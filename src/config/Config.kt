@@ -4,8 +4,8 @@ object Config {
     val seed = 111
 
     val startPortals = 10
-    val startFrogs = 1
-    val startSmurfs = 1
+    val startFrogs = 10
+    val startSmurfs = 10
 
     val maxFrogs = 500
     val maxSmurfs = 500
