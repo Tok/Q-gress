@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Q-Gress</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="stylesheet" href="QGress.css">
+    <link rel="stylesheet" href="https://openlayers.org/en/v4.5.0/css/ol.css" type="text/css">
+    <link href='lib/mapbox-gl-js/v0.42.0/mapbox-gl.css' rel='stylesheet'/>
+    <script src='lib/mapbox-gl-js/v0.42.0/mapbox-gl.js'></script>
+</head>
+<body>
+<div id="root" style="font-family:'AmarilloUSAF';font-weight:normal;font-size:21px;height:100%"></div>
+<div id="map" class="map" style="top:-100%"></div>
+<div id="shadowMap" class="shadowMap" style="top:-100%"></div>
+<script type="text/javascript">
+    mapboxgl.accessToken = "pk.eyJ1IjoiemlydGVxIiwiYSI6ImNqYW9yd2NnZTNvZngycXBsMjUwMWF1dHQifQ.p08HXZl07gz1jbLkVetZvw";
+</script>
+<script src="out/production/QGress/lib/kotlin.js"></script>
+<script src="out/production/QGress/QGress.js"></script>
+</body>
+</html>

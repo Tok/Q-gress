@@ -1,0 +1,27 @@
+{
+    "version": 8,
+    "name": "Empty",
+    "metadata": {
+        "mapbox:autocomposite": true,
+        "mapbox:type": "template"
+    },
+    "sources": {},
+    "sprite": "mapbox://sprites/zirteq/cjaq7lw9e2y7u2rn7u6xskobn",
+    "glyphs": "mapbox://fonts/mapbox/{fontstack}/{range}.pbf",
+    "layers": [
+        {
+            "id": "background",
+            "type": "background",
+            "paint": {
+                "background-color": "rgba(0,0,0,0)"
+            },
+            "interactive": true
+        }
+    ],
+    "draft": false,
+    "id": "cjaq7lw9e2y7u2rn7u6xskobn",
+    "modified": "2017-12-03T03:30:40.664Z",
+    "owner": "zirteq",
+    "visibility": "private",
+    "created": "2017-12-03T03:30:40.664Z"
+}
