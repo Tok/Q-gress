@@ -1,6 +1,7 @@
 # Q-Gress
 
-Q-Gress is a simulation of the Ingress simulacrum.
+Q-Gress is a simulation of Ingress.
+https://tok.github.io/Qgress/
 
 ## Work in Progress
 
@@ -37,8 +38,6 @@ Q-Gress was never tested on Mobile and is exclusively designed for desktop brows
     * tendency to move in good range
     * tendency to deploy to the opposite octant of existing max reso
 - Display FPS
-- Improve vector fields
-  * Fix path weights for terrain penalty
 - Implement glyphing
 - Improved controls
 - UI
@@ -49,8 +48,8 @@ Q-Gress was never tested on Mobile and is exclusively designed for desktop brows
 - Ultrastriking
 - Items
   * XM-Tanks
-  * MUFG-Capsules
-  
+  * Quantum-Capsules
+
 ### Further Ideas
 - Find a way to hook up a neural network for Q-learning
 - Create a mode to that uses emojis for agent visualization
@@ -61,3 +60,5 @@ Q-Gress was never tested on Mobile and is exclusively designed for desktop brows
 ### Third Party Copyrigths
 
 - Ingress and the concept of Ingress are Copyright of Niantic, Inc. https://www.nianticlabs.com/
+- Q-gress doesn't scrape any Data from Ingress and there is no intention to use real portal data.
+- All simulated agents and portals are user-created or generated randomly
