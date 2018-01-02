@@ -10,6 +10,7 @@ import config.Dimensions
 import config.Styles
 import config.Time
 import items.QgressItem
+import items.XmpBurster
 import items.deployable.Resonator
 import items.level.ResonatorLevel
 import items.level.XmpLevel
@@ -33,6 +34,7 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         val strongest = actionPortal.findStrongestResoPos()
         return strongest != null && pos.distanceTo(strongest) < range
     }
+
     fun isBusy(tick: Int): Boolean = tick <= action.untilTick
     fun lineToPortal(portal: Portal) = Line(pos, portal.location)
     fun lineToDestination() = Line(pos, destination)
@@ -64,103 +66,182 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
     }
 
     fun act(): Agent {
+        //println("DEBUG: ${World.tick} $action")
+        val useLocationFix = false
         if (isBusy(World.tick)) {
-            if (Util.random() < 0.005) { //jump away
-                val randomPortal = World.allPortals[(Util.random() * (World.allPortals.size - 1)).toInt()]
-                return this.copy(action = Action.start(ActionItem.WAIT, World.tick), actionPortal = randomPortal, pos = randomPortal.location)
+            if (useLocationFix && Util.random() < 0.005) {
+                return goDoSomethingElse()
             }
+            return this
         }
         when (action.item) {
-            ActionItem.MOVE -> return moveCloserToDestination()
-            ActionItem.ATTACK -> return attack()
+            ActionItem.MOVE -> return moveCloserToDestinationPortal()
+            ActionItem.ATTACK -> return attackPortal()
         }
-        return goDoSomethingElse()
+        return doSomething()
     }
 
-    fun goDoSomethingElse(): Agent {
+    fun doSomething(): Agent {
+        if (!isAtActionPortal()) {
+            return goDoSomethingElse()
+        }
+        return when (actionPortal.owner?.faction) {
+            null -> doNeutralPortalAction()
+            this.faction -> doFriendlyPortalAction()
+            else -> doEnemyPortalAction()
+        }
+    }
+
+    private fun isHackPossible() = actionPortal.canHack(this)
+    private fun isDeploymentPossible() = actionPortal.findAllowedResoLevels(this).map { it.value }.sum() > 0
+
+    fun doNeutralPortalAction(): Agent {
+        val hackQ = if (isHackPossible()) 0.5 else -1.0
+        val deployQ = if (isDeploymentPossible()) 0.5 else -1.0
         val qValues = listOf(
-                0.02 to { moveToRandomPortal() },
-                0.50 to { createLink() },
-                0.80 to { deployActionPortal() },
-                0.80 to { hackActionPortal() },
-                0.20 to { goAttackRandomPortal() },
-                0.30 to { moveToUncapturedPortal() },
-                0.05 to { moveToNearbyPortal() },
-                (1.0 - skills.reliability) to { doNothing() }
+                (1.0 - skills.reliability) to { doNothing() },
+                hackQ to { hackActionPortal() },
+                deployQ to { deployPortal() },
+                0.10 to { goDoSomethingElse() }
         )
         return Util.select(qValues).invoke()
     }
 
-    private fun moveCloserToDestination(): Agent {
-        if (!World.isReady) {
-            println("WARN: moveCloserToDestination: World is not ready.")
-            return this.copy(action = Action.start(ActionItem.WAIT, World.tick))
-        }
-
-        val isAtPortal = isAtActionPortal()
-        if (isAtPortal) {
-            if (pos == destination) {
-                return this.copy(action = Action.start(ActionItem.WAIT, World.tick))
-            } else {
-                //simple linear movement..
-                val dist = distanceToDestination()
-                val actualSpeed = skills.speed * Time.globalSpeedFactor * World.speed / 100
-                val inRangeSpeed = actualSpeed * 0.5
-                val isArrived = dist <= actualSpeed
-                if (isArrived) {
-                    return this.copy(action = Action.start(ActionItem.WAIT, World.tick), pos = destination)
-                }
-                val part = inRangeSpeed / distanceToDestination()
-                val rawDiffX = (pos.xDiff(destination) * part).toInt()
-                val rawDiffY = (pos.yDiff(destination) * part).toInt()
-                val rawNextX = pos.x - rawDiffX
-                val rawNextY = pos.y - rawDiffY
-                return this.copy(pos = Coords(rawNextX, rawNextY))
-            }
-        } else {
-            val shadowPos = PathUtil.posToShadowPos(pos)
-            val force = actionPortal.vectorField.get(shadowPos) ?: this.velocity
-            val mag = skills.speed * (World.speed / 100)
-            val relativeForce = Complex.fromMagnitudeAndPhase(mag, force.phase)
-            val oldWeight = 0.5F * 100 / World.speed
-            val oldVector = Complex.fromMagnitudeAndPhase(this.velocity.magnitude * oldWeight, this.velocity.phase)
-            val newVector = Complex.fromMagnitudeAndPhase(relativeForce.magnitude * (1F - oldWeight), relativeForce.phase)
-            val velo = oldVector + newVector
-            return this.copy(velocity = velo, pos = Coords((pos.x + velo.re).toInt(), (pos.y + velo.im).toInt()))
-        }
+    fun doFriendlyPortalAction(): Agent {
+        val hackQ = if (isHackPossible()) 0.5 else -1.0
+        val deployQ = if (isDeploymentPossible()) 0.5 else -1.0
+        val linkQ = if (isLinkPossible()) 0.5 else -1.0
+        val qValues = listOf(
+                (1.0 - skills.reliability) to { doNothing() },
+                hackQ to { hackActionPortal() },
+                deployQ to { deployPortal() },
+                linkQ to { createLink() },
+                0.10 to { goDoSomethingElse() }
+        )
+        return Util.select(qValues).invoke()
     }
 
-    fun attack(): Agent {
-        val isPortalStillEnemy = actionPortal.owner != null && actionPortal.owner?.faction != faction
-        if (!isPortalStillEnemy) {
-            return goAttackRandomPortal()
+    fun doEnemyPortalAction(): Agent {
+        val hackQ = if (isHackPossible()) 0.5 else -1.0
+        val attackQ = if (isAttackPossible()) 0.5 else -1.0
+        val qValues = listOf(
+                (1.0 - skills.reliability) to { doNothing() },
+                hackQ to { hackActionPortal() },
+                attackQ to { attackPortal() },
+                0.10 to { goDoSomethingElse() }
+        )
+        return Util.select(qValues).invoke()
+    }
+
+    fun goDoSomethingElse(): Agent {
+        val attackQ = if (isAttackPossible()) 0.20 else -1.0
+        val qValues = listOf(
+                0.02 to { moveToRandomPortal() },
+                attackQ to { goAttackRandomPortal() },
+                0.30 to { moveToUncapturedPortal() },
+                0.05 to { moveToNearbyPortal() }
+        )
+        return Util.select(qValues).invoke()
+    }
+
+    private fun moveCloserToDestinationPortal(): Agent {
+        if (!World.isReady) {
+            println("WARN: moveCloserToDestination: World is not ready.")
+            return doNothing()
         }
+        if (isAtActionPortal()) {
+            return doNothing()
+        }
+        val shadowPos = PathUtil.posToShadowPos(pos)
+        val force = actionPortal.vectorField.get(shadowPos) ?: this.velocity
+        val mag = skills.speed * (World.speed / 100)
+        val relativeForce = Complex.fromMagnitudeAndPhase(mag, force.phase)
+        val oldWeight = 0.5F * 100 / World.speed
+        val oldVector = Complex.fromMagnitudeAndPhase(this.velocity.magnitude * oldWeight, this.velocity.phase)
+        val newVector = Complex.fromMagnitudeAndPhase(relativeForce.magnitude * (1F - oldWeight), relativeForce.phase)
+        val velo = oldVector + newVector
+        return this.copy(velocity = velo, pos = Coords((pos.x + velo.re).toInt(), (pos.y + velo.im).toInt()))
+    }
+
+    private fun isAttackPossible() = inventory.findXmps()?.isNotEmpty() ?: false
+
+    fun attackPortal(): Agent {
+        val actualSpeed = skills.speed * Time.globalSpeedFactor * World.speed / 100
+        val inRangeSpeed = actualSpeed * 0.5
+        fun findExactDestination(): Coords {
+            if (actionPortal.calcHealth() > 0.5) {
+                return actionPortal.location
+            }
+            val maybeDestination = actionPortal.findStrongestResoPos()
+            if (maybeDestination != null && maybeDestination.isPassable()) {
+                return maybeDestination
+            } else { //send to portal center
+                return actionPortal.location
+            }
+        }
+
+        fun doAttack(xmps: List<XmpBurster>): Agent {
+            Queues.registerAttack(this, xmps)
+            inventory.consumeXmps(xmps)
+            return doNothing()
+        }
+
+        fun isArrived() = distanceToDestination() <= inRangeSpeed
+        fun moveCloser(): Agent {
+            val part = inRangeSpeed / distanceToDestination()
+            val rawDiffX = (pos.xDiff(destination) * part).toInt()
+            val rawDiffY = (pos.yDiff(destination) * part).toInt()
+            val rawNextX = pos.x - rawDiffX
+            val rawNextY = pos.y - rawDiffY
+            return this.copy(pos = Coords(rawNextX, rawNextY))
+        }
+
+        if (action.item != ActionItem.ATTACK) {
+            val destination = findExactDestination()
+            this.copy(action = Action.start(ActionItem.ATTACK, World.tick), destination = destination)
+        }
+        if (!isArrived()) {
+            return moveCloser()
+        }
+
         val maxXmps = 10
         val allXmps = inventory.findXmps()
-        val selected = allXmps?.sortedBy { it.level }?.take(min(maxXmps, allXmps.size))
-        if (selected == null || selected.isEmpty()) {
+        val selectedXmps = allXmps?.sortedBy { it.level }?.take(min(maxXmps, allXmps.size))
+        if (selectedXmps == null || selectedXmps.isEmpty()) {
             return goDoSomethingElse()
         }
-        val isInRange = isInAttackRange(selected.first().level.rangeM / 8)
-        if (!isInRange) {
-            val maybeDestination = actionPortal.findStrongestResoPos()
-            if (maybeDestination != null) {
-                return moveCloserToDestination()
-            } else {
-                return goDoSomethingElse()
-            }
-        } else {
-            Queues.registerAttack(this, selected)
-            inventory.consumeXmps(selected)
-            return this.copy(action = Action.start(ActionItem.WAIT, World.tick + Queues.attackDelayTicks))
-        }
+        return doAttack(selectedXmps)
     }
 
     fun doNothing(): Agent = this.copy(action = Action.start(ActionItem.WAIT, World.tick))
 
+    fun isLinkPossible(): Boolean {
+        if (!actionPortal.canLinkOut(this)) {
+            return false
+        }
+        val keyset: List<PortalKey>? = inventory.findUniqueKeys()
+        val hasKeys = keyset != null && keyset.isNotEmpty()
+        if (hasKeys) {
+            val linkOptions: List<Portal>? = actionPortal.findLinkableForKeys(keyset!!, this)?.filter {
+                it != actionPortal && it.owner != null && !it.isDeprecated()
+            }?.distinct()
+            if (linkOptions != null && linkOptions.isNotEmpty()) {
+                val linkLinks: List<Link> = linkOptions.map { Link.create(actionPortal, it, this) }.filterNotNull()
+                val nonCrossing = linkLinks.filter { link ->
+                    World.allLines().filter {
+                        it.doesIntersect(link.getLine())
+                    }.isEmpty()
+                }
+                val hasLinkOptions = nonCrossing.isNotEmpty()
+                return hasLinkOptions
+            }
+        }
+        return false
+    }
+
     fun createLink(): Agent {
         if (!actionPortal.canLinkOut(this)) {
-            return this
+            return doNothing()
         }
         val keyset: List<PortalKey>? = inventory.findUniqueKeys()
         val hasKeys = keyset != null && keyset.isNotEmpty()
@@ -182,75 +263,73 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
                 }
             }
         }
-        return this
+        return this.copy(action = Action.start(ActionItem.LINK, World.tick))
     }
 
     fun goAttackRandomPortal(): Agent {
         val enemyPortals = World.allPortals.filter { it.owner != null && it.owner!!.faction != this.faction }.sortedBy { distanceToPortal(it) }
         enemyPortals.forEach { portal ->
             if (Util.random() < skills.reliability) {
-                return goToDestination(portal).copy(action = Action.start(ActionItem.ATTACK, World.tick))
+                return goToDestinationPortal(portal).copy(action = Action.start(ActionItem.MOVE, World.tick))
             }
         }
-        return this.copy(action = Action.start(ActionItem.WAIT, World.tick))
+        return doNothing()
     }
 
     fun moveToNearbyPortal(): Agent {
         val randomNearPortals = World.allPortals.sortedBy { distanceToPortal(it) }
         randomNearPortals.forEach { portal ->
             if (Util.random() < skills.reliability) {
-                return goToDestination(portal)
+                return goToDestinationPortal(portal)
             }
         }
-        return goToDestination(randomNearPortals.elementAt(1))
+        return goToDestinationPortal(randomNearPortals.elementAt(1))
     }
 
     fun moveToRandomPortal(): Agent {
         val randomTarget: Portal = World.allPortals[(Util.random() * (World.allPortals.size - 1)).toInt()]
-        return goToDestination(randomTarget)
+        return goToDestinationPortal(randomTarget)
     }
 
     fun moveToUncapturedPortal(): Agent {
         val uncaptured = World.allPortals.filter { it.isUncaptured() }.sortedBy { distanceToPortal(it) }
         uncaptured.forEach { portal ->
             if (Util.random() < skills.reliability) {
-                return goToDestination(portal)
+                return goToDestinationPortal(portal)
             }
         }
         return this
     }
 
-    fun deployActionPortal(): Agent {
-        if (isAtActionPortal()) {
-            val allowedResoLevels: Map<ResonatorLevel, Int> = actionPortal.findAllowedResoLevels(this)
-            val areMoreResosAllowed = allowedResoLevels.map { it.value }.sum() > 0
-            if (areMoreResosAllowed) {
-                val ownedInPortal = actionPortal.resoSlots.filter { it.value.isOwnedBy(this) }.toList()
-                val inventoryResos = inventory.items.filter { it is Resonator }.map { it as Resonator }.sortedBy { it.level }
-                val deployLowFirstSet = inventoryResos.toSet()
+    fun deployPortal(): Agent {
+        val allowedResoLevels: Map<ResonatorLevel, Int> = actionPortal.findAllowedResoLevels(this)
+        val areMoreResosAllowed = allowedResoLevels.map { it.value }.sum() > 0
+        if (areMoreResosAllowed) {
+            val ownedInPortal = actionPortal.resoSlots.filter { it.value.isOwnedBy(this) }.toList()
+            val inventoryResos = inventory.items.filter { it is Resonator }.map { it as Resonator }.sortedBy { it.level }
+            val deployLowFirstSet = inventoryResos.toSet()
 
-                //in one move, deployActionPortal as many resonators as possible of one selected level
-                deployLowFirstSet.forEach { reso ->
-                    val owned = ownedInPortal.filter { slot -> slot.second.resonator?.level?.level ?: 0 >= reso.level.level }.count()
-                    val maxDeployable: Int = max(reso.level.deployablePerPlayer - owned, 0)
-                    val levelResos = inventoryResos.filter { it.level.level == reso.level.level && it.level.level <= this.getLevel() }
-                    if (levelResos.isNotEmpty()) {
-                        val resos = levelResos.take(min(maxDeployable, levelResos.size - 1))
-                        if (resos.isNotEmpty()) {
-                            val deployable = actionPortal.resoSlots.filter { it.value.resonator?.level?.level ?: 0 < reso.level.level }.toList()
-                            if (!deployable.isEmpty()) {
-                                val deployMap = Util.shuffle(deployable).zip(resos).map { it.first.first to it.second }.toMap()
-                                val distance = distanceToPortal(actionPortal)
-                                actionPortal.deploy(this, deployMap, distance.toInt())
-                                SoundUtil.playDeploySound(actionPortal.location, distance.toInt())
-                                return this.copy(action = Action.start(ActionItem.DEPLOY, World.tick))
-                            }
+            //in one move, deployActionPortal as many resonators as possible of one selected level
+            deployLowFirstSet.forEach { reso ->
+                val owned = ownedInPortal.filter { slot -> slot.second.resonator?.level?.level ?: 0 >= reso.level.level }.count()
+                val maxDeployable: Int = max(reso.level.deployablePerPlayer - owned, 0)
+                val levelResos = inventoryResos.filter { it.level.level == reso.level.level && it.level.level <= this.getLevel() }
+                if (levelResos.isNotEmpty()) {
+                    val resos = levelResos.take(min(maxDeployable, levelResos.size - 1))
+                    if (resos.isNotEmpty()) {
+                        val deployable = actionPortal.resoSlots.filter { it.value.resonator?.level?.level ?: 0 < reso.level.level }.toList()
+                        if (!deployable.isEmpty()) {
+                            val deployMap = Util.shuffle(deployable).zip(resos).map { it.first.first to it.second }.toMap()
+                            val distance = distanceToPortal(actionPortal)
+                            actionPortal.deploy(this, deployMap, distance.toInt())
+                            SoundUtil.playDeploySound(actionPortal.location, distance.toInt())
+                            return this.copy(action = Action.start(ActionItem.DEPLOY, World.tick))
                         }
                     }
                 }
             }
         }
-        return this.copy(action = Action.start(ActionItem.DEPLOY, World.tick))
+        return doNothing()
     }
 
     fun hackActionPortal(): Agent {
@@ -272,7 +351,7 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         return enemyPortals.filter { it.location.distanceTo(this.pos) <= attackDistance }.sortedBy { it.location.distanceTo(this.pos) }
     }
 
-    private fun goToDestination(destination: Portal): Agent {
+    private fun goToDestinationPortal(destination: Portal): Agent {
         val distance = skills.deployPrecision * Dimensions.maxDeploymentRange
         val nextDest = destination.findRandomPointNearPortal(distance.toInt())
         return this.copy(action = Action.start(ActionItem.MOVE, World.tick), actionPortal = destination, destination = nextDest)

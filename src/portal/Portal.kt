@@ -71,8 +71,15 @@ data class Portal constructor(val name: String, val location: Coords,
     }
 
     fun findResos(): List<Resonator> = resoSlots.map { it.value.resonator }.filterNotNull()
-    private fun findStrongestReso() = findResos().sortedBy { it.health * it.level.level }.first()
-    fun findStrongestResoPos(): Coords? = findStrongestReso().coords
+    private fun findStrongestReso(): Resonator? {
+        val resos = findResos()
+        if (resos.isEmpty()) {
+            return null
+        } else {
+            return resos.sortedBy { it.health * it.level.level }.first()
+        }
+    }
+    fun findStrongestResoPos(): Coords? = findStrongestReso()?.coords
     fun calcHealth(): Int = findResos().map { it.health }.sum() / findResos().count()
     fun calcTotalXm(): Int = getAllResos().map { it.health * it.level.xmToPortal }.sum()
     fun calculateLinkingRangeInMeters() = {

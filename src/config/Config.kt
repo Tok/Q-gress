@@ -9,7 +9,7 @@ object Config {
 
     val maxFrogs = 500
     val maxSmurfs = 500
-    val startNonFaction = 500 // ((maxFrogs + maxSmurfs) * 0.5 / Constants.phi).toInt()
+    val startNonFaction = 300 // ((maxFrogs + maxSmurfs) * 0.5 / Constants.phi).toInt()
 
     val isAutostart = true
     val vectorSmoothCount = 5

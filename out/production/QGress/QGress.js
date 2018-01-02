@@ -20,10 +20,10 @@ var QGress = function (_, Kotlin) {
   var Kind_OBJECT = Kotlin.Kind.OBJECT;
   var to = Kotlin.kotlin.to_ujzrz7$;
   var listOf = Kotlin.kotlin.collections.listOf_i5x0yv$;
-  var first = Kotlin.kotlin.collections.first_2p1efm$;
   var ensureNotNull = Kotlin.ensureNotNull;
   var distinct = Kotlin.kotlin.collections.distinct_7wnvza$;
   var filterNotNull = Kotlin.kotlin.collections.filterNotNull_m3lr2h$;
+  var first = Kotlin.kotlin.collections.first_2p1efm$;
   var toList = Kotlin.kotlin.collections.toList_abgq59$;
   var zip = Kotlin.kotlin.collections.zip_45mdf7$;
   var toMap = Kotlin.kotlin.collections.toMap_6hr0sd$;
@@ -909,18 +909,131 @@ var QGress = function (_, Kotlin) {
   };
   Agent.prototype.act = function () {
     var tmp$;
+    var useLocationFix = false;
     if (this.isBusy_za3lpa$(World_getInstance().tick)) {
-      if (Util_getInstance().random() < 0.005) {
-        var randomPortal = World_getInstance().allPortals.get_za3lpa$(numberToInt(Util_getInstance().random() * (World_getInstance().allPortals.size - 1 | 0)));
-        return this.copy_lmq102$(void 0, void 0, randomPortal.location, void 0, void 0, Action$Companion_getInstance().start_34yqkq$(ActionItem$Companion_getInstance().WAIT, World_getInstance().tick), randomPortal);
+      if (useLocationFix && Util_getInstance().random() < 0.005) {
+        return this.goDoSomethingElse();
       }
+      return this;
     }
     tmp$ = this.action.item;
     if (equals(tmp$, ActionItem$Companion_getInstance().MOVE))
-      return this.moveCloserToDestination_0();
+      return this.moveCloserToDestinationPortal_0();
     else if (equals(tmp$, ActionItem$Companion_getInstance().ATTACK))
-      return this.attack();
-    return this.goDoSomethingElse();
+      return this.attackPortal();
+    return this.doSomething();
+  };
+  Agent.prototype.doSomething = function () {
+    var tmp$, tmp$_0, tmp$_1;
+    if (!this.isAtActionPortal()) {
+      return this.goDoSomethingElse();
+    }
+    tmp$_0 = (tmp$ = this.actionPortal.owner) != null ? tmp$.faction : null;
+    if (tmp$_0 == null)
+      tmp$_1 = this.doNeutralPortalAction();
+    else if (equals(tmp$_0, this.faction))
+      tmp$_1 = this.doFriendlyPortalAction();
+    else
+      tmp$_1 = this.doEnemyPortalAction();
+    return tmp$_1;
+  };
+  Agent.prototype.isHackPossible_0 = function () {
+    return this.actionPortal.canHack_912u9o$(this);
+  };
+  Agent.prototype.isDeploymentPossible_0 = function () {
+    var $receiver = this.actionPortal.findAllowedResoLevels_912u9o$(this);
+    var destination = ArrayList_init($receiver.size);
+    var tmp$;
+    tmp$ = $receiver.entries.iterator();
+    while (tmp$.hasNext()) {
+      var item = tmp$.next();
+      destination.add_11rb$(item.value);
+    }
+    return sum(destination) > 0;
+  };
+  function Agent$doNeutralPortalAction$lambda(this$Agent) {
+    return function () {
+      return this$Agent.doNothing();
+    };
+  }
+  function Agent$doNeutralPortalAction$lambda_0(this$Agent) {
+    return function () {
+      return this$Agent.hackActionPortal();
+    };
+  }
+  function Agent$doNeutralPortalAction$lambda_1(this$Agent) {
+    return function () {
+      return this$Agent.deployPortal();
+    };
+  }
+  function Agent$doNeutralPortalAction$lambda_2(this$Agent) {
+    return function () {
+      return this$Agent.goDoSomethingElse();
+    };
+  }
+  Agent.prototype.doNeutralPortalAction = function () {
+    var hackQ = this.isHackPossible_0() ? 0.5 : -1.0;
+    var deployQ = this.isDeploymentPossible_0() ? 0.5 : -1.0;
+    var qValues = listOf([to(1.0 - this.skills.reliability, Agent$doNeutralPortalAction$lambda(this)), to(hackQ, Agent$doNeutralPortalAction$lambda_0(this)), to(deployQ, Agent$doNeutralPortalAction$lambda_1(this)), to(0.1, Agent$doNeutralPortalAction$lambda_2(this))]);
+    return Util_getInstance().select_flnx62$(qValues)();
+  };
+  function Agent$doFriendlyPortalAction$lambda(this$Agent) {
+    return function () {
+      return this$Agent.doNothing();
+    };
+  }
+  function Agent$doFriendlyPortalAction$lambda_0(this$Agent) {
+    return function () {
+      return this$Agent.hackActionPortal();
+    };
+  }
+  function Agent$doFriendlyPortalAction$lambda_1(this$Agent) {
+    return function () {
+      return this$Agent.deployPortal();
+    };
+  }
+  function Agent$doFriendlyPortalAction$lambda_2(this$Agent) {
+    return function () {
+      return this$Agent.createLink();
+    };
+  }
+  function Agent$doFriendlyPortalAction$lambda_3(this$Agent) {
+    return function () {
+      return this$Agent.goDoSomethingElse();
+    };
+  }
+  Agent.prototype.doFriendlyPortalAction = function () {
+    var hackQ = this.isHackPossible_0() ? 0.5 : -1.0;
+    var deployQ = this.isDeploymentPossible_0() ? 0.5 : -1.0;
+    var linkQ = this.isLinkPossible() ? 0.5 : -1.0;
+    var qValues = listOf([to(1.0 - this.skills.reliability, Agent$doFriendlyPortalAction$lambda(this)), to(hackQ, Agent$doFriendlyPortalAction$lambda_0(this)), to(deployQ, Agent$doFriendlyPortalAction$lambda_1(this)), to(linkQ, Agent$doFriendlyPortalAction$lambda_2(this)), to(0.1, Agent$doFriendlyPortalAction$lambda_3(this))]);
+    return Util_getInstance().select_flnx62$(qValues)();
+  };
+  function Agent$doEnemyPortalAction$lambda(this$Agent) {
+    return function () {
+      return this$Agent.doNothing();
+    };
+  }
+  function Agent$doEnemyPortalAction$lambda_0(this$Agent) {
+    return function () {
+      return this$Agent.hackActionPortal();
+    };
+  }
+  function Agent$doEnemyPortalAction$lambda_1(this$Agent) {
+    return function () {
+      return this$Agent.attackPortal();
+    };
+  }
+  function Agent$doEnemyPortalAction$lambda_2(this$Agent) {
+    return function () {
+      return this$Agent.goDoSomethingElse();
+    };
+  }
+  Agent.prototype.doEnemyPortalAction = function () {
+    var hackQ = this.isHackPossible_0() ? 0.5 : -1.0;
+    var attackQ = this.isAttackPossible_0() ? 0.5 : -1.0;
+    var qValues = listOf([to(1.0 - this.skills.reliability, Agent$doEnemyPortalAction$lambda(this)), to(hackQ, Agent$doEnemyPortalAction$lambda_0(this)), to(attackQ, Agent$doEnemyPortalAction$lambda_1(this)), to(0.1, Agent$doEnemyPortalAction$lambda_2(this))]);
+    return Util_getInstance().select_flnx62$(qValues)();
   };
   function Agent$goDoSomethingElse$lambda(this$Agent) {
     return function () {
@@ -929,83 +1042,84 @@ var QGress = function (_, Kotlin) {
   }
   function Agent$goDoSomethingElse$lambda_0(this$Agent) {
     return function () {
-      return this$Agent.createLink();
+      return this$Agent.goAttackRandomPortal();
     };
   }
   function Agent$goDoSomethingElse$lambda_1(this$Agent) {
     return function () {
-      return this$Agent.deployActionPortal();
+      return this$Agent.moveToUncapturedPortal();
     };
   }
   function Agent$goDoSomethingElse$lambda_2(this$Agent) {
     return function () {
-      return this$Agent.hackActionPortal();
-    };
-  }
-  function Agent$goDoSomethingElse$lambda_3(this$Agent) {
-    return function () {
-      return this$Agent.goAttackRandomPortal();
-    };
-  }
-  function Agent$goDoSomethingElse$lambda_4(this$Agent) {
-    return function () {
-      return this$Agent.moveToUncapturedPortal();
-    };
-  }
-  function Agent$goDoSomethingElse$lambda_5(this$Agent) {
-    return function () {
       return this$Agent.moveToNearbyPortal();
     };
   }
-  function Agent$goDoSomethingElse$lambda_6(this$Agent) {
+  Agent.prototype.goDoSomethingElse = function () {
+    var attackQ = this.isAttackPossible_0() ? 0.2 : -1.0;
+    var qValues = listOf([to(0.02, Agent$goDoSomethingElse$lambda(this)), to(attackQ, Agent$goDoSomethingElse$lambda_0(this)), to(0.3, Agent$goDoSomethingElse$lambda_1(this)), to(0.05, Agent$goDoSomethingElse$lambda_2(this))]);
+    return Util_getInstance().select_flnx62$(qValues)();
+  };
+  Agent.prototype.moveCloserToDestinationPortal_0 = function () {
+    var tmp$;
+    if (!World_getInstance().isReady) {
+      println('WARN: moveCloserToDestination: World is not ready.');
+      return this.doNothing();
+    }
+    if (this.isAtActionPortal()) {
+      return this.doNothing();
+    }
+    var shadowPos = PathUtil_getInstance().posToShadowPos_lfj9be$(this.pos);
+    var force = (tmp$ = this.actionPortal.vectorField.get_11rb$(shadowPos)) != null ? tmp$ : this.velocity;
+    var mag = this.skills.speed * (World_getInstance().speed / 100 | 0);
+    var relativeForce = Complex$Companion_getInstance().fromMagnitudeAndPhase_5nl2e7$(mag, force.phase);
+    var oldWeight = 0.5 * 100 / World_getInstance().speed;
+    var oldVector = Complex$Companion_getInstance().fromMagnitudeAndPhase_5nl2e7$(this.velocity.magnitude * oldWeight, this.velocity.phase);
+    var newVector = Complex$Companion_getInstance().fromMagnitudeAndPhase_5nl2e7$(relativeForce.magnitude * (1.0 - oldWeight), relativeForce.phase);
+    var velo = oldVector.plus_p4p8i0$(newVector);
+    return this.copy_lmq102$(void 0, void 0, new Coords(numberToInt(this.pos.x + velo.re), numberToInt(this.pos.y + velo.im)), void 0, void 0, void 0, void 0, void 0, void 0, void 0, velo);
+  };
+  Agent.prototype.isAttackPossible_0 = function () {
+    var tmp$, tmp$_0;
+    return (tmp$_0 = (tmp$ = this.inventory.findXmps()) != null ? !tmp$.isEmpty() : null) != null ? tmp$_0 : false;
+  };
+  function Agent$attackPortal$findExactDestination(this$Agent) {
     return function () {
+      if (this$Agent.actionPortal.calcHealth() > 0.5) {
+        return this$Agent.actionPortal.location;
+      }
+      var maybeDestination = this$Agent.actionPortal.findStrongestResoPos();
+      if (maybeDestination != null && maybeDestination.isPassable()) {
+        return maybeDestination;
+      }
+       else {
+        return this$Agent.actionPortal.location;
+      }
+    };
+  }
+  function Agent$attackPortal$doAttack(this$Agent) {
+    return function (xmps) {
+      Queues_getInstance().registerAttack_wr4det$(this$Agent, xmps);
+      this$Agent.inventory.consumeXmps_ss5kb$(xmps);
       return this$Agent.doNothing();
     };
   }
-  Agent.prototype.goDoSomethingElse = function () {
-    var qValues = listOf([to(0.02, Agent$goDoSomethingElse$lambda(this)), to(0.5, Agent$goDoSomethingElse$lambda_0(this)), to(0.8, Agent$goDoSomethingElse$lambda_1(this)), to(0.8, Agent$goDoSomethingElse$lambda_2(this)), to(0.2, Agent$goDoSomethingElse$lambda_3(this)), to(0.3, Agent$goDoSomethingElse$lambda_4(this)), to(0.05, Agent$goDoSomethingElse$lambda_5(this)), to(1.0 - this.skills.reliability, Agent$goDoSomethingElse$lambda_6(this))]);
-    return Util_getInstance().select_flnx62$(qValues)();
-  };
-  Agent.prototype.moveCloserToDestination_0 = function () {
-    var tmp$, tmp$_0;
-    if (!World_getInstance().isReady) {
-      println('WARN: moveCloserToDestination: World is not ready.');
-      return this.copy_lmq102$(void 0, void 0, void 0, void 0, void 0, Action$Companion_getInstance().start_34yqkq$(ActionItem$Companion_getInstance().WAIT, World_getInstance().tick));
-    }
-    var isAtPortal = this.isAtActionPortal();
-    if (isAtPortal) {
-      if ((tmp$ = this.pos) != null ? tmp$.equals(this.destination) : null) {
-        return this.copy_lmq102$(void 0, void 0, void 0, void 0, void 0, Action$Companion_getInstance().start_34yqkq$(ActionItem$Companion_getInstance().WAIT, World_getInstance().tick));
-      }
-       else {
-        var dist = this.distanceToDestination();
-        var actualSpeed = this.skills.speed * Time_getInstance().globalSpeedFactor * World_getInstance().speed / 100;
-        var inRangeSpeed = actualSpeed * 0.5;
-        var isArrived = dist <= actualSpeed;
-        if (isArrived) {
-          return this.copy_lmq102$(void 0, void 0, this.destination, void 0, void 0, Action$Companion_getInstance().start_34yqkq$(ActionItem$Companion_getInstance().WAIT, World_getInstance().tick));
-        }
-        var part = inRangeSpeed / this.distanceToDestination();
-        var rawDiffX = numberToInt(this.pos.xDiff_lfj9be$(this.destination) * part);
-        var rawDiffY = numberToInt(this.pos.yDiff_lfj9be$(this.destination) * part);
-        var rawNextX = this.pos.x - rawDiffX | 0;
-        var rawNextY = this.pos.y - rawDiffY | 0;
-        return this.copy_lmq102$(void 0, void 0, new Coords(rawNextX, rawNextY));
-      }
-    }
-     else {
-      var shadowPos = PathUtil_getInstance().posToShadowPos_lfj9be$(this.pos);
-      var force = (tmp$_0 = this.actionPortal.vectorField.get_11rb$(shadowPos)) != null ? tmp$_0 : this.velocity;
-      var mag = this.skills.speed * (World_getInstance().speed / 100 | 0);
-      var relativeForce = Complex$Companion_getInstance().fromMagnitudeAndPhase_5nl2e7$(mag, force.phase);
-      var oldWeight = 0.5 * 100 / World_getInstance().speed;
-      var oldVector = Complex$Companion_getInstance().fromMagnitudeAndPhase_5nl2e7$(this.velocity.magnitude * oldWeight, this.velocity.phase);
-      var newVector = Complex$Companion_getInstance().fromMagnitudeAndPhase_5nl2e7$(relativeForce.magnitude * (1.0 - oldWeight), relativeForce.phase);
-      var velo = oldVector.plus_p4p8i0$(newVector);
-      return this.copy_lmq102$(void 0, void 0, new Coords(numberToInt(this.pos.x + velo.re), numberToInt(this.pos.y + velo.im)), void 0, void 0, void 0, void 0, void 0, void 0, void 0, velo);
-    }
-  };
-  function Agent$attack$lambda(it) {
+  function Agent$attackPortal$isArrived(this$Agent, closure$inRangeSpeed) {
+    return function () {
+      return this$Agent.distanceToDestination() <= closure$inRangeSpeed;
+    };
+  }
+  function Agent$attackPortal$moveCloser(closure$inRangeSpeed, this$Agent) {
+    return function () {
+      var part = closure$inRangeSpeed / this$Agent.distanceToDestination();
+      var rawDiffX = numberToInt(this$Agent.pos.xDiff_lfj9be$(this$Agent.destination) * part);
+      var rawDiffY = numberToInt(this$Agent.pos.yDiff_lfj9be$(this$Agent.destination) * part);
+      var rawNextX = this$Agent.pos.x - rawDiffX | 0;
+      var rawNextY = this$Agent.pos.y - rawDiffY | 0;
+      return this$Agent.copy_lmq102$(void 0, void 0, new Coords(rawNextX, rawNextY));
+    };
+  }
+  function Agent$attackPortal$lambda(it) {
     return it.level;
   }
   var compareBy$lambda_0 = wrapFunction(function () {
@@ -1024,48 +1138,107 @@ var QGress = function (_, Kotlin) {
     return this.closure$comparison(a, b);
   };
   Comparator$ObjectLiteral_0.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
-  Agent.prototype.attack = function () {
+  Agent.prototype.attackPortal = function () {
     var tmp$, tmp$_0;
-    var isPortalStillEnemy = this.actionPortal.owner != null && !equals((tmp$ = this.actionPortal.owner) != null ? tmp$.faction : null, this.faction);
-    if (!isPortalStillEnemy) {
-      return this.goAttackRandomPortal();
+    var actualSpeed = this.skills.speed * Time_getInstance().globalSpeedFactor * World_getInstance().speed / 100;
+    var inRangeSpeed = actualSpeed * 0.5;
+    var findExactDestination = Agent$attackPortal$findExactDestination(this);
+    var doAttack = Agent$attackPortal$doAttack(this);
+    var isArrived = Agent$attackPortal$isArrived(this, inRangeSpeed);
+    var moveCloser = Agent$attackPortal$moveCloser(inRangeSpeed, this);
+    if (!((tmp$ = this.action.item) != null ? tmp$.equals(ActionItem$Companion_getInstance().ATTACK) : null)) {
+      var destination = findExactDestination();
+      this.copy_lmq102$(void 0, void 0, void 0, void 0, void 0, Action$Companion_getInstance().start_34yqkq$(ActionItem$Companion_getInstance().ATTACK, World_getInstance().tick), void 0, destination);
+    }
+    if (!isArrived()) {
+      return moveCloser();
     }
     var maxXmps = 10;
     var allXmps = this.inventory.findXmps();
     var tmp$_1;
-    if ((tmp$_0 = allXmps != null ? sortedWith(allXmps, new Comparator$ObjectLiteral_0(compareBy$lambda_0(Agent$attack$lambda))) : null) != null) {
+    if ((tmp$_0 = allXmps != null ? sortedWith(allXmps, new Comparator$ObjectLiteral_0(compareBy$lambda_0(Agent$attackPortal$lambda))) : null) != null) {
       var b = allXmps.size;
       tmp$_1 = take(tmp$_0, Math_0.min(maxXmps, b));
     }
      else
       tmp$_1 = null;
-    var selected = tmp$_1;
-    if (selected == null || selected.isEmpty()) {
+    var selectedXmps = tmp$_1;
+    if (selectedXmps == null || selectedXmps.isEmpty()) {
       return this.goDoSomethingElse();
     }
-    var isInRange = this.isInAttackRange_za3lpa$(first(selected).level.rangeM / 8 | 0);
-    if (!isInRange) {
-      var maybeDestination = this.actionPortal.findStrongestResoPos();
-      if (maybeDestination != null) {
-        return this.moveCloserToDestination_0();
-      }
-       else {
-        return this.goDoSomethingElse();
-      }
-    }
-     else {
-      Queues_getInstance().registerAttack_wr4det$(this, selected);
-      this.inventory.consumeXmps_ss5kb$(selected);
-      return this.copy_lmq102$(void 0, void 0, void 0, void 0, void 0, Action$Companion_getInstance().start_34yqkq$(ActionItem$Companion_getInstance().WAIT, World_getInstance().tick + Queues_getInstance().attackDelayTicks | 0));
-    }
+    return doAttack(selectedXmps);
   };
   Agent.prototype.doNothing = function () {
     return this.copy_lmq102$(void 0, void 0, void 0, void 0, void 0, Action$Companion_getInstance().start_34yqkq$(ActionItem$Companion_getInstance().WAIT, World_getInstance().tick));
   };
+  Agent.prototype.isLinkPossible = function () {
+    var tmp$, tmp$_0;
+    if (!this.actionPortal.canLinkOut_912u9o$(this)) {
+      return false;
+    }
+    var keyset = this.inventory.findUniqueKeys();
+    var tmp$_1 = keyset != null;
+    if (tmp$_1) {
+      tmp$_1 = !keyset.isEmpty();
+    }
+    var hasKeys = tmp$_1;
+    if (hasKeys) {
+      var tmp$_2;
+      if ((tmp$ = this.actionPortal.findLinkableForKeys_ep8wwm$(ensureNotNull(keyset), this)) != null) {
+        var destination = ArrayList_init();
+        var tmp$_3;
+        tmp$_3 = tmp$.iterator();
+        while (tmp$_3.hasNext()) {
+          var element = tmp$_3.next();
+          if (!(element != null ? element.equals(this.actionPortal) : null) && element.owner != null && !element.isDeprecated())
+            destination.add_11rb$(element);
+        }
+        tmp$_2 = destination;
+      }
+       else
+        tmp$_2 = null;
+      var linkOptions = (tmp$_0 = tmp$_2) != null ? distinct(tmp$_0) : null;
+      var tmp$_4 = linkOptions != null;
+      if (tmp$_4) {
+        tmp$_4 = !linkOptions.isEmpty();
+      }
+      if (tmp$_4) {
+        var destination_0 = ArrayList_init(collectionSizeOrDefault(linkOptions, 10));
+        var tmp$_5;
+        tmp$_5 = linkOptions.iterator();
+        while (tmp$_5.hasNext()) {
+          var item = tmp$_5.next();
+          destination_0.add_11rb$(Link$Companion_getInstance().create_6ezwqo$(this.actionPortal, item, this));
+        }
+        var linkLinks = filterNotNull(destination_0);
+        var destination_1 = ArrayList_init();
+        var tmp$_6;
+        tmp$_6 = linkLinks.iterator();
+        while (tmp$_6.hasNext()) {
+          var element_0 = tmp$_6.next();
+          var $receiver = World_getInstance().allLines();
+          var destination_2 = ArrayList_init();
+          var tmp$_7;
+          tmp$_7 = $receiver.iterator();
+          while (tmp$_7.hasNext()) {
+            var element_1 = tmp$_7.next();
+            if (element_1.doesIntersect_589y3w$(element_0.getLine()))
+              destination_2.add_11rb$(element_1);
+          }
+          if (destination_2.isEmpty())
+            destination_1.add_11rb$(element_0);
+        }
+        var nonCrossing = destination_1;
+        var hasLinkOptions = !nonCrossing.isEmpty();
+        return hasLinkOptions;
+      }
+    }
+    return false;
+  };
   Agent.prototype.createLink = function () {
     var tmp$, tmp$_0;
     if (!this.actionPortal.canLinkOut_912u9o$(this)) {
-      return this;
+      return this.doNothing();
     }
     var keyset = this.inventory.findUniqueKeys();
     var tmp$_1 = keyset != null;
@@ -1127,7 +1300,7 @@ var QGress = function (_, Kotlin) {
         }
       }
     }
-    return this;
+    return this.copy_lmq102$(void 0, void 0, void 0, void 0, void 0, Action$Companion_getInstance().start_34yqkq$(ActionItem$Companion_getInstance().LINK, World_getInstance().tick));
   };
   function Agent$goAttackRandomPortal$lambda(this$Agent) {
     return function (it) {
@@ -1166,10 +1339,10 @@ var QGress = function (_, Kotlin) {
     while (tmp$_0.hasNext()) {
       var element_0 = tmp$_0.next();
       if (Util_getInstance().random() < this.skills.reliability) {
-        return this.goToDestination_0(element_0).copy_lmq102$(void 0, void 0, void 0, void 0, void 0, Action$Companion_getInstance().start_34yqkq$(ActionItem$Companion_getInstance().ATTACK, World_getInstance().tick));
+        return this.goToDestinationPortal_0(element_0).copy_lmq102$(void 0, void 0, void 0, void 0, void 0, Action$Companion_getInstance().start_34yqkq$(ActionItem$Companion_getInstance().MOVE, World_getInstance().tick));
       }
     }
-    return this.copy_lmq102$(void 0, void 0, void 0, void 0, void 0, Action$Companion_getInstance().start_34yqkq$(ActionItem$Companion_getInstance().WAIT, World_getInstance().tick));
+    return this.doNothing();
   };
   function Agent$moveToNearbyPortal$lambda(this$Agent) {
     return function (it) {
@@ -1199,14 +1372,14 @@ var QGress = function (_, Kotlin) {
     while (tmp$.hasNext()) {
       var element = tmp$.next();
       if (Util_getInstance().random() < this.skills.reliability) {
-        return this.goToDestination_0(element);
+        return this.goToDestinationPortal_0(element);
       }
     }
-    return this.goToDestination_0.call(this, randomNearPortals.get_za3lpa$(1));
+    return this.goToDestinationPortal_0.call(this, randomNearPortals.get_za3lpa$(1));
   };
   Agent.prototype.moveToRandomPortal = function () {
     var randomTarget = World_getInstance().allPortals.get_za3lpa$(numberToInt(Util_getInstance().random() * (World_getInstance().allPortals.size - 1 | 0)));
-    return this.goToDestination_0(randomTarget);
+    return this.goToDestinationPortal_0(randomTarget);
   };
   function Agent$moveToUncapturedPortal$lambda(this$Agent) {
     return function (it) {
@@ -1245,12 +1418,12 @@ var QGress = function (_, Kotlin) {
     while (tmp$_0.hasNext()) {
       var element_0 = tmp$_0.next();
       if (Util_getInstance().random() < this.skills.reliability) {
-        return this.goToDestination_0(element_0);
+        return this.goToDestinationPortal_0(element_0);
       }
     }
     return this;
   };
-  function Agent$deployActionPortal$lambda(it) {
+  function Agent$deployPortal$lambda(it) {
     return it.level;
   }
   var compareBy$lambda_4 = wrapFunction(function () {
@@ -1269,110 +1442,108 @@ var QGress = function (_, Kotlin) {
     return this.closure$comparison(a, b);
   };
   Comparator$ObjectLiteral_4.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
-  Agent.prototype.deployActionPortal = function () {
-    if (this.isAtActionPortal()) {
-      var allowedResoLevels = this.actionPortal.findAllowedResoLevels_912u9o$(this);
-      var destination = ArrayList_init(allowedResoLevels.size);
-      var tmp$;
-      tmp$ = allowedResoLevels.entries.iterator();
-      while (tmp$.hasNext()) {
-        var item = tmp$.next();
-        destination.add_11rb$(item.value);
+  Agent.prototype.deployPortal = function () {
+    var allowedResoLevels = this.actionPortal.findAllowedResoLevels_912u9o$(this);
+    var destination = ArrayList_init(allowedResoLevels.size);
+    var tmp$;
+    tmp$ = allowedResoLevels.entries.iterator();
+    while (tmp$.hasNext()) {
+      var item = tmp$.next();
+      destination.add_11rb$(item.value);
+    }
+    var areMoreResosAllowed = sum(destination) > 0;
+    if (areMoreResosAllowed) {
+      var $receiver = this.actionPortal.resoSlots;
+      var destination_0 = LinkedHashMap_init();
+      var tmp$_0;
+      tmp$_0 = $receiver.entries.iterator();
+      while (tmp$_0.hasNext()) {
+        var element = tmp$_0.next();
+        if (element.value.isOwnedBy_912u9o$(this)) {
+          destination_0.put_xwzc9p$(element.key, element.value);
+        }
       }
-      var areMoreResosAllowed = sum(destination) > 0;
-      if (areMoreResosAllowed) {
-        var $receiver = this.actionPortal.resoSlots;
-        var destination_0 = LinkedHashMap_init();
-        var tmp$_0;
-        tmp$_0 = $receiver.entries.iterator();
-        while (tmp$_0.hasNext()) {
-          var element = tmp$_0.next();
-          if (element.value.isOwnedBy_912u9o$(this)) {
-            destination_0.put_xwzc9p$(element.key, element.value);
-          }
+      var ownedInPortal = toList(destination_0);
+      var $receiver_0 = this.inventory.items;
+      var destination_1 = ArrayList_init();
+      var tmp$_1;
+      tmp$_1 = $receiver_0.iterator();
+      while (tmp$_1.hasNext()) {
+        var element_0 = tmp$_1.next();
+        if (Kotlin.isType(element_0, Resonator))
+          destination_1.add_11rb$(element_0);
+      }
+      var destination_2 = ArrayList_init(collectionSizeOrDefault(destination_1, 10));
+      var tmp$_2;
+      tmp$_2 = destination_1.iterator();
+      while (tmp$_2.hasNext()) {
+        var item_0 = tmp$_2.next();
+        var tmp$_3;
+        destination_2.add_11rb$(Kotlin.isType(tmp$_3 = item_0, Resonator) ? tmp$_3 : throwCCE());
+      }
+      var inventoryResos = sortedWith(destination_2, new Comparator$ObjectLiteral_4(compareBy$lambda_4(Agent$deployPortal$lambda)));
+      var deployLowFirstSet = toSet(inventoryResos);
+      var tmp$_4;
+      tmp$_4 = deployLowFirstSet.iterator();
+      while (tmp$_4.hasNext()) {
+        var element_1 = tmp$_4.next();
+        var destination_3 = ArrayList_init();
+        var tmp$_5;
+        tmp$_5 = ownedInPortal.iterator();
+        while (tmp$_5.hasNext()) {
+          var element_2 = tmp$_5.next();
+          var tmp$_6, tmp$_7, tmp$_8;
+          if (((tmp$_8 = (tmp$_7 = (tmp$_6 = element_2.second.resonator) != null ? tmp$_6.level : null) != null ? tmp$_7.level : null) != null ? tmp$_8 : 0) >= element_1.level.level)
+            destination_3.add_11rb$(element_2);
         }
-        var ownedInPortal = toList(destination_0);
-        var $receiver_0 = this.inventory.items;
-        var destination_1 = ArrayList_init();
-        var tmp$_1;
-        tmp$_1 = $receiver_0.iterator();
-        while (tmp$_1.hasNext()) {
-          var element_0 = tmp$_1.next();
-          if (Kotlin.isType(element_0, Resonator))
-            destination_1.add_11rb$(element_0);
+        var owned = destination_3.size;
+        var a = element_1.level.deployablePerPlayer - owned | 0;
+        var maxDeployable = Math_0.max(a, 0);
+        var destination_4 = ArrayList_init();
+        var tmp$_9;
+        tmp$_9 = inventoryResos.iterator();
+        while (tmp$_9.hasNext()) {
+          var element_3 = tmp$_9.next();
+          if (element_3.level.level === element_1.level.level && element_3.level.level <= this.getLevel())
+            destination_4.add_11rb$(element_3);
         }
-        var destination_2 = ArrayList_init(collectionSizeOrDefault(destination_1, 10));
-        var tmp$_2;
-        tmp$_2 = destination_1.iterator();
-        while (tmp$_2.hasNext()) {
-          var item_0 = tmp$_2.next();
-          var tmp$_3;
-          destination_2.add_11rb$(Kotlin.isType(tmp$_3 = item_0, Resonator) ? tmp$_3 : throwCCE());
-        }
-        var inventoryResos = sortedWith(destination_2, new Comparator$ObjectLiteral_4(compareBy$lambda_4(Agent$deployActionPortal$lambda)));
-        var deployLowFirstSet = toSet(inventoryResos);
-        var tmp$_4;
-        tmp$_4 = deployLowFirstSet.iterator();
-        while (tmp$_4.hasNext()) {
-          var element_1 = tmp$_4.next();
-          var destination_3 = ArrayList_init();
-          var tmp$_5;
-          tmp$_5 = ownedInPortal.iterator();
-          while (tmp$_5.hasNext()) {
-            var element_2 = tmp$_5.next();
-            var tmp$_6, tmp$_7, tmp$_8;
-            if (((tmp$_8 = (tmp$_7 = (tmp$_6 = element_2.second.resonator) != null ? tmp$_6.level : null) != null ? tmp$_7.level : null) != null ? tmp$_8 : 0) >= element_1.level.level)
-              destination_3.add_11rb$(element_2);
-          }
-          var owned = destination_3.size;
-          var a = element_1.level.deployablePerPlayer - owned | 0;
-          var maxDeployable = Math_0.max(a, 0);
-          var destination_4 = ArrayList_init();
-          var tmp$_9;
-          tmp$_9 = inventoryResos.iterator();
-          while (tmp$_9.hasNext()) {
-            var element_3 = tmp$_9.next();
-            if (element_3.level.level === element_1.level.level && element_3.level.level <= this.getLevel())
-              destination_4.add_11rb$(element_3);
-          }
-          var levelResos = destination_4;
-          if (!levelResos.isEmpty()) {
-            var b = levelResos.size - 1 | 0;
-            var resos = take(levelResos, Math_0.min(maxDeployable, b));
-            if (!resos.isEmpty()) {
-              var $receiver_1 = this.actionPortal.resoSlots;
-              var destination_5 = LinkedHashMap_init();
-              var tmp$_10;
-              tmp$_10 = $receiver_1.entries.iterator();
-              while (tmp$_10.hasNext()) {
-                var element_4 = tmp$_10.next();
-                var tmp$_11, tmp$_12, tmp$_13;
-                if (((tmp$_13 = (tmp$_12 = (tmp$_11 = element_4.value.resonator) != null ? tmp$_11.level : null) != null ? tmp$_12.level : null) != null ? tmp$_13 : 0) < element_1.level.level) {
-                  destination_5.put_xwzc9p$(element_4.key, element_4.value);
-                }
+        var levelResos = destination_4;
+        if (!levelResos.isEmpty()) {
+          var b = levelResos.size - 1 | 0;
+          var resos = take(levelResos, Math_0.min(maxDeployable, b));
+          if (!resos.isEmpty()) {
+            var $receiver_1 = this.actionPortal.resoSlots;
+            var destination_5 = LinkedHashMap_init();
+            var tmp$_10;
+            tmp$_10 = $receiver_1.entries.iterator();
+            while (tmp$_10.hasNext()) {
+              var element_4 = tmp$_10.next();
+              var tmp$_11, tmp$_12, tmp$_13;
+              if (((tmp$_13 = (tmp$_12 = (tmp$_11 = element_4.value.resonator) != null ? tmp$_11.level : null) != null ? tmp$_12.level : null) != null ? tmp$_13 : 0) < element_1.level.level) {
+                destination_5.put_xwzc9p$(element_4.key, element_4.value);
               }
-              var deployable = toList(destination_5);
-              if (!deployable.isEmpty()) {
-                var $receiver_2 = zip(Util_getInstance().shuffle_bemo1h$(deployable), resos);
-                var destination_6 = ArrayList_init(collectionSizeOrDefault($receiver_2, 10));
-                var tmp$_14;
-                tmp$_14 = $receiver_2.iterator();
-                while (tmp$_14.hasNext()) {
-                  var item_1 = tmp$_14.next();
-                  destination_6.add_11rb$(to(item_1.first.first, item_1.second));
-                }
-                var deployMap = toMap(destination_6);
-                var distance = this.distanceToPortal_hv9zn6$(this.actionPortal);
-                this.actionPortal.deploy_en6fu0$(this, deployMap, numberToInt(distance));
-                SoundUtil_getInstance().playDeploySound_s1df0o$(this.actionPortal.location, numberToInt(distance));
-                return this.copy_lmq102$(void 0, void 0, void 0, void 0, void 0, Action$Companion_getInstance().start_34yqkq$(ActionItem$Companion_getInstance().DEPLOY, World_getInstance().tick));
+            }
+            var deployable = toList(destination_5);
+            if (!deployable.isEmpty()) {
+              var $receiver_2 = zip(Util_getInstance().shuffle_bemo1h$(deployable), resos);
+              var destination_6 = ArrayList_init(collectionSizeOrDefault($receiver_2, 10));
+              var tmp$_14;
+              tmp$_14 = $receiver_2.iterator();
+              while (tmp$_14.hasNext()) {
+                var item_1 = tmp$_14.next();
+                destination_6.add_11rb$(to(item_1.first.first, item_1.second));
               }
+              var deployMap = toMap(destination_6);
+              var distance = this.distanceToPortal_hv9zn6$(this.actionPortal);
+              this.actionPortal.deploy_en6fu0$(this, deployMap, numberToInt(distance));
+              SoundUtil_getInstance().playDeploySound_s1df0o$(this.actionPortal.location, numberToInt(distance));
+              return this.copy_lmq102$(void 0, void 0, void 0, void 0, void 0, Action$Companion_getInstance().start_34yqkq$(ActionItem$Companion_getInstance().DEPLOY, World_getInstance().tick));
             }
           }
         }
       }
     }
-    return this.copy_lmq102$(void 0, void 0, void 0, void 0, void 0, Action$Companion_getInstance().start_34yqkq$(ActionItem$Companion_getInstance().DEPLOY, World_getInstance().tick));
+    return this.doNothing();
   };
   Agent.prototype.hackActionPortal = function () {
     if (this.isAtActionPortal() && this.actionPortal.canHack_912u9o$(this)) {
@@ -1430,7 +1601,7 @@ var QGress = function (_, Kotlin) {
     }
     return sortedWith(destination_0, new Comparator$ObjectLiteral_5(compareBy$lambda_5(Agent$findPortalsInAttackRange$lambda(this))));
   };
-  Agent.prototype.goToDestination_0 = function (destination) {
+  Agent.prototype.goToDestinationPortal_0 = function (destination) {
     var distance = this.skills.deployPrecision * Dimensions_getInstance().maxDeploymentRange;
     var nextDest = destination.findRandomPointNearPortal_za3lpa$(numberToInt(distance));
     return this.copy_lmq102$(void 0, void 0, void 0, void 0, void 0, Action$Companion_getInstance().start_34yqkq$(ActionItem$Companion_getInstance().MOVE, World_getInstance().tick), destination, nextDest);
@@ -2397,7 +2568,7 @@ var QGress = function (_, Kotlin) {
     this.startSmurfs = 10;
     this.maxFrogs = 500;
     this.maxSmurfs = 500;
-    this.startNonFaction = 500;
+    this.startNonFaction = 300;
     this.isAutostart = true;
     this.vectorSmoothCount = 5;
     this.shadowBlurCount = 3;
@@ -2533,8 +2704,8 @@ var QGress = function (_, Kotlin) {
     this.isDrawCom = true;
     this.isDrawResoLevels = false;
     this.isDrawTopAgents = true;
-    this.useSatteliteMap = false;
-    this.use3DBuildings = true;
+    this.useSatteliteMap = true;
+    this.use3DBuildings = false;
     this.vectorStyle = Styles$VectorStyle$CIRCLE_getInstance();
     this.isDrawObstructedVectors = true;
     this.isDrawResoLineGradient = true;
@@ -4985,10 +5156,17 @@ var QGress = function (_, Kotlin) {
   };
   Comparator$ObjectLiteral_12.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
   Portal.prototype.findStrongestReso_0 = function () {
-    return first(sortedWith(this.findResos(), new Comparator$ObjectLiteral_12(compareBy$lambda_11(Portal$findStrongestReso$lambda))));
+    var resos = this.findResos();
+    if (resos.isEmpty()) {
+      return null;
+    }
+     else {
+      return first(sortedWith(resos, new Comparator$ObjectLiteral_12(compareBy$lambda_11(Portal$findStrongestReso$lambda))));
+    }
   };
   Portal.prototype.findStrongestResoPos = function () {
-    return this.findStrongestReso_0().coords;
+    var tmp$;
+    return (tmp$ = this.findStrongestReso_0()) != null ? tmp$.coords : null;
   };
   Portal.prototype.calcHealth = function () {
     var $receiver = this.findResos();
@@ -7530,30 +7708,39 @@ var QGress = function (_, Kotlin) {
   };
   Comparator$ObjectLiteral_15.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
   Util.prototype.select_flnx62$ = function (probabilityList) {
+    var destination = ArrayList_init();
     var tmp$;
-    var sum = 0.0;
     tmp$ = probabilityList.iterator();
     while (tmp$.hasNext()) {
       var element = tmp$.next();
-      sum += element.first;
+      if (!(element.first <= 0.0))
+        destination.add_11rb$(element);
+    }
+    var list = destination;
+    var tmp$_0;
+    var sum = 0.0;
+    tmp$_0 = list.iterator();
+    while (tmp$_0.hasNext()) {
+      var element_0 = tmp$_0.next();
+      sum += element_0.first;
     }
     var total = sum;
     var rand = this.randomDouble_14dthe$(total);
     var accu = {v: 0.0};
-    var tmp$_0;
-    tmp$_0 = sortedWith(probabilityList, new Comparator$ObjectLiteral_15(compareBy$lambda_14(Util$select$lambda))).iterator();
-    while (tmp$_0.hasNext()) {
-      var element_0 = tmp$_0.next();
-      accu.v += element_0.first;
-      if (!(element_0.first > 0.0)) {
+    var tmp$_1;
+    tmp$_1 = sortedWith(list, new Comparator$ObjectLiteral_15(compareBy$lambda_14(Util$select$lambda))).iterator();
+    while (tmp$_1.hasNext()) {
+      var element_1 = tmp$_1.next();
+      accu.v += element_1.first;
+      if (!(element_1.first > 0.0)) {
         var message = 'Check failed.';
         throw new IllegalStateException(message.toString());
       }
       if (accu.v >= rand) {
-        return element_0.second;
+        return element_1.second;
       }
     }
-    throw new IllegalStateException('');
+    throw new IllegalArgumentException('Invalid Q-values: ' + probabilityList);
   };
   Util.prototype.generatePortalName = function () {
     var separator = this.random() < 0.3 ? '-' : ' ';

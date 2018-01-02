@@ -43,17 +43,18 @@ object Util {
     }
 
     fun <T> select(probabilityList: List<Pair<Double, T>>): T {
-        val total = probabilityList.sumByDouble { it.first }
+        val list = probabilityList.filterNot { it.first <= 0.0 }
+        val total = list.sumByDouble { it.first }
         val rand = randomDouble(total)
         var accu = 0.0
-        probabilityList.sortedBy { it.first }.forEach {
+        list.sortedBy { it.first }.forEach {
             accu += it.first
             check(it.first > 0.0)
             if (accu >= rand) {
                 return it.second
             }
         }
-        throw IllegalStateException("")
+        throw IllegalArgumentException("Invalid Q-values: $probabilityList")
     }
 
     fun generatePortalName(): String {
