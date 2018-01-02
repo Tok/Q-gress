@@ -3,7 +3,7 @@ package config
 object Dimensions {
     val maxWidth = 1400
     val portalRadius = 8.0
-    val minDistanceBetweenPortals = (2 * portalRadius) * 2
+    val minDistanceBetweenPortals = (2 * portalRadius) * 3
     val minDistancePortalToImpassable = portalRadius
     val resoRadius = 2.0
     val maxDeploymentRange = 34.0

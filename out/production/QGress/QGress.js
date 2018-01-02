@@ -414,7 +414,7 @@ var QGress = function (_, Kotlin) {
     var tmp$, tmp$_0;
     if (Kotlin.isType(event, MouseEvent)) {
       var pos = findMousePosition(World_getInstance().uiCan, event);
-      if (pos.hasClosePortal()) {
+      if (pos.hasClosePortalForClick()) {
         SoundUtil_getInstance().playPortalRemovalSound_lfj9be$(pos);
         (tmp$ = document.defaultView) != null ? tmp$.setTimeout(pos.findClosestPortal().destroy_za3lpa$(World_getInstance().tick), 0) : null;
       }
@@ -2614,7 +2614,7 @@ var QGress = function (_, Kotlin) {
     Dimensions_instance = this;
     this.maxWidth = 1400;
     this.portalRadius = 8.0;
-    this.minDistanceBetweenPortals = 2 * this.portalRadius * 2;
+    this.minDistanceBetweenPortals = 2 * this.portalRadius * 3;
     this.minDistancePortalToImpassable = this.portalRadius;
     this.resoRadius = 2.0;
     this.maxDeploymentRange = 34.0;
@@ -6415,7 +6415,7 @@ var QGress = function (_, Kotlin) {
     ctx.beginPath();
     ctx.drawImage(tempCan, pos.xx() - r, pos.yy() - r, 2 * r, 2 * r);
     ctx.globalAlpha = 0.5;
-    if (pos.hasClosePortal()) {
+    if (pos.hasClosePortalForClick()) {
       tmp$_1 = Colors_getInstance().orange;
     }
      else if (pos.isBuildable()) {
@@ -8160,8 +8160,23 @@ var QGress = function (_, Kotlin) {
     var longitude = Coords$Companion_getInstance().minLng_0 - this.y * Coords$Companion_getInstance().pixelPartLng_0;
     return new GeoCoords(longitude, latitude);
   };
-  Coords.prototype.isClose_0 = function (location) {
+  Coords.prototype.isCloseForClick_0 = function (location) {
     return (new Line(location, this)).calcLength() < Dimensions_getInstance().portalRadius * 2;
+  };
+  Coords.prototype.isClose_0 = function (location) {
+    return (new Line(location, this)).calcLength() < Dimensions_getInstance().minDistanceBetweenPortals;
+  };
+  Coords.prototype.findClosePortalsForClick_0 = function () {
+    var $receiver = World_getInstance().allPortals;
+    var destination = ArrayList_init();
+    var tmp$;
+    tmp$ = $receiver.iterator();
+    while (tmp$.hasNext()) {
+      var element = tmp$.next();
+      if (this.isCloseForClick_0(element.location))
+        destination.add_11rb$(element);
+    }
+    return destination;
   };
   Coords.prototype.findClosePortals_0 = function () {
     var $receiver = World_getInstance().allPortals;
@@ -8175,14 +8190,17 @@ var QGress = function (_, Kotlin) {
     }
     return destination;
   };
+  Coords.prototype.hasClosePortalForClick = function () {
+    return !this.findClosePortalsForClick_0().isEmpty();
+  };
+  Coords.prototype.hasClosePortal = function () {
+    return !this.findClosePortals_0().isEmpty();
+  };
   Coords.prototype.toShadowPos = function () {
     return PathUtil_getInstance().posToShadowPos_lfj9be$(this);
   };
   Coords.prototype.isPassable = function () {
     return !World_getInstance().grid.isEmpty() && ensureNotNull(World_getInstance().grid.get_11rb$(this.toShadowPos())).isPassable;
-  };
-  Coords.prototype.hasClosePortal = function () {
-    return !this.findClosePortals_0().isEmpty();
   };
   Coords.prototype.findClosestPortal = function () {
     return first(this.findClosePortals_0());
@@ -8219,7 +8237,35 @@ var QGress = function (_, Kotlin) {
     return new Coords(numberToInt(x), numberToInt(y));
   };
   Coords$Companion.prototype.createRandomForPortal = function () {
-    var grid = World_getInstance().passableInActionArea();
+    var $receiver = World_getInstance().passableInActionArea();
+    var destination = LinkedHashMap_init();
+    var tmp$;
+    tmp$ = $receiver.entries.iterator();
+    while (tmp$.hasNext()) {
+      var element = tmp$.next();
+      if (!(PathUtil_getInstance().shadowPosToPos_lfj9be$(element.key).x < Dimensions_getInstance().maxDeploymentRange)) {
+        destination.put_xwzc9p$(element.key, element.value);
+      }
+    }
+    var destination_0 = LinkedHashMap_init();
+    var tmp$_0;
+    tmp$_0 = destination.entries.iterator();
+    while (tmp$_0.hasNext()) {
+      var element_0 = tmp$_0.next();
+      if (!(PathUtil_getInstance().shadowPosToPos_lfj9be$(element_0.key).x > World_getInstance().w() - Dimensions_getInstance().maxDeploymentRange)) {
+        destination_0.put_xwzc9p$(element_0.key, element_0.value);
+      }
+    }
+    var destination_1 = LinkedHashMap_init();
+    var tmp$_1;
+    tmp$_1 = destination_0.entries.iterator();
+    while (tmp$_1.hasNext()) {
+      var element_1 = tmp$_1.next();
+      if (!PathUtil_getInstance().shadowPosToPos_lfj9be$(element_1.key).hasClosePortal()) {
+        destination_1.put_xwzc9p$(element_1.key, element_1.value);
+      }
+    }
+    var grid = destination_1;
     if (!!grid.isEmpty()) {
       var message = 'Check failed.';
       throw new IllegalStateException(message.toString());

@@ -121,7 +121,7 @@ object DrawUtil {
 
         ctx.globalAlpha = 0.5
 
-        val color = if (pos.hasClosePortal()) {
+        val color = if (pos.hasClosePortalForClick()) {
             Colors.orange
         } else if (pos.isBuildable()) {
             Colors.white

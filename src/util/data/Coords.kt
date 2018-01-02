@@ -36,11 +36,14 @@ data class Coords(val x: Int, val y: Int) {
         return GeoCoords(longitude, latitude) //longitude = -Y, latitude = X
     }
 
-    private fun isClose(location: Coords) = Line(location, this).calcLength() < Dimensions.portalRadius * 2
+    private fun isCloseForClick(location: Coords) = Line(location, this).calcLength() < Dimensions.portalRadius * 2
+    private fun isClose(location: Coords) = Line(location, this).calcLength() < Dimensions.minDistanceBetweenPortals
+    private fun findClosePortalsForClick() = World.allPortals.filter { isCloseForClick(it.location) }
     private fun findClosePortals() = World.allPortals.filter { isClose(it.location) }
+    fun hasClosePortalForClick() = findClosePortalsForClick().isNotEmpty()
+    fun hasClosePortal() = findClosePortals().isNotEmpty()
     fun toShadowPos() = PathUtil.posToShadowPos(this)
     fun isPassable() = World.grid.isNotEmpty() && World.grid.get(toShadowPos())!!.isPassable
-    fun hasClosePortal() = findClosePortals().isNotEmpty()
     fun findClosestPortal() = findClosePortals().first()
     fun isBuildable(): Boolean {
         val r = Dimensions.minDistancePortalToImpassable.toInt()
@@ -75,7 +78,10 @@ data class Coords(val x: Int, val y: Int) {
 
         fun createRandomForPortal(): Coords {
             val grid = World.passableInActionArea()
-            check(grid.isNotEmpty())
+                    .filterNot { PathUtil.shadowPosToPos(it.key).x < Dimensions.maxDeploymentRange }
+                    .filterNot { PathUtil.shadowPosToPos(it.key).x > World.w() - Dimensions.maxDeploymentRange }
+                    .filterNot { PathUtil.shadowPosToPos(it.key).hasClosePortal() }
+            check(grid.isNotEmpty()) //map is blocked or there is no more space left.
             val randomCell = Util.shuffle(grid.toList()).first()
             val pos = PathUtil.shadowPosToPos(randomCell.first)
             val offset = PathUtil.RESOLUTION / 2

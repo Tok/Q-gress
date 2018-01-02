@@ -204,7 +204,7 @@ private fun isInOsmArea(pos: Coords): Boolean {
 fun handleMouseClick(event: Event) {
     if (event is MouseEvent) {
         val pos = findMousePosition(World.uiCan, event)
-        if (pos.hasClosePortal()) {
+        if (pos.hasClosePortalForClick()) {
             SoundUtil.playPortalRemovalSound(pos)
             document.defaultView?.setTimeout(pos.findClosestPortal().destroy(World.tick), 0)
         } else if (pos.isBuildable()) {
