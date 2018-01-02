@@ -26,17 +26,20 @@ object MapUtil {
     val groundZero: JSON = JSON.parse("[-74.0123000, 40.7125000]")
     val MAP_CENTER = redSquare
 
-    //fixme use json or drop args and set them later
-    val INIT_MAP_QGRESS = "new mapboxgl.Map({'container':'map','style':'mapbox://styles/zirteq/cjazhkywuppf42rnx453i73z5'});"
-    val INIT_MAP_SATELITE = "new mapboxgl.Map({'container':'map','style':'mapbox://styles/zirteq/cjb19u1dy02a82slyklj33o6g'});"
-    fun initMapbox() = if (Styles.useSatteliteMap) js(INIT_MAP_SATELITE) else js(INIT_MAP_QGRESS)
-
-    val INIT_SHADOW_MAP_LITERAL = "new mapboxgl.Map({'container':'shadowMap','style':'mapbox://styles/zirteq/cjaq7lw9e2y7u2rn7u6xskobn'});"
+    fun initInitialMapbox() = js("new mapboxgl.Map({'container':'initialMap','style':'mapbox://styles/zirteq/cjazhkywuppf42rnx453i73z5'});")
+    fun initMapbox() = js("new mapboxgl.Map({'container':'map','style':'mapbox://styles/zirteq/cjb19u1dy02a82slyklj33o6g'});")
+    fun initShadowMap() = js("new mapboxgl.Map({'container':'shadowMap','style':'mapbox://styles/zirteq/cjaq7lw9e2y7u2rn7u6xskobn'});")
     val GEO_CTRL_LITERAL = "new mapboxgl.GeolocateControl({'positionOptions':{'enableHighAccuracy':true,'zoom':18},'trackUserLocation':false})"
 
     val ZOOM = 18
     val MIN_ZOOM = 18
     val MAX_ZOOM = 18
+
+    fun loadMaps(callback: (Map<Coords, Cell>) -> Unit) {
+        loadInitialMap({
+            loadMap(callback)
+        })
+    }
 
     //https://www.mapbox.com/mapbox-gl-js/api/
     fun loadMap(callback: (Map<Coords, Cell>) -> Unit) {
@@ -49,16 +52,15 @@ object MapUtil {
         DrawUtil.drawLoadingText("Loading map..")
         map.on("load", fun() {
             DrawUtil.drawLoadingText("Creating grid..")
-            if (Styles.use3DBuildings) {
-                map.addLayer(buildingLayerConfig())
-            }
-            val shadowMap: MapBox = js(INIT_SHADOW_MAP_LITERAL)
+            val shadowMap: MapBox = initShadowMap()
             shadowMap.setMinZoom(MIN_ZOOM)
             shadowMap.setMaxZoom(MAX_ZOOM)
             shadowMap.setZoom(ZOOM)
             shadowMap.setCenter(MAP_CENTER)
             shadowMap.on("load", fun() {
-                val shadowMapCan: dynamic = document.getElementsByClassName("mapboxgl-canvas").get(1)
+                val maps = document.getElementsByClassName("mapboxgl-canvas")
+                val shadowMapCan: dynamic = maps.get(2)
+
                 val gl: dynamic = shadowMapCan.getContext("webgl")
                 val width = gl.canvas.width
                 val height = gl.canvas.height
@@ -72,6 +74,21 @@ object MapUtil {
 
                 callback(grid)
             })
+        })
+    }
+
+    fun loadInitialMap(callback: () -> Unit) {
+        val map: MapBox = initInitialMapbox()
+        map.setMinZoom(MIN_ZOOM)
+        map.setMaxZoom(MAX_ZOOM)
+        map.setZoom(ZOOM)
+        map.setCenter(MAP_CENTER)
+        map.addControl(js(GEO_CTRL_LITERAL))
+        map.on("load", fun() {
+            if (Styles.use3DBuildings) {
+                map.addLayer(buildingLayerConfig())
+            }
+            callback()
         })
     }
 

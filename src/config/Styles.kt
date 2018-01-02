@@ -16,8 +16,7 @@ object Styles {
     val isDrawResoLevels = false
     val isDrawTopAgents = true
 
-    val useSatteliteMap = true
-    val use3DBuildings = false
+    val use3DBuildings = true
 
     val vectorStyle = VectorStyle.CIRCLE
     val isDrawObstructedVectors = true

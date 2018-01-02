@@ -47,6 +47,13 @@ html, body {
     height: 100%;
     z-index: 5;
 }
+.initialMap {
+    pointer-events: none;
+    display: block;
+    position: relative;
+    height: 100%;
+    z-index: 8;
+}
 .mapboxgl-map {
     font-family: "Coda";
 }

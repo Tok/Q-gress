@@ -104,6 +104,7 @@ fun main(args: Array<String>) {
                     World.allPortals.add(newPortal)
                     createPortal(callback, count - 1)
                 } else {
+                    document.getElementById("initialMap")?.remove()
                     callback()
                 }
             }, 0)
@@ -162,7 +163,7 @@ fun main(args: Array<String>) {
     controlDiv.addEventListener("mousemove", { event -> handleMouseMove(event) }, false)
     rootDiv.addEventListener("mousemove", { event -> handleMouseMove(event) }, false)
 
-    MapUtil.loadMap(fun(grid: Map<Coords, Cell>) {
+    MapUtil.loadMaps(fun(grid: Map<Coords, Cell>) {
         World.grid = grid
         if (World.grid.isEmpty()) {
             println("ERROR: Grid is empty!")

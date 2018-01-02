@@ -215,6 +215,7 @@ var QGress = function (_, Kotlin) {
   }
   function main$createPortals$createPortal$lambda(closure$count, closure$callback, closure$createPortal) {
     return function () {
+      var tmp$;
       if (closure$count > 0) {
         var total = Config_getInstance().startPortals;
         var realCount = total - closure$count + 1 | 0;
@@ -225,6 +226,7 @@ var QGress = function (_, Kotlin) {
         closure$createPortal(closure$callback, closure$count - 1 | 0);
       }
        else {
+        (tmp$ = document.getElementById('initialMap')) != null ? (tmp$.remove(), Unit) : null;
         closure$callback();
       }
     };
@@ -387,7 +389,7 @@ var QGress = function (_, Kotlin) {
     rootDiv.append(controlDiv);
     controlDiv.addEventListener('mousemove', main$lambda_1, false);
     rootDiv.addEventListener('mousemove', main$lambda_2, false);
-    MapUtil_getInstance().loadMap_vekcfi$(main$lambda_3(createAgentsAndPortals));
+    MapUtil_getInstance().loadMaps_vekcfi$(main$lambda_3(createAgentsAndPortals));
     window.addEventListener('resize', main$lambda_4, false);
   }
   function isNotHandledByCanvas(pos) {
@@ -2706,8 +2708,7 @@ var QGress = function (_, Kotlin) {
     this.isDrawCom = true;
     this.isDrawResoLevels = false;
     this.isDrawTopAgents = true;
-    this.useSatteliteMap = true;
-    this.use3DBuildings = false;
+    this.use3DBuildings = true;
     this.vectorStyle = Styles$VectorStyle$CIRCLE_getInstance();
     this.isDrawObstructedVectors = true;
     this.isDrawResoLineGradient = true;
@@ -7165,22 +7166,35 @@ var QGress = function (_, Kotlin) {
     this.eiffel = JSON.parse('[2.2948595, 48.858243]');
     this.groundZero = JSON.parse('[-74.0123000, 40.7125000]');
     this.MAP_CENTER = this.redSquare;
-    this.INIT_MAP_QGRESS = "new mapboxgl.Map({'container':'map','style':'mapbox://styles/zirteq/cjazhkywuppf42rnx453i73z5'});";
-    this.INIT_MAP_SATELITE = "new mapboxgl.Map({'container':'map','style':'mapbox://styles/zirteq/cjb19u1dy02a82slyklj33o6g'});";
-    this.INIT_SHADOW_MAP_LITERAL = "new mapboxgl.Map({'container':'shadowMap','style':'mapbox://styles/zirteq/cjaq7lw9e2y7u2rn7u6xskobn'});";
     this.GEO_CTRL_LITERAL = "new mapboxgl.GeolocateControl({'positionOptions':{'enableHighAccuracy':true,'zoom':18},'trackUserLocation':false})";
     this.ZOOM = 18;
     this.MIN_ZOOM = 18;
     this.MAX_ZOOM = 18;
     this.OFFSCREEN_CELL_ROWS = 10;
   }
+  MapUtil.prototype.initInitialMapbox = function () {
+    return new mapboxgl.Map({container: 'initialMap', style: 'mapbox://styles/zirteq/cjazhkywuppf42rnx453i73z5'});
+  };
   MapUtil.prototype.initMapbox = function () {
-    return Styles_getInstance().useSatteliteMap ? new mapboxgl.Map({container: 'map', style: 'mapbox://styles/zirteq/cjb19u1dy02a82slyklj33o6g'}) : new mapboxgl.Map({container: 'map', style: 'mapbox://styles/zirteq/cjazhkywuppf42rnx453i73z5'});
+    return new mapboxgl.Map({container: 'map', style: 'mapbox://styles/zirteq/cjb19u1dy02a82slyklj33o6g'});
+  };
+  MapUtil.prototype.initShadowMap = function () {
+    return new mapboxgl.Map({container: 'shadowMap', style: 'mapbox://styles/zirteq/cjaq7lw9e2y7u2rn7u6xskobn'});
+  };
+  function MapUtil$loadMaps$lambda(closure$callback, this$MapUtil) {
+    return function () {
+      this$MapUtil.loadMap_vekcfi$(closure$callback);
+      return Unit;
+    };
+  }
+  MapUtil.prototype.loadMaps_vekcfi$ = function (callback) {
+    this.loadInitialMap_o14v8n$(MapUtil$loadMaps$lambda(callback, this));
   };
   function MapUtil$loadMap$lambda$lambda(this$MapUtil, closure$callback) {
     return function () {
       var tmp$, tmp$_0;
-      var shadowMapCan = document.getElementsByClassName('mapboxgl-canvas')[1];
+      var maps = document.getElementsByClassName('mapboxgl-canvas');
+      var shadowMapCan = maps[2];
       var gl = shadowMapCan.getContext('webgl');
       var width = gl.canvas.width;
       var height = gl.canvas.height;
@@ -7193,13 +7207,10 @@ var QGress = function (_, Kotlin) {
       closure$callback(grid);
     };
   }
-  function MapUtil$loadMap$lambda(closure$map, this$MapUtil, closure$callback) {
+  function MapUtil$loadMap$lambda(this$MapUtil, closure$callback) {
     return function () {
       DrawUtil_getInstance().drawLoadingText_61zpoe$('Creating grid..');
-      if (Styles_getInstance().use3DBuildings) {
-        closure$map.addLayer(this$MapUtil.buildingLayerConfig_0());
-      }
-      var shadowMap = new mapboxgl.Map({container: 'shadowMap', style: 'mapbox://styles/zirteq/cjaq7lw9e2y7u2rn7u6xskobn'});
+      var shadowMap = this$MapUtil.initShadowMap();
       shadowMap.setMinZoom(this$MapUtil.MIN_ZOOM);
       shadowMap.setMaxZoom(this$MapUtil.MAX_ZOOM);
       shadowMap.setZoom(this$MapUtil.ZOOM);
@@ -7215,7 +7226,24 @@ var QGress = function (_, Kotlin) {
     map.setCenter(this.MAP_CENTER);
     map.addControl(new mapboxgl.GeolocateControl({positionOptions: {enableHighAccuracy: true, zoom: 18}, trackUserLocation: false}));
     DrawUtil_getInstance().drawLoadingText_61zpoe$('Loading map..');
-    map.on('load', MapUtil$loadMap$lambda(map, this, callback));
+    map.on('load', MapUtil$loadMap$lambda(this, callback));
+  };
+  function MapUtil$loadInitialMap$lambda(closure$map, this$MapUtil, closure$callback) {
+    return function () {
+      if (Styles_getInstance().use3DBuildings) {
+        closure$map.addLayer(this$MapUtil.buildingLayerConfig_0());
+      }
+      closure$callback();
+    };
+  }
+  MapUtil.prototype.loadInitialMap_o14v8n$ = function (callback) {
+    var map = this.initInitialMapbox();
+    map.setMinZoom(this.MIN_ZOOM);
+    map.setMaxZoom(this.MAX_ZOOM);
+    map.setZoom(this.ZOOM);
+    map.setCenter(this.MAP_CENTER);
+    map.addControl(new mapboxgl.GeolocateControl({positionOptions: {enableHighAccuracy: true, zoom: 18}, trackUserLocation: false}));
+    map.on('load', MapUtil$loadInitialMap$lambda(map, this, callback));
   };
   MapUtil.prototype.buildingLayerConfig_0 = function () {
     return JSON.parse('{\n            "id": "3d-buildings",\n            "source": "composite",\n            "source-layer": "building",\n            "filter": ["==", "extrude", "true"],\n            "type": "fill-extrusion",\n            "minzoom": 15,\n            "paint": {\n                "fill-extrusion-color": "#333333",\n                "fill-extrusion-height": ["interpolate", ["linear"], ["zoom"], 15, 0, 15.05, ["get", "height"]],\n                "fill-extrusion-base": ["interpolate", ["linear"], ["zoom"], 15, 0, 15.05, ["get", "min_height"]],\n                "fill-extrusion-opacity": 0.9\n            }\n        }');
