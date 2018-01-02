@@ -7,7 +7,6 @@ import agent.action.Action
 import agent.action.ActionItem
 import config.*
 import items.QgressItem
-import items.XmpBurster
 import items.deployable.Resonator
 import items.level.ResonatorLevel
 import items.level.XmpLevel
@@ -133,12 +132,19 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
     }
 
     fun goDoSomethingElse(): Agent {
-        val attackQ = if (isAttackPossible()) 0.20 else -1.0
+        val captureQ = if (MovementUtil.hasUncapturedPortals()) 0.5 else -1.0
+        val attackClosestQ = if (MovementUtil.hasEnemyPortals(this) && isAttackPossible()) 0.5 else -1.0
+        val attackMostLinkedQ = if (MovementUtil.hasEnemyPortals(this) && isAttackPossible()) 0.5 else -1.0
+        val attackMostVulnerableQ = if (MovementUtil.hasEnemyPortals(this) && isAttackPossible()) 0.5 else -1.0
+        val moveToFriendlyQ = if (MovementUtil.hasFriendlyPortals(this)) 0.5 else -1.0
         val qValues = listOf(
-                0.02 to { moveToRandomPortal() },
-                attackQ to { goAttackRandomPortal() },
-                0.30 to { moveToUncapturedPortal() },
-                0.05 to { moveToNearbyPortal() }
+                attackClosestQ to { MovementUtil.moveToCloseEnemyPortal(this) },
+                attackMostLinkedQ to { MovementUtil.moveToMostLinkedEnemyPortal(this) },
+                attackMostVulnerableQ to { MovementUtil.moveToMostVulnerableEnemyPortal(this) },
+                captureQ to { MovementUtil.moveToUncapturedPortal(this) },
+                moveToFriendlyQ to { MovementUtil.moveToFriendlyHighLevelPortal(this) },
+                0.50 to { MovementUtil.moveToNearestPortal(this) },
+                0.50 to { MovementUtil.moveToRandomPortal(this) }
         )
         return Util.select(qValues).invoke()
     }
@@ -188,6 +194,7 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
                 return actionPortal.location
             }
         }
+
         fun doAttack(): Agent {
             val maxXmps = 10
             val allXmps = inventory.findXmps()
@@ -214,6 +221,7 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
             val distance = skills.deployPrecision * Dimensions.maxDeploymentRange
             return actionPortal.findRandomPointNearPortal(distance.toInt())
         }
+
         fun doDeploy(): Agent {
             if (actionPortal.isEnemyOf(this)) {
                 return goDoSomethingElse()
@@ -310,41 +318,6 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         return this.copy(action = Action.start(ActionItem.LINK, World.tick))
     }
 
-    fun goAttackRandomPortal(): Agent {
-        val enemyPortals = World.allPortals.filter { it.owner != null && it.owner!!.faction != this.faction }.sortedBy { distanceToPortal(it) }
-        enemyPortals.forEach { portal ->
-            if (Util.random() < skills.reliability) {
-                return goToDestinationPortal(portal).copy(action = Action.start(ActionItem.MOVE, World.tick))
-            }
-        }
-        return doSomething()
-    }
-
-    fun moveToNearbyPortal(): Agent {
-        val randomNearPortals = World.allPortals.sortedBy { distanceToPortal(it) }
-        randomNearPortals.forEach { portal ->
-            if (Util.random() < skills.reliability) {
-                return goToDestinationPortal(portal)
-            }
-        }
-        return goToDestinationPortal(randomNearPortals.elementAt(1))
-    }
-
-    fun moveToRandomPortal(): Agent {
-        val randomTarget: Portal = World.allPortals[(Util.random() * (World.allPortals.size - 1)).toInt()]
-        return goToDestinationPortal(randomTarget)
-    }
-
-    fun moveToUncapturedPortal(): Agent {
-        val uncaptured = World.allPortals.filter { it.isUncaptured() }.sortedBy { distanceToPortal(it) }
-        uncaptured.forEach { portal ->
-            if (Util.random() < skills.reliability) {
-                return goToDestinationPortal(portal)
-            }
-        }
-        return this
-    }
-
     fun hackActionPortal(): Agent {
         if (isAtActionPortal() && actionPortal.canHack(this)) {
             val hackResult = actionPortal.tryHack(this)
@@ -362,12 +335,6 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         val attackDistance = (level.rangeM * 0.5) + Dimensions.portalRadius
         val enemyPortals = World.allPortals.filter { it.owner?.faction != this.faction }
         return enemyPortals.filter { it.location.distanceTo(this.pos) <= attackDistance }.sortedBy { it.location.distanceTo(this.pos) }
-    }
-
-    private fun goToDestinationPortal(destination: Portal): Agent {
-        val distance = skills.deployPrecision * Dimensions.maxDeploymentRange
-        val nextDest = destination.findRandomPointNearPortal(distance.toInt())
-        return this.copy(action = Action.start(ActionItem.MOVE, World.tick), actionPortal = destination, destination = nextDest)
     }
 
     fun findResosInAttackRange(level: XmpLevel): List<Resonator> {

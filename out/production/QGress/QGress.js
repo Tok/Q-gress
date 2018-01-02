@@ -1030,27 +1030,46 @@ var QGress = function (_, Kotlin) {
   };
   function Agent$goDoSomethingElse$lambda(this$Agent) {
     return function () {
-      return this$Agent.moveToRandomPortal();
+      return MovementUtil_getInstance().moveToCloseEnemyPortal_912u9o$(this$Agent);
     };
   }
   function Agent$goDoSomethingElse$lambda_0(this$Agent) {
     return function () {
-      return this$Agent.goAttackRandomPortal();
+      return MovementUtil_getInstance().moveToMostLinkedEnemyPortal_912u9o$(this$Agent);
     };
   }
   function Agent$goDoSomethingElse$lambda_1(this$Agent) {
     return function () {
-      return this$Agent.moveToUncapturedPortal();
+      return MovementUtil_getInstance().moveToMostVulnerableEnemyPortal_912u9o$(this$Agent);
     };
   }
   function Agent$goDoSomethingElse$lambda_2(this$Agent) {
     return function () {
-      return this$Agent.moveToNearbyPortal();
+      return MovementUtil_getInstance().moveToUncapturedPortal_912u9o$(this$Agent);
+    };
+  }
+  function Agent$goDoSomethingElse$lambda_3(this$Agent) {
+    return function () {
+      return MovementUtil_getInstance().moveToFriendlyHighLevelPortal_912u9o$(this$Agent);
+    };
+  }
+  function Agent$goDoSomethingElse$lambda_4(this$Agent) {
+    return function () {
+      return MovementUtil_getInstance().moveToNearestPortal_912u9o$(this$Agent);
+    };
+  }
+  function Agent$goDoSomethingElse$lambda_5(this$Agent) {
+    return function () {
+      return MovementUtil_getInstance().moveToRandomPortal_912u9o$(this$Agent);
     };
   }
   Agent.prototype.goDoSomethingElse = function () {
-    var attackQ = this.isAttackPossible_0() ? 0.2 : -1.0;
-    var qValues = listOf([to(0.02, Agent$goDoSomethingElse$lambda(this)), to(attackQ, Agent$goDoSomethingElse$lambda_0(this)), to(0.3, Agent$goDoSomethingElse$lambda_1(this)), to(0.05, Agent$goDoSomethingElse$lambda_2(this))]);
+    var captureQ = MovementUtil_getInstance().hasUncapturedPortals() ? 0.5 : -1.0;
+    var attackClosestQ = MovementUtil_getInstance().hasEnemyPortals_912u9o$(this) && this.isAttackPossible_0() ? 0.5 : -1.0;
+    var attackMostLinkedQ = MovementUtil_getInstance().hasEnemyPortals_912u9o$(this) && this.isAttackPossible_0() ? 0.5 : -1.0;
+    var attackMostVulnerableQ = MovementUtil_getInstance().hasEnemyPortals_912u9o$(this) && this.isAttackPossible_0() ? 0.5 : -1.0;
+    var moveToFriendlyQ = MovementUtil_getInstance().hasFriendlyPortals_912u9o$(this) ? 0.5 : -1.0;
+    var qValues = listOf([to(attackClosestQ, Agent$goDoSomethingElse$lambda(this)), to(attackMostLinkedQ, Agent$goDoSomethingElse$lambda_0(this)), to(attackMostVulnerableQ, Agent$goDoSomethingElse$lambda_1(this)), to(captureQ, Agent$goDoSomethingElse$lambda_2(this)), to(moveToFriendlyQ, Agent$goDoSomethingElse$lambda_3(this)), to(0.5, Agent$goDoSomethingElse$lambda_4(this)), to(0.5, Agent$goDoSomethingElse$lambda_5(this))]);
     return Util_getInstance().select_flnx62$(qValues)();
   };
   Agent.prototype.moveCloserToDestinationPortal_0 = function () {
@@ -1440,9 +1459,21 @@ var QGress = function (_, Kotlin) {
     }
     return this.copy_lmq102$(void 0, void 0, void 0, void 0, void 0, Action$Companion_getInstance().start_34yqkq$(ActionItem$Companion_getInstance().LINK, World_getInstance().tick));
   };
-  function Agent$goAttackRandomPortal$lambda(this$Agent) {
+  Agent.prototype.hackActionPortal = function () {
+    if (this.isAtActionPortal() && this.actionPortal.canHack_912u9o$(this)) {
+      var hackResult = this.actionPortal.tryHack_912u9o$(this);
+      SoundUtil_getInstance().playHackingSound_lfj9be$(this.actionPortal.location);
+      var isSuccess = hackResult.items != null;
+      if (isSuccess) {
+        var newStuff = ensureNotNull(hackResult.items);
+        this.inventory.items.addAll_brywnq$(newStuff);
+      }
+    }
+    return this.copy_lmq102$(void 0, void 0, void 0, void 0, void 0, Action$Companion_getInstance().start_34yqkq$(ActionItem$Companion_getInstance().HACK, World_getInstance().tick));
+  };
+  function Agent$findPortalsInAttackRange$lambda(this$Agent) {
     return function (it) {
-      return this$Agent.distanceToPortal_hv9zn6$(it);
+      return it.location.distanceTo_lfj9be$(this$Agent.pos);
     };
   }
   var compareBy$lambda_2 = wrapFunction(function () {
@@ -1461,139 +1492,6 @@ var QGress = function (_, Kotlin) {
     return this.closure$comparison(a, b);
   };
   Comparator$ObjectLiteral_2.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
-  Agent.prototype.goAttackRandomPortal = function () {
-    var $receiver = World_getInstance().allPortals;
-    var destination = ArrayList_init();
-    var tmp$;
-    tmp$ = $receiver.iterator();
-    while (tmp$.hasNext()) {
-      var element = tmp$.next();
-      if (element.owner != null && ensureNotNull(element.owner).faction !== this.faction)
-        destination.add_11rb$(element);
-    }
-    var enemyPortals = sortedWith(destination, new Comparator$ObjectLiteral_2(compareBy$lambda_2(Agent$goAttackRandomPortal$lambda(this))));
-    var tmp$_0;
-    tmp$_0 = enemyPortals.iterator();
-    while (tmp$_0.hasNext()) {
-      var element_0 = tmp$_0.next();
-      if (Util_getInstance().random() < this.skills.reliability) {
-        return this.goToDestinationPortal_0(element_0).copy_lmq102$(void 0, void 0, void 0, void 0, void 0, Action$Companion_getInstance().start_34yqkq$(ActionItem$Companion_getInstance().MOVE, World_getInstance().tick));
-      }
-    }
-    return this.doSomething();
-  };
-  function Agent$moveToNearbyPortal$lambda(this$Agent) {
-    return function (it) {
-      return this$Agent.distanceToPortal_hv9zn6$(it);
-    };
-  }
-  var compareBy$lambda_3 = wrapFunction(function () {
-    var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
-    return function (closure$selector) {
-      return function (a, b) {
-        var selector = closure$selector;
-        return compareValues(selector(a), selector(b));
-      };
-    };
-  });
-  function Comparator$ObjectLiteral_3(closure$comparison) {
-    this.closure$comparison = closure$comparison;
-  }
-  Comparator$ObjectLiteral_3.prototype.compare = function (a, b) {
-    return this.closure$comparison(a, b);
-  };
-  Comparator$ObjectLiteral_3.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
-  Agent.prototype.moveToNearbyPortal = function () {
-    var randomNearPortals = sortedWith(World_getInstance().allPortals, new Comparator$ObjectLiteral_3(compareBy$lambda_3(Agent$moveToNearbyPortal$lambda(this))));
-    var tmp$;
-    tmp$ = randomNearPortals.iterator();
-    while (tmp$.hasNext()) {
-      var element = tmp$.next();
-      if (Util_getInstance().random() < this.skills.reliability) {
-        return this.goToDestinationPortal_0(element);
-      }
-    }
-    return this.goToDestinationPortal_0.call(this, randomNearPortals.get_za3lpa$(1));
-  };
-  Agent.prototype.moveToRandomPortal = function () {
-    var randomTarget = World_getInstance().allPortals.get_za3lpa$(numberToInt(Util_getInstance().random() * (World_getInstance().allPortals.size - 1 | 0)));
-    return this.goToDestinationPortal_0(randomTarget);
-  };
-  function Agent$moveToUncapturedPortal$lambda(this$Agent) {
-    return function (it) {
-      return this$Agent.distanceToPortal_hv9zn6$(it);
-    };
-  }
-  var compareBy$lambda_4 = wrapFunction(function () {
-    var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
-    return function (closure$selector) {
-      return function (a, b) {
-        var selector = closure$selector;
-        return compareValues(selector(a), selector(b));
-      };
-    };
-  });
-  function Comparator$ObjectLiteral_4(closure$comparison) {
-    this.closure$comparison = closure$comparison;
-  }
-  Comparator$ObjectLiteral_4.prototype.compare = function (a, b) {
-    return this.closure$comparison(a, b);
-  };
-  Comparator$ObjectLiteral_4.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
-  Agent.prototype.moveToUncapturedPortal = function () {
-    var $receiver = World_getInstance().allPortals;
-    var destination = ArrayList_init();
-    var tmp$;
-    tmp$ = $receiver.iterator();
-    while (tmp$.hasNext()) {
-      var element = tmp$.next();
-      if (element.isUncaptured())
-        destination.add_11rb$(element);
-    }
-    var uncaptured = sortedWith(destination, new Comparator$ObjectLiteral_4(compareBy$lambda_4(Agent$moveToUncapturedPortal$lambda(this))));
-    var tmp$_0;
-    tmp$_0 = uncaptured.iterator();
-    while (tmp$_0.hasNext()) {
-      var element_0 = tmp$_0.next();
-      if (Util_getInstance().random() < this.skills.reliability) {
-        return this.goToDestinationPortal_0(element_0);
-      }
-    }
-    return this;
-  };
-  Agent.prototype.hackActionPortal = function () {
-    if (this.isAtActionPortal() && this.actionPortal.canHack_912u9o$(this)) {
-      var hackResult = this.actionPortal.tryHack_912u9o$(this);
-      SoundUtil_getInstance().playHackingSound_lfj9be$(this.actionPortal.location);
-      var isSuccess = hackResult.items != null;
-      if (isSuccess) {
-        var newStuff = ensureNotNull(hackResult.items);
-        this.inventory.items.addAll_brywnq$(newStuff);
-      }
-    }
-    return this.copy_lmq102$(void 0, void 0, void 0, void 0, void 0, Action$Companion_getInstance().start_34yqkq$(ActionItem$Companion_getInstance().HACK, World_getInstance().tick));
-  };
-  function Agent$findPortalsInAttackRange$lambda(this$Agent) {
-    return function (it) {
-      return it.location.distanceTo_lfj9be$(this$Agent.pos);
-    };
-  }
-  var compareBy$lambda_5 = wrapFunction(function () {
-    var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
-    return function (closure$selector) {
-      return function (a, b) {
-        var selector = closure$selector;
-        return compareValues(selector(a), selector(b));
-      };
-    };
-  });
-  function Comparator$ObjectLiteral_5(closure$comparison) {
-    this.closure$comparison = closure$comparison;
-  }
-  Comparator$ObjectLiteral_5.prototype.compare = function (a, b) {
-    return this.closure$comparison(a, b);
-  };
-  Comparator$ObjectLiteral_5.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
   Agent.prototype.findPortalsInAttackRange_0 = function (level) {
     var attackDistance = level.rangeM * 0.5 + Dimensions_getInstance().portalRadius;
     var $receiver = World_getInstance().allPortals;
@@ -1615,12 +1513,7 @@ var QGress = function (_, Kotlin) {
       if (element_0.location.distanceTo_lfj9be$(this.pos) <= attackDistance)
         destination_0.add_11rb$(element_0);
     }
-    return sortedWith(destination_0, new Comparator$ObjectLiteral_5(compareBy$lambda_5(Agent$findPortalsInAttackRange$lambda(this))));
-  };
-  Agent.prototype.goToDestinationPortal_0 = function (destination) {
-    var distance = this.skills.deployPrecision * Dimensions_getInstance().maxDeploymentRange;
-    var nextDest = destination.findRandomPointNearPortal_za3lpa$(numberToInt(distance));
-    return this.copy_lmq102$(void 0, void 0, void 0, void 0, void 0, Action$Companion_getInstance().start_34yqkq$(ActionItem$Companion_getInstance().MOVE, World_getInstance().tick), destination, nextDest);
+    return sortedWith(destination_0, new Comparator$ObjectLiteral_2(compareBy$lambda_2(Agent$findPortalsInAttackRange$lambda(this))));
   };
   Agent.prototype.findResosInAttackRange_3vxbq7$ = function (level) {
     var attackDistance = level.rangeM * 0.5;
@@ -2132,6 +2025,278 @@ var QGress = function (_, Kotlin) {
   Inventory.prototype.equals = function (other) {
     return this === other || (other !== null && (typeof other === 'object' && (Object.getPrototypeOf(this) === Object.getPrototypeOf(other) && Kotlin.equals(this.items, other.items))));
   };
+  function MovementUtil() {
+    MovementUtil_instance = this;
+  }
+  MovementUtil.prototype.findUncapturedPortals = function () {
+    var $receiver = World_getInstance().allPortals;
+    var destination = ArrayList_init();
+    var tmp$;
+    tmp$ = $receiver.iterator();
+    while (tmp$.hasNext()) {
+      var element = tmp$.next();
+      if (element.isUncaptured())
+        destination.add_11rb$(element);
+    }
+    return destination;
+  };
+  MovementUtil.prototype.hasUncapturedPortals = function () {
+    return !this.findUncapturedPortals().isEmpty();
+  };
+  MovementUtil.prototype.findEnemyPortals_912u9o$ = function (agent) {
+    var $receiver = World_getInstance().allPortals;
+    var destination = ArrayList_init();
+    var tmp$;
+    tmp$ = $receiver.iterator();
+    while (tmp$.hasNext()) {
+      var element = tmp$.next();
+      if (element.isEnemyOf_912u9o$(agent))
+        destination.add_11rb$(element);
+    }
+    return destination;
+  };
+  MovementUtil.prototype.hasEnemyPortals_912u9o$ = function (agent) {
+    return !this.findEnemyPortals_912u9o$(agent).isEmpty();
+  };
+  MovementUtil.prototype.findFriendlyPortals_912u9o$ = function (agent) {
+    var $receiver = World_getInstance().allPortals;
+    var destination = ArrayList_init();
+    var tmp$;
+    tmp$ = $receiver.iterator();
+    while (tmp$.hasNext()) {
+      var element = tmp$.next();
+      if (element.isFriendlyTo_912u9o$(agent))
+        destination.add_11rb$(element);
+    }
+    return destination;
+  };
+  MovementUtil.prototype.hasFriendlyPortals_912u9o$ = function (agent) {
+    return !this.findFriendlyPortals_912u9o$(agent).isEmpty();
+  };
+  function MovementUtil$moveToUncapturedPortal$lambda(closure$agent) {
+    return function (it) {
+      return closure$agent.distanceToPortal_hv9zn6$(it);
+    };
+  }
+  var compareBy$lambda_3 = wrapFunction(function () {
+    var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
+    return function (closure$selector) {
+      return function (a, b) {
+        var selector = closure$selector;
+        return compareValues(selector(a), selector(b));
+      };
+    };
+  });
+  function Comparator$ObjectLiteral_3(closure$comparison) {
+    this.closure$comparison = closure$comparison;
+  }
+  Comparator$ObjectLiteral_3.prototype.compare = function (a, b) {
+    return this.closure$comparison(a, b);
+  };
+  Comparator$ObjectLiteral_3.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
+  MovementUtil.prototype.moveToUncapturedPortal_912u9o$ = function (agent) {
+    if (!this.hasUncapturedPortals()) {
+      var message = 'Check failed.';
+      throw new IllegalStateException(message.toString());
+    }
+    var $receiver = World_getInstance().allPortals;
+    var destination = ArrayList_init();
+    var tmp$;
+    tmp$ = $receiver.iterator();
+    while (tmp$.hasNext()) {
+      var element = tmp$.next();
+      if (element.isUncaptured())
+        destination.add_11rb$(element);
+    }
+    var uncaptured = sortedWith(destination, new Comparator$ObjectLiteral_3(compareBy$lambda_3(MovementUtil$moveToUncapturedPortal$lambda(agent))));
+    var tmp$_0;
+    tmp$_0 = uncaptured.iterator();
+    while (tmp$_0.hasNext()) {
+      var element_0 = tmp$_0.next();
+      if (Util_getInstance().random() < agent.skills.reliability) {
+        return this.goToDestinationPortal_0(agent, element_0);
+      }
+    }
+    return agent;
+  };
+  MovementUtil.prototype.moveToFriendlyHighLevelPortal_912u9o$ = function (agent) {
+    var tmp$, tmp$_0;
+    if (!this.hasFriendlyPortals_912u9o$(agent)) {
+      var message = 'Check failed.';
+      throw new IllegalStateException(message.toString());
+    }
+    var $receiver = World_getInstance().allPortals;
+    var destination = ArrayList_init();
+    var tmp$_1;
+    tmp$_1 = $receiver.iterator();
+    while (tmp$_1.hasNext()) {
+      var element = tmp$_1.next();
+      if (element.isFriendlyTo_912u9o$(agent))
+        destination.add_11rb$(element);
+    }
+    var friendlyPortals = destination;
+    var maxBy$result;
+    maxBy$break: do {
+      var iterator = friendlyPortals.iterator();
+      if (!iterator.hasNext()) {
+        maxBy$result = null;
+        break maxBy$break;
+      }
+      var maxElem = iterator.next();
+      var maxValue = maxElem.getLevel();
+      while (iterator.hasNext()) {
+        var e = iterator.next();
+        var v = e.getLevel();
+        if (Kotlin.compareTo(maxValue, v) < 0) {
+          maxElem = e;
+          maxValue = v;
+        }
+      }
+      maxBy$result = maxElem;
+    }
+     while (false);
+    var maxLevel = (tmp$_0 = (tmp$ = maxBy$result) != null ? tmp$.getLevel() : null) != null ? tmp$_0 : PortalLevel$ZERO_getInstance();
+    var destination_0 = ArrayList_init();
+    var tmp$_2;
+    tmp$_2 = friendlyPortals.iterator();
+    while (tmp$_2.hasNext()) {
+      var element_0 = tmp$_2.next();
+      if (element_0.getLevel() === maxLevel)
+        destination_0.add_11rb$(element_0);
+    }
+    var selection = destination_0;
+    var target = selection.get_za3lpa$(numberToInt(Util_getInstance().random() * (selection.size - 1 | 0)));
+    return this.goToDestinationPortal_0(agent, target);
+  };
+  function MovementUtil$moveToCloseEnemyPortal$lambda(closure$agent) {
+    return function (it) {
+      return closure$agent.distanceToPortal_hv9zn6$(it);
+    };
+  }
+  var compareBy$lambda_4 = wrapFunction(function () {
+    var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
+    return function (closure$selector) {
+      return function (a, b) {
+        var selector = closure$selector;
+        return compareValues(selector(a), selector(b));
+      };
+    };
+  });
+  function Comparator$ObjectLiteral_4(closure$comparison) {
+    this.closure$comparison = closure$comparison;
+  }
+  Comparator$ObjectLiteral_4.prototype.compare = function (a, b) {
+    return this.closure$comparison(a, b);
+  };
+  Comparator$ObjectLiteral_4.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
+  MovementUtil.prototype.moveToCloseEnemyPortal_912u9o$ = function (agent) {
+    if (!this.hasEnemyPortals_912u9o$(agent)) {
+      var message = 'Check failed.';
+      throw new IllegalStateException(message.toString());
+    }
+    var target = first(sortedWith(this.findEnemyPortals_912u9o$(agent), new Comparator$ObjectLiteral_4(compareBy$lambda_4(MovementUtil$moveToCloseEnemyPortal$lambda(agent)))));
+    return this.goToDestinationPortal_0(agent, target);
+  };
+  function MovementUtil$moveToMostLinkedEnemyPortal$lambda(it) {
+    return it.links.size;
+  }
+  var compareBy$lambda_5 = wrapFunction(function () {
+    var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
+    return function (closure$selector) {
+      return function (a, b) {
+        var selector = closure$selector;
+        return compareValues(selector(a), selector(b));
+      };
+    };
+  });
+  function Comparator$ObjectLiteral_5(closure$comparison) {
+    this.closure$comparison = closure$comparison;
+  }
+  Comparator$ObjectLiteral_5.prototype.compare = function (a, b) {
+    return this.closure$comparison(a, b);
+  };
+  Comparator$ObjectLiteral_5.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
+  MovementUtil.prototype.moveToMostLinkedEnemyPortal_912u9o$ = function (agent) {
+    if (!this.hasEnemyPortals_912u9o$(agent)) {
+      var message = 'Check failed.';
+      throw new IllegalStateException(message.toString());
+    }
+    var target = first(sortedWith(this.findEnemyPortals_912u9o$(agent), new Comparator$ObjectLiteral_5(compareBy$lambda_5(MovementUtil$moveToMostLinkedEnemyPortal$lambda))));
+    return this.goToDestinationPortal_0(agent, target);
+  };
+  function MovementUtil$moveToMostVulnerableEnemyPortal$lambda(it) {
+    return -it.calcHealth();
+  }
+  var compareBy$lambda_6 = wrapFunction(function () {
+    var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
+    return function (closure$selector) {
+      return function (a, b) {
+        var selector = closure$selector;
+        return compareValues(selector(a), selector(b));
+      };
+    };
+  });
+  function Comparator$ObjectLiteral_6(closure$comparison) {
+    this.closure$comparison = closure$comparison;
+  }
+  Comparator$ObjectLiteral_6.prototype.compare = function (a, b) {
+    return this.closure$comparison(a, b);
+  };
+  Comparator$ObjectLiteral_6.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
+  MovementUtil.prototype.moveToMostVulnerableEnemyPortal_912u9o$ = function (agent) {
+    if (!this.hasEnemyPortals_912u9o$(agent)) {
+      var message = 'Check failed.';
+      throw new IllegalStateException(message.toString());
+    }
+    var target = first(sortedWith(this.findEnemyPortals_912u9o$(agent), new Comparator$ObjectLiteral_6(compareBy$lambda_6(MovementUtil$moveToMostVulnerableEnemyPortal$lambda))));
+    return this.goToDestinationPortal_0(agent, target);
+  };
+  function MovementUtil$moveToNearestPortal$lambda(closure$agent) {
+    return function (it) {
+      return closure$agent.distanceToPortal_hv9zn6$(it);
+    };
+  }
+  var compareBy$lambda_7 = wrapFunction(function () {
+    var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
+    return function (closure$selector) {
+      return function (a, b) {
+        var selector = closure$selector;
+        return compareValues(selector(a), selector(b));
+      };
+    };
+  });
+  function Comparator$ObjectLiteral_7(closure$comparison) {
+    this.closure$comparison = closure$comparison;
+  }
+  Comparator$ObjectLiteral_7.prototype.compare = function (a, b) {
+    return this.closure$comparison(a, b);
+  };
+  Comparator$ObjectLiteral_7.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
+  MovementUtil.prototype.moveToNearestPortal_912u9o$ = function (agent) {
+    var target = first(sortedWith(World_getInstance().allPortals, new Comparator$ObjectLiteral_7(compareBy$lambda_7(MovementUtil$moveToNearestPortal$lambda(agent)))));
+    return this.goToDestinationPortal_0(agent, target);
+  };
+  MovementUtil.prototype.moveToRandomPortal_912u9o$ = function (agent) {
+    var random = World_getInstance().allPortals.get_za3lpa$(numberToInt(Util_getInstance().random() * (World_getInstance().allPortals.size - 1 | 0)));
+    return this.goToDestinationPortal_0(agent, random);
+  };
+  MovementUtil.prototype.goToDestinationPortal_0 = function (agent, destination) {
+    var distance = agent.skills.deployPrecision * Dimensions_getInstance().maxDeploymentRange;
+    var nextDest = destination.findRandomPointNearPortal_za3lpa$(numberToInt(distance));
+    return agent.copy_lmq102$(void 0, void 0, void 0, void 0, void 0, Action$Companion_getInstance().start_34yqkq$(ActionItem$Companion_getInstance().MOVE, World_getInstance().tick), destination, nextDest);
+  };
+  MovementUtil.$metadata$ = {
+    kind: Kind_OBJECT,
+    simpleName: 'MovementUtil',
+    interfaces: []
+  };
+  var MovementUtil_instance = null;
+  function MovementUtil_getInstance() {
+    if (MovementUtil_instance === null) {
+      new MovementUtil();
+    }
+    return MovementUtil_instance;
+  }
   function NonFaction(pos, speed, destination, vectorField, busyUntil) {
     NonFaction$Companion_getInstance();
     this.pos = pos;
@@ -2261,15 +2426,15 @@ var QGress = function (_, Kotlin) {
       };
     };
   });
-  function Comparator$ObjectLiteral_6(closure$comparison) {
+  function Comparator$ObjectLiteral_8(closure$comparison) {
     this.closure$comparison = closure$comparison;
   }
-  Comparator$ObjectLiteral_6.prototype.compare = function (a, b) {
+  Comparator$ObjectLiteral_8.prototype.compare = function (a, b) {
     return this.closure$comparison(a, b);
   };
-  Comparator$ObjectLiteral_6.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
+  Comparator$ObjectLiteral_8.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
   NonFaction$Companion.prototype.findFarPortal_0 = function (pos) {
-    var randomFarPortals = sortedWith(World_getInstance().allPortals, new Comparator$ObjectLiteral_6(compareByDescending$lambda(NonFaction$Companion$findFarPortal$lambda(pos))));
+    var randomFarPortals = sortedWith(World_getInstance().allPortals, new Comparator$ObjectLiteral_8(compareByDescending$lambda(NonFaction$Companion$findFarPortal$lambda(pos))));
     var tmp$;
     tmp$ = randomFarPortals.iterator();
     while (tmp$.hasNext()) {
@@ -3091,7 +3256,7 @@ var QGress = function (_, Kotlin) {
   function Multihack$Companion$calculateImprovedBurnout$lambda(it) {
     return it.type.order;
   }
-  var compareBy$lambda_6 = wrapFunction(function () {
+  var compareBy$lambda_8 = wrapFunction(function () {
     var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
     return function (closure$selector) {
       return function (a, b) {
@@ -3100,13 +3265,13 @@ var QGress = function (_, Kotlin) {
       };
     };
   });
-  function Comparator$ObjectLiteral_7(closure$comparison) {
+  function Comparator$ObjectLiteral_9(closure$comparison) {
     this.closure$comparison = closure$comparison;
   }
-  Comparator$ObjectLiteral_7.prototype.compare = function (a, b) {
+  Comparator$ObjectLiteral_9.prototype.compare = function (a, b) {
     return this.closure$comparison(a, b);
   };
-  Comparator$ObjectLiteral_7.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
+  Comparator$ObjectLiteral_9.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
   Multihack$Companion.prototype.calculateImprovedBurnout_6l8466$ = function (allModsInPortal) {
     var destination = ArrayList_init();
     var tmp$;
@@ -3124,7 +3289,7 @@ var QGress = function (_, Kotlin) {
       var tmp$_1;
       destination_0.add_11rb$(Kotlin.isType(tmp$_1 = item, Multihack) ? tmp$_1 : throwCCE());
     }
-    var multihacks = sortedWith(destination_0, new Comparator$ObjectLiteral_7(compareBy$lambda_6(Multihack$Companion$calculateImprovedBurnout$lambda)));
+    var multihacks = sortedWith(destination_0, new Comparator$ObjectLiteral_9(compareBy$lambda_8(Multihack$Companion$calculateImprovedBurnout$lambda)));
     var first_0 = first(multihacks).type.additionalHacks;
     var second = multihacks.get_za3lpa$(1).type.additionalHacks * 0.5;
     var third = multihacks.get_za3lpa$(2).type.additionalHacks * 0.5;
@@ -4448,52 +4613,6 @@ var QGress = function (_, Kotlin) {
   function Field$weakestPortal$lambda(it) {
     return it.calcHealth();
   }
-  var compareBy$lambda_7 = wrapFunction(function () {
-    var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
-    return function (closure$selector) {
-      return function (a, b) {
-        var selector = closure$selector;
-        return compareValues(selector(a), selector(b));
-      };
-    };
-  });
-  function Comparator$ObjectLiteral_8(closure$comparison) {
-    this.closure$comparison = closure$comparison;
-  }
-  Comparator$ObjectLiteral_8.prototype.compare = function (a, b) {
-    return this.closure$comparison(a, b);
-  };
-  Comparator$ObjectLiteral_8.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
-  Field.prototype.weakestPortal = function () {
-    return last(sortedWith(toList_0(this.idSet), new Comparator$ObjectLiteral_8(compareBy$lambda_7(Field$weakestPortal$lambda))));
-  };
-  function Field$strongestAnchors$lambda(it) {
-    return it.calcHealth();
-  }
-  var compareBy$lambda_8 = wrapFunction(function () {
-    var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
-    return function (closure$selector) {
-      return function (a, b) {
-        var selector = closure$selector;
-        return compareValues(selector(a), selector(b));
-      };
-    };
-  });
-  function Comparator$ObjectLiteral_9(closure$comparison) {
-    this.closure$comparison = closure$comparison;
-  }
-  Comparator$ObjectLiteral_9.prototype.compare = function (a, b) {
-    return this.closure$comparison(a, b);
-  };
-  Comparator$ObjectLiteral_9.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
-  Field.prototype.strongestAnchors = function () {
-    return take(sortedWith(toList_0(this.idSet), new Comparator$ObjectLiteral_9(compareBy$lambda_8(Field$strongestAnchors$lambda))), 2);
-  };
-  function Field$findFurthestFrom$lambda(closure$portal) {
-    return function (it) {
-      return (new Line(closure$portal.location, it.location)).calcLength();
-    };
-  }
   var compareBy$lambda_9 = wrapFunction(function () {
     var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
     return function (closure$selector) {
@@ -4510,8 +4629,54 @@ var QGress = function (_, Kotlin) {
     return this.closure$comparison(a, b);
   };
   Comparator$ObjectLiteral_10.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
+  Field.prototype.weakestPortal = function () {
+    return last(sortedWith(toList_0(this.idSet), new Comparator$ObjectLiteral_10(compareBy$lambda_9(Field$weakestPortal$lambda))));
+  };
+  function Field$strongestAnchors$lambda(it) {
+    return it.calcHealth();
+  }
+  var compareBy$lambda_10 = wrapFunction(function () {
+    var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
+    return function (closure$selector) {
+      return function (a, b) {
+        var selector = closure$selector;
+        return compareValues(selector(a), selector(b));
+      };
+    };
+  });
+  function Comparator$ObjectLiteral_11(closure$comparison) {
+    this.closure$comparison = closure$comparison;
+  }
+  Comparator$ObjectLiteral_11.prototype.compare = function (a, b) {
+    return this.closure$comparison(a, b);
+  };
+  Comparator$ObjectLiteral_11.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
+  Field.prototype.strongestAnchors = function () {
+    return take(sortedWith(toList_0(this.idSet), new Comparator$ObjectLiteral_11(compareBy$lambda_10(Field$strongestAnchors$lambda))), 2);
+  };
+  function Field$findFurthestFrom$lambda(closure$portal) {
+    return function (it) {
+      return (new Line(closure$portal.location, it.location)).calcLength();
+    };
+  }
+  var compareBy$lambda_11 = wrapFunction(function () {
+    var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
+    return function (closure$selector) {
+      return function (a, b) {
+        var selector = closure$selector;
+        return compareValues(selector(a), selector(b));
+      };
+    };
+  });
+  function Comparator$ObjectLiteral_12(closure$comparison) {
+    this.closure$comparison = closure$comparison;
+  }
+  Comparator$ObjectLiteral_12.prototype.compare = function (a, b) {
+    return this.closure$comparison(a, b);
+  };
+  Comparator$ObjectLiteral_12.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
   Field.prototype.findFurthestFrom_hv9zn6$ = function (portal) {
-    return first(sortedWith(toList_0(this.idSet), new Comparator$ObjectLiteral_10(compareBy$lambda_9(Field$findFurthestFrom$lambda(portal)))));
+    return first(sortedWith(toList_0(this.idSet), new Comparator$ObjectLiteral_12(compareBy$lambda_11(Field$findFurthestFrom$lambda(portal)))));
   };
   Field.prototype.calculateMu = function () {
     return this.calculateArea();
@@ -4711,7 +4876,7 @@ var QGress = function (_, Kotlin) {
   function Link$draw$lambda(it) {
     return it.calcHealth();
   }
-  var compareBy$lambda_10 = wrapFunction(function () {
+  var compareBy$lambda_12 = wrapFunction(function () {
     var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
     return function (closure$selector) {
       return function (a, b) {
@@ -4720,15 +4885,15 @@ var QGress = function (_, Kotlin) {
       };
     };
   });
-  function Comparator$ObjectLiteral_11(closure$comparison) {
+  function Comparator$ObjectLiteral_13(closure$comparison) {
     this.closure$comparison = closure$comparison;
   }
-  Comparator$ObjectLiteral_11.prototype.compare = function (a, b) {
+  Comparator$ObjectLiteral_13.prototype.compare = function (a, b) {
     return this.closure$comparison(a, b);
   };
-  Comparator$ObjectLiteral_11.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
+  Comparator$ObjectLiteral_13.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
   Link.prototype.draw_f69bme$ = function (ctx) {
-    var byHealth = sortedWith(listOf([this.origin, this.destination]), new Comparator$ObjectLiteral_11(compareBy$lambda_10(Link$draw$lambda)));
+    var byHealth = sortedWith(listOf([this.origin, this.destination]), new Comparator$ObjectLiteral_13(compareBy$lambda_12(Link$draw$lambda)));
     var lowHpTransparency = 1.0 * last(byHealth).calcHealth() / Resonator$Companion_getInstance().MAX_HEALTH;
     var highHpTransparency = 1.0 * first(byHealth).calcHealth() / Resonator$Companion_getInstance().MAX_HEALTH;
     var gradient = ctx.createLinearGradient(this.origin.x(), this.origin.y(), this.destination.x(), this.destination.y());
@@ -5164,7 +5329,7 @@ var QGress = function (_, Kotlin) {
   function Portal$findStrongestReso$lambda(it) {
     return Kotlin.imul(it.health, it.level.level);
   }
-  var compareBy$lambda_11 = wrapFunction(function () {
+  var compareBy$lambda_13 = wrapFunction(function () {
     var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
     return function (closure$selector) {
       return function (a, b) {
@@ -5173,20 +5338,20 @@ var QGress = function (_, Kotlin) {
       };
     };
   });
-  function Comparator$ObjectLiteral_12(closure$comparison) {
+  function Comparator$ObjectLiteral_14(closure$comparison) {
     this.closure$comparison = closure$comparison;
   }
-  Comparator$ObjectLiteral_12.prototype.compare = function (a, b) {
+  Comparator$ObjectLiteral_14.prototype.compare = function (a, b) {
     return this.closure$comparison(a, b);
   };
-  Comparator$ObjectLiteral_12.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
+  Comparator$ObjectLiteral_14.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
   Portal.prototype.findStrongestReso_0 = function () {
     var resos = this.findResos();
     if (resos.isEmpty()) {
       return null;
     }
      else {
-      return first(sortedWith(resos, new Comparator$ObjectLiteral_12(compareBy$lambda_11(Portal$findStrongestReso$lambda))));
+      return first(sortedWith(resos, new Comparator$ObjectLiteral_14(compareBy$lambda_13(Portal$findStrongestReso$lambda))));
     }
   };
   Portal.prototype.findStrongestResoPos = function () {
@@ -6640,7 +6805,7 @@ var QGress = function (_, Kotlin) {
   }
   var mapCapacity = Kotlin.kotlin.collections.mapCapacity_za3lpa$;
   var LinkedHashMap_init_0 = Kotlin.kotlin.collections.LinkedHashMap_init_xf5xz2$;
-  var compareBy$lambda_12 = wrapFunction(function () {
+  var compareBy$lambda_14 = wrapFunction(function () {
     var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
     return function (closure$selector) {
       return function (a, b) {
@@ -6649,13 +6814,13 @@ var QGress = function (_, Kotlin) {
       };
     };
   });
-  function Comparator$ObjectLiteral_13(closure$comparison) {
+  function Comparator$ObjectLiteral_15(closure$comparison) {
     this.closure$comparison = closure$comparison;
   }
-  Comparator$ObjectLiteral_13.prototype.compare = function (a, b) {
+  Comparator$ObjectLiteral_15.prototype.compare = function (a, b) {
     return this.closure$comparison(a, b);
   };
-  Comparator$ObjectLiteral_13.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
+  Comparator$ObjectLiteral_15.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
   DrawUtil.prototype.drawTopAgents = function () {
     var ctx = World_getInstance().uiCtx();
     var xPos = Dimensions_getInstance().topAgentsLeftOffset;
@@ -6663,7 +6828,7 @@ var QGress = function (_, Kotlin) {
     var xOffset = numberToInt(Dimensions_getInstance().topAgentsInventoryFontSize * Constants_getInstance().phi);
     var yFixOffset = World_getInstance().can.height - Dimensions_getInstance().topAgentsBottomOffset - Kotlin.imul(Config_getInstance().topAgentsMessageLimit, yOffset) | 0;
     var headerPos = new Coords(xPos, yFixOffset - yOffset | 0);
-    var top = take(sortedWith(toList_0(World_getInstance().allAgents), new Comparator$ObjectLiteral_13(compareBy$lambda_12(DrawUtil$drawTopAgents$lambda))), Config_getInstance().topAgentsMessageLimit);
+    var top = take(sortedWith(toList_0(World_getInstance().allAgents), new Comparator$ObjectLiteral_15(compareBy$lambda_14(DrawUtil$drawTopAgents$lambda))), Config_getInstance().topAgentsMessageLimit);
     var headerText = 'Agent AP                                               ' + 'XMPs                                                             ' + 'Resos                                                            ' + 'Keys';
     this.strokeText_lowmm9$(ctx, headerPos, headerText, Colors_getInstance().white, Dimensions_getInstance().topAgentsInventoryFontSize, this.CODA, 2.0, Colors_getInstance().black);
     var invFontSize = Dimensions_getInstance().topAgentsInventoryFontSize;
@@ -7676,7 +7841,7 @@ var QGress = function (_, Kotlin) {
   function Util$findNearestPortals$lambda(it) {
     return it.first;
   }
-  var compareBy$lambda_13 = wrapFunction(function () {
+  var compareBy$lambda_15 = wrapFunction(function () {
     var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
     return function (closure$selector) {
       return function (a, b) {
@@ -7685,13 +7850,13 @@ var QGress = function (_, Kotlin) {
       };
     };
   });
-  function Comparator$ObjectLiteral_14(closure$comparison) {
+  function Comparator$ObjectLiteral_16(closure$comparison) {
     this.closure$comparison = closure$comparison;
   }
-  Comparator$ObjectLiteral_14.prototype.compare = function (a, b) {
+  Comparator$ObjectLiteral_16.prototype.compare = function (a, b) {
     return this.closure$comparison(a, b);
   };
-  Comparator$ObjectLiteral_14.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
+  Comparator$ObjectLiteral_16.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
   Util.prototype.findNearestPortals_lfj9be$ = function (coords) {
     var $receiver = World_getInstance().allPortals;
     var destination = ArrayList_init(collectionSizeOrDefault($receiver, 10));
@@ -7701,7 +7866,7 @@ var QGress = function (_, Kotlin) {
       var item = tmp$.next();
       destination.add_11rb$(to(item.location.distanceTo_lfj9be$(coords), item));
     }
-    return toSet(sortedWith(destination, new Comparator$ObjectLiteral_14(compareBy$lambda_13(Util$findNearestPortals$lambda))));
+    return toSet(sortedWith(destination, new Comparator$ObjectLiteral_16(compareBy$lambda_15(Util$findNearestPortals$lambda))));
   };
   Util.prototype.findNearestPortal_lfj9be$ = function (coords) {
     var tmp$;
@@ -7743,7 +7908,7 @@ var QGress = function (_, Kotlin) {
   function Util$select$lambda(it) {
     return it.first;
   }
-  var compareBy$lambda_14 = wrapFunction(function () {
+  var compareBy$lambda_16 = wrapFunction(function () {
     var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
     return function (closure$selector) {
       return function (a, b) {
@@ -7752,13 +7917,13 @@ var QGress = function (_, Kotlin) {
       };
     };
   });
-  function Comparator$ObjectLiteral_15(closure$comparison) {
+  function Comparator$ObjectLiteral_17(closure$comparison) {
     this.closure$comparison = closure$comparison;
   }
-  Comparator$ObjectLiteral_15.prototype.compare = function (a, b) {
+  Comparator$ObjectLiteral_17.prototype.compare = function (a, b) {
     return this.closure$comparison(a, b);
   };
-  Comparator$ObjectLiteral_15.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
+  Comparator$ObjectLiteral_17.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
   Util.prototype.select_flnx62$ = function (probabilityList) {
     var destination = ArrayList_init();
     var tmp$;
@@ -7780,7 +7945,7 @@ var QGress = function (_, Kotlin) {
     var rand = this.randomDouble_14dthe$(total);
     var accu = {v: 0.0};
     var tmp$_1;
-    tmp$_1 = sortedWith(list, new Comparator$ObjectLiteral_15(compareBy$lambda_14(Util$select$lambda))).iterator();
+    tmp$_1 = sortedWith(list, new Comparator$ObjectLiteral_17(compareBy$lambda_16(Util$select$lambda))).iterator();
     while (tmp$_1.hasNext()) {
       var element_1 = tmp$_1.next();
       accu.v += element_1.first;
@@ -8782,6 +8947,9 @@ var QGress = function (_, Kotlin) {
   });
   package$agent.Faction = Faction;
   package$agent.Inventory = Inventory;
+  Object.defineProperty(package$agent, 'MovementUtil', {
+    get: MovementUtil_getInstance
+  });
   Object.defineProperty(NonFaction, 'Companion', {
     get: NonFaction$Companion_getInstance
   });
