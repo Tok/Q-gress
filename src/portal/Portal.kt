@@ -40,6 +40,8 @@ data class Portal constructor(val name: String, val location: Coords,
     fun isDeprecated() = resoSlots.isEmpty()
 
     fun isUncaptured() = owner == null
+    fun isEnemyOf(agent: Agent) = owner != null && owner?.faction != agent.faction
+    fun isFriendlyTo(agent: Agent) = owner != null && owner?.faction == agent.faction
 
     fun isCoveredByField() = World.allFields().filter { it.isCoveringPortal(this) }.isNotEmpty()
     fun isLinkable(agent: Agent): Boolean = this.owner?.faction == agent.faction && isFullyDeployed()
