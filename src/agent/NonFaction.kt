@@ -96,11 +96,14 @@ data class NonFaction(var pos: Coords, val speed: Float,
 
     companion object {
         private val OFFSCREEN_DISTANCE = PathUtil.RESOLUTION * (MapUtil.OFFSCREEN_CELL_ROWS / 2)
-        val DESTINATIONS = listOf(
+        val useOffscreenEdgeDestinations = false //TODO reactivate?
+        val OFFSCREEN_EDGES = listOf(
                 Coords(-OFFSCREEN_DISTANCE, -OFFSCREEN_DISTANCE),
                 Coords(World.w() + OFFSCREEN_DISTANCE, -OFFSCREEN_DISTANCE),
                 Coords(-OFFSCREEN_DISTANCE, World.h() + OFFSCREEN_DISTANCE),
-                Coords(World.w() + OFFSCREEN_DISTANCE, World.h() + OFFSCREEN_DISTANCE),
+                Coords(World.w() + OFFSCREEN_DISTANCE, World.h() + OFFSCREEN_DISTANCE)
+        )
+        val DESTINATIONS = listOf(
                 //NORTH
                 Coords(World.w() / 3, -OFFSCREEN_DISTANCE),
                 Coords(World.w() * 2 / 3, -OFFSCREEN_DISTANCE),
