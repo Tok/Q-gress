@@ -33,11 +33,11 @@ data class NonFaction(var pos: Coords, val speed: Float,
             return
         }
 
-        if (Util.random() < 0.005) {
+        if (Util.random() < 0.007) {
             wait()
         }
 
-        if (Util.random() < 0.02) {
+        if (Util.random() < 0.015) {
             moveElsewhere()
         }
 
@@ -65,13 +65,13 @@ data class NonFaction(var pos: Coords, val speed: Float,
     }
 
     fun moveElsewhere() {
-        if (!isOffScreen() && Util.random() < 0.8) {
-            return moveToRandomOffscreenDestination()
+        return if (!isOffScreen() && Util.random() < 0.9) {
+            moveToRandomOffscreenDestination()
+        } else if (Util.random() < 0.5) {
+            moveToFarPortal()
+        } else {
+            moveToRandomPortal()
         }
-        if (Util.random() < 0.5) {
-            return moveToFarPortal()
-        }
-        return moveToRandomPortal()
     }
 
     fun moveToRandomOffscreenDestination() {
@@ -130,15 +130,7 @@ data class NonFaction(var pos: Coords, val speed: Float,
             }
         }
 
-        private fun findFarPortal(pos: Coords): Portal {
-            val randomFarPortals = World.allPortals.sortedByDescending { pos.distanceTo(it.location) }
-            randomFarPortals.forEach { portal ->
-                if (Util.random() < 0.4) {
-                    return portal
-                }
-            }
-            return randomFarPortals.elementAt(0)
-        }
+        private fun findFarPortal(pos: Coords) =  World.allPortals.sortedByDescending { pos.distanceTo(it.location) }.first()
 
         private val MIN_WAIT = Util.secondsToTicks(5)
         private val MAX_WAIT = Util.secondsToTicks(45)

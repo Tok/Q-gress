@@ -23,6 +23,7 @@ typealias Canvas = HTMLCanvasElement
 object World {
     var tick: Int = 0
     var isReady = false
+    fun reload() = HtmlUtil.load(false)
 
     lateinit var can: Canvas
     fun ctx() = HtmlUtil.getContext2D(can)
@@ -33,6 +34,7 @@ object World {
     lateinit var uiCan: Canvas
     fun uiCtx() = HtmlUtil.getContext2D(uiCan)
 
+    //var center: JSON = MapUtil.INITIAL_MAP_CENTER
     var mousePos: Coords? = null
     var speed: Int = 100
 

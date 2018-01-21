@@ -3,16 +3,8 @@ if (typeof kotlin === 'undefined') {
 }
 var QGress = function (_, Kotlin) {
   'use strict';
-  var throwCCE = Kotlin.throwCCE;
-  var addClass = Kotlin.kotlin.dom.addClass_hhb33f$;
-  var Unit = Kotlin.kotlin.Unit;
-  var numberToInt = Kotlin.numberToInt;
-  var take = Kotlin.kotlin.collections.take_ba2ldo$;
-  var IntRange = Kotlin.kotlin.ranges.IntRange;
-  var toSet = Kotlin.kotlin.collections.toSet_7wnvza$;
-  var println = Kotlin.kotlin.io.println_s8jyv4$;
-  var removeClass = Kotlin.kotlin.dom.removeClass_hhb33f$;
   var throwUPAE = Kotlin.throwUPAE;
+  var numberToInt = Kotlin.numberToInt;
   var equals = Kotlin.equals;
   var sum = Kotlin.kotlin.collections.sum_plj8ka$;
   var toByte = Kotlin.toByte;
@@ -20,16 +12,21 @@ var QGress = function (_, Kotlin) {
   var Kind_OBJECT = Kotlin.Kind.OBJECT;
   var to = Kotlin.kotlin.to_ujzrz7$;
   var listOf = Kotlin.kotlin.collections.listOf_i5x0yv$;
+  var println = Kotlin.kotlin.io.println_s8jyv4$;
+  var take = Kotlin.kotlin.collections.take_ba2ldo$;
   var toList = Kotlin.kotlin.collections.toList_abgq59$;
+  var throwCCE = Kotlin.throwCCE;
+  var toSet = Kotlin.kotlin.collections.toSet_7wnvza$;
   var zip = Kotlin.kotlin.collections.zip_45mdf7$;
   var toMap = Kotlin.kotlin.collections.toMap_6hr0sd$;
+  var Unit = Kotlin.kotlin.Unit;
   var ensureNotNull = Kotlin.ensureNotNull;
   var distinct = Kotlin.kotlin.collections.distinct_7wnvza$;
   var filterNotNull = Kotlin.kotlin.collections.filterNotNull_m3lr2h$;
   var first = Kotlin.kotlin.collections.first_2p1efm$;
   var hashCode = Kotlin.hashCode;
   var getValue = Kotlin.kotlin.collections.getValue_t9ocha$;
-  var IllegalStateException = Kotlin.kotlin.IllegalStateException;
+  var IllegalStateException_init = Kotlin.kotlin.IllegalStateException_init_pdl1vj$;
   var Kind_CLASS = Kotlin.Kind.CLASS;
   var Enum = Kotlin.kotlin.Enum;
   var throwISE = Kotlin.throwISE;
@@ -41,6 +38,7 @@ var QGress = function (_, Kotlin) {
   var last = Kotlin.kotlin.collections.last_2p1efm$;
   var linkedSetOf = Kotlin.kotlin.collections.linkedSetOf_i5x0yv$;
   var unboxChar = Kotlin.unboxChar;
+  var toBoxedChar = Kotlin.toBoxedChar;
   var round = Kotlin.kotlin.math.round_14dthe$;
   var plus = Kotlin.kotlin.collections.plus_mydzjv$;
   var toMutableList = Kotlin.kotlin.collections.toMutableList_4c7yge$;
@@ -48,9 +46,11 @@ var QGress = function (_, Kotlin) {
   var mutableListOf = Kotlin.kotlin.collections.mutableListOf_i5x0yv$;
   var toMutableMap = Kotlin.kotlin.collections.toMutableMap_abgq59$;
   var reversed = Kotlin.kotlin.collections.reversed_7wnvza$;
-  var toBoxedChar = Kotlin.toBoxedChar;
   var Triple = Kotlin.kotlin.Triple;
-  var IllegalArgumentException = Kotlin.kotlin.IllegalArgumentException;
+  var IllegalArgumentException_init = Kotlin.kotlin.IllegalArgumentException_init_pdl1vj$;
+  var IntRange = Kotlin.kotlin.ranges.IntRange;
+  var addClass = Kotlin.kotlin.dom.addClass_hhb33f$;
+  var removeClass = Kotlin.kotlin.dom.removeClass_hhb33f$;
   var max = Kotlin.kotlin.collections.max_exjks8$;
   var toMap_0 = Kotlin.kotlin.collections.toMap_abgq59$;
   var listOfNotNull = Kotlin.kotlin.collections.listOfNotNull_jurz7g$;
@@ -91,363 +91,11 @@ var QGress = function (_, Kotlin) {
   Octant.prototype.constructor = Octant;
   Quality.prototype = Object.create(Enum.prototype);
   Quality.prototype.constructor = Quality;
-  function main$lambda(event) {
-    handleMouseClick(event);
-    return Unit;
-  }
-  function main$speedSetting(closure$SPEED_ID) {
-    return function () {
-      var tmp$;
-      return numberToInt((Kotlin.isType(tmp$ = document.getElementById(closure$SPEED_ID), HTMLInputElement) ? tmp$ : throwCCE()).valueAsNumber);
-    };
-  }
-  function main$frogCount(closure$FROG_COUNT_ID) {
-    return function () {
-      var tmp$;
-      return numberToInt((Kotlin.isType(tmp$ = document.getElementById(closure$FROG_COUNT_ID), HTMLInputElement) ? tmp$ : throwCCE()).valueAsNumber);
-    };
-  }
-  function main$smurfCount(closure$SMURF_COUNT_ID) {
-    return function () {
-      var tmp$;
-      return numberToInt((Kotlin.isType(tmp$ = document.getElementById(closure$SMURF_COUNT_ID), HTMLInputElement) ? tmp$ : throwCCE()).valueAsNumber);
-    };
-  }
-  var ArrayList_init = Kotlin.kotlin.collections.ArrayList_init_ww73n8$;
-  function main$updateAgents(agents, faction, nextAgents) {
-    agents.clear();
-    var destination = ArrayList_init();
-    var tmp$;
-    tmp$ = nextAgents.iterator();
-    while (tmp$.hasNext()) {
-      var element = tmp$.next();
-      if (element.faction === faction)
-        destination.add_11rb$(element);
-    }
-    agents.addAll_brywnq$(destination);
-  }
-  var collectionSizeOrDefault = Kotlin.kotlin.collections.collectionSizeOrDefault_ba2ldo$;
-  function main$updateAgentCount(agents, newCount, creationFuncion) {
-    if (newCount < agents.size) {
-      World_getInstance().allAgents.addAll_brywnq$(take(agents, newCount));
-    }
-     else {
-      World_getInstance().allAgents.addAll_brywnq$(agents);
-      if (newCount > agents.size) {
-        var diff = newCount - agents.size | 0;
-        var tmp$ = World_getInstance().allAgents;
-        var $receiver = new IntRange(1, diff);
-        var destination = ArrayList_init(collectionSizeOrDefault($receiver, 10));
-        var tmp$_0;
-        tmp$_0 = $receiver.iterator();
-        while (tmp$_0.hasNext()) {
-          var item = tmp$_0.next();
-          destination.add_11rb$(creationFuncion(item));
-        }
-        tmp$.addAll_brywnq$(toSet(destination));
-      }
-    }
-  }
-  function main$tick$lambda(f) {
-    return Agent$Companion_getInstance().createFrog_5edep5$(World_getInstance().grid);
-  }
-  function main$tick$lambda_0(f) {
-    return Agent$Companion_getInstance().createSmurf_5edep5$(World_getInstance().grid);
-  }
-  function main$tick$lambda_1(it) {
-    return Util_getInstance().random();
-  }
-  function main$tick$lambda_2(it) {
-    DrawUtil_getInstance().redraw();
-    DrawUtil_getInstance().redrawUserInterface();
-    return Unit;
-  }
-  var sortedWith = Kotlin.kotlin.collections.sortedWith_eknfly$;
-  var wrapFunction = Kotlin.wrapFunction;
-  var compareBy$lambda = wrapFunction(function () {
-    var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
-    return function (closure$selector) {
-      return function (a, b) {
-        var selector = closure$selector;
-        return compareValues(selector(a), selector(b));
-      };
-    };
-  });
-  var Comparator = Kotlin.kotlin.Comparator;
-  function Comparator$ObjectLiteral(closure$comparison) {
-    this.closure$comparison = closure$comparison;
-  }
-  Comparator$ObjectLiteral.prototype.compare = function (a, b) {
-    return this.closure$comparison(a, b);
-  };
-  Comparator$ObjectLiteral.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
-  function main$tick(closure$frogs, closure$frogCount, closure$updateAgentCount, closure$smurfs, closure$smurfCount, closure$updateAgents) {
-    return function () {
-      if (!World_getInstance().isReady) {
-        return;
-      }
-      World_getInstance().allAgents.clear();
-      closure$updateAgentCount(closure$frogs, closure$frogCount(), main$tick$lambda);
-      closure$updateAgentCount(closure$smurfs, closure$smurfCount(), main$tick$lambda_0);
-      sortedWith(World_getInstance().allAgents, new Comparator$ObjectLiteral(compareBy$lambda(main$tick$lambda_1)));
-      var $receiver = World_getInstance().allAgents;
-      var destination = ArrayList_init(collectionSizeOrDefault($receiver, 10));
-      var tmp$;
-      tmp$ = $receiver.iterator();
-      while (tmp$.hasNext()) {
-        var item = tmp$.next();
-        destination.add_11rb$(item.act());
-      }
-      var nextAgents = toSet(destination);
-      closure$updateAgents(closure$frogs, Faction$ENL_getInstance(), nextAgents);
-      closure$updateAgents(closure$smurfs, Faction$RES_getInstance(), nextAgents);
-      var tmp$_0;
-      tmp$_0 = World_getInstance().allNonFaction.iterator();
-      while (tmp$_0.hasNext()) {
-        var element = tmp$_0.next();
-        element.act();
-      }
-      window.requestAnimationFrame(main$tick$lambda_2);
-      var tmp$_1;
-      tmp$_1 = World_getInstance();
-      tmp$_1.tick = tmp$_1.tick + 1 | 0;
-    };
-  }
-  function main$createPortals$createPortal$lambda(closure$count, closure$callback, closure$createPortal) {
-    return function () {
-      var tmp$;
-      if (closure$count > 0) {
-        var total = Config_getInstance().startPortals;
-        var realCount = total - closure$count + 1 | 0;
-        var newPortal = Portal$Companion_getInstance().createRandom();
-        DrawUtil_getInstance().drawLoadingText_61zpoe$('Creating Portal (' + realCount + '/' + total + ')');
-        DrawUtil_getInstance().drawVectorField_hv9zn6$(newPortal);
-        World_getInstance().allPortals.add_11rb$(newPortal);
-        closure$createPortal(closure$callback, closure$count - 1 | 0);
-      }
-       else {
-        (tmp$ = document.getElementById('initialMap')) != null ? (tmp$.remove(), Unit) : null;
-        closure$callback();
-      }
-    };
-  }
-  function main$createPortals$createPortal(callback, count) {
-    var tmp$;
-    (tmp$ = document.defaultView) != null ? tmp$.setTimeout(main$createPortals$createPortal$lambda(count, callback, main$createPortals$createPortal), 0) : null;
-  }
-  function main$createPortals(callback) {
-    var createPortal = main$createPortals$createPortal;
-    createPortal(callback, Config_getInstance().startPortals);
-  }
-  var Math_0 = Math;
-  function main$createAgents$createNonFaction$lambda(closure$count, closure$batchSize, closure$callback, closure$createNonFaction) {
-    return function () {
-      if (closure$count > 0) {
-        var a = closure$batchSize;
-        var b = closure$count;
-        var realSize = Math_0.min(a, b);
-        var total = Config_getInstance().startNonFaction;
-        var realCount = total - closure$count + realSize | 0;
-        DrawUtil_getInstance().drawLoadingText_61zpoe$('Creating Non-Faction (' + realCount + '/' + total + ')');
-        var tmp$;
-        tmp$ = (new IntRange(0, realSize)).iterator();
-        while (tmp$.hasNext()) {
-          var element = tmp$.next();
-          var newNonFaction = NonFaction$Companion_getInstance().create_5edep5$(World_getInstance().grid);
-          World_getInstance().allNonFaction.add_11rb$(newNonFaction);
-        }
-        closure$createNonFaction(closure$callback, closure$count - realSize | 0);
-      }
-       else {
-        closure$callback();
-      }
-    };
-  }
-  function main$createAgents$createNonFaction(closure$batchSize) {
-    return function closure$createNonFaction(callback, count) {
-      var tmp$;
-      (tmp$ = document.defaultView) != null ? tmp$.setTimeout(main$createAgents$createNonFaction$lambda(count, closure$batchSize, callback, closure$createNonFaction), 0) : null;
-    };
-  }
-  function main$createAgents(callback) {
-    var batchSize = 1;
-    var createNonFaction = main$createAgents$createNonFaction(batchSize);
-    DrawUtil_getInstance().clearBackground();
-    createNonFaction(callback, Config_getInstance().startNonFaction);
-  }
-  function main$createAgentsAndPortals$lambda(closure$callback, closure$createAgents) {
-    return function () {
-      closure$createAgents(closure$callback);
-    };
-  }
-  function main$createAgentsAndPortals(closure$createAgents, closure$createPortals) {
-    return function (callback) {
-      closure$createPortals(main$createAgentsAndPortals$lambda(callback, closure$createAgents));
-    };
-  }
-  function main$lambda_0(closure$tick) {
-    return function () {
-      closure$tick();
-      return Unit;
-    };
-  }
-  function main$lambda$lambda(closure$speedSetting) {
-    return function (it) {
-      World_getInstance().speed = closure$speedSetting();
-      return Unit;
-    };
-  }
-  function main$lambda$lambda$lambda(closure$tick) {
-    return function () {
-      closure$tick();
-      return Unit;
-    };
-  }
-  function main$lambda$lambda_0(closure$intervalID, closure$tick) {
-    return function (it) {
-      closure$intervalID.v = HtmlUtil_getInstance().pauseHandler_n53o35$(closure$intervalID.v, main$lambda$lambda$lambda(closure$tick));
-      return Unit;
-    };
-  }
-  function main$lambda_1(event) {
-    handleMouseMove(event);
-    return Unit;
-  }
-  function main$lambda_2(event) {
-    handleMouseMove(event);
-    return Unit;
-  }
-  function main$lambda$lambda_1() {
-    DrawUtil_getInstance().drawLoadingText_61zpoe$('Ready.');
-    World_getInstance().isReady = true;
-    return Unit;
-  }
-  function main$lambda_3(closure$createAgentsAndPortals) {
-    return function (grid) {
-      World_getInstance().grid = grid;
-      if (World_getInstance().grid.isEmpty()) {
-        println('ERROR: Grid is empty!');
-      }
-      DrawUtil_getInstance().drawGrid();
-      closure$createAgentsAndPortals(main$lambda$lambda_1);
-    };
-  }
-  function main$lambda_4(it) {
-    var tmp$;
-    (tmp$ = document.location) != null ? (tmp$.reload(), Unit) : null;
-    return Unit;
+  function main(args) {
+    HtmlUtil_getInstance().load_6taknv$(true);
   }
   var LinkedHashSet_init = Kotlin.kotlin.collections.LinkedHashSet_init_287e2$;
-  function main(args) {
-    var tmp$, tmp$_0, tmp$_1, tmp$_2, tmp$_3, tmp$_4;
-    var FROG_COUNT_ID = 'numberOfFrogs';
-    var SMURF_COUNT_ID = 'numberOfSmurfs';
-    var SPEED_ID = 'speed';
-    var rootDiv = Kotlin.isType(tmp$ = document.getElementById('root'), HTMLDivElement) ? tmp$ : throwCCE();
-    addClass(rootDiv, ['container']);
-    World_getInstance().can = HtmlUtil_getInstance().createCanvas_61zpoe$('mainCanvas');
-    World_getInstance().bgCan = HtmlUtil_getInstance().createCanvas_61zpoe$('backgroundCanvas');
-    World_getInstance().uiCan = HtmlUtil_getInstance().createCanvas_61zpoe$('uiCanvas');
-    World_getInstance().uiCan.addEventListener('click', main$lambda, false);
-    var canvasDiv = Kotlin.isType(tmp$_0 = document.createElement('div'), HTMLDivElement) ? tmp$_0 : throwCCE();
-    canvasDiv.append(World_getInstance().uiCan);
-    canvasDiv.append(World_getInstance().bgCan);
-    canvasDiv.append(World_getInstance().can);
-    var w = World_getInstance().can.width;
-    var h = World_getInstance().can.height;
-    var noiseAlpha = 0.8;
-    World_getInstance().noiseMap = ImprovedNoise_getInstance().generateEdgeMap_224j3y$(w, h);
-    World_getInstance().noiseImage = World_getInstance().createNoiseImage_bd1o91$(World_getInstance().noiseMap, w, h, noiseAlpha);
-    var frogs = LinkedHashSet_init();
-    var smurfs = LinkedHashSet_init();
-    var speedSetting = main$speedSetting(SPEED_ID);
-    var frogCount = main$frogCount(FROG_COUNT_ID);
-    var smurfCount = main$smurfCount(SMURF_COUNT_ID);
-    var updateAgents = main$updateAgents;
-    var updateAgentCount = main$updateAgentCount;
-    var tick = main$tick(frogs, frogCount, updateAgentCount, smurfs, smurfCount, updateAgents);
-    var createPortals = main$createPortals;
-    var createAgents = main$createAgents;
-    var createAgentsAndPortals = main$createAgentsAndPortals(createAgents, createPortals);
-    rootDiv.append(canvasDiv);
-    var controlDiv = Kotlin.isType(tmp$_1 = document.createElement('div'), HTMLDivElement) ? tmp$_1 : throwCCE();
-    addClass(controlDiv, ['controls']);
-    if (Config_getInstance().isAutostart) {
-      tmp$_4 = (tmp$_3 = (tmp$_2 = document.defaultView) != null ? tmp$_2.setInterval(main$lambda_0(tick), Time_getInstance().minTickInterval) : null) != null ? tmp$_3 : 0;
-    }
-     else
-      tmp$_4 = 0;
-    var intervalID = {v: tmp$_4};
-    var $receiver = Config_getInstance();
-    var maxSpeed = 500;
-    var speedSlider = HtmlUtil_getInstance().createSliderDiv_k2bhec$('speedSlider', 100, maxSpeed, SPEED_ID, '% Speed', 100);
-    speedSlider.oninput = main$lambda$lambda(speedSetting);
-    controlDiv.append(speedSlider);
-    controlDiv.append(HtmlUtil_getInstance().createSliderDiv_k2bhec$('frogSlider', $receiver.startFrogs, $receiver.maxFrogs, FROG_COUNT_ID, ' Frogs', 0));
-    controlDiv.append(HtmlUtil_getInstance().createSliderDiv_k2bhec$('smurfSlider', $receiver.startSmurfs, $receiver.maxSmurfs, SMURF_COUNT_ID, ' Smurfs', 0));
-    controlDiv.append(HtmlUtil_getInstance().createButtonDiv_yasyo8$('button', 'Pause', main$lambda$lambda_0(intervalID, tick)));
-    rootDiv.append(controlDiv);
-    controlDiv.addEventListener('mousemove', main$lambda_1, false);
-    rootDiv.addEventListener('mousemove', main$lambda_2, false);
-    MapUtil_getInstance().loadMaps_vekcfi$(main$lambda_3(createAgentsAndPortals));
-    window.addEventListener('resize', main$lambda_4, false);
-  }
-  function isNotHandledByCanvas(pos) {
-    return isInPositionArea(pos) || isInMapboxArea(pos) || isInOsmArea(pos);
-  }
-  function isInPositionArea(pos) {
-    var w = World_getInstance().can.width;
-    var size = 52;
-    var area = new Line(new Coords(w - size | 0, 0), new Coords(w, size));
-    return pos.x > area.from.x && pos.x <= area.to.x && pos.y > area.from.y && pos.y <= area.to.y;
-  }
-  function isInMapboxArea(pos) {
-    var area = new Line(new Coords(0, World_getInstance().can.height - 21 | 0), new Coords(233, World_getInstance().can.height));
-    return pos.x > area.from.x && pos.x <= area.to.x && pos.y > area.from.y && pos.y <= area.to.y;
-  }
-  function isInOsmArea(pos) {
-    var w = World_getInstance().can.width;
-    var area = new Line(new Coords(w - 377 | 0, World_getInstance().can.height - 34 | 0), new Coords(w, World_getInstance().can.height));
-    return pos.x > area.from.x && pos.x <= area.to.x && pos.y > area.from.y && pos.y <= area.to.y;
-  }
-  function handleMouseClick(event) {
-    var tmp$, tmp$_0;
-    if (Kotlin.isType(event, MouseEvent)) {
-      var pos = findMousePosition(World_getInstance().uiCan, event);
-      if (pos.hasClosePortalForClick()) {
-        SoundUtil_getInstance().playPortalRemovalSound_lfj9be$(pos);
-        (tmp$ = document.defaultView) != null ? tmp$.setTimeout(pos.findClosestPortal().destroy_za3lpa$(World_getInstance().tick), 0) : null;
-      }
-       else if (pos.isBuildable()) {
-        SoundUtil_getInstance().playPortalCreationSound_lfj9be$(pos);
-        (tmp$_0 = document.defaultView) != null ? tmp$_0.setTimeout(World_getInstance().allPortals.add_11rb$(Portal$Companion_getInstance().create_lfj9be$(pos)), 0) : null;
-      }
-    }
-     else {
-      println('WARN: Unhandled event: ' + event + '.');
-    }
-  }
-  function handleMouseMove(event) {
-    var tmp$;
-    var pos = findMousePosition(World_getInstance().uiCan, Kotlin.isType(tmp$ = event, MouseEvent) ? tmp$ : throwCCE());
-    var isNotHandledByCanvas_0 = isNotHandledByCanvas(pos);
-    if (isNotHandledByCanvas_0) {
-      World_getInstance().mousePos = null;
-      addClass(World_getInstance().uiCan, ['unclickable']);
-    }
-     else {
-      World_getInstance().mousePos = pos;
-      removeClass(World_getInstance().uiCan, ['unclickable']);
-    }
-  }
-  function findMousePosition(canvas, mouseEvent) {
-    var rect = canvas.getBoundingClientRect();
-    var scaleX = canvas.width / rect.width;
-    var scaleY = canvas.height / rect.height;
-    var x = (mouseEvent.clientX - rect.left) * scaleX;
-    var y = (mouseEvent.clientY - rect.top) * scaleY;
-    return new Coords(numberToInt(x), numberToInt(y));
-  }
+  var ArrayList_init = Kotlin.kotlin.collections.ArrayList_init_ww73n8$;
   function World() {
     World_instance = this;
     this.tick = 0;
@@ -465,6 +113,9 @@ var QGress = function (_, Kotlin) {
     this.allNonFaction = LinkedHashSet_init();
     this.allPortals = ArrayList_init();
   }
+  World.prototype.reload = function () {
+    HtmlUtil_getInstance().load_6taknv$(false);
+  };
   Object.defineProperty(World.prototype, 'can', {
     get: function () {
       if (this.can_v8ttwa$_0 == null)
@@ -516,6 +167,7 @@ var QGress = function (_, Kotlin) {
   World.prototype.shadowH = function () {
     return this.h() / PathUtil_getInstance().RESOLUTION | 0;
   };
+  var Math_0 = Math;
   World.prototype.diagonalLength = function () {
     var x = Kotlin.imul(this.can.width, this.can.width) + Kotlin.imul(this.can.height, this.can.height);
     return numberToInt(Math_0.sqrt(x));
@@ -766,6 +418,7 @@ var QGress = function (_, Kotlin) {
     }
     return destination.size;
   };
+  var collectionSizeOrDefault = Kotlin.kotlin.collections.collectionSizeOrDefault_ba2ldo$;
   World.prototype.allLines = function () {
     var $receiver = this.allLinks();
     var destination = ArrayList_init(collectionSizeOrDefault($receiver, 10));
@@ -888,26 +541,25 @@ var QGress = function (_, Kotlin) {
     return 8;
   };
   Agent.prototype.gatXmCapacity = function () {
-    var tmp$;
-    tmp$ = this.getLevel();
-    if (tmp$ === 1)
-      return 3000;
-    else if (tmp$ === 2)
-      return 4000;
-    else if (tmp$ === 3)
-      return 5000;
-    else if (tmp$ === 4)
-      return 6000;
-    else if (tmp$ === 5)
-      return 7000;
-    else if (tmp$ === 6)
-      return 8000;
-    else if (tmp$ === 7)
-      return 9000;
-    else if (tmp$ === 8)
-      return 10000;
-    else
-      return 10000;
+    switch (this.getLevel()) {
+      case 1:
+        return 3000;
+      case 2:
+        return 4000;
+      case 3:
+        return 5000;
+      case 4:
+        return 6000;
+      case 5:
+        return 7000;
+      case 6:
+        return 8000;
+      case 7:
+        return 9000;
+      case 8:
+        return 10000;
+      default:return 10000;
+    }
   };
   Agent.prototype.act = function () {
     var tmp$;
@@ -1129,7 +781,9 @@ var QGress = function (_, Kotlin) {
   function Agent$attackPortal$doAttack$lambda(it) {
     return it.level;
   }
-  var compareBy$lambda_0 = wrapFunction(function () {
+  var sortedWith = Kotlin.kotlin.collections.sortedWith_eknfly$;
+  var wrapFunction = Kotlin.wrapFunction;
+  var compareBy$lambda = wrapFunction(function () {
     var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
     return function (closure$selector) {
       return function (a, b) {
@@ -1138,20 +792,21 @@ var QGress = function (_, Kotlin) {
       };
     };
   });
-  function Comparator$ObjectLiteral_0(closure$comparison) {
+  var Comparator = Kotlin.kotlin.Comparator;
+  function Comparator$ObjectLiteral(closure$comparison) {
     this.closure$comparison = closure$comparison;
   }
-  Comparator$ObjectLiteral_0.prototype.compare = function (a, b) {
+  Comparator$ObjectLiteral.prototype.compare = function (a, b) {
     return this.closure$comparison(a, b);
   };
-  Comparator$ObjectLiteral_0.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
+  Comparator$ObjectLiteral.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
   function Agent$attackPortal$doAttack(this$Agent) {
     return function () {
       var tmp$;
       var maxXmps = 10;
       var allXmps = this$Agent.inventory.findXmps();
       var tmp$_0;
-      if ((tmp$ = allXmps != null ? sortedWith(allXmps, new Comparator$ObjectLiteral_0(compareBy$lambda_0(Agent$attackPortal$doAttack$lambda))) : null) != null) {
+      if ((tmp$ = allXmps != null ? sortedWith(allXmps, new Comparator$ObjectLiteral(compareBy$lambda(Agent$attackPortal$doAttack$lambda))) : null) != null) {
         var b = allXmps.size;
         tmp$_0 = take(tmp$, Math_0.min(maxXmps, b));
       }
@@ -1187,7 +842,7 @@ var QGress = function (_, Kotlin) {
   function Agent$deployPortal$doDeploy$lambda(it) {
     return it.level;
   }
-  var compareBy$lambda_1 = wrapFunction(function () {
+  var compareBy$lambda_0 = wrapFunction(function () {
     var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
     return function (closure$selector) {
       return function (a, b) {
@@ -1196,13 +851,13 @@ var QGress = function (_, Kotlin) {
       };
     };
   });
-  function Comparator$ObjectLiteral_1(closure$comparison) {
+  function Comparator$ObjectLiteral_0(closure$comparison) {
     this.closure$comparison = closure$comparison;
   }
-  Comparator$ObjectLiteral_1.prototype.compare = function (a, b) {
+  Comparator$ObjectLiteral_0.prototype.compare = function (a, b) {
     return this.closure$comparison(a, b);
   };
-  Comparator$ObjectLiteral_1.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
+  Comparator$ObjectLiteral_0.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
   function Agent$deployPortal$doDeploy(this$Agent) {
     return function () {
       if (this$Agent.actionPortal.isEnemyOf_912u9o$(this$Agent)) {
@@ -1247,7 +902,7 @@ var QGress = function (_, Kotlin) {
           var tmp$_3;
           destination_2.add_11rb$(Kotlin.isType(tmp$_3 = item_0, Resonator) ? tmp$_3 : throwCCE());
         }
-        var inventoryResos = sortedWith(destination_2, new Comparator$ObjectLiteral_1(compareBy$lambda_1(Agent$deployPortal$doDeploy$lambda)));
+        var inventoryResos = sortedWith(destination_2, new Comparator$ObjectLiteral_0(compareBy$lambda_0(Agent$deployPortal$doDeploy$lambda)));
         var deployLowFirstSet = toSet(inventoryResos);
         var tmp$_4;
         tmp$_4 = deployLowFirstSet.iterator();
@@ -1476,7 +1131,7 @@ var QGress = function (_, Kotlin) {
       return it.location.distanceTo_lfj9be$(this$Agent.pos);
     };
   }
-  var compareBy$lambda_2 = wrapFunction(function () {
+  var compareBy$lambda_1 = wrapFunction(function () {
     var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
     return function (closure$selector) {
       return function (a, b) {
@@ -1485,13 +1140,13 @@ var QGress = function (_, Kotlin) {
       };
     };
   });
-  function Comparator$ObjectLiteral_2(closure$comparison) {
+  function Comparator$ObjectLiteral_1(closure$comparison) {
     this.closure$comparison = closure$comparison;
   }
-  Comparator$ObjectLiteral_2.prototype.compare = function (a, b) {
+  Comparator$ObjectLiteral_1.prototype.compare = function (a, b) {
     return this.closure$comparison(a, b);
   };
-  Comparator$ObjectLiteral_2.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
+  Comparator$ObjectLiteral_1.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
   Agent.prototype.findPortalsInAttackRange_0 = function (level) {
     var attackDistance = level.rangeM * 0.5 + Dimensions_getInstance().portalRadius;
     var $receiver = World_getInstance().allPortals;
@@ -1513,7 +1168,7 @@ var QGress = function (_, Kotlin) {
       if (element_0.location.distanceTo_lfj9be$(this.pos) <= attackDistance)
         destination_0.add_11rb$(element_0);
     }
-    return sortedWith(destination_0, new Comparator$ObjectLiteral_2(compareBy$lambda_2(Agent$findPortalsInAttackRange$lambda(this))));
+    return sortedWith(destination_0, new Comparator$ObjectLiteral_1(compareBy$lambda_1(Agent$findPortalsInAttackRange$lambda(this))));
   };
   Agent.prototype.findResosInAttackRange_3vxbq7$ = function (level) {
     var attackDistance = level.rangeM * 0.5;
@@ -1603,12 +1258,15 @@ var QGress = function (_, Kotlin) {
   }
   Agent$Companion.prototype.getImage_0 = function (faction, actionItem) {
     var tmp$;
-    if (equals(faction, Faction$ENL_getInstance()))
-      tmp$ = getValue(this.enlImages_0, actionItem);
-    else if (equals(faction, Faction$RES_getInstance()))
-      tmp$ = getValue(this.resImages_0, actionItem);
-    else
-      throw new IllegalStateException('Illegal faction: ' + faction);
+    switch (faction.name) {
+      case 'ENL':
+        tmp$ = getValue(this.enlImages_0, actionItem);
+        break;
+      case 'RES':
+        tmp$ = getValue(this.resImages_0, actionItem);
+        break;
+      default:throw IllegalStateException_init('Illegal faction: ' + faction);
+    }
     return tmp$;
   };
   function Agent$Companion$drawTemplate$lambda(closure$r, closure$lineWidth, closure$faction, closure$actionItem) {
@@ -1874,7 +1532,7 @@ var QGress = function (_, Kotlin) {
      while (false);
     tmp$ = firstOrNull$result;
     if (tmp$ == null) {
-      throw new IllegalStateException('Key should exist.');
+      throw IllegalStateException_init('Key should exist.');
     }
     var key = tmp$;
     this.items.remove_11rb$(key);
@@ -2078,7 +1736,7 @@ var QGress = function (_, Kotlin) {
       return closure$agent.distanceToPortal_hv9zn6$(it);
     };
   }
-  var compareBy$lambda_3 = wrapFunction(function () {
+  var compareBy$lambda_2 = wrapFunction(function () {
     var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
     return function (closure$selector) {
       return function (a, b) {
@@ -2087,17 +1745,17 @@ var QGress = function (_, Kotlin) {
       };
     };
   });
-  function Comparator$ObjectLiteral_3(closure$comparison) {
+  function Comparator$ObjectLiteral_2(closure$comparison) {
     this.closure$comparison = closure$comparison;
   }
-  Comparator$ObjectLiteral_3.prototype.compare = function (a, b) {
+  Comparator$ObjectLiteral_2.prototype.compare = function (a, b) {
     return this.closure$comparison(a, b);
   };
-  Comparator$ObjectLiteral_3.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
+  Comparator$ObjectLiteral_2.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
   MovementUtil.prototype.moveToUncapturedPortal_912u9o$ = function (agent) {
     if (!this.hasUncapturedPortals()) {
       var message = 'Check failed.';
-      throw new IllegalStateException(message.toString());
+      throw IllegalStateException_init(message.toString());
     }
     var $receiver = World_getInstance().allPortals;
     var destination = ArrayList_init();
@@ -2108,7 +1766,7 @@ var QGress = function (_, Kotlin) {
       if (element.isUncaptured())
         destination.add_11rb$(element);
     }
-    var uncaptured = sortedWith(destination, new Comparator$ObjectLiteral_3(compareBy$lambda_3(MovementUtil$moveToUncapturedPortal$lambda(agent))));
+    var uncaptured = sortedWith(destination, new Comparator$ObjectLiteral_2(compareBy$lambda_2(MovementUtil$moveToUncapturedPortal$lambda(agent))));
     var tmp$_0;
     tmp$_0 = uncaptured.iterator();
     while (tmp$_0.hasNext()) {
@@ -2123,7 +1781,7 @@ var QGress = function (_, Kotlin) {
     var tmp$, tmp$_0;
     if (!this.hasFriendlyPortals_912u9o$(agent)) {
       var message = 'Check failed.';
-      throw new IllegalStateException(message.toString());
+      throw IllegalStateException_init(message.toString());
     }
     var $receiver = World_getInstance().allPortals;
     var destination = ArrayList_init();
@@ -2173,6 +1831,33 @@ var QGress = function (_, Kotlin) {
       return closure$agent.distanceToPortal_hv9zn6$(it);
     };
   }
+  var compareBy$lambda_3 = wrapFunction(function () {
+    var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
+    return function (closure$selector) {
+      return function (a, b) {
+        var selector = closure$selector;
+        return compareValues(selector(a), selector(b));
+      };
+    };
+  });
+  function Comparator$ObjectLiteral_3(closure$comparison) {
+    this.closure$comparison = closure$comparison;
+  }
+  Comparator$ObjectLiteral_3.prototype.compare = function (a, b) {
+    return this.closure$comparison(a, b);
+  };
+  Comparator$ObjectLiteral_3.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
+  MovementUtil.prototype.moveToCloseEnemyPortal_912u9o$ = function (agent) {
+    if (!this.hasEnemyPortals_912u9o$(agent)) {
+      var message = 'Check failed.';
+      throw IllegalStateException_init(message.toString());
+    }
+    var target = first(sortedWith(this.findEnemyPortals_912u9o$(agent), new Comparator$ObjectLiteral_3(compareBy$lambda_3(MovementUtil$moveToCloseEnemyPortal$lambda(agent)))));
+    return this.goToDestinationPortal_0(agent, target);
+  };
+  function MovementUtil$moveToMostLinkedEnemyPortal$lambda(it) {
+    return it.links.size;
+  }
   var compareBy$lambda_4 = wrapFunction(function () {
     var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
     return function (closure$selector) {
@@ -2189,16 +1874,16 @@ var QGress = function (_, Kotlin) {
     return this.closure$comparison(a, b);
   };
   Comparator$ObjectLiteral_4.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
-  MovementUtil.prototype.moveToCloseEnemyPortal_912u9o$ = function (agent) {
+  MovementUtil.prototype.moveToMostLinkedEnemyPortal_912u9o$ = function (agent) {
     if (!this.hasEnemyPortals_912u9o$(agent)) {
       var message = 'Check failed.';
-      throw new IllegalStateException(message.toString());
+      throw IllegalStateException_init(message.toString());
     }
-    var target = first(sortedWith(this.findEnemyPortals_912u9o$(agent), new Comparator$ObjectLiteral_4(compareBy$lambda_4(MovementUtil$moveToCloseEnemyPortal$lambda(agent)))));
+    var target = first(sortedWith(this.findEnemyPortals_912u9o$(agent), new Comparator$ObjectLiteral_4(compareBy$lambda_4(MovementUtil$moveToMostLinkedEnemyPortal$lambda))));
     return this.goToDestinationPortal_0(agent, target);
   };
-  function MovementUtil$moveToMostLinkedEnemyPortal$lambda(it) {
-    return it.links.size;
+  function MovementUtil$moveToMostVulnerableEnemyPortal$lambda(it) {
+    return -it.calcHealth() | 0;
   }
   var compareBy$lambda_5 = wrapFunction(function () {
     var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
@@ -2216,16 +1901,18 @@ var QGress = function (_, Kotlin) {
     return this.closure$comparison(a, b);
   };
   Comparator$ObjectLiteral_5.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
-  MovementUtil.prototype.moveToMostLinkedEnemyPortal_912u9o$ = function (agent) {
+  MovementUtil.prototype.moveToMostVulnerableEnemyPortal_912u9o$ = function (agent) {
     if (!this.hasEnemyPortals_912u9o$(agent)) {
       var message = 'Check failed.';
-      throw new IllegalStateException(message.toString());
+      throw IllegalStateException_init(message.toString());
     }
-    var target = first(sortedWith(this.findEnemyPortals_912u9o$(agent), new Comparator$ObjectLiteral_5(compareBy$lambda_5(MovementUtil$moveToMostLinkedEnemyPortal$lambda))));
+    var target = first(sortedWith(this.findEnemyPortals_912u9o$(agent), new Comparator$ObjectLiteral_5(compareBy$lambda_5(MovementUtil$moveToMostVulnerableEnemyPortal$lambda))));
     return this.goToDestinationPortal_0(agent, target);
   };
-  function MovementUtil$moveToMostVulnerableEnemyPortal$lambda(it) {
-    return -it.calcHealth();
+  function MovementUtil$moveToNearestPortal$lambda(closure$agent) {
+    return function (it) {
+      return closure$agent.distanceToPortal_hv9zn6$(it);
+    };
   }
   var compareBy$lambda_6 = wrapFunction(function () {
     var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
@@ -2243,37 +1930,8 @@ var QGress = function (_, Kotlin) {
     return this.closure$comparison(a, b);
   };
   Comparator$ObjectLiteral_6.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
-  MovementUtil.prototype.moveToMostVulnerableEnemyPortal_912u9o$ = function (agent) {
-    if (!this.hasEnemyPortals_912u9o$(agent)) {
-      var message = 'Check failed.';
-      throw new IllegalStateException(message.toString());
-    }
-    var target = first(sortedWith(this.findEnemyPortals_912u9o$(agent), new Comparator$ObjectLiteral_6(compareBy$lambda_6(MovementUtil$moveToMostVulnerableEnemyPortal$lambda))));
-    return this.goToDestinationPortal_0(agent, target);
-  };
-  function MovementUtil$moveToNearestPortal$lambda(closure$agent) {
-    return function (it) {
-      return closure$agent.distanceToPortal_hv9zn6$(it);
-    };
-  }
-  var compareBy$lambda_7 = wrapFunction(function () {
-    var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
-    return function (closure$selector) {
-      return function (a, b) {
-        var selector = closure$selector;
-        return compareValues(selector(a), selector(b));
-      };
-    };
-  });
-  function Comparator$ObjectLiteral_7(closure$comparison) {
-    this.closure$comparison = closure$comparison;
-  }
-  Comparator$ObjectLiteral_7.prototype.compare = function (a, b) {
-    return this.closure$comparison(a, b);
-  };
-  Comparator$ObjectLiteral_7.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
   MovementUtil.prototype.moveToNearestPortal_912u9o$ = function (agent) {
-    var target = first(sortedWith(World_getInstance().allPortals, new Comparator$ObjectLiteral_7(compareBy$lambda_7(MovementUtil$moveToNearestPortal$lambda(agent)))));
+    var target = first(sortedWith(World_getInstance().allPortals, new Comparator$ObjectLiteral_6(compareBy$lambda_6(MovementUtil$moveToNearestPortal$lambda(agent)))));
     return this.goToDestinationPortal_0(agent, target);
   };
   MovementUtil.prototype.moveToRandomPortal_912u9o$ = function (agent) {
@@ -2328,10 +1986,10 @@ var QGress = function (_, Kotlin) {
       }
       return;
     }
-    if (Util_getInstance().random() < 0.005) {
+    if (Util_getInstance().random() < 0.007) {
       this.wait();
     }
-    if (Util_getInstance().random() < 0.02) {
+    if (Util_getInstance().random() < 0.015) {
       this.moveElsewhere();
     }
     if (this.isAtDestination()) {
@@ -2358,13 +2016,17 @@ var QGress = function (_, Kotlin) {
     this.busyUntil = World_getInstance().tick + NonFaction$Companion_getInstance().creatWaitTime_0() | 0;
   };
   NonFaction.prototype.moveElsewhere = function () {
-    if (!this.isOffScreen() && Util_getInstance().random() < 0.8) {
-      return this.moveToRandomOffscreenDestination();
+    var tmp$;
+    if (!this.isOffScreen() && Util_getInstance().random() < 0.9) {
+      tmp$ = this.moveToRandomOffscreenDestination();
     }
-    if (Util_getInstance().random() < 0.5) {
-      return this.moveToFarPortal();
+     else if (Util_getInstance().random() < 0.5) {
+      tmp$ = this.moveToFarPortal();
     }
-    return this.moveToRandomPortal();
+     else {
+      tmp$ = this.moveToRandomPortal();
+    }
+    return tmp$;
   };
   NonFaction.prototype.moveToRandomOffscreenDestination = function () {
     var destination = first(Util_getInstance().shuffle_bemo1h$(NonFaction$Companion_getInstance().DESTINATIONS));
@@ -2426,24 +2088,15 @@ var QGress = function (_, Kotlin) {
       };
     };
   });
-  function Comparator$ObjectLiteral_8(closure$comparison) {
+  function Comparator$ObjectLiteral_7(closure$comparison) {
     this.closure$comparison = closure$comparison;
   }
-  Comparator$ObjectLiteral_8.prototype.compare = function (a, b) {
+  Comparator$ObjectLiteral_7.prototype.compare = function (a, b) {
     return this.closure$comparison(a, b);
   };
-  Comparator$ObjectLiteral_8.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
+  Comparator$ObjectLiteral_7.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
   NonFaction$Companion.prototype.findFarPortal_0 = function (pos) {
-    var randomFarPortals = sortedWith(World_getInstance().allPortals, new Comparator$ObjectLiteral_8(compareByDescending$lambda(NonFaction$Companion$findFarPortal$lambda(pos))));
-    var tmp$;
-    tmp$ = randomFarPortals.iterator();
-    while (tmp$.hasNext()) {
-      var element = tmp$.next();
-      if (Util_getInstance().random() < 0.4) {
-        return element;
-      }
-    }
-    return randomFarPortals.get_za3lpa$(0);
+    return first(sortedWith(World_getInstance().allPortals, new Comparator$ObjectLiteral_7(compareByDescending$lambda(NonFaction$Companion$findFarPortal$lambda(pos)))));
   };
   NonFaction$Companion.prototype.creatWaitTime_0 = function () {
     return Util_getInstance().randomInt_vux9f0$(this.MIN_WAIT_0, this.MAX_WAIT_0);
@@ -2751,7 +2404,7 @@ var QGress = function (_, Kotlin) {
     this.startSmurfs = 10;
     this.maxFrogs = 500;
     this.maxSmurfs = 500;
-    this.startNonFaction = 300;
+    this.startNonFaction = 500;
     this.isAutostart = true;
     this.vectorSmoothCount = 5;
     this.shadowBlurCount = 3;
@@ -3170,28 +2823,33 @@ var QGress = function (_, Kotlin) {
     LinkAmp$Companion_instance = this;
   }
   LinkAmp$Companion.prototype.calculateImprovedRange_awbt68$ = function (allModsInPortal, range) {
-    var tmp$, tmp$_0;
+    var tmp$;
     var destination = ArrayList_init();
-    var tmp$_1;
-    tmp$_1 = allModsInPortal.iterator();
-    while (tmp$_1.hasNext()) {
-      var element = tmp$_1.next();
+    var tmp$_0;
+    tmp$_0 = allModsInPortal.iterator();
+    while (tmp$_0.hasNext()) {
+      var element = tmp$_0.next();
       if (Kotlin.isType(element, LinkAmp))
         destination.add_11rb$(element);
     }
     var linkamps = destination;
-    tmp$ = linkamps.size;
-    if (tmp$ === 1)
-      tmp$_0 = range * 2;
-    else if (tmp$ === 2)
-      tmp$_0 = range * 2.5;
-    else if (tmp$ === 3)
-      tmp$_0 = range * 2.75;
-    else if (tmp$ === 4)
-      tmp$_0 = range * 5;
-    else
-      tmp$_0 = range;
-    return tmp$_0;
+    switch (linkamps.size) {
+      case 1:
+        tmp$ = range * 2;
+        break;
+      case 2:
+        tmp$ = range * 2.5;
+        break;
+      case 3:
+        tmp$ = range * 2.75;
+        break;
+      case 4:
+        tmp$ = range * 5;
+        break;
+      default:tmp$ = range;
+        break;
+    }
+    return tmp$;
   };
   LinkAmp$Companion.$metadata$ = {
     kind: Kind_OBJECT,
@@ -3256,7 +2914,7 @@ var QGress = function (_, Kotlin) {
   function Multihack$Companion$calculateImprovedBurnout$lambda(it) {
     return it.type.order;
   }
-  var compareBy$lambda_8 = wrapFunction(function () {
+  var compareBy$lambda_7 = wrapFunction(function () {
     var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
     return function (closure$selector) {
       return function (a, b) {
@@ -3265,13 +2923,13 @@ var QGress = function (_, Kotlin) {
       };
     };
   });
-  function Comparator$ObjectLiteral_9(closure$comparison) {
+  function Comparator$ObjectLiteral_8(closure$comparison) {
     this.closure$comparison = closure$comparison;
   }
-  Comparator$ObjectLiteral_9.prototype.compare = function (a, b) {
+  Comparator$ObjectLiteral_8.prototype.compare = function (a, b) {
     return this.closure$comparison(a, b);
   };
-  Comparator$ObjectLiteral_9.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
+  Comparator$ObjectLiteral_8.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
   Multihack$Companion.prototype.calculateImprovedBurnout_6l8466$ = function (allModsInPortal) {
     var destination = ArrayList_init();
     var tmp$;
@@ -3289,7 +2947,7 @@ var QGress = function (_, Kotlin) {
       var tmp$_1;
       destination_0.add_11rb$(Kotlin.isType(tmp$_1 = item, Multihack) ? tmp$_1 : throwCCE());
     }
-    var multihacks = sortedWith(destination_0, new Comparator$ObjectLiteral_9(compareBy$lambda_8(Multihack$Companion$calculateImprovedBurnout$lambda)));
+    var multihacks = sortedWith(destination_0, new Comparator$ObjectLiteral_8(compareBy$lambda_7(Multihack$Companion$calculateImprovedBurnout$lambda)));
     var first_0 = first(multihacks).type.additionalHacks;
     var second = multihacks.get_za3lpa$(1).type.additionalHacks * 0.5;
     var third = multihacks.get_za3lpa$(2).type.additionalHacks * 0.5;
@@ -4613,6 +4271,28 @@ var QGress = function (_, Kotlin) {
   function Field$weakestPortal$lambda(it) {
     return it.calcHealth();
   }
+  var compareBy$lambda_8 = wrapFunction(function () {
+    var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
+    return function (closure$selector) {
+      return function (a, b) {
+        var selector = closure$selector;
+        return compareValues(selector(a), selector(b));
+      };
+    };
+  });
+  function Comparator$ObjectLiteral_9(closure$comparison) {
+    this.closure$comparison = closure$comparison;
+  }
+  Comparator$ObjectLiteral_9.prototype.compare = function (a, b) {
+    return this.closure$comparison(a, b);
+  };
+  Comparator$ObjectLiteral_9.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
+  Field.prototype.weakestPortal = function () {
+    return last(sortedWith(toList_0(this.idSet), new Comparator$ObjectLiteral_9(compareBy$lambda_8(Field$weakestPortal$lambda))));
+  };
+  function Field$strongestAnchors$lambda(it) {
+    return it.calcHealth();
+  }
   var compareBy$lambda_9 = wrapFunction(function () {
     var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
     return function (closure$selector) {
@@ -4629,11 +4309,13 @@ var QGress = function (_, Kotlin) {
     return this.closure$comparison(a, b);
   };
   Comparator$ObjectLiteral_10.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
-  Field.prototype.weakestPortal = function () {
-    return last(sortedWith(toList_0(this.idSet), new Comparator$ObjectLiteral_10(compareBy$lambda_9(Field$weakestPortal$lambda))));
+  Field.prototype.strongestAnchors = function () {
+    return take(sortedWith(toList_0(this.idSet), new Comparator$ObjectLiteral_10(compareBy$lambda_9(Field$strongestAnchors$lambda))), 2);
   };
-  function Field$strongestAnchors$lambda(it) {
-    return it.calcHealth();
+  function Field$findFurthestFrom$lambda(closure$portal) {
+    return function (it) {
+      return (new Line(closure$portal.location, it.location)).calcLength();
+    };
   }
   var compareBy$lambda_10 = wrapFunction(function () {
     var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
@@ -4651,32 +4333,8 @@ var QGress = function (_, Kotlin) {
     return this.closure$comparison(a, b);
   };
   Comparator$ObjectLiteral_11.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
-  Field.prototype.strongestAnchors = function () {
-    return take(sortedWith(toList_0(this.idSet), new Comparator$ObjectLiteral_11(compareBy$lambda_10(Field$strongestAnchors$lambda))), 2);
-  };
-  function Field$findFurthestFrom$lambda(closure$portal) {
-    return function (it) {
-      return (new Line(closure$portal.location, it.location)).calcLength();
-    };
-  }
-  var compareBy$lambda_11 = wrapFunction(function () {
-    var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
-    return function (closure$selector) {
-      return function (a, b) {
-        var selector = closure$selector;
-        return compareValues(selector(a), selector(b));
-      };
-    };
-  });
-  function Comparator$ObjectLiteral_12(closure$comparison) {
-    this.closure$comparison = closure$comparison;
-  }
-  Comparator$ObjectLiteral_12.prototype.compare = function (a, b) {
-    return this.closure$comparison(a, b);
-  };
-  Comparator$ObjectLiteral_12.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
   Field.prototype.findFurthestFrom_hv9zn6$ = function (portal) {
-    return first(sortedWith(toList_0(this.idSet), new Comparator$ObjectLiteral_12(compareBy$lambda_11(Field$findFurthestFrom$lambda(portal)))));
+    return first(sortedWith(toList_0(this.idSet), new Comparator$ObjectLiteral_11(compareBy$lambda_10(Field$findFurthestFrom$lambda(portal)))));
   };
   Field.prototype.calculateMu = function () {
     return this.calculateArea();
@@ -4876,7 +4534,7 @@ var QGress = function (_, Kotlin) {
   function Link$draw$lambda(it) {
     return it.calcHealth();
   }
-  var compareBy$lambda_12 = wrapFunction(function () {
+  var compareBy$lambda_11 = wrapFunction(function () {
     var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
     return function (closure$selector) {
       return function (a, b) {
@@ -4885,15 +4543,15 @@ var QGress = function (_, Kotlin) {
       };
     };
   });
-  function Comparator$ObjectLiteral_13(closure$comparison) {
+  function Comparator$ObjectLiteral_12(closure$comparison) {
     this.closure$comparison = closure$comparison;
   }
-  Comparator$ObjectLiteral_13.prototype.compare = function (a, b) {
+  Comparator$ObjectLiteral_12.prototype.compare = function (a, b) {
     return this.closure$comparison(a, b);
   };
-  Comparator$ObjectLiteral_13.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
+  Comparator$ObjectLiteral_12.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
   Link.prototype.draw_f69bme$ = function (ctx) {
-    var byHealth = sortedWith(listOf([this.origin, this.destination]), new Comparator$ObjectLiteral_13(compareBy$lambda_12(Link$draw$lambda)));
+    var byHealth = sortedWith(listOf([this.origin, this.destination]), new Comparator$ObjectLiteral_12(compareBy$lambda_11(Link$draw$lambda)));
     var lowHpTransparency = 1.0 * last(byHealth).calcHealth() / Resonator$Companion_getInstance().MAX_HEALTH;
     var highHpTransparency = 1.0 * first(byHealth).calcHealth() / Resonator$Companion_getInstance().MAX_HEALTH;
     var gradient = ctx.createLinearGradient(this.origin.x(), this.origin.y(), this.destination.x(), this.destination.y());
@@ -5067,7 +4725,7 @@ var QGress = function (_, Kotlin) {
   ModSlot.valueOf_61zpoe$ = ModSlot$valueOf;
   function Octant(name, ordinal, arrow, angle) {
     Enum.call(this);
-    this.arrow = arrow;
+    this.arrow = toBoxedChar(arrow);
     this.angle_90b5ws$_0 = angle;
     this.name$ = name;
     this.ordinal$ = ordinal;
@@ -5329,7 +4987,7 @@ var QGress = function (_, Kotlin) {
   function Portal$findStrongestReso$lambda(it) {
     return Kotlin.imul(it.health, it.level.level);
   }
-  var compareBy$lambda_13 = wrapFunction(function () {
+  var compareBy$lambda_12 = wrapFunction(function () {
     var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
     return function (closure$selector) {
       return function (a, b) {
@@ -5338,20 +4996,20 @@ var QGress = function (_, Kotlin) {
       };
     };
   });
-  function Comparator$ObjectLiteral_14(closure$comparison) {
+  function Comparator$ObjectLiteral_13(closure$comparison) {
     this.closure$comparison = closure$comparison;
   }
-  Comparator$ObjectLiteral_14.prototype.compare = function (a, b) {
+  Comparator$ObjectLiteral_13.prototype.compare = function (a, b) {
     return this.closure$comparison(a, b);
   };
-  Comparator$ObjectLiteral_14.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
+  Comparator$ObjectLiteral_13.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
   Portal.prototype.findStrongestReso_0 = function () {
     var resos = this.findResos();
     if (resos.isEmpty()) {
       return null;
     }
      else {
-      return first(sortedWith(resos, new Comparator$ObjectLiteral_14(compareBy$lambda_13(Portal$findStrongestReso$lambda))));
+      return first(sortedWith(resos, new Comparator$ObjectLiteral_13(compareBy$lambda_12(Portal$findStrongestReso$lambda))));
     }
   };
   Portal.prototype.findStrongestResoPos = function () {
@@ -6382,26 +6040,25 @@ var QGress = function (_, Kotlin) {
     return '#' + this.toHexString_0(red) + this.toHexString_0(green) + this.toHexString_0(blue);
   };
   ColorUtil.prototype.toHexString_0 = function (int) {
-    var $receiver = toByte(int);
-    var other = kotlin_js_internal_ByteCompanionObject.MAX_VALUE;
-    var v = Kotlin.toByte($receiver & other);
+    var v = toByte(toByte(int) & kotlin_js_internal_ByteCompanionObject.MAX_VALUE);
     return String.fromCharCode(Constants_getInstance().hexChars.charCodeAt(v >>> 4)) + String.fromCharCode(toBoxedChar(Constants_getInstance().hexChars.charCodeAt(v & 15)));
   };
   ColorUtil.prototype.getFullSpectrum_0 = function (range, fraction) {
-    if (range === 0)
-      return new Triple(1.0, fraction, 0.0);
-    else if (range === 1)
-      return new Triple(1.0 - fraction, 1.0, 0.0);
-    else if (range === 2)
-      return new Triple(0.0, 1.0, fraction);
-    else if (range === 3)
-      return new Triple(0.0, 1.0 - fraction, 1.0);
-    else if (range === 4)
-      return new Triple(fraction, 0.0, 1.0);
-    else if (range === 5)
-      return new Triple(1.0, 0.0, 1.0 - fraction);
-    else
-      throw new IllegalArgumentException('Out of range: ' + toString(range));
+    switch (range) {
+      case 0:
+        return new Triple(1.0, fraction, 0.0);
+      case 1:
+        return new Triple(1.0 - fraction, 1.0, 0.0);
+      case 2:
+        return new Triple(0.0, 1.0, fraction);
+      case 3:
+        return new Triple(0.0, 1.0 - fraction, 1.0);
+      case 4:
+        return new Triple(fraction, 0.0, 1.0);
+      case 5:
+        return new Triple(1.0, 0.0, 1.0 - fraction);
+      default:throw IllegalArgumentException_init('Out of range: ' + toString(range));
+    }
   };
   ColorUtil.$metadata$ = {
     kind: Kind_OBJECT,
@@ -6736,14 +6393,20 @@ var QGress = function (_, Kotlin) {
     tmp$ = (new IntRange(1, 4)).iterator();
     while (tmp$.hasNext()) {
       var element = tmp$.next();
-      if (element === 1)
-        drawRow(xPos, 'Agents', $receiver.countAgents_bip15f$(Faction$ENL_getInstance()), $receiver.countAgents_bip15f$(Faction$RES_getInstance()), $receiver.countAgents());
-      else if (element === 2)
-        drawRow(xPos + xStep | 0, 'Portals', $receiver.countPortals_bip15f$(Faction$ENL_getInstance()), $receiver.countPortals_bip15f$(Faction$RES_getInstance()), $receiver.countPortals());
-      else if (element === 3)
-        drawRow(xPos + (xStep * 2 | 0) | 0, 'Links', $receiver.countLinks_bip15f$(Faction$ENL_getInstance()), $receiver.countLinks_bip15f$(Faction$RES_getInstance()), $receiver.countLinks());
-      else if (element === 4)
-        drawRow(xPos + (xStep * 3 | 0) | 0, 'Fields', $receiver.countFields_bip15f$(Faction$ENL_getInstance()), $receiver.countFields_bip15f$(Faction$RES_getInstance()), $receiver.countFields());
+      switch (element) {
+        case 1:
+          drawRow(xPos, 'Agents', $receiver.countAgents_bip15f$(Faction$ENL_getInstance()), $receiver.countAgents_bip15f$(Faction$RES_getInstance()), $receiver.countAgents());
+          break;
+        case 2:
+          drawRow(xPos + xStep | 0, 'Portals', $receiver.countPortals_bip15f$(Faction$ENL_getInstance()), $receiver.countPortals_bip15f$(Faction$RES_getInstance()), $receiver.countPortals());
+          break;
+        case 3:
+          drawRow(xPos + (xStep * 2 | 0) | 0, 'Links', $receiver.countLinks_bip15f$(Faction$ENL_getInstance()), $receiver.countLinks_bip15f$(Faction$RES_getInstance()), $receiver.countLinks());
+          break;
+        case 4:
+          drawRow(xPos + (xStep * 3 | 0) | 0, 'Fields', $receiver.countFields_bip15f$(Faction$ENL_getInstance()), $receiver.countFields_bip15f$(Faction$RES_getInstance()), $receiver.countFields());
+          break;
+      }
     }
     return Unit;
   };
@@ -6801,11 +6464,11 @@ var QGress = function (_, Kotlin) {
     drawMuRect(resPos, resPart, Faction$RES_getInstance(), resMu);
   };
   function DrawUtil$drawTopAgents$lambda(it) {
-    return -it.ap;
+    return -it.ap | 0;
   }
   var mapCapacity = Kotlin.kotlin.collections.mapCapacity_za3lpa$;
   var LinkedHashMap_init_0 = Kotlin.kotlin.collections.LinkedHashMap_init_xf5xz2$;
-  var compareBy$lambda_14 = wrapFunction(function () {
+  var compareBy$lambda_13 = wrapFunction(function () {
     var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
     return function (closure$selector) {
       return function (a, b) {
@@ -6814,13 +6477,13 @@ var QGress = function (_, Kotlin) {
       };
     };
   });
-  function Comparator$ObjectLiteral_15(closure$comparison) {
+  function Comparator$ObjectLiteral_14(closure$comparison) {
     this.closure$comparison = closure$comparison;
   }
-  Comparator$ObjectLiteral_15.prototype.compare = function (a, b) {
+  Comparator$ObjectLiteral_14.prototype.compare = function (a, b) {
     return this.closure$comparison(a, b);
   };
-  Comparator$ObjectLiteral_15.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
+  Comparator$ObjectLiteral_14.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
   DrawUtil.prototype.drawTopAgents = function () {
     var ctx = World_getInstance().uiCtx();
     var xPos = Dimensions_getInstance().topAgentsLeftOffset;
@@ -6828,7 +6491,7 @@ var QGress = function (_, Kotlin) {
     var xOffset = numberToInt(Dimensions_getInstance().topAgentsInventoryFontSize * Constants_getInstance().phi);
     var yFixOffset = World_getInstance().can.height - Dimensions_getInstance().topAgentsBottomOffset - Kotlin.imul(Config_getInstance().topAgentsMessageLimit, yOffset) | 0;
     var headerPos = new Coords(xPos, yFixOffset - yOffset | 0);
-    var top = take(sortedWith(toList_0(World_getInstance().allAgents), new Comparator$ObjectLiteral_15(compareBy$lambda_14(DrawUtil$drawTopAgents$lambda))), Config_getInstance().topAgentsMessageLimit);
+    var top = take(sortedWith(toList_0(World_getInstance().allAgents), new Comparator$ObjectLiteral_14(compareBy$lambda_13(DrawUtil$drawTopAgents$lambda))), Config_getInstance().topAgentsMessageLimit);
     var headerText = 'Agent AP                                               ' + 'XMPs                                                             ' + 'Resos                                                            ' + 'Keys';
     this.strokeText_lowmm9$(ctx, headerPos, headerText, Colors_getInstance().white, Dimensions_getInstance().topAgentsInventoryFontSize, this.CODA, 2.0, Colors_getInstance().black);
     var invFontSize = Dimensions_getInstance().topAgentsInventoryFontSize;
@@ -7035,19 +6698,19 @@ var QGress = function (_, Kotlin) {
   };
   function DrawUtil$createVectorImage$lambda(closure$w, closure$h, closure$complex, closure$line, this$DrawUtil) {
     return function (ctx) {
-      var tmp$;
       ctx.fillStyle = '#ffffff22';
-      tmp$ = Styles_getInstance().vectorStyle;
-      if (equals(tmp$, Styles$VectorStyle$CIRCLE_getInstance())) {
-        var r = closure$w / 2.0;
-        var path = new Path2D();
-        path.moveTo(r, r);
-        path.arc(r, r, r, 0.0, 2.0 * math.PI);
-        ctx.fill(path);
-      }
-       else if (equals(tmp$, Styles$VectorStyle$SQUARE_getInstance())) {
-        ctx.fillRect(1.0, 1.0, closure$w, closure$h);
-        ctx.fill();
+      switch (Styles_getInstance().vectorStyle.name) {
+        case 'CIRCLE':
+          var r = closure$w / 2.0;
+          var path = new Path2D();
+          path.moveTo(r, r);
+          path.arc(r, r, r, 0.0, 2.0 * math.PI);
+          ctx.fill(path);
+          break;
+        case 'SQUARE':
+          ctx.fillRect(1.0, 1.0, closure$w, closure$h);
+          ctx.fill();
+          break;
       }
       var lineWidth = 2.0;
       var strokeStyle = ColorUtil_getInstance().getColor_p4p8i0$(closure$complex) + 'AA';
@@ -7138,7 +6801,363 @@ var QGress = function (_, Kotlin) {
   }
   function HtmlUtil() {
     HtmlUtil_instance = this;
+    this.FROG_COUNT_ID = 'numberOfFrogs';
+    this.SMURF_COUNT_ID = 'numberOfSmurfs';
+    this.SPEED_ID = 'speed';
+    this.frogs = LinkedHashSet_init();
+    this.smurfs = LinkedHashSet_init();
   }
+  HtmlUtil.prototype.speedSetting = function () {
+    var tmp$;
+    return numberToInt((Kotlin.isType(tmp$ = document.getElementById(this.SPEED_ID), HTMLInputElement) ? tmp$ : throwCCE()).valueAsNumber);
+  };
+  HtmlUtil.prototype.frogCount = function () {
+    var tmp$;
+    return numberToInt((Kotlin.isType(tmp$ = document.getElementById(this.FROG_COUNT_ID), HTMLInputElement) ? tmp$ : throwCCE()).valueAsNumber);
+  };
+  HtmlUtil.prototype.smurfCount = function () {
+    var tmp$;
+    return numberToInt((Kotlin.isType(tmp$ = document.getElementById(this.SMURF_COUNT_ID), HTMLInputElement) ? tmp$ : throwCCE()).valueAsNumber);
+  };
+  HtmlUtil.prototype.updateAgents_sbryja$ = function (agents, faction, nextAgents) {
+    agents.clear();
+    var destination = ArrayList_init();
+    var tmp$;
+    tmp$ = nextAgents.iterator();
+    while (tmp$.hasNext()) {
+      var element = tmp$.next();
+      if (element.faction === faction)
+        destination.add_11rb$(element);
+    }
+    agents.addAll_brywnq$(destination);
+  };
+  HtmlUtil.prototype.updateAgentCount_p30vra$ = function (agents, newCount, creationFuncion) {
+    if (newCount < agents.size) {
+      World_getInstance().allAgents.addAll_brywnq$(take(agents, newCount));
+    }
+     else {
+      World_getInstance().allAgents.addAll_brywnq$(agents);
+      if (newCount > agents.size) {
+        var diff = newCount - agents.size | 0;
+        var tmp$ = World_getInstance().allAgents;
+        var $receiver = new IntRange(1, diff);
+        var destination = ArrayList_init(collectionSizeOrDefault($receiver, 10));
+        var tmp$_0;
+        tmp$_0 = $receiver.iterator();
+        while (tmp$_0.hasNext()) {
+          var item = tmp$_0.next();
+          destination.add_11rb$(creationFuncion(item));
+        }
+        tmp$.addAll_brywnq$(toSet(destination));
+      }
+    }
+  };
+  function HtmlUtil$tick$lambda(f) {
+    return Agent$Companion_getInstance().createFrog_5edep5$(World_getInstance().grid);
+  }
+  function HtmlUtil$tick$lambda_0(f) {
+    return Agent$Companion_getInstance().createSmurf_5edep5$(World_getInstance().grid);
+  }
+  function HtmlUtil$tick$lambda_1(it) {
+    return Util_getInstance().random();
+  }
+  function HtmlUtil$tick$lambda_2(it) {
+    DrawUtil_getInstance().redraw();
+    DrawUtil_getInstance().redrawUserInterface();
+    return Unit;
+  }
+  var compareBy$lambda_14 = wrapFunction(function () {
+    var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
+    return function (closure$selector) {
+      return function (a, b) {
+        var selector = closure$selector;
+        return compareValues(selector(a), selector(b));
+      };
+    };
+  });
+  function Comparator$ObjectLiteral_15(closure$comparison) {
+    this.closure$comparison = closure$comparison;
+  }
+  Comparator$ObjectLiteral_15.prototype.compare = function (a, b) {
+    return this.closure$comparison(a, b);
+  };
+  Comparator$ObjectLiteral_15.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
+  HtmlUtil.prototype.tick = function () {
+    if (!World_getInstance().isReady) {
+      return;
+    }
+    World_getInstance().allAgents.clear();
+    this.updateAgentCount_p30vra$(this.frogs, this.frogCount(), HtmlUtil$tick$lambda);
+    this.updateAgentCount_p30vra$(this.smurfs, this.smurfCount(), HtmlUtil$tick$lambda_0);
+    sortedWith(World_getInstance().allAgents, new Comparator$ObjectLiteral_15(compareBy$lambda_14(HtmlUtil$tick$lambda_1)));
+    var $receiver = World_getInstance().allAgents;
+    var destination = ArrayList_init(collectionSizeOrDefault($receiver, 10));
+    var tmp$;
+    tmp$ = $receiver.iterator();
+    while (tmp$.hasNext()) {
+      var item = tmp$.next();
+      destination.add_11rb$(item.act());
+    }
+    var nextAgents = toSet(destination);
+    this.updateAgents_sbryja$(this.frogs, Faction$ENL_getInstance(), nextAgents);
+    this.updateAgents_sbryja$(this.smurfs, Faction$RES_getInstance(), nextAgents);
+    var tmp$_0;
+    tmp$_0 = World_getInstance().allNonFaction.iterator();
+    while (tmp$_0.hasNext()) {
+      var element = tmp$_0.next();
+      element.act();
+    }
+    window.requestAnimationFrame(HtmlUtil$tick$lambda_2);
+    var tmp$_1;
+    tmp$_1 = World_getInstance();
+    tmp$_1.tick = tmp$_1.tick + 1 | 0;
+  };
+  function HtmlUtil$load$lambda(this$HtmlUtil) {
+    return function (event) {
+      this$HtmlUtil.handleMouseClick_9ojx7i$(event);
+      return Unit;
+    };
+  }
+  function HtmlUtil$load$lambda_0(this$HtmlUtil) {
+    return function () {
+      this$HtmlUtil.tick();
+      return Unit;
+    };
+  }
+  function HtmlUtil$load$lambda$lambda(this$HtmlUtil) {
+    return function (it) {
+      World_getInstance().speed = this$HtmlUtil.speedSetting();
+      return Unit;
+    };
+  }
+  function HtmlUtil$load$lambda$lambda$lambda(this$HtmlUtil) {
+    return function () {
+      this$HtmlUtil.tick();
+      return Unit;
+    };
+  }
+  function HtmlUtil$load$lambda$lambda_0(closure$intervalID, this$HtmlUtil) {
+    return function (it) {
+      closure$intervalID.v = HtmlUtil_getInstance().pauseHandler_n53o35$(closure$intervalID.v, HtmlUtil$load$lambda$lambda$lambda(this$HtmlUtil));
+      return Unit;
+    };
+  }
+  function HtmlUtil$load$lambda_1(this$HtmlUtil) {
+    return function (event) {
+      this$HtmlUtil.handleMouseMove_9ojx7i$(event);
+      return Unit;
+    };
+  }
+  function HtmlUtil$load$lambda_2(this$HtmlUtil) {
+    return function (event) {
+      this$HtmlUtil.handleMouseMove_9ojx7i$(event);
+      return Unit;
+    };
+  }
+  function HtmlUtil$load$createPortals$createPortal$lambda(closure$count, closure$callback, closure$createPortal) {
+    return function () {
+      var tmp$;
+      if (closure$count > 0) {
+        var total = Config_getInstance().startPortals;
+        var realCount = total - closure$count + 1 | 0;
+        var newPortal = Portal$Companion_getInstance().createRandom();
+        DrawUtil_getInstance().drawLoadingText_61zpoe$('Creating Portal (' + realCount + '/' + total + ')');
+        DrawUtil_getInstance().drawVectorField_hv9zn6$(newPortal);
+        World_getInstance().allPortals.add_11rb$(newPortal);
+        closure$createPortal(closure$callback, closure$count - 1 | 0);
+      }
+       else {
+        (tmp$ = document.getElementById('initialMap')) != null ? (tmp$.remove(), Unit) : null;
+        closure$callback();
+      }
+    };
+  }
+  function HtmlUtil$load$createPortals$createPortal(callback, count) {
+    var tmp$;
+    (tmp$ = document.defaultView) != null ? tmp$.setTimeout(HtmlUtil$load$createPortals$createPortal$lambda(count, callback, HtmlUtil$load$createPortals$createPortal), 0) : null;
+  }
+  function HtmlUtil$load$createPortals(callback) {
+    var createPortal = HtmlUtil$load$createPortals$createPortal;
+    createPortal(callback, Config_getInstance().startPortals);
+  }
+  function HtmlUtil$load$createAgents$createNonFaction$lambda(closure$count, closure$batchSize, closure$callback, closure$createNonFaction) {
+    return function () {
+      if (closure$count > 0) {
+        var a = closure$batchSize;
+        var b = closure$count;
+        var realSize = Math_0.min(a, b);
+        var total = Config_getInstance().startNonFaction;
+        var realCount = total - closure$count + realSize | 0;
+        DrawUtil_getInstance().drawLoadingText_61zpoe$('Creating Non-Faction (' + realCount + '/' + total + ')');
+        var tmp$;
+        tmp$ = (new IntRange(0, realSize)).iterator();
+        while (tmp$.hasNext()) {
+          var element = tmp$.next();
+          var newNonFaction = NonFaction$Companion_getInstance().create_5edep5$(World_getInstance().grid);
+          World_getInstance().allNonFaction.add_11rb$(newNonFaction);
+        }
+        closure$createNonFaction(closure$callback, closure$count - realSize | 0);
+      }
+       else {
+        closure$callback();
+      }
+    };
+  }
+  function HtmlUtil$load$createAgents$createNonFaction(closure$batchSize) {
+    return function closure$createNonFaction(callback, count) {
+      var tmp$;
+      (tmp$ = document.defaultView) != null ? tmp$.setTimeout(HtmlUtil$load$createAgents$createNonFaction$lambda(count, closure$batchSize, callback, closure$createNonFaction), 0) : null;
+    };
+  }
+  function HtmlUtil$load$createAgents(callback) {
+    var batchSize = 1;
+    var createNonFaction = HtmlUtil$load$createAgents$createNonFaction(batchSize);
+    DrawUtil_getInstance().clearBackground();
+    createNonFaction(callback, Config_getInstance().startNonFaction);
+  }
+  function HtmlUtil$load$createAgentsAndPortals$lambda(closure$callback, closure$createAgents) {
+    return function () {
+      closure$createAgents(closure$callback);
+    };
+  }
+  function HtmlUtil$load$createAgentsAndPortals(closure$createAgents, closure$createPortals) {
+    return function (callback) {
+      closure$createPortals(HtmlUtil$load$createAgentsAndPortals$lambda(callback, closure$createAgents));
+    };
+  }
+  function HtmlUtil$load$lambda$lambda$lambda_0() {
+    println('Reloading world.');
+    World_getInstance().reload();
+  }
+  function HtmlUtil$load$lambda$lambda_1(it) {
+    var tmp$;
+    (tmp$ = document.defaultView) != null ? tmp$.setTimeout(HtmlUtil$load$lambda$lambda$lambda_0, 3000) : null;
+    return Unit;
+  }
+  function HtmlUtil$load$lambda$lambda_2() {
+    DrawUtil_getInstance().drawLoadingText_61zpoe$('Ready.');
+    World_getInstance().isReady = true;
+    return Unit;
+  }
+  function HtmlUtil$load$lambda_3(closure$createAgentsAndPortals) {
+    return function (grid) {
+      var tmp$;
+      World_getInstance().grid = grid;
+      if (World_getInstance().grid.isEmpty()) {
+        println('ERROR: Grid is empty!');
+      }
+      DrawUtil_getInstance().drawGrid();
+      var geoLocatorButton = Kotlin.isType(tmp$ = document.getElementsByClassName('mapboxgl-ctrl-geolocate')[0], HTMLButtonElement) ? tmp$ : throwCCE();
+      geoLocatorButton.addEventListener('click', HtmlUtil$load$lambda$lambda_1);
+      closure$createAgentsAndPortals(HtmlUtil$load$lambda$lambda_2);
+    };
+  }
+  function HtmlUtil$load$lambda_4(it) {
+    var tmp$;
+    (tmp$ = document.location) != null ? (tmp$.reload(), Unit) : null;
+    return Unit;
+  }
+  HtmlUtil.prototype.load_6taknv$ = function (isFirstLoad) {
+    var tmp$, tmp$_0, tmp$_1, tmp$_2, tmp$_3, tmp$_4;
+    if (isFirstLoad) {
+      var rootDiv = Kotlin.isType(tmp$ = document.getElementById('root'), HTMLDivElement) ? tmp$ : throwCCE();
+      addClass(rootDiv, ['container']);
+      World_getInstance().can = HtmlUtil_getInstance().createCanvas_61zpoe$('mainCanvas');
+      World_getInstance().bgCan = HtmlUtil_getInstance().createCanvas_61zpoe$('backgroundCanvas');
+      World_getInstance().uiCan = HtmlUtil_getInstance().createCanvas_61zpoe$('uiCanvas');
+      World_getInstance().uiCan.addEventListener('click', HtmlUtil$load$lambda(this), false);
+      var canvasDiv = Kotlin.isType(tmp$_0 = document.createElement('div'), HTMLDivElement) ? tmp$_0 : throwCCE();
+      canvasDiv.append(World_getInstance().uiCan);
+      canvasDiv.append(World_getInstance().bgCan);
+      canvasDiv.append(World_getInstance().can);
+      var w = World_getInstance().can.width;
+      var h = World_getInstance().can.height;
+      var noiseAlpha = 0.8;
+      World_getInstance().noiseMap = ImprovedNoise_getInstance().generateEdgeMap_224j3y$(w, h);
+      World_getInstance().noiseImage = World_getInstance().createNoiseImage_bd1o91$(World_getInstance().noiseMap, w, h, noiseAlpha);
+      rootDiv.append(canvasDiv);
+      var controlDiv = Kotlin.isType(tmp$_1 = document.createElement('div'), HTMLDivElement) ? tmp$_1 : throwCCE();
+      addClass(controlDiv, ['controls']);
+      if (Config_getInstance().isAutostart) {
+        tmp$_4 = (tmp$_3 = (tmp$_2 = document.defaultView) != null ? tmp$_2.setInterval(HtmlUtil$load$lambda_0(this), Time_getInstance().minTickInterval) : null) != null ? tmp$_3 : 0;
+      }
+       else
+        tmp$_4 = 0;
+      var intervalID = {v: tmp$_4};
+      var $receiver = Config_getInstance();
+      var maxSpeed = 500;
+      var speedSlider = HtmlUtil_getInstance().createSliderDiv_k2bhec$('speedSlider', 100, maxSpeed, this.SPEED_ID, '% Speed', 100);
+      speedSlider.oninput = HtmlUtil$load$lambda$lambda(this);
+      controlDiv.append(speedSlider);
+      controlDiv.append(HtmlUtil_getInstance().createSliderDiv_k2bhec$('frogSlider', $receiver.startFrogs, $receiver.maxFrogs, this.FROG_COUNT_ID, ' Frogs', 0));
+      controlDiv.append(HtmlUtil_getInstance().createSliderDiv_k2bhec$('smurfSlider', $receiver.startSmurfs, $receiver.maxSmurfs, this.SMURF_COUNT_ID, ' Smurfs', 0));
+      controlDiv.append(HtmlUtil_getInstance().createButtonDiv_yasyo8$('button', 'Pause', HtmlUtil$load$lambda$lambda_0(intervalID, this)));
+      rootDiv.append(controlDiv);
+      controlDiv.addEventListener('mousemove', HtmlUtil$load$lambda_1(this), false);
+      rootDiv.addEventListener('mousemove', HtmlUtil$load$lambda_2(this), false);
+    }
+    var createPortals = HtmlUtil$load$createPortals;
+    var createAgents = HtmlUtil$load$createAgents;
+    var createAgentsAndPortals = HtmlUtil$load$createAgentsAndPortals(createAgents, createPortals);
+    MapUtil_getInstance().loadMaps_j2gnlp$(isFirstLoad, HtmlUtil$load$lambda_3(createAgentsAndPortals));
+    window.addEventListener('resize', HtmlUtil$load$lambda_4, false);
+  };
+  HtmlUtil.prototype.isNotHandledByCanvas_lfj9be$ = function (pos) {
+    return this.isInPositionArea_0(pos) || this.isInMapboxArea_0(pos) || this.isInOsmArea_0(pos);
+  };
+  HtmlUtil.prototype.isInPositionArea_0 = function (pos) {
+    var w = World_getInstance().can.width;
+    var size = 52;
+    var area = new Line(new Coords(w - size | 0, 0), new Coords(w, size));
+    return pos.x > area.from.x && pos.x <= area.to.x && pos.y > area.from.y && pos.y <= area.to.y;
+  };
+  HtmlUtil.prototype.isInMapboxArea_0 = function (pos) {
+    var area = new Line(new Coords(0, World_getInstance().can.height - 21 | 0), new Coords(233, World_getInstance().can.height));
+    return pos.x > area.from.x && pos.x <= area.to.x && pos.y > area.from.y && pos.y <= area.to.y;
+  };
+  HtmlUtil.prototype.isInOsmArea_0 = function (pos) {
+    var w = World_getInstance().can.width;
+    var area = new Line(new Coords(w - 377 | 0, World_getInstance().can.height - 34 | 0), new Coords(w, World_getInstance().can.height));
+    return pos.x > area.from.x && pos.x <= area.to.x && pos.y > area.from.y && pos.y <= area.to.y;
+  };
+  HtmlUtil.prototype.handleMouseClick_9ojx7i$ = function (event) {
+    var tmp$, tmp$_0;
+    if (Kotlin.isType(event, MouseEvent)) {
+      var pos = this.findMousePosition_ferqyr$(World_getInstance().uiCan, event);
+      if (pos.hasClosePortalForClick()) {
+        SoundUtil_getInstance().playPortalRemovalSound_lfj9be$(pos);
+        (tmp$ = document.defaultView) != null ? tmp$.setTimeout(pos.findClosestPortal().destroy_za3lpa$(World_getInstance().tick), 0) : null;
+      }
+       else if (pos.isBuildable()) {
+        SoundUtil_getInstance().playPortalCreationSound_lfj9be$(pos);
+        (tmp$_0 = document.defaultView) != null ? tmp$_0.setTimeout(World_getInstance().allPortals.add_11rb$(Portal$Companion_getInstance().create_lfj9be$(pos)), 0) : null;
+      }
+    }
+     else {
+      println('WARN: Unhandled event: ' + event + '.');
+    }
+  };
+  HtmlUtil.prototype.handleMouseMove_9ojx7i$ = function (event) {
+    var tmp$;
+    var pos = this.findMousePosition_ferqyr$(World_getInstance().uiCan, Kotlin.isType(tmp$ = event, MouseEvent) ? tmp$ : throwCCE());
+    var isNotHandledByCanvas = this.isNotHandledByCanvas_lfj9be$(pos);
+    if (isNotHandledByCanvas) {
+      World_getInstance().mousePos = null;
+      addClass(World_getInstance().uiCan, ['unclickable']);
+    }
+     else {
+      World_getInstance().mousePos = pos;
+      removeClass(World_getInstance().uiCan, ['unclickable']);
+    }
+  };
+  HtmlUtil.prototype.findMousePosition_ferqyr$ = function (canvas, mouseEvent) {
+    var rect = canvas.getBoundingClientRect();
+    var scaleX = canvas.width / rect.width;
+    var scaleY = canvas.height / rect.height;
+    var x = (mouseEvent.clientX - rect.left) * scaleX;
+    var y = (mouseEvent.clientY - rect.top) * scaleY;
+    return new Coords(numberToInt(x), numberToInt(y));
+  };
   function HtmlUtil$createSliderDiv$lambda(closure$slider, closure$suffix, closure$sliderValue) {
     return function (f) {
       closure$sliderValue.innerHTML = closure$slider.value + closure$suffix;
@@ -7344,19 +7363,21 @@ var QGress = function (_, Kotlin) {
   function MapUtil() {
     MapUtil_instance = this;
     this.redSquare = JSON.parse('[9.373274, 47.422139]');
+    this.chlosterPlatz = JSON.parse('[9.3770000, 47.4240000]');
     this.badRagaz = JSON.parse('[9.500324, 47.0024734]');
     this.gollums = JSON.parse('[8.5952000, 47.3620000]');
     this.escherWyss = JSON.parse('[8.5220562, 47.3907937]');
     this.primeTower = JSON.parse('[8.5183064, 47.3867261]');
-    this.chlosterPlatz = JSON.parse('[9.3770000, 47.4240000]');
     this.gizaPlateau = JSON.parse('[31.1320000, 29.9780000]');
     this.eiffel = JSON.parse('[2.2948595, 48.858243]');
     this.groundZero = JSON.parse('[-74.0123000, 40.7125000]');
-    this.MAP_CENTER = this.redSquare;
+    this.INITIAL_MAP_CENTER = this.chlosterPlatz;
     this.GEO_CTRL_LITERAL = "new mapboxgl.GeolocateControl({'positionOptions':{'enableHighAccuracy':true,'zoom':18},'trackUserLocation':false})";
     this.ZOOM = 18;
     this.MIN_ZOOM = 18;
     this.MAX_ZOOM = 18;
+    this.map = null;
+    this.initMap = null;
     this.OFFSCREEN_CELL_ROWS = 10;
   }
   MapUtil.prototype.initInitialMapbox = function () {
@@ -7368,16 +7389,83 @@ var QGress = function (_, Kotlin) {
   MapUtil.prototype.initShadowMap = function () {
     return new mapboxgl.Map({container: 'shadowMap', style: 'mapbox://styles/zirteq/cjaq7lw9e2y7u2rn7u6xskobn'});
   };
-  function MapUtil$loadMaps$lambda(closure$callback, this$MapUtil) {
-    return function () {
-      this$MapUtil.loadMap_vekcfi$(closure$callback);
-      return Unit;
+  function MapUtil$loadMaps$lambda(closure$isFirstLoad, closure$callback, this$MapUtil) {
+    return function (initMap) {
+      this$MapUtil.loadMap_0(closure$isFirstLoad, initMap, closure$callback);
     };
   }
-  MapUtil.prototype.loadMaps_vekcfi$ = function (callback) {
-    this.loadInitialMap_o14v8n$(MapUtil$loadMaps$lambda(callback, this));
+  MapUtil.prototype.loadMaps_j2gnlp$ = function (isFirstLoad, callback) {
+    println('DEBUG: loadMaps ' + isFirstLoad);
+    this.loadInitialMap_0(isFirstLoad, MapUtil$loadMaps$lambda(isFirstLoad, callback, this));
   };
-  function MapUtil$loadMap$lambda$lambda(this$MapUtil, closure$callback) {
+  function MapUtil$loadInitialMap$addLayers(this$MapUtil) {
+    return function () {
+      if (Styles_getInstance().use3DBuildings) {
+        ensureNotNull(this$MapUtil.initMap).addLayer(this$MapUtil.buildingLayerConfig_0());
+      }
+    };
+  }
+  function MapUtil$loadInitialMap$lambda(closure$addLayers, closure$onLoadCallback, this$MapUtil) {
+    return function () {
+      closure$addLayers();
+      closure$onLoadCallback(ensureNotNull(this$MapUtil.initMap));
+    };
+  }
+  MapUtil.prototype.loadInitialMap_0 = function (isFirstLoad, onLoadCallback) {
+    println('DEBUG: loadInitialMap ' + isFirstLoad);
+    if (isFirstLoad || this.initMap == null) {
+      this.initMap = this.initInitialMapbox();
+    }
+    var $receiver = ensureNotNull(this.initMap);
+    if (isFirstLoad || this.map == null) {
+      $receiver.setMinZoom(this.MIN_ZOOM);
+      $receiver.setMaxZoom(this.MAX_ZOOM);
+      $receiver.setZoom(this.ZOOM);
+      println('DEBUG: loadInitialMap using INITIAL_MAP_CENTER');
+      $receiver.setCenter(this.INITIAL_MAP_CENTER);
+    }
+     else {
+      var currentMapCenter = ensureNotNull(this.map).getCenter();
+      println('DEBUG: loadInitialMap setting center to ' + currentMapCenter);
+      $receiver.setCenter(currentMapCenter);
+    }
+    var addLayers = MapUtil$loadInitialMap$addLayers(this);
+    if (ensureNotNull(this.initMap).loaded()) {
+      addLayers();
+      onLoadCallback(ensureNotNull(this.initMap));
+    }
+     else {
+      ensureNotNull(this.initMap).on('load', MapUtil$loadInitialMap$lambda(addLayers, onLoadCallback, this));
+    }
+  };
+  function MapUtil$loadMap$lambda(this$MapUtil, closure$callback) {
+    return function () {
+      this$MapUtil.loadShadowMap_0(ensureNotNull(this$MapUtil.map).getCenter(), closure$callback);
+    };
+  }
+  MapUtil.prototype.loadMap_0 = function (isFirstLoad, initMap, callback) {
+    println('DEBUG: loadMap ' + isFirstLoad + ' with initMap ' + initMap);
+    if (isFirstLoad || this.map == null) {
+      this.map = this.initMapbox();
+    }
+    var $receiver = ensureNotNull(this.map);
+    $receiver.addControl(new mapboxgl.GeolocateControl({positionOptions: {enableHighAccuracy: true, zoom: 18}, trackUserLocation: false}));
+    $receiver.setMinZoom(this.MIN_ZOOM);
+    $receiver.setMaxZoom(this.MAX_ZOOM);
+    $receiver.setZoom(this.ZOOM);
+    println('DEBUG: loadMap setting center to ' + initMap.getCenter());
+    if (isFirstLoad) {
+      $receiver.setCenter(initMap.getCenter());
+    }
+    DrawUtil_getInstance().drawLoadingText_61zpoe$('Loading map..');
+    if (ensureNotNull(this.map).loaded()) {
+      this.loadShadowMap_0(ensureNotNull(this.map).getCenter(), callback);
+    }
+     else {
+      ensureNotNull(this.map).on('load', MapUtil$loadMap$lambda(this, callback));
+    }
+  };
+  function MapUtil$loadShadowMap$lambda(this$MapUtil, closure$callback) {
     return function () {
       var tmp$, tmp$_0;
       var maps = document.getElementsByClassName('mapboxgl-canvas');
@@ -7394,43 +7482,16 @@ var QGress = function (_, Kotlin) {
       closure$callback(grid);
     };
   }
-  function MapUtil$loadMap$lambda(this$MapUtil, closure$callback) {
-    return function () {
-      DrawUtil_getInstance().drawLoadingText_61zpoe$('Creating grid..');
-      var shadowMap = this$MapUtil.initShadowMap();
-      shadowMap.setMinZoom(this$MapUtil.MIN_ZOOM);
-      shadowMap.setMaxZoom(this$MapUtil.MAX_ZOOM);
-      shadowMap.setZoom(this$MapUtil.ZOOM);
-      shadowMap.setCenter(this$MapUtil.MAP_CENTER);
-      shadowMap.on('load', MapUtil$loadMap$lambda$lambda(this$MapUtil, closure$callback));
-    };
-  }
-  MapUtil.prototype.loadMap_vekcfi$ = function (callback) {
-    var map = this.initMapbox();
-    map.setMinZoom(this.MIN_ZOOM);
-    map.setMaxZoom(this.MAX_ZOOM);
-    map.setZoom(this.ZOOM);
-    map.setCenter(this.MAP_CENTER);
-    map.addControl(new mapboxgl.GeolocateControl({positionOptions: {enableHighAccuracy: true, zoom: 18}, trackUserLocation: false}));
-    DrawUtil_getInstance().drawLoadingText_61zpoe$('Loading map..');
-    map.on('load', MapUtil$loadMap$lambda(this, callback));
-  };
-  function MapUtil$loadInitialMap$lambda(closure$map, this$MapUtil, closure$callback) {
-    return function () {
-      if (Styles_getInstance().use3DBuildings) {
-        closure$map.addLayer(this$MapUtil.buildingLayerConfig_0());
-      }
-      closure$callback();
-    };
-  }
-  MapUtil.prototype.loadInitialMap_o14v8n$ = function (callback) {
-    var map = this.initInitialMapbox();
-    map.setMinZoom(this.MIN_ZOOM);
-    map.setMaxZoom(this.MAX_ZOOM);
-    map.setZoom(this.ZOOM);
-    map.setCenter(this.MAP_CENTER);
-    map.addControl(new mapboxgl.GeolocateControl({positionOptions: {enableHighAccuracy: true, zoom: 18}, trackUserLocation: false}));
-    map.on('load', MapUtil$loadInitialMap$lambda(map, this, callback));
+  MapUtil.prototype.loadShadowMap_0 = function (center, callback) {
+    println('DEBUG: loadShadowMap');
+    DrawUtil_getInstance().drawLoadingText_61zpoe$('Creating grid..');
+    var shadowMap = this.initShadowMap();
+    shadowMap.setMinZoom(this.MIN_ZOOM);
+    shadowMap.setMaxZoom(this.MAX_ZOOM);
+    shadowMap.setZoom(this.ZOOM);
+    println('DEBUG: loadShadowMap center ' + center);
+    shadowMap.setCenter(center);
+    shadowMap.on('load', MapUtil$loadShadowMap$lambda(this, callback));
   };
   MapUtil.prototype.buildingLayerConfig_0 = function () {
     return JSON.parse('{\n            "id": "3d-buildings",\n            "source": "composite",\n            "source-layer": "building",\n            "filter": ["==", "extrude", "true"],\n            "type": "fill-extrusion",\n            "minzoom": 15,\n            "paint": {\n                "fill-extrusion-color": "#333333",\n                "fill-extrusion-height": ["interpolate", ["linear"], ["zoom"], 15, 0, 15.05, ["get", "height"]],\n                "fill-extrusion-base": ["interpolate", ["linear"], ["zoom"], 15, 0, 15.05, ["get", "min_height"]],\n                "fill-extrusion-opacity": 0.9\n            }\n        }');
@@ -7951,13 +8012,13 @@ var QGress = function (_, Kotlin) {
       accu.v += element_1.first;
       if (!(element_1.first > 0.0)) {
         var message = 'Check failed.';
-        throw new IllegalStateException(message.toString());
+        throw IllegalStateException_init(message.toString());
       }
       if (accu.v >= rand) {
         return element_1.second;
       }
     }
-    throw new IllegalArgumentException('Invalid Q-values: ' + probabilityList);
+    throw IllegalArgumentException_init('Invalid Q-values: ' + probabilityList);
   };
   Util.prototype.generatePortalName = function () {
     var separator = this.random() < 0.3 ? '-' : ' ';
@@ -8220,9 +8281,9 @@ var QGress = function (_, Kotlin) {
   };
   Complex.prototype.div_p4p8i0$ = function (c) {
     if (c.re === 0.0)
-      throw new IllegalArgumentException('Real part is 0.');
+      throw IllegalArgumentException_init('Real part is 0.');
     if (c.im === 0.0)
-      throw new IllegalArgumentException('Imaginary part is 0.');
+      throw IllegalArgumentException_init('Imaginary part is 0.');
     var d = this.addSquares_0(c.re, c.im);
     return new Complex((this.re * c.re + this.im * c.im) / d, (this.im * c.re - this.re * c.im) / d);
   };
@@ -8455,7 +8516,7 @@ var QGress = function (_, Kotlin) {
     var grid = destination_1;
     if (!!grid.isEmpty()) {
       var message = 'Check failed.';
-      throw new IllegalStateException(message.toString());
+      throw IllegalStateException_init(message.toString());
     }
     var randomCell = first(Util_getInstance().shuffle_bemo1h$(toList(grid)));
     var pos = PathUtil_getInstance().shadowPosToPos_lfj9be$(randomCell.first);
@@ -8469,7 +8530,7 @@ var QGress = function (_, Kotlin) {
     var tmp$;
     if (!!grid.isEmpty()) {
       var message = 'Check failed.';
-      throw new IllegalStateException(message.toString());
+      throw IllegalStateException_init(message.toString());
     }
     var random = this.createRandomNoOffset_0();
     if (ensureNotNull(grid.get_11rb$(PathUtil_getInstance().posToShadowPos_lfj9be$(random))).isPassable) {
@@ -8692,7 +8753,7 @@ var QGress = function (_, Kotlin) {
     var yDiff = this.to.lat - this.from.lat;
     if (!(xDiff !== 0.0 || yDiff !== 0.0)) {
       var message = 'Check failed.';
-      throw new IllegalStateException(message.toString());
+      throw IllegalStateException_init(message.toString());
     }
     var u = ((geoPoint.lng - this.from.lng) * xDiff + (geoPoint.lat - this.from.lat) * yDiff) / (xDiff * xDiff + yDiff * yDiff);
     if (u < 0)
@@ -8824,7 +8885,7 @@ var QGress = function (_, Kotlin) {
     var yDiff = this.to.y - this.from.y | 0;
     if (!(xDiff !== 0.0 || yDiff !== 0.0)) {
       var message = 'Check failed.';
-      throw new IllegalStateException(message.toString());
+      throw IllegalStateException_init(message.toString());
     }
     var u = ((point.x - this.from.x | 0) * xDiff + (point.y - this.from.y | 0) * yDiff) / (xDiff * xDiff + yDiff * yDiff);
     if (u < 0)
@@ -8921,10 +8982,6 @@ var QGress = function (_, Kotlin) {
     interfaces: []
   };
   _.main_kand9s$ = main;
-  _.isNotHandledByCanvas_lfj9be$ = isNotHandledByCanvas;
-  _.handleMouseClick_9ojx7i$ = handleMouseClick;
-  _.handleMouseMove_9ojx7i$ = handleMouseMove;
-  _.findMousePosition_ferqyr$ = findMousePosition;
   Object.defineProperty(_, 'World', {
     get: World_getInstance
   });

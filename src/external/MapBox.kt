@@ -5,6 +5,8 @@ external class MapBox {
     fun setMaxZoom(zoom: Int)
     fun setZoom(zoom: Int)
     fun setCenter(latLng: JSON)
+    fun getCenter(): JSON
+    fun loaded(): Boolean
     fun addLayer(config: JSON)
     fun addControl(control: String)
     fun on(actionName: String, callback: Function<Unit>)

@@ -8,6 +8,7 @@ import config.Styles
 import external.MapBox
 import org.khronos.webgl.Uint8Array
 import org.khronos.webgl.get
+import org.w3c.dom.HTMLButtonElement
 import org.w3c.dom.ImageData
 import org.w3c.dom.get
 import util.data.Cell
@@ -16,15 +17,15 @@ import kotlin.browser.document
 
 object MapUtil {
     val redSquare: JSON = JSON.parse("[9.373274, 47.422139]")
+    val chlosterPlatz: JSON = JSON.parse("[9.3770000, 47.4240000]")
     val badRagaz: JSON = JSON.parse("[9.500324, 47.0024734]")
     val gollums: JSON = JSON.parse("[8.5952000, 47.3620000]")
     val escherWyss: JSON = JSON.parse("[8.5220562, 47.3907937]")
     val primeTower: JSON = JSON.parse("[8.5183064, 47.3867261]")
-    val chlosterPlatz: JSON = JSON.parse("[9.3770000, 47.4240000]")
     val gizaPlateau: JSON = JSON.parse("[31.1320000, 29.9780000]")
     val eiffel: JSON = JSON.parse("[2.2948595, 48.858243]")
     val groundZero: JSON = JSON.parse("[-74.0123000, 40.7125000]")
-    val MAP_CENTER = redSquare
+    val INITIAL_MAP_CENTER = chlosterPlatz
 
     fun initInitialMapbox() = js("new mapboxgl.Map({'container':'initialMap','style':'mapbox://styles/zirteq/cjazhkywuppf42rnx453i73z5'});")
     fun initMapbox() = js("new mapboxgl.Map({'container':'map','style':'mapbox://styles/zirteq/cjb19u1dy02a82slyklj33o6g'});")
@@ -35,60 +36,110 @@ object MapUtil {
     val MIN_ZOOM = 18
     val MAX_ZOOM = 18
 
-    fun loadMaps(callback: (Map<Coords, Cell>) -> Unit) {
-        loadInitialMap({
-            loadMap(callback)
+    var map: MapBox? = null
+    var initMap: MapBox? = null
+
+    fun loadMaps(isFirstLoad: Boolean, callback: (Map<Coords, Cell>) -> Unit) {
+        println("DEBUG: loadMaps $isFirstLoad")
+        loadInitialMap(isFirstLoad, fun(initMap: MapBox) {
+            loadMap(isFirstLoad, initMap, callback)
         })
+    }
+
+    private fun loadInitialMap(isFirstLoad: Boolean, onLoadCallback: (MapBox) -> Unit) {
+        println("DEBUG: loadInitialMap $isFirstLoad")
+        if (isFirstLoad || initMap == null) {
+            initMap = initInitialMapbox()
+        }
+        with(initMap!!) {
+            if (isFirstLoad || map == null) {
+                //addControl(js(GEO_CTRL_LITERAL))
+                setMinZoom(MIN_ZOOM)
+                setMaxZoom(MAX_ZOOM)
+                setZoom(ZOOM)
+                println("DEBUG: loadInitialMap using INITIAL_MAP_CENTER")
+                setCenter(INITIAL_MAP_CENTER)
+            } else {
+                val currentMapCenter = map!!.getCenter()
+                println("DEBUG: loadInitialMap setting center to ${currentMapCenter}")
+                setCenter(currentMapCenter)
+            }
+        }
+        fun addLayers() {
+            if (Styles.use3DBuildings) {
+                initMap!!.addLayer(buildingLayerConfig())
+            }
+        }
+        if (initMap!!.loaded()) {
+            addLayers()
+            onLoadCallback(initMap!!)
+        } else {
+            initMap!!.on("load", fun() {
+                addLayers()
+                onLoadCallback(initMap!!)
+            })
+        }
     }
 
     //https://www.mapbox.com/mapbox-gl-js/api/
-    fun loadMap(callback: (Map<Coords, Cell>) -> Unit) {
-        val map: MapBox = initMapbox()
-        map.setMinZoom(MIN_ZOOM)
-        map.setMaxZoom(MAX_ZOOM)
-        map.setZoom(ZOOM)
-        map.setCenter(MAP_CENTER)
-        map.addControl(js(GEO_CTRL_LITERAL))
+    private fun loadMap(isFirstLoad: Boolean, initMap: MapBox, callback: (Map<Coords, Cell>) -> Unit) {
+        println("DEBUG: loadMap $isFirstLoad with initMap $initMap")
+        if (isFirstLoad || map == null) {
+            map = initMapbox()
+        }
+        with(map!!) {
+            addControl(js(GEO_CTRL_LITERAL))
+            setMinZoom(MIN_ZOOM)
+            setMaxZoom(MAX_ZOOM)
+            setZoom(ZOOM)
+            println("DEBUG: loadMap setting center to ${initMap.getCenter()}")
+            if (isFirstLoad) {
+                setCenter(initMap.getCenter())
+            }
+        }
         DrawUtil.drawLoadingText("Loading map..")
-        map.on("load", fun() {
-            DrawUtil.drawLoadingText("Creating grid..")
-            val shadowMap: MapBox = initShadowMap()
-            shadowMap.setMinZoom(MIN_ZOOM)
-            shadowMap.setMaxZoom(MAX_ZOOM)
-            shadowMap.setZoom(ZOOM)
-            shadowMap.setCenter(MAP_CENTER)
-            shadowMap.on("load", fun() {
-                val maps = document.getElementsByClassName("mapboxgl-canvas")
-                val shadowMapCan: dynamic = maps.get(2)
-
-                val gl: dynamic = shadowMapCan.getContext("webgl")
-                val width = gl.canvas.width
-                val height = gl.canvas.height
-                val rawBuf = Uint8Array((width * height * 4) as Int)
-                gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, rawBuf)
-                val imageData: ImageData = World.createStreetImage(rawBuf, gl.canvas.width, gl.canvas.height)
-                World.shadowStreetMap = imageData
-
-                document.getElementById("shadowMap")?.remove()
-                val grid = createGrid(imageData, width, height)
-
-                callback(grid)
+        if (map!!.loaded()) {
+            loadShadowMap(map!!.getCenter(), callback)
+        } else {
+            map!!.on("load", fun() {
+                loadShadowMap(map!!.getCenter(), callback)
             })
-        })
+        }
     }
 
-    fun loadInitialMap(callback: () -> Unit) {
-        val map: MapBox = initInitialMapbox()
-        map.setMinZoom(MIN_ZOOM)
-        map.setMaxZoom(MAX_ZOOM)
-        map.setZoom(ZOOM)
-        map.setCenter(MAP_CENTER)
-        map.addControl(js(GEO_CTRL_LITERAL))
-        map.on("load", fun() {
-            if (Styles.use3DBuildings) {
-                map.addLayer(buildingLayerConfig())
-            }
-            callback()
+    private fun loadShadowMap(center: JSON, callback: (Map<Coords, Cell>) -> Unit) {
+        println("DEBUG: loadShadowMap")
+        DrawUtil.drawLoadingText("Creating grid..")
+        val shadowMap = initShadowMap()
+        with(shadowMap) {
+            setMinZoom(MIN_ZOOM)
+            setMaxZoom(MAX_ZOOM)
+            setZoom(ZOOM)
+            println("DEBUG: loadShadowMap center ${center}")
+            setCenter(center)
+        }
+        shadowMap.on("load", fun() {
+            val maps = document.getElementsByClassName("mapboxgl-canvas")
+            val shadowMapCan: dynamic = maps.get(2)
+
+            val gl: dynamic = shadowMapCan.getContext("webgl")
+            val width = gl.canvas.width
+            val height = gl.canvas.height
+            val rawBuf = Uint8Array((width * height * 4) as Int)
+            gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, rawBuf)
+            val imageData: ImageData = World.createStreetImage(rawBuf, gl.canvas.width, gl.canvas.height)
+            World.shadowStreetMap = imageData
+
+            document.getElementById("shadowMap")?.remove()
+            val grid = createGrid(imageData, width, height)
+
+            /*
+            map.on("load", fun() { //replace with a handler that reloads the world.
+                World.reload()
+            })
+            */
+
+            callback(grid)
         })
     }
 
