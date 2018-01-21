@@ -3,12 +3,12 @@ package config
 object Config {
     val seed = 111
 
-    val startPortals = 10
-    val startFrogs = 10
-    val startSmurfs = 10
+    val startPortals = 8
+    val startFrogs = 13
+    val startSmurfs = 13
 
-    val maxFrogs = 500
-    val maxSmurfs = 500
+    val maxFrogs = 100
+    val maxSmurfs = 100
     val startNonFaction = 500 // ((maxFrogs + maxSmurfs) * 0.5 / Constants.phi).toInt()
 
     val isAutostart = true

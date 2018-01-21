@@ -2663,11 +2663,11 @@ var QGress = function (_, Kotlin) {
   function Config() {
     Config_instance = this;
     this.seed = 111;
-    this.startPortals = 10;
-    this.startFrogs = 10;
-    this.startSmurfs = 10;
-    this.maxFrogs = 500;
-    this.maxSmurfs = 500;
+    this.startPortals = 8;
+    this.startFrogs = 13;
+    this.startSmurfs = 13;
+    this.maxFrogs = 100;
+    this.maxSmurfs = 100;
     this.startNonFaction = 500;
     this.isAutostart = true;
     this.vectorSmoothCount = 5;
