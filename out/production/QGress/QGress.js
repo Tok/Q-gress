@@ -14,12 +14,12 @@ var QGress = function (_, Kotlin) {
   var listOf = Kotlin.kotlin.collections.listOf_i5x0yv$;
   var println = Kotlin.kotlin.io.println_s8jyv4$;
   var take = Kotlin.kotlin.collections.take_ba2ldo$;
+  var Unit = Kotlin.kotlin.Unit;
   var toList = Kotlin.kotlin.collections.toList_abgq59$;
   var throwCCE = Kotlin.throwCCE;
   var toSet = Kotlin.kotlin.collections.toSet_7wnvza$;
   var zip = Kotlin.kotlin.collections.zip_45mdf7$;
   var toMap = Kotlin.kotlin.collections.toMap_6hr0sd$;
-  var Unit = Kotlin.kotlin.Unit;
   var ensureNotNull = Kotlin.ensureNotNull;
   var distinct = Kotlin.kotlin.collections.distinct_7wnvza$;
   var filterNotNull = Kotlin.kotlin.collections.filterNotNull_m3lr2h$;
@@ -542,7 +542,40 @@ var QGress = function (_, Kotlin) {
     return new Line(this.pos, this.destination);
   };
   Agent.prototype.getLevel = function () {
-    return 8;
+    var tmp$;
+    tmp$ = this.ap;
+    if (tmp$ >= 0 && tmp$ <= 10000)
+      return 1;
+    else if (tmp$ >= 10000 && tmp$ <= 30000)
+      return 2;
+    else if (tmp$ >= 30000 && tmp$ <= 70000)
+      return 3;
+    else if (tmp$ >= 70000 && tmp$ <= 150000)
+      return 4;
+    else if (tmp$ >= 150000 && tmp$ <= 300000)
+      return 5;
+    else if (tmp$ >= 300000 && tmp$ <= 600000)
+      return 6;
+    else if (tmp$ >= 600000 && tmp$ <= 1200000)
+      return 7;
+    else if (tmp$ >= 1200000 && tmp$ <= 2400000)
+      return 8;
+    else if (tmp$ >= 2400000 && tmp$ <= 4000000)
+      return 9;
+    else if (tmp$ >= 4000000 && tmp$ <= 6000000)
+      return 10;
+    else if (tmp$ >= 6000000 && tmp$ <= 8400000)
+      return 11;
+    else if (tmp$ >= 8400000 && tmp$ <= 12000000)
+      return 12;
+    else if (tmp$ >= 12000000 && tmp$ <= 17000000)
+      return 13;
+    else if (tmp$ >= 17000000 && tmp$ <= 24000000)
+      return 14;
+    else if (tmp$ >= 24000000 && tmp$ <= 40000000)
+      return 15;
+    else
+      return 16;
   };
   Agent.prototype.getXmCapacity = function () {
     switch (this.getLevel()) {
@@ -562,12 +595,46 @@ var QGress = function (_, Kotlin) {
         return 9000;
       case 8:
         return 10000;
-      default:return 10000;
+      case 9:
+        return 10900;
+      case 10:
+        return 11700;
+      case 11:
+        return 12400;
+      case 12:
+        return 13000;
+      case 13:
+        return 13500;
+      case 14:
+        return 13900;
+      case 15:
+        return 14200;
+      default:return 14400;
+    }
+  };
+  Agent.prototype.getLinkingRange = function () {
+    switch (this.getLevel()) {
+      case 9:
+        return 2250;
+      case 10:
+        return 2500;
+      case 11:
+        return 2750;
+      case 12:
+        return 3000;
+      case 13:
+        return 3250;
+      case 14:
+        return 3500;
+      case 15:
+        return 3750;
+      case 16:
+        return 4000;
+      default:return 2000;
     }
   };
   Agent.prototype.act = function () {
-    var tmp$;
-    this.xm = this.xm + 10 | 0;
+    var tmp$, tmp$_0;
     var useLocationFix = false;
     if (this.isBusy_za3lpa$(World_getInstance().tick)) {
       if (useLocationFix && Util_getInstance().random() < 0.005) {
@@ -576,13 +643,19 @@ var QGress = function (_, Kotlin) {
       return this;
     }
     tmp$ = this.action.item;
-    if (equals(tmp$, ActionItem$Companion_getInstance().MOVE))
-      return this.moveCloserToDestinationPortal_0();
+    if (equals(tmp$, ActionItem$Companion_getInstance().RECHARGE))
+      tmp$_0 = this.rechargePortal();
+    else if (equals(tmp$, ActionItem$Companion_getInstance().RECYCLE))
+      tmp$_0 = this.recycleItems();
+    else if (equals(tmp$, ActionItem$Companion_getInstance().MOVE))
+      tmp$_0 = this.moveCloserToDestinationPortal_0();
     else if (equals(tmp$, ActionItem$Companion_getInstance().ATTACK))
-      return this.attackPortal();
+      tmp$_0 = this.attackPortal();
     else if (equals(tmp$, ActionItem$Companion_getInstance().DEPLOY))
-      return this.deployPortal();
-    return this.doSomething();
+      tmp$_0 = this.deployPortal();
+    else
+      tmp$_0 = this.doSomething();
+    return tmp$_0;
   };
   Agent.prototype.doSomething = function () {
     var tmp$, tmp$_0, tmp$_1;
@@ -738,6 +811,7 @@ var QGress = function (_, Kotlin) {
     if (this.isAtActionPortal()) {
       return this.doNothing();
     }
+    this.xm = this.xm + 2 | 0;
     var shadowPos = PathUtil_getInstance().posToShadowPos_lfj9be$(this.pos);
     var force = (tmp$ = this.actionPortal.vectorField.get_11rb$(shadowPos)) != null ? tmp$ : this.velocity;
     var mag = this.skills.speed * (World_getInstance().speed / 100 | 0);
@@ -768,6 +842,12 @@ var QGress = function (_, Kotlin) {
     var rawNextX = this.pos.x - rawDiffX | 0;
     var rawNextY = this.pos.y - rawDiffY | 0;
     return this.copy_lmq102$(void 0, void 0, new Coords(rawNextX, rawNextY));
+  };
+  Agent.prototype.rechargePortal = function () {
+    return this.copy_lmq102$(void 0, void 0, void 0, void 0, void 0, void 0, void 0, void 0, this.ap + 10 | 0);
+  };
+  Agent.prototype.recycleItems = function () {
+    return this;
   };
   function Agent$attackPortal$findExactDestination(this$Agent) {
     return function () {
@@ -820,6 +900,37 @@ var QGress = function (_, Kotlin) {
       var selectedXmps = tmp$_0;
       if (selectedXmps == null || selectedXmps.isEmpty()) {
         return this$Agent.goDoSomethingElse();
+      }
+      var tmp$_1;
+      tmp$_1 = selectedXmps.iterator();
+      while (tmp$_1.hasNext()) {
+        var element = tmp$_1.next();
+        var this$Agent_0 = this$Agent;
+        switch (element.level.level) {
+          case 1:
+            this$Agent_0.xm = this$Agent_0.xm - 10 | 0;
+            break;
+          case 2:
+            this$Agent_0.xm = this$Agent_0.xm - 20 | 0;
+            break;
+          case 3:
+            this$Agent_0.xm = this$Agent_0.xm - 70 | 0;
+            break;
+          case 4:
+            this$Agent_0.xm = this$Agent_0.xm - 140 | 0;
+            break;
+          case 5:
+            this$Agent_0.xm = this$Agent_0.xm - 250 | 0;
+            break;
+          case 6:
+            this$Agent_0.xm = this$Agent_0.xm - 360 | 0;
+            break;
+          case 7:
+            this$Agent_0.xm = this$Agent_0.xm - 490 | 0;
+            break;
+          default:this$Agent_0.xm = this$Agent_0.xm - 640 | 0;
+            break;
+        }
       }
       Queues_getInstance().registerAttack_wr4det$(this$Agent, selectedXmps);
       this$Agent.inventory.consumeXmps_ss5kb$(selectedXmps);
@@ -2383,6 +2494,8 @@ var QGress = function (_, Kotlin) {
     ActionItem$Companion_instance = this;
     this.MOVE = new ActionItem('moving', ' ', 1);
     this.WAIT = new ActionItem('waiting', 'o', 1);
+    this.RECHARGE = new ActionItem('recharge', 'r', 1);
+    this.RECYCLE = new ActionItem('recycle', 'c', 1);
     this.HACK = new ActionItem('hacking', ' !', 5);
     this.GLYPH = new ActionItem('glyphing', '?', 40);
     this.ATTACK = new ActionItem('attacking', '-', 5);
@@ -2802,7 +2915,7 @@ var QGress = function (_, Kotlin) {
       var isCloseEnough = distanceRatio < Constants_getInstance().phi - 1;
       var isCritical = isCloseEnough && Util_getInstance().random() <= XmpBurster$Companion_getInstance().CRIT_RATE;
       var damageValue = numberToInt(this.calcBaseDamage_0(isCritical) * distanceRatio * XmpBurster$Companion_getInstance().GLOBAL_DAMAGE_MULTIPLIER);
-      item.takeDamage_za3lpa$(damageValue);
+      item.takeDamage_2b7tta$(agent, damageValue);
       tmp$_0.call(destination, new Damage(damageValue, ensureNotNull(item.coords), isCritical));
     }
     return destination;
@@ -3086,14 +3199,15 @@ var QGress = function (_, Kotlin) {
     var tmp$;
     this.health = this.health - numberToInt(this.health * Resonator$Companion_getInstance().DECAY_RATIO) | 0;
     if (this.health <= 0) {
-      (tmp$ = this.portal) != null ? (tmp$.removeReso_iiw8yf$(ensureNotNull(this.octant)), Unit) : null;
+      (tmp$ = this.portal) != null ? (tmp$.removeReso_j436sm$(ensureNotNull(this.octant), null), Unit) : null;
     }
   };
-  Resonator.prototype.takeDamage_za3lpa$ = function (damage) {
+  Resonator.prototype.takeDamage_2b7tta$ = function (agent, damage) {
     var tmp$;
     this.health = this.health - damage | 0;
     if (this.health <= 0) {
-      (tmp$ = this.portal) != null ? (tmp$.removeReso_iiw8yf$(ensureNotNull(this.octant)), Unit) : null;
+      agent.ap = agent.ap + 75 | 0;
+      (tmp$ = this.portal) != null ? (tmp$.removeReso_j436sm$(ensureNotNull(this.octant), agent), Unit) : null;
     }
   };
   Resonator.prototype.deploy_njiqqf$ = function (portal, octant, coords) {
@@ -5271,8 +5385,13 @@ var QGress = function (_, Kotlin) {
     newStuff.addAll_brywnq$(this.obtainPowerCubes_0(level, agent));
     newStuff.add_11rb$(PortalKey$Companion_getInstance().tryHack_gju65e$(this, agent));
     agent.xm = agent.xm - (50 * this.calculateLevel() | 0) | 0;
-    if (this.owner != null && !equals(agent.faction, (tmp$ = this.owner) != null ? tmp$.faction : null)) {
+    var isEnemyPortal = this.owner != null && !equals(agent.faction, (tmp$ = this.owner) != null ? tmp$.faction : null);
+    if (isEnemyPortal) {
       agent.ap = agent.ap + 100 | 0;
+      agent.xm = agent.xm - (level * 300 | 0) | 0;
+    }
+     else {
+      agent.xm = agent.xm - (level * 50 | 0) | 0;
     }
     return toMutableList(filterNotNull(newStuff));
   };
@@ -5412,36 +5531,80 @@ var QGress = function (_, Kotlin) {
       }
     }
   };
+  Portal.prototype.deployMods_45mt8d$ = function (agent, mods) {
+    var isCommon = true;
+    var isRare = false;
+    var isVeryRare = false;
+    if (isCommon) {
+      agent.xm = agent.xm - 400 | 0;
+    }
+    if (isRare) {
+      agent.xm = agent.xm - 800 | 0;
+    }
+    if (isVeryRare) {
+      agent.xm = agent.xm - 1000 | 0;
+    }
+  };
   Portal.prototype.deploy_en6fu0$ = function (agent, resos, distance) {
-    if (this.owner == null) {
+    var isCapture = this.owner == null;
+    if (isCapture) {
       this.owner = agent;
       Com_getInstance().addMessage_61zpoe$(agent.toString() + ' captured ' + this + '.');
-      agent.ap = agent.ap + 500 | 0;
     }
+    var $receiver = this.resoSlots;
     var tmp$;
-    tmp$ = resos.entries.iterator();
+    var result = LinkedHashMap_init();
+    tmp$ = $receiver.entries.iterator();
     while (tmp$.hasNext()) {
-      var element = tmp$.next();
-      var octant = element.key;
-      var resonator = element.value;
-      var tmp$_0, tmp$_1;
-      var oldDistance = (tmp$_0 = this.resoSlots.get_11rb$(octant)) != null ? tmp$_0.distance : null;
-      var newDistance = (tmp$_1 = oldDistance === 0 ? distance : oldDistance) != null ? tmp$_1 : distance;
+      var entry = tmp$.next();
+      if (!entry.value.isEmpty()) {
+        result.put_xwzc9p$(entry.key, entry.value);
+      }
+    }
+    var initialResoCount = result.size;
+    var a = resos.size;
+    var b = 8 - initialResoCount | 0;
+    var firstResoCount = Math_0.max(a, b);
+    var tmp$_0, tmp$_0_0;
+    var index = 0;
+    tmp$_0 = resos.entries.iterator();
+    while (tmp$_0.hasNext()) {
+      var item = tmp$_0.next();
+      var index_0 = (tmp$_0_0 = index, index = tmp$_0_0 + 1 | 0, tmp$_0_0);
+      var octant = item.key;
+      var resonator = item.value;
+      var tmp$_1, tmp$_2;
+      var oldReso = this.resoSlots.get_11rb$(octant);
+      if (isCapture && index_0 === 0) {
+        agent.ap = agent.ap + 500 | 0;
+      }
+       else if (index_0 < firstResoCount) {
+        agent.ap = agent.ap + 125 | 0;
+      }
+       else if (index_0 === firstResoCount && (firstResoCount + initialResoCount | 0) === 8) {
+        agent.ap = agent.ap + 250 | 0;
+      }
+       else if (!((tmp$_1 = oldReso != null ? oldReso.isOwnedBy_912u9o$(agent) : null) != null ? tmp$_1 : false)) {
+        agent.ap = agent.ap + 65 | 0;
+      }
+      agent.xm = agent.xm - (resonator.level.level * 20 | 0) | 0;
+      var oldDistance = oldReso != null ? oldReso.distance : null;
+      var newDistance = (tmp$_2 = oldDistance === 0 ? distance : oldDistance) != null ? tmp$_2 : distance;
       var slot = new ResonatorSlot(agent.key(), resonator, newDistance);
       this.resoSlots.put_xwzc9p$(octant, slot);
       var xx = this.location.x + octant.calcXOffset_za3lpa$(slot.distance) | 0;
       var yy = this.location.y + octant.calcYOffset_za3lpa$(slot.distance) | 0;
       resonator.deploy_njiqqf$(this, octant, new Coords(xx, yy));
     }
-    var tmp$_2 = agent.inventory;
+    var tmp$_3 = agent.inventory;
     var destination = ArrayList_init(resos.size);
-    var tmp$_3;
-    tmp$_3 = resos.entries.iterator();
-    while (tmp$_3.hasNext()) {
-      var item = tmp$_3.next();
-      destination.add_11rb$(item.value);
+    var tmp$_4;
+    tmp$_4 = resos.entries.iterator();
+    while (tmp$_4.hasNext()) {
+      var item_0 = tmp$_4.next();
+      destination.add_11rb$(item_0.value);
     }
-    tmp$_2.consumeResos_tvxik5$(destination);
+    tmp$_3.consumeResos_tvxik5$(destination);
   };
   Portal.prototype.destroy_za3lpa$ = function (tick) {
     this.resoSlots.clear();
@@ -5500,7 +5663,7 @@ var QGress = function (_, Kotlin) {
     }
     World_getInstance().allPortals.remove_11rb$(this);
   };
-  Portal.prototype.removeReso_iiw8yf$ = function (octant) {
+  Portal.prototype.removeReso_j436sm$ = function (octant, agent) {
     this.resoSlots.put_xwzc9p$(octant, new ResonatorSlot(null, null, 0));
     var $receiver = this.resoSlots;
     var destination = LinkedHashMap_init();
@@ -5524,6 +5687,9 @@ var QGress = function (_, Kotlin) {
           var element_1 = tmp$_1.next();
           var tmp$_2;
           if ((tmp$_2 = element_1.destination) != null ? tmp$_2.equals(this) : null) {
+            if (agent != null) {
+              agent.ap = agent.ap + 187 | 0;
+            }
             element_0.links.remove_11rb$(element_1);
           }
         }
@@ -5533,6 +5699,9 @@ var QGress = function (_, Kotlin) {
           var element_2 = tmp$_3.next();
           var tmp$_4, tmp$_5;
           if (((tmp$_4 = element_2.primaryAnchor) != null ? tmp$_4.equals(this) : null) || ((tmp$_5 = element_2.secondaryAnchor) != null ? tmp$_5.equals(this) : null)) {
+            if (agent != null) {
+              agent.ap = agent.ap + 750 | 0;
+            }
             element_0.fields.remove_11rb$(element_2);
           }
         }

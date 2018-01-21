@@ -36,19 +36,24 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
     fun lineToPortal(portal: Portal) = Line(pos, portal.location)
     fun lineToDestination() = Line(pos, destination)
 
-    fun getLevel(): Int = 8 //FIXME
-    /*
     fun getLevel(): Int = when (ap) {
         in 0..10000 -> 1
-        in 3000..10000 -> 2
-        in 3000..10000 -> 3
-        in 3000..10000 -> 4
-        in 3000..10000 -> 5
-        in 3000..10000 -> 6
-        in 3000..10000 -> 7
-        else -> 8 //TODO
+        in 10000..30000 -> 2
+        in 30000..70000 -> 3
+        in 70000..150000 -> 4
+        in 150000..300000 -> 5
+        in 300000..600000 -> 6
+        in 600000..1200000 -> 7
+        in 1200000..2400000 -> 8
+        in 2400000..4000000 -> 9 //+ 1 gold 4 silver
+        in 4000000..6000000 -> 10 //+ 2 gold 5 silver
+        in 6000000..8400000 -> 11 //+ 4 gold 6 silver
+        in 8400000..12000000 -> 12 //+ 6 gold 7 silver
+        in 12000000..17000000 -> 13 //+ 1 Platinum 7 Gold
+        in 17000000..24000000 -> 14 //+ 2 Platinum 7 Gold
+        in 24000000..40000000 -> 15 //+ 3 Platinum 7 Gold
+        else -> 16 //TODO + 2 Black 4 Platinum 7 Gold
     }
-    */
 
     fun getXmCapacity(): Int = when (getLevel()) {
         1 -> 3000
@@ -59,14 +64,30 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         6 -> 8000
         7 -> 9000
         8 -> 10000
-        else -> 10000 //TODO
+        9 -> 10900
+        10 -> 11700
+        11 -> 12400
+        12 -> 13000
+        13 -> 13500
+        14 -> 13900
+        15 -> 14200
+        else -> 14400
+    }
+
+    fun getLinkingRange(): Int = when (getLevel()) {
+        9 -> 2250
+        10 -> 2500
+        11 -> 2750
+        12 -> 3000
+        13 -> 3250
+        14 -> 3500
+        15 -> 3750
+        16 -> 4000
+        else -> 2000
     }
 
     fun act(): Agent {
         //println("DEBUG: ${World.tick} $action")
-
-        xm += 10 //FIXME
-
         val useLocationFix = false
         if (isBusy(World.tick)) {
             if (useLocationFix && Util.random() < 0.005) {
@@ -74,12 +95,14 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
             }
             return this
         }
-        when (action.item) {
-            ActionItem.MOVE -> return moveCloserToDestinationPortal()
-            ActionItem.ATTACK -> return attackPortal()
-            ActionItem.DEPLOY -> return deployPortal()
+        return when (action.item) {
+            ActionItem.RECHARGE -> rechargePortal()
+            ActionItem.RECYCLE -> recycleItems()
+            ActionItem.MOVE -> moveCloserToDestinationPortal()
+            ActionItem.ATTACK -> attackPortal()
+            ActionItem.DEPLOY -> deployPortal()
+            else -> doSomething()
         }
-        return doSomething()
     }
 
     fun doSomething(): Agent {
@@ -91,6 +114,7 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
             this.faction -> doFriendlyPortalAction()
             else -> doEnemyPortalAction()
         }
+        //TODO doNeutralAction (recharge, recycle)
     }
 
     private fun isHackPossible() = actionPortal.canHack(this)
@@ -161,6 +185,7 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         if (isAtActionPortal()) {
             return doNothing()
         }
+        xm += 2 //FIXME
         val shadowPos = PathUtil.posToShadowPos(pos)
         val force = actionPortal.vectorField.get(shadowPos) ?: this.velocity
         val mag = skills.speed * (World.speed / 100)
@@ -186,6 +211,16 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         return this.copy(pos = Coords(rawNextX, rawNextY))
     }
 
+    fun rechargePortal(): Agent {
+        //TODO implement..
+        return this.copy(ap = ap + 10)
+    }
+
+    fun recycleItems(): Agent {
+        //TODO implement..
+        return this
+    }
+
     fun attackPortal(): Agent {
         fun findExactDestination(): Coords {
             if (actionPortal.calcHealth() > 0.5) {
@@ -205,6 +240,18 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
             val selectedXmps = allXmps?.sortedBy { it.level }?.take(min(maxXmps, allXmps.size))
             if (selectedXmps == null || selectedXmps.isEmpty()) {
                 return goDoSomethingElse()
+            }
+            selectedXmps.forEach { xmpBurster ->
+                when (xmpBurster.level.level) {
+                    1 -> xm -= 10
+                    2 -> xm -= 20
+                    3 -> xm -= 70
+                    4 -> xm -= 140
+                    5 -> xm -= 250
+                    6 -> xm -= 360
+                    7 -> xm -= 490
+                    else -> xm -= 640
+                }
             }
             Queues.registerAttack(this, selectedXmps)
             inventory.consumeXmps(selectedXmps)

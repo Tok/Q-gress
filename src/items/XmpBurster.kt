@@ -19,7 +19,7 @@ data class XmpBurster(val level: XmpLevel, val owner: Agent): DeployableItem {
             val isCloseEnough = distanceRatio < (Constants.phi - 1)
             val isCritical = isCloseEnough && Util.random() <= CRIT_RATE
             val damageValue: Int = (calcBaseDamage(isCritical) * distanceRatio * GLOBAL_DAMAGE_MULTIPLIER).toInt()
-            reso.takeDamage(damageValue)
+            reso.takeDamage(agent, damageValue)
             Damage(damageValue, reso.coords!!, isCritical)
         }
     }

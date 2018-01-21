@@ -5,6 +5,8 @@ data class ActionItem(val text: String, val letter: String, val durationSeconds:
     companion object {
         val MOVE = ActionItem("moving", " ", 1)
         val WAIT = ActionItem("waiting", "o", 1)
+        val RECHARGE = ActionItem("recharge", "r", 1)
+        val RECYCLE = ActionItem("recycle", "c", 1)
         val HACK = ActionItem("hacking", " !", 5)
         val GLYPH = ActionItem("glyphing", "?", 40)
         val ATTACK = ActionItem("attacking", "-", 5)

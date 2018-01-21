@@ -17,14 +17,15 @@ data class Resonator(val level: ResonatorLevel, val owner: Agent, var health: In
     fun decay() {
         health = health - (health * DECAY_RATIO).toInt()
         if (health <= 0) {
-            portal?.removeReso(octant!!)
+            portal?.removeReso(octant!!, null)
         }
     }
 
-    fun takeDamage(damage: Int) {
+    fun takeDamage(agent: Agent, damage: Int) {
         this.health = health - damage
         if (health <= 0) {
-            portal?.removeReso(octant!!)
+            agent.ap = agent.ap + 75
+            portal?.removeReso(octant!!, agent)
         }
     }
 

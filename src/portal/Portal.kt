@@ -13,6 +13,7 @@ import config.Styles
 import items.PowerCube
 import items.QgressItem
 import items.XmpBurster
+import items.deployable.DeployableItem
 import items.deployable.Resonator
 import items.deployable.Shield
 import items.deployable.Virus
@@ -165,8 +166,12 @@ data class Portal constructor(val name: String, val location: Coords,
         newStuff.add(PortalKey.tryHack(this, agent))
 
         agent.xm = agent.xm - (50 * this.calculateLevel())
-        if (owner != null && agent.faction != owner?.faction) {
+        val isEnemyPortal = owner != null && agent.faction != owner?.faction
+        if (isEnemyPortal) {
             agent.ap = agent.ap + 100
+            agent.xm = agent.xm - (level * 300)
+        } else {
+            agent.xm = agent.xm - (level * 50)
         }
 
         return newStuff.filterNotNull().toMutableList()
@@ -272,14 +277,43 @@ data class Portal constructor(val name: String, val location: Coords,
         }
     }
 
+    fun deployMods(agent: Agent, mods: Map<Octant, DeployableItem>) {
+        val isCommon = true //TODO implement
+        val isRare = false
+        val isVeryRare = false
+        if (isCommon) {
+            agent.xm = agent.xm - 400
+        }
+        if (isRare) {
+            agent.xm = agent.xm - 800
+        }
+        if (isVeryRare) {
+            agent.xm = agent.xm - 1000
+        }
+    }
+
     fun deploy(agent: Agent, resos: Map<Octant, Resonator>, distance: Int) {
-        if (owner == null) {
+        val isCapture = owner == null
+        if (isCapture) {
             owner = agent
             Com.addMessage("$agent captured $this.")
-            agent.ap = agent.ap + 500
         }
-        resos.forEach { (octant, resonator) ->
-            val oldDistance = resoSlots.get(octant)?.distance
+
+        val initialResoCount = resoSlots.filterValues { !it.isEmpty() }.size
+        val firstResoCount = max(resos.size, (8 - initialResoCount))
+        resos.asIterable().forEachIndexed { index, (octant, resonator) ->
+            val oldReso = resoSlots.get(octant)
+            if (isCapture && index == 0) {
+                agent.ap = agent.ap + 500
+            } else if (index < firstResoCount) {
+                agent.ap = agent.ap + 125
+            } else if (index == firstResoCount && firstResoCount + initialResoCount == 8) {
+                agent.ap = agent.ap + 250
+            } else if (!(oldReso?.isOwnedBy(agent) ?: false)) {
+                agent.ap = agent.ap + 65
+            }
+            agent.xm = agent.xm - (resonator.level.level * 20)
+            val oldDistance = oldReso?.distance
             val newDistance = (if (oldDistance == 0) distance else oldDistance) ?: distance
             //println("DEBUG: $agent deploys ${resonator} to $octant at $this. $distance $oldDistance")
             val slot = ResonatorSlot(agent.key(), resonator, newDistance)
@@ -321,18 +355,24 @@ data class Portal constructor(val name: String, val location: Coords,
         World.allPortals.remove(this)
     }
 
-    fun removeReso(octant: Octant) {
+    fun removeReso(octant: Octant, agent: Agent?) {
         resoSlots.put(octant, ResonatorSlot(null, null, 0))
         val numberOfResosLeft = resoSlots.filter { it.value.resonator != null }.count()
         if (numberOfResosLeft < 2) {
             findConnectedPortals().forEach { connctedPortal ->
                 connctedPortal.links.forEach { link ->
                     if (link.destination == this) {
+                        if (agent != null) {
+                            agent.ap = agent.ap + 187
+                        }
                         connctedPortal.links.remove(link)
                     }
                 }
                 connctedPortal.fields.forEach { field ->
                     if (field.primaryAnchor == this || field.secondaryAnchor == this) {
+                        if (agent != null) {
+                            agent.ap = agent.ap + 750
+                        }
                         connctedPortal.fields.remove(field)
                     }
                 }
