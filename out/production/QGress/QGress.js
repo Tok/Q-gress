@@ -25,13 +25,14 @@ var QGress = function (_, Kotlin) {
   var filterNotNull = Kotlin.kotlin.collections.filterNotNull_m3lr2h$;
   var first = Kotlin.kotlin.collections.first_2p1efm$;
   var hashCode = Kotlin.hashCode;
+  var toString = Kotlin.toString;
   var getValue = Kotlin.kotlin.collections.getValue_t9ocha$;
   var IllegalStateException_init = Kotlin.kotlin.IllegalStateException_init_pdl1vj$;
+  var IntRange = Kotlin.kotlin.ranges.IntRange;
   var Kind_CLASS = Kotlin.Kind.CLASS;
   var Enum = Kotlin.kotlin.Enum;
   var throwISE = Kotlin.throwISE;
   var eachCount = Kotlin.kotlin.collections.eachCount_kji7v9$;
-  var toString = Kotlin.toString;
   var math = Kotlin.kotlin.math;
   var Kind_INTERFACE = Kotlin.Kind.INTERFACE;
   var toList_0 = Kotlin.kotlin.collections.toList_7wnvza$;
@@ -48,7 +49,6 @@ var QGress = function (_, Kotlin) {
   var reversed = Kotlin.kotlin.collections.reversed_7wnvza$;
   var Triple = Kotlin.kotlin.Triple;
   var IllegalArgumentException_init = Kotlin.kotlin.IllegalArgumentException_init_pdl1vj$;
-  var IntRange = Kotlin.kotlin.ranges.IntRange;
   var addClass = Kotlin.kotlin.dom.addClass_hhb33f$;
   var removeClass = Kotlin.kotlin.dom.removeClass_hhb33f$;
   var max = Kotlin.kotlin.collections.max_exjks8$;
@@ -498,6 +498,10 @@ var QGress = function (_, Kotlin) {
   }
   function Agent(faction, name, pos, skills, inventory, action, actionPortal, destination, ap, xm, velocity) {
     Agent$Companion_getInstance();
+    if (ap === void 0)
+      ap = 0;
+    if (xm === void 0)
+      xm = 0;
     if (velocity === void 0)
       velocity = Complex$Companion_getInstance().ZERO;
     this.faction = faction;
@@ -540,7 +544,7 @@ var QGress = function (_, Kotlin) {
   Agent.prototype.getLevel = function () {
     return 8;
   };
-  Agent.prototype.gatXmCapacity = function () {
+  Agent.prototype.getXmCapacity = function () {
     switch (this.getLevel()) {
       case 1:
         return 3000;
@@ -563,6 +567,7 @@ var QGress = function (_, Kotlin) {
   };
   Agent.prototype.act = function () {
     var tmp$;
+    this.xm = this.xm + 10 | 0;
     var useLocationFix = false;
     if (this.isBusy_za3lpa$(World_getInstance().tick)) {
       if (useLocationFix && Util_getInstance().random() < 0.005) {
@@ -1213,8 +1218,14 @@ var QGress = function (_, Kotlin) {
     return PathUtil_getInstance().posToShadowPos_lfj9be$(this.pos);
   };
   Agent.prototype.draw_f69bme$ = function (ctx) {
-    var image = Agent$Companion_getInstance().getImage_0(this.faction, this.action.item);
+    var image = Agent$Companion_getInstance().getAgentImage_0(this.faction, this.action.item);
     ctx.drawImage(image, this.pos.xx(), this.pos.yy());
+    var tmp$ = this.getXmCapacity();
+    var b = this.xm;
+    var b_0 = Math_0.max(0, b);
+    var xmPercent = (Math_0.min(tmp$, b_0) * 100 | 0) / this.getXmCapacity() | 0;
+    var xmBar = Agent$Companion_getInstance().getXmBarImage_0(this.faction, xmPercent);
+    ctx.drawImage(xmBar, this.pos.xx(), this.pos.yy() - 5);
   };
   Agent.prototype.drawRadius_f69bme$ = function (ctx) {
     if (Styles_getInstance().isDrawDestination) {
@@ -1243,7 +1254,7 @@ var QGress = function (_, Kotlin) {
     tmp$ = $receiver.iterator();
     while (tmp$.hasNext()) {
       var item = tmp$.next();
-      destination.add_11rb$(to(item, this.drawTemplate_0(Faction$ENL_getInstance(), item)));
+      destination.add_11rb$(to(item, this.drawAgentTemplate_0(Faction$ENL_getInstance(), item)));
     }
     this.enlImages_0 = toMap(destination);
     var $receiver_0 = ActionItem$Companion_getInstance().values();
@@ -1252,11 +1263,31 @@ var QGress = function (_, Kotlin) {
     tmp$_0 = $receiver_0.iterator();
     while (tmp$_0.hasNext()) {
       var item_0 = tmp$_0.next();
-      destination_0.add_11rb$(to(item_0, this.drawTemplate_0(Faction$RES_getInstance(), item_0)));
+      destination_0.add_11rb$(to(item_0, this.drawAgentTemplate_0(Faction$RES_getInstance(), item_0)));
     }
     this.resImages_0 = toMap(destination_0);
+    var $receiver_1 = Faction$values();
+    var destination_1 = ArrayList_init();
+    var tmp$_1;
+    for (tmp$_1 = 0; tmp$_1 !== $receiver_1.length; ++tmp$_1) {
+      var element = $receiver_1[tmp$_1];
+      var $receiver_2 = new IntRange(0, 100);
+      var destination_2 = ArrayList_init(collectionSizeOrDefault($receiver_2, 10));
+      var tmp$_2;
+      tmp$_2 = $receiver_2.iterator();
+      while (tmp$_2.hasNext()) {
+        var item_1 = tmp$_2.next();
+        destination_2.add_11rb$(to(this.xmKey_0(element, item_1), this.drawXmBarTemplate_0(element, item_1)));
+      }
+      var list = destination_2;
+      addAll(destination_1, list);
+    }
+    this.xmBarImages_0 = toMap(destination_1);
   }
-  Agent$Companion.prototype.getImage_0 = function (faction, actionItem) {
+  Agent$Companion.prototype.xmKey_0 = function (faction, percent) {
+    return faction.abbr + ':' + toString(percent);
+  };
+  Agent$Companion.prototype.getAgentImage_0 = function (faction, actionItem) {
     var tmp$;
     switch (faction.name) {
       case 'ENL':
@@ -1269,7 +1300,14 @@ var QGress = function (_, Kotlin) {
     }
     return tmp$;
   };
-  function Agent$Companion$drawTemplate$lambda(closure$r, closure$lineWidth, closure$faction, closure$actionItem) {
+  Agent$Companion.prototype.getXmBarImage_0 = function (faction, percent) {
+    if (!(percent >= 0 && percent <= 100)) {
+      var message = 'Check failed.';
+      throw IllegalStateException_init(message.toString());
+    }
+    return getValue(this.xmBarImages_0, this.xmKey_0(faction, percent));
+  };
+  function Agent$Companion$drawAgentTemplate$lambda(closure$r, closure$lineWidth, closure$faction, closure$actionItem) {
     return function (ctx) {
       var pos = new Coords(closure$r + closure$lineWidth | 0, closure$r + closure$lineWidth | 0);
       var strokeStyle = Colors_getInstance().black;
@@ -1278,12 +1316,40 @@ var QGress = function (_, Kotlin) {
       DrawUtil_getInstance().drawText_omkwws$(ctx, pos.copy_vux9f0$(pos.x + 1 | 0), closure$actionItem.letter, strokeStyle, 13, DrawUtil_getInstance().CODA);
     };
   }
-  Agent$Companion.prototype.drawTemplate_0 = function (faction, actionItem) {
+  Agent$Companion.prototype.drawAgentTemplate_0 = function (faction, actionItem) {
     var lineWidth = 2;
     var r = numberToInt(Dimensions_getInstance().agentRadius);
     var w = (r * 2 | 0) + (2 * lineWidth | 0) | 0;
     var h = w;
-    return HtmlUtil_getInstance().prerender_yb5akz$(w, h, Agent$Companion$drawTemplate$lambda(r, lineWidth, faction, actionItem));
+    return HtmlUtil_getInstance().prerender_yb5akz$(w, h, Agent$Companion$drawAgentTemplate$lambda(r, lineWidth, faction, actionItem));
+  };
+  function Agent$Companion$drawXmBarTemplate$lambda(closure$w, closure$h, closure$pWidth, closure$faction) {
+    return function (ctx) {
+      var path = new Path2D();
+      path.moveTo(0.0, 0.0);
+      path.lineTo(closure$w, 0.0);
+      path.lineTo(closure$w, closure$h);
+      path.lineTo(0.0, closure$h);
+      path.lineTo(0.0, 0.0);
+      path.closePath();
+      DrawUtil_getInstance().drawPath_n1hvnp$(ctx, path, Colors_getInstance().black, 1.0);
+      var fillPath = new Path2D();
+      fillPath.moveTo(0.0, 0.0);
+      fillPath.lineTo(closure$pWidth, 0.0);
+      fillPath.lineTo(closure$pWidth, closure$h);
+      fillPath.lineTo(0.0, closure$h);
+      fillPath.lineTo(0.0, 0.0);
+      fillPath.closePath();
+      DrawUtil_getInstance().drawPath_n1hvnp$(ctx, fillPath, Colors_getInstance().black, 1.0, closure$faction.color);
+    };
+  }
+  Agent$Companion.prototype.drawXmBarTemplate_0 = function (faction, percent) {
+    var lineWidth = 2;
+    var r = numberToInt(Dimensions_getInstance().agentRadius);
+    var w = (r * 2 | 0) + (2 * lineWidth | 0) | 0;
+    var pWidth = Kotlin.imul(percent, w) / 100 | 0;
+    var h = 5;
+    return HtmlUtil_getInstance().prerender_yb5akz$(w, h, Agent$Companion$drawXmBarTemplate$lambda(w, h, pWidth, faction));
   };
   Agent$Companion.prototype.createFrog_5edep5$ = function (grid) {
     return this.create_0(grid, Faction$ENL_getInstance());
@@ -6776,6 +6842,25 @@ var QGress = function (_, Kotlin) {
       ctx.fillStyle = fillStyle;
       ctx.fill();
     }
+    ctx.globalAlpha = 1.0;
+  };
+  DrawUtil.prototype.drawPath_n1hvnp$ = function (ctx, path, strokeStyle, lineWidth, fillStyle, alpha) {
+    if (fillStyle === void 0)
+      fillStyle = null;
+    if (alpha === void 0)
+      alpha = 1.0;
+    World_getInstance();
+    ctx.globalAlpha = alpha;
+    if (fillStyle != null) {
+      ctx.fillStyle = fillStyle;
+      ctx.fill(path);
+    }
+    ctx.strokeStyle = strokeStyle;
+    ctx.lineWidth = lineWidth;
+    ctx.beginPath();
+    ctx.stroke(path);
+    ctx.closePath();
+    ctx.stroke();
     ctx.globalAlpha = 1.0;
   };
   DrawUtil.prototype.drawLine_1fs0nm$ = function (ctx, line, strokeStyle, lineWidth) {

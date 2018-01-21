@@ -487,6 +487,23 @@ object DrawUtil {
         }
     }
 
+    fun drawPath(ctx: Ctx, path: Path2D, strokeStyle: String, lineWidth: Double, fillStyle: String? = null, alpha: Double = 1.0) {
+        with(World) {
+            ctx.globalAlpha = alpha
+            if (fillStyle != null) {
+                ctx.fillStyle = fillStyle
+                ctx.fill(path)
+            }
+            ctx.strokeStyle = strokeStyle
+            ctx.lineWidth = lineWidth
+            ctx.beginPath()
+            ctx.stroke(path)
+            ctx.closePath()
+            ctx.stroke()
+            ctx.globalAlpha = 1.0
+        }
+    }
+
     fun drawLine(ctx: Ctx, line: Line, strokeStyle: String, lineWidth: Double) {
         ctx.strokeStyle = strokeStyle
         ctx.lineWidth = lineWidth

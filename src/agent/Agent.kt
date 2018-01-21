@@ -10,6 +10,7 @@ import items.QgressItem
 import items.deployable.Resonator
 import items.level.ResonatorLevel
 import items.level.XmpLevel
+import org.w3c.dom.Path2D
 import portal.Link
 import portal.Portal
 import portal.PortalKey
@@ -21,7 +22,7 @@ import kotlin.math.min
 
 data class Agent(val faction: Faction, val name: String, val pos: Coords, val skills: Skills,
                  val inventory: Inventory, var action: Action, var actionPortal: Portal, var destination: Coords,
-                 var ap: Int, var xm: Int, var velocity: Complex = Complex.ZERO) {
+                 var ap: Int = 0, var xm: Int = 0, var velocity: Complex = Complex.ZERO) {
     fun key() = toString()
     fun distanceToDestination(): Double = pos.distanceTo(destination)
     fun distanceToPortal(portal: Portal): Double = pos.distanceTo(portal.location)
@@ -49,7 +50,7 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
     }
     */
 
-    fun gatXmCapacity(): Int = when (getLevel()) {
+    fun getXmCapacity(): Int = when (getLevel()) {
         1 -> 3000
         2 -> 4000
         3 -> 5000
@@ -63,6 +64,9 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
 
     fun act(): Agent {
         //println("DEBUG: ${World.tick} $action")
+
+        xm += 10 //FIXME
+
         val useLocationFix = false
         if (isBusy(World.tick)) {
             if (useLocationFix && Util.random() < 0.005) {
@@ -348,8 +352,11 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
     private fun shadowPos() = PathUtil.posToShadowPos(pos)
 
     fun draw(ctx: Ctx) {
-        val image = getImage(faction, action.item)
+        val image = getAgentImage(faction, action.item)
         ctx.drawImage(image, pos.xx(), pos.yy())
+        val xmPercent: Int = min(getXmCapacity() , max(0 , xm)) * 100 / getXmCapacity()
+        val xmBar = getXmBarImage(faction, xmPercent)
+        ctx.drawImage(xmBar, pos.xx(), pos.yy() - 5)
     }
 
     fun drawRadius(ctx: Ctx) {
@@ -368,17 +375,23 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
     override fun hashCode() = this.key().hashCode() * 31
 
     companion object {
-        private val enlImages = ActionItem.values().map { it to drawTemplate(Faction.ENL, it) }.toMap()
-        private val resImages = ActionItem.values().map { it to drawTemplate(Faction.RES, it) }.toMap()
-        private fun getImage(faction: Faction, actionItem: ActionItem): Canvas {
+        private val enlImages = ActionItem.values().map { it to drawAgentTemplate(Faction.ENL, it) }.toMap()
+        private val resImages = ActionItem.values().map { it to drawAgentTemplate(Faction.RES, it) }.toMap()
+        private fun xmKey(faction: Faction, percent: Int) = faction.abbr + ":" + percent
+        private val xmBarImages = Faction.values().flatMap { fac -> (0..100).map { xmKey(fac, it) to drawXmBarTemplate(fac, it) } }.toMap()
+        private fun getAgentImage(faction: Faction, actionItem: ActionItem): Canvas {
             return when (faction) {
                 Faction.ENL -> enlImages.getValue(actionItem)
                 Faction.RES -> resImages.getValue(actionItem)
                 else -> throw IllegalStateException("Illegal faction: $faction")
             }
         }
+        private fun getXmBarImage(faction: Faction, percent: Int): Canvas {
+            check(percent >= 0 && percent <= 100)
+            return xmBarImages.getValue(xmKey(faction, percent))
+        }
 
-        private fun drawTemplate(faction: Faction, actionItem: ActionItem): Canvas {
+        private fun drawAgentTemplate(faction: Faction, actionItem: ActionItem): Canvas {
             val lineWidth = 2
             val r = Dimensions.agentRadius.toInt()
             val w = r * 2 + (2 * lineWidth)
@@ -389,6 +402,32 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
                 val circle = Circle(pos, r.toDouble())
                 DrawUtil.drawCircle(ctx, circle, strokeStyle, 2.0, faction.color)
                 DrawUtil.drawText(ctx, pos.copy(x = pos.x + 1), actionItem.letter, strokeStyle, 13, DrawUtil.CODA)
+            })
+        }
+
+        private fun drawXmBarTemplate(faction: Faction, percent: Int): Canvas {
+            val lineWidth = 2
+            val r = Dimensions.agentRadius.toInt()
+            val w = r * 2 + (2 * lineWidth)
+            val pWidth = percent * w / 100
+            val h = 5
+            return HtmlUtil.prerender(w, h, fun(ctx: Ctx) {
+                val path = Path2D()
+                path.moveTo(0.0, 0.0)
+                path.lineTo(w.toDouble(), 0.0)
+                path.lineTo(w.toDouble(), h.toDouble())
+                path.lineTo(0.0, h.toDouble())
+                path.lineTo(0.0, 0.0)
+                path.closePath()
+                DrawUtil.drawPath(ctx, path, Colors.black, 1.0)
+                val fillPath = Path2D()
+                fillPath.moveTo(0.0, 0.0)
+                fillPath.lineTo(pWidth.toDouble(), 0.0)
+                fillPath.lineTo(pWidth.toDouble(), h.toDouble())
+                fillPath.lineTo(0.0, h.toDouble())
+                fillPath.lineTo(0.0, 0.0)
+                fillPath.closePath()
+                DrawUtil.drawPath(ctx, fillPath, Colors.black, 1.0, faction.color)
             })
         }
 
