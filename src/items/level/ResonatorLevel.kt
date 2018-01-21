@@ -4,7 +4,7 @@ import portal.Quality
 import kotlin.math.min
 import kotlin.math.max
 
-enum class ResonatorLevel(val level: Int, val deployablePerPlayer: Int, val color: String, val xmToPortal: Int) {
+enum class ResonatorLevel(val level: Int, val deployablePerPlayer: Int, val color: String, val energy: Int) {
     ONE(1, 8, "#FECE5A", 1000),
     TWO(2, 4, "#FFA630", 1500),
     THREE(3, 4, "#FF7315", 2000),

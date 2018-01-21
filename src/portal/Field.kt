@@ -67,7 +67,7 @@ data class Field private constructor(val origin: Portal, val primaryAnchor: Port
         }
 
         fun drawRadial(portal: Portal, first: Coords, second: Coords) {
-            fun calcStyle(health: Int) = owner.faction.fieldStyle + (Styles.fieldTransparency * health / Resonator.MAX_HEALTH) + ")"
+            fun calcStyle(health: Int) = owner.faction.fieldStyle + (Styles.fieldTransparency * health / 100) + ")"
             val originHp = calcStyle(portal.calcHealth())
             with(ctx) {
                 val r = Line(portal.location, Line(first, second).findClosestPointTo(portal.location)).calcLength()

@@ -12,8 +12,8 @@ data class Link(val origin: Portal, val destination: Portal, val owner: Agent) {
 
     fun draw(ctx: Ctx) {
         val byHealth = listOf<Portal>(origin, destination).sortedBy { it.calcHealth() }
-        val lowHpTransparency = 1.0 * byHealth.last().calcHealth() / Resonator.MAX_HEALTH
-        val highHpTransparency = 1.0 * byHealth.first().calcHealth() / Resonator.MAX_HEALTH
+        val lowHpTransparency = 1.0 * byHealth.last().calcHealth() / 100
+        val highHpTransparency = 1.0 * byHealth.first().calcHealth() / 100
         val gradient = ctx.createLinearGradient(origin.x(), origin.y(), destination.x(), destination.y())
         if (origin.calcHealth() < destination.calcHealth()) {
             gradient.addColorStop(0.0, owner.faction.fieldStyle + highHpTransparency + ")")

@@ -36,55 +36,16 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
     fun lineToPortal(portal: Portal) = Line(pos, portal.location)
     fun lineToDestination() = Line(pos, destination)
 
-    fun getLevel(): Int = when (ap) {
-        in 0..10000 -> 1
-        in 10000..30000 -> 2
-        in 30000..70000 -> 3
-        in 70000..150000 -> 4
-        in 150000..300000 -> 5
-        in 300000..600000 -> 6
-        in 600000..1200000 -> 7
-        in 1200000..2400000 -> 8
-        in 2400000..4000000 -> 9 //+ 1 gold 4 silver
-        in 4000000..6000000 -> 10 //+ 2 gold 5 silver
-        in 6000000..8400000 -> 11 //+ 4 gold 6 silver
-        in 8400000..12000000 -> 12 //+ 6 gold 7 silver
-        in 12000000..17000000 -> 13 //+ 1 Platinum 7 Gold
-        in 17000000..24000000 -> 14 //+ 2 Platinum 7 Gold
-        in 24000000..40000000 -> 15 //+ 3 Platinum 7 Gold
-        else -> 16 //TODO + 2 Black 4 Platinum 7 Gold
-    }
+    fun getLevel(): Int = getLevel(this.ap)
+    fun getXmCapacity(): Int = getXmCapacity(getLevel())
 
-    fun getXmCapacity(): Int = when (getLevel()) {
-        1 -> 3000
-        2 -> 4000
-        3 -> 5000
-        4 -> 6000
-        5 -> 7000
-        6 -> 8000
-        7 -> 9000
-        8 -> 10000
-        9 -> 10900
-        10 -> 11700
-        11 -> 12400
-        12 -> 13000
-        13 -> 13500
-        14 -> 13900
-        15 -> 14200
-        else -> 14400
-    }
-
-    fun getLinkingRange(): Int = when (getLevel()) {
-        9 -> 2250
-        10 -> 2500
-        11 -> 2750
-        12 -> 3000
-        13 -> 3250
-        14 -> 3500
-        15 -> 3750
-        16 -> 4000
-        else -> 2000
-    }
+    private fun calcAbsXmBar() = min(getXmCapacity() , max(0 , xm))
+    fun xmBarPercent() = calcAbsXmBar() * 100 / getXmCapacity()
+    fun isXmBarEmpty() = xmBarPercent() == 0
+    fun isXmFilled() = xmBarPercent() >= 80
+    fun removeXm(v: Int) { if (xm - v <= 0) { this.xm = 0 } else { this.xm -= v } }
+    fun addXm(v: Int) { if (xm + v >= getXmCapacity()) { this.xm = getXmCapacity() } else { this.xm += v } }
+    fun addAp(v: Int) { this.ap += v }
 
     fun act(): Agent {
         //println("DEBUG: ${World.tick} $action")
@@ -114,7 +75,6 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
             this.faction -> doFriendlyPortalAction()
             else -> doEnemyPortalAction()
         }
-        //TODO doNeutralAction (recharge, recycle)
     }
 
     private fun isHackPossible() = actionPortal.canHack(this)
@@ -160,12 +120,16 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
     }
 
     fun goDoSomethingElse(): Agent {
+        val rechargePortalQ = if (isXmFilled()) 0.2 else -1.0
+        val recycleItemsQ = if (isXmBarEmpty()) 0.5 else -1.0
         val captureQ = if (MovementUtil.hasUncapturedPortals()) 0.5 else -1.0
         val attackClosestQ = if (MovementUtil.hasEnemyPortals(this) && isAttackPossible()) 0.5 else -1.0
         val attackMostLinkedQ = if (MovementUtil.hasEnemyPortals(this) && isAttackPossible()) 0.5 else -1.0
         val attackMostVulnerableQ = if (MovementUtil.hasEnemyPortals(this) && isAttackPossible()) 0.5 else -1.0
         val moveToFriendlyQ = if (MovementUtil.hasFriendlyPortals(this)) 0.5 else -1.0
         val qValues = listOf(
+                rechargePortalQ to { rechargePortal() },
+                recycleItemsQ to { recycleItems() },
                 attackClosestQ to { MovementUtil.moveToCloseEnemyPortal(this) },
                 attackMostLinkedQ to { MovementUtil.moveToMostLinkedEnemyPortal(this) },
                 attackMostVulnerableQ to { MovementUtil.moveToMostVulnerableEnemyPortal(this) },
@@ -185,7 +149,7 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         if (isAtActionPortal()) {
             return doNothing()
         }
-        xm += 2 //FIXME
+        addXm(2) //FIXME
         val shadowPos = PathUtil.posToShadowPos(pos)
         val force = actionPortal.vectorField.get(shadowPos) ?: this.velocity
         val mag = skills.speed * (World.speed / 100)
@@ -212,8 +176,20 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
     }
 
     fun rechargePortal(): Agent {
-        //TODO implement..
-        return this.copy(ap = ap + 10)
+        if (!hasKeys()) {
+            return this
+        }
+        val chargable = Portal.findChargeableForKeys(this)
+        if (chargable!!.isEmpty()) {
+            return this
+        }
+        val lowest: Portal? = chargable?.sortedBy { it.calcHealth() }?.first()
+        if (lowest != null) {
+            val resos = lowest.resoSlots.mapNotNull { it.value.resonator }
+            val resoCount = resos.count()
+            resos.forEach { it.recharge(this, 1000 / resoCount) }
+        }
+        return this
     }
 
     fun recycleItems(): Agent {
@@ -235,7 +211,7 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         }
 
         fun doAttack(): Agent {
-            val maxXmps = 10
+            val maxXmps = 12
             val allXmps = inventory.findXmps()
             val selectedXmps = allXmps?.sortedBy { it.level }?.take(min(maxXmps, allXmps.size))
             if (selectedXmps == null || selectedXmps.isEmpty()) {
@@ -243,14 +219,14 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
             }
             selectedXmps.forEach { xmpBurster ->
                 when (xmpBurster.level.level) {
-                    1 -> xm -= 10
-                    2 -> xm -= 20
-                    3 -> xm -= 70
-                    4 -> xm -= 140
-                    5 -> xm -= 250
-                    6 -> xm -= 360
-                    7 -> xm -= 490
-                    else -> xm -= 640
+                    1 -> removeXm(10)
+                    2 -> removeXm(20)
+                    3 -> removeXm(70)
+                    4 -> removeXm(140)
+                    5 -> removeXm(250)
+                    6 -> removeXm(360)
+                    7 -> removeXm(490)
+                    else -> removeXm(640)
                 }
             }
             Queues.registerAttack(this, selectedXmps)
@@ -318,14 +294,15 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
 
     fun doNothing(): Agent = this.copy(action = Action.start(ActionItem.WAIT, World.tick))
 
+    fun keySet() = inventory.findUniqueKeys()
+    fun hasKeys() = keySet() != null && keySet()!!.isNotEmpty()
+
     fun isLinkPossible(): Boolean {
         if (!actionPortal.canLinkOut(this)) {
             return false
         }
-        val keyset: List<PortalKey>? = inventory.findUniqueKeys()
-        val hasKeys = keyset != null && keyset.isNotEmpty()
-        if (hasKeys) {
-            val linkOptions: List<Portal>? = actionPortal.findLinkableForKeys(keyset!!, this)?.filter {
+        if (hasKeys()) {
+            val linkOptions: List<Portal>? = actionPortal.findLinkableForKeys(this)?.filter {
                 it != actionPortal && it.owner != null && !it.isDeprecated()
             }?.distinct()
             if (linkOptions != null && linkOptions.isNotEmpty()) {
@@ -346,10 +323,8 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         if (!actionPortal.canLinkOut(this)) {
             return doNothing()
         }
-        val keyset: List<PortalKey>? = inventory.findUniqueKeys()
-        val hasKeys = keyset != null && keyset.isNotEmpty()
-        if (hasKeys) {
-            val linkOptions: List<Portal>? = actionPortal.findLinkableForKeys(keyset!!, this)?.filter {
+        if (hasKeys()) {
+            val linkOptions: List<Portal>? = actionPortal.findLinkableForKeys(this)?.filter {
                 it != actionPortal && it.owner != null && !it.isDeprecated()
             }?.distinct()
             if (linkOptions != null && linkOptions.isNotEmpty()) {
@@ -401,9 +376,8 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
     fun draw(ctx: Ctx) {
         val image = getAgentImage(faction, action.item)
         ctx.drawImage(image, pos.xx(), pos.yy())
-        val xmPercent: Int = min(getXmCapacity() , max(0 , xm)) * 100 / getXmCapacity()
-        val xmBar = getXmBarImage(faction, xmPercent)
-        ctx.drawImage(xmBar, pos.xx(), pos.yy() - 5)
+        val xmBar = getXmBarImage(faction, xmBarPercent())
+        ctx.drawImage(xmBar, pos.xx(), pos.yy() - 3)
     }
 
     fun drawRadius(ctx: Ctx) {
@@ -417,15 +391,70 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         }
     }
 
-    override fun toString() = faction.abbr + "-" + name
+    override fun toString() = "L" + getLevel() + " " + faction.abbr + "-" + name
     override fun equals(other: Any?) = other is Agent && this.key() == other.key()
     override fun hashCode() = this.key().hashCode() * 31
 
     companion object {
+        private fun getXmCapacity(level: Int): Int = when (level) {
+            1 -> 3000
+            2 -> 4000
+            3 -> 5000
+            4 -> 6000
+            5 -> 7000
+            6 -> 8000
+            7 -> 9000
+            8 -> 10000
+            9 -> 10900
+            10 -> 11700
+            11 -> 12400
+            12 -> 13000
+            13 -> 13500
+            14 -> 13900
+            15 -> 14200
+            else -> 14400
+        }
+
+        private fun getLevel(actionPoints: Int): Int = when (actionPoints) {
+            in 0..10000 -> 1
+            in 10000..30000 -> 2
+            in 30000..70000 -> 3
+            in 70000..150000 -> 4
+            in 150000..300000 -> 5
+            in 300000..600000 -> 6
+            in 600000..1200000 -> 7
+            in 1200000..2400000 -> 8
+            in 2400000..4000000 -> 9 //+ 1 gold 4 silver
+            in 4000000..6000000 -> 10 //+ 2 gold 5 silver
+            in 6000000..8400000 -> 11 //+ 4 gold 6 silver
+            in 8400000..12000000 -> 12 //+ 6 gold 7 silver
+            in 12000000..17000000 -> 13 //+ 1 Platinum 7 Gold
+            in 17000000..24000000 -> 14 //+ 2 Platinum 7 Gold
+            in 24000000..40000000 -> 15 //+ 3 Platinum 7 Gold
+            else -> 16 //TODO + 2 Black 4 Platinum 7 Gold
+        }
+
+        private fun getLinkingRange(level: Int): Int = when (level) {
+            9 -> 2250
+            10 -> 2500
+            11 -> 2750
+            12 -> 3000
+            13 -> 3250
+            14 -> 3500
+            15 -> 3750
+            16 -> 4000
+            else -> 2000
+        }
+
         private val enlImages = ActionItem.values().map { it to drawAgentTemplate(Faction.ENL, it) }.toMap()
         private val resImages = ActionItem.values().map { it to drawAgentTemplate(Faction.RES, it) }.toMap()
         private fun xmKey(faction: Faction, percent: Int) = faction.abbr + ":" + percent
-        private val xmBarImages = Faction.values().flatMap { fac -> (0..100).map { xmKey(fac, it) to drawXmBarTemplate(fac, it) } }.toMap()
+        private val xmBarImages = Faction.values().flatMap { fac -> (0..100).map {
+            val lw = Dimensions.agentLineWidth
+            val r = Dimensions.agentRadius.toInt()
+            val w = (r * 2) + (2 * lw)
+            xmKey(fac, it) to DrawUtil.renderBarImage(fac.color, it, 3, w, lw)
+        }}.toMap()
         private fun getAgentImage(faction: Faction, actionItem: ActionItem): Canvas {
             return when (faction) {
                 Faction.ENL -> enlImages.getValue(actionItem)
@@ -439,52 +468,28 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         }
 
         private fun drawAgentTemplate(faction: Faction, actionItem: ActionItem): Canvas {
-            val lineWidth = 2
+            val lw = Dimensions.agentLineWidth
             val r = Dimensions.agentRadius.toInt()
-            val w = r * 2 + (2 * lineWidth)
+            val w = (r * 2) + (2 * lw)
             val h = w
             return HtmlUtil.prerender(w, h, fun(ctx: Ctx) {
-                val pos = Coords(r + lineWidth, r + lineWidth)
+                val pos = Coords(r + lw, r + lw)
                 val strokeStyle = Colors.black
                 val circle = Circle(pos, r.toDouble())
-                DrawUtil.drawCircle(ctx, circle, strokeStyle, 2.0, faction.color)
+                DrawUtil.drawCircle(ctx, circle, strokeStyle, lw * 2.0, faction.color)
                 DrawUtil.drawText(ctx, pos.copy(x = pos.x + 1), actionItem.letter, strokeStyle, 13, DrawUtil.CODA)
-            })
-        }
-
-        private fun drawXmBarTemplate(faction: Faction, percent: Int): Canvas {
-            val lineWidth = 2
-            val r = Dimensions.agentRadius.toInt()
-            val w = r * 2 + (2 * lineWidth)
-            val pWidth = percent * w / 100
-            val h = 5
-            return HtmlUtil.prerender(w, h, fun(ctx: Ctx) {
-                val path = Path2D()
-                path.moveTo(0.0, 0.0)
-                path.lineTo(w.toDouble(), 0.0)
-                path.lineTo(w.toDouble(), h.toDouble())
-                path.lineTo(0.0, h.toDouble())
-                path.lineTo(0.0, 0.0)
-                path.closePath()
-                DrawUtil.drawPath(ctx, path, Colors.black, 1.0)
-                val fillPath = Path2D()
-                fillPath.moveTo(0.0, 0.0)
-                fillPath.lineTo(pWidth.toDouble(), 0.0)
-                fillPath.lineTo(pWidth.toDouble(), h.toDouble())
-                fillPath.lineTo(0.0, h.toDouble())
-                fillPath.lineTo(0.0, 0.0)
-                fillPath.closePath()
-                DrawUtil.drawPath(ctx, fillPath, Colors.black, 1.0, faction.color)
             })
         }
 
         fun createFrog(grid: Map<Coords, Cell>) = create(grid, Faction.ENL)
         fun createSmurf(grid: Map<Coords, Cell>) = create(grid, Faction.RES)
         private fun create(grid: Map<Coords, Cell>, faction: Faction): Agent {
+            val initialAp = Util.randomInt(1000000)
+            val initialXm = getXmCapacity(getLevel(initialAp))
             val coords = Coords.createRandomPassable(grid)
             val actionPortal = Util.findNearestPortal(coords) ?: World.allPortals.get(0) //FIXME
             return Agent(faction, Util.generateAgentName(), coords, Skills.createRandom(),
-                    Inventory(), Action(ActionItem.MOVE, 0), actionPortal, actionPortal.location, 0, 0)
+                    Inventory(), Action(ActionItem.MOVE, 0), actionPortal, actionPortal.location, initialAp, initialXm)
         }
     }
 }

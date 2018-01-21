@@ -5,25 +5,32 @@ import items.level.ResonatorLevel
 import portal.Octant
 import portal.Portal
 import util.data.Coords
+import kotlin.math.max
 
-data class Resonator(val level: ResonatorLevel, val owner: Agent, var health: Int = MAX_HEALTH,
+data class Resonator(val level: ResonatorLevel, val owner: Agent, var energy: Int,
                      var portal: Portal? = null, var octant: Octant? = null, var coords: Coords? = null) : DeployableItem {
     //TODO move location and octant to ResonatorSlot
-    fun isAtCriticalLevel() = health < 20
-    fun recharge(xm: Int) {
-        health = health + xm
+    fun calcHealthPrecent() = energy * 100 / level.energy
+    fun isAtCriticalLevel() = calcHealthPrecent() < 20
+    fun recharge(agent: Agent, xm: Int) {
+        val rest = max((energy + xm) - level.energy, 0)
+        val energy = xm - rest
+        agent.removeXm(energy)
+        agent.addAp(10) //FIXME
+        this.energy += energy
     }
+    private fun decayEnergy() = (level.energy * DECAY_RATIO).toInt()
 
     fun decay() {
-        health = health - (health * DECAY_RATIO).toInt()
-        if (health <= 0) {
+        energy = energy - decayEnergy()
+        if (energy <= 0) {
             portal?.removeReso(octant!!, null)
         }
     }
 
     fun takeDamage(agent: Agent, damage: Int) {
-        this.health = health - damage
-        if (health <= 0) {
+        this.energy = energy - damage
+        if (energy <= 0) {
             agent.ap = agent.ap + 75
             portal?.removeReso(octant!!, agent)
         }
@@ -39,9 +46,8 @@ data class Resonator(val level: ResonatorLevel, val owner: Agent, var health: In
     override fun getOwnerId(): String = owner.key()
 
     companion object {
-        val MAX_HEALTH = 100
         val DECAY_RATIO = 0.15
-        fun create(level: ResonatorLevel, agent: Agent) = Resonator(level, agent)
+        fun create(level: ResonatorLevel, agent: Agent) = Resonator(level, agent, level.energy)
         fun create(level: Int, agent: Agent) = create(ResonatorLevel.valueOf(level), agent)
     }
 }

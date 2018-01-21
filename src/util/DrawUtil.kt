@@ -201,14 +201,14 @@ object DrawUtil {
     private fun createDamageCircleImage(xmpLevel: XmpLevel, ticksInFuture: Int): Canvas {
         val strokeStyle = "#ff731533"
         val fillStyle = "#fece5a11"
-        val lineWidth = 8
+        val lw = 8
         val ratio = (Queues.damageDelayTicks - ticksInFuture) / Queues.damageDelayTicks
-        val r = xmpLevel.rangeM * ratio / 2
-        val w = r * 2 + (2 * lineWidth)
+        val r = (xmpLevel.rangeM * Dimensions.pixelToMFactor * ratio).toInt()
+        val w = (r * 2) + (2 * lw)
         val h = w
         return HtmlUtil.prerender(w, h, fun(ctx: Ctx) {
-            val attackCircle = Circle(Coords(r + lineWidth, r + lineWidth), r.toDouble())
-            drawCircle(ctx, attackCircle, strokeStyle, lineWidth.toDouble(), fillStyle)
+            val attackCircle = Circle(Coords(r + lw, r + lw), r.toDouble())
+            drawCircle(ctx, attackCircle, strokeStyle, lw.toDouble(), fillStyle)
         })
     }
 
@@ -254,6 +254,30 @@ object DrawUtil {
         drawText(World.uiCtx(), pos, stamp, Colors.white, Dimensions.tickFontSize, CODA)
         val tick = " Tick: " + World.tick
         drawText(World.uiCtx(), pos.copy(x = pos.x + 55), tick, Colors.white, Dimensions.tickFontSize, CODA)
+    }
+
+    fun renderBarImage(color: String, health: Int, h: Int, w: Int, lineWidth: Int): Canvas {
+        val pWidth = health * w / 100
+        return HtmlUtil.prerender(w, h, fun(ctx: Ctx) {
+            if (color != Colors.white) {
+                val path = Path2D()
+                path.moveTo(0.0, 0.0)
+                path.lineTo(w.toDouble(), 0.0)
+                path.lineTo(w.toDouble(), h.toDouble())
+                path.lineTo(0.0, h.toDouble())
+                path.lineTo(0.0, 0.0)
+                path.closePath()
+                DrawUtil.drawPath(ctx, path, Colors.black, lineWidth.toDouble())
+                val fillPath = Path2D()
+                fillPath.moveTo(0.0, 0.0)
+                fillPath.lineTo(pWidth.toDouble(), 0.0)
+                fillPath.lineTo(pWidth.toDouble(), h.toDouble())
+                fillPath.lineTo(0.0, h.toDouble())
+                fillPath.lineTo(0.0, 0.0)
+                fillPath.closePath()
+                DrawUtil.drawPath(ctx, fillPath, Colors.black, lineWidth.toDouble(), color)
+            }
+        })
     }
 
     fun drawMindUnits() {

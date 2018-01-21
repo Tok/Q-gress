@@ -40,14 +40,12 @@ object MapUtil {
     var initMap: MapBox? = null
 
     fun loadMaps(isFirstLoad: Boolean, callback: (Map<Coords, Cell>) -> Unit) {
-        println("DEBUG: loadMaps $isFirstLoad")
         loadInitialMap(isFirstLoad, fun(initMap: MapBox) {
             loadMap(isFirstLoad, initMap, callback)
         })
     }
 
     private fun loadInitialMap(isFirstLoad: Boolean, onLoadCallback: (MapBox) -> Unit) {
-        println("DEBUG: loadInitialMap $isFirstLoad")
         if (isFirstLoad || initMap == null) {
             initMap = initInitialMapbox()
         }
@@ -57,11 +55,9 @@ object MapUtil {
                 setMinZoom(MIN_ZOOM)
                 setMaxZoom(MAX_ZOOM)
                 setZoom(ZOOM)
-                println("DEBUG: loadInitialMap using INITIAL_MAP_CENTER")
                 setCenter(INITIAL_MAP_CENTER)
             } else {
                 val currentMapCenter = map!!.getCenter()
-                println("DEBUG: loadInitialMap setting center to ${currentMapCenter}")
                 setCenter(currentMapCenter)
             }
         }
@@ -83,7 +79,6 @@ object MapUtil {
 
     //https://www.mapbox.com/mapbox-gl-js/api/
     private fun loadMap(isFirstLoad: Boolean, initMap: MapBox, callback: (Map<Coords, Cell>) -> Unit) {
-        println("DEBUG: loadMap $isFirstLoad with initMap $initMap")
         if (isFirstLoad || map == null) {
             map = initMapbox()
         }
@@ -92,7 +87,6 @@ object MapUtil {
             setMinZoom(MIN_ZOOM)
             setMaxZoom(MAX_ZOOM)
             setZoom(ZOOM)
-            println("DEBUG: loadMap setting center to ${initMap.getCenter()}")
             if (isFirstLoad) {
                 setCenter(initMap.getCenter())
             }
@@ -108,14 +102,13 @@ object MapUtil {
     }
 
     private fun loadShadowMap(center: JSON, callback: (Map<Coords, Cell>) -> Unit) {
-        println("DEBUG: loadShadowMap")
+        //println("DEBUG: loading shadow map.")
         DrawUtil.drawLoadingText("Creating grid..")
         val shadowMap = initShadowMap()
         with(shadowMap) {
             setMinZoom(MIN_ZOOM)
             setMaxZoom(MAX_ZOOM)
             setZoom(ZOOM)
-            println("DEBUG: loadShadowMap center ${center}")
             setCenter(center)
         }
         shadowMap.on("load", fun() {
@@ -132,12 +125,6 @@ object MapUtil {
 
             document.getElementById("shadowMap")?.remove()
             val grid = createGrid(imageData, width, height)
-
-            /*
-            map.on("load", fun() { //replace with a handler that reloads the world.
-                World.reload()
-            })
-            */
 
             callback(grid)
         })

@@ -3,11 +3,13 @@ package config
 object Dimensions {
     val maxWidth = 1400
     val portalRadius = 8.0
+    val portalLineWidth = 2
     val minDistanceBetweenPortals = (2 * portalRadius) * 3
     val minDistancePortalToImpassable = portalRadius
     val resoRadius = 2.0
     val maxDeploymentRange = 34.0
     val agentRadius = 5.0
+    val agentLineWidth = 1
     val agentDeployCircleLineWidth = 1.0
     val gridLineWidthMain = 0.2
     val gridLineWidth = 0.1
@@ -30,6 +32,8 @@ object Dimensions {
     val muFontSize = 21
     val muLeftOffset = 13
     val muBottomOffset = 89
+
+    val pixelToMFactor = 0.5
 
     val topAgentsBottomOffset = 0
     val topAgentsLeftOffset = 210
