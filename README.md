@@ -1,7 +1,7 @@
 # Q-Gress
 
 Q-Gress is a simulation of Ingress.
-https://tok.github.io/Qgress/
+https://tok.github.io/Q-gress/
 
 ## Work in Progress
 
@@ -15,11 +15,11 @@ Q-Gress was never tested on Mobile and is exclusively designed for desktop brows
 - Implement shielding
 - Improve agent behavior
   * More destinations
-    * Move to next agent 
+    * Move to next agent
     * Move to group of agents
     * Move to random agent
-  * Fix attacking
-  * Improve deployment
+  * ~~Fix attacking~~
+  * ~~Improve deployment~~
   * Allow more link variability
 - Implement inventory limit
 - More Items
@@ -44,7 +44,7 @@ Q-Gress was never tested on Mobile and is exclusively designed for desktop brows
   * Calculate and display cycles
 
 ### Low Priority
-- Agent level up
+- ~~Agent level up~~
 - Ultrastriking
 - Items
   * XM-Tanks
