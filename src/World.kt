@@ -16,6 +16,7 @@ import util.data.Cell
 import util.data.Complex
 import util.data.Coords
 import kotlin.browser.window
+import kotlin.dom.clear
 import kotlin.math.sqrt
 
 typealias Ctx = CanvasRenderingContext2D
@@ -23,7 +24,14 @@ typealias Canvas = HTMLCanvasElement
 object World {
     var tick: Int = 0
     var isReady = false
-    fun reload() = HtmlUtil.load(false)
+    fun reload() {
+        tick = 0
+        isReady = false
+        allAgents.clear()
+        allNonFaction.clear()
+        allPortals.clear()
+        HtmlUtil.load(false)
+    }
 
     lateinit var can: Canvas
     fun ctx() = HtmlUtil.getContext2D(can)
@@ -33,6 +41,15 @@ object World {
 
     lateinit var uiCan: Canvas
     fun uiCtx() = HtmlUtil.getContext2D(uiCan)
+
+    fun resetAllCanvas() {
+        can.clear()
+        ctx().clearRect(0.0, 0.0, can.width.toDouble(), can.height.toDouble())
+        bgCan.clear()
+        bgCtx().clearRect(0.0, 0.0, bgCan.width.toDouble(), bgCan.height.toDouble())
+        uiCan.clear()
+        uiCtx().clearRect(0.0, 0.0, uiCan.width.toDouble(), uiCan.height.toDouble())
+    }
 
     //var center: JSON = MapUtil.INITIAL_MAP_CENTER
     var mousePos: Coords? = null
@@ -47,8 +64,9 @@ object World {
 
     lateinit var noiseMap: Array<DoubleArray>
     lateinit var noiseImage: ImageData
-    lateinit var shadowStreetMap: ImageData
+    var shadowStreetMap: ImageData? = null
     lateinit var grid: Map<Coords, Cell>
+
     fun passableCells(): Map<Coords, Cell> = grid.filter { it.value.isPassable }
     fun wellPassableCells(): Map<Coords, Cell> = grid.filter { it.value.isPassableInAllDirections() }
     private fun passableOnScreen(): Map<Coords, Cell> = wellPassableCells().filterNot { it.key.isOffGrid() }

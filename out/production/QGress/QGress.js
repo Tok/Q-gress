@@ -4,6 +4,7 @@ if (typeof kotlin === 'undefined') {
 var QGress = function (_, Kotlin) {
   'use strict';
   var throwUPAE = Kotlin.throwUPAE;
+  var clear = Kotlin.kotlin.dom.clear_asww5s$;
   var numberToInt = Kotlin.numberToInt;
   var equals = Kotlin.equals;
   var sum = Kotlin.kotlin.collections.sum_plj8ka$;
@@ -51,6 +52,7 @@ var QGress = function (_, Kotlin) {
   var IllegalArgumentException_init = Kotlin.kotlin.IllegalArgumentException_init_pdl1vj$;
   var addClass = Kotlin.kotlin.dom.addClass_hhb33f$;
   var removeClass = Kotlin.kotlin.dom.removeClass_hhb33f$;
+  var trimMargin = Kotlin.kotlin.text.trimMargin_rjktp$;
   var max = Kotlin.kotlin.collections.max_exjks8$;
   var toMap_0 = Kotlin.kotlin.collections.toMap_abgq59$;
   var listOfNotNull = Kotlin.kotlin.collections.listOfNotNull_jurz7g$;
@@ -61,6 +63,8 @@ var QGress = function (_, Kotlin) {
   var padStart = Kotlin.kotlin.text.padStart_vrc1nu$;
   Faction.prototype = Object.create(Enum.prototype);
   Faction.prototype.constructor = Faction;
+  Location.prototype = Object.create(Enum.prototype);
+  Location.prototype.constructor = Location;
   Styles$VectorStyle.prototype = Object.create(Enum.prototype);
   Styles$VectorStyle.prototype.constructor = Styles$VectorStyle;
   PortalLevel.prototype = Object.create(Enum.prototype);
@@ -107,13 +111,18 @@ var QGress = function (_, Kotlin) {
     this.speed = 100;
     this.noiseMap_ft1fdo$_0 = this.noiseMap_ft1fdo$_0;
     this.noiseImage_c4tqbn$_0 = this.noiseImage_c4tqbn$_0;
-    this.shadowStreetMap_jwpvb7$_0 = this.shadowStreetMap_jwpvb7$_0;
+    this.shadowStreetMap = null;
     this.grid_pwdzco$_0 = this.grid_pwdzco$_0;
     this.allAgents = LinkedHashSet_init();
     this.allNonFaction = LinkedHashSet_init();
     this.allPortals = ArrayList_init();
   }
   World.prototype.reload = function () {
+    this.tick = 0;
+    this.isReady = false;
+    this.allAgents.clear();
+    this.allNonFaction.clear();
+    this.allPortals.clear();
     HtmlUtil_getInstance().load_6taknv$(false);
   };
   Object.defineProperty(World.prototype, 'can', {
@@ -155,6 +164,14 @@ var QGress = function (_, Kotlin) {
   World.prototype.uiCtx = function () {
     return HtmlUtil_getInstance().getContext2D_ap7jt0$(this.uiCan);
   };
+  World.prototype.resetAllCanvas = function () {
+    clear(this.can);
+    this.ctx().clearRect(0.0, 0.0, this.can.width, this.can.height);
+    clear(this.bgCan);
+    this.bgCtx().clearRect(0.0, 0.0, this.bgCan.width, this.bgCan.height);
+    clear(this.uiCan);
+    this.uiCtx().clearRect(0.0, 0.0, this.uiCan.width, this.uiCan.height);
+  };
   World.prototype.w = function () {
     return this.can.width;
   };
@@ -193,16 +210,6 @@ var QGress = function (_, Kotlin) {
     },
     set: function (noiseImage) {
       this.noiseImage_c4tqbn$_0 = noiseImage;
-    }
-  });
-  Object.defineProperty(World.prototype, 'shadowStreetMap', {
-    get: function () {
-      if (this.shadowStreetMap_jwpvb7$_0 == null)
-        return throwUPAE('shadowStreetMap');
-      return this.shadowStreetMap_jwpvb7$_0;
-    },
-    set: function (shadowStreetMap) {
-      this.shadowStreetMap_jwpvb7$_0 = shadowStreetMap;
     }
   });
   Object.defineProperty(World.prototype, 'grid', {
@@ -2757,6 +2764,129 @@ var QGress = function (_, Kotlin) {
     }
     return Dimensions_instance;
   }
+  function Location(name, ordinal, displayName, lng, lat) {
+    Enum.call(this);
+    this.displayName = displayName;
+    this.lng = lng;
+    this.lat = lat;
+    this.name$ = name;
+    this.ordinal$ = ordinal;
+  }
+  function Location_initFields() {
+    Location_initFields = function () {
+    };
+    Location$RED_SQUARE_instance = new Location('RED_SQUARE', 0, 'Red Square', 9.373274, 47.422139);
+    Location$CHLOSER_PLATZ_instance = new Location('CHLOSER_PLATZ', 1, 'Chloster Platz', 9.377, 47.424);
+    Location$GOLLUMS_instance = new Location('GOLLUMS', 2, 'Gollums', 8.5952, 47.362);
+    Location$BAD_RAGAZ_instance = new Location('BAD_RAGAZ', 3, 'Bad Ragaz', 9.500324, 47.0024734);
+    Location$ESCHER_WYSS_instance = new Location('ESCHER_WYSS', 4, 'Escher Wyss', 8.5220562, 47.3907937);
+    Location$GIZA_PLATEAU_instance = new Location('GIZA_PLATEAU', 5, 'Giza Plateau', 31.132, 29.978);
+    Location$EIFFEL_TOWER_instance = new Location('EIFFEL_TOWER', 6, 'Eiffel Tower', 2.2948595, 48.858243);
+    Location$PRIME_TOWER_instance = new Location('PRIME_TOWER', 7, 'Prime Tower', 8.5183064, 47.3867261);
+    Location$GROUND_ZERO_instance = new Location('GROUND_ZERO', 8, 'Ground Zero', -74.0123, 40.7125);
+    Location$Companion_getInstance();
+  }
+  var Location$RED_SQUARE_instance;
+  function Location$RED_SQUARE_getInstance() {
+    Location_initFields();
+    return Location$RED_SQUARE_instance;
+  }
+  var Location$CHLOSER_PLATZ_instance;
+  function Location$CHLOSER_PLATZ_getInstance() {
+    Location_initFields();
+    return Location$CHLOSER_PLATZ_instance;
+  }
+  var Location$GOLLUMS_instance;
+  function Location$GOLLUMS_getInstance() {
+    Location_initFields();
+    return Location$GOLLUMS_instance;
+  }
+  var Location$BAD_RAGAZ_instance;
+  function Location$BAD_RAGAZ_getInstance() {
+    Location_initFields();
+    return Location$BAD_RAGAZ_instance;
+  }
+  var Location$ESCHER_WYSS_instance;
+  function Location$ESCHER_WYSS_getInstance() {
+    Location_initFields();
+    return Location$ESCHER_WYSS_instance;
+  }
+  var Location$GIZA_PLATEAU_instance;
+  function Location$GIZA_PLATEAU_getInstance() {
+    Location_initFields();
+    return Location$GIZA_PLATEAU_instance;
+  }
+  var Location$EIFFEL_TOWER_instance;
+  function Location$EIFFEL_TOWER_getInstance() {
+    Location_initFields();
+    return Location$EIFFEL_TOWER_instance;
+  }
+  var Location$PRIME_TOWER_instance;
+  function Location$PRIME_TOWER_getInstance() {
+    Location_initFields();
+    return Location$PRIME_TOWER_instance;
+  }
+  var Location$GROUND_ZERO_instance;
+  function Location$GROUND_ZERO_getInstance() {
+    Location_initFields();
+    return Location$GROUND_ZERO_instance;
+  }
+  Location.prototype.toJSONString = function () {
+    return '[' + this.lng + ',' + this.lat + ']';
+  };
+  Location.prototype.toJSON = function () {
+    return JSON.parse(this.toJSONString());
+  };
+  function Location$Companion() {
+    Location$Companion_instance = this;
+    this.DEFAULT = Location$RED_SQUARE_getInstance();
+  }
+  Location$Companion.$metadata$ = {
+    kind: Kind_OBJECT,
+    simpleName: 'Companion',
+    interfaces: []
+  };
+  var Location$Companion_instance = null;
+  function Location$Companion_getInstance() {
+    Location_initFields();
+    if (Location$Companion_instance === null) {
+      new Location$Companion();
+    }
+    return Location$Companion_instance;
+  }
+  Location.$metadata$ = {
+    kind: Kind_CLASS,
+    simpleName: 'Location',
+    interfaces: [Enum]
+  };
+  function Location$values() {
+    return [Location$RED_SQUARE_getInstance(), Location$CHLOSER_PLATZ_getInstance(), Location$GOLLUMS_getInstance(), Location$BAD_RAGAZ_getInstance(), Location$ESCHER_WYSS_getInstance(), Location$GIZA_PLATEAU_getInstance(), Location$EIFFEL_TOWER_getInstance(), Location$PRIME_TOWER_getInstance(), Location$GROUND_ZERO_getInstance()];
+  }
+  Location.values = Location$values;
+  function Location$valueOf(name) {
+    switch (name) {
+      case 'RED_SQUARE':
+        return Location$RED_SQUARE_getInstance();
+      case 'CHLOSER_PLATZ':
+        return Location$CHLOSER_PLATZ_getInstance();
+      case 'GOLLUMS':
+        return Location$GOLLUMS_getInstance();
+      case 'BAD_RAGAZ':
+        return Location$BAD_RAGAZ_getInstance();
+      case 'ESCHER_WYSS':
+        return Location$ESCHER_WYSS_getInstance();
+      case 'GIZA_PLATEAU':
+        return Location$GIZA_PLATEAU_getInstance();
+      case 'EIFFEL_TOWER':
+        return Location$EIFFEL_TOWER_getInstance();
+      case 'PRIME_TOWER':
+        return Location$PRIME_TOWER_getInstance();
+      case 'GROUND_ZERO':
+        return Location$GROUND_ZERO_getInstance();
+      default:throwISE('No enum constant config.Location.' + name);
+    }
+  }
+  Location.valueOf_61zpoe$ = Location$valueOf;
   function OscillatorType() {
     OscillatorType_instance = this;
     this.SINE = 'sine';
@@ -6629,6 +6759,9 @@ var QGress = function (_, Kotlin) {
   };
   DrawUtil.prototype.highlightMouse_0 = function (pos) {
     var tmp$, tmp$_0, tmp$_1;
+    if (World_getInstance().shadowStreetMap == null) {
+      return;
+    }
     var ctx = World_getInstance().uiCtx();
     var topOffset = Dimensions_getInstance().topActionOffset;
     var botOffset = window.innerHeight - Dimensions_getInstance().botActionOffset;
@@ -6647,7 +6780,7 @@ var QGress = function (_, Kotlin) {
     tempCan.height = 2 * numberToInt(circle.radius) | 0;
     var xOffset = -(circle.center.xx() - r);
     var yOffset = -(circle.center.yy() - r);
-    tempCtx.putImageData(World_getInstance().shadowStreetMap, xOffset, yOffset);
+    tempCtx.putImageData(ensureNotNull(World_getInstance().shadowStreetMap), xOffset, yOffset);
     ctx.beginPath();
     ctx.arc(circle.center.xx(), circle.center.yy(), circle.radius, 0.0, 2.0 * math.PI);
     ctx.clip();
@@ -7241,6 +7374,7 @@ var QGress = function (_, Kotlin) {
   }
   function HtmlUtil() {
     HtmlUtil_instance = this;
+    this.intervalID = 0;
     this.FROG_COUNT_ID = 'numberOfFrogs';
     this.SMURF_COUNT_ID = 'numberOfSmurfs';
     this.SPEED_ID = 'speed';
@@ -7358,12 +7492,6 @@ var QGress = function (_, Kotlin) {
       return Unit;
     };
   }
-  function HtmlUtil$load$lambda_0(this$HtmlUtil) {
-    return function () {
-      this$HtmlUtil.tick();
-      return Unit;
-    };
-  }
   function HtmlUtil$load$lambda$lambda(this$HtmlUtil) {
     return function (it) {
       World_getInstance().speed = this$HtmlUtil.speedSetting();
@@ -7376,9 +7504,21 @@ var QGress = function (_, Kotlin) {
       return Unit;
     };
   }
-  function HtmlUtil$load$lambda$lambda_0(closure$intervalID, this$HtmlUtil) {
+  function HtmlUtil$load$lambda$lambda_0(this$HtmlUtil) {
     return function (it) {
-      closure$intervalID.v = HtmlUtil_getInstance().pauseHandler_n53o35$(closure$intervalID.v, HtmlUtil$load$lambda$lambda$lambda(this$HtmlUtil));
+      this$HtmlUtil.intervalID = this$HtmlUtil.pauseHandler_n53o35$(this$HtmlUtil.intervalID, HtmlUtil$load$lambda$lambda$lambda(this$HtmlUtil));
+      return Unit;
+    };
+  }
+  function HtmlUtil$load$lambda$lambda_1(this$HtmlUtil) {
+    return function (it) {
+      this$HtmlUtil.mapChangeHandler();
+      return Unit;
+    };
+  }
+  function HtmlUtil$load$lambda_0(this$HtmlUtil) {
+    return function (event) {
+      this$HtmlUtil.handleMouseMove_9ojx7i$(event);
       return Unit;
     };
   }
@@ -7388,159 +7528,74 @@ var QGress = function (_, Kotlin) {
       return Unit;
     };
   }
-  function HtmlUtil$load$lambda_2(this$HtmlUtil) {
-    return function (event) {
-      this$HtmlUtil.handleMouseMove_9ojx7i$(event);
-      return Unit;
-    };
-  }
-  function HtmlUtil$load$createPortals$createPortal$lambda(closure$count, closure$callback, closure$createPortal) {
-    return function () {
-      var tmp$;
-      if (closure$count > 0) {
-        var total = Config_getInstance().startPortals;
-        var realCount = total - closure$count + 1 | 0;
-        var newPortal = Portal$Companion_getInstance().createRandom();
-        DrawUtil_getInstance().drawLoadingText_61zpoe$('Creating Portal (' + realCount + '/' + total + ')');
-        DrawUtil_getInstance().drawVectorField_hv9zn6$(newPortal);
-        World_getInstance().allPortals.add_11rb$(newPortal);
-        closure$createPortal(closure$callback, closure$count - 1 | 0);
-      }
-       else {
-        (tmp$ = document.getElementById('initialMap')) != null ? (tmp$.remove(), Unit) : null;
-        closure$callback();
-      }
-    };
-  }
-  function HtmlUtil$load$createPortals$createPortal(callback, count) {
-    var tmp$;
-    (tmp$ = document.defaultView) != null ? tmp$.setTimeout(HtmlUtil$load$createPortals$createPortal$lambda(count, callback, HtmlUtil$load$createPortals$createPortal), 0) : null;
-  }
-  function HtmlUtil$load$createPortals(callback) {
-    var createPortal = HtmlUtil$load$createPortals$createPortal;
-    createPortal(callback, Config_getInstance().startPortals);
-  }
-  function HtmlUtil$load$createAgents$createNonFaction$lambda(closure$count, closure$batchSize, closure$callback, closure$createNonFaction) {
-    return function () {
-      if (closure$count > 0) {
-        var a = closure$batchSize;
-        var b = closure$count;
-        var realSize = Math_0.min(a, b);
-        var total = Config_getInstance().startNonFaction;
-        var realCount = total - closure$count + realSize | 0;
-        DrawUtil_getInstance().drawLoadingText_61zpoe$('Creating Non-Faction (' + realCount + '/' + total + ')');
-        var tmp$;
-        tmp$ = (new IntRange(0, realSize)).iterator();
-        while (tmp$.hasNext()) {
-          var element = tmp$.next();
-          var newNonFaction = NonFaction$Companion_getInstance().create_5edep5$(World_getInstance().grid);
-          World_getInstance().allNonFaction.add_11rb$(newNonFaction);
-        }
-        closure$createNonFaction(closure$callback, closure$count - realSize | 0);
-      }
-       else {
-        closure$callback();
-      }
-    };
-  }
-  function HtmlUtil$load$createAgents$createNonFaction(closure$batchSize) {
-    return function closure$createNonFaction(callback, count) {
-      var tmp$;
-      (tmp$ = document.defaultView) != null ? tmp$.setTimeout(HtmlUtil$load$createAgents$createNonFaction$lambda(count, closure$batchSize, callback, closure$createNonFaction), 0) : null;
-    };
-  }
-  function HtmlUtil$load$createAgents(callback) {
-    var batchSize = 1;
-    var createNonFaction = HtmlUtil$load$createAgents$createNonFaction(batchSize);
-    DrawUtil_getInstance().clearBackground();
-    createNonFaction(callback, Config_getInstance().startNonFaction);
-  }
-  function HtmlUtil$load$createAgentsAndPortals$lambda(closure$callback, closure$createAgents) {
-    return function () {
-      closure$createAgents(closure$callback);
-    };
-  }
-  function HtmlUtil$load$createAgentsAndPortals(closure$createAgents, closure$createPortals) {
-    return function (callback) {
-      closure$createPortals(HtmlUtil$load$createAgentsAndPortals$lambda(callback, closure$createAgents));
-    };
-  }
-  function HtmlUtil$load$lambda$lambda$lambda_0() {
-    println('Reloading world.');
-    World_getInstance().reload();
-  }
-  function HtmlUtil$load$lambda$lambda_1(it) {
-    var tmp$;
-    (tmp$ = document.defaultView) != null ? tmp$.setTimeout(HtmlUtil$load$lambda$lambda$lambda_0, 3000) : null;
-    return Unit;
-  }
-  function HtmlUtil$load$lambda$lambda_2() {
-    DrawUtil_getInstance().drawLoadingText_61zpoe$('Ready.');
-    World_getInstance().isReady = true;
-    return Unit;
-  }
-  function HtmlUtil$load$lambda_3(closure$createAgentsAndPortals) {
-    return function (grid) {
-      var tmp$;
-      World_getInstance().grid = grid;
-      if (World_getInstance().grid.isEmpty()) {
-        println('ERROR: Grid is empty!');
-      }
-      DrawUtil_getInstance().drawGrid();
-      var geoLocatorButton = Kotlin.isType(tmp$ = document.getElementsByClassName('mapboxgl-ctrl-geolocate')[0], HTMLButtonElement) ? tmp$ : throwCCE();
-      geoLocatorButton.addEventListener('click', HtmlUtil$load$lambda$lambda_1);
-      closure$createAgentsAndPortals(HtmlUtil$load$lambda$lambda_2);
-    };
-  }
-  function HtmlUtil$load$lambda_4(it) {
+  function HtmlUtil$load$lambda_2(it) {
     var tmp$;
     (tmp$ = document.location) != null ? (tmp$.reload(), Unit) : null;
     return Unit;
   }
   HtmlUtil.prototype.load_6taknv$ = function (isFirstLoad) {
-    var tmp$, tmp$_0, tmp$_1, tmp$_2, tmp$_3, tmp$_4;
+    var tmp$, tmp$_0, tmp$_1, tmp$_2, tmp$_3;
     if (isFirstLoad) {
       var rootDiv = Kotlin.isType(tmp$ = document.getElementById('root'), HTMLDivElement) ? tmp$ : throwCCE();
       addClass(rootDiv, ['container']);
-      World_getInstance().can = HtmlUtil_getInstance().createCanvas_61zpoe$('mainCanvas');
-      World_getInstance().bgCan = HtmlUtil_getInstance().createCanvas_61zpoe$('backgroundCanvas');
-      World_getInstance().uiCan = HtmlUtil_getInstance().createCanvas_61zpoe$('uiCanvas');
+      World_getInstance().can = this.createCanvas_0('mainCanvas');
+      World_getInstance().bgCan = this.createCanvas_0('backgroundCanvas');
+      World_getInstance().uiCan = this.createCanvas_0('uiCanvas');
       World_getInstance().uiCan.addEventListener('click', HtmlUtil$load$lambda(this), false);
       var canvasDiv = Kotlin.isType(tmp$_0 = document.createElement('div'), HTMLDivElement) ? tmp$_0 : throwCCE();
       canvasDiv.append(World_getInstance().uiCan);
       canvasDiv.append(World_getInstance().bgCan);
       canvasDiv.append(World_getInstance().can);
-      var w = World_getInstance().can.width;
-      var h = World_getInstance().can.height;
-      var noiseAlpha = 0.8;
-      World_getInstance().noiseMap = ImprovedNoise_getInstance().generateEdgeMap_224j3y$(w, h);
-      World_getInstance().noiseImage = World_getInstance().createNoiseImage_bd1o91$(World_getInstance().noiseMap, w, h, noiseAlpha);
       rootDiv.append(canvasDiv);
       var controlDiv = Kotlin.isType(tmp$_1 = document.createElement('div'), HTMLDivElement) ? tmp$_1 : throwCCE();
       addClass(controlDiv, ['controls']);
-      if (Config_getInstance().isAutostart) {
-        tmp$_4 = (tmp$_3 = (tmp$_2 = document.defaultView) != null ? tmp$_2.setInterval(HtmlUtil$load$lambda_0(this), Time_getInstance().minTickInterval) : null) != null ? tmp$_3 : 0;
-      }
-       else
-        tmp$_4 = 0;
-      var intervalID = {v: tmp$_4};
       var $receiver = Config_getInstance();
+      var tmp$_4;
       var maxSpeed = 500;
-      var speedSlider = HtmlUtil_getInstance().createSliderDiv_k2bhec$('speedSlider', 100, maxSpeed, this.SPEED_ID, '% Speed', 100);
+      var speedSlider = this.createSliderDiv_0('speedSlider', 100, maxSpeed, this.SPEED_ID, '% Speed', 100);
       speedSlider.oninput = HtmlUtil$load$lambda$lambda(this);
       controlDiv.append(speedSlider);
-      controlDiv.append(HtmlUtil_getInstance().createSliderDiv_k2bhec$('frogSlider', $receiver.startFrogs, $receiver.maxFrogs, this.FROG_COUNT_ID, ' Frogs', 0));
-      controlDiv.append(HtmlUtil_getInstance().createSliderDiv_k2bhec$('smurfSlider', $receiver.startSmurfs, $receiver.maxSmurfs, this.SMURF_COUNT_ID, ' Smurfs', 0));
-      controlDiv.append(HtmlUtil_getInstance().createButtonDiv_yasyo8$('button', 'Pause', HtmlUtil$load$lambda$lambda_0(intervalID, this)));
+      controlDiv.append(this.createSliderDiv_0('frogSlider', $receiver.startFrogs, $receiver.maxFrogs, this.FROG_COUNT_ID, ' Frogs', 0));
+      controlDiv.append(this.createSliderDiv_0('smurfSlider', $receiver.startSmurfs, $receiver.maxSmurfs, this.SMURF_COUNT_ID, ' Smurfs', 0));
+      var buttonDiv = Kotlin.isType(tmp$_4 = document.createElement('div'), HTMLDivElement) ? tmp$_4 : throwCCE();
+      buttonDiv.append(this.createButton_0('button', 'Pause', HtmlUtil$load$lambda$lambda_0(this)));
+      buttonDiv.append(this.createDropdown_0('locationSelect', HtmlUtil$load$lambda$lambda_1(this)));
+      controlDiv.append(buttonDiv);
       rootDiv.append(controlDiv);
-      controlDiv.addEventListener('mousemove', HtmlUtil$load$lambda_1(this), false);
-      rootDiv.addEventListener('mousemove', HtmlUtil$load$lambda_2(this), false);
+      controlDiv.addEventListener('mousemove', HtmlUtil$load$lambda_0(this), false);
+      rootDiv.addEventListener('mousemove', HtmlUtil$load$lambda_1(this), false);
+      window.addEventListener('resize', HtmlUtil$load$lambda_2, false);
     }
-    var createPortals = HtmlUtil$load$createPortals;
-    var createAgents = HtmlUtil$load$createAgents;
-    var createAgentsAndPortals = HtmlUtil$load$createAgentsAndPortals(createAgents, createPortals);
-    MapUtil_getInstance().loadMaps_j2gnlp$(isFirstLoad, HtmlUtil$load$lambda_3(createAgentsAndPortals));
-    window.addEventListener('resize', HtmlUtil$load$lambda_4, false);
+     else {
+      (Kotlin.isType(tmp$_2 = document.getElementById(this.FROG_COUNT_ID), HTMLInputElement) ? tmp$_2 : throwCCE()).value = Config_getInstance().startFrogs.toString();
+      (Kotlin.isType(tmp$_3 = document.getElementById(this.SMURF_COUNT_ID), HTMLInputElement) ? tmp$_3 : throwCCE()).value = Config_getInstance().startSmurfs.toString();
+    }
+    this.initWorld_0();
+  };
+  HtmlUtil.prototype.initWorld_0 = function () {
+    var noiseAlpha = 0.8;
+    var w = World_getInstance().can.width;
+    var h = World_getInstance().can.height;
+    World_getInstance().noiseMap = ImprovedNoise_getInstance().generateEdgeMap_224j3y$(w, h);
+    World_getInstance().noiseImage = World_getInstance().createNoiseImage_bd1o91$(World_getInstance().noiseMap, w, h, noiseAlpha);
+    this.resetInterval_0();
+    World_getInstance().resetAllCanvas();
+    MapUtil_getInstance().loadMaps_1io40y$(this.getSelectedCenter(), this.onMapload_0());
+  };
+  function HtmlUtil$resetInterval$lambda(this$HtmlUtil) {
+    return function () {
+      this$HtmlUtil.tick();
+      return Unit;
+    };
+  }
+  HtmlUtil.prototype.resetInterval_0 = function () {
+    var tmp$, tmp$_0, tmp$_1;
+    if (Config_getInstance().isAutostart) {
+      tmp$_1 = (tmp$_0 = (tmp$ = document.defaultView) != null ? tmp$.setInterval(HtmlUtil$resetInterval$lambda(this), Time_getInstance().minTickInterval) : null) != null ? tmp$_0 : 0;
+    }
+     else
+      tmp$_1 = 0;
+    this.intervalID = tmp$_1;
   };
   HtmlUtil.prototype.isNotHandledByCanvas_lfj9be$ = function (pos) {
     return this.isInPositionArea_0(pos) || this.isInMapboxArea_0(pos) || this.isInOsmArea_0(pos);
@@ -7604,7 +7659,7 @@ var QGress = function (_, Kotlin) {
       return null;
     };
   }
-  HtmlUtil.prototype.createSliderDiv_k2bhec$ = function (className, value, max, id, suffix, min) {
+  HtmlUtil.prototype.createSliderDiv_0 = function (className, value, max, id, suffix, min) {
     if (min === void 0)
       min = 0;
     var tmp$, tmp$_0, tmp$_1;
@@ -7624,17 +7679,43 @@ var QGress = function (_, Kotlin) {
     sliderValue.innerHTML = slider.value + suffix;
     return div;
   };
-  HtmlUtil.prototype.createButtonDiv_yasyo8$ = function (className, text, callback) {
-    var tmp$, tmp$_0;
-    var div = Kotlin.isType(tmp$ = document.createElement('div'), HTMLDivElement) ? tmp$ : throwCCE();
-    var button = Kotlin.isType(tmp$_0 = document.createElement('BUTTON'), HTMLButtonElement) ? tmp$_0 : throwCCE();
+  HtmlUtil.prototype.createButton_0 = function (className, text, callback) {
+    var tmp$;
+    var button = Kotlin.isType(tmp$ = document.createElement('BUTTON'), HTMLButtonElement) ? tmp$ : throwCCE();
     addClass(button, [className]);
     button.onclick = callback;
     button.innerText = text;
-    div.appendChild(button);
-    return div;
+    return button;
   };
-  HtmlUtil.prototype.createCanvas_61zpoe$ = function (className) {
+  HtmlUtil.prototype.createLocationOptions_0 = function () {
+    var $receiver = Location$values();
+    var destination = ArrayList_init($receiver.length);
+    var tmp$;
+    for (tmp$ = 0; tmp$ !== $receiver.length; ++tmp$) {
+      var item = $receiver[tmp$];
+      var tmp$_0 = destination.add_11rb$;
+      var tmp$_1;
+      var opt = Kotlin.isType(tmp$_1 = document.createElement('option'), HTMLOptionElement) ? tmp$_1 : throwCCE();
+      opt.text = item.displayName;
+      opt.value = item.toJSONString();
+      tmp$_0.call(destination, opt);
+    }
+    return destination;
+  };
+  HtmlUtil.prototype.createDropdown_0 = function (id, callback) {
+    var tmp$;
+    var select = Kotlin.isType(tmp$ = document.createElement('select'), HTMLSelectElement) ? tmp$ : throwCCE();
+    select.id = id;
+    select.onchange = callback;
+    var tmp$_0;
+    tmp$_0 = this.createLocationOptions_0().iterator();
+    while (tmp$_0.hasNext()) {
+      var element = tmp$_0.next();
+      select.appendChild(element);
+    }
+    return select;
+  };
+  HtmlUtil.prototype.createCanvas_0 = function (className) {
     var tmp$;
     var canvas = Kotlin.isType(tmp$ = document.createElement('canvas'), HTMLCanvasElement) ? tmp$ : throwCCE();
     addClass(canvas, ['canvas', className]);
@@ -7642,7 +7723,7 @@ var QGress = function (_, Kotlin) {
     canvas.height = window.innerHeight;
     return canvas;
   };
-  HtmlUtil.prototype.createOffscreenCanvas_vux9f0$ = function (w, h) {
+  HtmlUtil.prototype.createOffscreenCanvas_0 = function (w, h) {
     var tmp$;
     var canvas = Kotlin.isType(tmp$ = document.createElement('canvas'), HTMLCanvasElement) ? tmp$ : throwCCE();
     canvas.width = w;
@@ -7650,8 +7731,8 @@ var QGress = function (_, Kotlin) {
     return canvas;
   };
   HtmlUtil.prototype.prerender_yb5akz$ = function (w, h, drawFun) {
-    var offscreen = HtmlUtil_getInstance().createOffscreenCanvas_vux9f0$(w, h);
-    var offscreenCtx = HtmlUtil_getInstance().getContext2D_ap7jt0$(offscreen);
+    var offscreen = this.createOffscreenCanvas_0(w, h);
+    var offscreenCtx = this.getContext2D_ap7jt0$(offscreen);
     drawFun(offscreenCtx);
     return offscreen;
   };
@@ -7674,6 +7755,113 @@ var QGress = function (_, Kotlin) {
      else {
       return (tmp$_1 = (tmp$_0 = document.defaultView) != null ? tmp$_0.setInterval(HtmlUtil$pauseHandler$lambda(tickFunction), Time_getInstance().minTickInterval) : null) != null ? tmp$_1 : 0;
     }
+  };
+  function HtmlUtil$createPortals$createPortal$lambda(closure$count, closure$callback, closure$createPortal) {
+    return function () {
+      if (closure$count > 0) {
+        var total = Config_getInstance().startPortals;
+        var realCount = total - closure$count + 1 | 0;
+        var newPortal = Portal$Companion_getInstance().createRandom();
+        DrawUtil_getInstance().drawLoadingText_61zpoe$('Creating Portal (' + realCount + '/' + total + ')');
+        DrawUtil_getInstance().drawVectorField_hv9zn6$(newPortal);
+        World_getInstance().allPortals.add_11rb$(newPortal);
+        closure$createPortal(closure$callback, closure$count - 1 | 0);
+      }
+       else {
+        closure$callback();
+      }
+    };
+  }
+  function HtmlUtil$createPortals$createPortal(callback, count) {
+    var tmp$;
+    (tmp$ = document.defaultView) != null ? tmp$.setTimeout(HtmlUtil$createPortals$createPortal$lambda(count, callback, HtmlUtil$createPortals$createPortal), 0) : null;
+  }
+  HtmlUtil.prototype.createPortals_o14v8n$ = function (callback) {
+    World_getInstance().allPortals.clear();
+    var createPortal = HtmlUtil$createPortals$createPortal;
+    createPortal(callback, Config_getInstance().startPortals);
+  };
+  function HtmlUtil$createAgents$createNonFaction$lambda(closure$count, closure$batchSize, closure$callback, closure$createNonFaction) {
+    return function () {
+      if (closure$count > 0) {
+        var a = closure$batchSize;
+        var b = closure$count;
+        var realSize = Math_0.min(a, b);
+        var total = Config_getInstance().startNonFaction;
+        var realCount = total - closure$count + realSize | 0;
+        DrawUtil_getInstance().drawLoadingText_61zpoe$('Creating Non-Faction (' + realCount + '/' + total + ')');
+        var tmp$;
+        tmp$ = (new IntRange(0, realSize)).iterator();
+        while (tmp$.hasNext()) {
+          var element = tmp$.next();
+          var newNonFaction = NonFaction$Companion_getInstance().create_5edep5$(World_getInstance().grid);
+          World_getInstance().allNonFaction.add_11rb$(newNonFaction);
+        }
+        closure$createNonFaction(closure$callback, closure$count - realSize | 0);
+      }
+       else {
+        closure$callback();
+      }
+    };
+  }
+  function HtmlUtil$createAgents$createNonFaction(closure$batchSize) {
+    return function closure$createNonFaction(callback, count) {
+      var tmp$;
+      (tmp$ = document.defaultView) != null ? tmp$.setTimeout(HtmlUtil$createAgents$createNonFaction$lambda(count, closure$batchSize, callback, closure$createNonFaction), 0) : null;
+    };
+  }
+  HtmlUtil.prototype.createAgents_o14v8n$ = function (callback) {
+    var batchSize = 1;
+    var createNonFaction = HtmlUtil$createAgents$createNonFaction(batchSize);
+    DrawUtil_getInstance().clearBackground();
+    createNonFaction(callback, Config_getInstance().startNonFaction);
+  };
+  function HtmlUtil$createAgentsAndPortals$lambda(closure$callback, this$HtmlUtil) {
+    return function () {
+      this$HtmlUtil.createAgents_o14v8n$(closure$callback);
+    };
+  }
+  HtmlUtil.prototype.createAgentsAndPortals_o14v8n$ = function (callback) {
+    this.createPortals_o14v8n$(HtmlUtil$createAgentsAndPortals$lambda(callback, this));
+  };
+  function HtmlUtil$onMapload$lambda$lambda$lambda() {
+    println('Reloading world.');
+    World_getInstance().reload();
+  }
+  function HtmlUtil$onMapload$lambda$lambda(it) {
+    var tmp$;
+    (tmp$ = document.defaultView) != null ? tmp$.setTimeout(HtmlUtil$onMapload$lambda$lambda$lambda, 3000) : null;
+    return Unit;
+  }
+  function HtmlUtil$onMapload$lambda$lambda_0() {
+    DrawUtil_getInstance().drawLoadingText_61zpoe$('Ready.');
+    World_getInstance().isReady = true;
+    return Unit;
+  }
+  function HtmlUtil$onMapload$lambda(this$HtmlUtil) {
+    return function (grid) {
+      var tmp$;
+      World_getInstance().grid = grid;
+      if (World_getInstance().grid.isEmpty()) {
+        println('ERROR: Grid is empty!');
+      }
+      DrawUtil_getInstance().drawGrid();
+      var geoLocatorButton = Kotlin.isType(tmp$ = document.getElementsByClassName('mapboxgl-ctrl-geolocate')[0], HTMLButtonElement) ? tmp$ : throwCCE();
+      geoLocatorButton.addEventListener('click', HtmlUtil$onMapload$lambda$lambda);
+      this$HtmlUtil.createAgentsAndPortals_o14v8n$(HtmlUtil$onMapload$lambda$lambda_0);
+    };
+  }
+  HtmlUtil.prototype.onMapload_0 = function () {
+    return HtmlUtil$onMapload$lambda(this);
+  };
+  HtmlUtil.prototype.mapChangeHandler = function () {
+    World_getInstance().reload();
+  };
+  HtmlUtil.prototype.getSelectedCenter = function () {
+    var tmp$, tmp$_0;
+    var select = Kotlin.isType(tmp$ = document.getElementById('locationSelect'), HTMLSelectElement) ? tmp$ : throwCCE();
+    var selection = Kotlin.isType(tmp$_0 = select[select.selectedIndex], HTMLOptionElement) ? tmp$_0 : throwCCE();
+    return JSON.parse(selection.value);
   };
   HtmlUtil.$metadata$ = {
     kind: Kind_OBJECT,
@@ -7802,22 +7990,17 @@ var QGress = function (_, Kotlin) {
   }
   function MapUtil() {
     MapUtil_instance = this;
-    this.redSquare = JSON.parse('[9.373274, 47.422139]');
-    this.chlosterPlatz = JSON.parse('[9.3770000, 47.4240000]');
-    this.badRagaz = JSON.parse('[9.500324, 47.0024734]');
-    this.gollums = JSON.parse('[8.5952000, 47.3620000]');
-    this.escherWyss = JSON.parse('[8.5220562, 47.3907937]');
-    this.primeTower = JSON.parse('[8.5183064, 47.3867261]');
-    this.gizaPlateau = JSON.parse('[31.1320000, 29.9780000]');
-    this.eiffel = JSON.parse('[2.2948595, 48.858243]');
-    this.groundZero = JSON.parse('[-74.0123000, 40.7125000]');
-    this.INITIAL_MAP_CENTER = this.chlosterPlatz;
     this.GEO_CTRL_LITERAL = "new mapboxgl.GeolocateControl({'positionOptions':{'enableHighAccuracy':true,'zoom':18},'trackUserLocation':false})";
+    this.INITIAL_MAP = 'initialMap';
+    this.MAP = 'map';
+    this.SHADOW_MAP = 'shadowMap';
+    this.INVISIBLE = 'invisible';
     this.ZOOM = 18;
     this.MIN_ZOOM = 18;
     this.MAX_ZOOM = 18;
     this.map = null;
     this.initMap = null;
+    this.shadowMap = null;
     this.OFFSCREEN_CELL_ROWS = 10;
   }
   MapUtil.prototype.initInitialMapbox = function () {
@@ -7829,13 +8012,16 @@ var QGress = function (_, Kotlin) {
   MapUtil.prototype.initShadowMap = function () {
     return new mapboxgl.Map({container: 'shadowMap', style: 'mapbox://styles/zirteq/cjaq7lw9e2y7u2rn7u6xskobn'});
   };
-  function MapUtil$loadMaps$lambda(closure$isFirstLoad, closure$callback, this$MapUtil) {
+  function MapUtil$loadMaps$lambda(closure$callback, this$MapUtil) {
     return function (initMap) {
-      this$MapUtil.loadMap_0(closure$isFirstLoad, initMap, closure$callback);
+      this$MapUtil.loadMap_0(initMap, closure$callback);
     };
   }
-  MapUtil.prototype.loadMaps_j2gnlp$ = function (isFirstLoad, callback) {
-    this.loadInitialMap_0(isFirstLoad, MapUtil$loadMaps$lambda(isFirstLoad, callback, this));
+  MapUtil.prototype.loadMaps_1io40y$ = function (center, callback) {
+    var tmp$, tmp$_0;
+    (tmp$ = document.getElementById(this.MAP)) != null ? addClass(tmp$, [this.INVISIBLE]) : null;
+    (tmp$_0 = document.getElementById(this.SHADOW_MAP)) != null ? addClass(tmp$_0, [this.INVISIBLE]) : null;
+    this.loadInitialMap_0(center, MapUtil$loadMaps$lambda(callback, this));
   };
   function MapUtil$loadInitialMap$addLayers(this$MapUtil) {
     return function () {
@@ -7844,86 +8030,100 @@ var QGress = function (_, Kotlin) {
       }
     };
   }
-  function MapUtil$loadInitialMap$lambda(closure$addLayers, closure$onLoadCallback, this$MapUtil) {
+  function MapUtil$loadInitialMap$lambda(closure$addLayers, closure$callback, this$MapUtil) {
     return function () {
       closure$addLayers();
-      closure$onLoadCallback(ensureNotNull(this$MapUtil.initMap));
+      closure$callback(ensureNotNull(this$MapUtil.initMap));
     };
   }
-  MapUtil.prototype.loadInitialMap_0 = function (isFirstLoad, onLoadCallback) {
-    if (isFirstLoad || this.initMap == null) {
-      this.initMap = this.initInitialMapbox();
-    }
-    var $receiver = ensureNotNull(this.initMap);
-    if (isFirstLoad || this.map == null) {
-      $receiver.setMinZoom(this.MIN_ZOOM);
-      $receiver.setMaxZoom(this.MAX_ZOOM);
-      $receiver.setZoom(this.ZOOM);
-      $receiver.setCenter(this.INITIAL_MAP_CENTER);
-    }
-     else {
-      var currentMapCenter = ensureNotNull(this.map).getCenter();
-      $receiver.setCenter(currentMapCenter);
-    }
+  function MapUtil$loadInitialMap$lambda_0(closure$addLayers, closure$callback, this$MapUtil) {
+    return function () {
+      closure$addLayers();
+      closure$callback(ensureNotNull(this$MapUtil.initMap));
+    };
+  }
+  MapUtil.prototype.loadInitialMap_0 = function (center, callback) {
+    var tmp$;
+    (tmp$ = document.getElementById(this.INITIAL_MAP)) != null ? removeClass(tmp$, [this.INVISIBLE]) : null;
     var addLayers = MapUtil$loadInitialMap$addLayers(this);
-    if (ensureNotNull(this.initMap).loaded()) {
-      addLayers();
-      onLoadCallback(ensureNotNull(this.initMap));
+    if (this.initMap == null) {
+      this.initMap = this.initInitialMapbox();
+      ensureNotNull(this.initMap).on('load', MapUtil$loadInitialMap$lambda(addLayers, callback, this));
+      ensureNotNull(this.initMap).setMinZoom(this.MIN_ZOOM);
+      ensureNotNull(this.initMap).setMaxZoom(this.MAX_ZOOM);
+      ensureNotNull(this.initMap).setZoom(this.ZOOM);
+      ensureNotNull(this.initMap).setCenter(center);
     }
      else {
-      ensureNotNull(this.initMap).on('load', MapUtil$loadInitialMap$lambda(addLayers, onLoadCallback, this));
+      ensureNotNull(this.initMap).on('moveend', MapUtil$loadInitialMap$lambda_0(addLayers, callback, this));
+      var options = JSON.parse(trimMargin('{' + '"' + 'center' + '"' + ': [' + center + '], ' + '"' + 'zoom' + '"' + ': 18}'));
+      ensureNotNull(this.initMap).jumpTo(options);
     }
   };
-  function MapUtil$loadMap$lambda(this$MapUtil, closure$callback) {
+  function MapUtil$loadMap$lambda(closure$center, closure$callback, this$MapUtil) {
     return function () {
-      this$MapUtil.loadShadowMap_0(ensureNotNull(this$MapUtil.map).getCenter(), closure$callback);
+      this$MapUtil.loadShadowMap_0(closure$center, closure$callback);
     };
   }
-  MapUtil.prototype.loadMap_0 = function (isFirstLoad, initMap, callback) {
-    if (isFirstLoad || this.map == null) {
+  function MapUtil$loadMap$lambda_0(closure$center, closure$callback, this$MapUtil) {
+    return function () {
+      this$MapUtil.loadShadowMap_0(closure$center, closure$callback);
+    };
+  }
+  MapUtil.prototype.loadMap_0 = function (initMap, callback) {
+    var tmp$;
+    var center = initMap.getCenter();
+    (tmp$ = document.getElementById(this.MAP)) != null ? removeClass(tmp$, [this.INVISIBLE]) : null;
+    if (this.map == null) {
       this.map = this.initMapbox();
-    }
-    var $receiver = ensureNotNull(this.map);
-    $receiver.addControl(new mapboxgl.GeolocateControl({positionOptions: {enableHighAccuracy: true, zoom: 18}, trackUserLocation: false}));
-    $receiver.setMinZoom(this.MIN_ZOOM);
-    $receiver.setMaxZoom(this.MAX_ZOOM);
-    $receiver.setZoom(this.ZOOM);
-    if (isFirstLoad) {
-      $receiver.setCenter(initMap.getCenter());
-    }
-    DrawUtil_getInstance().drawLoadingText_61zpoe$('Loading map..');
-    if (ensureNotNull(this.map).loaded()) {
-      this.loadShadowMap_0(ensureNotNull(this.map).getCenter(), callback);
+      ensureNotNull(this.map).on('load', MapUtil$loadMap$lambda(center, callback, this));
+      ensureNotNull(this.map).addControl(new mapboxgl.GeolocateControl({positionOptions: {enableHighAccuracy: true, zoom: 18}, trackUserLocation: false}));
+      ensureNotNull(this.map).setMinZoom(this.MIN_ZOOM);
+      ensureNotNull(this.map).setMaxZoom(this.MAX_ZOOM);
+      ensureNotNull(this.map).setZoom(this.ZOOM);
+      ensureNotNull(this.map).setCenter(center);
     }
      else {
-      ensureNotNull(this.map).on('load', MapUtil$loadMap$lambda(this, callback));
+      ensureNotNull(this.map).on('moveend', MapUtil$loadMap$lambda_0(center, callback, this));
+      var lng = center['lng'];
+      var lat = center['lat'];
+      var options = JSON.parse(trimMargin('{' + '"' + 'center' + '"' + ': [' + toString(lng) + ',' + toString(lat) + '],' + '"' + 'zoom' + '"' + ': 18}'));
+      ensureNotNull(this.map).jumpTo(options);
     }
   };
-  function MapUtil$loadShadowMap$lambda(this$MapUtil, closure$callback) {
+  function MapUtil$loadShadowMap$lambda(closure$callback, this$MapUtil) {
     return function () {
-      var tmp$, tmp$_0;
-      var maps = document.getElementsByClassName('mapboxgl-canvas');
-      var shadowMapCan = maps[2];
-      var gl = shadowMapCan.getContext('webgl');
-      var width = gl.canvas.width;
-      var height = gl.canvas.height;
-      var rawBuf = new Uint8Array(typeof (tmp$ = width * height * 4) === 'number' ? tmp$ : throwCCE());
-      gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, rawBuf);
-      var imageData = World_getInstance().createStreetImage_n3vf4$(rawBuf, gl.canvas.width, gl.canvas.height);
-      World_getInstance().shadowStreetMap = imageData;
-      (tmp$_0 = document.getElementById('shadowMap')) != null ? (tmp$_0.remove(), Unit) : null;
-      var grid = this$MapUtil.createGrid_bxn848$(imageData, width, height);
-      closure$callback(grid);
+      this$MapUtil.addGrid_vekcfi$(closure$callback);
     };
   }
   MapUtil.prototype.loadShadowMap_0 = function (center, callback) {
-    DrawUtil_getInstance().drawLoadingText_61zpoe$('Creating grid..');
-    var shadowMap = this.initShadowMap();
-    shadowMap.setMinZoom(this.MIN_ZOOM);
-    shadowMap.setMaxZoom(this.MAX_ZOOM);
-    shadowMap.setZoom(this.ZOOM);
-    shadowMap.setCenter(center);
-    shadowMap.on('load', MapUtil$loadShadowMap$lambda(this, callback));
+    var tmp$, tmp$_0, tmp$_1;
+    (tmp$ = document.getElementById(this.SHADOW_MAP)) != null ? (tmp$.remove(), Unit) : null;
+    var div = Kotlin.isType(tmp$_0 = document.createElement('div'), HTMLDivElement) ? tmp$_0 : throwCCE();
+    div.id = this.SHADOW_MAP;
+    addClass(div, [this.SHADOW_MAP, 'top']);
+    (tmp$_1 = document.body) != null ? (tmp$_1.append(div), Unit) : null;
+    this.shadowMap = this.initShadowMap();
+    ensureNotNull(this.shadowMap).on('load', MapUtil$loadShadowMap$lambda(callback, this));
+    ensureNotNull(this.shadowMap).setMinZoom(this.MIN_ZOOM);
+    ensureNotNull(this.shadowMap).setMaxZoom(this.MAX_ZOOM);
+    ensureNotNull(this.shadowMap).setZoom(this.ZOOM);
+    ensureNotNull(this.shadowMap).setCenter(center);
+  };
+  MapUtil.prototype.addGrid_vekcfi$ = function (callback) {
+    var tmp$, tmp$_0;
+    var maps = document.getElementsByClassName('mapboxgl-canvas');
+    var shadowMapCan = maps[2];
+    var gl = shadowMapCan.getContext('webgl');
+    var width = gl.canvas.width;
+    var height = gl.canvas.height;
+    var rawBuf = new Uint8Array(typeof (tmp$ = width * height * 4) === 'number' ? tmp$ : throwCCE());
+    gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, rawBuf);
+    var imageData = World_getInstance().createStreetImage_n3vf4$(rawBuf, width, height);
+    World_getInstance().shadowStreetMap = imageData;
+    var grid = this.createGrid_bxn848$(imageData, width, height);
+    (tmp$_0 = document.getElementById(this.SHADOW_MAP)) != null ? addClass(tmp$_0, [this.INVISIBLE]) : null;
+    callback(grid);
   };
   MapUtil.prototype.buildingLayerConfig_0 = function () {
     return JSON.parse('{\n            "id": "3d-buildings",\n            "source": "composite",\n            "source-layer": "building",\n            "filter": ["==", "extrude", "true"],\n            "type": "fill-extrusion",\n            "minzoom": 15,\n            "paint": {\n                "fill-extrusion-color": "#333333",\n                "fill-extrusion-height": ["interpolate", ["linear"], ["zoom"], 15, 0, 15.05, ["get", "height"]],\n                "fill-extrusion-base": ["interpolate", ["linear"], ["zoom"], 15, 0, 15.05, ["get", "min_height"]],\n                "fill-extrusion-opacity": 0.9\n            }\n        }');
@@ -9469,6 +9669,37 @@ var QGress = function (_, Kotlin) {
   Object.defineProperty(package$config, 'Dimensions', {
     get: Dimensions_getInstance
   });
+  Object.defineProperty(Location, 'RED_SQUARE', {
+    get: Location$RED_SQUARE_getInstance
+  });
+  Object.defineProperty(Location, 'CHLOSER_PLATZ', {
+    get: Location$CHLOSER_PLATZ_getInstance
+  });
+  Object.defineProperty(Location, 'GOLLUMS', {
+    get: Location$GOLLUMS_getInstance
+  });
+  Object.defineProperty(Location, 'BAD_RAGAZ', {
+    get: Location$BAD_RAGAZ_getInstance
+  });
+  Object.defineProperty(Location, 'ESCHER_WYSS', {
+    get: Location$ESCHER_WYSS_getInstance
+  });
+  Object.defineProperty(Location, 'GIZA_PLATEAU', {
+    get: Location$GIZA_PLATEAU_getInstance
+  });
+  Object.defineProperty(Location, 'EIFFEL_TOWER', {
+    get: Location$EIFFEL_TOWER_getInstance
+  });
+  Object.defineProperty(Location, 'PRIME_TOWER', {
+    get: Location$PRIME_TOWER_getInstance
+  });
+  Object.defineProperty(Location, 'GROUND_ZERO', {
+    get: Location$GROUND_ZERO_getInstance
+  });
+  Object.defineProperty(Location, 'Companion', {
+    get: Location$Companion_getInstance
+  });
+  package$config.Location = Location;
   Object.defineProperty(package$config, 'OscillatorType', {
     get: OscillatorType_getInstance
   });

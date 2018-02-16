@@ -68,6 +68,9 @@ html, body {
     visibility: hidden;
     display: none;
 }
+.top {
+    top: -100%;
+}
 .unclickable {
     pointer-events: none;
 }
@@ -86,6 +89,14 @@ html, body {
 }
 
 .button {
+    height: 21px;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    margin-right: 5px;
+    margin-left: 5px;
+    font-family: "Coda", "Lucida Console";
+}
+.select {
     height: 21px;
     margin-top: 5px;
     margin-bottom: 5px;

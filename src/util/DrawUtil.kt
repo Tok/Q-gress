@@ -89,6 +89,9 @@ object DrawUtil {
     }
 
     private fun highlightMouse(pos: Coords) {
+        if (World.shadowStreetMap == null) {
+            return
+        }
         val ctx = World.uiCtx()
         val topOffset = Dimensions.topActionOffset
         val botOffset = window.innerHeight - Dimensions.botActionOffset
@@ -110,7 +113,7 @@ object DrawUtil {
         tempCan.height = 2 * circle.radius.toInt()
         val xOffset = -(circle.center.xx() - r)
         val yOffset = -(circle.center.yy() - r)
-        tempCtx.putImageData(World.shadowStreetMap, xOffset, yOffset)
+        tempCtx.putImageData(World.shadowStreetMap!!, xOffset, yOffset)
 
         ctx.beginPath()
         ctx.arc(circle.center.xx(), circle.center.yy(), circle.radius, 0.0, 2.0 * PI)

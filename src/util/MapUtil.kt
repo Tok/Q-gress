@@ -8,29 +8,26 @@ import config.Styles
 import external.MapBox
 import org.khronos.webgl.Uint8Array
 import org.khronos.webgl.get
-import org.w3c.dom.HTMLButtonElement
+import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.ImageData
 import org.w3c.dom.get
 import util.data.Cell
 import util.data.Coords
 import kotlin.browser.document
+import kotlin.dom.addClass
+import kotlin.dom.removeClass
+import kotlin.js.Json
 
 object MapUtil {
-    val redSquare: JSON = JSON.parse("[9.373274, 47.422139]")
-    val chlosterPlatz: JSON = JSON.parse("[9.3770000, 47.4240000]")
-    val badRagaz: JSON = JSON.parse("[9.500324, 47.0024734]")
-    val gollums: JSON = JSON.parse("[8.5952000, 47.3620000]")
-    val escherWyss: JSON = JSON.parse("[8.5220562, 47.3907937]")
-    val primeTower: JSON = JSON.parse("[8.5183064, 47.3867261]")
-    val gizaPlateau: JSON = JSON.parse("[31.1320000, 29.9780000]")
-    val eiffel: JSON = JSON.parse("[2.2948595, 48.858243]")
-    val groundZero: JSON = JSON.parse("[-74.0123000, 40.7125000]")
-    val INITIAL_MAP_CENTER = chlosterPlatz
-
     fun initInitialMapbox() = js("new mapboxgl.Map({'container':'initialMap','style':'mapbox://styles/zirteq/cjazhkywuppf42rnx453i73z5'});")
     fun initMapbox() = js("new mapboxgl.Map({'container':'map','style':'mapbox://styles/zirteq/cjb19u1dy02a82slyklj33o6g'});")
     fun initShadowMap() = js("new mapboxgl.Map({'container':'shadowMap','style':'mapbox://styles/zirteq/cjaq7lw9e2y7u2rn7u6xskobn'});")
     val GEO_CTRL_LITERAL = "new mapboxgl.GeolocateControl({'positionOptions':{'enableHighAccuracy':true,'zoom':18},'trackUserLocation':false})"
+
+    val INITIAL_MAP = "initialMap"
+    val MAP = "map"
+    val SHADOW_MAP = "shadowMap"
+    val INVISIBLE = "invisible"
 
     val ZOOM = 18
     val MIN_ZOOM = 18
@@ -38,99 +35,88 @@ object MapUtil {
 
     var map: MapBox? = null
     var initMap: MapBox? = null
+    var shadowMap: MapBox? = null
 
-    fun loadMaps(isFirstLoad: Boolean, callback: (Map<Coords, Cell>) -> Unit) {
-        loadInitialMap(isFirstLoad, fun(initMap: MapBox) {
-            loadMap(isFirstLoad, initMap, callback)
+    fun loadMaps(center: Json, callback: (Map<Coords, Cell>) -> Unit) {
+        document.getElementById(MAP)?.addClass(INVISIBLE)
+        document.getElementById(SHADOW_MAP)?.addClass(INVISIBLE)
+        loadInitialMap(center, fun(initMap: MapBox) {
+            loadMap(initMap, callback)
         })
     }
 
-    private fun loadInitialMap(isFirstLoad: Boolean, onLoadCallback: (MapBox) -> Unit) {
-        if (isFirstLoad || initMap == null) {
-            initMap = initInitialMapbox()
-        }
-        with(initMap!!) {
-            if (isFirstLoad || map == null) {
-                //addControl(js(GEO_CTRL_LITERAL))
-                setMinZoom(MIN_ZOOM)
-                setMaxZoom(MAX_ZOOM)
-                setZoom(ZOOM)
-                setCenter(INITIAL_MAP_CENTER)
-            } else {
-                val currentMapCenter = map!!.getCenter()
-                setCenter(currentMapCenter)
-            }
-        }
+    private fun loadInitialMap(center: Json, callback: (MapBox) -> Unit) {
+        document.getElementById(INITIAL_MAP)?.removeClass(INVISIBLE)
         fun addLayers() {
             if (Styles.use3DBuildings) {
                 initMap!!.addLayer(buildingLayerConfig())
             }
         }
-        if (initMap!!.loaded()) {
-            addLayers()
-            onLoadCallback(initMap!!)
+        if (initMap == null) {
+            initMap = initInitialMapbox()
+            initMap!!.on("load", fun() { addLayers(); callback(initMap!!) })
+            initMap!!.setMinZoom(MIN_ZOOM)
+            initMap!!.setMaxZoom(MAX_ZOOM)
+            initMap!!.setZoom(ZOOM)
+            initMap!!.setCenter(center)
         } else {
-            initMap!!.on("load", fun() {
-                addLayers()
-                onLoadCallback(initMap!!)
-            })
+            initMap!!.on("moveend", fun() { addLayers(); callback(initMap!!) })
+            val options: Json = JSON.parse("""{"center": [$center], "zoom": 18}""".trimMargin())
+            initMap!!.jumpTo(options)
         }
     }
 
     //https://www.mapbox.com/mapbox-gl-js/api/
-    private fun loadMap(isFirstLoad: Boolean, initMap: MapBox, callback: (Map<Coords, Cell>) -> Unit) {
-        if (isFirstLoad || map == null) {
+    private fun loadMap(initMap: MapBox, callback: (Map<Coords, Cell>) -> Unit) {
+        val center = initMap.getCenter()
+        document.getElementById(MAP)?.removeClass(INVISIBLE)
+        if (map == null) {
             map = initMapbox()
-        }
-        with(map!!) {
-            addControl(js(GEO_CTRL_LITERAL))
-            setMinZoom(MIN_ZOOM)
-            setMaxZoom(MAX_ZOOM)
-            setZoom(ZOOM)
-            if (isFirstLoad) {
-                setCenter(initMap.getCenter())
-            }
-        }
-        DrawUtil.drawLoadingText("Loading map..")
-        if (map!!.loaded()) {
-            loadShadowMap(map!!.getCenter(), callback)
+            map!!.on("load", fun() { loadShadowMap(center, callback) })
+            map!!.addControl(js(GEO_CTRL_LITERAL))
+            map!!.setMinZoom(MIN_ZOOM)
+            map!!.setMaxZoom(MAX_ZOOM)
+            map!!.setZoom(ZOOM)
+            map!!.setCenter(center)
         } else {
-            map!!.on("load", fun() {
-                loadShadowMap(map!!.getCenter(), callback)
-            })
+            map!!.on("moveend", fun() { loadShadowMap(center, callback) })
+            val lng = center.get("lng")
+            val lat = center.get("lat")
+            val options: Json = JSON.parse("""{"center": [$lng,$lat],"zoom": 18}""".trimMargin())
+            map!!.jumpTo(options)
         }
     }
 
-    private fun loadShadowMap(center: JSON, callback: (Map<Coords, Cell>) -> Unit) {
-        //println("DEBUG: loading shadow map.")
-        DrawUtil.drawLoadingText("Creating grid..")
-        val shadowMap = initShadowMap()
-        with(shadowMap) {
-            setMinZoom(MIN_ZOOM)
-            setMaxZoom(MAX_ZOOM)
-            setZoom(ZOOM)
-            setCenter(center)
-        }
-        shadowMap.on("load", fun() {
-            val maps = document.getElementsByClassName("mapboxgl-canvas")
-            val shadowMapCan: dynamic = maps.get(2)
-
-            val gl: dynamic = shadowMapCan.getContext("webgl")
-            val width = gl.canvas.width
-            val height = gl.canvas.height
-            val rawBuf = Uint8Array((width * height * 4) as Int)
-            gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, rawBuf)
-            val imageData: ImageData = World.createStreetImage(rawBuf, gl.canvas.width, gl.canvas.height)
-            World.shadowStreetMap = imageData
-
-            document.getElementById("shadowMap")?.remove()
-            val grid = createGrid(imageData, width, height)
-
-            callback(grid)
-        })
+    private fun loadShadowMap(center: Json, callback: (Map<Coords, Cell>) -> Unit) {
+        document.getElementById(SHADOW_MAP)?.remove()
+        val div = document.createElement("div") as HTMLDivElement
+        div.id = SHADOW_MAP
+        div.addClass(SHADOW_MAP, "top")
+        document.body?.append(div)
+        shadowMap = initShadowMap()
+        shadowMap!!.on("load", fun() { addGrid(callback) })
+        shadowMap!!.setMinZoom(MIN_ZOOM)
+        shadowMap!!.setMaxZoom(MAX_ZOOM)
+        shadowMap!!.setZoom(ZOOM)
+        shadowMap!!.setCenter(center)
     }
 
-    private fun buildingLayerConfig(): JSON {
+    fun addGrid(callback: (Map<Coords, Cell>) -> Unit) {
+        val maps = document.getElementsByClassName("mapboxgl-canvas")
+        val shadowMapCan: dynamic = maps.get(2) //!
+        val gl: dynamic = shadowMapCan.getContext("webgl")
+        val width = gl.canvas.width
+        val height = gl.canvas.height
+        val rawBuf = Uint8Array((width * height * 4) as Int)
+        gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, rawBuf)
+        val imageData: ImageData = World.createStreetImage(rawBuf, width, height)
+        World.shadowStreetMap = imageData
+        val grid = createGrid(imageData, width, height)
+        document.getElementById(SHADOW_MAP)?.addClass(INVISIBLE)
+        callback(grid)
+    }
+
+    private fun buildingLayerConfig(): Json {
         return JSON.parse("""{
             "id": "3d-buildings",
             "source": "composite",
