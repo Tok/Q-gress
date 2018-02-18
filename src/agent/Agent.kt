@@ -10,10 +10,8 @@ import items.QgressItem
 import items.deployable.Resonator
 import items.level.ResonatorLevel
 import items.level.XmpLevel
-import org.w3c.dom.Path2D
 import portal.Link
 import portal.Portal
-import portal.PortalKey
 import system.Queues
 import util.*
 import util.data.*
@@ -39,13 +37,29 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
     fun getLevel(): Int = getLevel(this.ap)
     fun getXmCapacity(): Int = getXmCapacity(getLevel())
 
-    private fun calcAbsXmBar() = min(getXmCapacity() , max(0 , xm))
+    private fun calcAbsXmBar() = min(getXmCapacity(), max(0, xm))
     fun xmBarPercent() = calcAbsXmBar() * 100 / getXmCapacity()
     fun isXmBarEmpty() = xmBarPercent() == 0
     fun isXmFilled() = xmBarPercent() >= 80
-    fun removeXm(v: Int) { if (xm - v <= 0) { this.xm = 0 } else { this.xm -= v } }
-    fun addXm(v: Int) { if (xm + v >= getXmCapacity()) { this.xm = getXmCapacity() } else { this.xm += v } }
-    fun addAp(v: Int) { this.ap += v }
+    fun removeXm(v: Int) {
+        if (xm - v <= 0) {
+            this.xm = 0
+        } else {
+            this.xm -= v
+        }
+    }
+
+    fun addXm(v: Int) {
+        if (xm + v >= getXmCapacity()) {
+            this.xm = getXmCapacity()
+        } else {
+            this.xm += v
+        }
+    }
+
+    fun addAp(v: Int) {
+        this.ap += v
+    }
 
     fun act(): Agent {
         //println("DEBUG: ${World.tick} $action")
@@ -183,7 +197,7 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         if (chargable!!.isEmpty()) {
             return this
         }
-        val lowest: Portal? = chargable?.sortedBy { it.calcHealth() }?.first()
+        val lowest: Portal? = chargable.sortedBy { it.calcHealth() }.first()
         if (lowest != null) {
             val resos = lowest.resoSlots.mapNotNull { it.value.resonator }
             val resoCount = resos.count()
@@ -193,8 +207,7 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
     }
 
     fun recycleItems(): Agent {
-        //TODO implement..
-        return this
+        return this //TODO implement..
     }
 
     fun attackPortal(): Agent {
@@ -449,12 +462,15 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         private val enlImages = ActionItem.values().map { it to drawAgentTemplate(Faction.ENL, it) }.toMap()
         private val resImages = ActionItem.values().map { it to drawAgentTemplate(Faction.RES, it) }.toMap()
         private fun xmKey(faction: Faction, percent: Int) = faction.abbr + ":" + percent
-        private val xmBarImages = Faction.values().flatMap { fac -> (0..100).map {
-            val lw = Dimensions.agentLineWidth
-            val r = Dimensions.agentRadius.toInt()
-            val w = (r * 2) + (2 * lw)
-            xmKey(fac, it) to DrawUtil.renderBarImage(fac.color, it, 3, w, lw)
-        }}.toMap()
+        private val xmBarImages = Faction.values().flatMap { fac ->
+            (0..100).map {
+                val lw = Dimensions.agentLineWidth
+                val r = Dimensions.agentRadius.toInt()
+                val w = (r * 2) + (2 * lw)
+                xmKey(fac, it) to DrawUtil.renderBarImage(fac.color, it, 3, w, lw)
+            }
+        }.toMap()
+
         private fun getAgentImage(faction: Faction, actionItem: ActionItem): Canvas {
             return when (faction) {
                 Faction.ENL -> enlImages.getValue(actionItem)
@@ -462,6 +478,7 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
                 else -> throw IllegalStateException("Illegal faction: $faction")
             }
         }
+
         private fun getXmBarImage(faction: Faction, percent: Int): Canvas {
             check(percent >= 0 && percent <= 100)
             return xmBarImages.getValue(xmKey(faction, percent))

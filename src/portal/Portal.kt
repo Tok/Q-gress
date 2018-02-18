@@ -279,7 +279,7 @@ data class Portal constructor(val name: String, val location: Coords,
         }
     }
 
-    fun deployMods(agent: Agent, mods: Map<Octant, DeployableItem>) {
+    fun deployMods(agent: Agent, @Suppress("UNUSED_PARAMETER") mods: Map<Octant, DeployableItem>) {
         val isCommon = true //TODO implement
         val isRare = false
         val isVeryRare = false

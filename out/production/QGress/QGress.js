@@ -10,13 +10,14 @@ var QGress = function (_, Kotlin) {
   var sum = Kotlin.kotlin.collections.sum_plj8ka$;
   var toByte = Kotlin.toByte;
   var kotlin_js_internal_ByteCompanionObject = Kotlin.kotlin.js.internal.ByteCompanionObject;
+  var IntRange = Kotlin.kotlin.ranges.IntRange;
+  var Unit = Kotlin.kotlin.Unit;
   var Kind_OBJECT = Kotlin.Kind.OBJECT;
   var to = Kotlin.kotlin.to_ujzrz7$;
   var listOf = Kotlin.kotlin.collections.listOf_i5x0yv$;
   var println = Kotlin.kotlin.io.println_s8jyv4$;
   var ensureNotNull = Kotlin.ensureNotNull;
   var first = Kotlin.kotlin.collections.first_2p1efm$;
-  var Unit = Kotlin.kotlin.Unit;
   var take = Kotlin.kotlin.collections.take_ba2ldo$;
   var toList = Kotlin.kotlin.collections.toList_abgq59$;
   var throwCCE = Kotlin.throwCCE;
@@ -29,7 +30,6 @@ var QGress = function (_, Kotlin) {
   var hashCode = Kotlin.hashCode;
   var getValue = Kotlin.kotlin.collections.getValue_t9ocha$;
   var IllegalStateException_init = Kotlin.kotlin.IllegalStateException_init_pdl1vj$;
-  var IntRange = Kotlin.kotlin.ranges.IntRange;
   var Kind_CLASS = Kotlin.Kind.CLASS;
   var Enum = Kotlin.kotlin.Enum;
   var throwISE = Kotlin.throwISE;
@@ -52,6 +52,10 @@ var QGress = function (_, Kotlin) {
   var IllegalArgumentException_init = Kotlin.kotlin.IllegalArgumentException_init_pdl1vj$;
   var addClass = Kotlin.kotlin.dom.addClass_hhb33f$;
   var removeClass = Kotlin.kotlin.dom.removeClass_hhb33f$;
+  var split = Kotlin.kotlin.text.split_ip8yn$;
+  var contains = Kotlin.kotlin.text.contains_li3zpu$;
+  var replace = Kotlin.kotlin.text.replace_680rmw$;
+  var toDouble = Kotlin.kotlin.text.toDouble_pdl1vz$;
   var trimMargin = Kotlin.kotlin.text.trimMargin_rjktp$;
   var max = Kotlin.kotlin.collections.max_exjks8$;
   var toMap_0 = Kotlin.kotlin.collections.toMap_abgq59$;
@@ -96,7 +100,7 @@ var QGress = function (_, Kotlin) {
   Quality.prototype = Object.create(Enum.prototype);
   Quality.prototype.constructor = Quality;
   function main(args) {
-    HtmlUtil_getInstance().load_6taknv$(true);
+    HtmlUtil_getInstance().load();
   }
   var LinkedHashSet_init = Kotlin.kotlin.collections.LinkedHashSet_init_287e2$;
   var ArrayList_init = Kotlin.kotlin.collections.ArrayList_init_ww73n8$;
@@ -113,18 +117,12 @@ var QGress = function (_, Kotlin) {
     this.noiseImage_c4tqbn$_0 = this.noiseImage_c4tqbn$_0;
     this.shadowStreetMap = null;
     this.grid_pwdzco$_0 = this.grid_pwdzco$_0;
+    this.frogs = LinkedHashSet_init();
+    this.smurfs = LinkedHashSet_init();
     this.allAgents = LinkedHashSet_init();
     this.allNonFaction = LinkedHashSet_init();
     this.allPortals = ArrayList_init();
   }
-  World.prototype.reload = function () {
-    this.tick = 0;
-    this.isReady = false;
-    this.allAgents.clear();
-    this.allNonFaction.clear();
-    this.allPortals.clear();
-    HtmlUtil_getInstance().load_6taknv$(false);
-  };
   Object.defineProperty(World.prototype, 'can', {
     get: function () {
       if (this.can_v8ttwa$_0 == null)
@@ -491,6 +489,34 @@ var QGress = function (_, Kotlin) {
     }
     return imageData;
   };
+  function World$createNonFaction$lambda(closure$count, closure$batchSize, closure$callback, this$World) {
+    return function () {
+      if (closure$count > 0) {
+        var a = closure$batchSize;
+        var b = closure$count;
+        var realSize = Math_0.min(a, b);
+        var total = Config_getInstance().startNonFaction;
+        var realCount = total - closure$count + realSize | 0;
+        DrawUtil_getInstance().drawLoadingText_61zpoe$('Creating Non-Faction (' + realCount + '/' + total + ')');
+        var tmp$;
+        tmp$ = (new IntRange(0, realSize)).iterator();
+        while (tmp$.hasNext()) {
+          var element = tmp$.next();
+          var newNonFaction = NonFaction$Companion_getInstance().create_5edep5$(World_getInstance().grid);
+          World_getInstance().allNonFaction.add_11rb$(newNonFaction);
+        }
+        this$World.createNonFaction_fzludj$(closure$callback, closure$count - realSize | 0);
+      }
+       else {
+        closure$callback();
+      }
+    };
+  }
+  World.prototype.createNonFaction_fzludj$ = function (callback, count) {
+    var tmp$;
+    var batchSize = 1;
+    (tmp$ = document.defaultView) != null ? tmp$.setTimeout(World$createNonFaction$lambda(count, batchSize, callback, this), 0) : null;
+  };
   World.$metadata$ = {
     kind: Kind_OBJECT,
     simpleName: 'World',
@@ -844,7 +870,6 @@ var QGress = function (_, Kotlin) {
     };
   });
   Agent.prototype.rechargePortal = function () {
-    var tmp$;
     if (!this.hasKeys()) {
       return this;
     }
@@ -852,17 +877,17 @@ var QGress = function (_, Kotlin) {
     if (ensureNotNull(chargable).isEmpty()) {
       return this;
     }
-    var lowest = (tmp$ = chargable != null ? sortedWith(chargable, new Comparator$ObjectLiteral(compareBy$lambda(Agent$rechargePortal$lambda))) : null) != null ? first(tmp$) : null;
+    var lowest = first(sortedWith(chargable, new Comparator$ObjectLiteral(compareBy$lambda(Agent$rechargePortal$lambda))));
     if (lowest != null) {
       var $receiver = lowest.resoSlots;
       var destination = ArrayList_init();
-      var tmp$_0;
-      tmp$_0 = $receiver.entries.iterator();
-      while (tmp$_0.hasNext()) {
-        var element = tmp$_0.next();
-        var tmp$_0_0;
-        if ((tmp$_0_0 = element.value.resonator) != null) {
-          destination.add_11rb$(tmp$_0_0);
+      var tmp$;
+      tmp$ = $receiver.entries.iterator();
+      while (tmp$.hasNext()) {
+        var element = tmp$.next();
+        var tmp$_0;
+        if ((tmp$_0 = element.value.resonator) != null) {
+          destination.add_11rb$(tmp$_0);
         }
       }
       var resos = destination;
@@ -2681,6 +2706,8 @@ var QGress = function (_, Kotlin) {
     this.shadowBlurCount = 3;
     this.comMessageLimit = 8;
     this.topAgentsMessageLimit = 5;
+    this.location = 'https://tok.github.io/Q-gress/';
+    this.localToken = 'Qgress/';
   }
   Config.$metadata$ = {
     kind: Kind_OBJECT,
@@ -7378,22 +7405,20 @@ var QGress = function (_, Kotlin) {
     this.FROG_COUNT_ID = 'numberOfFrogs';
     this.SMURF_COUNT_ID = 'numberOfSmurfs';
     this.SPEED_ID = 'speed';
-    this.frogs = LinkedHashSet_init();
-    this.smurfs = LinkedHashSet_init();
   }
-  HtmlUtil.prototype.speedSetting = function () {
+  HtmlUtil.prototype.speedSetting_0 = function () {
     var tmp$;
     return numberToInt((Kotlin.isType(tmp$ = document.getElementById(this.SPEED_ID), HTMLInputElement) ? tmp$ : throwCCE()).valueAsNumber);
   };
-  HtmlUtil.prototype.frogCount = function () {
+  HtmlUtil.prototype.frogCount_0 = function () {
     var tmp$;
     return numberToInt((Kotlin.isType(tmp$ = document.getElementById(this.FROG_COUNT_ID), HTMLInputElement) ? tmp$ : throwCCE()).valueAsNumber);
   };
-  HtmlUtil.prototype.smurfCount = function () {
+  HtmlUtil.prototype.smurfCount_0 = function () {
     var tmp$;
     return numberToInt((Kotlin.isType(tmp$ = document.getElementById(this.SMURF_COUNT_ID), HTMLInputElement) ? tmp$ : throwCCE()).valueAsNumber);
   };
-  HtmlUtil.prototype.updateAgents_sbryja$ = function (agents, faction, nextAgents) {
+  HtmlUtil.prototype.updateAgents_0 = function (agents, faction, nextAgents) {
     agents.clear();
     var destination = ArrayList_init();
     var tmp$;
@@ -7405,7 +7430,7 @@ var QGress = function (_, Kotlin) {
     }
     agents.addAll_brywnq$(destination);
   };
-  HtmlUtil.prototype.updateAgentCount_p30vra$ = function (agents, newCount, creationFuncion) {
+  HtmlUtil.prototype.updateAgentCount_0 = function (agents, newCount, creationFuncion) {
     if (newCount < agents.size) {
       World_getInstance().allAgents.addAll_brywnq$(take(agents, newCount));
     }
@@ -7456,13 +7481,13 @@ var QGress = function (_, Kotlin) {
     return this.closure$comparison(a, b);
   };
   Comparator$ObjectLiteral_16.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
-  HtmlUtil.prototype.tick = function () {
+  HtmlUtil.prototype.tick_0 = function () {
     if (!World_getInstance().isReady) {
       return;
     }
     World_getInstance().allAgents.clear();
-    this.updateAgentCount_p30vra$(this.frogs, this.frogCount(), HtmlUtil$tick$lambda);
-    this.updateAgentCount_p30vra$(this.smurfs, this.smurfCount(), HtmlUtil$tick$lambda_0);
+    this.updateAgentCount_0(World_getInstance().frogs, this.frogCount_0(), HtmlUtil$tick$lambda);
+    this.updateAgentCount_0(World_getInstance().smurfs, this.smurfCount_0(), HtmlUtil$tick$lambda_0);
     sortedWith(World_getInstance().allAgents, new Comparator$ObjectLiteral_16(compareBy$lambda_15(HtmlUtil$tick$lambda_1)));
     var $receiver = World_getInstance().allAgents;
     var destination = ArrayList_init(collectionSizeOrDefault($receiver, 10));
@@ -7473,8 +7498,8 @@ var QGress = function (_, Kotlin) {
       destination.add_11rb$(item.act());
     }
     var nextAgents = toSet(destination);
-    this.updateAgents_sbryja$(this.frogs, Faction$ENL_getInstance(), nextAgents);
-    this.updateAgents_sbryja$(this.smurfs, Faction$RES_getInstance(), nextAgents);
+    this.updateAgents_0(World_getInstance().frogs, Faction$ENL_getInstance(), nextAgents);
+    this.updateAgents_0(World_getInstance().smurfs, Faction$RES_getInstance(), nextAgents);
     var tmp$_0;
     tmp$_0 = World_getInstance().allNonFaction.iterator();
     while (tmp$_0.hasNext()) {
@@ -7488,43 +7513,43 @@ var QGress = function (_, Kotlin) {
   };
   function HtmlUtil$load$lambda(this$HtmlUtil) {
     return function (event) {
-      this$HtmlUtil.handleMouseClick_9ojx7i$(event);
+      this$HtmlUtil.handleMouseClick_0(event);
       return Unit;
     };
   }
   function HtmlUtil$load$lambda$lambda(this$HtmlUtil) {
     return function (it) {
-      World_getInstance().speed = this$HtmlUtil.speedSetting();
+      World_getInstance().speed = this$HtmlUtil.speedSetting_0();
       return Unit;
     };
   }
   function HtmlUtil$load$lambda$lambda$lambda(this$HtmlUtil) {
     return function () {
-      this$HtmlUtil.tick();
+      this$HtmlUtil.tick_0();
       return Unit;
     };
   }
   function HtmlUtil$load$lambda$lambda_0(this$HtmlUtil) {
     return function (it) {
-      this$HtmlUtil.intervalID = this$HtmlUtil.pauseHandler_n53o35$(this$HtmlUtil.intervalID, HtmlUtil$load$lambda$lambda$lambda(this$HtmlUtil));
+      this$HtmlUtil.intervalID = this$HtmlUtil.pauseHandler_0(this$HtmlUtil.intervalID, HtmlUtil$load$lambda$lambda$lambda(this$HtmlUtil));
       return Unit;
     };
   }
   function HtmlUtil$load$lambda$lambda_1(this$HtmlUtil) {
     return function (it) {
-      this$HtmlUtil.mapChangeHandler();
+      this$HtmlUtil.mapChangeHandler_0();
       return Unit;
     };
   }
   function HtmlUtil$load$lambda_0(this$HtmlUtil) {
     return function (event) {
-      this$HtmlUtil.handleMouseMove_9ojx7i$(event);
+      this$HtmlUtil.handleMouseMove_0(event);
       return Unit;
     };
   }
   function HtmlUtil$load$lambda_1(this$HtmlUtil) {
     return function (event) {
-      this$HtmlUtil.handleMouseMove_9ojx7i$(event);
+      this$HtmlUtil.handleMouseMove_0(event);
       return Unit;
     };
   }
@@ -7533,43 +7558,40 @@ var QGress = function (_, Kotlin) {
     (tmp$ = document.location) != null ? (tmp$.reload(), Unit) : null;
     return Unit;
   }
-  HtmlUtil.prototype.load_6taknv$ = function (isFirstLoad) {
-    var tmp$, tmp$_0, tmp$_1, tmp$_2, tmp$_3;
-    if (isFirstLoad) {
-      var rootDiv = Kotlin.isType(tmp$ = document.getElementById('root'), HTMLDivElement) ? tmp$ : throwCCE();
-      addClass(rootDiv, ['container']);
-      World_getInstance().can = this.createCanvas_0('mainCanvas');
-      World_getInstance().bgCan = this.createCanvas_0('backgroundCanvas');
-      World_getInstance().uiCan = this.createCanvas_0('uiCanvas');
-      World_getInstance().uiCan.addEventListener('click', HtmlUtil$load$lambda(this), false);
-      var canvasDiv = Kotlin.isType(tmp$_0 = document.createElement('div'), HTMLDivElement) ? tmp$_0 : throwCCE();
-      canvasDiv.append(World_getInstance().uiCan);
-      canvasDiv.append(World_getInstance().bgCan);
-      canvasDiv.append(World_getInstance().can);
-      rootDiv.append(canvasDiv);
-      var controlDiv = Kotlin.isType(tmp$_1 = document.createElement('div'), HTMLDivElement) ? tmp$_1 : throwCCE();
-      addClass(controlDiv, ['controls']);
-      var $receiver = Config_getInstance();
-      var tmp$_4;
-      var maxSpeed = 500;
-      var speedSlider = this.createSliderDiv_0('speedSlider', 100, maxSpeed, this.SPEED_ID, '% Speed', 100);
-      speedSlider.oninput = HtmlUtil$load$lambda$lambda(this);
-      controlDiv.append(speedSlider);
-      controlDiv.append(this.createSliderDiv_0('frogSlider', $receiver.startFrogs, $receiver.maxFrogs, this.FROG_COUNT_ID, ' Frogs', 0));
-      controlDiv.append(this.createSliderDiv_0('smurfSlider', $receiver.startSmurfs, $receiver.maxSmurfs, this.SMURF_COUNT_ID, ' Smurfs', 0));
-      var buttonDiv = Kotlin.isType(tmp$_4 = document.createElement('div'), HTMLDivElement) ? tmp$_4 : throwCCE();
-      buttonDiv.append(this.createButton_0('button', 'Pause', HtmlUtil$load$lambda$lambda_0(this)));
-      buttonDiv.append(this.createDropdown_0('locationSelect', HtmlUtil$load$lambda$lambda_1(this)));
-      controlDiv.append(buttonDiv);
-      rootDiv.append(controlDiv);
-      controlDiv.addEventListener('mousemove', HtmlUtil$load$lambda_0(this), false);
-      rootDiv.addEventListener('mousemove', HtmlUtil$load$lambda_1(this), false);
-      window.addEventListener('resize', HtmlUtil$load$lambda_2, false);
-    }
-     else {
-      (Kotlin.isType(tmp$_2 = document.getElementById(this.FROG_COUNT_ID), HTMLInputElement) ? tmp$_2 : throwCCE()).value = Config_getInstance().startFrogs.toString();
-      (Kotlin.isType(tmp$_3 = document.getElementById(this.SMURF_COUNT_ID), HTMLInputElement) ? tmp$_3 : throwCCE()).value = Config_getInstance().startSmurfs.toString();
-    }
+  HtmlUtil.prototype.load = function () {
+    var tmp$, tmp$_0, tmp$_1;
+    var rootDiv = Kotlin.isType(tmp$ = document.getElementById('root'), HTMLDivElement) ? tmp$ : throwCCE();
+    addClass(rootDiv, ['container']);
+    World_getInstance().can = this.createCanvas_0('mainCanvas');
+    World_getInstance().bgCan = this.createCanvas_0('backgroundCanvas');
+    World_getInstance().uiCan = this.createCanvas_0('uiCanvas');
+    World_getInstance().uiCan.addEventListener('click', HtmlUtil$load$lambda(this), false);
+    var canvasDiv = Kotlin.isType(tmp$_0 = document.createElement('div'), HTMLDivElement) ? tmp$_0 : throwCCE();
+    canvasDiv.append(World_getInstance().uiCan);
+    canvasDiv.append(World_getInstance().bgCan);
+    canvasDiv.append(World_getInstance().can);
+    rootDiv.append(canvasDiv);
+    var controlDiv = Kotlin.isType(tmp$_1 = document.createElement('div'), HTMLDivElement) ? tmp$_1 : throwCCE();
+    addClass(controlDiv, ['controls']);
+    var $receiver = Config_getInstance();
+    var tmp$_2, tmp$_3;
+    var maxSpeed = 500;
+    var speedSlider = this.createSliderDiv_0('speedSlider', 100, maxSpeed, this.SPEED_ID, '% Speed', 100);
+    speedSlider.oninput = HtmlUtil$load$lambda$lambda(this);
+    controlDiv.append(speedSlider);
+    controlDiv.append(this.createSliderDiv_0('frogSlider', $receiver.startFrogs, $receiver.maxFrogs, this.FROG_COUNT_ID, ' Frogs', 0));
+    controlDiv.append(this.createSliderDiv_0('smurfSlider', $receiver.startSmurfs, $receiver.maxSmurfs, this.SMURF_COUNT_ID, ' Smurfs', 0));
+    var buttonDiv = Kotlin.isType(tmp$_2 = document.createElement('div'), HTMLDivElement) ? tmp$_2 : throwCCE();
+    buttonDiv.append(this.createButton_0('button', 'Pause', HtmlUtil$load$lambda$lambda_0(this)));
+    var dropDown = this.createDropdown_0('locationSelect', HtmlUtil$load$lambda$lambda_1(this));
+    var selectionName = (tmp$_3 = this.getLocationNameFromUrl_0()) != null ? tmp$_3 : 'unknown';
+    this.setLocationDropdownSelection_0(dropDown, selectionName);
+    buttonDiv.append(dropDown);
+    controlDiv.append(buttonDiv);
+    rootDiv.append(controlDiv);
+    controlDiv.addEventListener('mousemove', HtmlUtil$load$lambda_0(this), false);
+    rootDiv.addEventListener('mousemove', HtmlUtil$load$lambda_1(this), false);
+    window.addEventListener('resize', HtmlUtil$load$lambda_2, false);
     this.initWorld_0();
   };
   HtmlUtil.prototype.initWorld_0 = function () {
@@ -7580,11 +7602,11 @@ var QGress = function (_, Kotlin) {
     World_getInstance().noiseImage = World_getInstance().createNoiseImage_bd1o91$(World_getInstance().noiseMap, w, h, noiseAlpha);
     this.resetInterval_0();
     World_getInstance().resetAllCanvas();
-    MapUtil_getInstance().loadMaps_1io40y$(this.getSelectedCenter(), this.onMapload_0());
+    MapUtil_getInstance().loadMaps_1io40y$(this.getSelectedCenterFromUrl_0(), this.onMapload_0());
   };
   function HtmlUtil$resetInterval$lambda(this$HtmlUtil) {
     return function () {
-      this$HtmlUtil.tick();
+      this$HtmlUtil.tick_0();
       return Unit;
     };
   }
@@ -7597,7 +7619,7 @@ var QGress = function (_, Kotlin) {
       tmp$_1 = 0;
     this.intervalID = tmp$_1;
   };
-  HtmlUtil.prototype.isNotHandledByCanvas_lfj9be$ = function (pos) {
+  HtmlUtil.prototype.isNotHandledByCanvas_0 = function (pos) {
     return this.isInPositionArea_0(pos) || this.isInMapboxArea_0(pos) || this.isInOsmArea_0(pos);
   };
   HtmlUtil.prototype.isInPositionArea_0 = function (pos) {
@@ -7615,10 +7637,10 @@ var QGress = function (_, Kotlin) {
     var area = new Line(new Coords(w - 377 | 0, World_getInstance().can.height - 34 | 0), new Coords(w, World_getInstance().can.height));
     return pos.x > area.from.x && pos.x <= area.to.x && pos.y > area.from.y && pos.y <= area.to.y;
   };
-  HtmlUtil.prototype.handleMouseClick_9ojx7i$ = function (event) {
+  HtmlUtil.prototype.handleMouseClick_0 = function (event) {
     var tmp$, tmp$_0;
     if (Kotlin.isType(event, MouseEvent)) {
-      var pos = this.findMousePosition_ferqyr$(World_getInstance().uiCan, event);
+      var pos = this.findMousePosition_0(World_getInstance().uiCan, event);
       if (pos.hasClosePortalForClick()) {
         SoundUtil_getInstance().playPortalRemovalSound_lfj9be$(pos);
         (tmp$ = document.defaultView) != null ? tmp$.setTimeout(pos.findClosestPortal().destroy_za3lpa$(World_getInstance().tick), 0) : null;
@@ -7632,10 +7654,10 @@ var QGress = function (_, Kotlin) {
       println('WARN: Unhandled event: ' + event + '.');
     }
   };
-  HtmlUtil.prototype.handleMouseMove_9ojx7i$ = function (event) {
+  HtmlUtil.prototype.handleMouseMove_0 = function (event) {
     var tmp$;
-    var pos = this.findMousePosition_ferqyr$(World_getInstance().uiCan, Kotlin.isType(tmp$ = event, MouseEvent) ? tmp$ : throwCCE());
-    var isNotHandledByCanvas = this.isNotHandledByCanvas_lfj9be$(pos);
+    var pos = this.findMousePosition_0(World_getInstance().uiCan, Kotlin.isType(tmp$ = event, MouseEvent) ? tmp$ : throwCCE());
+    var isNotHandledByCanvas = this.isNotHandledByCanvas_0(pos);
     if (isNotHandledByCanvas) {
       World_getInstance().mousePos = null;
       addClass(World_getInstance().uiCan, ['unclickable']);
@@ -7645,7 +7667,7 @@ var QGress = function (_, Kotlin) {
       removeClass(World_getInstance().uiCan, ['unclickable']);
     }
   };
-  HtmlUtil.prototype.findMousePosition_ferqyr$ = function (canvas, mouseEvent) {
+  HtmlUtil.prototype.findMousePosition_0 = function (canvas, mouseEvent) {
     var rect = canvas.getBoundingClientRect();
     var scaleX = canvas.width / rect.width;
     var scaleY = canvas.height / rect.height;
@@ -7746,7 +7768,7 @@ var QGress = function (_, Kotlin) {
       return Unit;
     };
   }
-  HtmlUtil.prototype.pauseHandler_n53o35$ = function (intervalID, tickFunction) {
+  HtmlUtil.prototype.pauseHandler_0 = function (intervalID, tickFunction) {
     var tmp$, tmp$_0, tmp$_1;
     if (intervalID !== -1) {
       (tmp$ = document.defaultView) != null ? (tmp$.clearInterval(intervalID), Unit) : null;
@@ -7776,92 +7798,129 @@ var QGress = function (_, Kotlin) {
     var tmp$;
     (tmp$ = document.defaultView) != null ? tmp$.setTimeout(HtmlUtil$createPortals$createPortal$lambda(count, callback, HtmlUtil$createPortals$createPortal), 0) : null;
   }
-  HtmlUtil.prototype.createPortals_o14v8n$ = function (callback) {
+  HtmlUtil.prototype.createPortals_0 = function (callback) {
     World_getInstance().allPortals.clear();
     var createPortal = HtmlUtil$createPortals$createPortal;
+    DrawUtil_getInstance().drawLoadingText_61zpoe$('Creating Portals..');
     createPortal(callback, Config_getInstance().startPortals);
   };
-  function HtmlUtil$createAgents$createNonFaction$lambda(closure$count, closure$batchSize, closure$callback, closure$createNonFaction) {
-    return function () {
-      if (closure$count > 0) {
-        var a = closure$batchSize;
-        var b = closure$count;
-        var realSize = Math_0.min(a, b);
-        var total = Config_getInstance().startNonFaction;
-        var realCount = total - closure$count + realSize | 0;
-        DrawUtil_getInstance().drawLoadingText_61zpoe$('Creating Non-Faction (' + realCount + '/' + total + ')');
-        var tmp$;
-        tmp$ = (new IntRange(0, realSize)).iterator();
-        while (tmp$.hasNext()) {
-          var element = tmp$.next();
-          var newNonFaction = NonFaction$Companion_getInstance().create_5edep5$(World_getInstance().grid);
-          World_getInstance().allNonFaction.add_11rb$(newNonFaction);
-        }
-        closure$createNonFaction(closure$callback, closure$count - realSize | 0);
-      }
-       else {
-        closure$callback();
-      }
-    };
-  }
-  function HtmlUtil$createAgents$createNonFaction(closure$batchSize) {
-    return function closure$createNonFaction(callback, count) {
-      var tmp$;
-      (tmp$ = document.defaultView) != null ? tmp$.setTimeout(HtmlUtil$createAgents$createNonFaction$lambda(count, closure$batchSize, callback, closure$createNonFaction), 0) : null;
-    };
-  }
-  HtmlUtil.prototype.createAgents_o14v8n$ = function (callback) {
-    var batchSize = 1;
-    var createNonFaction = HtmlUtil$createAgents$createNonFaction(batchSize);
+  HtmlUtil.prototype.createAgents_0 = function (callback) {
+    DrawUtil_getInstance().drawLoadingText_61zpoe$('Creating Non-Faction..');
     DrawUtil_getInstance().clearBackground();
-    createNonFaction(callback, Config_getInstance().startNonFaction);
+    World_getInstance().allNonFaction.clear();
+    World_getInstance().createNonFaction_fzludj$(callback, Config_getInstance().startNonFaction);
   };
   function HtmlUtil$createAgentsAndPortals$lambda(closure$callback, this$HtmlUtil) {
     return function () {
-      this$HtmlUtil.createAgents_o14v8n$(closure$callback);
+      this$HtmlUtil.createAgents_0(closure$callback);
     };
   }
-  HtmlUtil.prototype.createAgentsAndPortals_o14v8n$ = function (callback) {
-    this.createPortals_o14v8n$(HtmlUtil$createAgentsAndPortals$lambda(callback, this));
+  HtmlUtil.prototype.createAgentsAndPortals_0 = function (callback) {
+    this.createPortals_0(HtmlUtil$createAgentsAndPortals$lambda(callback, this));
   };
-  function HtmlUtil$onMapload$lambda$lambda$lambda() {
-    println('Reloading world.');
-    World_getInstance().reload();
-  }
-  function HtmlUtil$onMapload$lambda$lambda(it) {
-    var tmp$;
-    (tmp$ = document.defaultView) != null ? tmp$.setTimeout(HtmlUtil$onMapload$lambda$lambda$lambda, 3000) : null;
-    return Unit;
-  }
-  function HtmlUtil$onMapload$lambda$lambda_0() {
+  function HtmlUtil$onMapload$lambda$lambda() {
     DrawUtil_getInstance().drawLoadingText_61zpoe$('Ready.');
     World_getInstance().isReady = true;
     return Unit;
   }
   function HtmlUtil$onMapload$lambda(this$HtmlUtil) {
     return function (grid) {
-      var tmp$;
       World_getInstance().grid = grid;
       if (World_getInstance().grid.isEmpty()) {
         println('ERROR: Grid is empty!');
       }
       DrawUtil_getInstance().drawGrid();
-      var geoLocatorButton = Kotlin.isType(tmp$ = document.getElementsByClassName('mapboxgl-ctrl-geolocate')[0], HTMLButtonElement) ? tmp$ : throwCCE();
-      geoLocatorButton.addEventListener('click', HtmlUtil$onMapload$lambda$lambda);
-      this$HtmlUtil.createAgentsAndPortals_o14v8n$(HtmlUtil$onMapload$lambda$lambda_0);
+      this$HtmlUtil.createAgentsAndPortals_0(HtmlUtil$onMapload$lambda$lambda);
     };
   }
   HtmlUtil.prototype.onMapload_0 = function () {
     return HtmlUtil$onMapload$lambda(this);
   };
-  HtmlUtil.prototype.mapChangeHandler = function () {
-    World_getInstance().reload();
+  HtmlUtil.prototype.mapChangeHandler_0 = function () {
+    var tmp$;
+    var center = this.getCenterFromDropdown_0();
+    var name = this.getLocationNameFromDropdown_0();
+    (tmp$ = document.location) != null ? (tmp$.href = this.createNewUrl_0(center, name)) : null;
   };
-  HtmlUtil.prototype.getSelectedCenter = function () {
+  HtmlUtil.prototype.createNewUrl_0 = function (center, name) {
+    if (name === void 0)
+      name = 'unknown';
+    var tmp$, tmp$_0, tmp$_1, tmp$_2;
+    var lng = split(center.toString(), [',']).get_za3lpa$(0);
+    var lat = split(center.toString(), [',']).get_za3lpa$(1);
+    var currentUrl = (tmp$ = document.location) != null ? tmp$.href : null;
+    if ((tmp$_0 = currentUrl != null ? contains(currentUrl, 'localhost') : null) != null ? tmp$_0 : false) {
+      var token = Config_getInstance().localToken;
+      if ((tmp$_1 = currentUrl != null ? contains(currentUrl, token) : null) != null ? tmp$_1 : false) {
+        tmp$_2 = ensureNotNull(currentUrl != null ? split(currentUrl, [token]) : null).get_za3lpa$(0) + token;
+      }
+       else {
+        tmp$_2 = 'http://localhost:63342/' + token;
+      }
+    }
+     else {
+      tmp$_2 = Config_getInstance().location;
+    }
+    var url = tmp$_2;
+    return this.addParameters_0(url, lng, lat, name);
+  };
+  HtmlUtil.prototype.getCenterFromDropdown_0 = function () {
     var tmp$, tmp$_0;
     var select = Kotlin.isType(tmp$ = document.getElementById('locationSelect'), HTMLSelectElement) ? tmp$ : throwCCE();
     var selection = Kotlin.isType(tmp$_0 = select[select.selectedIndex], HTMLOptionElement) ? tmp$_0 : throwCCE();
+    selection.text;
     return JSON.parse(selection.value);
+  };
+  HtmlUtil.prototype.getLocationNameFromDropdown_0 = function () {
+    var tmp$, tmp$_0;
+    var select = Kotlin.isType(tmp$ = document.getElementById('locationSelect'), HTMLSelectElement) ? tmp$ : throwCCE();
+    var selection = Kotlin.isType(tmp$_0 = select[select.selectedIndex], HTMLOptionElement) ? tmp$_0 : throwCCE();
+    return selection.text;
+  };
+  HtmlUtil.prototype.setLocationDropdownSelection_0 = function (dropdown, name) {
+    var cleanName = replace(name, '%20', ' ');
+    var tmp$;
+    tmp$ = (new IntRange(0, dropdown.options.length - 1 | 0)).iterator();
+    while (tmp$.hasNext()) {
+      var element = tmp$.next();
+      var tmp$_0;
+      var option = Kotlin.isType(tmp$_0 = dropdown.options[element], HTMLOptionElement) ? tmp$_0 : throwCCE();
+      if (equals(option.label, cleanName)) {
+        dropdown.selectedIndex = element;
+      }
+    }
+  };
+  HtmlUtil.prototype.getSelectedCenterFromUrl_0 = function () {
+    var tmp$;
+    var geo = this.getLngLatFromUrl_0();
+    if (geo != null) {
+      tmp$ = geo.toJson();
+    }
+     else {
+      return this.getCenterFromDropdown_0();
+    }
+    return tmp$;
+  };
+  HtmlUtil.prototype.getLocationNameFromUrl_0 = function () {
+    var tmp$, tmp$_0;
+    var url = new URL((tmp$_0 = (tmp$ = document.location) != null ? tmp$.href : null) != null ? tmp$_0 : '');
+    return url.searchParams.get('name');
+  };
+  HtmlUtil.prototype.getLngLatFromUrl_0 = function () {
+    var tmp$, tmp$_0, tmp$_1;
+    var url = new URL((tmp$_0 = (tmp$ = document.location) != null ? tmp$.href : null) != null ? tmp$_0 : '');
+    var lngString = url.searchParams.get('lng');
+    var latString = url.searchParams.get('lat');
+    if (lngString != null && latString != null) {
+      tmp$_1 = new GeoCoords(toDouble(lngString), toDouble(latString));
+    }
+     else {
+      tmp$_1 = null;
+    }
+    return tmp$_1;
+  };
+  HtmlUtil.prototype.addParameters_0 = function (url, lng, lat, name) {
+    return url + '?lng=' + lng + '&lat=' + lat + '&name=' + name;
   };
   HtmlUtil.$metadata$ = {
     kind: Kind_OBJECT,
@@ -9319,6 +9378,9 @@ var QGress = function (_, Kotlin) {
     var x = lngPow + latPow;
     var x_0 = Math_0.sqrt(x);
     return Math_0.abs(x_0);
+  };
+  GeoCoords.prototype.toJson = function () {
+    return JSON.parse('[' + this.lng + ',' + this.lat + ']');
   };
   GeoCoords.prototype.toString = function () {
     return 'Geo-' + this.lng + ':' + this.lat;

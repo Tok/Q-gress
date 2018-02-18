@@ -1,6 +1,7 @@
 import agent.Agent
 import agent.Faction
 import agent.NonFaction
+import config.Config
 import config.Dimensions
 import org.khronos.webgl.Uint8Array
 import org.khronos.webgl.get
@@ -8,30 +9,22 @@ import org.w3c.dom.CanvasRenderingContext2D
 import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.ImageData
 import portal.Portal
+import util.DrawUtil
 import util.HtmlUtil
-import util.MapUtil
 import util.PathUtil
-import util.Util
 import util.data.Cell
-import util.data.Complex
 import util.data.Coords
+import kotlin.browser.document
 import kotlin.browser.window
 import kotlin.dom.clear
 import kotlin.math.sqrt
 
 typealias Ctx = CanvasRenderingContext2D
 typealias Canvas = HTMLCanvasElement
+
 object World {
     var tick: Int = 0
     var isReady = false
-    fun reload() {
-        tick = 0
-        isReady = false
-        allAgents.clear()
-        allNonFaction.clear()
-        allPortals.clear()
-        HtmlUtil.load(false)
-    }
 
     lateinit var can: Canvas
     fun ctx() = HtmlUtil.getContext2D(can)
@@ -74,6 +67,8 @@ object World {
             .filterNot { it.key.y * PathUtil.RESOLUTION < Dimensions.topActionOffset }
             .filterNot { it.key.y * PathUtil.RESOLUTION > (window.innerHeight - Dimensions.botActionOffset) }
 
+    val frogs: MutableSet<Agent> = mutableSetOf()
+    val smurfs: MutableSet<Agent> = mutableSetOf()
     val allAgents: MutableSet<Agent> = mutableSetOf()
     fun countAgents() = allAgents.count()
     fun countAgents(fact: Faction) = allAgents.count { it.faction.equals(fact) }
@@ -132,5 +127,24 @@ object World {
             }
             return imageData
         }
+    }
+
+    fun createNonFaction(callback: () -> Unit, count: Int) {
+        val batchSize = 1
+        document.defaultView?.setTimeout(fun() {
+            if (count > 0) {
+                val realSize = kotlin.math.min(batchSize, count)
+                val total = Config.startNonFaction
+                val realCount = total - count + realSize
+                DrawUtil.drawLoadingText("Creating Non-Faction ($realCount/$total)")
+                (0..realSize).forEach {
+                    val newNonFaction = NonFaction.create(World.grid)
+                    World.allNonFaction.add(newNonFaction)
+                }
+                createNonFaction(callback, count - realSize)
+            } else {
+                callback()
+            }
+        }, 0)
     }
 }

@@ -6,21 +6,21 @@ import ImprovedNoise
 import World
 import agent.Agent
 import agent.Faction
-import agent.NonFaction
 import config.Config
 import config.Location
 import config.Time
 import org.w3c.dom.*
 import org.w3c.dom.events.Event
 import org.w3c.dom.events.MouseEvent
+import org.w3c.dom.url.URL
 import portal.Portal
 import util.data.Cell
 import util.data.Coords
+import util.data.GeoCoords
 import util.data.Line
 import kotlin.browser.document
 import kotlin.browser.window
 import kotlin.dom.addClass
-import kotlin.dom.clear
 import kotlin.dom.removeClass
 import kotlin.js.Json
 
@@ -31,19 +31,16 @@ object HtmlUtil {
     val SMURF_COUNT_ID = "numberOfSmurfs"
     val SPEED_ID = "speed"
 
-    val frogs: MutableSet<Agent> = mutableSetOf()
-    val smurfs: MutableSet<Agent> = mutableSetOf()
+    private fun speedSetting(): Int = (document.getElementById(SPEED_ID) as HTMLInputElement).valueAsNumber.toInt()
+    private fun frogCount(): Int = (document.getElementById(FROG_COUNT_ID) as HTMLInputElement).valueAsNumber.toInt()
+    private fun smurfCount(): Int = (document.getElementById(SMURF_COUNT_ID) as HTMLInputElement).valueAsNumber.toInt()
 
-    fun speedSetting(): Int = (document.getElementById(SPEED_ID) as HTMLInputElement).valueAsNumber.toInt()
-    fun frogCount(): Int = (document.getElementById(FROG_COUNT_ID) as HTMLInputElement).valueAsNumber.toInt()
-    fun smurfCount(): Int = (document.getElementById(SMURF_COUNT_ID) as HTMLInputElement).valueAsNumber.toInt()
-
-    fun updateAgents(agents: MutableSet<Agent>, faction: Faction, nextAgents: Set<Agent>) {
+    private fun updateAgents(agents: MutableSet<Agent>, faction: Faction, nextAgents: Set<Agent>) {
         agents.clear()
         agents.addAll(nextAgents.filter { it.faction == faction })
     }
 
-    fun updateAgentCount(agents: MutableSet<Agent>, newCount: Int, creationFuncion: (Int) -> Agent) {
+    private fun updateAgentCount(agents: MutableSet<Agent>, newCount: Int, creationFuncion: (Int) -> Agent) {
         if (newCount < agents.size) {
             World.allAgents.addAll(agents.take(newCount))
         } else {
@@ -55,18 +52,18 @@ object HtmlUtil {
         }
     }
 
-    fun tick() {
+    private fun tick() {
         if (!World.isReady) {
             return
         }
         World.allAgents.clear()
-        updateAgentCount(frogs, frogCount(), { _ -> Agent.createFrog(World.grid) })
-        updateAgentCount(smurfs, smurfCount(), { _ -> Agent.createSmurf(World.grid) })
+        updateAgentCount(World.frogs, frogCount(), { _ -> Agent.createFrog(World.grid) })
+        updateAgentCount(World.smurfs, smurfCount(), { _ -> Agent.createSmurf(World.grid) })
         World.allAgents.sortedBy { Util.random() } //TODO remove if necessary
 
         val nextAgents = World.allAgents.map { it.act() }.toSet() //actual tick execution
-        updateAgents(frogs, Faction.ENL, nextAgents)
-        updateAgents(smurfs, Faction.RES, nextAgents)
+        updateAgents(World.frogs, Faction.ENL, nextAgents)
+        updateAgents(World.smurfs, Faction.RES, nextAgents)
 
         World.allNonFaction.forEach { it.act() }
 
@@ -77,54 +74,52 @@ object HtmlUtil {
         World.tick++
     }
 
-    fun load(isFirstLoad: Boolean) {
-        if (isFirstLoad) {
-            val rootDiv = document.getElementById("root") as HTMLDivElement
-            rootDiv.addClass("container")
+    fun load() {
+        val rootDiv = document.getElementById("root") as HTMLDivElement
+        rootDiv.addClass("container")
 
-            //Prepare all canvas..
-            World.can = createCanvas("mainCanvas")
-            World.bgCan = createCanvas("backgroundCanvas")
-            World.uiCan = createCanvas("uiCanvas")
-            World.uiCan.addEventListener("click", { event -> handleMouseClick(event) }, false)
+        //Prepare all canvas..
+        World.can = createCanvas("mainCanvas")
+        World.bgCan = createCanvas("backgroundCanvas")
+        World.uiCan = createCanvas("uiCanvas")
+        World.uiCan.addEventListener("click", { event -> handleMouseClick(event) }, false)
 
-            val canvasDiv = document.createElement("div") as HTMLDivElement
-            canvasDiv.append(World.uiCan)
-            canvasDiv.append(World.bgCan)
-            canvasDiv.append(World.can)
+        val canvasDiv = document.createElement("div") as HTMLDivElement
+        canvasDiv.append(World.uiCan)
+        canvasDiv.append(World.bgCan)
+        canvasDiv.append(World.can)
 
-            rootDiv.append(canvasDiv)
+        rootDiv.append(canvasDiv)
 
-            val controlDiv = document.createElement("div") as HTMLDivElement
-            controlDiv.addClass("controls")
+        val controlDiv = document.createElement("div") as HTMLDivElement
+        controlDiv.addClass("controls")
 
-            with(Config) {
-                val maxSpeed = 500
-                val speedSlider = createSliderDiv("speedSlider", 100, maxSpeed, SPEED_ID, "% Speed", 100)
-                speedSlider.oninput = { World.speed = speedSetting(); Unit }
-                controlDiv.append(speedSlider)
-                controlDiv.append(createSliderDiv("frogSlider", startFrogs, maxFrogs,
-                        FROG_COUNT_ID, " Frogs", 0))
-                controlDiv.append(createSliderDiv("smurfSlider", startSmurfs, maxSmurfs,
-                        SMURF_COUNT_ID, " Smurfs", 0))
-                val buttonDiv = document.createElement("div") as HTMLDivElement
-                buttonDiv.append(createButton("button", "Pause", {
-                    intervalID = pauseHandler(intervalID, { tick() })
-                }))
-                buttonDiv.append(createDropdown("locationSelect", { mapChangeHandler() }))
-                controlDiv.append(buttonDiv)
-            }
-            rootDiv.append(controlDiv)
-
-            controlDiv.addEventListener("mousemove", { event -> handleMouseMove(event) }, false)
-            rootDiv.addEventListener("mousemove", { event -> handleMouseMove(event) }, false)
-
-            window.addEventListener("resize", { document.location?.reload() /* FIXME */ }, false)
-        } else {
-            //document.defaultView?.clearInterval(intervalID)
-            (document.getElementById(FROG_COUNT_ID) as HTMLInputElement).value = Config.startFrogs.toString()
-            (document.getElementById(SMURF_COUNT_ID) as HTMLInputElement).value = Config.startSmurfs.toString()
+        with(Config) {
+            val maxSpeed = 500
+            val speedSlider = createSliderDiv("speedSlider", 100, maxSpeed, SPEED_ID, "% Speed", 100)
+            speedSlider.oninput = { World.speed = speedSetting(); Unit }
+            controlDiv.append(speedSlider)
+            controlDiv.append(createSliderDiv("frogSlider", startFrogs, maxFrogs,
+                    FROG_COUNT_ID, " Frogs", 0))
+            controlDiv.append(createSliderDiv("smurfSlider", startSmurfs, maxSmurfs,
+                    SMURF_COUNT_ID, " Smurfs", 0))
+            val buttonDiv = document.createElement("div") as HTMLDivElement
+            buttonDiv.append(createButton("button", "Pause", {
+                intervalID = pauseHandler(intervalID, { tick() })
+            }))
+            val dropDown = createDropdown("locationSelect", { mapChangeHandler() })
+            val selectionName = getLocationNameFromUrl() ?: "unknown"
+            setLocationDropdownSelection(dropDown, selectionName)
+            buttonDiv.append(dropDown)
+            controlDiv.append(buttonDiv)
         }
+        rootDiv.append(controlDiv)
+
+        controlDiv.addEventListener("mousemove", { event -> handleMouseMove(event) }, false)
+        rootDiv.addEventListener("mousemove", { event -> handleMouseMove(event) }, false)
+
+        window.addEventListener("resize", { document.location?.reload() /* FIXME */ }, false)
+
         initWorld()
     }
 
@@ -136,14 +131,16 @@ object HtmlUtil {
         World.noiseImage = World.createNoiseImage(World.noiseMap, w, h, noiseAlpha)
         resetInterval()
         World.resetAllCanvas()
-        MapUtil.loadMaps(getSelectedCenter(), onMapload())
+        MapUtil.loadMaps(getSelectedCenterFromUrl(), onMapload())
     }
 
     private fun resetInterval() {
-        intervalID = if (Config.isAutostart) { document.defaultView?.setInterval({ tick() }, Time.minTickInterval) ?: 0 } else 0
+        intervalID = if (Config.isAutostart) {
+            document.defaultView?.setInterval({ tick() }, Time.minTickInterval) ?: 0
+        } else 0
     }
 
-    fun isNotHandledByCanvas(pos: Coords) = isInPositionArea(pos) || isInMapboxArea(pos) || isInOsmArea(pos)
+    private fun isNotHandledByCanvas(pos: Coords) = isInPositionArea(pos) || isInMapboxArea(pos) || isInOsmArea(pos)
 
     private fun isInPositionArea(pos: Coords): Boolean {
         val w = World.can.width
@@ -166,7 +163,7 @@ object HtmlUtil {
                 pos.y > area.from.y && pos.y <= area.to.y
     }
 
-    fun handleMouseClick(event: Event) {
+    private fun handleMouseClick(event: Event) {
         if (event is MouseEvent) {
             val pos = findMousePosition(World.uiCan, event)
             if (pos.hasClosePortalForClick()) {
@@ -182,7 +179,7 @@ object HtmlUtil {
         }
     }
 
-    fun handleMouseMove(event: Event) {
+    private fun handleMouseMove(event: Event) {
         val pos = findMousePosition(World.uiCan, event as MouseEvent)
         val isNotHandledByCanvas = isNotHandledByCanvas(pos)
         if (isNotHandledByCanvas) {
@@ -194,7 +191,7 @@ object HtmlUtil {
         }
     }
 
-    fun findMousePosition(canvas: HTMLCanvasElement, mouseEvent: MouseEvent): Coords {
+    private fun findMousePosition(canvas: HTMLCanvasElement, mouseEvent: MouseEvent): Coords {
         val rect = canvas.getBoundingClientRect()
         val scaleX = canvas.width / rect.width
         val scaleY = canvas.height / rect.height
@@ -204,7 +201,7 @@ object HtmlUtil {
     }
 
     private fun createSliderDiv(className: String, value: Int, max: Int,
-                        id: String, suffix: String, min: Int = 0): HTMLDivElement {
+                                id: String, suffix: String, min: Int = 0): HTMLDivElement {
         val div = document.createElement("div") as HTMLDivElement
         val slider = document.createElement("INPUT") as HTMLInputElement
         slider.id = id
@@ -231,10 +228,10 @@ object HtmlUtil {
     }
 
     private fun createLocationOptions(): List<HTMLOptionElement> = Location.values().map {
-            val opt = document.createElement("option") as HTMLOptionElement
-            opt.text = it.displayName
-            opt.value = it.toJSONString()
-            opt
+        val opt = document.createElement("option") as HTMLOptionElement
+        opt.text = it.displayName
+        opt.value = it.toJSONString()
+        opt
     }
 
     private fun createDropdown(id: String, callback: ((Event) -> Unit)?): HTMLSelectElement {
@@ -269,7 +266,7 @@ object HtmlUtil {
 
     fun getContext2D(canvas: Canvas): Ctx = canvas.getContext("2d") as Ctx
 
-    fun pauseHandler(intervalID: Int, tickFunction: () -> Unit): Int {
+    private fun pauseHandler(intervalID: Int, tickFunction: () -> Unit): Int {
         if (intervalID != -1) {
             document.defaultView?.clearInterval(intervalID)
             return -1
@@ -278,8 +275,7 @@ object HtmlUtil {
         }
     }
 
-
-    fun createPortals(callback: () -> Unit) {
+    private fun createPortals(callback: () -> Unit) {
         World.allPortals.clear()
         fun createPortal(callback: () -> Unit, count: Int) {
             document.defaultView?.setTimeout(fun() {
@@ -296,62 +292,104 @@ object HtmlUtil {
                 }
             }, 0)
         }
-        //DrawUtil.drawLoadingText(noiseImage, "Creating Portals..")
+        DrawUtil.drawLoadingText("Creating Portals..")
         createPortal(callback, Config.startPortals)
     }
 
-    fun createAgents(callback: () -> Unit) {
-        val batchSize = 1
-        fun createNonFaction(callback: () -> Unit, count: Int) {
-            document.defaultView?.setTimeout(fun() {
-                if (count > 0) {
-                    val realSize = kotlin.math.min(batchSize, count)
-                    val total = Config.startNonFaction
-                    val realCount = total - count + realSize
-                    DrawUtil.drawLoadingText("Creating Non-Faction ($realCount/$total)")
-                    (0..realSize).forEach {
-                        val newNonFaction = NonFaction.create(World.grid)
-                        World.allNonFaction.add(newNonFaction)
-                    }
-                    createNonFaction(callback, count - realSize)
-                } else {
-                    callback()
-                }
-            }, 0)
-        }
-        //DrawUtil.drawLoadingText(noiseImage, "Creating Non-Faction..")
+    private fun createAgents(callback: () -> Unit) {
+        DrawUtil.drawLoadingText("Creating Non-Faction..")
         DrawUtil.clearBackground()
-        createNonFaction(callback, Config.startNonFaction)
+        World.allNonFaction.clear()
+        World.createNonFaction(callback, Config.startNonFaction)
     }
 
-    fun createAgentsAndPortals(callback: () -> Unit) = createPortals(fun() { createAgents(callback) })
+    private fun createAgentsAndPortals(callback: () -> Unit) = createPortals(fun() { createAgents(callback) })
 
     private fun onMapload() =
-        fun(grid: Map<Coords, Cell>) {
-            World.grid = grid
-            if (World.grid.isEmpty()) {
-                println("ERROR: Grid is empty!")
+            fun(grid: Map<Coords, Cell>) {
+                World.grid = grid
+                if (World.grid.isEmpty()) {
+                    println("ERROR: Grid is empty!")
+                }
+                DrawUtil.drawGrid()
+                createAgentsAndPortals({
+                    DrawUtil.drawLoadingText("Ready.")
+                    World.isReady = true
+                })
             }
-            DrawUtil.drawGrid()
 
-            val geoLocatorButton = document.getElementsByClassName("mapboxgl-ctrl-geolocate")[0] as HTMLButtonElement
-            geoLocatorButton.addEventListener("click", {
-                document.defaultView?.setTimeout(fun() {
-                    println("Reloading world.")
-                    World.reload()
-                }, 3000)
-            })
+    private fun mapChangeHandler() {
+        val center: Json = getCenterFromDropdown()
+        val name = getLocationNameFromDropdown()
+        document.location?.href = createNewUrl(center, name)
+    }
 
-            createAgentsAndPortals({
-                DrawUtil.drawLoadingText("Ready.")
-                World.isReady = true
-            })
+    private fun createNewUrl(center: Json, name: String = "unknown"): String {
+        val lng = center.toString().split(",")[0]
+        val lat = center.toString().split(",")[1]
+        val currentUrl = document.location?.href
+        val url = if (currentUrl?.contains("localhost") ?: false) {
+            val token = Config.localToken
+            if (currentUrl?.contains(token) ?: false) {
+                currentUrl?.split(token)!![0] + token
+            } else {
+                "http://localhost:63342/" + token
+            }
+        } else {
+            Config.location
         }
+        return addParameters(url, lng, lat, name)
+    }
 
-    fun mapChangeHandler() = World.reload()
-    fun getSelectedCenter(): Json {
+    private fun getCenterFromDropdown(): Json {
         val select = document.getElementById("locationSelect") as HTMLSelectElement
         val selection = select.get(select.selectedIndex) as HTMLOptionElement
+        selection.text
         return JSON.parse(selection.value)
+    }
+
+    private fun getLocationNameFromDropdown(): String {
+        val select = document.getElementById("locationSelect") as HTMLSelectElement
+        val selection = select.get(select.selectedIndex) as HTMLOptionElement
+        return selection.text
+    }
+
+    private fun setLocationDropdownSelection(dropdown: HTMLSelectElement, name: String) {
+        val cleanName = name.replace("%20", " ")
+        (0..dropdown.options.length - 1).forEach {
+            val option = dropdown.options[it] as HTMLOptionElement
+            if (option.label.equals(cleanName)) {
+                dropdown.selectedIndex = it
+            }
+        }
+    }
+
+    private fun getSelectedCenterFromUrl(): Json {
+        val geo: GeoCoords? = getLngLatFromUrl()
+        return if (geo != null) {
+            geo.toJson()
+        } else {
+            return getCenterFromDropdown()
+        }
+    }
+
+    private fun getLocationNameFromUrl(): String? {
+        val url = URL(document.location?.href ?: "")
+        return url.searchParams.get("name")
+    }
+
+    private fun getLngLatFromUrl(): GeoCoords? {
+        val url = URL(document.location?.href ?: "")
+        val lngString = url.searchParams.get("lng")
+        val latString = url.searchParams.get("lat")
+        return if (lngString != null && latString != null) {
+            GeoCoords(lngString.toDouble(), latString.toDouble())
+        } else {
+            null
+        }
+    }
+
+    private fun addParameters(url: String, lng: String, lat: String, name: String): String {
+        return url + "?lng=" + lng + "&lat=" + lat + "&name=" + name
     }
 }
