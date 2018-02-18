@@ -2706,10 +2706,6 @@ var QGress = function (_, Kotlin) {
     this.shadowBlurCount = 3;
     this.comMessageLimit = 8;
     this.topAgentsMessageLimit = 5;
-    this.localLocation = 'http://localhost:63342/';
-    this.localToken = 'Qgress/';
-    this.location = 'https://tok.github.io/';
-    this.token = 'Q-gress/';
   }
   Config.$metadata$ = {
     kind: Kind_OBJECT,
@@ -2729,7 +2725,17 @@ var QGress = function (_, Kotlin) {
     this.tau = 2.0 * math.PI;
     this.hexChars = '0123456789ABCDEF';
     this.historyFactor = 1.0 - 1.0 / math.E;
+    this.localLocation_0 = 'http://localhost:63342/';
+    this.localToken_0 = 'Qgress/';
+    this.location_0 = 'https://tok.github.io/';
+    this.token_0 = 'Q-gress/';
   }
+  Constants.prototype.token = function () {
+    return HtmlUtil_getInstance().isLocal() ? this.localToken_0 : this.token_0;
+  };
+  Constants.prototype.targetUrl = function () {
+    return HtmlUtil_getInstance().isLocal() ? this.localLocation_0 : this.location_0;
+  };
   Constants.$metadata$ = {
     kind: Kind_OBJECT,
     simpleName: 'Constants',
@@ -2967,6 +2973,7 @@ var QGress = function (_, Kotlin) {
     this.isDrawResoLevels = false;
     this.isDrawTopAgents = true;
     this.use3DBuildings = true;
+    this.leaveInitialMap = false;
     this.vectorStyle = Styles$VectorStyle$CIRCLE_getInstance();
     this.isDrawObstructedVectors = true;
     this.isDrawResoLineGradient = true;
@@ -7407,6 +7414,7 @@ var QGress = function (_, Kotlin) {
     this.FROG_COUNT_ID = 'numberOfFrogs';
     this.SMURF_COUNT_ID = 'numberOfSmurfs';
     this.SPEED_ID = 'speed';
+    this.LOCATION_DROPDOWN_ID = 'locationSelect';
   }
   HtmlUtil.prototype.speedSetting_0 = function () {
     var tmp$;
@@ -7585,7 +7593,7 @@ var QGress = function (_, Kotlin) {
     controlDiv.append(this.createSliderDiv_0('smurfSlider', $receiver.startSmurfs, $receiver.maxSmurfs, this.SMURF_COUNT_ID, ' Smurfs', 0));
     var buttonDiv = Kotlin.isType(tmp$_2 = document.createElement('div'), HTMLDivElement) ? tmp$_2 : throwCCE();
     buttonDiv.append(this.createButton_0('button', 'Pause', HtmlUtil$load$lambda$lambda_0(this)));
-    var dropDown = this.createDropdown_0('locationSelect', HtmlUtil$load$lambda$lambda_1(this));
+    var dropDown = this.createDropdown_0(this.LOCATION_DROPDOWN_ID, HtmlUtil$load$lambda$lambda_1(this));
     var selectionName = (tmp$_3 = this.getLocationNameFromUrl_0()) != null ? tmp$_3 : 'unknown';
     this.setLocationDropdownSelection_0(dropDown, selectionName);
     buttonDiv.append(dropDown);
@@ -7822,6 +7830,9 @@ var QGress = function (_, Kotlin) {
   };
   function HtmlUtil$onMapload$lambda$lambda() {
     DrawUtil_getInstance().drawLoadingText_61zpoe$('Ready.');
+    if (!Styles_getInstance().leaveInitialMap) {
+      MapUtil_getInstance().removeInitMap();
+    }
     World_getInstance().isReady = true;
     return Unit;
   }
@@ -7847,58 +7858,59 @@ var QGress = function (_, Kotlin) {
   HtmlUtil.prototype.createNewUrl_0 = function (center, name) {
     if (name === void 0)
       name = 'unknown';
-    var tmp$, tmp$_0, tmp$_1, tmp$_2, tmp$_3, tmp$_4;
-    var lng = split(center.toString(), [',']).get_za3lpa$(0);
-    var lat = split(center.toString(), [',']).get_za3lpa$(1);
-    var currentUrl = (tmp$ = document.location) != null ? tmp$.href : null;
-    var isLocal = (tmp$_0 = currentUrl != null ? contains(currentUrl, 'localhost') : null) != null ? tmp$_0 : false;
-    if (isLocal) {
-      tmp$_1 = Config_getInstance().localToken;
+    var tmp$, tmp$_0, tmp$_1;
+    var split_0 = split(center.toString(), [',']);
+    var lng = split_0.get_za3lpa$(0);
+    var lat = split_0.get_za3lpa$(1);
+    var url = (tmp$ = document.location) != null ? tmp$.href : null;
+    var token = Constants_getInstance().token();
+    var target = Constants_getInstance().targetUrl() + token;
+    if ((tmp$_0 = url != null ? contains(url, token) : null) != null ? tmp$_0 : false) {
+      tmp$_1 = ensureNotNull(url != null ? split(url, [token]) : null).get_za3lpa$(0) + token;
     }
      else {
-      tmp$_1 = Config_getInstance().token;
+      tmp$_1 = target;
     }
-    var token = tmp$_1;
-    if (isLocal) {
-      tmp$_2 = Config_getInstance().localLocation;
-    }
-     else {
-      tmp$_2 = Config_getInstance().location;
-    }
-    var targetUrl = tmp$_2;
-    if ((tmp$_3 = currentUrl != null ? contains(currentUrl, token) : null) != null ? tmp$_3 : false) {
-      tmp$_4 = ensureNotNull(currentUrl != null ? split(currentUrl, [token]) : null).get_za3lpa$(0) + token;
-    }
-     else {
-      tmp$_4 = targetUrl + token;
-    }
-    var url = tmp$_4;
-    return this.addParameters_0(url, lng, lat, name);
+    var newUrl = tmp$_1;
+    return this.addParameters_0(newUrl, lng, lat, name);
+  };
+  HtmlUtil.prototype.isLocal = function () {
+    var tmp$, tmp$_0, tmp$_1;
+    return (tmp$_1 = (tmp$_0 = (tmp$ = document.location) != null ? tmp$.href : null) != null ? contains(tmp$_0, 'localhost') : null) != null ? tmp$_1 : false;
   };
   HtmlUtil.prototype.getCenterFromDropdown_0 = function () {
     var tmp$, tmp$_0;
-    var select = Kotlin.isType(tmp$ = document.getElementById('locationSelect'), HTMLSelectElement) ? tmp$ : throwCCE();
-    var selection = Kotlin.isType(tmp$_0 = select[select.selectedIndex], HTMLOptionElement) ? tmp$_0 : throwCCE();
-    selection.text;
+    var dropdown = Kotlin.isType(tmp$ = document.getElementById(this.LOCATION_DROPDOWN_ID), HTMLSelectElement) ? tmp$ : throwCCE();
+    var selection = Kotlin.isType(tmp$_0 = dropdown[dropdown.selectedIndex], HTMLOptionElement) ? tmp$_0 : throwCCE();
     return JSON.parse(selection.value);
   };
   HtmlUtil.prototype.getLocationNameFromDropdown_0 = function () {
     var tmp$, tmp$_0;
-    var select = Kotlin.isType(tmp$ = document.getElementById('locationSelect'), HTMLSelectElement) ? tmp$ : throwCCE();
-    var selection = Kotlin.isType(tmp$_0 = select[select.selectedIndex], HTMLOptionElement) ? tmp$_0 : throwCCE();
+    var dropdown = Kotlin.isType(tmp$ = document.getElementById(this.LOCATION_DROPDOWN_ID), HTMLSelectElement) ? tmp$ : throwCCE();
+    var selection = Kotlin.isType(tmp$_0 = dropdown[dropdown.selectedIndex], HTMLOptionElement) ? tmp$_0 : throwCCE();
     return selection.text;
   };
   HtmlUtil.prototype.setLocationDropdownSelection_0 = function (dropdown, name) {
-    var cleanName = replace(name, '%20', ' ');
     var tmp$;
-    tmp$ = (new IntRange(0, dropdown.options.length - 1 | 0)).iterator();
-    while (tmp$.hasNext()) {
-      var element = tmp$.next();
-      var tmp$_0;
-      var option = Kotlin.isType(tmp$_0 = dropdown.options[element], HTMLOptionElement) ? tmp$_0 : throwCCE();
+    var cleanName = replace(name, '%20', ' ');
+    var hasMatch = {v: false};
+    var tmp$_0;
+    tmp$_0 = (new IntRange(0, dropdown.options.length - 1 | 0)).iterator();
+    while (tmp$_0.hasNext()) {
+      var element = tmp$_0.next();
+      var tmp$_1;
+      var option = Kotlin.isType(tmp$_1 = dropdown.options[element], HTMLOptionElement) ? tmp$_1 : throwCCE();
       if (equals(option.label, cleanName)) {
         dropdown.selectedIndex = element;
+        hasMatch.v = true;
       }
+    }
+    if (!hasMatch.v) {
+      var opt = Kotlin.isType(tmp$ = document.createElement('option'), HTMLOptionElement) ? tmp$ : throwCCE();
+      opt.text = 'Unknown Location';
+      opt.value = '[0.0,0.0]';
+      dropdown.add(opt);
+      dropdown.selectedIndex = dropdown.length - 1 | 0;
     }
   };
   HtmlUtil.prototype.getSelectedCenterFromUrl_0 = function () {
@@ -8081,6 +8093,10 @@ var QGress = function (_, Kotlin) {
   };
   MapUtil.prototype.initShadowMap = function () {
     return new mapboxgl.Map({container: 'shadowMap', style: 'mapbox://styles/zirteq/cjaq7lw9e2y7u2rn7u6xskobn'});
+  };
+  MapUtil.prototype.removeInitMap = function () {
+    var tmp$;
+    (tmp$ = document.getElementById(this.INITIAL_MAP)) != null ? addClass(tmp$, [this.INVISIBLE]) : null;
   };
   function MapUtil$loadMaps$lambda(closure$callback, this$MapUtil) {
     return function (initMap) {
@@ -9166,6 +9182,9 @@ var QGress = function (_, Kotlin) {
   Coords.prototype.hashCode = function () {
     return hashCode(this.toString()) * 1337 | 0;
   };
+  Coords.prototype.equals = function (other) {
+    return Kotlin.isType(other, Coords) && this.x === (other != null ? other.x : null) && this.y === (other != null ? other.y : null);
+  };
   function Coords$Companion() {
     Coords$Companion_instance = this;
     this.defaultLat_0 = 47.4220454;
@@ -9274,9 +9293,6 @@ var QGress = function (_, Kotlin) {
   };
   Coords.prototype.copy_vux9f0$ = function (x, y) {
     return new Coords(x === void 0 ? this.x : x, y === void 0 ? this.y : y);
-  };
-  Coords.prototype.equals = function (other) {
-    return this === other || (other !== null && (typeof other === 'object' && (Object.getPrototypeOf(this) === Object.getPrototypeOf(other) && (Kotlin.equals(this.x, other.x) && Kotlin.equals(this.y, other.y)))));
   };
   function Damage(value, pos, isCritical) {
     this.value = value;

@@ -18,6 +18,8 @@ object Styles {
 
     val use3DBuildings = true
 
+    val leaveInitialMap = false
+
     val vectorStyle = VectorStyle.CIRCLE
     val isDrawObstructedVectors = true
 

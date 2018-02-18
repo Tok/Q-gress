@@ -17,10 +17,4 @@ object Config {
 
     val comMessageLimit = 8
     val topAgentsMessageLimit = 5
-
-    val localLocation = "http://localhost:63342/"
-    val localToken = "Qgress/"
-
-    val location = "https://tok.github.io/"
-    val token = "Q-gress/"
 }

@@ -6,9 +6,8 @@ import ImprovedNoise
 import World
 import agent.Agent
 import agent.Faction
-import config.Config
+import config.*
 import config.Location
-import config.Time
 import org.w3c.dom.*
 import org.w3c.dom.events.Event
 import org.w3c.dom.events.MouseEvent
@@ -30,6 +29,7 @@ object HtmlUtil {
     val FROG_COUNT_ID = "numberOfFrogs"
     val SMURF_COUNT_ID = "numberOfSmurfs"
     val SPEED_ID = "speed"
+    val LOCATION_DROPDOWN_ID = "locationSelect"
 
     private fun speedSetting(): Int = (document.getElementById(SPEED_ID) as HTMLInputElement).valueAsNumber.toInt()
     private fun frogCount(): Int = (document.getElementById(FROG_COUNT_ID) as HTMLInputElement).valueAsNumber.toInt()
@@ -107,7 +107,7 @@ object HtmlUtil {
             buttonDiv.append(createButton("button", "Pause", {
                 intervalID = pauseHandler(intervalID, { tick() })
             }))
-            val dropDown = createDropdown("locationSelect", { mapChangeHandler() })
+            val dropDown = createDropdown(LOCATION_DROPDOWN_ID, { mapChangeHandler() })
             val selectionName = getLocationNameFromUrl() ?: "unknown"
             setLocationDropdownSelection(dropDown, selectionName)
             buttonDiv.append(dropDown)
@@ -314,6 +314,9 @@ object HtmlUtil {
                 DrawUtil.drawGrid()
                 createAgentsAndPortals({
                     DrawUtil.drawLoadingText("Ready.")
+                    if (!Styles.leaveInitialMap) {
+                        MapUtil.removeInitMap()
+                    }
                     World.isReady = true
                 })
             }
@@ -325,36 +328,46 @@ object HtmlUtil {
     }
 
     private fun createNewUrl(center: Json, name: String = "unknown"): String {
-        val lng = center.toString().split(",")[0]
-        val lat = center.toString().split(",")[1]
-        val currentUrl = document.location?.href
-        val isLocal = currentUrl?.contains("localhost") ?: false
-        val token = if (isLocal) { Config.localToken } else { Config.token }
-        val targetUrl = if (isLocal) { Config.localLocation } else { Config.location }
-        val url = if (currentUrl?.contains(token) ?: false) { currentUrl?.split(token)!![0] + token } else { targetUrl + token }
-        return addParameters(url, lng, lat, name)
+        val split = center.toString().split(",")
+        val lng = split[0]
+        val lat = split[1]
+        val url = document.location?.href
+        val token = Constants.token()
+        val target = Constants.targetUrl() + token
+        val newUrl = if (url?.contains(token) ?: false) { url?.split(token)!![0] + token } else { target }
+        return addParameters(newUrl, lng, lat, name)
     }
 
+    fun isLocal() = document.location?.href?.contains("localhost") ?: false
+
     private fun getCenterFromDropdown(): Json {
-        val select = document.getElementById("locationSelect") as HTMLSelectElement
-        val selection = select.get(select.selectedIndex) as HTMLOptionElement
-        selection.text
+        val dropdown = document.getElementById(LOCATION_DROPDOWN_ID) as HTMLSelectElement
+        val selection = dropdown.get(dropdown.selectedIndex) as HTMLOptionElement
         return JSON.parse(selection.value)
     }
 
     private fun getLocationNameFromDropdown(): String {
-        val select = document.getElementById("locationSelect") as HTMLSelectElement
-        val selection = select.get(select.selectedIndex) as HTMLOptionElement
+        val dropdown = document.getElementById(LOCATION_DROPDOWN_ID) as HTMLSelectElement
+        val selection = dropdown.get(dropdown.selectedIndex) as HTMLOptionElement
         return selection.text
     }
 
     private fun setLocationDropdownSelection(dropdown: HTMLSelectElement, name: String) {
         val cleanName = name.replace("%20", " ")
+        var hasMatch = false
         (0..dropdown.options.length - 1).forEach {
             val option = dropdown.options[it] as HTMLOptionElement
             if (option.label.equals(cleanName)) {
                 dropdown.selectedIndex = it
+                hasMatch = true
             }
+        }
+        if (!hasMatch) {
+            val opt = document.createElement("option") as HTMLOptionElement
+            opt.text = "Unknown Location"
+            opt.value = "[0.0,0.0]"
+            dropdown.add(opt)
+            dropdown.selectedIndex = dropdown.length-1
         }
     }
 

@@ -37,6 +37,10 @@ object MapUtil {
     var initMap: MapBox? = null
     var shadowMap: MapBox? = null
 
+    fun removeInitMap() {
+        document.getElementById(INITIAL_MAP)?.addClass(INVISIBLE)
+    }
+
     fun loadMaps(center: Json, callback: (Map<Coords, Cell>) -> Unit) {
         document.getElementById(MAP)?.addClass(INVISIBLE)
         document.getElementById(SHADOW_MAP)?.addClass(INVISIBLE)
