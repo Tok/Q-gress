@@ -328,16 +328,10 @@ object HtmlUtil {
         val lng = center.toString().split(",")[0]
         val lat = center.toString().split(",")[1]
         val currentUrl = document.location?.href
-        val url = if (currentUrl?.contains("localhost") ?: false) {
-            val token = Config.localToken
-            if (currentUrl?.contains(token) ?: false) {
-                currentUrl?.split(token)!![0] + token
-            } else {
-                "http://localhost:63342/" + token
-            }
-        } else {
-            Config.location
-        }
+        val isLocal = currentUrl?.contains("localhost") ?: false
+        val token = if (isLocal) { Config.localToken } else { Config.token }
+        val targetUrl = if (isLocal) { Config.localLocation } else { Config.location }
+        val url = if (currentUrl?.contains(token) ?: false) { currentUrl?.split(token)!![0] + token } else { targetUrl + token }
         return addParameters(url, lng, lat, name)
     }
 

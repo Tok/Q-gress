@@ -2706,8 +2706,10 @@ var QGress = function (_, Kotlin) {
     this.shadowBlurCount = 3;
     this.comMessageLimit = 8;
     this.topAgentsMessageLimit = 5;
-    this.location = 'https://tok.github.io/Q-gress/';
+    this.localLocation = 'http://localhost:63342/';
     this.localToken = 'Qgress/';
+    this.location = 'https://tok.github.io/';
+    this.token = 'Q-gress/';
   }
   Config.$metadata$ = {
     kind: Kind_OBJECT,
@@ -7845,23 +7847,32 @@ var QGress = function (_, Kotlin) {
   HtmlUtil.prototype.createNewUrl_0 = function (center, name) {
     if (name === void 0)
       name = 'unknown';
-    var tmp$, tmp$_0, tmp$_1, tmp$_2;
+    var tmp$, tmp$_0, tmp$_1, tmp$_2, tmp$_3, tmp$_4;
     var lng = split(center.toString(), [',']).get_za3lpa$(0);
     var lat = split(center.toString(), [',']).get_za3lpa$(1);
     var currentUrl = (tmp$ = document.location) != null ? tmp$.href : null;
-    if ((tmp$_0 = currentUrl != null ? contains(currentUrl, 'localhost') : null) != null ? tmp$_0 : false) {
-      var token = Config_getInstance().localToken;
-      if ((tmp$_1 = currentUrl != null ? contains(currentUrl, token) : null) != null ? tmp$_1 : false) {
-        tmp$_2 = ensureNotNull(currentUrl != null ? split(currentUrl, [token]) : null).get_za3lpa$(0) + token;
-      }
-       else {
-        tmp$_2 = 'http://localhost:63342/' + token;
-      }
+    var isLocal = (tmp$_0 = currentUrl != null ? contains(currentUrl, 'localhost') : null) != null ? tmp$_0 : false;
+    if (isLocal) {
+      tmp$_1 = Config_getInstance().localToken;
+    }
+     else {
+      tmp$_1 = Config_getInstance().token;
+    }
+    var token = tmp$_1;
+    if (isLocal) {
+      tmp$_2 = Config_getInstance().localLocation;
     }
      else {
       tmp$_2 = Config_getInstance().location;
     }
-    var url = tmp$_2;
+    var targetUrl = tmp$_2;
+    if ((tmp$_3 = currentUrl != null ? contains(currentUrl, token) : null) != null ? tmp$_3 : false) {
+      tmp$_4 = ensureNotNull(currentUrl != null ? split(currentUrl, [token]) : null).get_za3lpa$(0) + token;
+    }
+     else {
+      tmp$_4 = targetUrl + token;
+    }
+    var url = tmp$_4;
     return this.addParameters_0(url, lng, lat, name);
   };
   HtmlUtil.prototype.getCenterFromDropdown_0 = function () {
