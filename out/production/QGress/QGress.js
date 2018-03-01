@@ -35,6 +35,7 @@ var QGress = function (_, Kotlin) {
   var throwISE = Kotlin.throwISE;
   var eachCount = Kotlin.kotlin.collections.eachCount_kji7v9$;
   var math = Kotlin.kotlin.math;
+  var asList = Kotlin.kotlin.collections.asList_us0mfu$;
   var Kind_INTERFACE = Kotlin.Kind.INTERFACE;
   var toList_0 = Kotlin.kotlin.collections.toList_7wnvza$;
   var last = Kotlin.kotlin.collections.last_2p1efm$;
@@ -2876,6 +2877,9 @@ var QGress = function (_, Kotlin) {
     Location$Companion_instance = this;
     this.DEFAULT = Location$RED_SQUARE_getInstance();
   }
+  Location$Companion.prototype.random = function () {
+    return Util_getInstance().shuffle_bemo1h$(asList(Location$values())).get_za3lpa$(0);
+  };
   Location$Companion.$metadata$ = {
     kind: Kind_OBJECT,
     simpleName: 'Companion',
@@ -7612,7 +7616,9 @@ var QGress = function (_, Kotlin) {
     World_getInstance().noiseImage = World_getInstance().createNoiseImage_bd1o91$(World_getInstance().noiseMap, w, h, noiseAlpha);
     this.resetInterval_0();
     World_getInstance().resetAllCanvas();
-    MapUtil_getInstance().loadMaps_1io40y$(this.getSelectedCenterFromUrl_0(), this.onMapload_0());
+    var maybeCenter = this.getSelectedCenterFromUrl_0();
+    var center = !equals(maybeCenter.toString(), '0,0') ? maybeCenter : Location$Companion_getInstance().random().toJSON();
+    MapUtil_getInstance().loadMaps_1io40y$(center, this.onMapload_0());
   };
   function HtmlUtil$resetInterval$lambda(this$HtmlUtil) {
     return function () {
@@ -7914,15 +7920,8 @@ var QGress = function (_, Kotlin) {
     }
   };
   HtmlUtil.prototype.getSelectedCenterFromUrl_0 = function () {
-    var tmp$;
     var geo = this.getLngLatFromUrl_0();
-    if (geo != null) {
-      tmp$ = geo.toJson();
-    }
-     else {
-      return this.getCenterFromDropdown_0();
-    }
-    return tmp$;
+    return geo != null ? geo.toJson() : this.getCenterFromDropdown_0();
   };
   HtmlUtil.prototype.getLocationNameFromUrl_0 = function () {
     var tmp$, tmp$_0;

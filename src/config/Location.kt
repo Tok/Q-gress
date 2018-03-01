@@ -1,5 +1,8 @@
 package config
 
+import util.Util
+import kotlin.js.Json
+
 enum class Location(val displayName: String, val lng: Double, val lat: Double) {
     RED_SQUARE("Red Square", 9.373274, 47.422139),
     CHLOSER_PLATZ("Chloster Platz", 9.3770000, 47.4240000),
@@ -12,8 +15,9 @@ enum class Location(val displayName: String, val lng: Double, val lat: Double) {
     GROUND_ZERO("Ground Zero", -74.0123000, 40.7125000);
 
     fun toJSONString() = "[$lng,$lat]"
-    fun toJSON(): JSON = JSON.parse(toJSONString())
+    fun toJSON(): Json = JSON.parse(toJSONString())
     companion object {
         val DEFAULT = RED_SQUARE
+        fun random(): Location = Util.shuffle(values().asList())[0]
     }
 }

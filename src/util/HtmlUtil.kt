@@ -131,7 +131,9 @@ object HtmlUtil {
         World.noiseImage = World.createNoiseImage(World.noiseMap, w, h, noiseAlpha)
         resetInterval()
         World.resetAllCanvas()
-        MapUtil.loadMaps(getSelectedCenterFromUrl(), onMapload())
+        val maybeCenter = getSelectedCenterFromUrl()
+        val center = if (!maybeCenter.toString().equals("0,0")) maybeCenter else Location.random().toJSON()
+        MapUtil.loadMaps(center, onMapload())
     }
 
     private fun resetInterval() {
@@ -373,11 +375,7 @@ object HtmlUtil {
 
     private fun getSelectedCenterFromUrl(): Json {
         val geo: GeoCoords? = getLngLatFromUrl()
-        return if (geo != null) {
-            geo.toJson()
-        } else {
-            return getCenterFromDropdown()
-        }
+        return if (geo != null) geo.toJson() else getCenterFromDropdown()
     }
 
     private fun getLocationNameFromUrl(): String? {
