@@ -22,6 +22,7 @@ import kotlin.browser.window
 import kotlin.dom.addClass
 import kotlin.dom.removeClass
 import kotlin.js.Json
+import kotlin.math.min
 
 object HtmlUtil {
     var intervalID = 0
@@ -117,8 +118,6 @@ object HtmlUtil {
 
         controlDiv.addEventListener("mousemove", { event -> handleMouseMove(event) }, false)
         rootDiv.addEventListener("mousemove", { event -> handleMouseMove(event) }, false)
-
-        window.addEventListener("resize", { document.location?.reload() /* FIXME */ }, false)
 
         initWorld()
     }
@@ -247,8 +246,8 @@ object HtmlUtil {
     private fun createCanvas(className: String): Canvas {
         val canvas = document.createElement("canvas") as Canvas
         canvas.addClass("canvas", className)
-        canvas.width = window.innerWidth
-        canvas.height = window.innerHeight
+        canvas.width = Dimensions.width
+        canvas.height = Dimensions.height
         return canvas
     }
 
@@ -336,7 +335,11 @@ object HtmlUtil {
         val url = document.location?.href
         val token = Constants.token()
         val target = Constants.targetUrl() + token
-        val newUrl = if (url?.contains(token) ?: false) { url?.split(token)!![0] + token } else { target }
+        val newUrl = if (url?.contains(token) ?: false) {
+            url?.split(token)!![0] + token
+        } else {
+            target
+        }
         return addParameters(newUrl, lng, lat, name)
     }
 
@@ -369,7 +372,7 @@ object HtmlUtil {
             opt.text = "Unknown Location"
             opt.value = "[0.0,0.0]"
             dropdown.add(opt)
-            dropdown.selectedIndex = dropdown.length-1
+            dropdown.selectedIndex = dropdown.length - 1
         }
     }
 

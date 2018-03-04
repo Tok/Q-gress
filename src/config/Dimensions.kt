@@ -1,7 +1,9 @@
 package config
 
 object Dimensions {
-    val maxWidth = 1400
+    val width = 1200 //Compare to dimensions defined in CSS
+    val height = 800
+
     val portalRadius = 8.0
     val portalLineWidth = 2
     val minDistanceBetweenPortals = (2 * portalRadius) * 3
@@ -11,14 +13,10 @@ object Dimensions {
     val agentRadius = 5.0
     val agentLineWidth = 1
     val agentDeployCircleLineWidth = 1.0
-    val gridLineWidthMain = 0.2
-    val gridLineWidth = 0.1
-    val gridSizeMain = 100
-    val gridSize = 20
     val linkLineWidth = 3.0
 
-    val topActionOffset = 102.0
-    val botActionOffset = 158.0
+    val topActionOffset = 105.0
+    val botActionOffset = 174.0
 
     val leftOffset = maxDeploymentRange.toInt() * Constants.phi //no portals will be placed here
     val rightOffset = maxDeploymentRange.toInt() * Constants.phi

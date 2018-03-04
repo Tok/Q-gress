@@ -13,13 +13,14 @@
 }
 
 * {
-    margin: 0;
+    margin: 0 auto;
 }
 
 html, body {
-    width: 100%;
-    height: 100%;
+    width: 1200px; /* Compare to dimensions defined in Dimensions.kt */
+    height: 800px;
     overflow: hidden;
+    background: #777777;
 }
 
 .container {

@@ -2280,6 +2280,7 @@ var QGress = function (_, Kotlin) {
     this.maxSmurfs = 100;
     this.startNonFaction = 500;
     this.isAutostart = true;
+    this.isHighlighActionLimit = false;
     this.vectorSmoothCount = 5;
     this.shadowBlurCount = 3;
     this.comMessageLimit = 8;
@@ -2328,7 +2329,8 @@ var QGress = function (_, Kotlin) {
   }
   function Dimensions() {
     Dimensions_instance = this;
-    this.maxWidth = 1400;
+    this.width = 1200;
+    this.height = 800;
     this.portalRadius = 8.0;
     this.portalLineWidth = 2;
     this.minDistanceBetweenPortals = 2 * this.portalRadius * 3;
@@ -2338,13 +2340,9 @@ var QGress = function (_, Kotlin) {
     this.agentRadius = 5.0;
     this.agentLineWidth = 1;
     this.agentDeployCircleLineWidth = 1.0;
-    this.gridLineWidthMain = 0.2;
-    this.gridLineWidth = 0.1;
-    this.gridSizeMain = 100;
-    this.gridSize = 20;
     this.linkLineWidth = 3.0;
-    this.topActionOffset = 102.0;
-    this.botActionOffset = 158.0;
+    this.topActionOffset = 105.0;
+    this.botActionOffset = 174.0;
     this.leftOffset = numberToInt(this.maxDeploymentRange) * Constants_getInstance().phi;
     this.rightOffset = numberToInt(this.maxDeploymentRange) * Constants_getInstance().phi;
     this.topOffset = numberToInt(this.maxDeploymentRange) * Constants_getInstance().phi;
@@ -7283,8 +7281,8 @@ var QGress = function (_, Kotlin) {
   DrawUtil.prototype.redraw_0 = function (canvas, ctx, image) {
     if (image === void 0)
       image = null;
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    canvas.width = Dimensions_getInstance().width;
+    canvas.height = Dimensions_getInstance().height;
     if (image != null) {
       ctx.putImageData(image, 0.0, 0.0);
     }
@@ -7341,15 +7339,17 @@ var QGress = function (_, Kotlin) {
       return;
     }
     var ctx = World_getInstance().uiCtx();
-    var topOffset = Dimensions_getInstance().topActionOffset;
-    var botOffset = window.innerHeight - Dimensions_getInstance().botActionOffset;
-    var w = World_getInstance().can.width;
-    var h = World_getInstance().can.height;
-    World_getInstance().ctx().beginPath();
-    World_getInstance().ctx().fillStyle = '#00000077';
-    World_getInstance().ctx().fillRect(0.0, 0.0, w, topOffset);
-    World_getInstance().ctx().fillRect(0.0, botOffset, w, h);
-    World_getInstance().ctx().closePath();
+    if (Config_getInstance().isHighlighActionLimit) {
+      var topOffset = Dimensions_getInstance().topActionOffset;
+      var botOffset = window.innerHeight - Dimensions_getInstance().botActionOffset;
+      var w = World_getInstance().can.width;
+      var h = World_getInstance().can.height;
+      ctx.beginPath();
+      ctx.fillStyle = '#00000077';
+      ctx.fillRect(0.0, 0.0, w, topOffset);
+      ctx.fillRect(0.0, botOffset, w, h);
+      ctx.closePath();
+    }
     var r = Dimensions_getInstance().maxDeploymentRange * Constants_getInstance().phi;
     var circle = new Circle(pos, r);
     var tempCan = Kotlin.isType(tmp$ = document.createElement('canvas'), HTMLCanvasElement) ? tmp$ : throwCCE();
@@ -7522,7 +7522,7 @@ var QGress = function (_, Kotlin) {
     World_getInstance().uiCtx().fillStyle = '#00000077';
     World_getInstance().uiCtx().fillRect(pos.xx() - 8, pos.yy() - half - 1, 164.0, Dimensions_getInstance().tickFontSize + 2.0);
     World_getInstance().uiCtx().fill();
-    World_getInstance().uiCtx().globalAlpha = 3.0;
+    World_getInstance().uiCtx().globalAlpha = 1.0;
     var stamp = Util_getInstance().ticksToTimestamp_za3lpa$(World_getInstance().tick);
     this.drawText_omkwws$(World_getInstance().uiCtx(), pos, stamp, Colors_getInstance().white, Dimensions_getInstance().tickFontSize, this.CODA);
     var tick = ' Tick: ' + toString(World_getInstance().tick);
@@ -7595,6 +7595,85 @@ var QGress = function (_, Kotlin) {
     drawMuRect(enlPos, enlPart, Faction$ENL_getInstance(), enlMu);
     drawMuRect(resPos, resPart, Faction$RES_getInstance(), resMu);
   };
+  var mapCapacity = Kotlin.kotlin.collections.mapCapacity_za3lpa$;
+  var LinkedHashMap_init_0 = Kotlin.kotlin.collections.LinkedHashMap_init_xf5xz2$;
+  function DrawUtil$drawTopAgents$drawCounts(this$DrawUtil) {
+    return function (ctx, items, pos) {
+      var tmp$, tmp$_0;
+      var fontSize = Dimensions_getInstance().topAgentsInventoryFontSize;
+      var width = 6;
+      var lineWidth = 1.0;
+      var tmp$_1;
+      if (items != null) {
+        var destination = LinkedHashMap_init();
+        var tmp$_2;
+        tmp$_2 = items.iterator();
+        while (tmp$_2.hasNext()) {
+          var element = tmp$_2.next();
+          var key = element.getLevel();
+          var tmp$_0_0;
+          var value = destination.get_11rb$(key);
+          if (value == null) {
+            var answer = ArrayList_init();
+            destination.put_xwzc9p$(key, answer);
+            tmp$_0_0 = answer;
+          }
+           else {
+            tmp$_0_0 = value;
+          }
+          var list = tmp$_0_0;
+          list.add_11rb$(element);
+        }
+        tmp$_1 = destination;
+      }
+       else
+        tmp$_1 = null;
+      var itemGroups = tmp$_1;
+      var tmp$_3;
+      if (itemGroups != null) {
+        var destination_0 = LinkedHashMap_init_0(mapCapacity(itemGroups.size));
+        var tmp$_4;
+        tmp$_4 = itemGroups.entries.iterator();
+        while (tmp$_4.hasNext()) {
+          var element_0 = tmp$_4.next();
+          destination_0.put_xwzc9p$(element_0.key, element_0.value.size);
+        }
+        tmp$_3 = destination_0;
+      }
+       else
+        tmp$_3 = null;
+      var itemLevels = tmp$_3;
+      var tmp$_5;
+      if (itemLevels != null) {
+        var destination_1 = ArrayList_init(itemLevels.size);
+        var tmp$_6;
+        tmp$_6 = itemLevels.entries.iterator();
+        while (tmp$_6.hasNext()) {
+          var item = tmp$_6.next();
+          destination_1.add_11rb$(item.value);
+        }
+        tmp$_5 = destination_1;
+      }
+       else
+        tmp$_5 = null;
+      var maxLevel = (tmp$_0 = (tmp$ = tmp$_5) != null ? max(tmp$) : null) != null ? tmp$_0 : 0;
+      var countPos = new Coords(pos.x, pos.y);
+      this$DrawUtil.strokeText_lowmm9$(ctx, countPos, toString(items != null ? items.size : null), Colors_getInstance().white, fontSize, this$DrawUtil.CODA, 2.0, Colors_getInstance().black, 'end');
+      var $receiver = new IntRange(1, 8);
+      var tmp$_7;
+      tmp$_7 = $receiver.iterator();
+      while (tmp$_7.hasNext()) {
+        var element_1 = tmp$_7.next();
+        var this$DrawUtil_0 = this$DrawUtil;
+        var tmp$_8, tmp$_9;
+        var statPos = new Coords(pos.x + Kotlin.imul(width, element_1) | 0, pos.y + width | 0);
+        var itemLevel = (tmp$_8 = itemLevels != null ? itemLevels.get_11rb$(element_1) : null) != null ? tmp$_8 : 0;
+        var h = fontSize * itemLevel / maxLevel;
+        var color = (tmp$_9 = LevelColor_getInstance().map.get_11rb$(element_1)) != null ? tmp$_9 : '#FFFFFF';
+        this$DrawUtil_0.drawRect_0(ctx, statPos, h, width, color, Colors_getInstance().black, lineWidth);
+      }
+    };
+  }
   function DrawUtil$drawTopAgents$lambda(it) {
     return -it.ap | 0;
   }
@@ -7615,6 +7694,7 @@ var QGress = function (_, Kotlin) {
   };
   Comparator$ObjectLiteral_15.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
   DrawUtil.prototype.drawTopAgents = function () {
+    var drawCounts = DrawUtil$drawTopAgents$drawCounts(this);
     var ctx = World_getInstance().uiCtx();
     ctx.globalAlpha = 1.0;
     var xPos = Dimensions_getInstance().topAgentsLeftOffset;
@@ -7638,90 +7718,15 @@ var QGress = function (_, Kotlin) {
       var pos = new Coords(xPos, yFixOffset + Kotlin.imul(yOffset, index_0) | 0);
       this.strokeText_lowmm9$(ctx, pos, text, item.faction.color, Dimensions_getInstance().topAgentsFontSize, this.CODA, 3.0, Colors_getInstance().black);
       var xmpColumnOffset = 180;
-      this.drawCounts_0(ctx, item.inventory.findXmps(), new Coords(pos.x + xmpColumnOffset | 0, pos.y));
+      drawCounts(ctx, item.inventory.findXmps(), new Coords(pos.x + xmpColumnOffset | 0, pos.y));
       var resoColumnOffset = xmpColumnOffset + 80 | 0;
-      this.drawCounts_0(ctx, item.inventory.findResonators(), new Coords(pos.x + resoColumnOffset | 0, pos.y));
+      drawCounts(ctx, item.inventory.findResonators(), new Coords(pos.x + resoColumnOffset | 0, pos.y));
       var cubeColumnOffset = resoColumnOffset + 80 | 0;
-      this.drawCounts_0(ctx, item.inventory.findPowerCubes(), new Coords(pos.x + cubeColumnOffset | 0, pos.y));
+      drawCounts(ctx, item.inventory.findPowerCubes(), new Coords(pos.x + cubeColumnOffset | 0, pos.y));
       var keyCount = item.inventory.keyCount();
       var keyColumnOffset = cubeColumnOffset + 80 | 0;
       var keyPos = new Coords(pos.x + keyColumnOffset | 0, pos.y);
       this.strokeText_lowmm9$(ctx, keyPos, keyCount.toString(), Colors_getInstance().white, invFontSize, this.CODA, 2.0, Colors_getInstance().black, 'end');
-    }
-  };
-  var mapCapacity = Kotlin.kotlin.collections.mapCapacity_za3lpa$;
-  var LinkedHashMap_init_0 = Kotlin.kotlin.collections.LinkedHashMap_init_xf5xz2$;
-  DrawUtil.prototype.drawCounts_0 = function (ctx, items, pos) {
-    var tmp$, tmp$_0;
-    var fontSize = Dimensions_getInstance().topAgentsInventoryFontSize;
-    var width = 6;
-    var lineWidth = 1.0;
-    var tmp$_1;
-    if (items != null) {
-      var destination = LinkedHashMap_init();
-      var tmp$_2;
-      tmp$_2 = items.iterator();
-      while (tmp$_2.hasNext()) {
-        var element = tmp$_2.next();
-        var key = element.getLevel();
-        var tmp$_0_0;
-        var value = destination.get_11rb$(key);
-        if (value == null) {
-          var answer = ArrayList_init();
-          destination.put_xwzc9p$(key, answer);
-          tmp$_0_0 = answer;
-        }
-         else {
-          tmp$_0_0 = value;
-        }
-        var list = tmp$_0_0;
-        list.add_11rb$(element);
-      }
-      tmp$_1 = destination;
-    }
-     else
-      tmp$_1 = null;
-    var itemGroups = tmp$_1;
-    var tmp$_3;
-    if (itemGroups != null) {
-      var destination_0 = LinkedHashMap_init_0(mapCapacity(itemGroups.size));
-      var tmp$_4;
-      tmp$_4 = itemGroups.entries.iterator();
-      while (tmp$_4.hasNext()) {
-        var element_0 = tmp$_4.next();
-        destination_0.put_xwzc9p$(element_0.key, element_0.value.size);
-      }
-      tmp$_3 = destination_0;
-    }
-     else
-      tmp$_3 = null;
-    var itemLevels = tmp$_3;
-    var tmp$_5;
-    if (itemLevels != null) {
-      var destination_1 = ArrayList_init(itemLevels.size);
-      var tmp$_6;
-      tmp$_6 = itemLevels.entries.iterator();
-      while (tmp$_6.hasNext()) {
-        var item = tmp$_6.next();
-        destination_1.add_11rb$(item.value);
-      }
-      tmp$_5 = destination_1;
-    }
-     else
-      tmp$_5 = null;
-    var maxLevel = (tmp$_0 = (tmp$ = tmp$_5) != null ? max(tmp$) : null) != null ? tmp$_0 : 0;
-    var countPos = new Coords(pos.x, pos.y);
-    this.strokeText_lowmm9$(ctx, countPos, toString(items != null ? items.size : null), Colors_getInstance().white, fontSize, this.CODA, 2.0, Colors_getInstance().black, 'end');
-    var tmp$_7;
-    tmp$_7 = (new IntRange(1, 8)).iterator();
-    while (tmp$_7.hasNext()) {
-      var element_1 = tmp$_7.next();
-      var tmp$_8, tmp$_9;
-      var statPos = new Coords(pos.x + Kotlin.imul(width, element_1) | 0, pos.y + width | 0);
-      var itemLevel = (tmp$_8 = itemLevels != null ? itemLevels.get_11rb$(element_1) : null) != null ? tmp$_8 : 0;
-      var h = fontSize * itemLevel / maxLevel;
-      var color = (tmp$_9 = LevelColor_getInstance().map.get_11rb$(element_1)) != null ? tmp$_9 : '#FFFFFF';
-      this.drawRect_0(ctx, statPos, h, width, color, Colors_getInstance().black, lineWidth);
     }
   };
   DrawUtil.prototype.drawRect_0 = function (ctx, pos, h, w, fillStyle, strokeStyle, lineWidth) {
@@ -8073,11 +8078,6 @@ var QGress = function (_, Kotlin) {
       return Unit;
     };
   }
-  function HtmlUtil$load$lambda_2(it) {
-    var tmp$;
-    (tmp$ = document.location) != null ? (tmp$.reload(), Unit) : null;
-    return Unit;
-  }
   HtmlUtil.prototype.load = function () {
     var tmp$, tmp$_0, tmp$_1;
     var rootDiv = Kotlin.isType(tmp$ = document.getElementById('root'), HTMLDivElement) ? tmp$ : throwCCE();
@@ -8111,7 +8111,6 @@ var QGress = function (_, Kotlin) {
     rootDiv.append(controlDiv);
     controlDiv.addEventListener('mousemove', HtmlUtil$load$lambda_0(this), false);
     rootDiv.addEventListener('mousemove', HtmlUtil$load$lambda_1(this), false);
-    window.addEventListener('resize', HtmlUtil$load$lambda_2, false);
     this.initWorld_0();
   };
   HtmlUtil.prototype.initWorld_0 = function () {
@@ -8263,8 +8262,8 @@ var QGress = function (_, Kotlin) {
     var tmp$;
     var canvas = Kotlin.isType(tmp$ = document.createElement('canvas'), HTMLCanvasElement) ? tmp$ : throwCCE();
     addClass(canvas, ['canvas', className]);
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    canvas.width = Dimensions_getInstance().width;
+    canvas.height = Dimensions_getInstance().height;
     return canvas;
   };
   HtmlUtil.prototype.createOffscreenCanvas_0 = function (w, h) {

@@ -48,8 +48,8 @@ object DrawUtil {
     fun clear() = redraw(World.can, World.ctx())
 
     private fun redraw(canvas: Canvas, ctx: Ctx, image: ImageData? = null) {
-        canvas.width = window.innerWidth
-        canvas.height = window.innerHeight
+        canvas.width = Dimensions.width
+        canvas.height = Dimensions.height
         if (image != null) {
             ctx.putImageData(image, 0.0, 0.0)
         } else {
@@ -92,16 +92,17 @@ object DrawUtil {
             return
         }
         val ctx = World.uiCtx()
-        val topOffset = Dimensions.topActionOffset
-        val botOffset = window.innerHeight - Dimensions.botActionOffset
-
-        val w = World.can.width
-        val h = World.can.height
-        World.ctx().beginPath()
-        World.ctx().fillStyle = "#00000077"
-        World.ctx().fillRect(0.0, 0.0, w.toDouble(), topOffset)
-        World.ctx().fillRect(0.0, botOffset, w.toDouble(), h.toDouble())
-        World.ctx().closePath()
+        if (Config.isHighlighActionLimit) {
+            val topOffset = Dimensions.topActionOffset
+            val botOffset = window.innerHeight - Dimensions.botActionOffset
+            val w = World.can.width.toDouble()
+            val h = World.can.height.toDouble()
+            ctx.beginPath()
+            ctx.fillStyle = "#00000077"
+            ctx.fillRect(0.0, 0.0, w, topOffset)
+            ctx.fillRect(0.0, botOffset, w, h)
+            ctx.closePath()
+        }
 
         val r = Dimensions.maxDeploymentRange * Constants.phi
         val circle = Circle(pos, r)
@@ -251,7 +252,7 @@ object DrawUtil {
         World.uiCtx().fillStyle = "#00000077"
         World.uiCtx().fillRect(pos.xx() - 8, pos.yy() - half - 1, 164.0, Dimensions.tickFontSize + 2.0)
         World.uiCtx().fill()
-        World.uiCtx().globalAlpha = 3.0
+        World.uiCtx().globalAlpha = 1.0
         val stamp = Util.ticksToTimestamp(World.tick)
         drawText(World.uiCtx(), pos, stamp, Colors.white, Dimensions.tickFontSize, CODA)
         val tick = " Tick: " + World.tick
@@ -326,6 +327,24 @@ object DrawUtil {
     }
 
     fun drawTopAgents() {
+        fun drawCounts(ctx: Ctx, items: List<DeployableItem>?, pos: Coords) {
+            val fontSize = Dimensions.topAgentsInventoryFontSize
+            val width = 6
+            val lineWidth = 1.0
+            val itemGroups: Map<Int, List<DeployableItem>>? = items?.groupBy { it.getLevel() }
+            val itemLevels: Map<Int, Int>? = itemGroups?.mapValues { it.value.count() }
+            val maxLevel = itemLevels?.map { it.value }?.max() ?: 0
+            val countPos = Coords(pos.x, pos.y)
+            strokeText(ctx, countPos, items?.size.toString(), Colors.white, fontSize, CODA, 2.0, Colors.black, CanvasTextAlign.END)
+            (1..8).forEach { level ->
+                val statPos = Coords(pos.x + (width * level), pos.y + width)
+                val itemLevel = itemLevels?.get(level) ?: 0
+                val h = fontSize * itemLevel.toDouble() / maxLevel
+                val color = LevelColor.map.get(level) ?: "#FFFFFF"
+                drawRect(ctx, statPos, h, width.toDouble(), color, Colors.black, lineWidth)
+            }
+        }
+
         val ctx = World.uiCtx()
         ctx.globalAlpha = 1.0
         val xPos = Dimensions.topAgentsLeftOffset
@@ -365,24 +384,6 @@ object DrawUtil {
             val keyColumnOffset = cubeColumnOffset + 80
             val keyPos = Coords(pos.x + keyColumnOffset, pos.y)
             strokeText(ctx, keyPos, keyCount.toString(), Colors.white, invFontSize, CODA, 2.0, Colors.black, CanvasTextAlign.END)
-        }
-    }
-
-    private fun drawCounts(ctx: Ctx, items: List<DeployableItem>?, pos: Coords) {
-        val fontSize = Dimensions.topAgentsInventoryFontSize
-        val width = 6
-        val lineWidth = 1.0
-        val itemGroups: Map<Int, List<DeployableItem>>? = items?.groupBy { it.getLevel() }
-        val itemLevels: Map<Int, Int>? = itemGroups?.mapValues { it.value.count() }
-        val maxLevel = itemLevels?.map { it.value }?.max() ?: 0
-        val countPos = Coords(pos.x, pos.y)
-        strokeText(ctx, countPos, items?.size.toString(), Colors.white, fontSize, CODA, 2.0, Colors.black, CanvasTextAlign.END)
-        (1..8).forEach { level ->
-            val statPos = Coords(pos.x + (width * level), pos.y + width)
-            val itemLevel = itemLevels?.get(level) ?: 0
-            val h = fontSize * itemLevel.toDouble() / maxLevel
-            val color = LevelColor.map.get(level) ?: "#FFFFFF"
-            drawRect(ctx, statPos, h, width.toDouble(), color, Colors.black, lineWidth)
         }
     }
 

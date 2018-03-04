@@ -12,6 +12,7 @@ object Config {
     val startNonFaction = 500 // ((maxFrogs + maxSmurfs) * 0.5 / Constants.phi).toInt()
 
     val isAutostart = true
+    val isHighlighActionLimit = false
     val vectorSmoothCount = 5
     val shadowBlurCount = 3
 
