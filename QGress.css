@@ -143,6 +143,21 @@ html, body {
     background: #777777;
     cursor: pointer;
 }
+.qSlider {
+    width: 89px !important;
+}
+.qSlider:hover {
+    opacity: 1;
+}
+.qSlider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 21px;
+    height: 21px;
+    border-radius: 62%;
+    background: #777777;
+    cursor: pointer;
+}
 .sliderLabel {
     margin-top: 8px;
     margin-bottom: 8px;

@@ -10,11 +10,15 @@ import items.QgressItem
 import items.deployable.Resonator
 import items.level.ResonatorLevel
 import items.level.XmpLevel
+import org.w3c.dom.HTMLInputElement
+import org.w3c.dom.HTMLSelectElement
 import portal.Link
 import portal.Portal
 import system.Queues
 import util.*
 import util.data.*
+import kotlin.browser.document
+import kotlin.browser.window
 import kotlin.math.max
 import kotlin.math.min
 
@@ -95,11 +99,15 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
     private fun isDeploymentPossible() = !actionPortal.isEnemyOf(this)
             && actionPortal.findAllowedResoLevels(this).map { it.value }.sum() > 0
 
+    private fun q(value: QValue): Double {
+        val slider = window.document.getElementById(value.name + "Slider") as HTMLInputElement
+        return slider.valueAsNumber / 100.0
+    }
+
     fun doNeutralPortalAction(): Agent {
-        val hackQ = if (isHackPossible()) 0.5 else -1.0
-        val deployQ = if (isDeploymentPossible()) 0.5 else -1.0
+        val hackQ = if (isHackPossible()) q(QValue.HACK) else -1.0
+        val deployQ = if (isDeploymentPossible()) q(QValue.DEPLOY) else -1.0
         val qValues = listOf(
-                //(1.0 - skills.reliability) to { doNothing() },
                 hackQ to { hackActionPortal() },
                 deployQ to { deployPortal() },
                 0.10 to { goDoSomethingElse() }
@@ -108,11 +116,10 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
     }
 
     fun doFriendlyPortalAction(): Agent {
-        val hackQ = if (isHackPossible()) 0.5 else -1.0
-        val deployQ = if (isDeploymentPossible()) 0.5 else -1.0
-        val linkQ = if (isLinkPossible()) 0.5 else -1.0
+        val hackQ = if (isHackPossible()) q(QValue.HACK) else -1.0
+        val deployQ = if (isDeploymentPossible()) q(QValue.DEPLOY) else -1.0
+        val linkQ = if (isLinkPossible()) q(QValue.LINK) else -1.0
         val qValues = listOf(
-                //(1.0 - skills.reliability) to { doNothing() },
                 hackQ to { hackActionPortal() },
                 deployQ to { deployPortal() },
                 linkQ to { createLink() },
@@ -122,10 +129,9 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
     }
 
     fun doEnemyPortalAction(): Agent {
-        val hackQ = if (isHackPossible()) 0.5 else -1.0
-        val attackQ = if (isAttackPossible()) 0.5 else -1.0
+        val hackQ = if (isHackPossible()) q(QValue.HACK) else -1.0
+        val attackQ = if (isAttackPossible()) q(QValue.ATTACK) else -1.0
         val qValues = listOf(
-                //(1.0 - skills.reliability) to { doNothing() },
                 hackQ to { hackActionPortal() },
                 attackQ to { attackPortal() },
                 0.10 to { goDoSomethingElse() }

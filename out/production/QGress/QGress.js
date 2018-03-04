@@ -8,6 +8,7 @@ var QGress = function (_, Kotlin) {
   var listOf = Kotlin.kotlin.collections.listOf_i5x0yv$;
   var equals = Kotlin.equals;
   var sum = Kotlin.kotlin.collections.sum_plj8ka$;
+  var throwCCE = Kotlin.throwCCE;
   var to = Kotlin.kotlin.to_ujzrz7$;
   var println = Kotlin.kotlin.io.println_s8jyv4$;
   var numberToInt = Kotlin.numberToInt;
@@ -16,7 +17,6 @@ var QGress = function (_, Kotlin) {
   var Unit = Kotlin.kotlin.Unit;
   var take = Kotlin.kotlin.collections.take_ba2ldo$;
   var toList = Kotlin.kotlin.collections.toList_abgq59$;
-  var throwCCE = Kotlin.throwCCE;
   var toSet = Kotlin.kotlin.collections.toSet_7wnvza$;
   var zip = Kotlin.kotlin.collections.zip_45mdf7$;
   var toMap = Kotlin.kotlin.collections.toMap_6hr0sd$;
@@ -151,23 +151,24 @@ var QGress = function (_, Kotlin) {
   Action.prototype.equals = function (other) {
     return this === other || (other !== null && (typeof other === 'object' && (Object.getPrototypeOf(this) === Object.getPrototypeOf(other) && (Kotlin.equals(this.item, other.item) && Kotlin.equals(this.untilTick, other.untilTick)))));
   };
-  function ActionItem(text, letter, durationSeconds) {
+  function ActionItem(text, letter, durationSeconds, qName) {
     ActionItem$Companion_getInstance();
     this.text = text;
     this.letter = letter;
     this.durationSeconds = durationSeconds;
+    this.qName = qName;
   }
   function ActionItem$Companion() {
     ActionItem$Companion_instance = this;
-    this.MOVE = new ActionItem('moving', ' ', 1);
-    this.WAIT = new ActionItem('waiting', 'o', 1);
-    this.RECHARGE = new ActionItem('recharge', 'r', 1);
-    this.RECYCLE = new ActionItem('recycle', 'c', 1);
-    this.HACK = new ActionItem('hacking', ' !', 5);
-    this.GLYPH = new ActionItem('glyphing', '?', 40);
-    this.ATTACK = new ActionItem('attacking', '-', 5);
-    this.DEPLOY = new ActionItem('deploying', '+', 10);
-    this.LINK = new ActionItem('linking', ' |', 10);
+    this.MOVE = new ActionItem('moving', ' ', 1, 'Move');
+    this.WAIT = new ActionItem('waiting', 'o', 1, 'Wait');
+    this.RECHARGE = new ActionItem('recharge', 'r', 1, 'Recharge');
+    this.RECYCLE = new ActionItem('recycle', 'c', 1, 'Recycle');
+    this.HACK = new ActionItem('hacking', ' !', 5, 'Hack');
+    this.GLYPH = new ActionItem('glyphing', '?', 40, 'Glyph');
+    this.ATTACK = new ActionItem('attacking', '-', 5, 'Attack');
+    this.DEPLOY = new ActionItem('deploying', '+', 10, 'Deploy');
+    this.LINK = new ActionItem('linking', ' |', 10, 'Link');
   }
   ActionItem$Companion.prototype.values = function () {
     return listOf([this.MOVE, this.WAIT, this.HACK, this.GLYPH, this.ATTACK, this.DEPLOY, this.LINK]);
@@ -198,21 +199,25 @@ var QGress = function (_, Kotlin) {
   ActionItem.prototype.component3 = function () {
     return this.durationSeconds;
   };
-  ActionItem.prototype.copy_rjan26$ = function (text, letter, durationSeconds) {
-    return new ActionItem(text === void 0 ? this.text : text, letter === void 0 ? this.letter : letter, durationSeconds === void 0 ? this.durationSeconds : durationSeconds);
+  ActionItem.prototype.component4 = function () {
+    return this.qName;
+  };
+  ActionItem.prototype.copy_7z05hs$ = function (text, letter, durationSeconds, qName) {
+    return new ActionItem(text === void 0 ? this.text : text, letter === void 0 ? this.letter : letter, durationSeconds === void 0 ? this.durationSeconds : durationSeconds, qName === void 0 ? this.qName : qName);
   };
   ActionItem.prototype.toString = function () {
-    return 'ActionItem(text=' + Kotlin.toString(this.text) + (', letter=' + Kotlin.toString(this.letter)) + (', durationSeconds=' + Kotlin.toString(this.durationSeconds)) + ')';
+    return 'ActionItem(text=' + Kotlin.toString(this.text) + (', letter=' + Kotlin.toString(this.letter)) + (', durationSeconds=' + Kotlin.toString(this.durationSeconds)) + (', qName=' + Kotlin.toString(this.qName)) + ')';
   };
   ActionItem.prototype.hashCode = function () {
     var result = 0;
     result = result * 31 + Kotlin.hashCode(this.text) | 0;
     result = result * 31 + Kotlin.hashCode(this.letter) | 0;
     result = result * 31 + Kotlin.hashCode(this.durationSeconds) | 0;
+    result = result * 31 + Kotlin.hashCode(this.qName) | 0;
     return result;
   };
   ActionItem.prototype.equals = function (other) {
-    return this === other || (other !== null && (typeof other === 'object' && (Object.getPrototypeOf(this) === Object.getPrototypeOf(other) && (Kotlin.equals(this.text, other.text) && Kotlin.equals(this.letter, other.letter) && Kotlin.equals(this.durationSeconds, other.durationSeconds)))));
+    return this === other || (other !== null && (typeof other === 'object' && (Object.getPrototypeOf(this) === Object.getPrototypeOf(other) && (Kotlin.equals(this.text, other.text) && Kotlin.equals(this.letter, other.letter) && Kotlin.equals(this.durationSeconds, other.durationSeconds) && Kotlin.equals(this.qName, other.qName)))));
   };
   function Agent(faction, name, pos, skills, inventory, action, actionPortal, destination, ap, xm, velocity) {
     Agent$Companion_getInstance();
@@ -357,6 +362,11 @@ var QGress = function (_, Kotlin) {
     }
     return tmp$;
   };
+  Agent.prototype.q_0 = function (value) {
+    var tmp$;
+    var slider = Kotlin.isType(tmp$ = window.document.getElementById(value.name + 'Slider'), HTMLInputElement) ? tmp$ : throwCCE();
+    return slider.valueAsNumber / 100.0;
+  };
   function Agent$doNeutralPortalAction$lambda(this$Agent) {
     return function () {
       return this$Agent.hackActionPortal();
@@ -373,8 +383,8 @@ var QGress = function (_, Kotlin) {
     };
   }
   Agent.prototype.doNeutralPortalAction = function () {
-    var hackQ = this.isHackPossible_0() ? 0.5 : -1.0;
-    var deployQ = this.isDeploymentPossible_0() ? 0.5 : -1.0;
+    var hackQ = this.isHackPossible_0() ? this.q_0(QValue$Companion_getInstance().HACK) : -1.0;
+    var deployQ = this.isDeploymentPossible_0() ? this.q_0(QValue$Companion_getInstance().DEPLOY) : -1.0;
     var qValues = listOf([to(hackQ, Agent$doNeutralPortalAction$lambda(this)), to(deployQ, Agent$doNeutralPortalAction$lambda_0(this)), to(0.1, Agent$doNeutralPortalAction$lambda_1(this))]);
     return Util_getInstance().select_flnx62$(qValues)();
   };
@@ -399,9 +409,9 @@ var QGress = function (_, Kotlin) {
     };
   }
   Agent.prototype.doFriendlyPortalAction = function () {
-    var hackQ = this.isHackPossible_0() ? 0.5 : -1.0;
-    var deployQ = this.isDeploymentPossible_0() ? 0.5 : -1.0;
-    var linkQ = this.isLinkPossible() ? 0.5 : -1.0;
+    var hackQ = this.isHackPossible_0() ? this.q_0(QValue$Companion_getInstance().HACK) : -1.0;
+    var deployQ = this.isDeploymentPossible_0() ? this.q_0(QValue$Companion_getInstance().DEPLOY) : -1.0;
+    var linkQ = this.isLinkPossible() ? this.q_0(QValue$Companion_getInstance().LINK) : -1.0;
     var qValues = listOf([to(hackQ, Agent$doFriendlyPortalAction$lambda(this)), to(deployQ, Agent$doFriendlyPortalAction$lambda_0(this)), to(linkQ, Agent$doFriendlyPortalAction$lambda_1(this)), to(0.1, Agent$doFriendlyPortalAction$lambda_2(this))]);
     return Util_getInstance().select_flnx62$(qValues)();
   };
@@ -421,8 +431,8 @@ var QGress = function (_, Kotlin) {
     };
   }
   Agent.prototype.doEnemyPortalAction = function () {
-    var hackQ = this.isHackPossible_0() ? 0.5 : -1.0;
-    var attackQ = this.isAttackPossible_0() ? 0.5 : -1.0;
+    var hackQ = this.isHackPossible_0() ? this.q_0(QValue$Companion_getInstance().HACK) : -1.0;
+    var attackQ = this.isAttackPossible_0() ? this.q_0(QValue$Companion_getInstance().ATTACK) : -1.0;
     var qValues = listOf([to(hackQ, Agent$doEnemyPortalAction$lambda(this)), to(attackQ, Agent$doEnemyPortalAction$lambda_0(this)), to(0.1, Agent$doEnemyPortalAction$lambda_1(this))]);
     return Util_getInstance().select_flnx62$(qValues)();
   };
@@ -2166,6 +2176,56 @@ var QGress = function (_, Kotlin) {
   };
   NonFaction.prototype.equals = function (other) {
     return this === other || (other !== null && (typeof other === 'object' && (Object.getPrototypeOf(this) === Object.getPrototypeOf(other) && (Kotlin.equals(this.pos, other.pos) && Kotlin.equals(this.speed, other.speed) && Kotlin.equals(this.destination, other.destination) && Kotlin.equals(this.vectorField, other.vectorField) && Kotlin.equals(this.busyUntil, other.busyUntil)))));
+  };
+  function QValue(name) {
+    QValue$Companion_getInstance();
+    this.name = name;
+    this.sliderId = this.name + 'Slider';
+    this.unitLabel = '% ' + this.name;
+  }
+  function QValue$Companion() {
+    QValue$Companion_instance = this;
+    this.HACK = new QValue('Hack');
+    this.DEPLOY = new QValue('Deploy');
+    this.LINK = new QValue('Link');
+    this.ATTACK = new QValue('Attack');
+  }
+  QValue$Companion.prototype.values = function () {
+    return listOf([this.HACK, this.DEPLOY, this.LINK, this.ATTACK]);
+  };
+  QValue$Companion.$metadata$ = {
+    kind: Kind_OBJECT,
+    simpleName: 'Companion',
+    interfaces: []
+  };
+  var QValue$Companion_instance = null;
+  function QValue$Companion_getInstance() {
+    if (QValue$Companion_instance === null) {
+      new QValue$Companion();
+    }
+    return QValue$Companion_instance;
+  }
+  QValue.$metadata$ = {
+    kind: Kind_CLASS,
+    simpleName: 'QValue',
+    interfaces: []
+  };
+  QValue.prototype.component1 = function () {
+    return this.name;
+  };
+  QValue.prototype.copy_61zpoe$ = function (name) {
+    return new QValue(name === void 0 ? this.name : name);
+  };
+  QValue.prototype.toString = function () {
+    return 'QValue(name=' + Kotlin.toString(this.name) + ')';
+  };
+  QValue.prototype.hashCode = function () {
+    var result = 0;
+    result = result * 31 + Kotlin.hashCode(this.name) | 0;
+    return result;
+  };
+  QValue.prototype.equals = function (other) {
+    return this === other || (other !== null && (typeof other === 'object' && (Object.getPrototypeOf(this) === Object.getPrototypeOf(other) && Kotlin.equals(this.name, other.name))));
   };
   function Skills(speed, deployPrecision, glyphSkill, reliability) {
     Skills$Companion_getInstance();
@@ -7301,6 +7361,7 @@ var QGress = function (_, Kotlin) {
       $receiver.fillStyle = '#00000077';
       $receiver.fillRect(0.0, 0.0, w, topOffset);
       $receiver.fillRect(0.0, botOffset, w, h);
+      $receiver.fillRect(0.0, topOffset, 233.0, 21.0 * (QValue$Companion_getInstance().values().size + 1.0));
       $receiver.closePath();
     }
   };
@@ -8007,50 +8068,56 @@ var QGress = function (_, Kotlin) {
       return Unit;
     };
   }
-  function HtmlUtil$load$lambda$lambda(this$HtmlUtil) {
+  function HtmlUtil$load$lambda_0(this$HtmlUtil) {
     return function (it) {
       World_getInstance().speed = this$HtmlUtil.speedSetting_0();
       return Unit;
     };
   }
-  function HtmlUtil$load$lambda$lambda$lambda(this$HtmlUtil) {
+  function HtmlUtil$load$lambda$lambda(this$HtmlUtil) {
     return function () {
       this$HtmlUtil.tick_0();
       return Unit;
     };
   }
-  function HtmlUtil$load$lambda$lambda_0(this$HtmlUtil) {
+  function HtmlUtil$load$lambda_1(this$HtmlUtil) {
     return function (it) {
-      this$HtmlUtil.intervalID = this$HtmlUtil.pauseHandler_n53o35$(this$HtmlUtil.intervalID, HtmlUtil$load$lambda$lambda$lambda(this$HtmlUtil));
+      this$HtmlUtil.intervalID = this$HtmlUtil.pauseHandler_n53o35$(this$HtmlUtil.intervalID, HtmlUtil$load$lambda$lambda(this$HtmlUtil));
       return Unit;
     };
   }
-  function HtmlUtil$load$lambda$lambda_1(this$HtmlUtil) {
+  function HtmlUtil$load$lambda_2(this$HtmlUtil) {
     return function (it) {
       this$HtmlUtil.mapChangeHandler_0();
       return Unit;
     };
   }
-  function HtmlUtil$load$lambda$lambda_2(closure$slider, closure$sliderValue) {
+  function HtmlUtil$load$lambda$lambda_0(this$, closure$volumeSliderValue) {
     return function (f) {
-      closure$sliderValue.innerHTML = closure$slider.value + '% VOLUME';
+      closure$volumeSliderValue.innerHTML = this$.value + '% VOLUME';
       return null;
     };
   }
-  function HtmlUtil$load$lambda_0(this$HtmlUtil) {
+  function HtmlUtil$load$lambda$lambda_1(closure$slider, closure$it, closure$sliderValue) {
+    return function (f) {
+      closure$sliderValue.innerHTML = closure$slider.value + closure$it.unitLabel;
+      return null;
+    };
+  }
+  function HtmlUtil$load$lambda_3(this$HtmlUtil) {
     return function (event) {
       this$HtmlUtil.handleMouseMove_0(event);
       return Unit;
     };
   }
-  function HtmlUtil$load$lambda_1(this$HtmlUtil) {
+  function HtmlUtil$load$lambda_4(this$HtmlUtil) {
     return function (event) {
       this$HtmlUtil.handleMouseMove_0(event);
       return Unit;
     };
   }
   HtmlUtil.prototype.load = function () {
-    var tmp$, tmp$_0, tmp$_1;
+    var tmp$, tmp$_0, tmp$_1, tmp$_2, tmp$_3, tmp$_4, tmp$_5;
     var rootDiv = Kotlin.isType(tmp$ = document.getElementById('root'), HTMLDivElement) ? tmp$ : throwCCE();
     addClass(rootDiv, ['container']);
     World_getInstance().can = this.createCanvas_0('mainCanvas');
@@ -8064,39 +8131,62 @@ var QGress = function (_, Kotlin) {
     rootDiv.append(canvasDiv);
     var controlDiv = Kotlin.isType(tmp$_1 = document.createElement('div'), HTMLDivElement) ? tmp$_1 : throwCCE();
     addClass(controlDiv, ['controls']);
-    var $receiver = Config_getInstance();
-    var tmp$_2, tmp$_3, tmp$_4, tmp$_5;
     var maxSpeed = 500;
     var speedSlider = this.createSliderDiv_0('speedSlider', 100, maxSpeed, this.SPEED_ID, '% Speed', 100);
-    speedSlider.oninput = HtmlUtil$load$lambda$lambda(this);
+    speedSlider.oninput = HtmlUtil$load$lambda_0(this);
     controlDiv.append(speedSlider);
-    controlDiv.append(this.createSliderDiv_0('frogSlider', $receiver.startFrogs, $receiver.maxFrogs, this.FROG_COUNT_ID, ' Frogs', 0));
-    controlDiv.append(this.createSliderDiv_0('smurfSlider', $receiver.startSmurfs, $receiver.maxSmurfs, this.SMURF_COUNT_ID, ' Smurfs', 0));
+    controlDiv.append(this.createSliderDiv_0('frogSlider', Config_getInstance().startFrogs, Config_getInstance().maxFrogs, this.FROG_COUNT_ID, ' Frogs', 0));
+    controlDiv.append(this.createSliderDiv_0('smurfSlider', Config_getInstance().startSmurfs, Config_getInstance().maxSmurfs, this.SMURF_COUNT_ID, ' Smurfs', 0));
     var buttonDiv = Kotlin.isType(tmp$_2 = document.createElement('div'), HTMLDivElement) ? tmp$_2 : throwCCE();
-    var pauseButton = this.createButton_0('button', 'Stop', HtmlUtil$load$lambda$lambda_0(this));
+    var pauseButton = this.createButton_0('button', 'Stop', HtmlUtil$load$lambda_1(this));
     pauseButton.id = this.PAUSE_BUTTON_ID;
     buttonDiv.append(pauseButton);
-    var dropDown = this.createDropdown_0(this.LOCATION_DROPDOWN_ID, HtmlUtil$load$lambda$lambda_1(this));
+    var dropDown = this.createDropdown_0(this.LOCATION_DROPDOWN_ID, HtmlUtil$load$lambda_2(this));
     var selectionName = (tmp$_3 = this.getLocationNameFromUrl_0()) != null ? tmp$_3 : 'unknown';
     this.setLocationDropdownSelection_0(dropDown, selectionName);
     buttonDiv.append(dropDown);
-    var slider = Kotlin.isType(tmp$_4 = document.createElement('INPUT'), HTMLInputElement) ? tmp$_4 : throwCCE();
-    slider.id = this.VOLUME_SLIDER_ID;
-    slider.type = 'range';
-    slider.min = '0';
-    slider.max = '100';
-    slider.value = '80';
-    addClass(slider, ['slider', 'volumeSlider']);
-    var sliderValue = Kotlin.isType(tmp$_5 = document.createElement('span'), HTMLSpanElement) ? tmp$_5 : throwCCE();
-    addClass(sliderValue, ['sliderLabel']);
-    slider.oninput = HtmlUtil$load$lambda$lambda_2(slider, sliderValue);
-    sliderValue.innerHTML = slider.value + '% VOLUME';
-    buttonDiv.append(slider);
-    buttonDiv.append(sliderValue);
+    var volumeSlider = Kotlin.isType(tmp$_4 = document.createElement('input'), HTMLInputElement) ? tmp$_4 : throwCCE();
+    var tmp$_6;
+    volumeSlider.id = this.VOLUME_SLIDER_ID;
+    volumeSlider.type = 'range';
+    volumeSlider.min = '0';
+    volumeSlider.max = '100';
+    volumeSlider.value = '80';
+    addClass(volumeSlider, ['slider', 'volumeSlider']);
+    var volumeSliderValue = Kotlin.isType(tmp$_6 = document.createElement('span'), HTMLSpanElement) ? tmp$_6 : throwCCE();
+    addClass(volumeSliderValue, ['sliderLabel']);
+    volumeSlider.oninput = HtmlUtil$load$lambda$lambda_0(volumeSlider, volumeSliderValue);
+    volumeSliderValue.innerHTML = volumeSlider.value + '% VOLUME';
+    buttonDiv.append(volumeSlider);
+    buttonDiv.append(volumeSliderValue);
     controlDiv.append(buttonDiv);
+    var qDiv = Kotlin.isType(tmp$_5 = document.createElement('div'), HTMLDivElement) ? tmp$_5 : throwCCE();
+    addClass(qDiv, ['qValues']);
+    var tmp$_7;
+    tmp$_7 = QValue$Companion_getInstance().values().iterator();
+    while (tmp$_7.hasNext()) {
+      var element = tmp$_7.next();
+      var tmp$_8, tmp$_9, tmp$_10;
+      var sliderDiv = Kotlin.isType(tmp$_8 = document.createElement('div'), HTMLDivElement) ? tmp$_8 : throwCCE();
+      var slider = Kotlin.isType(tmp$_9 = document.createElement('input'), HTMLInputElement) ? tmp$_9 : throwCCE();
+      slider.id = element.sliderId;
+      slider.type = 'range';
+      slider.min = '0';
+      slider.max = '100';
+      slider.value = '50';
+      addClass(slider, ['slider', 'qSlider']);
+      var sliderValue = Kotlin.isType(tmp$_10 = document.createElement('span'), HTMLSpanElement) ? tmp$_10 : throwCCE();
+      addClass(sliderValue, ['sliderLabel']);
+      slider.oninput = HtmlUtil$load$lambda$lambda_1(slider, element, sliderValue);
+      sliderValue.innerHTML = slider.value + element.unitLabel;
+      sliderDiv.append(slider);
+      sliderDiv.append(sliderValue);
+      qDiv.append(sliderDiv);
+    }
+    controlDiv.append(qDiv);
     rootDiv.append(controlDiv);
-    controlDiv.addEventListener('mousemove', HtmlUtil$load$lambda_0(this), false);
-    rootDiv.addEventListener('mousemove', HtmlUtil$load$lambda_1(this), false);
+    controlDiv.addEventListener('mousemove', HtmlUtil$load$lambda_3(this), false);
+    rootDiv.addEventListener('mousemove', HtmlUtil$load$lambda_4(this), false);
     this.initWorld_0();
   };
   HtmlUtil.prototype.initWorld_0 = function () {
@@ -9784,6 +9874,10 @@ var QGress = function (_, Kotlin) {
     get: NonFaction$Companion_getInstance
   });
   package$agent.NonFaction = NonFaction;
+  Object.defineProperty(QValue, 'Companion', {
+    get: QValue$Companion_getInstance
+  });
+  package$agent.QValue = QValue;
   Object.defineProperty(Skills, 'Companion', {
     get: Skills$Companion_getInstance
   });

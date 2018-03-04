@@ -6,6 +6,8 @@ import ImprovedNoise
 import World
 import agent.Agent
 import agent.Faction
+import agent.QValue
+import agent.action.ActionItem
 import config.*
 import config.Location
 import org.w3c.dom.*
@@ -96,45 +98,65 @@ object HtmlUtil {
         val controlDiv = document.createElement("div") as HTMLDivElement
         controlDiv.addClass("controls")
 
-        with(Config) {
-            val maxSpeed = 500
-            val speedSlider = createSliderDiv("speedSlider", 100, maxSpeed, SPEED_ID, "% Speed", 100)
-            speedSlider.oninput = { World.speed = speedSetting(); Unit }
-            controlDiv.append(speedSlider)
-            controlDiv.append(createSliderDiv("frogSlider", startFrogs, maxFrogs,
-                    FROG_COUNT_ID, " Frogs", 0))
-            controlDiv.append(createSliderDiv("smurfSlider", startSmurfs, maxSmurfs,
-                    SMURF_COUNT_ID, " Smurfs", 0))
-            val buttonDiv = document.createElement("div") as HTMLDivElement
-            val pauseButton = createButton("button", "Stop", {
-                intervalID = pauseHandler(intervalID, { tick() })
-            })
-            pauseButton.id = PAUSE_BUTTON_ID
-            buttonDiv.append(pauseButton)
+        val maxSpeed = 500
+        val speedSlider = createSliderDiv("speedSlider", 100, maxSpeed, SPEED_ID, "% Speed", 100)
+        speedSlider.oninput = { World.speed = speedSetting(); Unit }
+        controlDiv.append(speedSlider)
+        controlDiv.append(createSliderDiv("frogSlider", Config.startFrogs, Config.maxFrogs,
+                FROG_COUNT_ID, " Frogs", 0))
+        controlDiv.append(createSliderDiv("smurfSlider", Config.startSmurfs, Config.maxSmurfs,
+                SMURF_COUNT_ID, " Smurfs", 0))
+        val buttonDiv = document.createElement("div") as HTMLDivElement
+        val pauseButton = createButton("button", "Stop", {
+            intervalID = pauseHandler(intervalID, { tick() })
+        })
+        pauseButton.id = PAUSE_BUTTON_ID
+        buttonDiv.append(pauseButton)
 
-            val dropDown = createDropdown(LOCATION_DROPDOWN_ID, { mapChangeHandler() })
-            val selectionName = getLocationNameFromUrl() ?: "unknown"
-            setLocationDropdownSelection(dropDown, selectionName)
-            buttonDiv.append(dropDown)
+        val dropDown = createDropdown(LOCATION_DROPDOWN_ID, { mapChangeHandler() })
+        val selectionName = getLocationNameFromUrl() ?: "unknown"
+        setLocationDropdownSelection(dropDown, selectionName)
+        buttonDiv.append(dropDown)
 
-            val slider = document.createElement("INPUT") as HTMLInputElement
-            slider.id = VOLUME_SLIDER_ID
+        val volumeSlider = document.createElement("input") as HTMLInputElement
+        with(volumeSlider) {
+            id = VOLUME_SLIDER_ID
+            type = "range"
+            min = "0"
+            max = "100"
+            value = "80"
+            addClass("slider", "volumeSlider")
+            val volumeSliderValue = document.createElement("span") as HTMLSpanElement
+            volumeSliderValue.addClass("sliderLabel")
+            oninput = { _ -> volumeSliderValue.innerHTML = value + "% VOLUME"; null }
+            volumeSliderValue.innerHTML = value + "% VOLUME"
+            buttonDiv.append(volumeSlider)
+            buttonDiv.append(volumeSliderValue)
+        }
+        controlDiv.append(buttonDiv)
+
+        val qDiv = document.createElement("div") as HTMLDivElement
+        qDiv.addClass("qValues")
+        QValue.values().forEach {
+            val sliderDiv = document.createElement("div") as HTMLDivElement
+            val slider = document.createElement("input") as HTMLInputElement
+            slider.id = it.sliderId
             slider.type = "range"
             slider.min = "0"
             slider.max = "100"
-            slider.value = "80"
-            slider.addClass("slider", "volumeSlider")
+            slider.value = "50"
+            slider.addClass("slider", "qSlider")
             val sliderValue = document.createElement("span") as HTMLSpanElement
             sliderValue.addClass("sliderLabel")
-            slider.oninput = { _ -> sliderValue.innerHTML = slider.value + "% VOLUME"; null }
-            sliderValue.innerHTML = slider.value + "% VOLUME"
-            buttonDiv.append(slider)
-            buttonDiv.append(sliderValue)
-
-            controlDiv.append(buttonDiv)
+            slider.oninput = { _ -> sliderValue.innerHTML = slider.value + it.unitLabel; null }
+            sliderValue.innerHTML = slider.value + it.unitLabel
+            sliderDiv.append(slider)
+            sliderDiv.append(sliderValue)
+            qDiv.append(sliderDiv)
         }
-        rootDiv.append(controlDiv)
+        controlDiv.append(qDiv)
 
+        rootDiv.append(controlDiv)
         controlDiv.addEventListener("mousemove", { event -> handleMouseMove(event) }, false)
         rootDiv.addEventListener("mousemove", { event -> handleMouseMove(event) }, false)
 

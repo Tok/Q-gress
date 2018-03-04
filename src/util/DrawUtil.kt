@@ -5,6 +5,8 @@ import Ctx
 import World
 import agent.Faction
 import agent.NonFaction
+import agent.QValue
+import agent.action.ActionItem
 import config.*
 import items.XmpBurster
 import items.deployable.DeployableItem
@@ -97,6 +99,7 @@ object DrawUtil {
                 fillStyle = "#00000077"
                 fillRect(0.0, 0.0, w, topOffset)
                 fillRect(0.0, botOffset, w, h)
+                fillRect(0.0, topOffset, 233.0, 21.0 * (QValue.values().count() + 1.0))
                 closePath()
             }
         }
