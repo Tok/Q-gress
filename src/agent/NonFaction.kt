@@ -65,9 +65,9 @@ data class NonFaction(var pos: Coords, val speed: Float,
     }
 
     fun moveElsewhere() {
-        return if (!isOffScreen() && Util.random() < 0.9) {
+        return if (!isOffScreen() && Util.random() < 0.96) {
             moveToRandomOffscreenDestination()
-        } else if (Util.random() < 0.5) {
+        } else if (Util.random() < 0.7) {
             moveToFarPortal()
         } else {
             moveToRandomPortal()

@@ -2001,10 +2001,10 @@ var QGress = function (_, Kotlin) {
   };
   NonFaction.prototype.moveElsewhere = function () {
     var tmp$;
-    if (!this.isOffScreen() && Util_getInstance().random() < 0.9) {
+    if (!this.isOffScreen() && Util_getInstance().random() < 0.96) {
       tmp$ = this.moveToRandomOffscreenDestination();
     }
-     else if (Util_getInstance().random() < 0.5) {
+     else if (Util_getInstance().random() < 0.7) {
       tmp$ = this.moveToFarPortal();
     }
      else {
