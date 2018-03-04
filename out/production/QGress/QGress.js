@@ -2276,8 +2276,8 @@ var QGress = function (_, Kotlin) {
     this.startPortals = 13;
     this.startFrogs = 50;
     this.startSmurfs = 50;
-    this.maxFrogs = 100;
-    this.maxSmurfs = 100;
+    this.maxFrogs = 200;
+    this.maxSmurfs = 200;
     this.startNonFaction = 500;
     this.isAutostart = true;
     this.isHighlighActionLimit = true;
@@ -7732,7 +7732,10 @@ var QGress = function (_, Kotlin) {
       if (Styles_getInstance().isDrawObstructedVectors || isWalkable()) {
         var vectorImageData = this.getOrCreateVectorImageData_0(w, h, element.value);
         var pos = PathUtil_getInstance().shadowPosToPos_lfj9be$(element.key);
-        World_getInstance().bgCtx().putImageData(vectorImageData, pos.xx(), pos.yy());
+        var isBlocked = HtmlUtil_getInstance().isBlockedForVector_lfj9be$(pos);
+        if (!isBlocked) {
+          World_getInstance().bgCtx().putImageData(vectorImageData, pos.xx(), pos.yy());
+        }
       }
     }
   };
@@ -8093,8 +8096,11 @@ var QGress = function (_, Kotlin) {
       tmp$_1 = 0;
     this.intervalID = tmp$_1;
   };
-  HtmlUtil.prototype.isNotHandledByCanvas_0 = function (pos) {
-    return this.isInPositionArea_0(pos) || this.isInMapboxArea_0(pos) || this.isInOsmArea_0(pos);
+  HtmlUtil.prototype.isBlockedByMapbox_lfj9be$ = function (pos) {
+    return this.isInMapboxArea_0(pos) || this.isInOsmArea_0(pos);
+  };
+  HtmlUtil.prototype.isBlockedForVector_lfj9be$ = function (pos) {
+    return this.isBlockedByMapbox_lfj9be$(pos);
   };
   HtmlUtil.prototype.isInPositionArea_0 = function (pos) {
     var w = World_getInstance().can.width;
@@ -8103,12 +8109,12 @@ var QGress = function (_, Kotlin) {
     return pos.x > area.from.x && pos.x <= area.to.x && pos.y > area.from.y && pos.y <= area.to.y;
   };
   HtmlUtil.prototype.isInMapboxArea_0 = function (pos) {
-    var area = new Line(new Coords(0, World_getInstance().can.height - 21 | 0), new Coords(233, World_getInstance().can.height));
+    var area = new Line(new Coords(-20, World_getInstance().can.height - 40 | 0), new Coords(90, World_getInstance().can.height));
     return pos.x > area.from.x && pos.x <= area.to.x && pos.y > area.from.y && pos.y <= area.to.y;
   };
   HtmlUtil.prototype.isInOsmArea_0 = function (pos) {
     var w = World_getInstance().can.width;
-    var area = new Line(new Coords(w - 377 | 0, World_getInstance().can.height - 34 | 0), new Coords(w, World_getInstance().can.height));
+    var area = new Line(new Coords(w - 280 | 0, World_getInstance().can.height - 30 | 0), new Coords(w, World_getInstance().can.height));
     return pos.x > area.from.x && pos.x <= area.to.x && pos.y > area.from.y && pos.y <= area.to.y;
   };
   HtmlUtil.prototype.handleMouseClick_0 = function (event) {
@@ -8131,7 +8137,7 @@ var QGress = function (_, Kotlin) {
   HtmlUtil.prototype.handleMouseMove_0 = function (event) {
     var tmp$;
     var pos = this.findMousePosition_0(World_getInstance().uiCan, Kotlin.isType(tmp$ = event, MouseEvent) ? tmp$ : throwCCE());
-    var isNotHandledByCanvas = this.isNotHandledByCanvas_0(pos);
+    var isNotHandledByCanvas = this.isBlockedByMapbox_lfj9be$(pos);
     if (isNotHandledByCanvas) {
       World_getInstance().mousePos = null;
       addClass(World_getInstance().uiCan, ['unclickable']);

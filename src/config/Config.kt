@@ -7,8 +7,8 @@ object Config {
     val startFrogs = 50
     val startSmurfs = 50
 
-    val maxFrogs = 100
-    val maxSmurfs = 100
+    val maxFrogs = 200
+    val maxSmurfs = 200
     val startNonFaction = 500 // ((maxFrogs + maxSmurfs) * 0.5 / Constants.phi).toInt()
 
     val isAutostart = true

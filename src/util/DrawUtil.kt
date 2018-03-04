@@ -430,8 +430,10 @@ object DrawUtil {
                 if (Styles.isDrawObstructedVectors || isWalkable()) {
                     val vectorImageData = getOrCreateVectorImageData(w, h, it.value)
                     val pos = PathUtil.shadowPosToPos(it.key)
-                    //if (pos.x >= 0 && pos.x <= 50 && pos.y >= Dimensions.height - 50 && )
-                    World.bgCtx().putImageData(vectorImageData, pos.xx(), pos.yy())
+                    val isBlocked = HtmlUtil.isBlockedForVector(pos)
+                    if (!isBlocked) {
+                        World.bgCtx().putImageData(vectorImageData, pos.xx(), pos.yy())
+                    }
                 }
             }
         }

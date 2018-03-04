@@ -141,7 +141,8 @@ object HtmlUtil {
         } else 0
     }
 
-    private fun isNotHandledByCanvas(pos: Coords) = isInPositionArea(pos) || isInMapboxArea(pos) || isInOsmArea(pos)
+    fun isBlockedByMapbox(pos: Coords) = isInMapboxArea(pos) || isInOsmArea(pos)
+    fun isBlockedForVector(pos: Coords) = isBlockedByMapbox(pos)
 
     private fun isInPositionArea(pos: Coords): Boolean {
         val w = World.can.width
@@ -152,14 +153,14 @@ object HtmlUtil {
     }
 
     private fun isInMapboxArea(pos: Coords): Boolean {
-        val area = Line(Coords(0, World.can.height - 21), Coords(233, World.can.height))
+        val area = Line(Coords(-20, World.can.height - 40), Coords(90, World.can.height))
         return pos.x > area.from.x && pos.x <= area.to.x &&
                 pos.y > area.from.y && pos.y <= area.to.y
     }
 
     private fun isInOsmArea(pos: Coords): Boolean {
         val w = World.can.width
-        val area = Line(Coords(w - 377, World.can.height - 34), Coords(w, World.can.height))
+        val area = Line(Coords(w - 280, World.can.height - 30), Coords(w, World.can.height))
         return pos.x > area.from.x && pos.x <= area.to.x &&
                 pos.y > area.from.y && pos.y <= area.to.y
     }
@@ -182,7 +183,7 @@ object HtmlUtil {
 
     private fun handleMouseMove(event: Event) {
         val pos = findMousePosition(World.uiCan, event as MouseEvent)
-        val isNotHandledByCanvas = isNotHandledByCanvas(pos)
+        val isNotHandledByCanvas = isBlockedByMapbox(pos)
         if (isNotHandledByCanvas) {
             World.mousePos = null
             World.uiCan.addClass("unclickable")
