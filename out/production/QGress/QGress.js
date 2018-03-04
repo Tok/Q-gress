@@ -482,14 +482,16 @@ var QGress = function (_, Kotlin) {
     };
   }
   Agent.prototype.goDoSomethingElse = function () {
-    var rechargePortalQ = this.isXmFilled() ? 0.2 : -1.0;
-    var recycleItemsQ = this.isXmBarEmpty() ? 0.5 : -1.0;
-    var captureQ = MovementUtil_getInstance().hasUncapturedPortals() ? 0.5 : -1.0;
-    var attackClosestQ = MovementUtil_getInstance().hasEnemyPortals_912u9o$(this) && this.isAttackPossible_0() ? 0.5 : -1.0;
-    var attackMostLinkedQ = MovementUtil_getInstance().hasEnemyPortals_912u9o$(this) && this.isAttackPossible_0() ? 0.5 : -1.0;
-    var attackMostVulnerableQ = MovementUtil_getInstance().hasEnemyPortals_912u9o$(this) && this.isAttackPossible_0() ? 0.5 : -1.0;
-    var moveToFriendlyQ = MovementUtil_getInstance().hasFriendlyPortals_912u9o$(this) ? 0.5 : -1.0;
-    var qValues = listOf([to(rechargePortalQ, Agent$goDoSomethingElse$lambda(this)), to(recycleItemsQ, Agent$goDoSomethingElse$lambda_0(this)), to(attackClosestQ, Agent$goDoSomethingElse$lambda_1(this)), to(attackMostLinkedQ, Agent$goDoSomethingElse$lambda_2(this)), to(attackMostVulnerableQ, Agent$goDoSomethingElse$lambda_3(this)), to(captureQ, Agent$goDoSomethingElse$lambda_4(this)), to(moveToFriendlyQ, Agent$goDoSomethingElse$lambda_5(this)), to(0.5, Agent$goDoSomethingElse$lambda_6(this)), to(0.5, Agent$goDoSomethingElse$lambda_7(this))]);
+    var rechargePortalQ = this.isXmFilled() ? this.q_0(QValue$Companion_getInstance().RECHARGE) : -1.0;
+    var recycleItemsQ = this.isXmBarEmpty() ? this.q_0(QValue$Companion_getInstance().RECYCLE) : -1.0;
+    var captureQ = MovementUtil_getInstance().hasUncapturedPortals() ? this.q_0(QValue$Companion_getInstance().CAPTURE) : -1.0;
+    var attackClosestQ = MovementUtil_getInstance().hasEnemyPortals_912u9o$(this) && this.isAttackPossible_0() ? this.q_0(QValue$Companion_getInstance().ATTACK_CLOSE) : -1.0;
+    var attackMostLinkedQ = MovementUtil_getInstance().hasEnemyPortals_912u9o$(this) && this.isAttackPossible_0() ? this.q_0(QValue$Companion_getInstance().ATTACK_LINKS) : -1.0;
+    var attackMostVulnerableQ = MovementUtil_getInstance().hasEnemyPortals_912u9o$(this) && this.isAttackPossible_0() ? this.q_0(QValue$Companion_getInstance().ATTACK_WEAK) : -1.0;
+    var moveToFriendlyQ = MovementUtil_getInstance().hasFriendlyPortals_912u9o$(this) ? this.q_0(QValue$Companion_getInstance().MOVE_TO_FRIENDLY) : -1.0;
+    var moveToNearQ = this.q_0(QValue$Companion_getInstance().MOVE_TO_NEAR);
+    var moveToRandomQ = this.q_0(QValue$Companion_getInstance().MOVE_TO_RANDOM);
+    var qValues = listOf([to(rechargePortalQ, Agent$goDoSomethingElse$lambda(this)), to(recycleItemsQ, Agent$goDoSomethingElse$lambda_0(this)), to(attackClosestQ, Agent$goDoSomethingElse$lambda_1(this)), to(attackMostLinkedQ, Agent$goDoSomethingElse$lambda_2(this)), to(attackMostVulnerableQ, Agent$goDoSomethingElse$lambda_3(this)), to(captureQ, Agent$goDoSomethingElse$lambda_4(this)), to(moveToFriendlyQ, Agent$goDoSomethingElse$lambda_5(this)), to(moveToNearQ, Agent$goDoSomethingElse$lambda_6(this)), to(moveToRandomQ, Agent$goDoSomethingElse$lambda_7(this))]);
     return Util_getInstance().select_flnx62$(qValues)();
   };
   Agent.prototype.moveCloserToDestinationPortal_0 = function () {
@@ -2189,9 +2191,18 @@ var QGress = function (_, Kotlin) {
     this.DEPLOY = new QValue('Deploy');
     this.LINK = new QValue('Link');
     this.ATTACK = new QValue('Attack');
+    this.RECHARGE = new QValue('Recharge');
+    this.RECYCLE = new QValue('Recycle');
+    this.CAPTURE = new QValue('Capture');
+    this.ATTACK_CLOSE = new QValue('Attack Close');
+    this.ATTACK_LINKS = new QValue('Attack Links');
+    this.ATTACK_WEAK = new QValue('Attack Weak');
+    this.MOVE_TO_FRIENDLY = new QValue('Move To Friendly');
+    this.MOVE_TO_NEAR = new QValue('Move To Near');
+    this.MOVE_TO_RANDOM = new QValue('Move To Random');
   }
   QValue$Companion.prototype.values = function () {
-    return listOf([this.HACK, this.DEPLOY, this.LINK, this.ATTACK]);
+    return listOf([this.HACK, this.DEPLOY, this.LINK, this.ATTACK, this.RECHARGE, this.RECYCLE, this.CAPTURE, this.ATTACK_CLOSE, this.ATTACK_LINKS, this.ATTACK_WEAK, this.MOVE_TO_FRIENDLY, this.MOVE_TO_NEAR, this.MOVE_TO_RANDOM]);
   };
   QValue$Companion.$metadata$ = {
     kind: Kind_OBJECT,
@@ -7361,7 +7372,8 @@ var QGress = function (_, Kotlin) {
       $receiver.fillStyle = '#00000077';
       $receiver.fillRect(0.0, 0.0, w, topOffset);
       $receiver.fillRect(0.0, botOffset, w, h);
-      $receiver.fillRect(0.0, topOffset, 233.0, 21.0 * (QValue$Companion_getInstance().values().size + 1.0));
+      var qSliderHeight = 13 + 4 | 0;
+      $receiver.fillRect(0.0, topOffset, 233.0, qSliderHeight * (QValue$Companion_getInstance().values().size + 1.0));
       $receiver.closePath();
     }
   };
@@ -8176,7 +8188,7 @@ var QGress = function (_, Kotlin) {
       slider.value = '50';
       addClass(slider, ['slider', 'qSlider']);
       var sliderValue = Kotlin.isType(tmp$_10 = document.createElement('span'), HTMLSpanElement) ? tmp$_10 : throwCCE();
-      addClass(sliderValue, ['sliderLabel']);
+      addClass(sliderValue, ['qSliderLabel']);
       slider.oninput = HtmlUtil$load$lambda$lambda_1(slider, element, sliderValue);
       sliderValue.innerHTML = slider.value + element.unitLabel;
       sliderDiv.append(slider);

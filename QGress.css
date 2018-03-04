@@ -128,6 +128,12 @@ html, body {
 .slider:hover {
     opacity: 1;
 }
+.sliderLabel {
+    margin-top: 8px;
+    margin-bottom: 8px;
+    color: #ffffff;
+    text-shadow: -1px 0px black, 0px 1px black, 1px 0px black, 0px -1px black;
+}
 .volumeSlider {
     width: 233px !important;
 }
@@ -144,6 +150,7 @@ html, body {
     cursor: pointer;
 }
 .qSlider {
+    height: 8px !important;
     width: 89px !important;
 }
 .qSlider:hover {
@@ -152,17 +159,22 @@ html, body {
 .qSlider::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 21px;
-    height: 21px;
+    width: 13px;
+    height: 13px;
     border-radius: 62%;
     background: #777777;
     cursor: pointer;
 }
-.sliderLabel {
-    margin-top: 8px;
-    margin-bottom: 8px;
+.qSliderLabel {
+    font-size: 13px;
+    height: 13px;
+    margin-top: 2px;
+    margin-bottom: 2px;
     color: #ffffff;
     text-shadow: -1px 0px black, 0px 1px black, 1px 0px black, 0px -1px black;
+}
+.qValues {
+    font-size: 13px;
 }
 .frogSlider { }
 .frogSlider::-moz-range-thumb {

@@ -147,7 +147,7 @@ object HtmlUtil {
             slider.value = "50"
             slider.addClass("slider", "qSlider")
             val sliderValue = document.createElement("span") as HTMLSpanElement
-            sliderValue.addClass("sliderLabel")
+            sliderValue.addClass("qSliderLabel")
             slider.oninput = { _ -> sliderValue.innerHTML = slider.value + it.unitLabel; null }
             sliderValue.innerHTML = slider.value + it.unitLabel
             sliderDiv.append(slider)

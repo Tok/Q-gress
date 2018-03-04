@@ -140,13 +140,15 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
     }
 
     fun goDoSomethingElse(): Agent {
-        val rechargePortalQ = if (isXmFilled()) 0.2 else -1.0
-        val recycleItemsQ = if (isXmBarEmpty()) 0.5 else -1.0
-        val captureQ = if (MovementUtil.hasUncapturedPortals()) 0.5 else -1.0
-        val attackClosestQ = if (MovementUtil.hasEnemyPortals(this) && isAttackPossible()) 0.5 else -1.0
-        val attackMostLinkedQ = if (MovementUtil.hasEnemyPortals(this) && isAttackPossible()) 0.5 else -1.0
-        val attackMostVulnerableQ = if (MovementUtil.hasEnemyPortals(this) && isAttackPossible()) 0.5 else -1.0
-        val moveToFriendlyQ = if (MovementUtil.hasFriendlyPortals(this)) 0.5 else -1.0
+        val rechargePortalQ = if (isXmFilled()) q(QValue.RECHARGE) else -1.0
+        val recycleItemsQ = if (isXmBarEmpty()) q(QValue.RECYCLE) else -1.0
+        val captureQ = if (MovementUtil.hasUncapturedPortals()) q(QValue.CAPTURE) else -1.0
+        val attackClosestQ = if (MovementUtil.hasEnemyPortals(this) && isAttackPossible()) q(QValue.ATTACK_CLOSE) else -1.0
+        val attackMostLinkedQ = if (MovementUtil.hasEnemyPortals(this) && isAttackPossible()) q(QValue.ATTACK_LINKS) else -1.0
+        val attackMostVulnerableQ = if (MovementUtil.hasEnemyPortals(this) && isAttackPossible()) q(QValue.ATTACK_WEAK) else -1.0
+        val moveToFriendlyQ = if (MovementUtil.hasFriendlyPortals(this)) q(QValue.MOVE_TO_FRIENDLY) else -1.0
+        val moveToNearQ = q(QValue.MOVE_TO_NEAR)
+        val moveToRandomQ = q(QValue.MOVE_TO_RANDOM)
         val qValues = listOf(
                 rechargePortalQ to { rechargePortal() },
                 recycleItemsQ to { recycleItems() },
@@ -155,8 +157,8 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
                 attackMostVulnerableQ to { MovementUtil.moveToMostVulnerableEnemyPortal(this) },
                 captureQ to { MovementUtil.moveToUncapturedPortal(this) },
                 moveToFriendlyQ to { MovementUtil.moveToFriendlyHighLevelPortal(this) },
-                0.50 to { MovementUtil.moveToNearestPortal(this) },
-                0.50 to { MovementUtil.moveToRandomPortal(this) }
+                moveToNearQ to { MovementUtil.moveToNearestPortal(this) },
+                moveToRandomQ to { MovementUtil.moveToRandomPortal(this) }
         )
         return Util.select(qValues).invoke()
     }
