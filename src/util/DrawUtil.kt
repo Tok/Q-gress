@@ -45,7 +45,9 @@ object DrawUtil {
 
     fun clearBackground() = redraw(World.bgCan, World.bgCtx(), if (Styles.isDrawNoiseMap) World.noiseImage else null)
     fun clearUserInterface() = redraw(World.uiCan, World.uiCtx())
-    fun clear() = redraw(World.can, World.ctx())
+    fun clear() = {
+        redraw(World.can, World.ctx())
+    }
 
     private fun redraw(canvas: Canvas, ctx: Ctx, image: ImageData? = null) {
         canvas.width = Dimensions.width
@@ -85,6 +87,19 @@ object DrawUtil {
         if (World.mousePos != null) {
             highlightMouse(World.mousePos!!)
         }
+        if (Config.isHighlighActionLimit) {
+            val topOffset = Dimensions.topActionOffset
+            val botOffset = window.innerHeight - Dimensions.botActionOffset
+            val w = World.can.width.toDouble()
+            val h = World.can.height.toDouble()
+            with(World.ctx()) {
+                beginPath()
+                fillStyle = "#00000077"
+                fillRect(0.0, 0.0, w, topOffset)
+                fillRect(0.0, botOffset, w, h)
+                closePath()
+            }
+        }
     }
 
     private fun highlightMouse(pos: Coords) {
@@ -92,18 +107,6 @@ object DrawUtil {
             return
         }
         val ctx = World.uiCtx()
-        if (Config.isHighlighActionLimit) {
-            val topOffset = Dimensions.topActionOffset
-            val botOffset = window.innerHeight - Dimensions.botActionOffset
-            val w = World.can.width.toDouble()
-            val h = World.can.height.toDouble()
-            ctx.beginPath()
-            ctx.fillStyle = "#00000055"
-            ctx.fillRect(0.0, 0.0, w, topOffset)
-            ctx.fillRect(0.0, botOffset, w, h)
-            ctx.closePath()
-        }
-
         val r = Dimensions.maxDeploymentRange * Constants.phi
         val circle = Circle(pos, r)
 

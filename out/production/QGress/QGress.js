@@ -7228,8 +7228,14 @@ var QGress = function (_, Kotlin) {
   DrawUtil.prototype.clearUserInterface = function () {
     this.redraw_0(World_getInstance().uiCan, World_getInstance().uiCtx());
   };
+  function DrawUtil$clear$lambda(this$DrawUtil) {
+    return function () {
+      this$DrawUtil.redraw_0(World_getInstance().can, World_getInstance().ctx());
+      return Unit;
+    };
+  }
   DrawUtil.prototype.clear = function () {
-    this.redraw_0(World_getInstance().can, World_getInstance().ctx());
+    return DrawUtil$clear$lambda(this);
   };
   DrawUtil.prototype.redraw_0 = function (canvas, ctx, image) {
     if (image === void 0)
@@ -7285,6 +7291,18 @@ var QGress = function (_, Kotlin) {
     if (World_getInstance().mousePos != null) {
       this.highlightMouse_0(ensureNotNull(World_getInstance().mousePos));
     }
+    if (Config_getInstance().isHighlighActionLimit) {
+      var topOffset = Dimensions_getInstance().topActionOffset;
+      var botOffset = window.innerHeight - Dimensions_getInstance().botActionOffset;
+      var w = World_getInstance().can.width;
+      var h = World_getInstance().can.height;
+      var $receiver = World_getInstance().ctx();
+      $receiver.beginPath();
+      $receiver.fillStyle = '#00000077';
+      $receiver.fillRect(0.0, 0.0, w, topOffset);
+      $receiver.fillRect(0.0, botOffset, w, h);
+      $receiver.closePath();
+    }
   };
   DrawUtil.prototype.highlightMouse_0 = function (pos) {
     var tmp$, tmp$_0, tmp$_1;
@@ -7292,17 +7310,6 @@ var QGress = function (_, Kotlin) {
       return;
     }
     var ctx = World_getInstance().uiCtx();
-    if (Config_getInstance().isHighlighActionLimit) {
-      var topOffset = Dimensions_getInstance().topActionOffset;
-      var botOffset = window.innerHeight - Dimensions_getInstance().botActionOffset;
-      var w = World_getInstance().can.width;
-      var h = World_getInstance().can.height;
-      ctx.beginPath();
-      ctx.fillStyle = '#00000055';
-      ctx.fillRect(0.0, 0.0, w, topOffset);
-      ctx.fillRect(0.0, botOffset, w, h);
-      ctx.closePath();
-    }
     var r = Dimensions_getInstance().maxDeploymentRange * Constants_getInstance().phi;
     var circle = new Circle(pos, r);
     var tempCan = Kotlin.isType(tmp$ = document.createElement('canvas'), HTMLCanvasElement) ? tmp$ : throwCCE();
