@@ -57,6 +57,9 @@ html, body {
 .mapboxgl-map {
     font-family: "Coda";
 }
+#locationSelect {
+    font-family: "Coda";
+}
 .shadowMap {
     pointer-events: none;
     display: block;
