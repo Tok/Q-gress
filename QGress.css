@@ -128,13 +128,27 @@ html, body {
 .slider:hover {
     opacity: 1;
 }
+.volumeSlider {
+    width: 233px !important;
+}
+.volumeSlider:hover {
+    opacity: 1;
+}
+.volumeSlider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 21px;
+    height: 21px;
+    border-radius: 62%;
+    background: #777777;
+    cursor: pointer;
+}
 .sliderLabel {
     margin-top: 8px;
     margin-bottom: 8px;
     color: #ffffff;
     text-shadow: -1px 0px black, 0px 1px black, 1px 0px black, 0px -1px black;
 }
-
 .frogSlider { }
 .frogSlider::-moz-range-thumb {
     width: 21px;
@@ -191,8 +205,11 @@ html, body {
 #pauseButton {
     width: 55px;
 }
-#locationDropdown {
+#locationSelect {
     width: 144px;
+}
+#volumeSlider {
+    width: 233px;
 }
 .mapboxgl-ctrl-bottom-left,
 .mapboxgl-ctrl-bottom-right {

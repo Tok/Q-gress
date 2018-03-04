@@ -9,19 +9,26 @@ import external.sound.GainNode
 import external.sound.OscillatorNode
 import external.sound.StereoPannerNode
 import items.level.XmpLevel
+import org.w3c.dom.HTMLInputElement
 import portal.Field
 import portal.Link
 import util.data.Coords
+import kotlin.browser.document
 
 object SoundUtil {
     val audioCtx = AudioContext()
+    private fun volume(): Double {
+        val volumeSlider = document.getElementById(HtmlUtil.VOLUME_SLIDER_ID) as HTMLInputElement
+        val volume = volumeSlider.valueAsNumber / 100
+        return volume
+    }
 
     fun playPortalCreationSound(pos: Coords) {
         val duration = 0.5
         val pan = pos.x.toDouble() / World.can.width
         val oscNode = createLinearRampOscillator(OscillatorType.SINE, 120.0, 0.0, duration)
         val panNode = createStaticPan(pan)
-        playSound(oscNode, panNode, 0.50, duration)
+        playSound(oscNode, panNode, 1.0, duration)
     }
 
     fun playPortalRemovalSound(pos: Coords) {
@@ -29,7 +36,7 @@ object SoundUtil {
         val pan = pos.x.toDouble() / World.can.width
         val oscNode = createLinearRampOscillator(OscillatorType.SINE, 60.0, 120.0, duration)
         val panNode = createStaticPan(pan)
-        playSound(oscNode, panNode, 0.50, duration)
+        playSound(oscNode, panNode, 1.0, duration)
     }
 
     fun playHackingSound(pos: Coords) {
@@ -37,7 +44,7 @@ object SoundUtil {
         val osc = createStaticOscillator(OscillatorType.SINE, freq)
         val pan = pos.xx() / World.can.width
         val panNode = createStaticPan(pan)
-        val gain = 0.02
+        val gain = 0.04
         val duration = 0.02
         playSound(osc, panNode, gain, duration)
     }
@@ -47,14 +54,14 @@ object SoundUtil {
         val osc = createStaticOscillator(OscillatorType.SQUARE, freq)
         val pan = pos.xx() / World.can.width
         val panNode = createStaticPan(pan)
-        val gain = 0.02 + (level.level * 0.003)
+        val gain = (0.04 + (level.level * 0.006))
         val duration = 0.005 + (0.001 * level.level)
         playSound(osc, panNode, gain, duration)
     }
 
     fun playDeploySound(pos: Coords, distanceToPortal: Int) {
         val ratio = distanceToPortal / Dimensions.maxDeploymentRange
-        val gain = 0.05
+        val gain = 0.10
         val duration = 0.2
         val minFreq = 250.0
         val baseFreq = -250.0
@@ -68,7 +75,7 @@ object SoundUtil {
 
     fun playLinkingSound(link: Link) {
         val ratio = link.getLine().calcLength() / World.diagonalLength()
-        val gain = 0.15
+        val gain = 0.30
         val duration = 0.04 + (0.16 * ratio)
         val minFreq = 500.0 * ratio
         val baseFreq = 500.0
@@ -83,7 +90,7 @@ object SoundUtil {
 
     fun playFieldingSound(field: Field) {
         val areaRatio = field.calculateArea() / World.totalArea()
-        val gain = 0.2
+        val gain = 0.4
         val minDuration = 1.0 / Constants.phi
         val maxDuration = 1.0
         val diff = maxDuration - minDuration
@@ -144,7 +151,7 @@ object SoundUtil {
 
     private fun createStaticGain(gain: Double): GainNode {
         val node = audioCtx.createGain()
-        node.gain.setTargetAtTime(gain, now(), 0.0)
+        node.gain.setTargetAtTime(gain * volume(), now(), 0.0)
         return node
     }
 }

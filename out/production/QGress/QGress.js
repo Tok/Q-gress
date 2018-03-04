@@ -7892,7 +7892,9 @@ var QGress = function (_, Kotlin) {
     this.FROG_COUNT_ID = 'numberOfFrogs';
     this.SMURF_COUNT_ID = 'numberOfSmurfs';
     this.SPEED_ID = 'speed';
+    this.PAUSE_BUTTON_ID = 'pauseButton';
     this.LOCATION_DROPDOWN_ID = 'locationSelect';
+    this.VOLUME_SLIDER_ID = 'volumeSlider';
   }
   HtmlUtil.prototype.speedSetting_0 = function () {
     var tmp$;
@@ -8029,6 +8031,12 @@ var QGress = function (_, Kotlin) {
       return Unit;
     };
   }
+  function HtmlUtil$load$lambda$lambda_2(closure$slider, closure$sliderValue) {
+    return function (f) {
+      closure$sliderValue.innerHTML = closure$slider.value + '% VOLUME';
+      return null;
+    };
+  }
   function HtmlUtil$load$lambda_0(this$HtmlUtil) {
     return function (event) {
       this$HtmlUtil.handleMouseMove_0(event);
@@ -8057,7 +8065,7 @@ var QGress = function (_, Kotlin) {
     var controlDiv = Kotlin.isType(tmp$_1 = document.createElement('div'), HTMLDivElement) ? tmp$_1 : throwCCE();
     addClass(controlDiv, ['controls']);
     var $receiver = Config_getInstance();
-    var tmp$_2, tmp$_3;
+    var tmp$_2, tmp$_3, tmp$_4, tmp$_5;
     var maxSpeed = 500;
     var speedSlider = this.createSliderDiv_0('speedSlider', 100, maxSpeed, this.SPEED_ID, '% Speed', 100);
     speedSlider.oninput = HtmlUtil$load$lambda$lambda(this);
@@ -8066,13 +8074,25 @@ var QGress = function (_, Kotlin) {
     controlDiv.append(this.createSliderDiv_0('smurfSlider', $receiver.startSmurfs, $receiver.maxSmurfs, this.SMURF_COUNT_ID, ' Smurfs', 0));
     var buttonDiv = Kotlin.isType(tmp$_2 = document.createElement('div'), HTMLDivElement) ? tmp$_2 : throwCCE();
     var pauseButton = this.createButton_0('button', 'Stop', HtmlUtil$load$lambda$lambda_0(this));
-    pauseButton.id = 'pauseButton';
+    pauseButton.id = this.PAUSE_BUTTON_ID;
     buttonDiv.append(pauseButton);
     var dropDown = this.createDropdown_0(this.LOCATION_DROPDOWN_ID, HtmlUtil$load$lambda$lambda_1(this));
-    dropDown.id = 'locationDropdown';
     var selectionName = (tmp$_3 = this.getLocationNameFromUrl_0()) != null ? tmp$_3 : 'unknown';
     this.setLocationDropdownSelection_0(dropDown, selectionName);
     buttonDiv.append(dropDown);
+    var slider = Kotlin.isType(tmp$_4 = document.createElement('INPUT'), HTMLInputElement) ? tmp$_4 : throwCCE();
+    slider.id = this.VOLUME_SLIDER_ID;
+    slider.type = 'range';
+    slider.min = '0';
+    slider.max = '100';
+    slider.value = '80';
+    addClass(slider, ['slider', 'volumeSlider']);
+    var sliderValue = Kotlin.isType(tmp$_5 = document.createElement('span'), HTMLSpanElement) ? tmp$_5 : throwCCE();
+    addClass(sliderValue, ['sliderLabel']);
+    slider.oninput = HtmlUtil$load$lambda$lambda_2(slider, sliderValue);
+    sliderValue.innerHTML = slider.value + '% VOLUME';
+    buttonDiv.append(slider);
+    buttonDiv.append(sliderValue);
     controlDiv.append(buttonDiv);
     rootDiv.append(controlDiv);
     controlDiv.addEventListener('mousemove', HtmlUtil$load$lambda_0(this), false);
@@ -8114,7 +8134,7 @@ var QGress = function (_, Kotlin) {
   }
   HtmlUtil.prototype.pauseHandler_n53o35$ = function (intervalID, tickFunction) {
     var tmp$, tmp$_0, tmp$_1, tmp$_2;
-    var pauseButton = Kotlin.isType(tmp$ = document.getElementById('pauseButton'), HTMLButtonElement) ? tmp$ : throwCCE();
+    var pauseButton = Kotlin.isType(tmp$ = document.getElementById(this.PAUSE_BUTTON_ID), HTMLButtonElement) ? tmp$ : throwCCE();
     if (intervalID !== -1) {
       pauseButton.innerText = 'Start';
       (tmp$_0 = document.defaultView) != null ? (tmp$_0.clearInterval(intervalID), Unit) : null;
@@ -8959,26 +8979,32 @@ var QGress = function (_, Kotlin) {
     SoundUtil_instance = this;
     this.audioCtx = new AudioContext();
   }
+  SoundUtil.prototype.volume_0 = function () {
+    var tmp$;
+    var volumeSlider = Kotlin.isType(tmp$ = document.getElementById(HtmlUtil_getInstance().VOLUME_SLIDER_ID), HTMLInputElement) ? tmp$ : throwCCE();
+    var volume = volumeSlider.valueAsNumber / 100;
+    return volume;
+  };
   SoundUtil.prototype.playPortalCreationSound_lfj9be$ = function (pos) {
     var duration = 0.5;
     var pan = pos.x / World_getInstance().can.width;
     var oscNode = this.createLinearRampOscillator_0(OscillatorType_getInstance().SINE, 120.0, 0.0, duration);
     var panNode = this.createStaticPan_0(pan);
-    this.playSound_0(oscNode, panNode, 0.5, duration);
+    this.playSound_0(oscNode, panNode, 1.0, duration);
   };
   SoundUtil.prototype.playPortalRemovalSound_lfj9be$ = function (pos) {
     var duration = 0.5;
     var pan = pos.x / World_getInstance().can.width;
     var oscNode = this.createLinearRampOscillator_0(OscillatorType_getInstance().SINE, 60.0, 120.0, duration);
     var panNode = this.createStaticPan_0(pan);
-    this.playSound_0(oscNode, panNode, 0.5, duration);
+    this.playSound_0(oscNode, panNode, 1.0, duration);
   };
   SoundUtil.prototype.playHackingSound_lfj9be$ = function (pos) {
     var freq = 500.0;
     var osc = this.createStaticOscillator_0(OscillatorType_getInstance().SINE, freq);
     var pan = pos.xx() / World_getInstance().can.width;
     var panNode = this.createStaticPan_0(pan);
-    var gain = 0.02;
+    var gain = 0.04;
     var duration = 0.02;
     this.playSound_0(osc, panNode, gain, duration);
   };
@@ -8987,13 +9013,13 @@ var QGress = function (_, Kotlin) {
     var osc = this.createStaticOscillator_0(OscillatorType_getInstance().SQUARE, freq);
     var pan = pos.xx() / World_getInstance().can.width;
     var panNode = this.createStaticPan_0(pan);
-    var gain = 0.02 + level.level * 0.003;
+    var gain = 0.04 + level.level * 0.006;
     var duration = 0.005 + 0.001 * level.level;
     this.playSound_0(osc, panNode, gain, duration);
   };
   SoundUtil.prototype.playDeploySound_s1df0o$ = function (pos, distanceToPortal) {
     var ratio = distanceToPortal / Dimensions_getInstance().maxDeploymentRange;
-    var gain = 0.05;
+    var gain = 0.1;
     var duration = 0.2;
     var minFreq = 250.0;
     var baseFreq = -250.0;
@@ -9006,7 +9032,7 @@ var QGress = function (_, Kotlin) {
   };
   SoundUtil.prototype.playLinkingSound_4tp95w$ = function (link) {
     var ratio = link.getLine().calcLength() / World_getInstance().diagonalLength();
-    var gain = 0.15;
+    var gain = 0.3;
     var duration = 0.04 + 0.16 * ratio;
     var minFreq = 500.0 * ratio;
     var baseFreq = 500.0;
@@ -9020,7 +9046,7 @@ var QGress = function (_, Kotlin) {
   };
   SoundUtil.prototype.playFieldingSound_7ltq94$ = function (field) {
     var areaRatio = field.calculateArea() / World_getInstance().totalArea() | 0;
-    var gain = 0.2;
+    var gain = 0.4;
     var minDuration = 1.0 / Constants_getInstance().phi;
     var maxDuration = 1.0;
     var diff = maxDuration - minDuration;
@@ -9075,7 +9101,7 @@ var QGress = function (_, Kotlin) {
   };
   SoundUtil.prototype.createStaticGain_0 = function (gain) {
     var node = this.audioCtx.createGain();
-    node.gain.setTargetAtTime(gain, this.now_0(), 0.0);
+    node.gain.setTargetAtTime(gain * this.volume_0(), this.now_0(), 0.0);
     return node;
   };
   SoundUtil.$metadata$ = {

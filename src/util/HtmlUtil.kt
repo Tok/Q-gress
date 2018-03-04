@@ -22,7 +22,6 @@ import kotlin.browser.window
 import kotlin.dom.addClass
 import kotlin.dom.removeClass
 import kotlin.js.Json
-import kotlin.math.min
 
 object HtmlUtil {
     var intervalID = 0
@@ -30,7 +29,9 @@ object HtmlUtil {
     val FROG_COUNT_ID = "numberOfFrogs"
     val SMURF_COUNT_ID = "numberOfSmurfs"
     val SPEED_ID = "speed"
+    val PAUSE_BUTTON_ID = "pauseButton"
     val LOCATION_DROPDOWN_ID = "locationSelect"
+    val VOLUME_SLIDER_ID = "volumeSlider"
 
     private fun speedSetting(): Int = (document.getElementById(SPEED_ID) as HTMLInputElement).valueAsNumber.toInt()
     private fun frogCount(): Int = (document.getElementById(FROG_COUNT_ID) as HTMLInputElement).valueAsNumber.toInt()
@@ -108,14 +109,28 @@ object HtmlUtil {
             val pauseButton = createButton("button", "Stop", {
                 intervalID = pauseHandler(intervalID, { tick() })
             })
-            pauseButton.id = "pauseButton"
+            pauseButton.id = PAUSE_BUTTON_ID
             buttonDiv.append(pauseButton)
 
             val dropDown = createDropdown(LOCATION_DROPDOWN_ID, { mapChangeHandler() })
-            dropDown.id = "locationDropdown"
             val selectionName = getLocationNameFromUrl() ?: "unknown"
             setLocationDropdownSelection(dropDown, selectionName)
             buttonDiv.append(dropDown)
+
+            val slider = document.createElement("INPUT") as HTMLInputElement
+            slider.id = VOLUME_SLIDER_ID
+            slider.type = "range"
+            slider.min = "0"
+            slider.max = "100"
+            slider.value = "80"
+            slider.addClass("slider", "volumeSlider")
+            val sliderValue = document.createElement("span") as HTMLSpanElement
+            sliderValue.addClass("sliderLabel")
+            slider.oninput = { _ -> sliderValue.innerHTML = slider.value + "% VOLUME"; null }
+            sliderValue.innerHTML = slider.value + "% VOLUME"
+            buttonDiv.append(slider)
+            buttonDiv.append(sliderValue)
+
             controlDiv.append(buttonDiv)
         }
         rootDiv.append(controlDiv)
@@ -146,7 +161,7 @@ object HtmlUtil {
     }
 
     fun pauseHandler(intervalID: Int, tickFunction: () -> Unit): Int {
-        val pauseButton = document.getElementById("pauseButton") as HTMLButtonElement
+        val pauseButton = document.getElementById(PAUSE_BUTTON_ID) as HTMLButtonElement
         if (intervalID != -1) {
             pauseButton.innerText = "Start"
             document.defaultView?.clearInterval(intervalID)
