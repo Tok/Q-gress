@@ -2280,7 +2280,7 @@ var QGress = function (_, Kotlin) {
     this.maxSmurfs = 100;
     this.startNonFaction = 500;
     this.isAutostart = true;
-    this.isHighlighActionLimit = false;
+    this.isHighlighActionLimit = true;
     this.vectorSmoothCount = 5;
     this.shadowBlurCount = 3;
     this.comMessageLimit = 8;
@@ -2554,7 +2554,7 @@ var QGress = function (_, Kotlin) {
     this.use3DBuildings = true;
     this.leaveInitialMap = false;
     this.vectorStyle = Styles$VectorStyle$CIRCLE_getInstance();
-    this.isDrawObstructedVectors = true;
+    this.isDrawObstructedVectors = false;
     this.isDrawResoLineGradient = true;
     this.isFillMuDisplay = true;
   }
@@ -6132,8 +6132,8 @@ var QGress = function (_, Kotlin) {
     tmp$ = reversed_0.iterator();
     while (tmp$.hasNext()) {
       var item = tmp$.next();
-      var index_0 = (tmp$_0 = index, index = tmp$_0 + 1 | 0, tmp$_0);
-      DrawUtil_getInstance().drawText_omkwws$(ctx, new Coords(xPos, yFixOffset - Kotlin.imul(yOffset, index_0) | 0), item, Colors_getInstance().white, Dimensions_getInstance().comFontSize, DrawUtil_getInstance().CODA);
+      var pos = new Coords(xPos, yFixOffset - Kotlin.imul(yOffset, (tmp$_0 = index, index = tmp$_0 + 1 | 0, tmp$_0)) | 0);
+      DrawUtil_getInstance().strokeText_lowmm9$(ctx, pos, item, Colors_getInstance().white, Dimensions_getInstance().comFontSize, DrawUtil_getInstance().CODA, 1.5);
     }
   };
   Com.$metadata$ = {
@@ -7041,53 +7041,6 @@ var QGress = function (_, Kotlin) {
     simpleName: 'AgentsTableWidget',
     interfaces: []
   };
-  function InfoWidget(div, callback) {
-    InfoWidget$Companion_getInstance();
-    this.div = div;
-    this.callback = callback;
-  }
-  function InfoWidget$Companion() {
-    InfoWidget$Companion_instance = this;
-    this.COL = 'p-2';
-    this.FLEX = 'd-flex';
-    this.ROW = 'flex-row';
-  }
-  function InfoWidget$Companion$create$lambda(closure$content) {
-    return function (text) {
-      closure$content.innerText = text;
-    };
-  }
-  InfoWidget$Companion.prototype.create_61zpoe$ = function (labelText) {
-    var tmp$, tmp$_0, tmp$_1;
-    var label = Kotlin.isType(tmp$ = document.createElement('div'), HTMLDivElement) ? tmp$ : throwCCE();
-    addClass(label, [this.COL]);
-    label.innerText = labelText;
-    var content = Kotlin.isType(tmp$_0 = document.createElement('div'), HTMLDivElement) ? tmp$_0 : throwCCE();
-    addClass(content, [this.COL]);
-    var timeRow = Kotlin.isType(tmp$_1 = document.createElement('div'), HTMLDivElement) ? tmp$_1 : throwCCE();
-    addClass(timeRow, [this.FLEX, this.ROW]);
-    timeRow.append(label);
-    timeRow.append(content);
-    var callback = InfoWidget$Companion$create$lambda(content);
-    return new InfoWidget(timeRow, callback);
-  };
-  InfoWidget$Companion.$metadata$ = {
-    kind: Kind_OBJECT,
-    simpleName: 'Companion',
-    interfaces: []
-  };
-  var InfoWidget$Companion_instance = null;
-  function InfoWidget$Companion_getInstance() {
-    if (InfoWidget$Companion_instance === null) {
-      new InfoWidget$Companion();
-    }
-    return InfoWidget$Companion_instance;
-  }
-  InfoWidget.$metadata$ = {
-    kind: Kind_CLASS,
-    simpleName: 'InfoWidget',
-    interfaces: []
-  };
   function Line(from, to) {
     this.from = from;
     this.to = to;
@@ -7345,7 +7298,7 @@ var QGress = function (_, Kotlin) {
       var w = World_getInstance().can.width;
       var h = World_getInstance().can.height;
       ctx.beginPath();
-      ctx.fillStyle = '#00000077';
+      ctx.fillStyle = '#00000055';
       ctx.fillRect(0.0, 0.0, w, topOffset);
       ctx.fillRect(0.0, botOffset, w, h);
       ctx.closePath();
@@ -10221,10 +10174,6 @@ var QGress = function (_, Kotlin) {
   });
   var package$html = package$data.html || (package$data.html = {});
   package$html.AgentsTableWidget = AgentsTableWidget;
-  Object.defineProperty(InfoWidget, 'Companion', {
-    get: InfoWidget$Companion_getInstance
-  });
-  package$data.InfoWidget = InfoWidget;
   package$data.Line = Line;
   Object.defineProperty(package$util, 'DrawUtil', {
     get: DrawUtil_getInstance

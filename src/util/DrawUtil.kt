@@ -98,7 +98,7 @@ object DrawUtil {
             val w = World.can.width.toDouble()
             val h = World.can.height.toDouble()
             ctx.beginPath()
-            ctx.fillStyle = "#00000077"
+            ctx.fillStyle = "#00000055"
             ctx.fillRect(0.0, 0.0, w, topOffset)
             ctx.fillRect(0.0, botOffset, w, h)
             ctx.closePath()
@@ -430,6 +430,7 @@ object DrawUtil {
                 if (Styles.isDrawObstructedVectors || isWalkable()) {
                     val vectorImageData = getOrCreateVectorImageData(w, h, it.value)
                     val pos = PathUtil.shadowPosToPos(it.key)
+                    //if (pos.x >= 0 && pos.x <= 50 && pos.y >= Dimensions.height - 50 && )
                     World.bgCtx().putImageData(vectorImageData, pos.xx(), pos.yy())
                 }
             }

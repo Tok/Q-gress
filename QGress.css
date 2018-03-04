@@ -188,3 +188,7 @@ html, body {
     background: #777777;
     cursor: pointer;
 }
+.mapboxgl-ctrl-bottom-left,
+.mapboxgl-ctrl-bottom-right {
+    z-index: 999 !important;
+}

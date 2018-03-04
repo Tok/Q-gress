@@ -21,7 +21,7 @@ object Styles {
     val leaveInitialMap = false
 
     val vectorStyle = VectorStyle.CIRCLE
-    val isDrawObstructedVectors = true
+    val isDrawObstructedVectors = false
 
     //settings with impact on performance
     val isDrawResoLineGradient = true

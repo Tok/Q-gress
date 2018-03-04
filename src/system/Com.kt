@@ -25,7 +25,8 @@ object Com {
         val yOffset = (Dimensions.comFontSize * 3 / 2)
         val reversed = messages.reversed()
         reversed.forEachIndexed { index, text ->
-            DrawUtil.drawText(ctx, Coords(xPos, yFixOffset - (yOffset * index)), text, Colors.white, Dimensions.comFontSize, DrawUtil.CODA)
+            val pos = Coords(xPos, yFixOffset - (yOffset * index))
+            DrawUtil.strokeText(ctx, pos, text, Colors.white, Dimensions.comFontSize, DrawUtil.CODA, 1.5)
         }
     }
 }
