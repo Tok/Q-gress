@@ -7,9 +7,9 @@ import agent.Faction
 import agent.NonFaction
 import config.*
 import items.XmpBurster
-import items.deployable.Resonator
+import items.deployable.DeployableItem
+import items.level.LevelColor
 import items.level.PortalLevel
-import items.level.ResonatorLevel
 import items.level.XmpLevel
 import org.w3c.dom.*
 import portal.Portal
@@ -20,7 +20,6 @@ import kotlin.browser.document
 import kotlin.browser.window
 import kotlin.math.PI
 import kotlin.math.max
-import kotlin.math.min
 import kotlin.math.round
 
 object DrawUtil {
@@ -328,16 +327,18 @@ object DrawUtil {
 
     fun drawTopAgents() {
         val ctx = World.uiCtx()
+        ctx.globalAlpha = 1.0
         val xPos = Dimensions.topAgentsLeftOffset
         val yOffset = Dimensions.topAgentsFontSize * 3 / 2
-        val xOffset = (Dimensions.topAgentsInventoryFontSize * Constants.phi).toInt()
+        //val xOffset = (Dimensions.topAgentsInventoryFontSize * Constants.phi).toInt()
         val yFixOffset = World.can.height - Dimensions.topAgentsBottomOffset - (Config.topAgentsMessageLimit * yOffset)
         val headerPos = Coords(xPos, yFixOffset - yOffset)
         val top = World.allAgents.toList().sortedBy { -it.ap }.take(Config.topAgentsMessageLimit)
         val headerText =
-                "Agent AP                                               " +
-                        "XMPs                                                             " +
-                        "Resos                                                            " +
+                "Agent AP                                                                 " +
+                        "XMPs                         " +
+                        "Resos                       " +
+                        "Cubes               " +
                         "Keys"
         strokeText(ctx, headerPos, headerText, Colors.white, Dimensions.topAgentsInventoryFontSize, CODA, 2.0, Colors.black)
 
@@ -349,40 +350,53 @@ object DrawUtil {
             val text = "$rank: $ap $name"
             val pos = Coords(xPos, yFixOffset + (yOffset * index))
             strokeText(ctx, pos, text, agent.faction.color, Dimensions.topAgentsFontSize, CODA, 3.0, Colors.black)
-            val columnOff = 160
 
-            //XMP counts
-            val xmpGroups: Map<XmpLevel, List<XmpBurster>>? = agent.inventory.findXmps()?.groupBy { it.level }
-            val xmpLevels: Map<XmpLevel, Int>? = xmpGroups?.mapValues { it.value.count() }
-            XmpLevel.values().forEachIndexed { i, level ->
-                val xmpPos = Coords(xPos + columnOff + (xOffset * i), yFixOffset + (yOffset * index))
-                val clipped = min(xmpLevels?.get(level) ?: 0, 100)
-                val xmpText = if (clipped <= 99) {
-                    clipped.toString()
-                } else "##"
-                strokeText(ctx, xmpPos, xmpText, level.color, invFontSize, CODA, 2.0, Colors.black, CanvasTextAlign.END)
-            }
+            val xmpColumnOffset = 180
+            drawCounts(ctx, agent.inventory.findXmps(), Coords(pos.x + xmpColumnOffset, pos.y))
 
-            //Reso counts
-            val resoGroups: Map<ResonatorLevel, List<Resonator>>? = agent.inventory.findResonators()?.groupBy { it.level }
-            val resoLevels: Map<ResonatorLevel, Int>? = resoGroups?.mapValues { it.value.count() }
-            ResonatorLevel.values().forEachIndexed { i, level ->
-                val resoPos = Coords(xPos + (2 * columnOff) + (xOffset * i), yFixOffset + (yOffset * index))
-                val clipped = min(resoLevels?.get(level) ?: 0, 100)
-                val resoText = if (clipped <= 99) {
-                    clipped.toString()
-                } else "##"
-                strokeText(ctx, resoPos, resoText, level.color, invFontSize, CODA, 2.0, Colors.black, CanvasTextAlign.END)
-            }
+            val resoColumnOffset = xmpColumnOffset + 80
+            drawCounts(ctx, agent.inventory.findResonators(), Coords(pos.x + resoColumnOffset, pos.y))
+
+            val cubeColumnOffset = resoColumnOffset + 80
+            drawCounts(ctx, agent.inventory.findPowerCubes(), Coords(pos.x + cubeColumnOffset, pos.y))
 
             //Key counts
-            val clipped = min(agent.inventory.keyCount(), 100)
-            val keyText = if (clipped <= 99) {
-                clipped.toString()
-            } else "##"
-            val keyPos = Coords(xPos + (3 * columnOff), yFixOffset + (yOffset * index))
-            strokeText(ctx, keyPos, keyText, Colors.white, invFontSize, CODA, 2.0, Colors.black, CanvasTextAlign.END)
+            val keyCount = agent.inventory.keyCount()
+            val keyColumnOffset = cubeColumnOffset + 80
+            val keyPos = Coords(pos.x + keyColumnOffset, pos.y)
+            strokeText(ctx, keyPos, keyCount.toString(), Colors.white, invFontSize, CODA, 2.0, Colors.black, CanvasTextAlign.END)
         }
+    }
+
+    private fun drawCounts(ctx: Ctx, items: List<DeployableItem>?, pos: Coords) {
+        val fontSize = Dimensions.topAgentsInventoryFontSize
+        val width = 6
+        val lineWidth = 1.0
+        val itemGroups: Map<Int, List<DeployableItem>>? = items?.groupBy { it.getLevel() }
+        val itemLevels: Map<Int, Int>? = itemGroups?.mapValues { it.value.count() }
+        val maxLevel = itemLevels?.map { it.value }?.max() ?: 0
+        val countPos = Coords(pos.x, pos.y)
+        strokeText(ctx, countPos, items?.size.toString(), Colors.white, fontSize, CODA, 2.0, Colors.black, CanvasTextAlign.END)
+        (1..8).forEach { level ->
+            val statPos = Coords(pos.x + (width * level), pos.y + width)
+            val itemLevel = itemLevels?.get(level) ?: 0
+            val h = fontSize * itemLevel.toDouble() / maxLevel
+            val color = LevelColor.map.get(level) ?: "#FFFFFF"
+            drawRect(ctx, statPos, h, width.toDouble(), color, Colors.black, lineWidth)
+        }
+    }
+
+    private fun drawRect(ctx: Ctx, pos: Coords, h: Double, w: Double,
+                         fillStyle: String, strokeStyle: String, lineWidth: Double) {
+        ctx.fillStyle = fillStyle
+        ctx.fillRect(pos.xx(), pos.yy(), w, -h)
+        ctx.fill()
+        ctx.strokeStyle = strokeStyle
+        ctx.lineWidth = lineWidth
+        ctx.beginPath()
+        ctx.strokeRect(pos.xx(), pos.yy(), w, -h)
+        ctx.closePath()
+        ctx.stroke()
     }
 
     fun drawGrid() {
@@ -402,7 +416,7 @@ object DrawUtil {
 
     fun drawVectorField(portal: Portal) {
         drawVectorField(portal.vectorField)
-        portal.drawCenter(World.bgCtx())
+        portal.drawCenter(World.bgCtx(), false)
     }
 
     fun drawVectorField(vectorField: Map<Coords, Complex>) {

@@ -9,6 +9,7 @@ import util.Util
 class PortalKey(val portal: Portal, val owner: Agent) : DeployableItem {
     override fun toString() = "Key-$portal"
     override fun getOwnerId(): String = owner.key()
+    override fun getLevel(): Int = throw NotImplementedError("Portal Key has no level.")
 
     companion object {
         //TODO Probabilities

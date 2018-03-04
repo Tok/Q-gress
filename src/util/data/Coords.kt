@@ -55,7 +55,7 @@ data class Coords(val x: Int, val y: Int) {
     }
     override fun toString() = "X$x:Y$y"
     override fun hashCode() = toString().hashCode() * 1337
-    override fun equals(other: Any?) = other is Coords && x == other?.x && y == other?.y
+    override fun equals(other: Any?) = other is Coords && x == other.x && y == other.y
 
     companion object {
         private val defaultLat = 47.4220454 //X

@@ -442,23 +442,25 @@ data class Portal constructor(val name: String, val location: Coords,
 
             val lineToPortal = Line(Coords(x, y), location)
             val alpha = reso.energy * 100.0 / resoLevel.energy
-            drawResoLine(lineToPortal, resoLevel.color, owner?.faction?.color ?: Faction.NONE.color, 1.0, alpha)
+            drawResoLine(lineToPortal, resoLevel.getColor(), owner?.faction?.color ?: Faction.NONE.color, 1.0, alpha)
 
             val resoCircle = Circle(Coords(x, y), Dimensions.resoRadius)
-            DrawUtil.drawCircle(ctx, resoCircle, Colors.black, 2.0, resoLevel.color, alpha)
+            DrawUtil.drawCircle(ctx, resoCircle, Colors.black, 2.0, resoLevel.getColor(), alpha)
             if (Styles.isDrawResoLevels) {
                 DrawUtil.drawText(ctx, Coords(x, y), reso.level.level.toString(), Colors.black, 8, DrawUtil.CODA)
             }
         }
     }
 
-    fun drawCenter(ctx: Ctx) {
+    fun drawCenter(ctx: Ctx, isDrawHealthBar: Boolean = true) {
         val image = getCenterImage(owner?.faction ?: Faction.NONE, getLevel())
         val x = location.xx() - (image.width / 2)
         val y = location.yy() - (image.height / 2)
         ctx.drawImage(image, x, y)
-        val healthBarImage = getHealthBarImage(owner?.faction ?: Faction.NONE, calcHealth())
-        ctx.drawImage(healthBarImage, x, y + image.height + 1)
+        if (isDrawHealthBar) {
+            val healthBarImage = getHealthBarImage(owner?.faction ?: Faction.NONE, calcHealth())
+            ctx.drawImage(healthBarImage, x, y + image.height + 1)
+        }
     }
 
     fun drawName(ctx: Ctx) {
@@ -516,7 +518,7 @@ data class Portal constructor(val name: String, val location: Coords,
                 val portalCircle = Circle(Coords(r + lw, r + lw), r.toDouble())
                 DrawUtil.drawCircle(ctx, portalCircle, Colors.black, 2.0, color)
                 val pos = Coords(r + lw + if (level.value > 1) 0 else 1, r + lw)
-                DrawUtil.drawText(ctx, pos, level.toString(), Colors.black, 13, DrawUtil.CODA)
+                DrawUtil.drawText(ctx, pos, level.display, Colors.black, 13, DrawUtil.CODA)
             })
         }
 

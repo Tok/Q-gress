@@ -7,6 +7,7 @@ import items.level.PowerCubeLevel
 data class PowerCube(val level: PowerCubeLevel, val owner: Agent) : DeployableItem {
     override fun toString() = "PC" + level.level
     override fun getOwnerId(): String = owner.key()
+    override fun getLevel(): Int = level.level
     companion object {
         fun create(level: PowerCubeLevel, agent: Agent) = PowerCube(level, agent)
         fun create(level: Int, agent: Agent) = create(PowerCubeLevel.valueOf(level), agent)

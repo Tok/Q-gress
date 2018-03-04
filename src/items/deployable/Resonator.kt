@@ -44,6 +44,7 @@ data class Resonator(val level: ResonatorLevel, val owner: Agent, var energy: In
 
     override fun toString() = "R" + level.level
     override fun getOwnerId(): String = owner.key()
+    override fun getLevel(): Int = level.level
 
     companion object {
         val DECAY_RATIO = 0.15

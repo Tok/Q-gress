@@ -6,4 +6,5 @@ import items.types.VirusType
 data class Virus(val type: VirusType, val owner: Agent) : DeployableItem {
     override fun toString() = type.abbr
     override fun getOwnerId(): String = owner.key()
+    override fun getLevel(): Int = throw NotImplementedError("Virus has no level.")
 }

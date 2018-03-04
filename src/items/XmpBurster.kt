@@ -29,6 +29,7 @@ data class XmpBurster(val level: XmpLevel, val owner: Agent) : DeployableItem {
 
     override fun toString() = "XMP" + level.level
     override fun getOwnerId(): String = owner.key()
+    override fun getLevel(): Int = level.level
 
     companion object {
         val GLOBAL_DAMAGE_MULTIPLIER = 0.20 //FIXME
