@@ -188,6 +188,12 @@ html, body {
     background: #777777;
     cursor: pointer;
 }
+#pauseButton {
+    width: 55px;
+}
+#locationDropdown {
+    width: 144px;
+}
 .mapboxgl-ctrl-bottom-left,
 .mapboxgl-ctrl-bottom-right {
     z-index: 999 !important;

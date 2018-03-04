@@ -105,10 +105,14 @@ object HtmlUtil {
             controlDiv.append(createSliderDiv("smurfSlider", startSmurfs, maxSmurfs,
                     SMURF_COUNT_ID, " Smurfs", 0))
             val buttonDiv = document.createElement("div") as HTMLDivElement
-            buttonDiv.append(createButton("button", "Pause", {
+            val pauseButton = createButton("button", "Stop", {
                 intervalID = pauseHandler(intervalID, { tick() })
-            }))
+            })
+            pauseButton.id = "pauseButton"
+            buttonDiv.append(pauseButton)
+
             val dropDown = createDropdown(LOCATION_DROPDOWN_ID, { mapChangeHandler() })
+            dropDown.id = "locationDropdown"
             val selectionName = getLocationNameFromUrl() ?: "unknown"
             setLocationDropdownSelection(dropDown, selectionName)
             buttonDiv.append(dropDown)
@@ -139,6 +143,18 @@ object HtmlUtil {
         intervalID = if (Config.isAutostart) {
             document.defaultView?.setInterval({ tick() }, Time.minTickInterval) ?: 0
         } else 0
+    }
+
+    fun pauseHandler(intervalID: Int, tickFunction: () -> Unit): Int {
+        val pauseButton = document.getElementById("pauseButton") as HTMLButtonElement
+        if (intervalID != -1) {
+            pauseButton.innerText = "Start"
+            document.defaultView?.clearInterval(intervalID)
+            return -1
+        } else {
+            pauseButton.innerText = "Stop"
+            return document.defaultView?.setInterval({ tickFunction() }, Time.minTickInterval) ?: 0
+        }
     }
 
     fun isBlockedByMapbox(pos: Coords) = isInMapboxArea(pos) || isInOsmArea(pos)
@@ -267,15 +283,6 @@ object HtmlUtil {
     }
 
     fun getContext2D(canvas: Canvas): Ctx = canvas.getContext("2d") as Ctx
-
-    private fun pauseHandler(intervalID: Int, tickFunction: () -> Unit): Int {
-        if (intervalID != -1) {
-            document.defaultView?.clearInterval(intervalID)
-            return -1
-        } else {
-            return document.defaultView?.setInterval({ tickFunction() }, Time.minTickInterval) ?: 0
-        }
-    }
 
     private fun createPortals(callback: () -> Unit) {
         World.allPortals.clear()

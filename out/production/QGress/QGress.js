@@ -8019,7 +8019,7 @@ var QGress = function (_, Kotlin) {
   }
   function HtmlUtil$load$lambda$lambda_0(this$HtmlUtil) {
     return function (it) {
-      this$HtmlUtil.intervalID = this$HtmlUtil.pauseHandler_0(this$HtmlUtil.intervalID, HtmlUtil$load$lambda$lambda$lambda(this$HtmlUtil));
+      this$HtmlUtil.intervalID = this$HtmlUtil.pauseHandler_n53o35$(this$HtmlUtil.intervalID, HtmlUtil$load$lambda$lambda$lambda(this$HtmlUtil));
       return Unit;
     };
   }
@@ -8065,8 +8065,11 @@ var QGress = function (_, Kotlin) {
     controlDiv.append(this.createSliderDiv_0('frogSlider', $receiver.startFrogs, $receiver.maxFrogs, this.FROG_COUNT_ID, ' Frogs', 0));
     controlDiv.append(this.createSliderDiv_0('smurfSlider', $receiver.startSmurfs, $receiver.maxSmurfs, this.SMURF_COUNT_ID, ' Smurfs', 0));
     var buttonDiv = Kotlin.isType(tmp$_2 = document.createElement('div'), HTMLDivElement) ? tmp$_2 : throwCCE();
-    buttonDiv.append(this.createButton_0('button', 'Pause', HtmlUtil$load$lambda$lambda_0(this)));
+    var pauseButton = this.createButton_0('button', 'Stop', HtmlUtil$load$lambda$lambda_0(this));
+    pauseButton.id = 'pauseButton';
+    buttonDiv.append(pauseButton);
     var dropDown = this.createDropdown_0(this.LOCATION_DROPDOWN_ID, HtmlUtil$load$lambda$lambda_1(this));
+    dropDown.id = 'locationDropdown';
     var selectionName = (tmp$_3 = this.getLocationNameFromUrl_0()) != null ? tmp$_3 : 'unknown';
     this.setLocationDropdownSelection_0(dropDown, selectionName);
     buttonDiv.append(dropDown);
@@ -8102,6 +8105,25 @@ var QGress = function (_, Kotlin) {
      else
       tmp$_1 = 0;
     this.intervalID = tmp$_1;
+  };
+  function HtmlUtil$pauseHandler$lambda(closure$tickFunction) {
+    return function () {
+      closure$tickFunction();
+      return Unit;
+    };
+  }
+  HtmlUtil.prototype.pauseHandler_n53o35$ = function (intervalID, tickFunction) {
+    var tmp$, tmp$_0, tmp$_1, tmp$_2;
+    var pauseButton = Kotlin.isType(tmp$ = document.getElementById('pauseButton'), HTMLButtonElement) ? tmp$ : throwCCE();
+    if (intervalID !== -1) {
+      pauseButton.innerText = 'Start';
+      (tmp$_0 = document.defaultView) != null ? (tmp$_0.clearInterval(intervalID), Unit) : null;
+      return -1;
+    }
+     else {
+      pauseButton.innerText = 'Stop';
+      return (tmp$_2 = (tmp$_1 = document.defaultView) != null ? tmp$_1.setInterval(HtmlUtil$pauseHandler$lambda(tickFunction), Time_getInstance().minTickInterval) : null) != null ? tmp$_2 : 0;
+    }
   };
   HtmlUtil.prototype.isBlockedByMapbox_lfj9be$ = function (pos) {
     return this.isInMapboxArea_0(pos) || this.isInOsmArea_0(pos);
@@ -8248,22 +8270,6 @@ var QGress = function (_, Kotlin) {
   HtmlUtil.prototype.getContext2D_ap7jt0$ = function (canvas) {
     var tmp$;
     return Kotlin.isType(tmp$ = canvas.getContext('2d'), CanvasRenderingContext2D) ? tmp$ : throwCCE();
-  };
-  function HtmlUtil$pauseHandler$lambda(closure$tickFunction) {
-    return function () {
-      closure$tickFunction();
-      return Unit;
-    };
-  }
-  HtmlUtil.prototype.pauseHandler_0 = function (intervalID, tickFunction) {
-    var tmp$, tmp$_0, tmp$_1;
-    if (intervalID !== -1) {
-      (tmp$ = document.defaultView) != null ? (tmp$.clearInterval(intervalID), Unit) : null;
-      return -1;
-    }
-     else {
-      return (tmp$_1 = (tmp$_0 = document.defaultView) != null ? tmp$_0.setInterval(HtmlUtil$pauseHandler$lambda(tickFunction), Time_getInstance().minTickInterval) : null) != null ? tmp$_1 : 0;
-    }
   };
   function HtmlUtil$createPortals$createPortal$lambda(closure$count, closure$callback, closure$createPortal) {
     return function () {
