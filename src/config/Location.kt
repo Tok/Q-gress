@@ -4,15 +4,17 @@ import util.Util
 import kotlin.js.Json
 
 enum class Location(val displayName: String, val lng: Double, val lat: Double) {
-    RED_SQUARE("Red Square", 9.373274, 47.422139),
-    CHLOSER_PLATZ("Chloster Platz", 9.3770000, 47.4240000),
-    GOLLUMS("Gollums", 8.5952000, 47.3620000),
-    BAD_RAGAZ("Bad Ragaz", 9.500324, 47.0024734),
-    ESCHER_WYSS("Escher Wyss", 8.5220562, 47.3907937),
-    GIZA_PLATEAU("Giza Plateau", 31.1320000, 29.9780000),
-    EIFFEL_TOWER("Eiffel Tower", 2.2948595, 48.858243),
-    PRIME_TOWER("Prime Tower", 8.5183064, 47.3867261),
-    GROUND_ZERO("Ground Zero", -74.0123000, 40.7125000);
+    RED_SQUARE("Red Square St. Gallen", 9.37327, 47.42214),
+    RED_SQUARE_MOSCOW("Red Square Moscow", 37.62050, 55.75400),
+    CHLOSER_PLATZ("Chloster Platz St. Gallen", 9.37700, 47.42400),
+    GOLLUMS("Gollums", 8.59520, 47.36200),
+    BAD_RAGAZ("Bad Ragaz", 9.50032, 47.00247),
+    ESCHER_WYSS("Escher Wyss", 8.52206, 47.39080),
+    GIZA_PLATEAU("Giza Plateau", 31.13200, 29.97800),
+    EIFFEL_TOWER("Eiffel Tower", 2.29486, 48.85824),
+    PRIME_TOWER("Prime Tower", 8.51831, 47.38673),
+    GROUND_ZERO("Ground Zero", -74.01230, 40.71250),
+    PLATZSPITZ("Platzspitz", 8.53900, 47.38210);
 
     fun toJSONString() = "[$lng,$lat]"
     fun toJSON(): Json = JSON.parse(toJSONString())

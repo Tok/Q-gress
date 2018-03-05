@@ -98,8 +98,10 @@ object HtmlUtil {
         val controlDiv = document.createElement("div") as HTMLDivElement
         controlDiv.addClass("controls")
 
-        val maxSpeed = 500
-        val speedSlider = createSliderDiv("speedSlider", 100, maxSpeed, SPEED_ID, "% Speed", 100)
+        val speed = 100
+        val minSpeed = 100
+        val maxSpeed = 300
+        val speedSlider = createSliderDiv("speedSlider", speed, maxSpeed, SPEED_ID, "% Speed", minSpeed)
         speedSlider.oninput = { World.speed = speedSetting(); Unit }
         controlDiv.append(speedSlider)
         controlDiv.append(createSliderDiv("frogSlider", Config.startFrogs, Config.maxFrogs,
@@ -143,14 +145,15 @@ object HtmlUtil {
                 val slider = document.createElement("input") as HTMLInputElement
                 slider.id = qValue.sliderId + faction.nickName
                 slider.type = "range"
-                slider.min = "0"
-                slider.max = "100"
-                slider.value = "50"
+                slider.min = "0.00"
+                slider.max = "1.00"
+                slider.step = "0.01"
+                slider.value = "0.50"
                 slider.addClass("slider", "qSlider", faction.abbr.toLowerCase() + "Slider")
                 val sliderValue = document.createElement("span") as HTMLSpanElement
                 sliderValue.addClass("qSliderLabel", faction.abbr.toLowerCase() + "Label")
-                slider.oninput = { _ -> sliderValue.innerHTML = slider.value + qValue.unitLabel; null }
-                sliderValue.innerHTML = slider.value + qValue.unitLabel
+                slider.oninput = { _ -> sliderValue.innerHTML = qDisplay(slider.value); null }
+                sliderValue.innerHTML = qDisplay(slider.value)
                 sliderDiv.append(slider)
                 sliderDiv.append(sliderValue)
             }
@@ -167,6 +170,15 @@ object HtmlUtil {
         rootDiv.addEventListener("mousemove", { event -> handleMouseMove(event) }, false)
 
         initWorld()
+    }
+
+    private fun qDisplay(qValue: String): String {
+        val fixed = qValue.padEnd(4,'0')
+        return when (fixed) {
+            "0000" -> "0.00"
+            "1000" -> "1.00"
+            else -> fixed
+        }
     }
 
     private fun initWorld() {
@@ -364,6 +376,7 @@ object HtmlUtil {
                     println("ERROR: Grid is empty!")
                 }
                 DrawUtil.drawGrid()
+                DrawUtil.drawActionLimits(false)
                 createAgentsAndPortals({
                     DrawUtil.drawLoadingText("Ready.")
                     if (!Styles.leaveInitialMap) {

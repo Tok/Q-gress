@@ -102,7 +102,7 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
     private fun q(value: QValue): Double {
         val id = value.name + "Slider" + faction.nickName
         val slider = window.document.getElementById(id) as HTMLInputElement
-        return slider.valueAsNumber * value.factor / 100.0
+        return slider.valueAsNumber * value.weight
     }
 
     private fun basicQvalues(): List<Pair<Double, () -> Agent>> {

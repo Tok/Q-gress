@@ -54,6 +54,7 @@ var QGress = function (_, Kotlin) {
   var IllegalArgumentException_init = Kotlin.kotlin.IllegalArgumentException_init_pdl1vj$;
   var addClass = Kotlin.kotlin.dom.addClass_hhb33f$;
   var max = Kotlin.kotlin.collections.max_exjks8$;
+  var padEnd = Kotlin.kotlin.text.padEnd_vrc1nu$;
   var removeClass = Kotlin.kotlin.dom.removeClass_hhb33f$;
   var split = Kotlin.kotlin.text.split_ip8yn$;
   var contains = Kotlin.kotlin.text.contains_li3zpu$;
@@ -368,7 +369,7 @@ var QGress = function (_, Kotlin) {
     var tmp$;
     var id = value.name + 'Slider' + this.faction.nickName;
     var slider = Kotlin.isType(tmp$ = window.document.getElementById(id), HTMLInputElement) ? tmp$ : throwCCE();
-    return slider.valueAsNumber * value.factor / 100.0;
+    return slider.valueAsNumber * value.weight;
   };
   function Agent$basicQvalues$lambda(this$Agent) {
     return function () {
@@ -2201,33 +2202,32 @@ var QGress = function (_, Kotlin) {
   NonFaction.prototype.equals = function (other) {
     return this === other || (other !== null && (typeof other === 'object' && (Object.getPrototypeOf(this) === Object.getPrototypeOf(other) && (Kotlin.equals(this.pos, other.pos) && Kotlin.equals(this.speed, other.speed) && Kotlin.equals(this.destination, other.destination) && Kotlin.equals(this.vectorField, other.vectorField) && Kotlin.equals(this.busyUntil, other.busyUntil)))));
   };
-  function QValue(name, factor) {
+  function QValue(name, weight) {
     QValue$Companion_getInstance();
     this.name = name;
-    this.factor = factor;
+    this.weight = weight;
     this.sliderId = this.name + 'Slider';
-    this.unitLabel = '% ';
   }
   function QValue$Companion() {
     QValue$Companion_instance = this;
-    this.CAPTURE = new QValue('Capture', 1.0);
-    this.HACK = new QValue('Hack', 1.0);
-    this.DEPLOY = new QValue('Deploy', 1.0);
-    this.LINK = new QValue('Link', 1.0);
-    this.RECHARGE = new QValue('Recharge', 0.2);
-    this.RECYCLE = new QValue('Recycle', 0.2);
-    this.ATTACK = new QValue('Attack', 1.0);
-    this.ATTACK_SOMEHERE = new QValue('Attack Another Portal', 0.01);
-    this.ATTACK_CLOSE = new QValue('- Closest', 1.0);
-    this.ATTACK_LINKS = new QValue('- Most Linked', 1.0);
-    this.ATTACK_WEAK = new QValue('- Weakest', 1.0);
-    this.MOVE_ELSEWHERE = new QValue('Move To Another Portal', 0.01);
-    this.MOVE_TO_FRIENDLY = new QValue('- Friendly', 1.0);
-    this.MOVE_TO_NEAR = new QValue('- Nearest', 1.0);
-    this.MOVE_TO_RANDOM = new QValue('- Random', 1.0);
+    this.CAPTURE = new QValue('. capture portal', 0.4);
+    this.HACK = new QValue('. hack portal', 0.5);
+    this.RECYCLE = new QValue('. recycle items', 0.3);
+    this.RECHARGE = new QValue('. recharge portal', 0.2);
+    this.DEPLOY = new QValue('+ deploy portal', 1.0);
+    this.LINK = new QValue('+ create link', 0.5);
+    this.ATTACK = new QValue('* attack portal', 1.0);
+    this.ATTACK_SOMEHERE = new QValue('-> move to enemy portal..', 0.003);
+    this.ATTACK_CLOSE = new QValue('--> ..closest', 1.0);
+    this.ATTACK_LINKS = new QValue('--> ..most linked', 0.5);
+    this.ATTACK_WEAK = new QValue('--> ..weakest', 0.8);
+    this.MOVE_ELSEWHERE = new QValue('-> move to another portal..', 0.005);
+    this.MOVE_TO_FRIENDLY = new QValue('--> ..friendly', 0.8);
+    this.MOVE_TO_NEAR = new QValue('--> ..nearest', 1.0);
+    this.MOVE_TO_RANDOM = new QValue('--> ..random', 0.5);
   }
   QValue$Companion.prototype.values = function () {
-    return listOf([this.CAPTURE, this.HACK, this.DEPLOY, this.LINK, this.ATTACK, this.RECHARGE, this.RECYCLE, this.ATTACK_SOMEHERE, this.ATTACK_CLOSE, this.ATTACK_LINKS, this.ATTACK_WEAK, this.MOVE_ELSEWHERE, this.MOVE_TO_NEAR, this.MOVE_TO_FRIENDLY, this.MOVE_TO_RANDOM]);
+    return listOf([this.CAPTURE, this.HACK, this.RECYCLE, this.RECHARGE, this.DEPLOY, this.LINK, this.ATTACK, this.ATTACK_SOMEHERE, this.ATTACK_CLOSE, this.ATTACK_LINKS, this.ATTACK_WEAK, this.MOVE_ELSEWHERE, this.MOVE_TO_NEAR, this.MOVE_TO_FRIENDLY, this.MOVE_TO_RANDOM]);
   };
   QValue$Companion.$metadata$ = {
     kind: Kind_OBJECT,
@@ -2250,22 +2250,22 @@ var QGress = function (_, Kotlin) {
     return this.name;
   };
   QValue.prototype.component2 = function () {
-    return this.factor;
+    return this.weight;
   };
-  QValue.prototype.copy_io5o9c$ = function (name, factor) {
-    return new QValue(name === void 0 ? this.name : name, factor === void 0 ? this.factor : factor);
+  QValue.prototype.copy_io5o9c$ = function (name, weight) {
+    return new QValue(name === void 0 ? this.name : name, weight === void 0 ? this.weight : weight);
   };
   QValue.prototype.toString = function () {
-    return 'QValue(name=' + Kotlin.toString(this.name) + (', factor=' + Kotlin.toString(this.factor)) + ')';
+    return 'QValue(name=' + Kotlin.toString(this.name) + (', weight=' + Kotlin.toString(this.weight)) + ')';
   };
   QValue.prototype.hashCode = function () {
     var result = 0;
     result = result * 31 + Kotlin.hashCode(this.name) | 0;
-    result = result * 31 + Kotlin.hashCode(this.factor) | 0;
+    result = result * 31 + Kotlin.hashCode(this.weight) | 0;
     return result;
   };
   QValue.prototype.equals = function (other) {
-    return this === other || (other !== null && (typeof other === 'object' && (Object.getPrototypeOf(this) === Object.getPrototypeOf(other) && (Kotlin.equals(this.name, other.name) && Kotlin.equals(this.factor, other.factor)))));
+    return this === other || (other !== null && (typeof other === 'object' && (Object.getPrototypeOf(this) === Object.getPrototypeOf(other) && (Kotlin.equals(this.name, other.name) && Kotlin.equals(this.weight, other.weight)))));
   };
   function Skills(speed, deployPrecision, glyphSkill, reliability) {
     Skills$Companion_getInstance();
@@ -2486,21 +2486,28 @@ var QGress = function (_, Kotlin) {
   function Location_initFields() {
     Location_initFields = function () {
     };
-    Location$RED_SQUARE_instance = new Location('RED_SQUARE', 0, 'Red Square', 9.373274, 47.422139);
-    Location$CHLOSER_PLATZ_instance = new Location('CHLOSER_PLATZ', 1, 'Chloster Platz', 9.377, 47.424);
-    Location$GOLLUMS_instance = new Location('GOLLUMS', 2, 'Gollums', 8.5952, 47.362);
-    Location$BAD_RAGAZ_instance = new Location('BAD_RAGAZ', 3, 'Bad Ragaz', 9.500324, 47.0024734);
-    Location$ESCHER_WYSS_instance = new Location('ESCHER_WYSS', 4, 'Escher Wyss', 8.5220562, 47.3907937);
-    Location$GIZA_PLATEAU_instance = new Location('GIZA_PLATEAU', 5, 'Giza Plateau', 31.132, 29.978);
-    Location$EIFFEL_TOWER_instance = new Location('EIFFEL_TOWER', 6, 'Eiffel Tower', 2.2948595, 48.858243);
-    Location$PRIME_TOWER_instance = new Location('PRIME_TOWER', 7, 'Prime Tower', 8.5183064, 47.3867261);
-    Location$GROUND_ZERO_instance = new Location('GROUND_ZERO', 8, 'Ground Zero', -74.0123, 40.7125);
+    Location$RED_SQUARE_instance = new Location('RED_SQUARE', 0, 'Red Square St. Gallen', 9.37327, 47.42214);
+    Location$RED_SQUARE_MOSCOW_instance = new Location('RED_SQUARE_MOSCOW', 1, 'Red Square Moscow', 37.6205, 55.754);
+    Location$CHLOSER_PLATZ_instance = new Location('CHLOSER_PLATZ', 2, 'Chloster Platz St. Gallen', 9.377, 47.424);
+    Location$GOLLUMS_instance = new Location('GOLLUMS', 3, 'Gollums', 8.5952, 47.362);
+    Location$BAD_RAGAZ_instance = new Location('BAD_RAGAZ', 4, 'Bad Ragaz', 9.50032, 47.00247);
+    Location$ESCHER_WYSS_instance = new Location('ESCHER_WYSS', 5, 'Escher Wyss', 8.52206, 47.3908);
+    Location$GIZA_PLATEAU_instance = new Location('GIZA_PLATEAU', 6, 'Giza Plateau', 31.132, 29.978);
+    Location$EIFFEL_TOWER_instance = new Location('EIFFEL_TOWER', 7, 'Eiffel Tower', 2.29486, 48.85824);
+    Location$PRIME_TOWER_instance = new Location('PRIME_TOWER', 8, 'Prime Tower', 8.51831, 47.38673);
+    Location$GROUND_ZERO_instance = new Location('GROUND_ZERO', 9, 'Ground Zero', -74.0123, 40.7125);
+    Location$PLATZSPITZ_instance = new Location('PLATZSPITZ', 10, 'Platzspitz', 8.539, 47.3821);
     Location$Companion_getInstance();
   }
   var Location$RED_SQUARE_instance;
   function Location$RED_SQUARE_getInstance() {
     Location_initFields();
     return Location$RED_SQUARE_instance;
+  }
+  var Location$RED_SQUARE_MOSCOW_instance;
+  function Location$RED_SQUARE_MOSCOW_getInstance() {
+    Location_initFields();
+    return Location$RED_SQUARE_MOSCOW_instance;
   }
   var Location$CHLOSER_PLATZ_instance;
   function Location$CHLOSER_PLATZ_getInstance() {
@@ -2542,6 +2549,11 @@ var QGress = function (_, Kotlin) {
     Location_initFields();
     return Location$GROUND_ZERO_instance;
   }
+  var Location$PLATZSPITZ_instance;
+  function Location$PLATZSPITZ_getInstance() {
+    Location_initFields();
+    return Location$PLATZSPITZ_instance;
+  }
   Location.prototype.toJSONString = function () {
     return '[' + this.lng + ',' + this.lat + ']';
   };
@@ -2574,13 +2586,15 @@ var QGress = function (_, Kotlin) {
     interfaces: [Enum]
   };
   function Location$values() {
-    return [Location$RED_SQUARE_getInstance(), Location$CHLOSER_PLATZ_getInstance(), Location$GOLLUMS_getInstance(), Location$BAD_RAGAZ_getInstance(), Location$ESCHER_WYSS_getInstance(), Location$GIZA_PLATEAU_getInstance(), Location$EIFFEL_TOWER_getInstance(), Location$PRIME_TOWER_getInstance(), Location$GROUND_ZERO_getInstance()];
+    return [Location$RED_SQUARE_getInstance(), Location$RED_SQUARE_MOSCOW_getInstance(), Location$CHLOSER_PLATZ_getInstance(), Location$GOLLUMS_getInstance(), Location$BAD_RAGAZ_getInstance(), Location$ESCHER_WYSS_getInstance(), Location$GIZA_PLATEAU_getInstance(), Location$EIFFEL_TOWER_getInstance(), Location$PRIME_TOWER_getInstance(), Location$GROUND_ZERO_getInstance(), Location$PLATZSPITZ_getInstance()];
   }
   Location.values = Location$values;
   function Location$valueOf(name) {
     switch (name) {
       case 'RED_SQUARE':
         return Location$RED_SQUARE_getInstance();
+      case 'RED_SQUARE_MOSCOW':
+        return Location$RED_SQUARE_MOSCOW_getInstance();
       case 'CHLOSER_PLATZ':
         return Location$CHLOSER_PLATZ_getInstance();
       case 'GOLLUMS':
@@ -2597,6 +2611,8 @@ var QGress = function (_, Kotlin) {
         return Location$PRIME_TOWER_getInstance();
       case 'GROUND_ZERO':
         return Location$GROUND_ZERO_getInstance();
+      case 'PLATZSPITZ':
+        return Location$PLATZSPITZ_getInstance();
       default:throwISE('No enum constant config.Location.' + name);
     }
   }
@@ -2714,7 +2730,7 @@ var QGress = function (_, Kotlin) {
     Time_instance = this;
     this.minTickInterval = 20;
     this.secondsPerTick = 1;
-    this.globalSpeedFactor = 0.5;
+    this.globalSpeedFactor = 1.0;
   }
   Time.prototype.ticksPerFrame = function () {
     return this.globalSpeedFactor * 100.0 / World_getInstance().speed;
@@ -7392,21 +7408,28 @@ var QGress = function (_, Kotlin) {
       this.highlightMouse_0(ensureNotNull(World_getInstance().mousePos));
     }
     if (Config_getInstance().isHighlighActionLimit) {
-      var w = Dimensions_getInstance().width;
-      var h = Dimensions_getInstance().height;
-      var topOffset = Dimensions_getInstance().topActionOffset;
-      var botOffset = h - Dimensions_getInstance().botActionOffset;
-      var $receiver = World_getInstance().ctx();
-      $receiver.beginPath();
-      $receiver.fillStyle = '#00000077';
-      $receiver.fillRect(0.0, 0.0, w, topOffset);
-      $receiver.fillRect(0.0, botOffset, w, h);
-      var qSliderHeight = 13 + 5 | 0;
-      var qSliderDivHeight = qSliderHeight * (QValue$Companion_getInstance().values().size + 1.0);
-      var qSliderDivWidth = 400.0;
-      $receiver.fillRect(0.0, topOffset, qSliderDivWidth, qSliderDivHeight);
-      $receiver.closePath();
+      this.drawActionLimits_6taknv$();
     }
+  };
+  DrawUtil.prototype.drawActionLimits_6taknv$ = function (isHighlightBottom) {
+    if (isHighlightBottom === void 0)
+      isHighlightBottom = false;
+    var w = Dimensions_getInstance().width;
+    var h = Dimensions_getInstance().height;
+    var topOffset = Dimensions_getInstance().topActionOffset;
+    var botOffset = h - Dimensions_getInstance().botActionOffset;
+    var $receiver = World_getInstance().ctx();
+    $receiver.beginPath();
+    $receiver.fillStyle = '#00000077';
+    $receiver.fillRect(0.0, 0.0, w, topOffset);
+    if (isHighlightBottom) {
+      $receiver.fillRect(0.0, botOffset, w, h);
+    }
+    var qSliderHeight = 13.0 + 5.0;
+    var qSliderDivHeight = qSliderHeight * QValue$Companion_getInstance().values().size;
+    var qSliderDivWidth = 410.0;
+    $receiver.fillRect(0.0, topOffset, qSliderDivWidth, qSliderDivHeight);
+    $receiver.closePath();
   };
   DrawUtil.prototype.highlightMouse_0 = function (pos) {
     var tmp$, tmp$_0, tmp$_1;
@@ -8141,9 +8164,9 @@ var QGress = function (_, Kotlin) {
       return null;
     };
   }
-  function HtmlUtil$load$lambda$lambda$lambda(closure$slider, closure$qValue, closure$sliderValue) {
+  function HtmlUtil$load$lambda$lambda$lambda(closure$slider, this$HtmlUtil, closure$sliderValue) {
     return function (f) {
-      closure$sliderValue.innerHTML = closure$slider.value + closure$qValue.unitLabel;
+      closure$sliderValue.innerHTML = this$HtmlUtil.qDisplay_0(closure$slider.value);
       return null;
     };
   }
@@ -8174,8 +8197,10 @@ var QGress = function (_, Kotlin) {
     rootDiv.append(canvasDiv);
     var controlDiv = Kotlin.isType(tmp$_1 = document.createElement('div'), HTMLDivElement) ? tmp$_1 : throwCCE();
     addClass(controlDiv, ['controls']);
-    var maxSpeed = 500;
-    var speedSlider = this.createSliderDiv_0('speedSlider', 100, maxSpeed, this.SPEED_ID, '% Speed', 100);
+    var speed = 100;
+    var minSpeed = 100;
+    var maxSpeed = 300;
+    var speedSlider = this.createSliderDiv_0('speedSlider', speed, maxSpeed, this.SPEED_ID, '% Speed', minSpeed);
     speedSlider.oninput = HtmlUtil$load$lambda_0(this);
     controlDiv.append(speedSlider);
     controlDiv.append(this.createSliderDiv_0('frogSlider', Config_getInstance().startFrogs, Config_getInstance().maxFrogs, this.FROG_COUNT_ID, ' Frogs', 0));
@@ -8219,14 +8244,15 @@ var QGress = function (_, Kotlin) {
         var slider = Kotlin.isType(tmp$_11 = document.createElement('input'), HTMLInputElement) ? tmp$_11 : throwCCE();
         slider.id = element.sliderId + element_0.nickName;
         slider.type = 'range';
-        slider.min = '0';
-        slider.max = '100';
-        slider.value = '50';
+        slider.min = '0.00';
+        slider.max = '1.00';
+        slider.step = '0.01';
+        slider.value = '0.50';
         addClass(slider, ['slider', 'qSlider', element_0.abbr.toLowerCase() + 'Slider']);
         var sliderValue = Kotlin.isType(tmp$_12 = document.createElement('span'), HTMLSpanElement) ? tmp$_12 : throwCCE();
         addClass(sliderValue, ['qSliderLabel', element_0.abbr.toLowerCase() + 'Label']);
-        slider.oninput = HtmlUtil$load$lambda$lambda$lambda(slider, element, sliderValue);
-        sliderValue.innerHTML = slider.value + element.unitLabel;
+        slider.oninput = HtmlUtil$load$lambda$lambda$lambda(slider, this, sliderValue);
+        sliderValue.innerHTML = this.qDisplay_0(slider.value);
         sliderDiv.append(slider);
         sliderDiv.append(sliderValue);
       }
@@ -8241,6 +8267,21 @@ var QGress = function (_, Kotlin) {
     controlDiv.addEventListener('mousemove', HtmlUtil$load$lambda_3(this), false);
     rootDiv.addEventListener('mousemove', HtmlUtil$load$lambda_4(this), false);
     this.initWorld_0();
+  };
+  HtmlUtil.prototype.qDisplay_0 = function (qValue) {
+    var tmp$;
+    var fixed = padEnd(qValue, 4, 48);
+    switch (fixed) {
+      case '0000':
+        tmp$ = '0.00';
+        break;
+      case '1000':
+        tmp$ = '1.00';
+        break;
+      default:tmp$ = fixed;
+        break;
+    }
+    return tmp$;
   };
   HtmlUtil.prototype.initWorld_0 = function () {
     var noiseAlpha = 0.8;
@@ -8489,6 +8530,7 @@ var QGress = function (_, Kotlin) {
         println('ERROR: Grid is empty!');
       }
       DrawUtil_getInstance().drawGrid();
+      DrawUtil_getInstance().drawActionLimits_6taknv$(false);
       this$HtmlUtil.createAgentsAndPortals_0(HtmlUtil$onMapload$lambda$lambda);
     };
   }
@@ -9954,6 +9996,9 @@ var QGress = function (_, Kotlin) {
   Object.defineProperty(Location, 'RED_SQUARE', {
     get: Location$RED_SQUARE_getInstance
   });
+  Object.defineProperty(Location, 'RED_SQUARE_MOSCOW', {
+    get: Location$RED_SQUARE_MOSCOW_getInstance
+  });
   Object.defineProperty(Location, 'CHLOSER_PLATZ', {
     get: Location$CHLOSER_PLATZ_getInstance
   });
@@ -9977,6 +10022,9 @@ var QGress = function (_, Kotlin) {
   });
   Object.defineProperty(Location, 'GROUND_ZERO', {
     get: Location$GROUND_ZERO_getInstance
+  });
+  Object.defineProperty(Location, 'PLATZSPITZ', {
+    get: Location$PLATZSPITZ_getInstance
   });
   Object.defineProperty(Location, 'Companion', {
     get: Location$Companion_getInstance

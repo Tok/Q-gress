@@ -1,29 +1,36 @@
 package agent
 
-data class QValue(val name: String, val factor: Double) {
+data class QValue(val name: String, val weight: Double) {
     val sliderId = name + "Slider"
-    val unitLabel = "% "
     companion object {
-        val CAPTURE = QValue("Capture", 1.0)
-        val HACK = QValue("Hack", 1.0)
-        val DEPLOY = QValue("Deploy", 1.0)
-        val LINK = QValue("Link", 1.0)
-        val RECHARGE = QValue("Recharge", 0.2)
-        val RECYCLE = QValue("Recycle", 0.2)
-        val ATTACK = QValue("Attack", 1.0)
+        //at neutral portal
+        val CAPTURE = QValue(". capture portal", 0.4)
+        val HACK = QValue(". hack portal", 0.5)
+        val RECYCLE = QValue(". recycle items", 0.3)
+        val RECHARGE = QValue(". recharge portal", 0.2)
 
-        val ATTACK_SOMEHERE = QValue("Attack Another Portal", 0.01)
-        val ATTACK_CLOSE = QValue("- Closest", 1.0)
-        val ATTACK_LINKS = QValue("- Most Linked", 1.0)
-        val ATTACK_WEAK = QValue("- Weakest", 1.0)
+        //at friendly portal
+        val DEPLOY = QValue("+ deploy portal", 1.0)
+        val LINK = QValue("+ create link", 0.5)
 
-        val MOVE_ELSEWHERE = QValue("Move To Another Portal", 0.01)
-        val MOVE_TO_FRIENDLY = QValue("- Friendly", 1.0)
-        val MOVE_TO_NEAR = QValue("- Nearest", 1.0)
-        val MOVE_TO_RANDOM = QValue("- Random", 1.0)
+        //at enemy portal
+        val ATTACK = QValue("* attack portal", 1.0)
+
+        //general
+        val ATTACK_SOMEHERE = QValue("-> move to enemy portal..", 0.003)
+        val ATTACK_CLOSE = QValue("--> ..closest", 1.0)
+        val ATTACK_LINKS = QValue("--> ..most linked", 0.5)
+        val ATTACK_WEAK = QValue("--> ..weakest", 0.8)
+
+        val MOVE_ELSEWHERE = QValue("-> move to another portal..", 0.005)
+        val MOVE_TO_FRIENDLY = QValue("--> ..friendly", 0.8)
+        val MOVE_TO_NEAR = QValue("--> ..nearest", 1.0)
+        val MOVE_TO_RANDOM = QValue("--> ..random", 0.5)
+
         fun values() = listOf(
-                CAPTURE, HACK, DEPLOY, LINK,
-                ATTACK, RECHARGE, RECYCLE,
+                CAPTURE, HACK, RECYCLE, RECHARGE,
+                DEPLOY, LINK,
+                ATTACK,
                 ATTACK_SOMEHERE, ATTACK_CLOSE, ATTACK_LINKS, ATTACK_WEAK,
                 MOVE_ELSEWHERE, MOVE_TO_NEAR, MOVE_TO_FRIENDLY, MOVE_TO_RANDOM
         )

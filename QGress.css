@@ -204,6 +204,7 @@ body {
     text-shadow: -1px 0px black, 0px 1px black, 1px 0px black, 0px -1px black;
 }
 .qSliderTextLabel {
+    font-family: "Coda";
     font-size: 13px;
     height: 13px;
     margin-left: 5px;

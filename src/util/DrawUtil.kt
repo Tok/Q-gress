@@ -90,21 +90,27 @@ object DrawUtil {
             highlightMouse(World.mousePos!!)
         }
         if (Config.isHighlighActionLimit) {
-            val w = Dimensions.width.toDouble()
-            val h = Dimensions.height.toDouble()
-            val topOffset = Dimensions.topActionOffset
-            val botOffset = h - Dimensions.botActionOffset
-            with(World.ctx()) {
-                beginPath()
-                fillStyle = "#00000077"
-                fillRect(0.0, 0.0, w, topOffset)
+            drawActionLimits()
+        }
+    }
+
+    fun drawActionLimits(isHighlightBottom: Boolean = false) {
+        val w = Dimensions.width.toDouble()
+        val h = Dimensions.height.toDouble()
+        val topOffset = Dimensions.topActionOffset
+        val botOffset = h - Dimensions.botActionOffset
+        with(World.ctx()) {
+            beginPath()
+            fillStyle = "#00000077"
+            fillRect(0.0, 0.0, w, topOffset)
+            if (isHighlightBottom) {
                 fillRect(0.0, botOffset, w, h)
-                val qSliderHeight = 13 + 5 //defined in CSS
-                val qSliderDivHeight = qSliderHeight * (QValue.values().count() + 1.0)
-                val qSliderDivWidth = 400.0
-                fillRect(0.0, topOffset, qSliderDivWidth, qSliderDivHeight)
-                closePath()
             }
+            val qSliderHeight = 13.0 + 5.0 //defined in CSS
+            val qSliderDivHeight = qSliderHeight * QValue.values().count()
+            val qSliderDivWidth = 410.0
+            fillRect(0.0, topOffset, qSliderDivWidth, qSliderDivHeight)
+            closePath()
         }
     }
 
