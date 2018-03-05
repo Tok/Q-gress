@@ -7413,7 +7413,7 @@ var QGress = function (_, Kotlin) {
   };
   DrawUtil.prototype.drawActionLimits_6taknv$ = function (isHighlightBottom) {
     if (isHighlightBottom === void 0)
-      isHighlightBottom = false;
+      isHighlightBottom = true;
     var w = Dimensions_getInstance().width;
     var h = Dimensions_getInstance().height;
     var topOffset = Dimensions_getInstance().topActionOffset;

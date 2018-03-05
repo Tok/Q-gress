@@ -94,7 +94,7 @@ object DrawUtil {
         }
     }
 
-    fun drawActionLimits(isHighlightBottom: Boolean = false) {
+    fun drawActionLimits(isHighlightBottom: Boolean = true) {
         val w = Dimensions.width.toDouble()
         val h = Dimensions.height.toDouble()
         val topOffset = Dimensions.topActionOffset
