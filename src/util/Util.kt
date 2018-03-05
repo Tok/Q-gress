@@ -42,8 +42,11 @@ object Util {
         return result.toList()
     }
 
-    fun <T> select(probabilityList: List<Pair<Double, T>>): T {
+    fun <T> select(probabilityList: List<Pair<Double, T>>, default: T): T {
         val list = probabilityList.filterNot { it.first <= 0.0 }
+        if (list.isEmpty()) {
+            return default
+        }
         val total = list.sumByDouble { it.first }
         val rand = randomDouble(total)
         var accu = 0.0
@@ -72,7 +75,7 @@ object Util {
                 0.01 to separator + "Memorial",
                 0.01 to separator + "Museum"
         )
-        return name + Util.select(values)
+        return name + Util.select(values, "")
     }
 
     fun generateAgentName(): String {
@@ -88,8 +91,8 @@ object Util {
 
     private fun generateName(minLength: Int, maxLength: Int): String {
         val length = minLength + randomInt(maxLength - minLength)
-        val firstLetter = select(generateFirstSelection())
-        val name = firstLetter + IntRange(1, length).map { _ -> select(generateSelection()) }.joinToString("");
+        val firstLetter = select(generateFirstSelection(), ' ')
+        val name = firstLetter + IntRange(1, length).map { _ -> select(generateSelection(), ' ') }.joinToString("");
         val temp = name.substring(0, 1).toUpperCase() + name.substring(1).toLowerCase()
         return if (temp.endsWith('-')) temp.dropLast(1) else temp
     }
@@ -101,7 +104,7 @@ object Util {
      * https://en.wikipedia.org/wiki/Letter_frequency#Relative_frequencies_of_letters_in_the_English_language
      */
     private fun generateSelection(): List<Pair<Double, Char>> {
-        return listOf<Pair<Double, Char>>(
+        return listOf(
                 12.702 to 'E',
                 9.056 to 'T',
                 8.167 to 'A',
@@ -136,7 +139,7 @@ object Util {
      * https://en.wikipedia.org/wiki/Letter_frequency#Relative_frequencies_of_letters_in_the_English_language
      */
     private fun generateFirstSelection(): List<Pair<Double, Char>> {
-        return listOf<Pair<Double, Char>>(
+        return listOf(
                 15.978 to 'T',
                 11.682 to 'A',
                 7.631 to 'O',

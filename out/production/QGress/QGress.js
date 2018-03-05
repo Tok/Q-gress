@@ -10,6 +10,8 @@ var QGress = function (_, Kotlin) {
   var sum = Kotlin.kotlin.collections.sum_plj8ka$;
   var throwCCE = Kotlin.throwCCE;
   var to = Kotlin.kotlin.to_ujzrz7$;
+  var listOf_0 = Kotlin.kotlin.collections.listOf_mh5how$;
+  var plus = Kotlin.kotlin.collections.plus_mydzjv$;
   var println = Kotlin.kotlin.io.println_s8jyv4$;
   var numberToInt = Kotlin.numberToInt;
   var ensureNotNull = Kotlin.ensureNotNull;
@@ -41,7 +43,6 @@ var QGress = function (_, Kotlin) {
   var unboxChar = Kotlin.unboxChar;
   var toBoxedChar = Kotlin.toBoxedChar;
   var round = Kotlin.kotlin.math.round_14dthe$;
-  var plus = Kotlin.kotlin.collections.plus_mydzjv$;
   var toMutableList = Kotlin.kotlin.collections.toMutableList_4c7yge$;
   var sort = Kotlin.kotlin.collections.sort_4wi501$;
   var mutableListOf = Kotlin.kotlin.collections.mutableListOf_i5x0yv$;
@@ -238,6 +239,7 @@ var QGress = function (_, Kotlin) {
     this.ap = ap;
     this.xm = xm;
     this.velocity = velocity;
+    this.defaultAction = Agent$defaultAction$lambda(this);
   }
   Agent.prototype.key = function () {
     return this.toString();
@@ -310,7 +312,7 @@ var QGress = function (_, Kotlin) {
     var useLocationFix = false;
     if (this.isBusy_za3lpa$(World_getInstance().tick)) {
       if (useLocationFix && Util_getInstance().random() < 0.005) {
-        return this.goDoSomethingElse();
+        return this.doSomethingElse();
       }
       return this;
     }
@@ -332,7 +334,7 @@ var QGress = function (_, Kotlin) {
   Agent.prototype.doSomething = function () {
     var tmp$, tmp$_0, tmp$_1;
     if (!this.isAtActionPortal()) {
-      return this.goDoSomethingElse();
+      return this.doSomethingElse();
     }
     tmp$_0 = (tmp$ = this.actionPortal.owner) != null ? tmp$.faction : null;
     if (tmp$_0 == null)
@@ -364,135 +366,150 @@ var QGress = function (_, Kotlin) {
   };
   Agent.prototype.q_0 = function (value) {
     var tmp$;
-    var slider = Kotlin.isType(tmp$ = window.document.getElementById(value.name + 'Slider'), HTMLInputElement) ? tmp$ : throwCCE();
-    return slider.valueAsNumber / 100.0;
+    var id = value.name + 'Slider' + this.faction.nickName;
+    var slider = Kotlin.isType(tmp$ = window.document.getElementById(id), HTMLInputElement) ? tmp$ : throwCCE();
+    return slider.valueAsNumber * value.factor / 100.0;
   };
-  function Agent$doNeutralPortalAction$lambda(this$Agent) {
-    return function () {
-      return this$Agent.hackActionPortal();
-    };
-  }
-  function Agent$doNeutralPortalAction$lambda_0(this$Agent) {
-    return function () {
-      return this$Agent.deployPortal();
-    };
-  }
-  function Agent$doNeutralPortalAction$lambda_1(this$Agent) {
-    return function () {
-      return this$Agent.goDoSomethingElse();
-    };
-  }
-  Agent.prototype.doNeutralPortalAction = function () {
-    var hackQ = this.isHackPossible_0() ? this.q_0(QValue$Companion_getInstance().HACK) : -1.0;
-    var deployQ = this.isDeploymentPossible_0() ? this.q_0(QValue$Companion_getInstance().DEPLOY) : -1.0;
-    var qValues = listOf([to(hackQ, Agent$doNeutralPortalAction$lambda(this)), to(deployQ, Agent$doNeutralPortalAction$lambda_0(this)), to(0.1, Agent$doNeutralPortalAction$lambda_1(this))]);
-    return Util_getInstance().select_flnx62$(qValues)();
-  };
-  function Agent$doFriendlyPortalAction$lambda(this$Agent) {
-    return function () {
-      return this$Agent.hackActionPortal();
-    };
-  }
-  function Agent$doFriendlyPortalAction$lambda_0(this$Agent) {
-    return function () {
-      return this$Agent.deployPortal();
-    };
-  }
-  function Agent$doFriendlyPortalAction$lambda_1(this$Agent) {
-    return function () {
-      return this$Agent.createLink();
-    };
-  }
-  function Agent$doFriendlyPortalAction$lambda_2(this$Agent) {
-    return function () {
-      return this$Agent.goDoSomethingElse();
-    };
-  }
-  Agent.prototype.doFriendlyPortalAction = function () {
-    var hackQ = this.isHackPossible_0() ? this.q_0(QValue$Companion_getInstance().HACK) : -1.0;
-    var deployQ = this.isDeploymentPossible_0() ? this.q_0(QValue$Companion_getInstance().DEPLOY) : -1.0;
-    var linkQ = this.isLinkPossible() ? this.q_0(QValue$Companion_getInstance().LINK) : -1.0;
-    var qValues = listOf([to(hackQ, Agent$doFriendlyPortalAction$lambda(this)), to(deployQ, Agent$doFriendlyPortalAction$lambda_0(this)), to(linkQ, Agent$doFriendlyPortalAction$lambda_1(this)), to(0.1, Agent$doFriendlyPortalAction$lambda_2(this))]);
-    return Util_getInstance().select_flnx62$(qValues)();
-  };
-  function Agent$doEnemyPortalAction$lambda(this$Agent) {
-    return function () {
-      return this$Agent.hackActionPortal();
-    };
-  }
-  function Agent$doEnemyPortalAction$lambda_0(this$Agent) {
-    return function () {
-      return this$Agent.attackPortal();
-    };
-  }
-  function Agent$doEnemyPortalAction$lambda_1(this$Agent) {
-    return function () {
-      return this$Agent.goDoSomethingElse();
-    };
-  }
-  Agent.prototype.doEnemyPortalAction = function () {
-    var hackQ = this.isHackPossible_0() ? this.q_0(QValue$Companion_getInstance().HACK) : -1.0;
-    var attackQ = this.isAttackPossible_0() ? this.q_0(QValue$Companion_getInstance().ATTACK) : -1.0;
-    var qValues = listOf([to(hackQ, Agent$doEnemyPortalAction$lambda(this)), to(attackQ, Agent$doEnemyPortalAction$lambda_0(this)), to(0.1, Agent$doEnemyPortalAction$lambda_1(this))]);
-    return Util_getInstance().select_flnx62$(qValues)();
-  };
-  function Agent$goDoSomethingElse$lambda(this$Agent) {
-    return function () {
-      return this$Agent.rechargePortal();
-    };
-  }
-  function Agent$goDoSomethingElse$lambda_0(this$Agent) {
-    return function () {
-      return this$Agent.recycleItems();
-    };
-  }
-  function Agent$goDoSomethingElse$lambda_1(this$Agent) {
-    return function () {
-      return MovementUtil_getInstance().moveToCloseEnemyPortal_912u9o$(this$Agent);
-    };
-  }
-  function Agent$goDoSomethingElse$lambda_2(this$Agent) {
-    return function () {
-      return MovementUtil_getInstance().moveToMostLinkedEnemyPortal_912u9o$(this$Agent);
-    };
-  }
-  function Agent$goDoSomethingElse$lambda_3(this$Agent) {
-    return function () {
-      return MovementUtil_getInstance().moveToMostVulnerableEnemyPortal_912u9o$(this$Agent);
-    };
-  }
-  function Agent$goDoSomethingElse$lambda_4(this$Agent) {
+  function Agent$basicQvalues$lambda(this$Agent) {
     return function () {
       return MovementUtil_getInstance().moveToUncapturedPortal_912u9o$(this$Agent);
     };
   }
-  function Agent$goDoSomethingElse$lambda_5(this$Agent) {
+  function Agent$basicQvalues$lambda_0(this$Agent) {
     return function () {
-      return MovementUtil_getInstance().moveToFriendlyHighLevelPortal_912u9o$(this$Agent);
+      return this$Agent.hackActionPortal();
     };
   }
-  function Agent$goDoSomethingElse$lambda_6(this$Agent) {
+  function Agent$basicQvalues$lambda_1(this$Agent) {
+    return function () {
+      return this$Agent.recycleItems();
+    };
+  }
+  function Agent$basicQvalues$lambda_2(this$Agent) {
+    return function () {
+      return this$Agent.rechargePortal();
+    };
+  }
+  function Agent$basicQvalues$lambda_3(this$Agent) {
+    return function () {
+      return this$Agent.attackSomewhere_0();
+    };
+  }
+  function Agent$basicQvalues$lambda_4(this$Agent) {
+    return function () {
+      return this$Agent.moveElsewhere_0();
+    };
+  }
+  Agent.prototype.basicQvalues_0 = function () {
+    var captureQ = MovementUtil_getInstance().hasUncapturedPortals() ? this.q_0(QValue$Companion_getInstance().CAPTURE) : -1.0;
+    var hackQ = this.isHackPossible_0() ? this.q_0(QValue$Companion_getInstance().HACK) : -1.0;
+    var recycleQ = this.isDeploymentPossible_0() ? this.q_0(QValue$Companion_getInstance().RECYCLE) : -1.0;
+    var rechargeQ = this.isXmFilled() ? this.q_0(QValue$Companion_getInstance().RECHARGE) : -1.0;
+    var attackSomewhereQ = this.isAttackPossible_0() ? this.q_0(QValue$Companion_getInstance().ATTACK_SOMEHERE) : -1.0;
+    var moveElsewhereQ = this.q_0(QValue$Companion_getInstance().MOVE_ELSEWHERE);
+    return listOf([to(captureQ, Agent$basicQvalues$lambda(this)), to(hackQ, Agent$basicQvalues$lambda_0(this)), to(recycleQ, Agent$basicQvalues$lambda_1(this)), to(rechargeQ, Agent$basicQvalues$lambda_2(this)), to(attackSomewhereQ, Agent$basicQvalues$lambda_3(this)), to(moveElsewhereQ, Agent$basicQvalues$lambda_4(this))]);
+  };
+  function Agent$neutralQvalues$lambda(this$Agent) {
+    return function () {
+      return this$Agent.deployPortal();
+    };
+  }
+  Agent.prototype.neutralQvalues_0 = function () {
+    var basicValues = this.basicQvalues_0();
+    var deployQ = this.isDeploymentPossible_0() ? this.q_0(QValue$Companion_getInstance().DEPLOY) : -1.0;
+    return plus(basicValues, listOf_0(to(deployQ, Agent$neutralQvalues$lambda(this))));
+  };
+  function Agent$friendlyQvalues$lambda(this$Agent) {
+    return function () {
+      return this$Agent.deployPortal();
+    };
+  }
+  function Agent$friendlyQvalues$lambda_0(this$Agent) {
+    return function () {
+      return this$Agent.createLink();
+    };
+  }
+  Agent.prototype.friendlyQvalues_0 = function () {
+    var basicValues = this.basicQvalues_0();
+    var deployQ = this.isDeploymentPossible_0() ? this.q_0(QValue$Companion_getInstance().DEPLOY) : -1.0;
+    var linkQ = this.isLinkPossible() ? this.q_0(QValue$Companion_getInstance().LINK) : -1.0;
+    return plus(basicValues, listOf([to(deployQ, Agent$friendlyQvalues$lambda(this)), to(linkQ, Agent$friendlyQvalues$lambda_0(this))]));
+  };
+  function Agent$enemyQvalues$lambda(this$Agent) {
+    return function () {
+      return this$Agent.attackPortal();
+    };
+  }
+  Agent.prototype.enemyQvalues_0 = function () {
+    var basicValues = this.basicQvalues_0();
+    var attackQ = this.isLinkPossible() ? this.q_0(QValue$Companion_getInstance().ATTACK) : -1.0;
+    return plus(basicValues, listOf_0(to(attackQ, Agent$enemyQvalues$lambda(this))));
+  };
+  Agent.prototype.doSomethingElse = function () {
+    return Util_getInstance().select_4u7aq8$(this.basicQvalues_0(), this.defaultAction)();
+  };
+  Agent.prototype.doNeutralPortalAction = function () {
+    return Util_getInstance().select_4u7aq8$(this.neutralQvalues_0(), this.defaultAction)();
+  };
+  Agent.prototype.doFriendlyPortalAction = function () {
+    return Util_getInstance().select_4u7aq8$(this.friendlyQvalues_0(), this.defaultAction)();
+  };
+  Agent.prototype.doEnemyPortalAction = function () {
+    return Util_getInstance().select_4u7aq8$(this.enemyQvalues_0(), this.defaultAction)();
+  };
+  function Agent$moveElsewhere$lambda(this$Agent) {
     return function () {
       return MovementUtil_getInstance().moveToNearestPortal_912u9o$(this$Agent);
     };
   }
-  function Agent$goDoSomethingElse$lambda_7(this$Agent) {
+  function Agent$moveElsewhere$lambda_0(this$Agent) {
+    return function () {
+      return MovementUtil_getInstance().moveToFriendlyHighLevelPortal_912u9o$(this$Agent);
+    };
+  }
+  function Agent$moveElsewhere$lambda_1(this$Agent) {
     return function () {
       return MovementUtil_getInstance().moveToRandomPortal_912u9o$(this$Agent);
     };
   }
-  Agent.prototype.goDoSomethingElse = function () {
-    var rechargePortalQ = this.isXmFilled() ? this.q_0(QValue$Companion_getInstance().RECHARGE) : -1.0;
-    var recycleItemsQ = this.isXmBarEmpty() ? this.q_0(QValue$Companion_getInstance().RECYCLE) : -1.0;
-    var captureQ = MovementUtil_getInstance().hasUncapturedPortals() ? this.q_0(QValue$Companion_getInstance().CAPTURE) : -1.0;
+  function Agent$moveElsewhere$lambda_2(this$Agent) {
+    return function () {
+      return MovementUtil_getInstance().moveToNearestPortal_912u9o$(this$Agent);
+    };
+  }
+  Agent.prototype.moveElsewhere_0 = function () {
+    var moveToNearQ = this.q_0(QValue$Companion_getInstance().MOVE_TO_NEAR);
+    var moveToFriendlyQ = MovementUtil_getInstance().hasFriendlyPortals_912u9o$(this) ? this.q_0(QValue$Companion_getInstance().MOVE_TO_FRIENDLY) : -1.0;
+    var moveToRandomQ = this.q_0(QValue$Companion_getInstance().MOVE_TO_RANDOM);
+    var qValues = listOf([to(moveToNearQ, Agent$moveElsewhere$lambda(this)), to(moveToFriendlyQ, Agent$moveElsewhere$lambda_0(this)), to(moveToRandomQ, Agent$moveElsewhere$lambda_1(this))]);
+    return Util_getInstance().select_4u7aq8$(qValues, Agent$moveElsewhere$lambda_2(this))().copy_lmq102$(void 0, void 0, void 0, void 0, void 0, Action$Companion_getInstance().start_34yqkq$(ActionItem$Companion_getInstance().MOVE, World_getInstance().tick));
+  };
+  function Agent$attackSomewhere$lambda(this$Agent) {
+    return function () {
+      return MovementUtil_getInstance().moveToCloseEnemyPortal_912u9o$(this$Agent);
+    };
+  }
+  function Agent$attackSomewhere$lambda_0(this$Agent) {
+    return function () {
+      return MovementUtil_getInstance().moveToMostLinkedEnemyPortal_912u9o$(this$Agent);
+    };
+  }
+  function Agent$attackSomewhere$lambda_1(this$Agent) {
+    return function () {
+      return MovementUtil_getInstance().moveToMostVulnerableEnemyPortal_912u9o$(this$Agent);
+    };
+  }
+  function Agent$attackSomewhere$lambda_2(this$Agent) {
+    return function () {
+      return MovementUtil_getInstance().moveToNearestPortal_912u9o$(this$Agent);
+    };
+  }
+  Agent.prototype.attackSomewhere_0 = function () {
     var attackClosestQ = MovementUtil_getInstance().hasEnemyPortals_912u9o$(this) && this.isAttackPossible_0() ? this.q_0(QValue$Companion_getInstance().ATTACK_CLOSE) : -1.0;
     var attackMostLinkedQ = MovementUtil_getInstance().hasEnemyPortals_912u9o$(this) && this.isAttackPossible_0() ? this.q_0(QValue$Companion_getInstance().ATTACK_LINKS) : -1.0;
     var attackMostVulnerableQ = MovementUtil_getInstance().hasEnemyPortals_912u9o$(this) && this.isAttackPossible_0() ? this.q_0(QValue$Companion_getInstance().ATTACK_WEAK) : -1.0;
-    var moveToFriendlyQ = MovementUtil_getInstance().hasFriendlyPortals_912u9o$(this) ? this.q_0(QValue$Companion_getInstance().MOVE_TO_FRIENDLY) : -1.0;
-    var moveToNearQ = this.q_0(QValue$Companion_getInstance().MOVE_TO_NEAR);
-    var moveToRandomQ = this.q_0(QValue$Companion_getInstance().MOVE_TO_RANDOM);
-    var qValues = listOf([to(rechargePortalQ, Agent$goDoSomethingElse$lambda(this)), to(recycleItemsQ, Agent$goDoSomethingElse$lambda_0(this)), to(attackClosestQ, Agent$goDoSomethingElse$lambda_1(this)), to(attackMostLinkedQ, Agent$goDoSomethingElse$lambda_2(this)), to(attackMostVulnerableQ, Agent$goDoSomethingElse$lambda_3(this)), to(captureQ, Agent$goDoSomethingElse$lambda_4(this)), to(moveToFriendlyQ, Agent$goDoSomethingElse$lambda_5(this)), to(moveToNearQ, Agent$goDoSomethingElse$lambda_6(this)), to(moveToRandomQ, Agent$goDoSomethingElse$lambda_7(this))]);
-    return Util_getInstance().select_flnx62$(qValues)();
+    var qValues = listOf([to(attackClosestQ, Agent$attackSomewhere$lambda(this)), to(attackMostLinkedQ, Agent$attackSomewhere$lambda_0(this)), to(attackMostVulnerableQ, Agent$attackSomewhere$lambda_1(this))]);
+    return Util_getInstance().select_4u7aq8$(qValues, Agent$attackSomewhere$lambda_2(this))().copy_lmq102$(void 0, void 0, void 0, void 0, void 0, Action$Companion_getInstance().start_34yqkq$(ActionItem$Companion_getInstance().ATTACK, World_getInstance().tick));
   };
   Agent.prototype.moveCloserToDestinationPortal_0 = function () {
     var tmp$;
@@ -605,16 +622,19 @@ var QGress = function (_, Kotlin) {
   };
   function Agent$attackPortal$findExactDestination(this$Agent) {
     return function () {
+      var tmp$;
       if (this$Agent.actionPortal.calcHealth() > 0.5) {
         return this$Agent.actionPortal.location;
       }
       var maybeDestination = this$Agent.actionPortal.findStrongestResoPos();
-      if (maybeDestination != null && maybeDestination.isPassable()) {
-        return maybeDestination;
+      var isPassable = maybeDestination != null && maybeDestination.isPassable();
+      if (isPassable) {
+        tmp$ = ensureNotNull(maybeDestination);
       }
        else {
-        return this$Agent.actionPortal.location;
+        tmp$ = this$Agent.actionPortal.location;
       }
+      return tmp$;
     };
   }
   function Agent$attackPortal$doAttack$lambda(it) {
@@ -650,7 +670,7 @@ var QGress = function (_, Kotlin) {
         tmp$_0 = null;
       var selectedXmps = tmp$_0;
       if (selectedXmps == null || selectedXmps.isEmpty()) {
-        return this$Agent.goDoSomethingElse();
+        return this$Agent.doSomethingElse();
       }
       var tmp$_1;
       tmp$_1 = selectedXmps.iterator();
@@ -695,10 +715,7 @@ var QGress = function (_, Kotlin) {
     if (!((tmp$ = this.action.item) != null ? tmp$.equals(ActionItem$Companion_getInstance().ATTACK) : null)) {
       this.copy_lmq102$(void 0, void 0, void 0, void 0, void 0, Action$Companion_getInstance().start_34yqkq$(ActionItem$Companion_getInstance().ATTACK, World_getInstance().tick), void 0, findExactDestination());
     }
-    if (!this.isArrived_0()) {
-      return this.moveCloserInRange();
-    }
-    return doAttack();
+    return !this.isArrived_0() ? this.moveCloserInRange() : doAttack();
   };
   function Agent$deployPortal$findExactDestination(this$Agent) {
     return function () {
@@ -730,7 +747,7 @@ var QGress = function (_, Kotlin) {
   function Agent$deployPortal$doDeploy(this$Agent) {
     return function () {
       if (this$Agent.actionPortal.isEnemyOf_912u9o$(this$Agent)) {
-        return this$Agent.goDoSomethingElse();
+        return this$Agent.doSomethingElse();
       }
       var allowedResoLevels = this$Agent.actionPortal.findAllowedResoLevels_912u9o$(this$Agent);
       var destination = ArrayList_init(allowedResoLevels.size);
@@ -1301,6 +1318,11 @@ var QGress = function (_, Kotlin) {
       new Agent$Companion();
     }
     return Agent$Companion_instance;
+  }
+  function Agent$defaultAction$lambda(this$Agent) {
+    return function () {
+      return this$Agent.moveElsewhere_0();
+    };
   }
   Agent.$metadata$ = {
     kind: Kind_CLASS,
@@ -2179,30 +2201,33 @@ var QGress = function (_, Kotlin) {
   NonFaction.prototype.equals = function (other) {
     return this === other || (other !== null && (typeof other === 'object' && (Object.getPrototypeOf(this) === Object.getPrototypeOf(other) && (Kotlin.equals(this.pos, other.pos) && Kotlin.equals(this.speed, other.speed) && Kotlin.equals(this.destination, other.destination) && Kotlin.equals(this.vectorField, other.vectorField) && Kotlin.equals(this.busyUntil, other.busyUntil)))));
   };
-  function QValue(name) {
+  function QValue(name, factor) {
     QValue$Companion_getInstance();
     this.name = name;
+    this.factor = factor;
     this.sliderId = this.name + 'Slider';
-    this.unitLabel = '% ' + this.name;
+    this.unitLabel = '% ';
   }
   function QValue$Companion() {
     QValue$Companion_instance = this;
-    this.HACK = new QValue('Hack');
-    this.DEPLOY = new QValue('Deploy');
-    this.LINK = new QValue('Link');
-    this.ATTACK = new QValue('Attack');
-    this.RECHARGE = new QValue('Recharge');
-    this.RECYCLE = new QValue('Recycle');
-    this.CAPTURE = new QValue('Capture');
-    this.ATTACK_CLOSE = new QValue('Attack Close');
-    this.ATTACK_LINKS = new QValue('Attack Links');
-    this.ATTACK_WEAK = new QValue('Attack Weak');
-    this.MOVE_TO_FRIENDLY = new QValue('Move To Friendly');
-    this.MOVE_TO_NEAR = new QValue('Move To Near');
-    this.MOVE_TO_RANDOM = new QValue('Move To Random');
+    this.CAPTURE = new QValue('Capture', 1.0);
+    this.HACK = new QValue('Hack', 1.0);
+    this.DEPLOY = new QValue('Deploy', 1.0);
+    this.LINK = new QValue('Link', 1.0);
+    this.RECHARGE = new QValue('Recharge', 0.2);
+    this.RECYCLE = new QValue('Recycle', 0.2);
+    this.ATTACK = new QValue('Attack', 1.0);
+    this.ATTACK_SOMEHERE = new QValue('Attack Another Portal', 0.01);
+    this.ATTACK_CLOSE = new QValue('- Closest', 1.0);
+    this.ATTACK_LINKS = new QValue('- Most Linked', 1.0);
+    this.ATTACK_WEAK = new QValue('- Weakest', 1.0);
+    this.MOVE_ELSEWHERE = new QValue('Move To Another Portal', 0.01);
+    this.MOVE_TO_FRIENDLY = new QValue('- Friendly', 1.0);
+    this.MOVE_TO_NEAR = new QValue('- Nearest', 1.0);
+    this.MOVE_TO_RANDOM = new QValue('- Random', 1.0);
   }
   QValue$Companion.prototype.values = function () {
-    return listOf([this.HACK, this.DEPLOY, this.LINK, this.ATTACK, this.RECHARGE, this.RECYCLE, this.CAPTURE, this.ATTACK_CLOSE, this.ATTACK_LINKS, this.ATTACK_WEAK, this.MOVE_TO_FRIENDLY, this.MOVE_TO_NEAR, this.MOVE_TO_RANDOM]);
+    return listOf([this.CAPTURE, this.HACK, this.DEPLOY, this.LINK, this.ATTACK, this.RECHARGE, this.RECYCLE, this.ATTACK_SOMEHERE, this.ATTACK_CLOSE, this.ATTACK_LINKS, this.ATTACK_WEAK, this.MOVE_ELSEWHERE, this.MOVE_TO_NEAR, this.MOVE_TO_FRIENDLY, this.MOVE_TO_RANDOM]);
   };
   QValue$Companion.$metadata$ = {
     kind: Kind_OBJECT,
@@ -2224,19 +2249,23 @@ var QGress = function (_, Kotlin) {
   QValue.prototype.component1 = function () {
     return this.name;
   };
-  QValue.prototype.copy_61zpoe$ = function (name) {
-    return new QValue(name === void 0 ? this.name : name);
+  QValue.prototype.component2 = function () {
+    return this.factor;
+  };
+  QValue.prototype.copy_io5o9c$ = function (name, factor) {
+    return new QValue(name === void 0 ? this.name : name, factor === void 0 ? this.factor : factor);
   };
   QValue.prototype.toString = function () {
-    return 'QValue(name=' + Kotlin.toString(this.name) + ')';
+    return 'QValue(name=' + Kotlin.toString(this.name) + (', factor=' + Kotlin.toString(this.factor)) + ')';
   };
   QValue.prototype.hashCode = function () {
     var result = 0;
     result = result * 31 + Kotlin.hashCode(this.name) | 0;
+    result = result * 31 + Kotlin.hashCode(this.factor) | 0;
     return result;
   };
   QValue.prototype.equals = function (other) {
-    return this === other || (other !== null && (typeof other === 'object' && (Object.getPrototypeOf(this) === Object.getPrototypeOf(other) && Kotlin.equals(this.name, other.name))));
+    return this === other || (other !== null && (typeof other === 'object' && (Object.getPrototypeOf(this) === Object.getPrototypeOf(other) && (Kotlin.equals(this.name, other.name) && Kotlin.equals(this.factor, other.factor)))));
   };
   function Skills(speed, deployPrecision, glyphSkill, reliability) {
     Skills$Companion_getInstance();
@@ -7372,8 +7401,10 @@ var QGress = function (_, Kotlin) {
       $receiver.fillStyle = '#00000077';
       $receiver.fillRect(0.0, 0.0, w, topOffset);
       $receiver.fillRect(0.0, botOffset, w, h);
-      var qSliderHeight = 13 + 4 | 0;
-      $receiver.fillRect(0.0, topOffset, 233.0, qSliderHeight * (QValue$Companion_getInstance().values().size + 1.0));
+      var qSliderHeight = 13 + 5 | 0;
+      var qSliderDivHeight = qSliderHeight * (QValue$Companion_getInstance().values().size + 1.0);
+      var qSliderDivWidth = 400.0;
+      $receiver.fillRect(0.0, topOffset, qSliderDivWidth, qSliderDivHeight);
       $receiver.closePath();
     }
   };
@@ -8106,13 +8137,13 @@ var QGress = function (_, Kotlin) {
   }
   function HtmlUtil$load$lambda$lambda_0(this$, closure$volumeSliderValue) {
     return function (f) {
-      closure$volumeSliderValue.innerHTML = this$.value + '% VOLUME';
+      closure$volumeSliderValue.innerHTML = this$.value + '% SOUND VOLUME';
       return null;
     };
   }
-  function HtmlUtil$load$lambda$lambda_1(closure$slider, closure$it, closure$sliderValue) {
+  function HtmlUtil$load$lambda$lambda$lambda(closure$slider, closure$qValue, closure$sliderValue) {
     return function (f) {
-      closure$sliderValue.innerHTML = closure$slider.value + closure$it.unitLabel;
+      closure$sliderValue.innerHTML = closure$slider.value + closure$qValue.unitLabel;
       return null;
     };
   }
@@ -8178,21 +8209,31 @@ var QGress = function (_, Kotlin) {
     tmp$_7 = QValue$Companion_getInstance().values().iterator();
     while (tmp$_7.hasNext()) {
       var element = tmp$_7.next();
-      var tmp$_8, tmp$_9, tmp$_10;
+      var tmp$_8, tmp$_9;
       var sliderDiv = Kotlin.isType(tmp$_8 = document.createElement('div'), HTMLDivElement) ? tmp$_8 : throwCCE();
-      var slider = Kotlin.isType(tmp$_9 = document.createElement('input'), HTMLInputElement) ? tmp$_9 : throwCCE();
-      slider.id = element.sliderId;
-      slider.type = 'range';
-      slider.min = '0';
-      slider.max = '100';
-      slider.value = '50';
-      addClass(slider, ['slider', 'qSlider']);
-      var sliderValue = Kotlin.isType(tmp$_10 = document.createElement('span'), HTMLSpanElement) ? tmp$_10 : throwCCE();
-      addClass(sliderValue, ['qSliderLabel']);
-      slider.oninput = HtmlUtil$load$lambda$lambda_1(slider, element, sliderValue);
-      sliderValue.innerHTML = slider.value + element.unitLabel;
-      sliderDiv.append(slider);
-      sliderDiv.append(sliderValue);
+      var tmp$_10;
+      tmp$_10 = Faction$Companion_getInstance().factionValues().iterator();
+      while (tmp$_10.hasNext()) {
+        var element_0 = tmp$_10.next();
+        var tmp$_11, tmp$_12;
+        var slider = Kotlin.isType(tmp$_11 = document.createElement('input'), HTMLInputElement) ? tmp$_11 : throwCCE();
+        slider.id = element.sliderId + element_0.nickName;
+        slider.type = 'range';
+        slider.min = '0';
+        slider.max = '100';
+        slider.value = '50';
+        addClass(slider, ['slider', 'qSlider', element_0.abbr.toLowerCase() + 'Slider']);
+        var sliderValue = Kotlin.isType(tmp$_12 = document.createElement('span'), HTMLSpanElement) ? tmp$_12 : throwCCE();
+        addClass(sliderValue, ['qSliderLabel', element_0.abbr.toLowerCase() + 'Label']);
+        slider.oninput = HtmlUtil$load$lambda$lambda$lambda(slider, element, sliderValue);
+        sliderValue.innerHTML = slider.value + element.unitLabel;
+        sliderDiv.append(slider);
+        sliderDiv.append(sliderValue);
+      }
+      var label = Kotlin.isType(tmp$_9 = document.createElement('span'), HTMLSpanElement) ? tmp$_9 : throwCCE();
+      addClass(label, ['qSliderTextLabel']);
+      label.innerHTML = element.name;
+      sliderDiv.append(label);
       qDiv.append(sliderDiv);
     }
     controlDiv.append(qDiv);
@@ -9307,7 +9348,7 @@ var QGress = function (_, Kotlin) {
     return this.closure$comparison(a, b);
   };
   Comparator$ObjectLiteral_18.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
-  Util.prototype.select_flnx62$ = function (probabilityList) {
+  Util.prototype.select_4u7aq8$ = function (probabilityList, default_0) {
     var destination = ArrayList_init();
     var tmp$;
     tmp$ = probabilityList.iterator();
@@ -9317,6 +9358,9 @@ var QGress = function (_, Kotlin) {
         destination.add_11rb$(element);
     }
     var list = destination;
+    if (list.isEmpty()) {
+      return default_0;
+    }
     var tmp$_0;
     var sum = 0.0;
     tmp$_0 = list.iterator();
@@ -9346,7 +9390,7 @@ var QGress = function (_, Kotlin) {
     var separator = this.random() < 0.3 ? '-' : ' ';
     var name = this.generateName_0(3, 5);
     var values = listOf([to(1.0, ''), to(0.15, separator + 'Portal'), to(0.05, separator + 'Square'), to(0.1, separator + 'Street'), to(0.07, separator + 'Fountain'), to(0.08, separator + 'Park'), to(0.03, separator + 'Station'), to(0.02, separator + 'House'), to(0.01, separator + 'Memorial'), to(0.01, separator + 'Museum')]);
-    return name + Util_getInstance().select_flnx62$(values);
+    return name + Util_getInstance().select_4u7aq8$(values, '');
   };
   Util.prototype.generateAgentName = function () {
     var name = this.generateName_0(3, 6);
@@ -9360,14 +9404,14 @@ var QGress = function (_, Kotlin) {
   };
   Util.prototype.generateName_0 = function (minLength, maxLength) {
     var length = minLength + this.randomInt_za3lpa$(maxLength - minLength | 0) | 0;
-    var firstLetter = unboxChar(this.select_flnx62$(this.generateFirstSelection_0()));
+    var firstLetter = unboxChar(this.select_4u7aq8$(this.generateFirstSelection_0(), toBoxedChar(32)));
     var $receiver = new IntRange(1, length);
     var destination = ArrayList_init(collectionSizeOrDefault($receiver, 10));
     var tmp$;
     tmp$ = $receiver.iterator();
     while (tmp$.hasNext()) {
       var item = tmp$.next();
-      destination.add_11rb$(this.select_flnx62$(this.generateSelection_0()));
+      destination.add_11rb$(this.select_4u7aq8$(this.generateSelection_0(), toBoxedChar(32)));
     }
     var other = joinToString(destination, '');
     var name = String.fromCharCode(firstLetter) + other;

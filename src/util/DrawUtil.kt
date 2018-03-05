@@ -99,8 +99,10 @@ object DrawUtil {
                 fillStyle = "#00000077"
                 fillRect(0.0, 0.0, w, topOffset)
                 fillRect(0.0, botOffset, w, h)
-                val qSliderHeight = 13 + 4 //defined in CSS
-                fillRect(0.0, topOffset, 233.0, qSliderHeight * (QValue.values().count() + 1.0))
+                val qSliderHeight = 13 + 5 //defined in CSS
+                val qSliderDivHeight = qSliderHeight * (QValue.values().count() + 1.0)
+                val qSliderDivWidth = 400.0
+                fillRect(0.0, topOffset, qSliderDivWidth, qSliderDivHeight)
                 closePath()
             }
         }

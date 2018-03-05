@@ -16,11 +16,15 @@
     margin: 0 auto;
 }
 
-html, body {
+html {
+    background: linear-gradient(to right, #03dc03, #0088ff);
+    overflow: hidden;
+}
+
+body {
     width: 1200px; /* Compare to dimensions defined in Dimensions.kt */
     height: 800px;
     overflow: hidden;
-    background: #777777;
 }
 
 .container {
@@ -91,7 +95,26 @@ html, body {
 .res {
     background: #0088ff;
 }
-
+.enlLabel {
+    color: #03dc03 !important;
+}
+.resLabel {
+    color: #0088ff !important;
+}
+.enlSlider {}
+.enlSlider::-moz-range-thumb {
+    background: #03dc03 !important;
+}
+.enlSlider::-webkit-slider-thumb {
+    background: #03dc03 !important;
+}
+.resSlider {}
+.resSlider::-moz-range-thumb {
+    background: #0088ff !important;
+}
+.resSlider::-webkit-slider-thumb {
+    background: #0088ff !important;
+}
 .button {
     height: 21px;
     margin-top: 5px;
@@ -168,6 +191,18 @@ html, body {
 .qSliderLabel {
     font-size: 13px;
     height: 13px;
+    width: 25px !important;
+    text-align: right;
+    display: inline-block;
+    margin-top: 2px;
+    margin-bottom: 2px;
+    color: #ffffff;
+    text-shadow: -1px 0px black, 0px 1px black, 1px 0px black, 0px -1px black;
+}
+.qSliderTextLabel {
+    font-size: 13px;
+    height: 13px;
+    margin-left: 5px;
     margin-top: 2px;
     margin-bottom: 2px;
     color: #ffffff;

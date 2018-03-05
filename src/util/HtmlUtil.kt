@@ -128,7 +128,7 @@ object HtmlUtil {
             addClass("slider", "volumeSlider")
             val volumeSliderValue = document.createElement("span") as HTMLSpanElement
             volumeSliderValue.addClass("sliderLabel")
-            oninput = { _ -> volumeSliderValue.innerHTML = value + "% VOLUME"; null }
+            oninput = { _ -> volumeSliderValue.innerHTML = value + "% SOUND VOLUME"; null }
             volumeSliderValue.innerHTML = value + "% VOLUME"
             buttonDiv.append(volumeSlider)
             buttonDiv.append(volumeSliderValue)
@@ -137,21 +137,27 @@ object HtmlUtil {
 
         val qDiv = document.createElement("div") as HTMLDivElement
         qDiv.addClass("qValues")
-        QValue.values().forEach {
+        QValue.values().forEach { qValue ->
             val sliderDiv = document.createElement("div") as HTMLDivElement
-            val slider = document.createElement("input") as HTMLInputElement
-            slider.id = it.sliderId
-            slider.type = "range"
-            slider.min = "0"
-            slider.max = "100"
-            slider.value = "50"
-            slider.addClass("slider", "qSlider")
-            val sliderValue = document.createElement("span") as HTMLSpanElement
-            sliderValue.addClass("qSliderLabel")
-            slider.oninput = { _ -> sliderValue.innerHTML = slider.value + it.unitLabel; null }
-            sliderValue.innerHTML = slider.value + it.unitLabel
-            sliderDiv.append(slider)
-            sliderDiv.append(sliderValue)
+            Faction.factionValues().forEach { faction ->
+                val slider = document.createElement("input") as HTMLInputElement
+                slider.id = qValue.sliderId + faction.nickName
+                slider.type = "range"
+                slider.min = "0"
+                slider.max = "100"
+                slider.value = "50"
+                slider.addClass("slider", "qSlider", faction.abbr.toLowerCase() + "Slider")
+                val sliderValue = document.createElement("span") as HTMLSpanElement
+                sliderValue.addClass("qSliderLabel", faction.abbr.toLowerCase() + "Label")
+                slider.oninput = { _ -> sliderValue.innerHTML = slider.value + qValue.unitLabel; null }
+                sliderValue.innerHTML = slider.value + qValue.unitLabel
+                sliderDiv.append(slider)
+                sliderDiv.append(sliderValue)
+            }
+            val label = document.createElement("span") as HTMLSpanElement
+            label.addClass("qSliderTextLabel")
+            label.innerHTML = qValue.name
+            sliderDiv.append(label)
             qDiv.append(sliderDiv)
         }
         controlDiv.append(qDiv)
