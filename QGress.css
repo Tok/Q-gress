@@ -277,3 +277,56 @@ body {
 .mapboxgl-ctrl-bottom-right {
     z-index: 999 !important;
 }
+
+/* See: http://aleclownes.com/2017/02/01/crt-display.html */
+.crt::before {
+    content: " ";
+    display: block;
+    position: absolute;
+    top: 0; left: 0; bottom: 0; right: 0;
+    background: linear-gradient(
+      rgba(16, 16, 16, 0) 50%,
+      rgba(0, 0, 0, 0.20) 50%),
+      linear-gradient(
+          90deg,
+          rgba(255, 0, 0, 0.05),
+          rgba(0, 255, 0, 0.05),
+          rgba(0, 0, 255, 0.05)
+      );
+    z-index: 2;
+    background-size: 100% 2px, 3px 100%;
+    pointer-events: none;
+}
+@keyframes flicker {
+      0% { opacity: 0.28; }
+      5% { opacity: 0.75; }
+     10% { opacity: 0.24; }
+     15% { opacity: 0.91; }
+     20% { opacity: 0.18; }
+     25% { opacity: 0.84; }
+     30% { opacity: 0.36; }
+     35% { opacity: 0.68; }
+     40% { opacity: 0.27; }
+     45% { opacity: 0.85; }
+     50% { opacity: 0.96; }
+     55% { opacity: 0.08; }
+     60% { opacity: 0.20; }
+     65% { opacity: 0.72; }
+     70% { opacity: 0.53; }
+     75% { opacity: 0.37; }
+     80% { opacity: 0.71; }
+     85% { opacity: 0.30; }
+     90% { opacity: 0.70; }
+    100% { opacity: 0.24; }
+}
+.crt::after {
+    content: " ";
+    display: block;
+    position: absolute;
+    top: 0; left: 0; bottom: 0; right: 0;
+    background: rgba(16, 16, 16, 0.07);
+    opacity: 0;
+    z-index: 2;
+    pointer-events: none;
+    animation: flicker 0.17s infinite;
+}
