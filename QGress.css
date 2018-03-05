@@ -76,6 +76,10 @@ body {
     visibility: hidden;
     display: none;
 }
+.mapboxgl-ctrl-top-right {
+    visibility: hidden;
+    display: none;
+}
 .top {
     top: -100%;
 }

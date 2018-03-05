@@ -16,7 +16,7 @@ object Dimensions {
     val linkLineWidth = 3.0
 
     val topActionOffset = 105.0
-    val botActionOffset = 174.0
+    val botActionOffset = 160.0
 
     val leftOffset = maxDeploymentRange.toInt() * Constants.phi //no portals will be placed here
     val rightOffset = maxDeploymentRange.toInt() * Constants.phi

@@ -2378,7 +2378,7 @@ var QGress = function (_, Kotlin) {
     this.startSmurfs = 50;
     this.maxFrogs = 200;
     this.maxSmurfs = 200;
-    this.startNonFaction = 500;
+    this.startNonFaction = numberToInt((this.maxFrogs + this.maxSmurfs | 0) * 0.5 * Constants_getInstance().phi);
     this.isAutostart = true;
     this.isHighlighActionLimit = true;
     this.vectorSmoothCount = 5;
@@ -2442,7 +2442,7 @@ var QGress = function (_, Kotlin) {
     this.agentDeployCircleLineWidth = 1.0;
     this.linkLineWidth = 3.0;
     this.topActionOffset = 105.0;
-    this.botActionOffset = 174.0;
+    this.botActionOffset = 160.0;
     this.leftOffset = numberToInt(this.maxDeploymentRange) * Constants_getInstance().phi;
     this.rightOffset = numberToInt(this.maxDeploymentRange) * Constants_getInstance().phi;
     this.topOffset = numberToInt(this.maxDeploymentRange) * Constants_getInstance().phi;
@@ -7392,10 +7392,10 @@ var QGress = function (_, Kotlin) {
       this.highlightMouse_0(ensureNotNull(World_getInstance().mousePos));
     }
     if (Config_getInstance().isHighlighActionLimit) {
+      var w = Dimensions_getInstance().width;
+      var h = Dimensions_getInstance().height;
       var topOffset = Dimensions_getInstance().topActionOffset;
-      var botOffset = window.innerHeight - Dimensions_getInstance().botActionOffset;
-      var w = World_getInstance().can.width;
-      var h = World_getInstance().can.height;
+      var botOffset = h - Dimensions_getInstance().botActionOffset;
       var $receiver = World_getInstance().ctx();
       $receiver.beginPath();
       $receiver.fillStyle = '#00000077';

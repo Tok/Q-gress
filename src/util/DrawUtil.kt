@@ -90,10 +90,10 @@ object DrawUtil {
             highlightMouse(World.mousePos!!)
         }
         if (Config.isHighlighActionLimit) {
+            val w = Dimensions.width.toDouble()
+            val h = Dimensions.height.toDouble()
             val topOffset = Dimensions.topActionOffset
-            val botOffset = window.innerHeight - Dimensions.botActionOffset
-            val w = World.can.width.toDouble()
-            val h = World.can.height.toDouble()
+            val botOffset = h - Dimensions.botActionOffset
             with(World.ctx()) {
                 beginPath()
                 fillStyle = "#00000077"
