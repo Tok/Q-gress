@@ -2378,7 +2378,7 @@ var QGress = function (_, Kotlin) {
     this.startSmurfs = 50;
     this.maxFrogs = 200;
     this.maxSmurfs = 200;
-    this.startNonFaction = numberToInt((this.maxFrogs + this.maxSmurfs | 0) * 0.5 * Constants_getInstance().phi);
+    this.startNonFaction = numberToInt((this.maxFrogs + this.maxSmurfs | 0) * 0.5 / Constants_getInstance().phi);
     this.isAutostart = true;
     this.isHighlighActionLimit = true;
     this.vectorSmoothCount = 5;
@@ -6223,8 +6223,8 @@ var QGress = function (_, Kotlin) {
   };
   Com.prototype.draw_f69bme$ = function (ctx) {
     var messages = toList_0(this.messages);
-    var xPos = World_getInstance().can.width - Dimensions_getInstance().comRightOffset | 0;
-    var yFixOffset = World_getInstance().can.height - Dimensions_getInstance().comBottomOffset | 0;
+    var xPos = Dimensions_getInstance().width - Dimensions_getInstance().comRightOffset | 0;
+    var yFixOffset = Dimensions_getInstance().height - Dimensions_getInstance().comBottomOffset | 0;
     var yOffset = (Dimensions_getInstance().comFontSize * 3 | 0) / 2 | 0;
     var reversed_0 = reversed(messages);
     var tmp$, tmp$_0;
@@ -6761,19 +6761,19 @@ var QGress = function (_, Kotlin) {
     this.defaultLat_0 = 47.4220454;
     this.defaultLng_0 = 9.3733032;
     this.latDist_0 = 0.002;
-    this.lngDist_0 = this.latDist_0 * World_getInstance().can.height / World_getInstance().can.width;
+    this.lngDist_0 = this.latDist_0 * Dimensions_getInstance().height / Dimensions_getInstance().width;
     this.minLat_0 = this.defaultLat_0 - this.latDist_0;
     this.minLng_0 = this.defaultLng_0 + this.lngDist_0;
-    this.pixelPartLat_0 = this.latDist_0 / World_getInstance().can.width;
-    this.pixelPartLng_0 = this.lngDist_0 / World_getInstance().can.height;
+    this.pixelPartLat_0 = this.latDist_0 / Dimensions_getInstance().width;
+    this.pixelPartLng_0 = this.lngDist_0 / Dimensions_getInstance().height;
     this.xMax_0 = numberToInt(Dimensions_getInstance().maxDeploymentRange) * 2 | 0;
   }
   Coords$Companion.prototype.createRandomNoOffset_0 = function () {
-    return new Coords(Util_getInstance().randomInt_za3lpa$(World_getInstance().can.width), Util_getInstance().randomInt_za3lpa$(World_getInstance().can.height));
+    return new Coords(Util_getInstance().randomInt_za3lpa$(Dimensions_getInstance().width), Util_getInstance().randomInt_za3lpa$(Dimensions_getInstance().height));
   };
   Coords$Companion.prototype.createRandom_0 = function () {
-    var x = Dimensions_getInstance().leftOffset + Util_getInstance().randomInt_za3lpa$(numberToInt(World_getInstance().can.width - Dimensions_getInstance().leftOffset - Dimensions_getInstance().rightOffset));
-    var y = Dimensions_getInstance().topOffset + Util_getInstance().randomInt_za3lpa$(numberToInt(World_getInstance().can.height - Dimensions_getInstance().topOffset - Dimensions_getInstance().botOffset));
+    var x = Dimensions_getInstance().leftOffset + Util_getInstance().randomInt_za3lpa$(numberToInt(Dimensions_getInstance().width - Dimensions_getInstance().leftOffset - Dimensions_getInstance().rightOffset));
+    var y = Dimensions_getInstance().topOffset + Util_getInstance().randomInt_za3lpa$(numberToInt(Dimensions_getInstance().height - Dimensions_getInstance().topOffset - Dimensions_getInstance().botOffset));
     return new Coords(numberToInt(x), numberToInt(y));
   };
   Coords$Companion.prototype.createRandomForPortal = function () {
@@ -7352,8 +7352,8 @@ var QGress = function (_, Kotlin) {
   DrawUtil.prototype.drawLoadingText_61zpoe$ = function (text) {
     this.clearUserInterface();
     var fontSize = 21;
-    var y = World_getInstance().uiCan.height / 2 | 0;
-    var x = (World_getInstance().uiCan.width - (Kotlin.imul(text.length, fontSize) / 2 | 0) | 0) / 2 | 0;
+    var y = Dimensions_getInstance().height / 2 | 0;
+    var x = (Dimensions_getInstance().width - (Kotlin.imul(text.length, fontSize) / 2 | 0) | 0) / 2 | 0;
     var lineWidth = 3.0;
     var strokeStyle = Colors_getInstance().black;
     this.strokeText_lowmm9$(World_getInstance().uiCtx(), new Coords(x, y), text, Colors_getInstance().white, fontSize, this.AMARILLO, lineWidth, strokeStyle);
@@ -7557,7 +7557,7 @@ var QGress = function (_, Kotlin) {
     var yStep = (fontSize * 3 | 0) / 2 | 0;
     var xStep = 55;
     var drawRow = DrawUtil$drawStats$drawRow(yStep, drawCell);
-    var xPos = World_getInstance().can.width - rightXOffset | 0;
+    var xPos = Dimensions_getInstance().width - rightXOffset | 0;
     var $receiver = World_getInstance();
     var tmp$;
     tmp$ = (new IntRange(1, 4)).iterator();
@@ -7581,7 +7581,7 @@ var QGress = function (_, Kotlin) {
     return Unit;
   };
   DrawUtil.prototype.drawTick = function () {
-    var pos = new Coords(13, World_getInstance().uiCan.height - Dimensions_getInstance().tickBottomOffset | 0);
+    var pos = new Coords(13, Dimensions_getInstance().height - Dimensions_getInstance().tickBottomOffset | 0);
     var half = Dimensions_getInstance().tickFontSize / 2 | 0;
     World_getInstance().uiCtx().fillStyle = '#00000077';
     World_getInstance().uiCtx().fillRect(pos.xx() - 8, pos.yy() - half - 1, 164.0, Dimensions_getInstance().tickFontSize + 2.0);
@@ -7653,7 +7653,7 @@ var QGress = function (_, Kotlin) {
     var enlPart = numberToInt(round(100.0 * enlMu / totalMu));
     var resPart = numberToInt(round(100.0 * resMu / totalMu));
     var xPos = Dimensions_getInstance().muLeftOffset;
-    var yPos = World_getInstance().can.height - Dimensions_getInstance().muBottomOffset | 0;
+    var yPos = Dimensions_getInstance().height - Dimensions_getInstance().muBottomOffset | 0;
     var enlPos = new Coords(xPos, yPos - (Dimensions_getInstance().muFontSize * 2 | 0) | 0);
     var resPos = new Coords(xPos, yPos);
     drawMuRect(enlPos, enlPart, Faction$ENL_getInstance(), enlMu);
@@ -7763,7 +7763,7 @@ var QGress = function (_, Kotlin) {
     ctx.globalAlpha = 1.0;
     var xPos = Dimensions_getInstance().topAgentsLeftOffset;
     var yOffset = (Dimensions_getInstance().topAgentsFontSize * 3 | 0) / 2 | 0;
-    var yFixOffset = World_getInstance().can.height - Dimensions_getInstance().topAgentsBottomOffset - Kotlin.imul(Config_getInstance().topAgentsMessageLimit, yOffset) | 0;
+    var yFixOffset = Dimensions_getInstance().height - Dimensions_getInstance().topAgentsBottomOffset - Kotlin.imul(Config_getInstance().topAgentsMessageLimit, yOffset) | 0;
     var headerPos = new Coords(xPos, yFixOffset - yOffset | 0);
     var top = take(sortedWith(toList_0(World_getInstance().allAgents), new Comparator$ObjectLiteral_15(compareBy$lambda_14(DrawUtil$drawTopAgents$lambda))), Config_getInstance().topAgentsMessageLimit);
     var headerText = 'Agent AP                                                                 ' + 'XMPs                         ' + 'Resos                       ' + 'Cubes               ' + 'Keys';
@@ -7831,7 +7831,7 @@ var QGress = function (_, Kotlin) {
     };
   }
   DrawUtil.prototype.drawVectorField_v4iyov$ = function (vectorField) {
-    World_getInstance().bgCtx().clearRect(0.0, 0.0, World_getInstance().can.width, World_getInstance().can.height);
+    World_getInstance().bgCtx().clearRect(0.0, 0.0, Dimensions_getInstance().width, Dimensions_getInstance().height);
     var w = PathUtil_getInstance().RESOLUTION - 1 | 0;
     var h = PathUtil_getInstance().RESOLUTION - 1 | 0;
     World_getInstance();
@@ -8244,8 +8244,8 @@ var QGress = function (_, Kotlin) {
   };
   HtmlUtil.prototype.initWorld_0 = function () {
     var noiseAlpha = 0.8;
-    var w = World_getInstance().can.width;
-    var h = World_getInstance().can.height;
+    var w = Dimensions_getInstance().width;
+    var h = Dimensions_getInstance().height;
     World_getInstance().noiseMap = ImprovedNoise_getInstance().generateEdgeMap_224j3y$(w, h);
     World_getInstance().noiseImage = World_getInstance().createNoiseImage_bd1o91$(World_getInstance().noiseMap, w, h, noiseAlpha);
     this.resetInterval_0();
@@ -8295,18 +8295,18 @@ var QGress = function (_, Kotlin) {
     return this.isBlockedByMapbox_lfj9be$(pos);
   };
   HtmlUtil.prototype.isInPositionArea_0 = function (pos) {
-    var w = World_getInstance().can.width;
+    var w = Dimensions_getInstance().width;
     var size = 52;
     var area = new Line(new Coords(w - size | 0, 0), new Coords(w, size));
     return pos.x > area.from.x && pos.x <= area.to.x && pos.y > area.from.y && pos.y <= area.to.y;
   };
   HtmlUtil.prototype.isInMapboxArea_0 = function (pos) {
-    var area = new Line(new Coords(-20, World_getInstance().can.height - 40 | 0), new Coords(90, World_getInstance().can.height));
+    var area = new Line(new Coords(-20, Dimensions_getInstance().height - 40 | 0), new Coords(90, Dimensions_getInstance().height));
     return pos.x > area.from.x && pos.x <= area.to.x && pos.y > area.from.y && pos.y <= area.to.y;
   };
   HtmlUtil.prototype.isInOsmArea_0 = function (pos) {
-    var w = World_getInstance().can.width;
-    var area = new Line(new Coords(w - 280 | 0, World_getInstance().can.height - 30 | 0), new Coords(w, World_getInstance().can.height));
+    var w = Dimensions_getInstance().width;
+    var area = new Line(new Coords(w - 280 | 0, Dimensions_getInstance().height - 30 | 0), new Coords(w, Dimensions_getInstance().height));
     return pos.x > area.from.x && pos.x <= area.to.x && pos.y > area.from.y && pos.y <= area.to.y;
   };
   HtmlUtil.prototype.handleMouseClick_0 = function (event) {
@@ -8940,10 +8940,10 @@ var QGress = function (_, Kotlin) {
     this.RESOLUTION = 12;
   }
   PathUtil.prototype.w = function () {
-    return World_getInstance().bgCan.width / this.RESOLUTION | 0;
+    return Dimensions_getInstance().width / this.RESOLUTION | 0;
   };
   PathUtil.prototype.h = function () {
-    return World_getInstance().bgCan.height / this.RESOLUTION | 0;
+    return Dimensions_getInstance().height / this.RESOLUTION | 0;
   };
   PathUtil.prototype.posToShadowPos_lfj9be$ = function (pos) {
     return new Coords(pos.x / this.RESOLUTION | 0, pos.y / this.RESOLUTION | 0);
@@ -9130,14 +9130,14 @@ var QGress = function (_, Kotlin) {
   };
   SoundUtil.prototype.playPortalCreationSound_lfj9be$ = function (pos) {
     var duration = 0.5;
-    var pan = pos.x / World_getInstance().can.width;
+    var pan = pos.x / Dimensions_getInstance().width;
     var oscNode = this.createLinearRampOscillator_0(OscillatorType_getInstance().SINE, 120.0, 0.0, duration);
     var panNode = this.createStaticPan_0(pan);
     this.playSound_0(oscNode, panNode, 1.0, duration);
   };
   SoundUtil.prototype.playPortalRemovalSound_lfj9be$ = function (pos) {
     var duration = 0.5;
-    var pan = pos.x / World_getInstance().can.width;
+    var pan = pos.x / Dimensions_getInstance().width;
     var oscNode = this.createLinearRampOscillator_0(OscillatorType_getInstance().SINE, 60.0, 120.0, duration);
     var panNode = this.createStaticPan_0(pan);
     this.playSound_0(oscNode, panNode, 1.0, duration);
@@ -9145,7 +9145,7 @@ var QGress = function (_, Kotlin) {
   SoundUtil.prototype.playHackingSound_lfj9be$ = function (pos) {
     var freq = 500.0;
     var osc = this.createStaticOscillator_0(OscillatorType_getInstance().SINE, freq);
-    var pan = pos.xx() / World_getInstance().can.width;
+    var pan = pos.xx() / Dimensions_getInstance().width;
     var panNode = this.createStaticPan_0(pan);
     var gain = 0.04;
     var duration = 0.02;
@@ -9154,7 +9154,7 @@ var QGress = function (_, Kotlin) {
   SoundUtil.prototype.playXmpSound_zbn281$ = function (level, pos) {
     var freq = 160.0 - (level.level * 5 | 0);
     var osc = this.createStaticOscillator_0(OscillatorType_getInstance().SQUARE, freq);
-    var pan = pos.xx() / World_getInstance().can.width;
+    var pan = pos.xx() / Dimensions_getInstance().width;
     var panNode = this.createStaticPan_0(pan);
     var gain = 0.04 + level.level * 0.006;
     var duration = 0.005 + 0.001 * level.level;
@@ -9168,7 +9168,7 @@ var QGress = function (_, Kotlin) {
     var baseFreq = -250.0;
     var startFreq = minFreq + baseFreq * ratio;
     var endFreq = minFreq + baseFreq * ratio * 2;
-    var pan = pos.x / World_getInstance().can.width;
+    var pan = pos.x / Dimensions_getInstance().width;
     var oscNode = this.createLinearRampOscillator_0(OscillatorType_getInstance().SINE, startFreq, endFreq, duration);
     var panNode = this.createStaticPan_0(pan);
     this.playSound_0(oscNode, panNode, gain, duration);
@@ -9181,8 +9181,8 @@ var QGress = function (_, Kotlin) {
     var baseFreq = 500.0;
     var startFreq = minFreq + baseFreq * ratio;
     var endFreq = minFreq + baseFreq * ratio * 2;
-    var startPan = link.getLine().from.x / World_getInstance().can.width;
-    var endPan = link.getLine().to.x / World_getInstance().can.width;
+    var startPan = link.getLine().from.x / Dimensions_getInstance().width;
+    var endPan = link.getLine().to.x / Dimensions_getInstance().width;
     var oscNode = this.createLinearRampOscillator_0(OscillatorType_getInstance().SINE, startFreq, endFreq, duration);
     var panNode = this.createLinearRampPan_0(startPan, endPan, duration);
     this.playSound_0(oscNode, panNode, gain, duration);
@@ -9199,8 +9199,8 @@ var QGress = function (_, Kotlin) {
     var baseFreq = 20.0;
     var startFreq = minFreq + baseFreq * areaRatio;
     var endFreq = startFreq * 2.0;
-    var startPan = field.origin.x() / World_getInstance().can.width;
-    var endPan = 0.5 * (field.primaryAnchor.x() + field.secondaryAnchor.x()) / World_getInstance().can.width;
+    var startPan = field.origin.x() / Dimensions_getInstance().width;
+    var endPan = 0.5 * (field.primaryAnchor.x() + field.secondaryAnchor.x()) / Dimensions_getInstance().width;
     var oscNode = this.createExponentialRampOscillator_0(OscillatorType_getInstance().TRIANGLE, startFreq, endFreq, duration);
     var panNode = this.createLinearRampPan_0(startPan, endPan, duration);
     this.playSound_0(oscNode, panNode, gain, duration);

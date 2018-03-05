@@ -61,17 +61,17 @@ data class Coords(val x: Int, val y: Int) {
         private val defaultLat = 47.4220454 //X
         private val defaultLng = 9.3733032 //-Y
         private val latDist = 0.002
-        private val lngDist = latDist * World.can.height / World.can.width
+        private val lngDist = latDist * Dimensions.height / Dimensions.width
         private val minLat = defaultLat - latDist
         private val minLng = defaultLng + lngDist
-        private val pixelPartLat = latDist / World.can.width
-        private val pixelPartLng = lngDist / World.can.height
+        private val pixelPartLat = latDist / Dimensions.width
+        private val pixelPartLng = lngDist / Dimensions.height
 
         private val xMax = Dimensions.maxDeploymentRange.toInt() * 2
-        private fun createRandomNoOffset() = Coords(Util.randomInt(World.can.width), Util.randomInt(World.can.height))
+        private fun createRandomNoOffset() = Coords(Util.randomInt(Dimensions.width), Util.randomInt(Dimensions.height))
         private fun createRandom(): Coords {
-            val x = Dimensions.leftOffset + Util.randomInt((World.can.width - Dimensions.leftOffset - Dimensions.rightOffset).toInt())
-            val y = Dimensions.topOffset + Util.randomInt((World.can.height - Dimensions.topOffset - Dimensions.botOffset).toInt())
+            val x = Dimensions.leftOffset + Util.randomInt((Dimensions.width - Dimensions.leftOffset - Dimensions.rightOffset).toInt())
+            val y = Dimensions.topOffset + Util.randomInt((Dimensions.height - Dimensions.topOffset - Dimensions.botOffset).toInt())
             return Coords(x.toInt(), y.toInt())
         }
 

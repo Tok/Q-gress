@@ -2,6 +2,7 @@ package util
 
 import World
 import config.Config
+import config.Dimensions
 import util.data.Cell
 import util.data.Complex
 import util.data.Coords
@@ -10,8 +11,8 @@ object PathUtil {
     val MIN_HEAT = 35
     val MAX_HEAT = 100
     val RESOLUTION = 12
-    fun w() = World.bgCan.width / RESOLUTION
-    fun h() = World.bgCan.height / RESOLUTION
+    fun w() = Dimensions.width / RESOLUTION
+    fun h() = Dimensions.height / RESOLUTION
     fun posToShadowPos(pos: Coords) = Coords(pos.x / RESOLUTION, pos.y / RESOLUTION)
     fun shadowPosToPos(pos: Coords) = Coords(pos.x * RESOLUTION, pos.y * RESOLUTION)
 

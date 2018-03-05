@@ -64,8 +64,8 @@ object DrawUtil {
     fun drawLoadingText(text: String) {
         clearUserInterface()
         val fontSize = 21
-        val y = World.uiCan.height / 2
-        val x = (World.uiCan.width - (text.length * fontSize / 2)) / 2
+        val y = Dimensions.height / 2
+        val x = (Dimensions.width - (text.length * fontSize / 2)) / 2
         val lineWidth = 3.0
         val strokeStyle: String = Colors.black
         strokeText(World.uiCtx(), Coords(x, y), text, Colors.white, fontSize, AMARILLO, lineWidth, strokeStyle)
@@ -242,7 +242,7 @@ object DrawUtil {
             drawCell(Coords(pos, yStep * 4), total.toString(), Colors.white)
         }
 
-        val xPos = World.can.width - rightXOffset
+        val xPos = Dimensions.width - rightXOffset
         return with(World) {
             (1..4).forEach { step ->
                 when (step) {
@@ -256,7 +256,7 @@ object DrawUtil {
     }
 
     fun drawTick() {
-        val pos = Coords(13, World.uiCan.height - Dimensions.tickBottomOffset)
+        val pos = Coords(13, Dimensions.height - Dimensions.tickBottomOffset)
         val half = Dimensions.tickFontSize / 2
         World.uiCtx().fillStyle = "#00000077"
         World.uiCtx().fillRect(pos.xx() - 8, pos.yy() - half - 1, 164.0, Dimensions.tickFontSize + 2.0)
@@ -328,7 +328,7 @@ object DrawUtil {
         val enlPart: Int = round((100.0 * enlMu) / totalMu).toInt()
         val resPart: Int = round((100.0 * resMu) / totalMu).toInt()
         val xPos = Dimensions.muLeftOffset
-        val yPos = World.can.height - Dimensions.muBottomOffset
+        val yPos = Dimensions.height - Dimensions.muBottomOffset
         val enlPos = Coords(xPos, yPos - Dimensions.muFontSize * 2)
         val resPos = Coords(xPos, yPos)
         drawMuRect(enlPos, enlPart, Faction.ENL, enlMu)
@@ -359,7 +359,7 @@ object DrawUtil {
         val xPos = Dimensions.topAgentsLeftOffset
         val yOffset = Dimensions.topAgentsFontSize * 3 / 2
         //val xOffset = (Dimensions.topAgentsInventoryFontSize * Constants.phi).toInt()
-        val yFixOffset = World.can.height - Dimensions.topAgentsBottomOffset - (Config.topAgentsMessageLimit * yOffset)
+        val yFixOffset = Dimensions.height - Dimensions.topAgentsBottomOffset - (Config.topAgentsMessageLimit * yOffset)
         val headerPos = Coords(xPos, yFixOffset - yOffset)
         val top = World.allAgents.toList().sortedBy { -it.ap }.take(Config.topAgentsMessageLimit)
         val headerText =
@@ -430,7 +430,7 @@ object DrawUtil {
     }
 
     fun drawVectorField(vectorField: Map<Coords, Complex>) {
-        World.bgCtx().clearRect(0.0, 0.0, World.can.width.toDouble(), World.can.height.toDouble())
+        World.bgCtx().clearRect(0.0, 0.0, Dimensions.width.toDouble(), Dimensions.height.toDouble())
         val w = PathUtil.RESOLUTION - 1
         val h = PathUtil.RESOLUTION - 1
         with(World) {

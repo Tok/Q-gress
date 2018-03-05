@@ -20,8 +20,8 @@ object Com {
 
     fun draw(ctx: Ctx) {
         val messages = messages.toList()
-        val xPos = World.can.width - Dimensions.comRightOffset
-        val yFixOffset = World.can.height - Dimensions.comBottomOffset
+        val xPos = Dimensions.width - Dimensions.comRightOffset
+        val yFixOffset = Dimensions.height - Dimensions.comBottomOffset
         val yOffset = (Dimensions.comFontSize * 3 / 2)
         val reversed = messages.reversed()
         reversed.forEachIndexed { index, text ->

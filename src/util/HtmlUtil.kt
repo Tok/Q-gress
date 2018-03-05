@@ -171,8 +171,8 @@ object HtmlUtil {
 
     private fun initWorld() {
         val noiseAlpha = 0.8
-        val w = World.can.width
-        val h = World.can.height
+        val w = Dimensions.width
+        val h = Dimensions.height
         World.noiseMap = ImprovedNoise.generateEdgeMap(w, h)
         World.noiseImage = World.createNoiseImage(World.noiseMap, w, h, noiseAlpha)
         resetInterval()
@@ -204,7 +204,7 @@ object HtmlUtil {
     fun isBlockedForVector(pos: Coords) = isBlockedByMapbox(pos)
 
     private fun isInPositionArea(pos: Coords): Boolean {
-        val w = World.can.width
+        val w = Dimensions.width
         val size = 52
         val area = Line(Coords(w - size, 0), Coords(w, size))
         return pos.x > area.from.x && pos.x <= area.to.x &&
@@ -212,14 +212,14 @@ object HtmlUtil {
     }
 
     private fun isInMapboxArea(pos: Coords): Boolean {
-        val area = Line(Coords(-20, World.can.height - 40), Coords(90, World.can.height))
+        val area = Line(Coords(-20, Dimensions.height - 40), Coords(90, Dimensions.height))
         return pos.x > area.from.x && pos.x <= area.to.x &&
                 pos.y > area.from.y && pos.y <= area.to.y
     }
 
     private fun isInOsmArea(pos: Coords): Boolean {
-        val w = World.can.width
-        val area = Line(Coords(w - 280, World.can.height - 30), Coords(w, World.can.height))
+        val w = Dimensions.width
+        val area = Line(Coords(w - 280, Dimensions.height - 30), Coords(w, Dimensions.height))
         return pos.x > area.from.x && pos.x <= area.to.x &&
                 pos.y > area.from.y && pos.y <= area.to.y
     }
