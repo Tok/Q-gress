@@ -91,6 +91,7 @@ body {
     display: inline-block;
     z-index: 100;
     padding-right: 5px;
+    height: 100px;
 }
 
 .enl {
@@ -215,6 +216,8 @@ body {
 }
 .qValues {
     font-size: 13px;
+    width: 420px;
+    float: left;
 }
 .frogSlider { }
 .frogSlider::-moz-range-thumb {
