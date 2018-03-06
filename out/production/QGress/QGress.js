@@ -109,14 +109,22 @@ var QGress = function (_, Kotlin) {
     this.item = item;
     this.untilTick = untilTick;
   }
+  Action.prototype.start_fyi6w8$ = function (item) {
+    this.item = item;
+    this.untilTick = World_getInstance().tick + item.durationSeconds | 0;
+  };
+  Action.prototype.end = function () {
+    this.item = ActionItem$Companion_getInstance().WAIT;
+    this.untilTick = World_getInstance().tick + 1 | 0;
+  };
   Action.prototype.toString = function () {
     return this.item.text;
   };
   function Action$Companion() {
     Action$Companion_instance = this;
   }
-  Action$Companion.prototype.start_34yqkq$ = function (item, tick) {
-    return new Action(item, tick + item.durationSeconds | 0);
+  Action$Companion.prototype.create = function () {
+    return new Action(ActionItem$Companion_getInstance().MOVE, World_getInstance().tick);
   };
   Action$Companion.$metadata$ = {
     kind: Kind_OBJECT,
@@ -483,7 +491,9 @@ var QGress = function (_, Kotlin) {
     var moveToFriendlyQ = MovementUtil_getInstance().hasFriendlyPortals_912u9o$(this) ? this.q_0(QValue$Companion_getInstance().MOVE_TO_FRIENDLY) : -1.0;
     var moveToRandomQ = this.q_0(QValue$Companion_getInstance().MOVE_TO_RANDOM);
     var qValues = listOf([to(moveToNearQ, Agent$moveElsewhere$lambda(this)), to(moveToFriendlyQ, Agent$moveElsewhere$lambda_0(this)), to(moveToRandomQ, Agent$moveElsewhere$lambda_1(this))]);
-    return Util_getInstance().select_4u7aq8$(qValues, Agent$moveElsewhere$lambda_2(this))().copy_lmq102$(void 0, void 0, void 0, void 0, void 0, Action$Companion_getInstance().start_34yqkq$(ActionItem$Companion_getInstance().MOVE, World_getInstance().tick));
+    var newAgent = Util_getInstance().select_4u7aq8$(qValues, Agent$moveElsewhere$lambda_2(this))();
+    newAgent.action.start_fyi6w8$(ActionItem$Companion_getInstance().MOVE);
+    return newAgent;
   };
   function Agent$attackSomewhere$lambda(this$Agent) {
     return function () {
@@ -509,8 +519,9 @@ var QGress = function (_, Kotlin) {
     var attackClosestQ = MovementUtil_getInstance().hasEnemyPortals_912u9o$(this) && this.isAttackPossible_0() ? this.q_0(QValue$Companion_getInstance().ATTACK_CLOSE) : -1.0;
     var attackMostLinkedQ = MovementUtil_getInstance().hasEnemyPortals_912u9o$(this) && this.isAttackPossible_0() ? this.q_0(QValue$Companion_getInstance().ATTACK_LINKS) : -1.0;
     var attackMostVulnerableQ = MovementUtil_getInstance().hasEnemyPortals_912u9o$(this) && this.isAttackPossible_0() ? this.q_0(QValue$Companion_getInstance().ATTACK_WEAK) : -1.0;
-    var qValues = listOf([to(attackClosestQ, Agent$attackSomewhere$lambda(this)), to(attackMostLinkedQ, Agent$attackSomewhere$lambda_0(this)), to(attackMostVulnerableQ, Agent$attackSomewhere$lambda_1(this))]);
-    return Util_getInstance().select_4u7aq8$(qValues, Agent$attackSomewhere$lambda_2(this))().copy_lmq102$(void 0, void 0, void 0, void 0, void 0, Action$Companion_getInstance().start_34yqkq$(ActionItem$Companion_getInstance().ATTACK, World_getInstance().tick));
+    var actions = listOf([to(attackClosestQ, Agent$attackSomewhere$lambda(this)), to(attackMostLinkedQ, Agent$attackSomewhere$lambda_0(this)), to(attackMostVulnerableQ, Agent$attackSomewhere$lambda_1(this))]);
+    this.action.start_fyi6w8$(ActionItem$Companion_getInstance().MOVE);
+    return Util_getInstance().select_4u7aq8$(actions, Agent$attackSomewhere$lambda_2(this))();
   };
   Agent.prototype.moveCloserToDestinationPortal_0 = function () {
     var tmp$;
@@ -714,7 +725,9 @@ var QGress = function (_, Kotlin) {
     var findExactDestination = Agent$attackPortal$findExactDestination(this);
     var doAttack = Agent$attackPortal$doAttack(this);
     if (!((tmp$ = this.action.item) != null ? tmp$.equals(ActionItem$Companion_getInstance().ATTACK) : null)) {
-      this.copy_lmq102$(void 0, void 0, void 0, void 0, void 0, Action$Companion_getInstance().start_34yqkq$(ActionItem$Companion_getInstance().ATTACK, World_getInstance().tick), void 0, findExactDestination());
+      this.action.start_fyi6w8$(ActionItem$Companion_getInstance().ATTACK);
+      this.destination = findExactDestination();
+      return this;
     }
     return !this.isArrived_0() ? this.moveCloserInRange() : doAttack();
   };
@@ -846,29 +859,26 @@ var QGress = function (_, Kotlin) {
                 var distance = this$Agent_1.distanceToPortal_hv9zn6$(this$Agent_1.actionPortal);
                 this$Agent_1.actionPortal.deploy_en6fu0$(this$Agent_1, deployMap, numberToInt(distance));
                 SoundUtil_getInstance().playDeploySound_s1df0o$(this$Agent_1.actionPortal.location, numberToInt(distance));
-                return this$Agent_1.copy_lmq102$(void 0, void 0, void 0, void 0, void 0, Action$Companion_getInstance().start_34yqkq$(ActionItem$Companion_getInstance().DEPLOY, World_getInstance().tick));
               }
             }
           }
         }
       }
-      return this$Agent.doSomething();
+      this$Agent.action.end();
+      return this$Agent;
     };
   }
   Agent.prototype.deployPortal = function () {
-    var tmp$;
     var findExactDestination = Agent$deployPortal$findExactDestination(this);
     var doDeploy = Agent$deployPortal$doDeploy(this);
-    if (!((tmp$ = this.action.item) != null ? tmp$.equals(ActionItem$Companion_getInstance().DEPLOY) : null)) {
-      this.copy_lmq102$(void 0, void 0, void 0, void 0, void 0, Action$Companion_getInstance().start_34yqkq$(ActionItem$Companion_getInstance().DEPLOY, World_getInstance().tick), void 0, findExactDestination());
-    }
     if (!this.isArrived_0()) {
       return this.moveCloserInRange();
     }
     return doDeploy();
   };
   Agent.prototype.doNothing = function () {
-    return this.copy_lmq102$(void 0, void 0, void 0, void 0, void 0, Action$Companion_getInstance().start_34yqkq$(ActionItem$Companion_getInstance().WAIT, World_getInstance().tick));
+    this.action.start_fyi6w8$(ActionItem$Companion_getInstance().WAIT);
+    return this;
   };
   Agent.prototype.keySet = function () {
     return this.inventory.findUniqueKeys();
@@ -997,7 +1007,8 @@ var QGress = function (_, Kotlin) {
         }
       }
     }
-    return this.copy_lmq102$(void 0, void 0, void 0, void 0, void 0, Action$Companion_getInstance().start_34yqkq$(ActionItem$Companion_getInstance().LINK, World_getInstance().tick));
+    this.action.start_fyi6w8$(ActionItem$Companion_getInstance().LINK);
+    return this;
   };
   Agent.prototype.hackActionPortal = function () {
     if (this.isAtActionPortal() && this.actionPortal.canHack_912u9o$(this)) {
@@ -1009,7 +1020,8 @@ var QGress = function (_, Kotlin) {
         this.inventory.items.addAll_brywnq$(newStuff);
       }
     }
-    return this.copy_lmq102$(void 0, void 0, void 0, void 0, void 0, Action$Companion_getInstance().start_34yqkq$(ActionItem$Companion_getInstance().HACK, World_getInstance().tick));
+    this.action.start_fyi6w8$(ActionItem$Companion_getInstance().HACK);
+    return this;
   };
   function Agent$findPortalsInAttackRange$lambda(this$Agent) {
     return function (it) {
@@ -1293,6 +1305,14 @@ var QGress = function (_, Kotlin) {
     var w = (r * 2 | 0) + (2 * lw | 0) | 0;
     var h = w;
     return HtmlUtil_getInstance().prerender_yb5akz$(w, h, Agent$Companion$drawAgentTemplate$lambda(r, lw, faction, actionItem));
+  };
+  Agent$Companion.prototype.startAction_0 = function (agent, item) {
+    agent.action.start_fyi6w8$(item);
+    return agent;
+  };
+  Agent$Companion.prototype.endAction_0 = function (agent) {
+    agent.action.end();
+    return agent;
   };
   Agent$Companion.prototype.createFrog_5edep5$ = function (grid) {
     return this.create_0(grid, Faction$ENL_getInstance());
@@ -1960,7 +1980,8 @@ var QGress = function (_, Kotlin) {
   MovementUtil.prototype.goToDestinationPortal_0 = function (agent, destination) {
     var distance = agent.skills.deployPrecision * Dimensions_getInstance().maxDeploymentRange;
     var nextDest = destination.findRandomPointNearPortal_za3lpa$(numberToInt(distance));
-    return agent.copy_lmq102$(void 0, void 0, void 0, void 0, void 0, Action$Companion_getInstance().start_34yqkq$(ActionItem$Companion_getInstance().MOVE, World_getInstance().tick), destination, nextDest);
+    agent.action.start_fyi6w8$(ActionItem$Companion_getInstance().MOVE);
+    return agent.copy_lmq102$(void 0, void 0, void 0, void 0, void 0, void 0, destination, nextDest);
   };
   MovementUtil.$metadata$ = {
     kind: Kind_OBJECT,
@@ -5697,7 +5718,8 @@ var QGress = function (_, Kotlin) {
       }
       if ((tmp$_7 = element_2.actionPortal) != null ? tmp$_7.equals(this) : null) {
         element_2.actionPortal = first(World_getInstance().allPortals);
-        element_2.action = Action$Companion_getInstance().start_34yqkq$(ActionItem$Companion_getInstance().WAIT, tick);
+        element_2.action.item = ActionItem$Companion_getInstance().WAIT;
+        element_2.action.untilTick = tick + 1 | 0;
       }
     }
     World_getInstance().allPortals.remove_11rb$(this);

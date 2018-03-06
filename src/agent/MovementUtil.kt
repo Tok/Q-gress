@@ -75,6 +75,7 @@ object MovementUtil {
     private fun goToDestinationPortal(agent: Agent, destination: Portal): Agent {
         val distance = agent.skills.deployPrecision * Dimensions.maxDeploymentRange
         val nextDest = destination.findRandomPointNearPortal(distance.toInt())
-        return agent.copy(action = Action.start(ActionItem.MOVE, World.tick), actionPortal = destination, destination = nextDest)
+        agent.action.start(ActionItem.MOVE)
+        return agent.copy(actionPortal = destination, destination = nextDest)
     }
 }

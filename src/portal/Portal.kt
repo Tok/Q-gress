@@ -351,7 +351,8 @@ data class Portal constructor(val name: String, val location: Coords,
             }
             if (agent.actionPortal == this) {
                 agent.actionPortal = World.allPortals.first()
-                agent.action = Action.start(ActionItem.WAIT, tick)
+                agent.action.item = ActionItem.WAIT
+                agent.action.untilTick = tick + 1
             }
         }
         World.allPortals.remove(this)

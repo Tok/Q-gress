@@ -11,19 +11,17 @@ import items.deployable.Resonator
 import items.level.ResonatorLevel
 import items.level.XmpLevel
 import org.w3c.dom.HTMLInputElement
-import org.w3c.dom.HTMLSelectElement
 import portal.Link
 import portal.Portal
 import system.Queues
 import util.*
 import util.data.*
-import kotlin.browser.document
 import kotlin.browser.window
 import kotlin.math.max
 import kotlin.math.min
 
 data class Agent(val faction: Faction, val name: String, val pos: Coords, val skills: Skills,
-                 val inventory: Inventory, var action: Action, var actionPortal: Portal, var destination: Coords,
+                 val inventory: Inventory, val action: Action, var actionPortal: Portal, var destination: Coords,
                  var ap: Int = 0, var xm: Int = 0, var velocity: Complex = Complex.ZERO) {
     fun key() = toString()
     fun distanceToDestination(): Double = pos.distanceTo(destination)
@@ -159,21 +157,22 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
             moveToFriendlyQ to { MovementUtil.moveToFriendlyHighLevelPortal(this) },
             moveToRandomQ to { MovementUtil.moveToRandomPortal(this) }
         )
-        return Util.select(qValues, { MovementUtil.moveToNearestPortal(this) }).invoke()
-                .copy(action = Action.start(ActionItem.MOVE, World.tick))
+        val newAgent = Util.select(qValues, { MovementUtil.moveToNearestPortal(this) }).invoke()
+        newAgent.action.start(ActionItem.MOVE)
+        return newAgent
     }
 
     private fun attackSomewhere(): Agent {
         val attackClosestQ = if (MovementUtil.hasEnemyPortals(this) && isAttackPossible()) q(QValue.ATTACK_CLOSE) else -1.0
         val attackMostLinkedQ = if (MovementUtil.hasEnemyPortals(this) && isAttackPossible()) q(QValue.ATTACK_LINKS) else -1.0
         val attackMostVulnerableQ = if (MovementUtil.hasEnemyPortals(this) && isAttackPossible()) q(QValue.ATTACK_WEAK) else -1.0
-        val qValues = listOf(
+        val actions = listOf(
                 attackClosestQ to { MovementUtil.moveToCloseEnemyPortal(this) },
                 attackMostLinkedQ to { MovementUtil.moveToMostLinkedEnemyPortal(this) },
                 attackMostVulnerableQ to { MovementUtil.moveToMostVulnerableEnemyPortal(this) }
         )
-        return Util.select(qValues, { MovementUtil.moveToNearestPortal(this) }).invoke()
-                .copy(action = Action.start(ActionItem.ATTACK, World.tick))
+        action.start(ActionItem.MOVE)
+        return Util.select(actions, { MovementUtil.moveToNearestPortal(this) }).invoke()
     }
 
     private fun moveCloserToDestinationPortal(): Agent {
@@ -266,7 +265,9 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         }
 
         if (action.item != ActionItem.ATTACK) {
-            this.copy(action = Action.start(ActionItem.ATTACK, World.tick), destination = findExactDestination())
+            action.start(ActionItem.ATTACK)
+            destination = findExactDestination()
+            return this
         }
         return if (!isArrived()) moveCloserInRange() else doAttack()
     }
@@ -302,25 +303,27 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
                                 val distance = distanceToPortal(actionPortal)
                                 actionPortal.deploy(this, deployMap, distance.toInt())
                                 SoundUtil.playDeploySound(actionPortal.location, distance.toInt())
-                                return this.copy(action = Action.start(ActionItem.DEPLOY, World.tick))
+                                //return this.copy(action = Action.start(ActionItem.DEPLOY, World.tick))
+
                             }
                         }
                     }
                 }
             }
-            return doSomething()
+            action.end()
+            return this
         }
 
-        if (action.item != ActionItem.DEPLOY) {
-            this.copy(action = Action.start(ActionItem.DEPLOY, World.tick), destination = findExactDestination())
-        }
         if (!isArrived()) {
             return moveCloserInRange()
         }
         return doDeploy()
     }
 
-    fun doNothing(): Agent = this.copy(action = Action.start(ActionItem.WAIT, World.tick))
+    fun doNothing(): Agent {
+        action.start(ActionItem.WAIT)
+        return this
+    }
 
     fun keySet() = inventory.findUniqueKeys()
     fun hasKeys() = keySet() != null && keySet()!!.isNotEmpty()
@@ -369,7 +372,8 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
                 }
             }
         }
-        return this.copy(action = Action.start(ActionItem.LINK, World.tick))
+        action.start(ActionItem.LINK)
+        return this
     }
 
     fun hackActionPortal(): Agent {
@@ -382,7 +386,8 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
                 inventory.items.addAll(newStuff)
             }
         }
-        return this.copy(action = Action.start(ActionItem.HACK, World.tick))
+        action.start(ActionItem.HACK)
+        return this
     }
 
     private fun findPortalsInAttackRange(level: XmpLevel): List<Portal> {
@@ -511,6 +516,15 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
                 DrawUtil.drawCircle(ctx, circle, strokeStyle, lw * 2.0, faction.color)
                 DrawUtil.drawText(ctx, pos.copy(x = pos.x + 1), actionItem.letter, strokeStyle, 13, DrawUtil.CODA)
             })
+        }
+
+        private fun startAction(agent: Agent, item: ActionItem): Agent {
+            agent.action.start(item)
+            return agent
+        }
+        private fun endAction(agent: Agent): Agent {
+            agent.action.end()
+            return agent
         }
 
         fun createFrog(grid: Map<Coords, Cell>) = create(grid, Faction.ENL)
