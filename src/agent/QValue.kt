@@ -17,7 +17,7 @@ data class QValue(val name: String, val weight: Double) {
         val ATTACK = QValue("* attack portal", 1.0)
 
         //general
-        val ATTACK_SOMEHERE = QValue("-> move to enemy portal..", 0.003)
+        val ATTACK_SOMEHERE = QValue("-> attack enemy portal..", 0.020)
         val ATTACK_CLOSE = QValue("--> ..closest", 1.0)
         val ATTACK_LINKS = QValue("--> ..most linked", 0.5)
         val ATTACK_WEAK = QValue("--> ..weakest", 0.8)

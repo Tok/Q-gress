@@ -497,22 +497,22 @@ var QGress = function (_, Kotlin) {
   };
   function Agent$attackSomewhere$lambda(this$Agent) {
     return function () {
-      return MovementUtil_getInstance().moveToCloseEnemyPortal_912u9o$(this$Agent);
+      return MovementUtil_getInstance().attackClosePortal_912u9o$(this$Agent);
     };
   }
   function Agent$attackSomewhere$lambda_0(this$Agent) {
     return function () {
-      return MovementUtil_getInstance().moveToMostLinkedEnemyPortal_912u9o$(this$Agent);
+      return MovementUtil_getInstance().attackMostLinkedPortal_912u9o$(this$Agent);
     };
   }
   function Agent$attackSomewhere$lambda_1(this$Agent) {
     return function () {
-      return MovementUtil_getInstance().moveToMostVulnerableEnemyPortal_912u9o$(this$Agent);
+      return MovementUtil_getInstance().attackMostVulnerablePortal_912u9o$(this$Agent);
     };
   }
   function Agent$attackSomewhere$lambda_2(this$Agent) {
     return function () {
-      return MovementUtil_getInstance().moveToNearestPortal_912u9o$(this$Agent);
+      return MovementUtil_getInstance().attackClosePortal_912u9o$(this$Agent);
     };
   }
   Agent.prototype.attackSomewhere_0 = function () {
@@ -520,8 +520,9 @@ var QGress = function (_, Kotlin) {
     var attackMostLinkedQ = MovementUtil_getInstance().hasEnemyPortals_912u9o$(this) && this.isAttackPossible_0() ? this.q_0(QValue$Companion_getInstance().ATTACK_LINKS) : -1.0;
     var attackMostVulnerableQ = MovementUtil_getInstance().hasEnemyPortals_912u9o$(this) && this.isAttackPossible_0() ? this.q_0(QValue$Companion_getInstance().ATTACK_WEAK) : -1.0;
     var actions = listOf([to(attackClosestQ, Agent$attackSomewhere$lambda(this)), to(attackMostLinkedQ, Agent$attackSomewhere$lambda_0(this)), to(attackMostVulnerableQ, Agent$attackSomewhere$lambda_1(this))]);
-    this.action.start_fyi6w8$(ActionItem$Companion_getInstance().MOVE);
-    return Util_getInstance().select_4u7aq8$(actions, Agent$attackSomewhere$lambda_2(this))();
+    var newAgent = Util_getInstance().select_4u7aq8$(actions, Agent$attackSomewhere$lambda_2(this))();
+    newAgent.action.start_fyi6w8$(ActionItem$Companion_getInstance().ATTACK);
+    return newAgent;
   };
   Agent.prototype.moveCloserToDestinationPortal_0 = function () {
     if (!World_getInstance().isReady) {
@@ -529,7 +530,7 @@ var QGress = function (_, Kotlin) {
       return this.doNothing();
     }
     if (this.isAtActionPortal()) {
-      return this.doNothing();
+      return this.action.item.equals(ActionItem$Companion_getInstance().ATTACK) ? this : this.doNothing();
     }
     this.addXm_za3lpa$(2);
     var force = this.actionPortal.vectorField.get_11rb$(PathUtil_getInstance().posToShadowPos_lfj9be$(this.pos));
@@ -669,7 +670,8 @@ var QGress = function (_, Kotlin) {
         tmp$_0 = null;
       var selectedXmps = tmp$_0;
       if (selectedXmps == null || selectedXmps.isEmpty()) {
-        return this$Agent.doSomethingElse();
+        this$Agent.action.end();
+        return this$Agent;
       }
       var tmp$_1;
       tmp$_1 = selectedXmps.iterator();
@@ -704,11 +706,12 @@ var QGress = function (_, Kotlin) {
       }
       Queues_getInstance().registerAttack_wr4det$(this$Agent, selectedXmps);
       this$Agent.inventory.consumeXmps_ss5kb$(selectedXmps);
-      return this$Agent.doSomething();
+      this$Agent.action.end();
+      return this$Agent;
     };
   }
   Agent.prototype.attackPortal = function () {
-    var tmp$;
+    var tmp$, tmp$_0;
     var findExactDestination = Agent$attackPortal$findExactDestination(this);
     var doAttack = Agent$attackPortal$doAttack(this);
     if (!((tmp$ = this.action.item) != null ? tmp$.equals(ActionItem$Companion_getInstance().ATTACK) : null)) {
@@ -716,7 +719,13 @@ var QGress = function (_, Kotlin) {
       this.destination = findExactDestination();
       return this;
     }
-    return !this.isArrived_0() ? this.moveCloserInRange() : doAttack();
+    if (!this.isAtActionPortal())
+      tmp$_0 = this.moveCloserToDestinationPortal_0();
+    else if (!this.isArrived_0())
+      tmp$_0 = this.moveCloserInRange();
+    else
+      tmp$_0 = doAttack();
+    return tmp$_0;
   };
   function Agent$deployPortal$findExactDestination(this$Agent) {
     return function () {
@@ -1844,7 +1853,7 @@ var QGress = function (_, Kotlin) {
     var target = selection.get_za3lpa$(numberToInt(Util_getInstance().random() * (selection.size - 1 | 0)));
     return this.goToDestinationPortal_0(agent, target);
   };
-  function MovementUtil$moveToCloseEnemyPortal$lambda(closure$agent) {
+  function MovementUtil$attackClosePortal$lambda(closure$agent) {
     return function (it) {
       return closure$agent.distanceToPortal_hv9zn6$(it);
     };
@@ -1865,15 +1874,15 @@ var QGress = function (_, Kotlin) {
     return this.closure$comparison(a, b);
   };
   Comparator$ObjectLiteral_4.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
-  MovementUtil.prototype.moveToCloseEnemyPortal_912u9o$ = function (agent) {
+  MovementUtil.prototype.attackClosePortal_912u9o$ = function (agent) {
     if (!this.hasEnemyPortals_912u9o$(agent)) {
       var message = 'Check failed.';
       throw IllegalStateException_init(message.toString());
     }
-    var target = first(sortedWith(this.findEnemyPortals_912u9o$(agent), new Comparator$ObjectLiteral_4(compareBy$lambda_4(MovementUtil$moveToCloseEnemyPortal$lambda(agent)))));
+    var target = first(sortedWith(this.findEnemyPortals_912u9o$(agent), new Comparator$ObjectLiteral_4(compareBy$lambda_4(MovementUtil$attackClosePortal$lambda(agent)))));
     return this.goToDestinationPortal_0(agent, target);
   };
-  function MovementUtil$moveToMostLinkedEnemyPortal$lambda(it) {
+  function MovementUtil$attackMostLinkedPortal$lambda(it) {
     return it.links.size;
   }
   var compareBy$lambda_5 = wrapFunction(function () {
@@ -1892,15 +1901,15 @@ var QGress = function (_, Kotlin) {
     return this.closure$comparison(a, b);
   };
   Comparator$ObjectLiteral_5.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
-  MovementUtil.prototype.moveToMostLinkedEnemyPortal_912u9o$ = function (agent) {
+  MovementUtil.prototype.attackMostLinkedPortal_912u9o$ = function (agent) {
     if (!this.hasEnemyPortals_912u9o$(agent)) {
       var message = 'Check failed.';
       throw IllegalStateException_init(message.toString());
     }
-    var target = first(sortedWith(this.findEnemyPortals_912u9o$(agent), new Comparator$ObjectLiteral_5(compareBy$lambda_5(MovementUtil$moveToMostLinkedEnemyPortal$lambda))));
+    var target = first(sortedWith(this.findEnemyPortals_912u9o$(agent), new Comparator$ObjectLiteral_5(compareBy$lambda_5(MovementUtil$attackMostLinkedPortal$lambda))));
     return this.goToDestinationPortal_0(agent, target);
   };
-  function MovementUtil$moveToMostVulnerableEnemyPortal$lambda(it) {
+  function MovementUtil$attackMostVulnerablePortal$lambda(it) {
     return -it.calcHealth() | 0;
   }
   var compareBy$lambda_6 = wrapFunction(function () {
@@ -1919,12 +1928,12 @@ var QGress = function (_, Kotlin) {
     return this.closure$comparison(a, b);
   };
   Comparator$ObjectLiteral_6.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
-  MovementUtil.prototype.moveToMostVulnerableEnemyPortal_912u9o$ = function (agent) {
+  MovementUtil.prototype.attackMostVulnerablePortal_912u9o$ = function (agent) {
     if (!this.hasEnemyPortals_912u9o$(agent)) {
       var message = 'Check failed.';
       throw IllegalStateException_init(message.toString());
     }
-    var target = first(sortedWith(this.findEnemyPortals_912u9o$(agent), new Comparator$ObjectLiteral_6(compareBy$lambda_6(MovementUtil$moveToMostVulnerableEnemyPortal$lambda))));
+    var target = first(sortedWith(this.findEnemyPortals_912u9o$(agent), new Comparator$ObjectLiteral_6(compareBy$lambda_6(MovementUtil$attackMostVulnerablePortal$lambda))));
     return this.goToDestinationPortal_0(agent, target);
   };
   function MovementUtil$moveToNearestPortal$lambda(closure$agent) {
@@ -2220,7 +2229,7 @@ var QGress = function (_, Kotlin) {
     this.DEPLOY = new QValue('+ deploy portal', 1.0);
     this.LINK = new QValue('+ create link', 0.5);
     this.ATTACK = new QValue('* attack portal', 1.0);
-    this.ATTACK_SOMEHERE = new QValue('-> move to enemy portal..', 0.003);
+    this.ATTACK_SOMEHERE = new QValue('-> attack enemy portal..', 0.02);
     this.ATTACK_CLOSE = new QValue('--> ..closest', 1.0);
     this.ATTACK_LINKS = new QValue('--> ..most linked', 0.5);
     this.ATTACK_WEAK = new QValue('--> ..weakest', 0.8);

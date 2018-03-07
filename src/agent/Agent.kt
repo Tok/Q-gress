@@ -167,12 +167,13 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         val attackMostLinkedQ = if (MovementUtil.hasEnemyPortals(this) && isAttackPossible()) q(QValue.ATTACK_LINKS) else -1.0
         val attackMostVulnerableQ = if (MovementUtil.hasEnemyPortals(this) && isAttackPossible()) q(QValue.ATTACK_WEAK) else -1.0
         val actions = listOf(
-                attackClosestQ to { MovementUtil.moveToCloseEnemyPortal(this) },
-                attackMostLinkedQ to { MovementUtil.moveToMostLinkedEnemyPortal(this) },
-                attackMostVulnerableQ to { MovementUtil.moveToMostVulnerableEnemyPortal(this) }
+                attackClosestQ to { MovementUtil.attackClosePortal(this) },
+                attackMostLinkedQ to { MovementUtil.attackMostLinkedPortal(this) },
+                attackMostVulnerableQ to { MovementUtil.attackMostVulnerablePortal(this) }
         )
-        action.start(ActionItem.MOVE)
-        return Util.select(actions, { MovementUtil.moveToNearestPortal(this) }).invoke()
+        val newAgent = Util.select(actions, { MovementUtil.attackClosePortal(this) }).invoke()
+        newAgent.action.start(ActionItem.ATTACK)
+        return newAgent
     }
 
     private fun moveCloserToDestinationPortal(): Agent {
@@ -181,7 +182,7 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
             return doNothing()
         }
         if (isAtActionPortal()) {
-            return doNothing()
+            return if (action.item.equals(ActionItem.ATTACK)) this else doNothing()
         }
         addXm(2) //FIXME
 
@@ -238,7 +239,8 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
             val allXmps = inventory.findXmps()
             val selectedXmps = allXmps?.sortedBy { it.level }?.take(min(maxXmps, allXmps.size))
             if (selectedXmps == null || selectedXmps.isEmpty()) {
-                return doSomethingElse()
+                action.end()
+                return this
             }
             selectedXmps.forEach { xmpBurster ->
                 when (xmpBurster.level.level) {
@@ -254,7 +256,8 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
             }
             Queues.registerAttack(this, selectedXmps)
             inventory.consumeXmps(selectedXmps)
-            return doSomething()
+            action.end()
+            return this
         }
 
         if (action.item != ActionItem.ATTACK) {
@@ -262,7 +265,12 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
             destination = findExactDestination()
             return this
         }
-        return if (!isArrived()) moveCloserInRange() else doAttack()
+
+        return when {
+            !isAtActionPortal() -> moveCloserToDestinationPortal()
+            !isArrived() -> moveCloserInRange()
+            else -> doAttack()
+        }
     }
 
     fun deployPortal(): Agent {

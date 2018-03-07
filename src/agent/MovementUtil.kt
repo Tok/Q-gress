@@ -43,19 +43,19 @@ object MovementUtil {
     /* End Friendly Portals */
 
     /* Enemy Portals */
-    fun moveToCloseEnemyPortal(agent: Agent): Agent {
+    fun attackClosePortal(agent: Agent): Agent {
         check(hasEnemyPortals(agent))
         val target = findEnemyPortals(agent).sortedBy { agent.distanceToPortal(it) }.first()
         return goToDestinationPortal(agent, target)
     }
 
-    fun moveToMostLinkedEnemyPortal(agent: Agent): Agent {
+    fun attackMostLinkedPortal(agent: Agent): Agent {
         check(hasEnemyPortals(agent))
         val target = findEnemyPortals(agent).sortedBy { it.links.size }.first()
         return goToDestinationPortal(agent, target)
     }
 
-    fun moveToMostVulnerableEnemyPortal(agent: Agent): Agent {
+    fun attackMostVulnerablePortal(agent: Agent): Agent {
         check(hasEnemyPortals(agent))
         val target = findEnemyPortals(agent).sortedBy { -it.calcHealth() }.first()
         return goToDestinationPortal(agent, target)
