@@ -524,7 +524,6 @@ var QGress = function (_, Kotlin) {
     return Util_getInstance().select_4u7aq8$(actions, Agent$attackSomewhere$lambda_2(this))();
   };
   Agent.prototype.moveCloserToDestinationPortal_0 = function () {
-    var tmp$;
     if (!World_getInstance().isReady) {
       println('WARN: moveCloserToDestination: World is not ready.');
       return this.doNothing();
@@ -533,31 +532,19 @@ var QGress = function (_, Kotlin) {
       return this.doNothing();
     }
     this.addXm_za3lpa$(2);
-    var shadowPos = PathUtil_getInstance().posToShadowPos_lfj9be$(this.pos);
-    var force = (tmp$ = this.actionPortal.vectorField.get_11rb$(shadowPos)) != null ? tmp$ : this.velocity;
-    var mag = this.skills.speed * (World_getInstance().speed / 100 | 0);
-    var relativeForce = Complex$Companion_getInstance().fromMagnitudeAndPhase_5nl2e7$(mag, force.phase);
-    var oldWeight = 0.5 * 100 / World_getInstance().speed;
-    var oldVector = Complex$Companion_getInstance().fromMagnitudeAndPhase_5nl2e7$(this.velocity.magnitude * oldWeight, this.velocity.phase);
-    var newVector = Complex$Companion_getInstance().fromMagnitudeAndPhase_5nl2e7$(relativeForce.magnitude * (1.0 - oldWeight), relativeForce.phase);
-    var velo = oldVector.plus_p4p8i0$(newVector);
-    return this.copy_lmq102$(void 0, void 0, new Coords(numberToInt(this.pos.x + velo.re), numberToInt(this.pos.y + velo.im)), void 0, void 0, void 0, void 0, void 0, void 0, void 0, velo);
+    var force = this.actionPortal.vectorField.get_11rb$(PathUtil_getInstance().posToShadowPos_lfj9be$(this.pos));
+    this.velocity = MovementUtil_getInstance().move_75inmo$(this.velocity, force, this.skills.speed);
+    return this.copy_lmq102$(void 0, void 0, new Coords(numberToInt(this.pos.x + this.velocity.re), numberToInt(this.pos.y + this.velocity.im)));
   };
   Agent.prototype.isAttackPossible_0 = function () {
     var tmp$, tmp$_0;
     return (tmp$_0 = (tmp$ = this.inventory.findXmps()) != null ? !tmp$.isEmpty() : null) != null ? tmp$_0 : false;
   };
-  Agent.prototype.actualSpeed_0 = function () {
-    return this.skills.speed * Time_getInstance().globalSpeedFactor * World_getInstance().speed / 100;
-  };
-  Agent.prototype.inRangeSpeed_0 = function () {
-    return this.actualSpeed_0() / Constants_getInstance().phi;
-  };
   Agent.prototype.isArrived_0 = function () {
-    return this.distanceToDestination() <= this.inRangeSpeed_0();
+    return this.distanceToDestination() <= this.skills.inRangeSpeed();
   };
   Agent.prototype.moveCloserInRange = function () {
-    var part = this.inRangeSpeed_0() / this.distanceToDestination();
+    var part = this.skills.inRangeSpeed() / this.distanceToDestination();
     var rawDiffX = numberToInt(this.pos.xDiff_lfj9be$(this.destination) * part);
     var rawDiffY = numberToInt(this.pos.yDiff_lfj9be$(this.destination) * part);
     var rawNextX = this.pos.x - rawDiffX | 0;
@@ -1306,14 +1293,6 @@ var QGress = function (_, Kotlin) {
     var h = w;
     return HtmlUtil_getInstance().prerender_yb5akz$(w, h, Agent$Companion$drawAgentTemplate$lambda(r, lw, faction, actionItem));
   };
-  Agent$Companion.prototype.startAction_0 = function (agent, item) {
-    agent.action.start_fyi6w8$(item);
-    return agent;
-  };
-  Agent$Companion.prototype.endAction_0 = function (agent) {
-    agent.action.end();
-    return agent;
-  };
   Agent$Companion.prototype.createFrog_5edep5$ = function (grid) {
     return this.create_0(grid, Faction$ENL_getInstance());
   };
@@ -1326,7 +1305,7 @@ var QGress = function (_, Kotlin) {
     var initialXm = this.getXmCapacity_0(this.getLevel_0(initialAp));
     var coords = Coords$Companion_getInstance().createRandomPassable_5edep5$(grid);
     var actionPortal = (tmp$ = Util_getInstance().findNearestPortal_lfj9be$(coords)) != null ? tmp$ : World_getInstance().allPortals.get_za3lpa$(0);
-    return new Agent(faction, Util_getInstance().generateAgentName(), coords, Skills$Companion_getInstance().createRandom(), new Inventory(), new Action(ActionItem$Companion_getInstance().MOVE, 0), actionPortal, actionPortal.location, initialAp, initialXm);
+    return new Agent(faction, Util_getInstance().generateAgentName(), coords, Skills$Companion_getInstance().createRandom(), new Inventory(), Action$Companion_getInstance().create(), actionPortal, actionPortal.location, initialAp, initialXm);
   };
   Agent$Companion.$metadata$ = {
     kind: Kind_OBJECT,
@@ -1983,6 +1962,17 @@ var QGress = function (_, Kotlin) {
     agent.action.start_fyi6w8$(ActionItem$Companion_getInstance().MOVE);
     return agent.copy_lmq102$(void 0, void 0, void 0, void 0, void 0, void 0, destination, nextDest);
   };
+  MovementUtil.prototype.move_75inmo$ = function (vector, force, speed) {
+    var tmp$;
+    if (force != null) {
+      var sum = vector.plus_p4p8i0$(vector).plus_p4p8i0$(vector).plus_p4p8i0$(force).plus_p4p8i0$(force);
+      return sum.copyWithNewMagnitude_mx4ult$(speed);
+    }
+     else {
+      tmp$ = vector;
+    }
+    return tmp$;
+  };
   MovementUtil.$metadata$ = {
     kind: Kind_OBJECT,
     simpleName: 'MovementUtil',
@@ -2018,7 +2008,6 @@ var QGress = function (_, Kotlin) {
     return tick <= this.busyUntil;
   };
   NonFaction.prototype.act = function () {
-    var tmp$;
     if (this.isBusy_za3lpa$(World_getInstance().tick)) {
       if (Util_getInstance().random() < 0.001) {
         this.busyUntil = World_getInstance().tick;
@@ -2036,15 +2025,8 @@ var QGress = function (_, Kotlin) {
       this.wait();
     }
      else {
-      var shadowPos = PathUtil_getInstance().posToShadowPos_lfj9be$(this.pos);
-      var force = (tmp$ = this.vectorField.get_11rb$(shadowPos)) != null ? tmp$ : this.velocity;
-      var mag = this.speed * Time_getInstance().globalSpeedFactor * World_getInstance().speed / 100;
-      var relativeForce = Complex$Companion_getInstance().fromMagnitudeAndPhase_5nl2e7$(mag, force.phase);
-      var oldWeight = Constants_getInstance().historyFactor * 100 / World_getInstance().speed;
-      var oldVector = Complex$Companion_getInstance().valueOf_5nl2e7$(this.velocity.magnitude * oldWeight, this.velocity.phase);
-      var newVector = Complex$Companion_getInstance().valueOf_5nl2e7$(relativeForce.magnitude * (1.0 - oldWeight), relativeForce.phase);
-      var velo = oldVector.plus_p4p8i0$(newVector);
-      this.velocity = velo;
+      var force = this.vectorField.get_11rb$(PathUtil_getInstance().posToShadowPos_lfj9be$(this.pos));
+      this.velocity = MovementUtil_getInstance().move_75inmo$(this.velocity, force, this.speed);
       this.pos = new Coords(numberToInt(this.pos.x + this.velocity.re), numberToInt(this.pos.y + this.velocity.im));
     }
   };
@@ -2096,8 +2078,8 @@ var QGress = function (_, Kotlin) {
     this.MIN_WAIT_0 = Util_getInstance().secondsToTicks_za3lpa$(5);
     this.MAX_WAIT_0 = Util_getInstance().secondsToTicks_za3lpa$(45);
     this.image_0 = this.drawTemplate_0();
-    this.maxSpeed = 5.0;
-    this.minSpeed = 3.0;
+    this.maxSpeed = 3.0;
+    this.minSpeed = 1.0;
   }
   NonFaction$Companion.prototype.getOrCreateVectorField_lfj9be$ = function (destination) {
     var maybeField = this.fields.get_11rb$(destination);
@@ -2297,10 +2279,13 @@ var QGress = function (_, Kotlin) {
     this.glyphSkill = glyphSkill;
     this.reliability = reliability;
   }
+  Skills.prototype.inRangeSpeed = function () {
+    return this.speed / Constants_getInstance().phi;
+  };
   function Skills$Companion() {
     Skills$Companion_instance = this;
-    this.maxSpeed = 8.0;
-    this.minSpeed = 5.0;
+    this.maxSpeed = 5.0;
+    this.minSpeed = 2.0;
   }
   Skills$Companion.prototype.createRandom = function () {
     return new Skills(this.randomSpeed_0(), this.deployPrecision_0(), this.randomGlyphSkill_0(), this.randomReliability_0());
@@ -2394,18 +2379,18 @@ var QGress = function (_, Kotlin) {
   function Config() {
     Config_instance = this;
     this.seed = 111;
-    this.startPortals = 13;
+    this.startPortals = 8;
     this.startFrogs = 50;
     this.startSmurfs = 50;
-    this.maxFrogs = 200;
-    this.maxSmurfs = 200;
-    this.startNonFaction = numberToInt((this.maxFrogs + this.maxSmurfs | 0) * 0.5 / Constants_getInstance().phi);
+    this.maxFrogs = 100;
+    this.maxSmurfs = 100;
+    this.startNonFaction = numberToInt((this.startFrogs + this.startSmurfs | 0) / Constants_getInstance().phi);
     this.isAutostart = true;
     this.isHighlighActionLimit = true;
-    this.vectorSmoothCount = 5;
+    this.vectorSmoothCount = 3;
     this.shadowBlurCount = 3;
     this.comMessageLimit = 8;
-    this.topAgentsMessageLimit = 5;
+    this.topAgentsMessageLimit = 6;
   }
   Config.$metadata$ = {
     kind: Kind_OBJECT,
@@ -2424,7 +2409,6 @@ var QGress = function (_, Kotlin) {
     this.phi = 1.618033988749895;
     this.tau = 2.0 * math.PI;
     this.hexChars = '0123456789ABCDEF';
-    this.historyFactor = 1.0 - 1.0 / math.E;
     this.localLocation_0 = 'http://localhost:63342/';
     this.localToken_0 = 'Qgress/';
     this.location_0 = 'https://tok.github.io/';
@@ -2689,7 +2673,6 @@ var QGress = function (_, Kotlin) {
     this.isDrawResoLevels = false;
     this.isDrawTopAgents = true;
     this.use3DBuildings = true;
-    this.leaveInitialMap = false;
     this.vectorStyle = Styles$VectorStyle$CIRCLE_getInstance();
     this.isDrawObstructedVectors = false;
     this.isDrawResoLineGradient = true;
@@ -2751,10 +2734,10 @@ var QGress = function (_, Kotlin) {
     Time_instance = this;
     this.minTickInterval = 20;
     this.secondsPerTick = 1;
-    this.globalSpeedFactor = 1.0;
+    this.globalSpeedFactor_0 = 5.0;
   }
   Time.prototype.ticksPerFrame = function () {
-    return this.globalSpeedFactor * 100.0 / World_getInstance().speed;
+    return this.globalSpeedFactor_0 * 100.0 / World_getInstance().speed;
   };
   Time.$metadata$ = {
     kind: Kind_OBJECT,
@@ -6570,6 +6553,7 @@ var QGress = function (_, Kotlin) {
     this.im = im;
     var x = this.addSquares_0(this.re, this.im);
     this.magnitude = Math_0.sqrt(x);
+    this.mag = this.magnitude;
     this.magnitude2 = this.addSquares_0(this.re, this.im);
     var y = this.im;
     var x_0 = this.re;
@@ -6637,6 +6621,9 @@ var QGress = function (_, Kotlin) {
     this.ZERO = new Complex(0.0, 0.0);
     this.ONE = new Complex(1.0, 0.0);
   }
+  Complex$Companion.prototype.selectStronger_wqtvwk$ = function (first, second) {
+    return first.mag < second.mag ? first : second;
+  };
   Complex$Companion.prototype.fromImaginary_mx4ult$ = function (imaginary) {
     return new Complex(0.0, imaginary);
   };
@@ -8186,16 +8173,19 @@ var QGress = function (_, Kotlin) {
       return null;
     };
   }
+  function HtmlUtil$load$lambda_3(closure$satCheckbox) {
+    return function (it) {
+      if (closure$satCheckbox.checked)
+        MapUtil_getInstance().showSateliteMap();
+      else
+        MapUtil_getInstance().hideSateliteMap();
+      return Unit;
+    };
+  }
   function HtmlUtil$load$lambda$lambda$lambda(closure$slider, this$HtmlUtil, closure$sliderValue) {
     return function (f) {
       closure$sliderValue.innerHTML = this$HtmlUtil.qDisplay_0(closure$slider.value);
       return null;
-    };
-  }
-  function HtmlUtil$load$lambda_3(this$HtmlUtil) {
-    return function (event) {
-      this$HtmlUtil.handleMouseMove_0(event);
-      return Unit;
     };
   }
   function HtmlUtil$load$lambda_4(this$HtmlUtil) {
@@ -8204,8 +8194,14 @@ var QGress = function (_, Kotlin) {
       return Unit;
     };
   }
+  function HtmlUtil$load$lambda_5(this$HtmlUtil) {
+    return function (event) {
+      this$HtmlUtil.handleMouseMove_0(event);
+      return Unit;
+    };
+  }
   HtmlUtil.prototype.load = function () {
-    var tmp$, tmp$_0, tmp$_1, tmp$_2, tmp$_3, tmp$_4, tmp$_5;
+    var tmp$, tmp$_0, tmp$_1, tmp$_2, tmp$_3, tmp$_4, tmp$_5, tmp$_6, tmp$_7;
     var rootDiv = Kotlin.isType(tmp$ = document.getElementById('root'), HTMLDivElement) ? tmp$ : throwCCE();
     addClass(rootDiv, ['container']);
     World_getInstance().can = this.createCanvas_0('mainCanvas');
@@ -8236,34 +8232,44 @@ var QGress = function (_, Kotlin) {
     this.setLocationDropdownSelection_0(dropDown, selectionName);
     buttonDiv.append(dropDown);
     var volumeSlider = Kotlin.isType(tmp$_4 = document.createElement('input'), HTMLInputElement) ? tmp$_4 : throwCCE();
-    var tmp$_6;
+    var tmp$_8;
     volumeSlider.id = this.VOLUME_SLIDER_ID;
     volumeSlider.type = 'range';
     volumeSlider.min = '0';
     volumeSlider.max = '100';
     volumeSlider.value = '80';
     addClass(volumeSlider, ['slider', 'volumeSlider']);
-    var volumeSliderValue = Kotlin.isType(tmp$_6 = document.createElement('span'), HTMLSpanElement) ? tmp$_6 : throwCCE();
-    addClass(volumeSliderValue, ['sliderLabel']);
+    var volumeSliderValue = Kotlin.isType(tmp$_8 = document.createElement('span'), HTMLSpanElement) ? tmp$_8 : throwCCE();
+    addClass(volumeSliderValue, ['label']);
     volumeSlider.oninput = HtmlUtil$load$lambda$lambda_0(volumeSlider, volumeSliderValue);
     volumeSliderValue.innerHTML = volumeSlider.value + '% VOLUME';
     buttonDiv.append(volumeSlider);
     buttonDiv.append(volumeSliderValue);
+    var satCheckbox = Kotlin.isType(tmp$_5 = document.createElement('input'), HTMLInputElement) ? tmp$_5 : throwCCE();
+    satCheckbox.type = 'checkbox';
+    addClass(satCheckbox, ['checkbox']);
+    satCheckbox.onchange = HtmlUtil$load$lambda_3(satCheckbox);
+    buttonDiv.append(satCheckbox);
+    var label = Kotlin.isType(tmp$_6 = document.createElement('span'), HTMLSpanElement) ? tmp$_6 : throwCCE();
+    addClass(label, ['label']);
+    label.id = 'satCheckLabel';
+    label.innerHTML = 'Satellite Map';
+    buttonDiv.append(label);
     controlDiv.append(buttonDiv);
-    var qDiv = Kotlin.isType(tmp$_5 = document.createElement('div'), HTMLDivElement) ? tmp$_5 : throwCCE();
+    var qDiv = Kotlin.isType(tmp$_7 = document.createElement('div'), HTMLDivElement) ? tmp$_7 : throwCCE();
     addClass(qDiv, ['qValues']);
-    var tmp$_7;
-    tmp$_7 = QValue$Companion_getInstance().values().iterator();
-    while (tmp$_7.hasNext()) {
-      var element = tmp$_7.next();
-      var tmp$_8, tmp$_9;
-      var sliderDiv = Kotlin.isType(tmp$_8 = document.createElement('div'), HTMLDivElement) ? tmp$_8 : throwCCE();
-      var tmp$_10;
-      tmp$_10 = Faction$Companion_getInstance().factionValues().iterator();
-      while (tmp$_10.hasNext()) {
-        var element_0 = tmp$_10.next();
-        var tmp$_11, tmp$_12;
-        var slider = Kotlin.isType(tmp$_11 = document.createElement('input'), HTMLInputElement) ? tmp$_11 : throwCCE();
+    var tmp$_9;
+    tmp$_9 = QValue$Companion_getInstance().values().iterator();
+    while (tmp$_9.hasNext()) {
+      var element = tmp$_9.next();
+      var tmp$_10, tmp$_11;
+      var sliderDiv = Kotlin.isType(tmp$_10 = document.createElement('div'), HTMLDivElement) ? tmp$_10 : throwCCE();
+      var tmp$_12;
+      tmp$_12 = Faction$Companion_getInstance().factionValues().iterator();
+      while (tmp$_12.hasNext()) {
+        var element_0 = tmp$_12.next();
+        var tmp$_13, tmp$_14;
+        var slider = Kotlin.isType(tmp$_13 = document.createElement('input'), HTMLInputElement) ? tmp$_13 : throwCCE();
         slider.id = element.sliderId + element_0.nickName;
         slider.type = 'range';
         slider.min = '0.00';
@@ -8271,23 +8277,23 @@ var QGress = function (_, Kotlin) {
         slider.step = '0.01';
         slider.value = '0.50';
         addClass(slider, ['slider', 'qSlider', element_0.abbr.toLowerCase() + 'Slider']);
-        var sliderValue = Kotlin.isType(tmp$_12 = document.createElement('span'), HTMLSpanElement) ? tmp$_12 : throwCCE();
+        var sliderValue = Kotlin.isType(tmp$_14 = document.createElement('span'), HTMLSpanElement) ? tmp$_14 : throwCCE();
         addClass(sliderValue, ['qSliderLabel', element_0.abbr.toLowerCase() + 'Label']);
         slider.oninput = HtmlUtil$load$lambda$lambda$lambda(slider, this, sliderValue);
         sliderValue.innerHTML = this.qDisplay_0(slider.value);
         sliderDiv.append(slider);
         sliderDiv.append(sliderValue);
       }
-      var label = Kotlin.isType(tmp$_9 = document.createElement('span'), HTMLSpanElement) ? tmp$_9 : throwCCE();
-      addClass(label, ['qSliderTextLabel']);
-      label.innerHTML = element.name;
-      sliderDiv.append(label);
+      var label_0 = Kotlin.isType(tmp$_11 = document.createElement('span'), HTMLSpanElement) ? tmp$_11 : throwCCE();
+      addClass(label_0, ['qSliderTextLabel']);
+      label_0.innerHTML = element.name;
+      sliderDiv.append(label_0);
       qDiv.append(sliderDiv);
     }
     controlDiv.append(qDiv);
     rootDiv.append(controlDiv);
-    controlDiv.addEventListener('mousemove', HtmlUtil$load$lambda_3(this), false);
-    rootDiv.addEventListener('mousemove', HtmlUtil$load$lambda_4(this), false);
+    controlDiv.addEventListener('mousemove', HtmlUtil$load$lambda_4(this), false);
+    rootDiv.addEventListener('mousemove', HtmlUtil$load$lambda_5(this), false);
     this.initWorld_0();
   };
   HtmlUtil.prototype.qDisplay_0 = function (qValue) {
@@ -8429,7 +8435,7 @@ var QGress = function (_, Kotlin) {
     slider.value = value.toString();
     addClass(slider, ['slider', className]);
     var sliderValue = Kotlin.isType(tmp$_1 = document.createElement('span'), HTMLSpanElement) ? tmp$_1 : throwCCE();
-    addClass(sliderValue, ['sliderLabel']);
+    addClass(sliderValue, ['label']);
     slider.oninput = HtmlUtil$createSliderDiv$lambda(slider, suffix, sliderValue);
     div.appendChild(slider);
     div.appendChild(sliderValue);
@@ -8539,9 +8545,6 @@ var QGress = function (_, Kotlin) {
   };
   function HtmlUtil$onMapload$lambda$lambda() {
     DrawUtil_getInstance().drawLoadingText_61zpoe$('Ready.');
-    if (!Styles_getInstance().leaveInitialMap) {
-      MapUtil_getInstance().removeInitMap();
-    }
     World_getInstance().isReady = true;
     return Unit;
   }
@@ -8797,10 +8800,6 @@ var QGress = function (_, Kotlin) {
   MapUtil.prototype.initShadowMap = function () {
     return new mapboxgl.Map({container: 'shadowMap', style: 'mapbox://styles/zirteq/cjaq7lw9e2y7u2rn7u6xskobn'});
   };
-  MapUtil.prototype.removeInitMap = function () {
-    var tmp$;
-    (tmp$ = document.getElementById(this.INITIAL_MAP)) != null ? addClass(tmp$, [this.INVISIBLE]) : null;
-  };
   function MapUtil$loadMaps$lambda(closure$callback, this$MapUtil) {
     return function (initMap) {
       this$MapUtil.loadMap_0(initMap, closure$callback);
@@ -8985,6 +8984,16 @@ var QGress = function (_, Kotlin) {
     var rawGrid = toMap(destination);
     return rawGrid;
   };
+  MapUtil.prototype.showSateliteMap = function () {
+    var tmp$, tmp$_0;
+    (tmp$ = document.getElementById(this.INITIAL_MAP)) != null ? addClass(tmp$, [this.INVISIBLE]) : null;
+    (tmp$_0 = document.getElementById(this.MAP)) != null ? removeClass(tmp$_0, [this.INVISIBLE]) : null;
+  };
+  MapUtil.prototype.hideSateliteMap = function () {
+    var tmp$, tmp$_0;
+    (tmp$ = document.getElementById(this.INITIAL_MAP)) != null ? removeClass(tmp$, [this.INVISIBLE]) : null;
+    (tmp$_0 = document.getElementById(this.MAP)) != null ? addClass(tmp$_0, [this.INVISIBLE]) : null;
+  };
   MapUtil.$metadata$ = {
     kind: Kind_OBJECT,
     simpleName: 'MapUtil',
@@ -9091,8 +9100,6 @@ var QGress = function (_, Kotlin) {
     while (createWaveFront((tmp$ = heat, heat = tmp$ + 1 | 0, tmp$))) {
     }
     var nextLayer = PathUtil$generateHeatMap$nextLayer(this);
-    heatMap.putAll_a2k3zr$(nextLayer(heatMap));
-    heatMap.putAll_a2k3zr$(nextLayer(heatMap));
     heatMap.putAll_a2k3zr$(nextLayer(heatMap));
     return heatMap;
   };

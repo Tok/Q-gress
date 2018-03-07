@@ -4,9 +4,7 @@ import Canvas
 import Ctx
 import World
 import config.Colors
-import config.Constants
 import config.Dimensions
-import config.Time
 import portal.Portal
 import util.*
 import util.data.Cell
@@ -23,7 +21,6 @@ data class NonFaction(var pos: Coords, val speed: Float,
     fun distanceToPortal(portal: Portal): Double = pos.distanceTo(portal.location)
     fun isAtDestination(): Boolean = distanceToDestination() < Dimensions.maxDeploymentRange // Constants.phi
     fun isBusy(tick: Int): Boolean = tick <= busyUntil
-
     fun act() {
         if (isBusy(World.tick)) {
             if (Util.random() < 0.001) { //stop waiting and go somewhere random
@@ -44,16 +41,9 @@ data class NonFaction(var pos: Coords, val speed: Float,
         if (isAtDestination()) {
             wait()
         } else {
-            val shadowPos = PathUtil.posToShadowPos(pos)
-            val force = vectorField.get(shadowPos) ?: velocity
-            val mag = speed * Time.globalSpeedFactor * World.speed / 100
-            val relativeForce = Complex.fromMagnitudeAndPhase(mag, force.phase)
-            val oldWeight = Constants.historyFactor * 100 / World.speed
-            val oldVector = Complex.valueOf(this.velocity.magnitude * oldWeight, this.velocity.phase)
-            val newVector = Complex.valueOf(relativeForce.magnitude * (1F - oldWeight), relativeForce.phase)
-            val velo = oldVector + newVector
-            this.velocity = velo
-            this.pos = Coords((pos.x + this.velocity.re).toInt(), (pos.y + this.velocity.im).toInt())
+            val force = vectorField.get(PathUtil.posToShadowPos(pos))
+            velocity = MovementUtil.move(velocity, force, speed)
+            this.pos = Coords((pos.x + velocity.re).toInt(), (pos.y + velocity.im).toInt())
         }
     }
 
@@ -149,8 +139,8 @@ data class NonFaction(var pos: Coords, val speed: Float,
             })
         }
 
-        val maxSpeed = 5F
-        val minSpeed = 3F
+        val maxSpeed = 3F
+        val minSpeed = 1F
         fun create(grid: Map<Coords, Cell>): NonFaction {
             val position = Coords.createRandomPassable(grid)
             val speed = minSpeed + (Util.random().toFloat() * (maxSpeed - minSpeed))

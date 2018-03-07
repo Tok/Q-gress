@@ -13,6 +13,7 @@ data class Complex(val re: Float, val im: Float = 0F) {
     constructor(real: Int, imaginary: Int = 0) : this(real.toFloat(), imaginary.toFloat())
 
     val magnitude: Float = sqrt(addSquares(re, im)).toFloat()
+    val mag: Float = magnitude
     val magnitude2: Float = addSquares(re, im)
     val phase = atan2(im.toDouble(), re.toDouble())
     val modulus = magnitude
@@ -53,6 +54,7 @@ data class Complex(val re: Float, val im: Float = 0F) {
         val I = Complex(0F, 1F)
         val ZERO = Complex(0F, 0F)
         val ONE = Complex(1F, 0F)
+        fun selectStronger(first: Complex, second: Complex) = if (first.mag < second.mag) first else second
         fun fromImaginary(imaginary: Float) = Complex(0F, imaginary)
         fun fromImaginaryInt(imaginary: Int) = Complex(0F, imaginary.toFloat())
         fun valueOf(magnitude: Float, phase: Double) = fromMagnitudeAndPhase(magnitude, phase)

@@ -53,8 +53,8 @@ object PathUtil {
         }
 
         heatMap.putAll(nextLayer(heatMap))
-        heatMap.putAll(nextLayer(heatMap))
-        heatMap.putAll(nextLayer(heatMap))
+        //heatMap.putAll(nextLayer(heatMap))
+        //heatMap.putAll(nextLayer(heatMap))
 
         return heatMap
     }

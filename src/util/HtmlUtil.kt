@@ -129,12 +129,24 @@ object HtmlUtil {
             value = "80"
             addClass("slider", "volumeSlider")
             val volumeSliderValue = document.createElement("span") as HTMLSpanElement
-            volumeSliderValue.addClass("sliderLabel")
+            volumeSliderValue.addClass("label")
             oninput = { _ -> volumeSliderValue.innerHTML = value + "% SOUND VOLUME"; null }
             volumeSliderValue.innerHTML = value + "% VOLUME"
             buttonDiv.append(volumeSlider)
             buttonDiv.append(volumeSliderValue)
         }
+
+        val satCheckbox = document.createElement("input") as HTMLInputElement
+        satCheckbox.type = "checkbox"
+        satCheckbox.addClass("checkbox")
+        satCheckbox.onchange = { if (satCheckbox.checked) MapUtil.showSateliteMap() else MapUtil.hideSateliteMap() }
+        buttonDiv.append(satCheckbox)
+        val label = document.createElement("span") as HTMLSpanElement
+        label.addClass("label")
+        label.id = "satCheckLabel"
+        label.innerHTML = "Satellite Map"
+        buttonDiv.append(label)
+
         controlDiv.append(buttonDiv)
 
         val qDiv = document.createElement("div") as HTMLDivElement
@@ -284,7 +296,7 @@ object HtmlUtil {
         slider.value = value.toString()
         slider.addClass("slider", className)
         val sliderValue = document.createElement("span") as HTMLSpanElement
-        sliderValue.addClass("sliderLabel")
+        sliderValue.addClass("label")
         slider.oninput = { _ -> sliderValue.innerHTML = slider.value + suffix; null }
         div.appendChild(slider)
         div.appendChild(sliderValue)
@@ -379,9 +391,6 @@ object HtmlUtil {
                 DrawUtil.drawActionLimits(false)
                 createAgentsAndPortals({
                     DrawUtil.drawLoadingText("Ready.")
-                    if (!Styles.leaveInitialMap) {
-                        MapUtil.removeInitMap()
-                    }
                     World.isReady = true
                 })
             }

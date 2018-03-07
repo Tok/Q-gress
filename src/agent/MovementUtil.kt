@@ -1,12 +1,14 @@
 package agent
 
 import World
-import agent.action.Action
 import agent.action.ActionItem
+import config.Constants
 import config.Dimensions
 import items.level.PortalLevel
 import portal.Portal
 import util.Util
+import util.data.Complex
+import kotlin.math.min
 
 object MovementUtil {
     fun findUncapturedPortals() = World.allPortals.filter { it.isUncaptured() }
@@ -77,5 +79,14 @@ object MovementUtil {
         val nextDest = destination.findRandomPointNearPortal(distance.toInt())
         agent.action.start(ActionItem.MOVE)
         return agent.copy(actionPortal = destination, destination = nextDest)
+    }
+
+    fun move(vector: Complex, force: Complex?, speed: Float): Complex {
+        return if (force != null) {
+            val sum = vector + vector + vector + force + force
+            return sum.copyWithNewMagnitude(speed)
+        } else {
+            vector
+        }
     }
 }

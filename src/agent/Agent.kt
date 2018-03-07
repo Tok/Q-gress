@@ -184,24 +184,17 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
             return doNothing()
         }
         addXm(2) //FIXME
-        val shadowPos = PathUtil.posToShadowPos(pos)
-        val force = actionPortal.vectorField.get(shadowPos) ?: this.velocity
-        val mag = skills.speed * (World.speed / 100)
-        val relativeForce = Complex.fromMagnitudeAndPhase(mag, force.phase)
-        val oldWeight = 0.5F * 100 / World.speed
-        val oldVector = Complex.fromMagnitudeAndPhase(this.velocity.magnitude * oldWeight, this.velocity.phase)
-        val newVector = Complex.fromMagnitudeAndPhase(relativeForce.magnitude * (1F - oldWeight), relativeForce.phase)
-        val velo = oldVector + newVector
-        return this.copy(velocity = velo, pos = Coords((pos.x + velo.re).toInt(), (pos.y + velo.im).toInt()))
+
+        val force = actionPortal.vectorField.get(PathUtil.posToShadowPos(pos))
+        velocity = MovementUtil.move(velocity, force, skills.speed)
+        return this.copy(pos = Coords((pos.x + velocity.re).toInt(), (pos.y + velocity.im).toInt()))
     }
 
     private fun isAttackPossible() = inventory.findXmps()?.isNotEmpty() ?: false
 
-    private fun actualSpeed() = skills.speed * Time.globalSpeedFactor * World.speed / 100
-    private fun inRangeSpeed() = actualSpeed() / Constants.phi
-    private fun isArrived() = distanceToDestination() <= inRangeSpeed()
+    private fun isArrived() = distanceToDestination() <= skills.inRangeSpeed()
     fun moveCloserInRange(): Agent {
-        val part = inRangeSpeed() / distanceToDestination()
+        val part = skills.inRangeSpeed() / distanceToDestination()
         val rawDiffX = (pos.xDiff(destination) * part).toInt()
         val rawDiffY = (pos.yDiff(destination) * part).toInt()
         val rawNextX = pos.x - rawDiffX
@@ -518,15 +511,6 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
             })
         }
 
-        private fun startAction(agent: Agent, item: ActionItem): Agent {
-            agent.action.start(item)
-            return agent
-        }
-        private fun endAction(agent: Agent): Agent {
-            agent.action.end()
-            return agent
-        }
-
         fun createFrog(grid: Map<Coords, Cell>) = create(grid, Faction.ENL)
         fun createSmurf(grid: Map<Coords, Cell>) = create(grid, Faction.RES)
         private fun create(grid: Map<Coords, Cell>, faction: Faction): Agent {
@@ -535,7 +519,7 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
             val coords = Coords.createRandomPassable(grid)
             val actionPortal = Util.findNearestPortal(coords) ?: World.allPortals.get(0) //FIXME
             return Agent(faction, Util.generateAgentName(), coords, Skills.createRandom(),
-                    Inventory(), Action(ActionItem.MOVE, 0), actionPortal, actionPortal.location, initialAp, initialXm)
+                    Inventory(), Action.create(), actionPortal, actionPortal.location, initialAp, initialXm)
         }
     }
 }

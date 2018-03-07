@@ -8,8 +8,6 @@ object Constants {
 
     val hexChars = "0123456789ABCDEF"
 
-    val historyFactor = 1F - (1F / kotlin.math.E.toFloat())
-
     private val localLocation = "http://localhost:63342/"
     private val localToken = "Qgress/"
     private val location = "https://tok.github.io/"
