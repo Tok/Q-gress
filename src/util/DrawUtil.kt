@@ -6,12 +6,13 @@ import World
 import agent.Faction
 import agent.NonFaction
 import agent.QValue
-import agent.action.ActionItem
 import config.*
 import items.XmpBurster
 import items.deployable.DeployableItem
+import items.deployable.Shield
 import items.level.LevelColor
 import items.level.PortalLevel
+import items.types.ShieldType
 import items.level.XmpLevel
 import org.w3c.dom.*
 import portal.Portal
@@ -19,7 +20,6 @@ import system.Com
 import system.Queues
 import util.data.*
 import kotlin.browser.document
-import kotlin.browser.window
 import kotlin.math.PI
 import kotlin.math.max
 import kotlin.math.round
@@ -342,21 +342,45 @@ object DrawUtil {
     }
 
     fun drawTopAgents() {
-        fun drawCounts(ctx: Ctx, items: List<DeployableItem>?, pos: Coords) {
-            val fontSize = Dimensions.topAgentsInventoryFontSize
-            val width = 6
-            val lineWidth = 1.0
-            val itemGroups: Map<Int, List<DeployableItem>>? = items?.groupBy { it.getLevel() }
-            val itemLevels: Map<Int, Int>? = itemGroups?.mapValues { it.value.count() }
-            val maxLevel = itemLevels?.map { it.value }?.max() ?: 0
+        val fontSize = Dimensions.topAgentsInventoryFontSize
+        val lineWidth = 2.0
+        fun drawBars(ctx: Ctx, barWidth: Int, level: Int, color: String, pos: Coords, count: Int, maxCount: Int,
+                     isShields: Boolean = false) {
+            val xOffset = if (isShields) { (barWidth * level) - (barWidth / 2) } else { (barWidth * level) }
+            val statPos = Coords(pos.x + xOffset, pos.y + (fontSize / 2))
+            val h = fontSize.toDouble() * count / maxCount
+            drawRect(ctx, statPos, h, barWidth.toDouble(), color, Colors.black, lineWidth)
+        }
+        fun drawCounts(ctx: Ctx, items: List<DeployableItem>?, pos: Coords, isShields: Boolean = false) {
+            val barWidth = 6
             val countPos = Coords(pos.x, pos.y)
-            strokeText(ctx, countPos, items?.size.toString(), Colors.white, fontSize, CODA, 2.0, Colors.black, CanvasTextAlign.END)
-            (1..8).forEach { level ->
-                val statPos = Coords(pos.x + (width * level), pos.y + width)
-                val itemLevel = itemLevels?.get(level) ?: 0
-                val h = fontSize * itemLevel.toDouble() / maxLevel
-                val color = LevelColor.map.get(level) ?: "#FFFFFF"
-                drawRect(ctx, statPos, h, width.toDouble(), color, Colors.black, lineWidth)
+            val totalWidth = 48
+            val statPos = Coords(pos.x + barWidth, pos.y + (fontSize / 2))
+            drawRect(ctx, statPos, 0.0, totalWidth.toDouble(), Colors.black, Colors.black, lineWidth)
+            if (items == null || items.isEmpty()) {
+                strokeText(ctx, countPos, "0", Colors.white, fontSize, CODA, lineWidth, Colors.black, CanvasTextAlign.END)
+            } else {
+                strokeText(ctx, countPos, items.size.toString(), Colors.white, fontSize, CODA, lineWidth, Colors.black, CanvasTextAlign.END)
+                val itemsByLevel: Map<Int, List<DeployableItem>> = items.groupBy { it.getLevel() }
+                val countsByLevel: Map<Int, Int> = itemsByLevel.mapValues { it.value.count() }
+                val maxCount = countsByLevel.map { it.value }.max() ?: 0
+                if (isShields) {
+                    (1..4).forEach { level ->
+                        val count = countsByLevel.get(level) ?: 0
+                        if (count > 0) {
+                            val color = ShieldType.getColorForLevel(level)
+                            drawBars(ctx, barWidth * 2, level, color, pos, count, maxCount, true)
+                        }
+                    }
+                } else {
+                    (1..8).forEach { level ->
+                        val count = countsByLevel.get(level) ?: 0
+                        if (count > 0) {
+                            val color = LevelColor.map.get(level) ?: "#FFFFFF"
+                            drawBars(ctx, barWidth, level, color, pos, count, maxCount)
+                        }
+                    }
+                }
             }
         }
 
@@ -372,7 +396,8 @@ object DrawUtil {
                 "Agent AP                                                                 " +
                         "XMPs                         " +
                         "Resos                       " +
-                        "Cubes               " +
+                        "Cubes                      " +
+                        "Shields               " +
                         "Keys"
         strokeText(ctx, headerPos, headerText, Colors.white, Dimensions.topAgentsInventoryFontSize, CODA, 2.0, Colors.black)
 
@@ -394,9 +419,12 @@ object DrawUtil {
             val cubeColumnOffset = resoColumnOffset + 80
             drawCounts(ctx, agent.inventory.findPowerCubes(), Coords(pos.x + cubeColumnOffset, pos.y))
 
+            val shieldColumnOffset = cubeColumnOffset + 80
+            drawCounts(ctx, agent.inventory.findShields(), Coords(pos.x + shieldColumnOffset, pos.y), true)
+
             //Key counts
             val keyCount = agent.inventory.keyCount()
-            val keyColumnOffset = cubeColumnOffset + 80
+            val keyColumnOffset = shieldColumnOffset + 80
             val keyPos = Coords(pos.x + keyColumnOffset, pos.y)
             strokeText(ctx, keyPos, keyCount.toString(), Colors.white, invFontSize, CODA, 2.0, Colors.black, CanvasTextAlign.END)
         }

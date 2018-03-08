@@ -538,8 +538,7 @@ var QGress = function (_, Kotlin) {
     return this.copy_lmq102$(void 0, void 0, new Coords(numberToInt(this.pos.x + this.velocity.re), numberToInt(this.pos.y + this.velocity.im)));
   };
   Agent.prototype.isAttackPossible_0 = function () {
-    var tmp$, tmp$_0;
-    return (tmp$_0 = (tmp$ = this.inventory.findXmps()) != null ? !tmp$.isEmpty() : null) != null ? tmp$_0 : false;
+    return !this.inventory.findXmps().isEmpty();
   };
   Agent.prototype.isArrived_0 = function () {
     return this.distanceToDestination() <= this.skills.inRangeSpeed();
@@ -658,25 +657,19 @@ var QGress = function (_, Kotlin) {
   Comparator$ObjectLiteral_0.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
   function Agent$attackPortal$doAttack(this$Agent) {
     return function () {
-      var tmp$;
       var maxXmps = 12;
       var allXmps = this$Agent.inventory.findXmps();
-      var tmp$_0;
-      if ((tmp$ = allXmps != null ? sortedWith(allXmps, new Comparator$ObjectLiteral_0(compareBy$lambda_0(Agent$attackPortal$doAttack$lambda))) : null) != null) {
-        var b = allXmps.size;
-        tmp$_0 = take(tmp$, Math_0.min(maxXmps, b));
-      }
-       else
-        tmp$_0 = null;
-      var selectedXmps = tmp$_0;
-      if (selectedXmps == null || selectedXmps.isEmpty()) {
+      var tmp$ = sortedWith(allXmps, new Comparator$ObjectLiteral_0(compareBy$lambda_0(Agent$attackPortal$doAttack$lambda)));
+      var b = allXmps.size;
+      var selectedXmps = take(tmp$, Math_0.min(maxXmps, b));
+      if (selectedXmps.isEmpty()) {
         this$Agent.action.end();
         return this$Agent;
       }
-      var tmp$_1;
-      tmp$_1 = selectedXmps.iterator();
-      while (tmp$_1.hasNext()) {
-        var element = tmp$_1.next();
+      var tmp$_0;
+      tmp$_0 = selectedXmps.iterator();
+      while (tmp$_0.hasNext()) {
+        var element = tmp$_0.next();
         var this$Agent_0 = this$Agent;
         switch (element.level.level) {
           case 1:
@@ -1535,9 +1528,28 @@ var QGress = function (_, Kotlin) {
     }
     return destination_0;
   };
-  Inventory.prototype.findUniqueKeys = function () {
+  Inventory.prototype.findShields = function () {
+    var $receiver = this.items;
+    var destination = ArrayList_init();
     var tmp$;
-    return (tmp$ = this.findKeys()) != null ? distinct(tmp$) : null;
+    tmp$ = $receiver.iterator();
+    while (tmp$.hasNext()) {
+      var element = tmp$.next();
+      if (Kotlin.isType(element, Shield))
+        destination.add_11rb$(element);
+    }
+    var destination_0 = ArrayList_init(collectionSizeOrDefault(destination, 10));
+    var tmp$_0;
+    tmp$_0 = destination.iterator();
+    while (tmp$_0.hasNext()) {
+      var item = tmp$_0.next();
+      var tmp$_1;
+      destination_0.add_11rb$(Kotlin.isType(tmp$_1 = item, Shield) ? tmp$_1 : throwCCE());
+    }
+    return destination_0;
+  };
+  Inventory.prototype.findUniqueKeys = function () {
+    return distinct(this.findKeys());
   };
   Inventory.prototype.consumeKeyToPortal_hv9zn6$ = function (portal) {
     var tmp$;
@@ -2399,7 +2411,7 @@ var QGress = function (_, Kotlin) {
     this.vectorSmoothCount = 3;
     this.shadowBlurCount = 3;
     this.comMessageLimit = 8;
-    this.topAgentsMessageLimit = 6;
+    this.topAgentsMessageLimit = 8;
   }
   Config.$metadata$ = {
     kind: Kind_OBJECT,
@@ -2469,8 +2481,8 @@ var QGress = function (_, Kotlin) {
     this.muBottomOffset = 89;
     this.pixelToMFactor = 0.5;
     this.topAgentsBottomOffset = 0;
-    this.topAgentsLeftOffset = 210;
-    this.topAgentsFontSize = 13;
+    this.topAgentsLeftOffset = 144;
+    this.topAgentsFontSize = 11;
     this.topAgentsInventoryFontSize = 11;
     this.tickBottomOffset = 55;
     this.tickFontSize = 12;
@@ -3098,7 +3110,7 @@ var QGress = function (_, Kotlin) {
     return this.owner.key();
   };
   Shield.prototype.getLevel = function () {
-    return -1;
+    return this.type.level;
   };
   Shield.$metadata$ = {
     kind: Kind_CLASS,
@@ -4130,24 +4142,26 @@ var QGress = function (_, Kotlin) {
     }
   }
   MultihackType.valueOf_61zpoe$ = MultihackType$valueOf;
-  function ShieldType(name, ordinal, abbr, color, mitigation, stickiness, deployCostXm, roll) {
+  function ShieldType(name, ordinal, level, abbr, color, mitigation, stickiness, deployCostXm, chance) {
     Enum.call(this);
+    this.level = level;
     this.abbr = abbr;
     this.color = color;
     this.mitigation = mitigation;
     this.stickiness = stickiness;
     this.deployCostXm = deployCostXm;
-    this.roll = roll;
+    this.chance = chance;
     this.name$ = name;
     this.ordinal$ = ordinal;
   }
   function ShieldType_initFields() {
     ShieldType_initFields = function () {
     };
-    ShieldType$COMMON_instance = new ShieldType('COMMON', 0, 'CS', '8cffbf', 30, 0, 250, 50);
-    ShieldType$RARE_instance = new ShieldType('RARE', 1, 'RS', '73a8ff', 40, 15, 500, 500);
-    ShieldType$VERY_RARE_instance = new ShieldType('VERY_RARE', 2, 'VRS', 'b08cff', 60, 45, 1000, 1500);
-    ShieldType$AXA_instance = new ShieldType('AXA', 3, 'AXA', 'b08cff', 70, 80, 1000, 1500);
+    ShieldType$COMMON_instance = new ShieldType('COMMON', 0, 1, 'CS', '#8CFBBD', 30, 0, 250, 10.0 / 50);
+    ShieldType$RARE_instance = new ShieldType('RARE', 1, 2, 'RS', '#B18DFD', 40, 15, 500, 10.0 / 500);
+    ShieldType$VERY_RARE_instance = new ShieldType('VERY_RARE', 2, 3, 'VRS', '#F88BF5', 60, 45, 1000, 10.0 / 1500);
+    ShieldType$AEGIS_instance = new ShieldType('AEGIS', 3, 4, 'AEGIS', '#F88BF5', 70, 80, 1000, 10.0 / 1500);
+    ShieldType$Companion_getInstance();
   }
   var ShieldType$COMMON_instance;
   function ShieldType$COMMON_getInstance() {
@@ -4164,10 +4178,39 @@ var QGress = function (_, Kotlin) {
     ShieldType_initFields();
     return ShieldType$VERY_RARE_instance;
   }
-  var ShieldType$AXA_instance;
-  function ShieldType$AXA_getInstance() {
+  var ShieldType$AEGIS_instance;
+  function ShieldType$AEGIS_getInstance() {
     ShieldType_initFields();
-    return ShieldType$AXA_instance;
+    return ShieldType$AEGIS_instance;
+  }
+  function ShieldType$Companion() {
+    ShieldType$Companion_instance = this;
+  }
+  ShieldType$Companion.prototype.getColorForLevel_za3lpa$ = function (level) {
+    switch (level) {
+      case 1:
+        return ShieldType$COMMON_getInstance().color;
+      case 2:
+        return ShieldType$RARE_getInstance().color;
+      case 3:
+        return ShieldType$VERY_RARE_getInstance().color;
+      case 4:
+        return ShieldType$AEGIS_getInstance().color;
+      default:return '#FFFFFF';
+    }
+  };
+  ShieldType$Companion.$metadata$ = {
+    kind: Kind_OBJECT,
+    simpleName: 'Companion',
+    interfaces: []
+  };
+  var ShieldType$Companion_instance = null;
+  function ShieldType$Companion_getInstance() {
+    ShieldType_initFields();
+    if (ShieldType$Companion_instance === null) {
+      new ShieldType$Companion();
+    }
+    return ShieldType$Companion_instance;
   }
   ShieldType.$metadata$ = {
     kind: Kind_CLASS,
@@ -4175,7 +4218,7 @@ var QGress = function (_, Kotlin) {
     interfaces: [Enum]
   };
   function ShieldType$values() {
-    return [ShieldType$COMMON_getInstance(), ShieldType$RARE_getInstance(), ShieldType$VERY_RARE_getInstance(), ShieldType$AXA_getInstance()];
+    return [ShieldType$COMMON_getInstance(), ShieldType$RARE_getInstance(), ShieldType$VERY_RARE_getInstance(), ShieldType$AEGIS_getInstance()];
   }
   ShieldType.values = ShieldType$values;
   function ShieldType$valueOf(name) {
@@ -4186,8 +4229,8 @@ var QGress = function (_, Kotlin) {
         return ShieldType$RARE_getInstance();
       case 'VERY_RARE':
         return ShieldType$VERY_RARE_getInstance();
-      case 'AXA':
-        return ShieldType$AXA_getInstance();
+      case 'AEGIS':
+        return ShieldType$AEGIS_getInstance();
       default:throwISE('No enum constant items.types.ShieldType.' + name);
     }
   }
@@ -5408,7 +5451,7 @@ var QGress = function (_, Kotlin) {
         if (Field$Companion_getInstance().isPossible_rsiz9u$(this, target, element_0)) {
           var newField = Field$Companion_getInstance().create_veg84i$(this, target, element_0, agent);
           if (newField != null) {
-            Com_getInstance().addMessage_61zpoe$(agent.toString() + ' created a field at ' + this + ' between ' + target + ' and ' + element_0 + '. +' + toString(newField));
+            Com_getInstance().addMessage_61zpoe$(agent.toString() + ' created a field at ' + this + '. +' + toString(newField));
             SoundUtil_getInstance().playFieldingSound_7ltq94$(newField);
             this.fields.add_11rb$(newField);
             agent.addAp_za3lpa$(1250);
@@ -5487,7 +5530,7 @@ var QGress = function (_, Kotlin) {
     var tmp$;
     for (tmp$ = 0; tmp$ !== $receiver.length; ++tmp$) {
       var element = $receiver[tmp$];
-      while (Util_getInstance().random() < (1 / element.roll | 0)) {
+      if (Util_getInstance().random() < element.chance) {
         stuff.add_11rb$(new Shield(element, agent));
       }
     }
@@ -5689,26 +5732,21 @@ var QGress = function (_, Kotlin) {
     tmp$_4 = World_getInstance().allAgents.iterator();
     while (tmp$_4.hasNext()) {
       var element_2 = tmp$_4.next();
-      var tmp$_5, tmp$_6, tmp$_7;
-      var tmp$_8;
-      if ((tmp$_5 = element_2.inventory.findKeys()) != null) {
-        var destination = ArrayList_init();
-        var tmp$_9;
-        tmp$_9 = tmp$_5.iterator();
-        while (tmp$_9.hasNext()) {
-          var element_3 = tmp$_9.next();
-          if (element_3.portal.equals(this))
-            destination.add_11rb$(element_3);
-        }
-        tmp$_8 = destination;
+      var tmp$_5;
+      var $receiver = element_2.inventory.findKeys();
+      var destination = ArrayList_init();
+      var tmp$_6;
+      tmp$_6 = $receiver.iterator();
+      while (tmp$_6.hasNext()) {
+        var element_3 = tmp$_6.next();
+        if (element_3.portal.equals(this))
+          destination.add_11rb$(element_3);
       }
-       else
-        tmp$_8 = null;
-      var portalKeys = (tmp$_6 = tmp$_8) != null ? toList_0(tmp$_6) : null;
+      var portalKeys = toList_0(destination);
       if (portalKeys != null) {
         element_2.inventory.items.removeAll_brywnq$(portalKeys);
       }
-      if ((tmp$_7 = element_2.actionPortal) != null ? tmp$_7.equals(this) : null) {
+      if ((tmp$_5 = element_2.actionPortal) != null ? tmp$_5.equals(this) : null) {
         element_2.actionPortal = first(World_getInstance().allPortals);
         element_2.action.item = ActionItem$Companion_getInstance().WAIT;
         element_2.action.untilTick = tick + 1 | 0;
@@ -7700,21 +7738,45 @@ var QGress = function (_, Kotlin) {
     drawMuRect(enlPos, enlPart, Faction$ENL_getInstance(), enlMu);
     drawMuRect(resPos, resPart, Faction$RES_getInstance(), resMu);
   };
+  function DrawUtil$drawTopAgents$drawBars(closure$fontSize, closure$lineWidth, this$DrawUtil) {
+    return function (ctx, barWidth, level, color, pos, count, maxCount, isShields) {
+      if (isShields === void 0)
+        isShields = false;
+      var tmp$;
+      if (isShields) {
+        tmp$ = Kotlin.imul(barWidth, level) - (barWidth / 2 | 0) | 0;
+      }
+       else {
+        tmp$ = Kotlin.imul(barWidth, level);
+      }
+      var xOffset = tmp$;
+      var statPos = new Coords(pos.x + xOffset | 0, pos.y + (closure$fontSize / 2 | 0) | 0);
+      var h = closure$fontSize * count / maxCount;
+      this$DrawUtil.drawRect_0(ctx, statPos, h, barWidth, color, Colors_getInstance().black, closure$lineWidth);
+    };
+  }
   var mapCapacity = Kotlin.kotlin.collections.mapCapacity_za3lpa$;
   var LinkedHashMap_init_0 = Kotlin.kotlin.collections.LinkedHashMap_init_xf5xz2$;
-  function DrawUtil$drawTopAgents$drawCounts(this$DrawUtil) {
-    return function (ctx, items, pos) {
-      var tmp$, tmp$_0;
-      var fontSize = Dimensions_getInstance().topAgentsInventoryFontSize;
-      var width = 6;
-      var lineWidth = 1.0;
-      var tmp$_1;
-      if (items != null) {
+  function DrawUtil$drawTopAgents$drawCounts(closure$fontSize, closure$lineWidth, this$DrawUtil, closure$drawBars) {
+    return function (ctx, items, pos, isShields) {
+      if (isShields === void 0)
+        isShields = false;
+      var tmp$;
+      var barWidth = 6;
+      var countPos = new Coords(pos.x, pos.y);
+      var totalWidth = 48;
+      var statPos = new Coords(pos.x + barWidth | 0, pos.y + (closure$fontSize / 2 | 0) | 0);
+      this$DrawUtil.drawRect_0(ctx, statPos, 0.0, totalWidth, Colors_getInstance().black, Colors_getInstance().black, closure$lineWidth);
+      if (items == null || items.isEmpty()) {
+        this$DrawUtil.strokeText_lowmm9$(ctx, countPos, '0', Colors_getInstance().white, closure$fontSize, this$DrawUtil.CODA, closure$lineWidth, Colors_getInstance().black, 'end');
+      }
+       else {
+        this$DrawUtil.strokeText_lowmm9$(ctx, countPos, items.size.toString(), Colors_getInstance().white, closure$fontSize, this$DrawUtil.CODA, closure$lineWidth, Colors_getInstance().black, 'end');
         var destination = LinkedHashMap_init();
-        var tmp$_2;
-        tmp$_2 = items.iterator();
-        while (tmp$_2.hasNext()) {
-          var element = tmp$_2.next();
+        var tmp$_0;
+        tmp$_0 = items.iterator();
+        while (tmp$_0.hasNext()) {
+          var element = tmp$_0.next();
           var key = element.getLevel();
           var tmp$_0_0;
           var value = destination.get_11rb$(key);
@@ -7729,53 +7791,53 @@ var QGress = function (_, Kotlin) {
           var list = tmp$_0_0;
           list.add_11rb$(element);
         }
-        tmp$_1 = destination;
-      }
-       else
-        tmp$_1 = null;
-      var itemGroups = tmp$_1;
-      var tmp$_3;
-      if (itemGroups != null) {
-        var destination_0 = LinkedHashMap_init_0(mapCapacity(itemGroups.size));
-        var tmp$_4;
-        tmp$_4 = itemGroups.entries.iterator();
-        while (tmp$_4.hasNext()) {
-          var element_0 = tmp$_4.next();
+        var itemsByLevel = destination;
+        var destination_0 = LinkedHashMap_init_0(mapCapacity(itemsByLevel.size));
+        var tmp$_1;
+        tmp$_1 = itemsByLevel.entries.iterator();
+        while (tmp$_1.hasNext()) {
+          var element_0 = tmp$_1.next();
           destination_0.put_xwzc9p$(element_0.key, element_0.value.size);
         }
-        tmp$_3 = destination_0;
-      }
-       else
-        tmp$_3 = null;
-      var itemLevels = tmp$_3;
-      var tmp$_5;
-      if (itemLevels != null) {
-        var destination_1 = ArrayList_init(itemLevels.size);
-        var tmp$_6;
-        tmp$_6 = itemLevels.entries.iterator();
-        while (tmp$_6.hasNext()) {
-          var item = tmp$_6.next();
+        var countsByLevel = destination_0;
+        var destination_1 = ArrayList_init(countsByLevel.size);
+        var tmp$_2;
+        tmp$_2 = countsByLevel.entries.iterator();
+        while (tmp$_2.hasNext()) {
+          var item = tmp$_2.next();
           destination_1.add_11rb$(item.value);
         }
-        tmp$_5 = destination_1;
-      }
-       else
-        tmp$_5 = null;
-      var maxLevel = (tmp$_0 = (tmp$ = tmp$_5) != null ? max(tmp$) : null) != null ? tmp$_0 : 0;
-      var countPos = new Coords(pos.x, pos.y);
-      this$DrawUtil.strokeText_lowmm9$(ctx, countPos, toString(items != null ? items.size : null), Colors_getInstance().white, fontSize, this$DrawUtil.CODA, 2.0, Colors_getInstance().black, 'end');
-      var $receiver = new IntRange(1, 8);
-      var tmp$_7;
-      tmp$_7 = $receiver.iterator();
-      while (tmp$_7.hasNext()) {
-        var element_1 = tmp$_7.next();
-        var this$DrawUtil_0 = this$DrawUtil;
-        var tmp$_8, tmp$_9;
-        var statPos = new Coords(pos.x + Kotlin.imul(width, element_1) | 0, pos.y + width | 0);
-        var itemLevel = (tmp$_8 = itemLevels != null ? itemLevels.get_11rb$(element_1) : null) != null ? tmp$_8 : 0;
-        var h = fontSize * itemLevel / maxLevel;
-        var color = (tmp$_9 = LevelColor_getInstance().map.get_11rb$(element_1)) != null ? tmp$_9 : '#FFFFFF';
-        this$DrawUtil_0.drawRect_0(ctx, statPos, h, width, color, Colors_getInstance().black, lineWidth);
+        var maxCount = (tmp$ = max(destination_1)) != null ? tmp$ : 0;
+        if (isShields) {
+          var $receiver = new IntRange(1, 4);
+          var tmp$_3;
+          tmp$_3 = $receiver.iterator();
+          while (tmp$_3.hasNext()) {
+            var element_1 = tmp$_3.next();
+            var closure$drawBars_0 = closure$drawBars;
+            var tmp$_4;
+            var count = (tmp$_4 = countsByLevel.get_11rb$(element_1)) != null ? tmp$_4 : 0;
+            if (count > 0) {
+              var color = ShieldType$Companion_getInstance().getColorForLevel_za3lpa$(element_1);
+              closure$drawBars_0(ctx, barWidth * 2 | 0, element_1, color, pos, count, maxCount, true);
+            }
+          }
+        }
+         else {
+          var $receiver_0 = new IntRange(1, 8);
+          var tmp$_5;
+          tmp$_5 = $receiver_0.iterator();
+          while (tmp$_5.hasNext()) {
+            var element_2 = tmp$_5.next();
+            var closure$drawBars_1 = closure$drawBars;
+            var tmp$_6, tmp$_7;
+            var count_0 = (tmp$_6 = countsByLevel.get_11rb$(element_2)) != null ? tmp$_6 : 0;
+            if (count_0 > 0) {
+              var color_0 = (tmp$_7 = LevelColor_getInstance().map.get_11rb$(element_2)) != null ? tmp$_7 : '#FFFFFF';
+              closure$drawBars_1(ctx, barWidth, element_2, color_0, pos, count_0, maxCount);
+            }
+          }
+        }
       }
     };
   }
@@ -7799,7 +7861,10 @@ var QGress = function (_, Kotlin) {
   };
   Comparator$ObjectLiteral_15.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
   DrawUtil.prototype.drawTopAgents = function () {
-    var drawCounts = DrawUtil$drawTopAgents$drawCounts(this);
+    var fontSize = Dimensions_getInstance().topAgentsInventoryFontSize;
+    var lineWidth = 2.0;
+    var drawBars = DrawUtil$drawTopAgents$drawBars(fontSize, lineWidth, this);
+    var drawCounts = DrawUtil$drawTopAgents$drawCounts(fontSize, lineWidth, this, drawBars);
     var ctx = World_getInstance().uiCtx();
     ctx.globalAlpha = 1.0;
     var xPos = Dimensions_getInstance().topAgentsLeftOffset;
@@ -7807,7 +7872,7 @@ var QGress = function (_, Kotlin) {
     var yFixOffset = Dimensions_getInstance().height - Dimensions_getInstance().topAgentsBottomOffset - Kotlin.imul(Config_getInstance().topAgentsMessageLimit, yOffset) | 0;
     var headerPos = new Coords(xPos, yFixOffset - yOffset | 0);
     var top = take(sortedWith(toList_0(World_getInstance().allAgents), new Comparator$ObjectLiteral_15(compareBy$lambda_14(DrawUtil$drawTopAgents$lambda))), Config_getInstance().topAgentsMessageLimit);
-    var headerText = 'Agent AP                                                                 ' + 'XMPs                         ' + 'Resos                       ' + 'Cubes               ' + 'Keys';
+    var headerText = 'Agent AP                                                                 ' + 'XMPs                         ' + 'Resos                       ' + 'Cubes                     ' + 'Shields                ' + 'Keys';
     this.strokeText_lowmm9$(ctx, headerPos, headerText, Colors_getInstance().white, Dimensions_getInstance().topAgentsInventoryFontSize, this.CODA, 2.0, Colors_getInstance().black);
     var invFontSize = Dimensions_getInstance().topAgentsInventoryFontSize;
     var tmp$, tmp$_0;
@@ -7828,8 +7893,10 @@ var QGress = function (_, Kotlin) {
       drawCounts(ctx, item.inventory.findResonators(), new Coords(pos.x + resoColumnOffset | 0, pos.y));
       var cubeColumnOffset = resoColumnOffset + 80 | 0;
       drawCounts(ctx, item.inventory.findPowerCubes(), new Coords(pos.x + cubeColumnOffset | 0, pos.y));
+      var shieldColumnOffset = cubeColumnOffset + 80 | 0;
+      drawCounts(ctx, item.inventory.findShields(), new Coords(pos.x + shieldColumnOffset | 0, pos.y), true);
       var keyCount = item.inventory.keyCount();
-      var keyColumnOffset = cubeColumnOffset + 80 | 0;
+      var keyColumnOffset = shieldColumnOffset + 80 | 0;
       var keyPos = new Coords(pos.x + keyColumnOffset | 0, pos.y);
       this.strokeText_lowmm9$(ctx, keyPos, keyCount.toString(), Colors_getInstance().white, invFontSize, this.CODA, 2.0, Colors_getInstance().black, 'end');
     }
@@ -8293,10 +8360,10 @@ var QGress = function (_, Kotlin) {
         sliderDiv.append(slider);
         sliderDiv.append(sliderValue);
       }
-      var label_0 = Kotlin.isType(tmp$_11 = document.createElement('span'), HTMLSpanElement) ? tmp$_11 : throwCCE();
-      addClass(label_0, ['qSliderTextLabel']);
-      label_0.innerHTML = element.name;
-      sliderDiv.append(label_0);
+      var qSliderLabel = Kotlin.isType(tmp$_11 = document.createElement('span'), HTMLSpanElement) ? tmp$_11 : throwCCE();
+      addClass(qSliderLabel, ['qSliderTextLabel']);
+      qSliderLabel.innerHTML = element.name;
+      sliderDiv.append(qSliderLabel);
       qDiv.append(sliderDiv);
     }
     controlDiv.append(qDiv);
@@ -10303,8 +10370,11 @@ var QGress = function (_, Kotlin) {
   Object.defineProperty(ShieldType, 'VERY_RARE', {
     get: ShieldType$VERY_RARE_getInstance
   });
-  Object.defineProperty(ShieldType, 'AXA', {
-    get: ShieldType$AXA_getInstance
+  Object.defineProperty(ShieldType, 'AEGIS', {
+    get: ShieldType$AEGIS_getInstance
+  });
+  Object.defineProperty(ShieldType, 'Companion', {
+    get: ShieldType$Companion_getInstance
   });
   package$types.ShieldType = ShieldType;
   Object.defineProperty(VirusType, 'JARVIS_VIRUS', {

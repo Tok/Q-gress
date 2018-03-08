@@ -137,7 +137,7 @@ data class Portal constructor(val name: String, val location: Coords,
                 if (Field.isPossible(this, target, anchor)) {
                     val newField = Field.create(this, target, anchor, agent)
                     if (newField != null) {
-                        Com.addMessage("$agent created a field at $this between $target and $anchor. +$newField")
+                        Com.addMessage("$agent created a field at $this. +$newField")
                         SoundUtil.playFieldingSound(newField)
                         fields.add(newField)
                         agent.addAp(1250)
@@ -166,7 +166,6 @@ data class Portal constructor(val name: String, val location: Coords,
         newStuff.addAll(obtainVirus(agent))
         newStuff.addAll(obtainPowerCubes(level, agent))
         newStuff.add(PortalKey.tryHack(this, agent))
-
 
         val isEnemyPortal = owner != null && agent.faction != owner?.faction
         if (isEnemyPortal) {
@@ -204,7 +203,7 @@ data class Portal constructor(val name: String, val location: Coords,
     private fun obtainShields(agent: Agent): List<QgressItem> {
         val stuff = mutableListOf<QgressItem>()
         ShieldType.values().forEach {
-            while (Util.random() < (1 / it.roll)) {
+            if (Util.random() < it.chance) {
                 stuff.add(Shield(it, agent))
             }
         }
@@ -345,7 +344,7 @@ data class Portal constructor(val name: String, val location: Coords,
             }
         }
         World.allAgents.forEach { agent ->
-            val portalKeys: List<PortalKey>? = agent.inventory.findKeys()?.filter { key -> key.portal.equals(this) }?.toList()
+            val portalKeys: List<PortalKey>? = agent.inventory.findKeys().filter { key -> key.portal.equals(this) }.toList()
             if (portalKeys != null) {
                 agent.inventory.items.removeAll(portalKeys)
             }

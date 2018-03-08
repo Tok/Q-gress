@@ -17,5 +17,5 @@ object Config {
     val shadowBlurCount = 3
 
     val comMessageLimit = 8
-    val topAgentsMessageLimit = 6
+    val topAgentsMessageLimit = 8
 }

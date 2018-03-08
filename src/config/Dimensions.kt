@@ -34,8 +34,8 @@ object Dimensions {
     val pixelToMFactor = 0.5
 
     val topAgentsBottomOffset = 0
-    val topAgentsLeftOffset = 210
-    val topAgentsFontSize = 13
+    val topAgentsLeftOffset = 144
+    val topAgentsFontSize = 11
     val topAgentsInventoryFontSize = 11
 
     val tickBottomOffset = 55

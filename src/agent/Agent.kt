@@ -191,7 +191,7 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         return this.copy(pos = Coords((pos.x + velocity.re).toInt(), (pos.y + velocity.im).toInt()))
     }
 
-    private fun isAttackPossible() = inventory.findXmps()?.isNotEmpty() ?: false
+    private fun isAttackPossible() = inventory.findXmps().isNotEmpty()
 
     private fun isArrived() = distanceToDestination() <= skills.inRangeSpeed()
     fun moveCloserInRange(): Agent {
@@ -237,8 +237,8 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         fun doAttack(): Agent {
             val maxXmps = 12
             val allXmps = inventory.findXmps()
-            val selectedXmps = allXmps?.sortedBy { it.level }?.take(min(maxXmps, allXmps.size))
-            if (selectedXmps == null || selectedXmps.isEmpty()) {
+            val selectedXmps = allXmps.sortedBy { it.level }.take(min(maxXmps, allXmps.size))
+            if (selectedXmps.isEmpty()) {
                 action.end()
                 return this
             }

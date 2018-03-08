@@ -6,5 +6,5 @@ import items.types.ShieldType
 data class Shield(val type: ShieldType, val owner: Agent) : DeployableItem {
     override fun toString() = type.abbr
     override fun getOwnerId(): String = owner.key()
-    override fun getLevel(): Int = -1 //TODO
+    override fun getLevel(): Int = type.level
 }

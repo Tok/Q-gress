@@ -169,10 +169,10 @@ object HtmlUtil {
                 sliderDiv.append(slider)
                 sliderDiv.append(sliderValue)
             }
-            val label = document.createElement("span") as HTMLSpanElement
-            label.addClass("qSliderTextLabel")
-            label.innerHTML = qValue.name
-            sliderDiv.append(label)
+            val qSliderLabel = document.createElement("span") as HTMLSpanElement
+            qSliderLabel.addClass("qSliderTextLabel")
+            qSliderLabel.innerHTML = qValue.name
+            sliderDiv.append(qSliderLabel)
             qDiv.append(sliderDiv)
         }
         controlDiv.append(qDiv)
