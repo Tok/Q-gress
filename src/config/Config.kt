@@ -9,7 +9,7 @@ object Config {
 
     val maxFrogs = 100
     val maxSmurfs = 100
-    val startNonFaction = ((startFrogs + startSmurfs) / Constants.phi).toInt()
+    val startNonFaction = ((startFrogs + startSmurfs) * Constants.phi).toInt()
 
     val isAutostart = true
     val isHighlighActionLimit = true

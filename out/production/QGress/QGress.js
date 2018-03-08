@@ -2405,7 +2405,7 @@ var QGress = function (_, Kotlin) {
     this.startSmurfs = 50;
     this.maxFrogs = 100;
     this.maxSmurfs = 100;
-    this.startNonFaction = numberToInt((this.startFrogs + this.startSmurfs | 0) / Constants_getInstance().phi);
+    this.startNonFaction = numberToInt((this.startFrogs + this.startSmurfs | 0) * Constants_getInstance().phi);
     this.isAutostart = true;
     this.isHighlighActionLimit = true;
     this.vectorSmoothCount = 3;
@@ -2463,7 +2463,7 @@ var QGress = function (_, Kotlin) {
     this.minDistancePortalToImpassable = this.portalRadius;
     this.resoRadius = 2.0;
     this.maxDeploymentRange = 34.0;
-    this.agentRadius = 5.0;
+    this.agentRadius = 3.0;
     this.agentLineWidth = 1;
     this.agentDeployCircleLineWidth = 1.0;
     this.linkLineWidth = 3.0;
@@ -7872,7 +7872,7 @@ var QGress = function (_, Kotlin) {
     var yFixOffset = Dimensions_getInstance().height - Dimensions_getInstance().topAgentsBottomOffset - Kotlin.imul(Config_getInstance().topAgentsMessageLimit, yOffset) | 0;
     var headerPos = new Coords(xPos, yFixOffset - yOffset | 0);
     var top = take(sortedWith(toList_0(World_getInstance().allAgents), new Comparator$ObjectLiteral_15(compareBy$lambda_14(DrawUtil$drawTopAgents$lambda))), Config_getInstance().topAgentsMessageLimit);
-    var headerText = 'Agent AP                                                                 ' + 'XMPs                         ' + 'Resos                       ' + 'Cubes                     ' + 'Shields                ' + 'Keys';
+    var headerText = 'Agent AP                                                                 ' + 'XMPs                         ' + 'Resos                       ' + 'Cubes                      ' + 'Shields               ' + 'Keys';
     this.strokeText_lowmm9$(ctx, headerPos, headerText, Colors_getInstance().white, Dimensions_getInstance().topAgentsInventoryFontSize, this.CODA, 2.0, Colors_getInstance().black);
     var invFontSize = Dimensions_getInstance().topAgentsInventoryFontSize;
     var tmp$, tmp$_0;
