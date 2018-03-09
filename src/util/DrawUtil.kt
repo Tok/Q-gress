@@ -397,7 +397,8 @@ object DrawUtil {
                         "Resos                       " +
                         "Cubes                      " +
                         "Shields               " +
-                        "Keys"
+                        "Keys                " +
+                        "Action"
         strokeText(ctx, headerPos, headerText, Colors.white, Dimensions.topAgentsInventoryFontSize, CODA, 2.0, Colors.black)
 
         val invFontSize = Dimensions.topAgentsInventoryFontSize
@@ -421,11 +422,14 @@ object DrawUtil {
             val shieldColumnOffset = cubeColumnOffset + 80
             drawCounts(ctx, agent.inventory.findShields(), Coords(pos.x + shieldColumnOffset, pos.y), true)
 
-            //Key counts
             val keyCount = agent.inventory.keyCount()
             val keyColumnOffset = shieldColumnOffset + 80
             val keyPos = Coords(pos.x + keyColumnOffset, pos.y)
             strokeText(ctx, keyPos, keyCount.toString(), Colors.white, invFontSize, CODA, 2.0, Colors.black, CanvasTextAlign.END)
+
+            val actionColumnOffset = keyColumnOffset + 80
+            val actionPos = Coords(pos.x + actionColumnOffset, pos.y)
+            strokeText(ctx, actionPos, agent.action.toString(), Colors.white, invFontSize, CODA, 2.0, Colors.black, CanvasTextAlign.END)
         }
     }
 

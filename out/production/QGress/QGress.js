@@ -7839,7 +7839,7 @@ var QGress = function (_, Kotlin) {
     var yFixOffset = Dimensions_getInstance().height - Dimensions_getInstance().topAgentsBottomOffset - Kotlin.imul(Config_getInstance().topAgentsMessageLimit, yOffset) | 0;
     var headerPos = new Coords(xPos, yFixOffset - yOffset | 0);
     var top = take(sortedWith(toList_0(World_getInstance().allAgents), new Comparator$ObjectLiteral_15(compareBy$lambda_14(DrawUtil$drawTopAgents$lambda))), Config_getInstance().topAgentsMessageLimit);
-    var headerText = 'Agent AP                                                                 ' + 'XMPs                         ' + 'Resos                       ' + 'Cubes                      ' + 'Shields               ' + 'Keys';
+    var headerText = 'Agent AP                                                                 ' + 'XMPs                         ' + 'Resos                       ' + 'Cubes                      ' + 'Shields               ' + 'Keys                ' + 'Action';
     this.strokeText_lowmm9$(ctx, headerPos, headerText, Colors_getInstance().white, Dimensions_getInstance().topAgentsInventoryFontSize, this.CODA, 2.0, Colors_getInstance().black);
     var invFontSize = Dimensions_getInstance().topAgentsInventoryFontSize;
     var tmp$, tmp$_0;
@@ -7866,6 +7866,9 @@ var QGress = function (_, Kotlin) {
       var keyColumnOffset = shieldColumnOffset + 80 | 0;
       var keyPos = new Coords(pos.x + keyColumnOffset | 0, pos.y);
       this.strokeText_lowmm9$(ctx, keyPos, keyCount.toString(), Colors_getInstance().white, invFontSize, this.CODA, 2.0, Colors_getInstance().black, 'end');
+      var actionColumnOffset = keyColumnOffset + 80 | 0;
+      var actionPos = new Coords(pos.x + actionColumnOffset | 0, pos.y);
+      this.strokeText_lowmm9$(ctx, actionPos, item.action.toString(), Colors_getInstance().white, invFontSize, this.CODA, 2.0, Colors_getInstance().black, 'end');
     }
   };
   DrawUtil.prototype.drawRect_0 = function (ctx, pos, h, w, fillStyle, strokeStyle, lineWidth) {
