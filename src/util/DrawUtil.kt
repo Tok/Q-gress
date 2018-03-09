@@ -9,7 +9,6 @@ import agent.QValue
 import config.*
 import items.XmpBurster
 import items.deployable.DeployableItem
-import items.deployable.Shield
 import items.level.LevelColor
 import items.level.PortalLevel
 import items.types.ShieldType

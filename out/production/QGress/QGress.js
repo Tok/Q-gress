@@ -607,12 +607,11 @@ var QGress = function (_, Kotlin) {
         }
       }
       var resos = destination;
-      var resoCount = resos.size;
       var tmp$_1;
       tmp$_1 = resos.iterator();
       while (tmp$_1.hasNext()) {
         var element_0 = tmp$_1.next();
-        element_0.recharge_2b7tta$(this, 1000 / resoCount | 0);
+        element_0.recharge_2b7tta$(this, 1000 / resos.size | 0);
       }
     }
     return this;
@@ -5211,15 +5210,7 @@ var QGress = function (_, Kotlin) {
     return filterNotNull(destination);
   };
   Portal.prototype.isFullyDeployed_0 = function () {
-    var $receiver = this.resoSlots;
-    var destination = ArrayList_init($receiver.size);
-    var tmp$;
-    tmp$ = $receiver.entries.iterator();
-    while (tmp$.hasNext()) {
-      var item = tmp$.next();
-      destination.add_11rb$(item.value.resonator);
-    }
-    return filterNotNull(destination).size === 8;
+    return this.getAllResos_0().size === 8;
   };
   Portal.prototype.averageResoLevel_0 = function () {
     var resos = this.getAllResos_0();
@@ -5241,17 +5232,6 @@ var QGress = function (_, Kotlin) {
     var b = numberToInt(round(tmp$ * Math_0.atan(x)));
     return Math_0.min(maxMitigation, b);
   };
-  Portal.prototype.findResos = function () {
-    var $receiver = this.resoSlots;
-    var destination = ArrayList_init($receiver.size);
-    var tmp$;
-    tmp$ = $receiver.entries.iterator();
-    while (tmp$.hasNext()) {
-      var item = tmp$.next();
-      destination.add_11rb$(item.value.resonator);
-    }
-    return filterNotNull(destination);
-  };
   function Portal$findStrongestReso$lambda(it) {
     return Kotlin.imul(it.energy, it.level.level);
   }
@@ -5272,7 +5252,7 @@ var QGress = function (_, Kotlin) {
   };
   Comparator$ObjectLiteral_14.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
   Portal.prototype.findStrongestReso_0 = function () {
-    var resos = this.findResos();
+    var resos = this.getAllResos_0();
     if (resos.isEmpty()) {
       return null;
     }
@@ -5285,17 +5265,16 @@ var QGress = function (_, Kotlin) {
     return (tmp$ = this.findStrongestReso_0()) != null ? tmp$.coords : null;
   };
   Portal.prototype.calcHealth = function () {
-    var $receiver = this.findResos();
-    var destination = ArrayList_init(collectionSizeOrDefault($receiver, 10));
+    var resos = this.getAllResos_0();
+    var destination = ArrayList_init(collectionSizeOrDefault(resos, 10));
     var tmp$;
-    tmp$ = $receiver.iterator();
+    tmp$ = resos.iterator();
     while (tmp$.hasNext()) {
       var item = tmp$.next();
-      destination.add_11rb$((item.energy * 100 | 0) / item.level.energy | 0);
+      destination.add_11rb$(item.calcHealthPrecent());
     }
-    var b = sum(destination) / this.findResos().size | 0;
-    var b_0 = Math_0.min(100, b);
-    return Math_0.max(0, b_0);
+    var health = sum(destination) / resos.size | 0;
+    return Util_getInstance().clip_qt1dr2$(health, 0, 100);
   };
   Portal.prototype.calcTotalXm = function () {
     var $receiver = this.getAllResos_0();
@@ -5882,36 +5861,29 @@ var QGress = function (_, Kotlin) {
         destination.put_xwzc9p$(element.key, element.value);
       }
     }
-    var destination_0 = ArrayList_init(destination.size);
+    var octantSlots = toList(destination);
+    var destination_0 = ArrayList_init(collectionSizeOrDefault(octantSlots, 10));
     var tmp$_0;
-    tmp$_0 = destination.entries.iterator();
+    tmp$_0 = octantSlots.iterator();
     while (tmp$_0.hasNext()) {
       var item = tmp$_0.next();
-      destination_0.add_11rb$(to(item.key, item.value));
-    }
-    var octantSlots = toList_0(destination_0);
-    var destination_1 = ArrayList_init(collectionSizeOrDefault(octantSlots, 10));
-    var tmp$_1;
-    tmp$_1 = octantSlots.iterator();
-    while (tmp$_1.hasNext()) {
-      var item_0 = tmp$_1.next();
-      var tmp$_2 = destination_1.add_11rb$;
-      var tmp$_3, tmp$_4, tmp$_5;
-      var octant = item_0.first;
-      var slot = item_0.second;
+      var tmp$_1 = destination_0.add_11rb$;
+      var tmp$_2, tmp$_3, tmp$_4;
+      var octant = item.first;
+      var slot = item.second;
       var reso = ensureNotNull(slot.resonator);
       var resoLevel = reso.level;
       var x = this.location.x + octant.calcXOffset_za3lpa$(slot.distance) | 0;
       var y = this.location.y + octant.calcYOffset_za3lpa$(slot.distance) | 0;
       var lineToPortal = new Line(new Coords(x, y), this.location);
-      var alpha = reso.energy * 100.0 / resoLevel.energy;
-      drawResoLine(lineToPortal, resoLevel.getColor(), (tmp$_5 = (tmp$_4 = (tmp$_3 = this.owner) != null ? tmp$_3.faction : null) != null ? tmp$_4.color : null) != null ? tmp$_5 : Faction$NONE_getInstance().color, 1.0, alpha);
+      var alpha = reso.calcHealthPrecent();
+      drawResoLine(lineToPortal, resoLevel.getColor(), (tmp$_4 = (tmp$_3 = (tmp$_2 = this.owner) != null ? tmp$_2.faction : null) != null ? tmp$_3.color : null) != null ? tmp$_4 : Faction$NONE_getInstance().color, 1.0, alpha);
       var resoCircle = new Circle(new Coords(x, y), Dimensions_getInstance().resoRadius);
       DrawUtil_getInstance().drawCircle_3kie0f$(ctx, resoCircle, Colors_getInstance().black, 2.0, resoLevel.getColor(), alpha);
       if (Styles_getInstance().isDrawResoLevels) {
         DrawUtil_getInstance().drawText_omkwws$(ctx, new Coords(x, y), reso.level.level.toString(), Colors_getInstance().black, 8, DrawUtil_getInstance().CODA);
       }
-      tmp$_2.call(destination_1, Unit);
+      tmp$_1.call(destination_0, Unit);
     }
   };
   Portal.prototype.drawCenter_j4cg6b$ = function (ctx, isDrawHealthBar) {
@@ -9444,6 +9416,10 @@ var QGress = function (_, Kotlin) {
       tmp$ = null;
     }
     return tmp$;
+  };
+  Util.prototype.clip_qt1dr2$ = function (value, from, to) {
+    var b = Math_0.min(to, value);
+    return Math_0.max(from, b);
   };
   Util.prototype.random = function () {
     return Math.random();

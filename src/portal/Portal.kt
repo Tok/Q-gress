@@ -59,8 +59,9 @@ data class Portal constructor(val name: String, val location: Coords,
     fun getLevel() = PortalLevel.findByValue(calculateLevel())
     fun x() = location.x.toDouble()
     fun y() = location.y.toDouble()
+
     private fun getAllResos() = resoSlots.map { it.value.resonator }.filterNotNull()
-    private fun isFullyDeployed() = resoSlots.map { it.value.resonator }.filterNotNull().count() == 8
+    private fun isFullyDeployed() = getAllResos().count() == 8
     private fun averageResoLevel(): Double {
         val resos = getAllResos()
         return resos.map { it.level.level }.sum() / resos.count().toDouble()
@@ -73,10 +74,8 @@ data class Portal constructor(val name: String, val location: Coords,
         val totalLinkCount = incoming.count() + links.count()
         return min(maxMitigation, round(400.0 / 9.0 * atan(totalLinkCount / E)).toInt())
     }
-
-    fun findResos(): List<Resonator> = resoSlots.map { it.value.resonator }.filterNotNull()
     private fun findStrongestReso(): Resonator? {
-        val resos = findResos()
+        val resos = getAllResos()
         if (resos.isEmpty()) {
             return null
         } else {
@@ -84,7 +83,11 @@ data class Portal constructor(val name: String, val location: Coords,
         }
     }
     fun findStrongestResoPos(): Coords? = findStrongestReso()?.coords
-    fun calcHealth(): Int = max(0, min(100, findResos().map { it.energy * 100 / it.level.energy }.sum() / findResos().count()))
+    fun calcHealth(): Int {
+        val resos = getAllResos()
+        val health = resos.map { it.calcHealthPrecent() }.sum() / resos.count()
+        return Util.clip(health, 0, 100)
+    }
     fun calcTotalXm(): Int = getAllResos().map { it.energy }.sum()
     fun calculateLinkingRangeInMeters() = {
         val x = averageResoLevel() //kotlin.math.pow?
@@ -431,7 +434,7 @@ data class Portal constructor(val name: String, val location: Coords,
 
         val octantSlots: List<Pair<Octant, ResonatorSlot>> = resoSlots.filter {
             it.value.owner != null && it.value.resonator != null
-        }.map { it.key to it.value }.toList()
+        }.toList()
         octantSlots.map { octantSlot ->
             val octant: Octant = octantSlot.first
             val slot = octantSlot.second
@@ -441,7 +444,7 @@ data class Portal constructor(val name: String, val location: Coords,
             val y = location.y + octant.calcYOffset(slot.distance)
 
             val lineToPortal = Line(Coords(x, y), location)
-            val alpha = reso.energy * 100.0 / resoLevel.energy
+            val alpha = reso.calcHealthPrecent().toDouble()
             drawResoLine(lineToPortal, resoLevel.getColor(), owner?.faction?.color ?: Faction.NONE.color, 1.0, alpha)
 
             val resoCircle = Circle(Coords(x, y), Dimensions.resoRadius)

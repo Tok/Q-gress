@@ -6,6 +6,8 @@ import portal.Portal
 import util.data.Coords
 import kotlin.math.PI
 import kotlin.math.floor
+import kotlin.math.max
+import kotlin.math.min
 
 object Util {
     fun findNearestPortals(coords: Coords): Set<Pair<Double, Portal>> {
@@ -20,6 +22,8 @@ object Util {
             null
         }
     }
+
+    fun clip(value: Int, from: Int, to: Int): Int = max(from, min(to, value))
 
     fun random(): Double = js("Math.random();") //native JS replacement for reprecated kotlin.js.Math.random()
 

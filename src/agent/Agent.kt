@@ -214,8 +214,7 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         val lowest: Portal? = chargable.sortedBy { it.calcHealth() }.first()
         if (lowest != null) {
             val resos = lowest.resoSlots.mapNotNull { it.value.resonator }
-            val resoCount = resos.count()
-            resos.forEach { it.recharge(this, 1000 / resoCount) }
+            resos.forEach { it.recharge(this, 1000 / resos.count()) }
         }
         return this
     }
