@@ -4819,8 +4819,9 @@ var QGress = function (_, Kotlin) {
   Comparator$ObjectLiteral_13.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
   Link.prototype.draw_f69bme$ = function (ctx) {
     var byHealth = sortedWith(listOf([this.origin, this.destination]), new Comparator$ObjectLiteral_13(compareBy$lambda_12(Link$draw$lambda)));
-    var lowHpTransparency = 1.0 * last(byHealth).calcHealth() / 100;
-    var highHpTransparency = 1.0 * first(byHealth).calcHealth() / 100;
+    var minTransparency = 0.2;
+    var lowHpTransparency = Util_getInstance().clipDouble_yvo9jy$(last(byHealth).calcHealth() * 0.01, minTransparency, 1.0);
+    var highHpTransparency = Util_getInstance().clipDouble_yvo9jy$(first(byHealth).calcHealth() * 0.01, minTransparency, 1.0);
     var gradient = ctx.createLinearGradient(this.origin.x(), this.origin.y(), this.destination.x(), this.destination.y());
     if (this.origin.calcHealth() < this.destination.calcHealth()) {
       gradient.addColorStop(0.0, this.owner.faction.fieldStyle + toString(highHpTransparency) + ')');
@@ -9421,6 +9422,10 @@ var QGress = function (_, Kotlin) {
     return tmp$;
   };
   Util.prototype.clip_qt1dr2$ = function (value, from, to) {
+    var b = Math_0.min(to, value);
+    return Math_0.max(from, b);
+  };
+  Util.prototype.clipDouble_yvo9jy$ = function (value, from, to) {
     var b = Math_0.min(to, value);
     return Math_0.max(from, b);
   };

@@ -4,6 +4,7 @@ import Ctx
 import agent.Agent
 import config.Dimensions
 import items.deployable.Resonator
+import util.Util
 import util.data.Line
 
 data class Link(val origin: Portal, val destination: Portal, val owner: Agent) {
@@ -12,8 +13,9 @@ data class Link(val origin: Portal, val destination: Portal, val owner: Agent) {
 
     fun draw(ctx: Ctx) {
         val byHealth = listOf<Portal>(origin, destination).sortedBy { it.calcHealth() }
-        val lowHpTransparency = 1.0 * byHealth.last().calcHealth() / 100
-        val highHpTransparency = 1.0 * byHealth.first().calcHealth() / 100
+        val minTransparency = 0.2
+        val lowHpTransparency = Util.clipDouble(byHealth.last().calcHealth() * 0.01, minTransparency, 1.0)
+        val highHpTransparency = Util.clipDouble(byHealth.first().calcHealth() * 0.01, minTransparency, 1.0)
         val gradient = ctx.createLinearGradient(origin.x(), origin.y(), destination.x(), destination.y())
         if (origin.calcHealth() < destination.calcHealth()) {
             gradient.addColorStop(0.0, owner.faction.fieldStyle + highHpTransparency + ")")
