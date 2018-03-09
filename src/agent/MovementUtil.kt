@@ -13,7 +13,7 @@ import kotlin.math.min
 object MovementUtil {
     fun findUncapturedPortals() = World.allPortals.filter { it.isUncaptured() }
     fun hasUncapturedPortals() = findUncapturedPortals().isNotEmpty()
-    fun findEnemyPortals(agent: Agent) = World.allPortals.filter { it.isEnemyOf(agent) }
+    fun findEnemyPortals(agent: Agent): List<Portal> = World.allPortals.filter { it.isEnemyOf(agent) }
     fun hasEnemyPortals(agent: Agent) = findEnemyPortals(agent).isNotEmpty()
     fun findFriendlyPortals(agent: Agent) = World.allPortals.filter { it.isFriendlyTo(agent) }
     fun hasFriendlyPortals(agent: Agent) = findFriendlyPortals(agent).isNotEmpty()
@@ -43,22 +43,16 @@ object MovementUtil {
     /* End Friendly Portals */
 
     /* Enemy Portals */
-    fun attackClosePortal(agent: Agent): Agent {
-        check(hasEnemyPortals(agent))
-        val target = findEnemyPortals(agent).sortedBy { agent.distanceToPortal(it) }.first()
-        return goToDestinationPortal(agent, target)
-    }
-
-    fun attackMostLinkedPortal(agent: Agent): Agent {
-        check(hasEnemyPortals(agent))
-        val target = findEnemyPortals(agent).sortedBy { it.links.size }.first()
-        return goToDestinationPortal(agent, target)
-    }
-
-    fun attackMostVulnerablePortal(agent: Agent): Agent {
-        check(hasEnemyPortals(agent))
-        val target = findEnemyPortals(agent).sortedBy { -it.calcHealth() }.first()
-        return goToDestinationPortal(agent, target)
+    fun attackClosePortal(a: Agent) = goAttack(a, findEnemyPortals(a).sortedBy { a.distanceToPortal(it) }.firstOrNull())
+    fun attackMostLinkedPortal(a: Agent) = goAttack(a, findEnemyPortals(a).sortedBy { it.links.size }.firstOrNull())
+    fun attackMostVulnerablePortal(a: Agent) = goAttack(a, findEnemyPortals(a).sortedBy { -it.calcHealth() }.firstOrNull())
+    private fun goAttack(agent: Agent, target: Portal?): Agent  {
+        if (target != null) {
+            return goToDestinationPortal(agent, target)
+        } else {
+            agent.action.end()
+            return agent
+        }
     }
     /* End Enemy Portals */
 

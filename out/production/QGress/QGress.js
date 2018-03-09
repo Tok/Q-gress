@@ -32,6 +32,7 @@ var QGress = function (_, Kotlin) {
   var Enum = Kotlin.kotlin.Enum;
   var throwISE = Kotlin.throwISE;
   var eachCount = Kotlin.kotlin.collections.eachCount_kji7v9$;
+  var firstOrNull = Kotlin.kotlin.collections.firstOrNull_2p1efm$;
   var math = Kotlin.kotlin.math;
   var asList = Kotlin.kotlin.collections.asList_us0mfu$;
   var Kind_INTERFACE = Kotlin.Kind.INTERFACE;
@@ -1865,9 +1866,9 @@ var QGress = function (_, Kotlin) {
     var target = selection.get_za3lpa$(numberToInt(Util_getInstance().random() * (selection.size - 1 | 0)));
     return this.goToDestinationPortal_0(agent, target);
   };
-  function MovementUtil$attackClosePortal$lambda(closure$agent) {
+  function MovementUtil$attackClosePortal$lambda(closure$a) {
     return function (it) {
-      return closure$agent.distanceToPortal_hv9zn6$(it);
+      return closure$a.distanceToPortal_hv9zn6$(it);
     };
   }
   var compareBy$lambda_4 = wrapFunction(function () {
@@ -1886,13 +1887,8 @@ var QGress = function (_, Kotlin) {
     return this.closure$comparison(a, b);
   };
   Comparator$ObjectLiteral_4.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
-  MovementUtil.prototype.attackClosePortal_912u9o$ = function (agent) {
-    if (!this.hasEnemyPortals_912u9o$(agent)) {
-      var message = 'Check failed.';
-      throw IllegalStateException_init(message.toString());
-    }
-    var target = first(sortedWith(this.findEnemyPortals_912u9o$(agent), new Comparator$ObjectLiteral_4(compareBy$lambda_4(MovementUtil$attackClosePortal$lambda(agent)))));
-    return this.goToDestinationPortal_0(agent, target);
+  MovementUtil.prototype.attackClosePortal_912u9o$ = function (a) {
+    return this.goAttack_0(a, firstOrNull(sortedWith(this.findEnemyPortals_912u9o$(a), new Comparator$ObjectLiteral_4(compareBy$lambda_4(MovementUtil$attackClosePortal$lambda(a))))));
   };
   function MovementUtil$attackMostLinkedPortal$lambda(it) {
     return it.links.size;
@@ -1913,13 +1909,8 @@ var QGress = function (_, Kotlin) {
     return this.closure$comparison(a, b);
   };
   Comparator$ObjectLiteral_5.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
-  MovementUtil.prototype.attackMostLinkedPortal_912u9o$ = function (agent) {
-    if (!this.hasEnemyPortals_912u9o$(agent)) {
-      var message = 'Check failed.';
-      throw IllegalStateException_init(message.toString());
-    }
-    var target = first(sortedWith(this.findEnemyPortals_912u9o$(agent), new Comparator$ObjectLiteral_5(compareBy$lambda_5(MovementUtil$attackMostLinkedPortal$lambda))));
-    return this.goToDestinationPortal_0(agent, target);
+  MovementUtil.prototype.attackMostLinkedPortal_912u9o$ = function (a) {
+    return this.goAttack_0(a, firstOrNull(sortedWith(this.findEnemyPortals_912u9o$(a), new Comparator$ObjectLiteral_5(compareBy$lambda_5(MovementUtil$attackMostLinkedPortal$lambda)))));
   };
   function MovementUtil$attackMostVulnerablePortal$lambda(it) {
     return -it.calcHealth() | 0;
@@ -1940,13 +1931,17 @@ var QGress = function (_, Kotlin) {
     return this.closure$comparison(a, b);
   };
   Comparator$ObjectLiteral_6.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
-  MovementUtil.prototype.attackMostVulnerablePortal_912u9o$ = function (agent) {
-    if (!this.hasEnemyPortals_912u9o$(agent)) {
-      var message = 'Check failed.';
-      throw IllegalStateException_init(message.toString());
+  MovementUtil.prototype.attackMostVulnerablePortal_912u9o$ = function (a) {
+    return this.goAttack_0(a, firstOrNull(sortedWith(this.findEnemyPortals_912u9o$(a), new Comparator$ObjectLiteral_6(compareBy$lambda_6(MovementUtil$attackMostVulnerablePortal$lambda)))));
+  };
+  MovementUtil.prototype.goAttack_0 = function (agent, target) {
+    if (target != null) {
+      return this.goToDestinationPortal_0(agent, target);
     }
-    var target = first(sortedWith(this.findEnemyPortals_912u9o$(agent), new Comparator$ObjectLiteral_6(compareBy$lambda_6(MovementUtil$attackMostVulnerablePortal$lambda))));
-    return this.goToDestinationPortal_0(agent, target);
+     else {
+      agent.action.end();
+      return agent;
+    }
   };
   function MovementUtil$moveToNearestPortal$lambda(closure$agent) {
     return function (it) {
