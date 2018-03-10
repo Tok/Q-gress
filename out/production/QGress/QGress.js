@@ -7749,17 +7749,8 @@ var QGress = function (_, Kotlin) {
     drawMuRect(resPos, resPart, Faction$RES_getInstance(), resMu);
   };
   function DrawUtil$drawTopAgents$drawBars(closure$fontSize, closure$lineWidth, this$DrawUtil) {
-    return function (ctx, barWidth, level, color, pos, count, maxCount, isShields) {
-      if (isShields === void 0)
-        isShields = false;
-      var tmp$;
-      if (isShields) {
-        tmp$ = Kotlin.imul(barWidth, level) - (barWidth / 2 | 0) | 0;
-      }
-       else {
-        tmp$ = Kotlin.imul(barWidth, level);
-      }
-      var xOffset = tmp$;
+    return function (ctx, barWidth, level, color, pos, count, maxCount) {
+      var xOffset = Kotlin.imul(barWidth, level) - barWidth | 0;
       var statPos = new Coords(pos.x + xOffset | 0, pos.y + (closure$fontSize / 2 | 0) | 0);
       var h = closure$fontSize * count / maxCount;
       this$DrawUtil.drawRect_0(ctx, statPos, h, barWidth, color, Colors_getInstance().black, closure$lineWidth);
@@ -7774,15 +7765,14 @@ var QGress = function (_, Kotlin) {
       var tmp$;
       var pos = new Coords(col.x + offset | 0, col.y);
       var barWidth = 6;
-      var countPos = new Coords(pos.x, pos.y);
       var totalWidth = 48;
-      var statPos = new Coords(pos.x + barWidth | 0, pos.y + (closure$fontSize / 2 | 0) | 0);
+      var statPos = new Coords(pos.x, pos.y + (closure$fontSize / 2 | 0) | 0);
       this$DrawUtil.drawRect_0(ctx, statPos, 0.0, totalWidth, Colors_getInstance().black, Colors_getInstance().black, closure$lineWidth);
       if (items == null || items.isEmpty()) {
-        this$DrawUtil.strokeText_lowmm9$(ctx, countPos, '0', Colors_getInstance().white, closure$fontSize, this$DrawUtil.CODA, closure$lineWidth, Colors_getInstance().black, 'end');
+        this$DrawUtil.strokeText_lowmm9$(ctx, pos, '0', Colors_getInstance().white, closure$fontSize, this$DrawUtil.CODA, closure$lineWidth, Colors_getInstance().black, 'right');
       }
        else {
-        this$DrawUtil.strokeText_lowmm9$(ctx, countPos, items.size.toString(), Colors_getInstance().white, closure$fontSize, this$DrawUtil.CODA, closure$lineWidth, Colors_getInstance().black, 'end');
+        this$DrawUtil.strokeText_lowmm9$(ctx, pos, items.size.toString(), Colors_getInstance().white, closure$fontSize, this$DrawUtil.CODA, closure$lineWidth, Colors_getInstance().black, 'right');
         var destination = LinkedHashMap_init();
         var tmp$_0;
         tmp$_0 = items.iterator();
@@ -7830,7 +7820,7 @@ var QGress = function (_, Kotlin) {
             var count = (tmp$_4 = countsByLevel.get_11rb$(element_1)) != null ? tmp$_4 : 0;
             if (count > 0) {
               var color = ShieldType$Companion_getInstance().getColorForLevel_za3lpa$(element_1);
-              closure$drawBars_0(ctx, barWidth * 2 | 0, element_1, color, pos, count, maxCount, true);
+              closure$drawBars_0(ctx, barWidth * 2 | 0, element_1, color, pos, count, maxCount);
             }
           }
         }
@@ -7893,32 +7883,32 @@ var QGress = function (_, Kotlin) {
       var name = item.toString();
       var pos = new Coords(xPos, yFixOffset + Kotlin.imul(yOffset, index_0) | 0);
       var offset = 0;
-      this.strokeTableText_0(pos, offset, rank, item.faction.color);
-      offset = offset + 20 | 0;
+      this.strokeTableText_0(pos, offset, rank, 'right');
+      offset = offset + 10 | 0;
       this.strokeTableHeaderText_0(headerPos, offset, 'AP');
-      this.strokeTableText_0(pos, offset, item.ap.toString(), item.faction.color);
+      this.strokeTableText_0(pos, offset + 44 | 0, item.ap.toString(), 'right');
       offset = offset + 50 | 0;
       this.strokeTableHeaderText_0(headerPos, offset, 'Agent');
-      this.strokeTableText_0(pos, offset, name, item.faction.color);
+      this.strokeTableText_0(pos, offset, name, 'start', item.faction.color);
       offset = offset + 100 | 0;
       this.strokeTableHeaderText_0(headerPos, offset, 'XMPs');
       drawCounts(ctx, item.inventory.findXmps(), pos, offset);
-      offset = offset + 80 | 0;
+      offset = offset + 70 | 0;
       this.strokeTableHeaderText_0(headerPos, offset, 'Resos');
       drawCounts(ctx, item.inventory.findResonators(), pos, offset);
-      offset = offset + 80 | 0;
+      offset = offset + 70 | 0;
       this.strokeTableHeaderText_0(headerPos, offset, 'Cubes');
       drawCounts(ctx, item.inventory.findPowerCubes(), pos, offset);
-      offset = offset + 80 | 0;
+      offset = offset + 70 | 0;
       this.strokeTableHeaderText_0(headerPos, offset, 'Shields');
       drawCounts(ctx, item.inventory.findShields(), pos, offset, true);
-      offset = offset + 80 | 0;
+      offset = offset + 60 | 0;
       var keyCount = item.inventory.keyCount();
       this.strokeTableHeaderText_0(headerPos, offset, 'Keys');
-      this.strokeTableText_0(pos, offset, keyCount.toString(), Colors_getInstance().white);
+      this.strokeTableText_0(pos, offset + 24 | 0, keyCount.toString(), 'right');
       offset = offset + 30 | 0;
       this.strokeTableHeaderText_0(headerPos, offset, 'Action');
-      this.strokeTableText_0(pos, offset, item.action.toString(), Colors_getInstance().white);
+      this.strokeTableText_0(pos, offset, item.action.toString());
     }
   };
   DrawUtil.prototype.drawRect_0 = function (ctx, pos, h, w, fillStyle, strokeStyle, lineWidth) {
@@ -8033,9 +8023,14 @@ var QGress = function (_, Kotlin) {
     var pos = new Coords(headerPos.x + offset | 0, headerPos.y);
     this.strokeText_lowmm9$(World_getInstance().uiCtx(), pos, text, Colors_getInstance().white, Dimensions_getInstance().topAgentsFontSize, this.CODA, 3.0);
   };
-  DrawUtil.prototype.strokeTableText_0 = function (headerPos, offset, text, fillStyle) {
+  DrawUtil.prototype.strokeTableText_0 = function (headerPos, offset, text, textAlign, fillStyle) {
+    if (textAlign === void 0) {
+      textAlign = 'start';
+    }
+    if (fillStyle === void 0)
+      fillStyle = Colors_getInstance().white;
     var pos = new Coords(headerPos.x + offset | 0, headerPos.y);
-    this.strokeText_lowmm9$(World_getInstance().uiCtx(), pos, text, fillStyle, Dimensions_getInstance().topAgentsFontSize, this.CODA, 3.0);
+    this.strokeText_lowmm9$(World_getInstance().uiCtx(), pos, text, fillStyle, Dimensions_getInstance().topAgentsFontSize, this.CODA, 3.0, Colors_getInstance().black, textAlign);
   };
   DrawUtil.prototype.strokeText_lowmm9$ = function (ctx, pos, text, fillStyle, fontSize, fontName, lineWidth, strokeStyle, textAlign) {
     if (fontName === void 0)

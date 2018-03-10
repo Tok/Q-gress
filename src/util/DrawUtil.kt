@@ -343,9 +343,8 @@ object DrawUtil {
     fun drawTopAgents() {
         val fontSize = Dimensions.topAgentsInventoryFontSize
         val lineWidth = 2.0
-        fun drawBars(ctx: Ctx, barWidth: Int, level: Int, color: String, pos: Coords, count: Int, maxCount: Int,
-                     isShields: Boolean = false) {
-            val xOffset = if (isShields) { (barWidth * level) - (barWidth / 2) } else { (barWidth * level) }
+        fun drawBars(ctx: Ctx, barWidth: Int, level: Int, color: String, pos: Coords, count: Int, maxCount: Int) {
+            val xOffset = (barWidth * level) - barWidth
             val statPos = Coords(pos.x + xOffset, pos.y + (fontSize / 2))
             val h = fontSize.toDouble() * count / maxCount
             drawRect(ctx, statPos, h, barWidth.toDouble(), color, Colors.black, lineWidth)
@@ -353,14 +352,13 @@ object DrawUtil {
         fun drawCounts(ctx: Ctx, items: List<DeployableItem>?, col: Coords, offset: Int, isShields: Boolean = false) {
             val pos = Coords(col.x + offset, col.y)
             val barWidth = 6
-            val countPos = Coords(pos.x, pos.y)
             val totalWidth = 48
-            val statPos = Coords(pos.x + barWidth, pos.y + (fontSize / 2))
+            val statPos = Coords(pos.x, pos.y + (fontSize / 2))
             drawRect(ctx, statPos, 0.0, totalWidth.toDouble(), Colors.black, Colors.black, lineWidth)
             if (items == null || items.isEmpty()) {
-                strokeText(ctx, countPos, "0", Colors.white, fontSize, CODA, lineWidth, Colors.black, CanvasTextAlign.END)
+                strokeText(ctx, pos, "0", Colors.white, fontSize, CODA, lineWidth, Colors.black, CanvasTextAlign.RIGHT)
             } else {
-                strokeText(ctx, countPos, items.size.toString(), Colors.white, fontSize, CODA, lineWidth, Colors.black, CanvasTextAlign.END)
+                strokeText(ctx, pos, items.size.toString(), Colors.white, fontSize, CODA, lineWidth, Colors.black, CanvasTextAlign.RIGHT)
                 val itemsByLevel: Map<Int, List<DeployableItem>> = items.groupBy { it.getLevel() }
                 val countsByLevel: Map<Int, Int> = itemsByLevel.mapValues { it.value.count() }
                 val maxCount = countsByLevel.map { it.value }.max() ?: 0
@@ -369,7 +367,7 @@ object DrawUtil {
                         val count = countsByLevel.get(level) ?: 0
                         if (count > 0) {
                             val color = ShieldType.getColorForLevel(level)
-                            drawBars(ctx, barWidth * 2, level, color, pos, count, maxCount, true)
+                            drawBars(ctx, barWidth * 2, level, color, pos, count, maxCount)
                         }
                     }
                 } else {
@@ -395,42 +393,42 @@ object DrawUtil {
             val rank = (index + 1).toString()
             val name = agent.toString()
             val pos = Coords(xPos, yFixOffset + (yOffset * index))
-
             var offset = 0
-            strokeTableText(pos, offset, rank, agent.faction.color)
 
-            offset += 20
+            strokeTableText(pos, offset, rank, CanvasTextAlign.RIGHT)
+            offset += 10
+
             strokeTableHeaderText(headerPos, offset,"AP")
-            strokeTableText(pos, offset, agent.ap.toString(), agent.faction.color)
-
+            strokeTableText(pos, offset + 44, agent.ap.toString(), CanvasTextAlign.RIGHT)
             offset += 50
-            strokeTableHeaderText(headerPos, offset, "Agent")
-            strokeTableText(pos, offset, name, agent.faction.color)
 
+            strokeTableHeaderText(headerPos, offset, "Agent")
+            strokeTableText(pos, offset, name, CanvasTextAlign.START, agent.faction.color)
             offset += 100
+
             strokeTableHeaderText(headerPos, offset, "XMPs")
             drawCounts(ctx, agent.inventory.findXmps(), pos, offset)
+            offset += 70
 
-            offset += 80
             strokeTableHeaderText(headerPos, offset, "Resos")
             drawCounts(ctx, agent.inventory.findResonators(), pos, offset)
+            offset += 70
 
-            offset += 80
             strokeTableHeaderText(headerPos, offset, "Cubes")
             drawCounts(ctx, agent.inventory.findPowerCubes(), pos, offset)
+            offset += 70
 
-            offset += 80
             strokeTableHeaderText(headerPos, offset, "Shields")
             drawCounts(ctx, agent.inventory.findShields(), pos, offset, true)
+            offset += 60
 
-            offset += 80
             val keyCount = agent.inventory.keyCount()
             strokeTableHeaderText(headerPos, offset, "Keys")
-            strokeTableText(pos, offset, keyCount.toString(), Colors.white)
-
+            strokeTableText(pos, offset + 24, keyCount.toString(), CanvasTextAlign.RIGHT)
             offset += 30
+
             strokeTableHeaderText(headerPos, offset, "Action")
-            strokeTableText(pos, offset, agent.action.toString(), Colors.white)
+            strokeTableText(pos, offset, agent.action.toString())
         }
     }
 
@@ -541,9 +539,10 @@ object DrawUtil {
         val pos = Coords(headerPos.x + offset, headerPos.y)
         strokeText(World.uiCtx(), pos, text, Colors.white, Dimensions.topAgentsFontSize, CODA, 3.0)
     }
-    private fun strokeTableText(headerPos: Coords, offset: Int, text: String, fillStyle: String) {
+    private fun strokeTableText(headerPos: Coords, offset: Int, text: String,
+                                textAlign: CanvasTextAlign = CanvasTextAlign.START, fillStyle: String = Colors.white) {
         val pos = Coords(headerPos.x + offset, headerPos.y)
-        strokeText(World.uiCtx(), pos, text, fillStyle, Dimensions.topAgentsFontSize, CODA, 3.0)
+        strokeText(World.uiCtx(), pos, text, fillStyle, Dimensions.topAgentsFontSize, CODA, 3.0, Colors.black, textAlign)
     }
     fun strokeText(ctx: Ctx, pos: Coords, text: String, fillStyle: String, fontSize: Int, fontName: String = CODA,
                    lineWidth: Double = 0.0, strokeStyle: String = Colors.black,
