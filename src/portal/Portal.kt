@@ -5,11 +5,11 @@ import Ctx
 import World
 import agent.Agent
 import agent.Faction
-import agent.action.Action
 import agent.action.ActionItem
 import config.Colors
 import config.Dimensions
 import config.Styles
+import config.Time
 import items.PowerCube
 import items.QgressItem
 import items.XmpBurster
@@ -23,7 +23,6 @@ import items.level.ResonatorLevel
 import items.level.XmpLevel
 import items.types.ShieldType
 import items.types.VirusType
-import org.w3c.dom.Path2D
 import system.Com
 import util.*
 import util.data.Circle
@@ -55,7 +54,10 @@ data class Portal constructor(val name: String, val location: Coords,
     fun canLinkOut(agent: Agent) = isLinkable(agent) && (links.isEmpty() || links.count() < 8) &&
             !isCoveredByField() && isInside()
 
-    fun calculateLevel() = if (owner == null) 0 else clipLevel(resoSlots.values.map { (it.resonator?.level?.level ?: 0) }.sum() / 8)
+    fun calculateLevel() = if (owner == null) 0 else clipLevel(resoSlots.values.map {
+        (it.resonator?.level?.level ?: 0)
+    }.sum() / 8)
+
     fun getLevel() = PortalLevel.findByValue(calculateLevel())
     fun x() = location.x.toDouble()
     fun y() = location.y.toDouble()
@@ -74,6 +76,7 @@ data class Portal constructor(val name: String, val location: Coords,
         val totalLinkCount = incoming.count() + links.count()
         return min(maxMitigation, round(400.0 / 9.0 * atan(totalLinkCount / E)).toInt())
     }
+
     private fun findStrongestReso(): Resonator? {
         val resos = getAllResos()
         if (resos.isEmpty()) {
@@ -82,12 +85,14 @@ data class Portal constructor(val name: String, val location: Coords,
             return resos.sortedBy { it.energy * it.level.level }.first()
         }
     }
+
     fun findStrongestResoPos(): Coords? = findStrongestReso()?.coords
     fun calcHealth(): Int {
         val resos = getAllResos()
         val health = resos.map { it.calcHealthPrecent() }.sum() / resos.count()
         return Util.clip(health, 0, 100)
     }
+
     fun calcTotalXm(): Int = getAllResos().map { it.energy }.sum()
     fun calculateLinkingRangeInMeters() = {
         val x = averageResoLevel() //kotlin.math.pow?
@@ -241,8 +246,8 @@ data class Portal constructor(val name: String, val location: Coords,
             agentsLastHacks.sort()
             val lastHack = agentsLastHacks.last()
             val ticksSinceLastHack: Int = tickNr - lastHack
-            val timeDiff = Util.secondsToTicks(Cooldown.FIVE.seconds).toInt() - ticksSinceLastHack
-            val cooldown = Cooldown.valueOf(Util.ticksToSeconds(timeDiff).toInt())
+            val timeDiff = Time.secondsToTicks(Cooldown.FIVE.seconds).toInt() - ticksSinceLastHack
+            val cooldown = Cooldown.valueOf(Time.ticksToSeconds(timeDiff).toInt())
             if (cooldown == Cooldown.NONE && !readOnly) {
                 agentsLastHacks.add(tickNr)
                 lastHacks.put(key, mutableListOf(tickNr))
@@ -251,7 +256,7 @@ data class Portal constructor(val name: String, val location: Coords,
         }
 
         fun burn(agentsLastHacks: MutableList<Int>, tickNr: Int): Cooldown {
-            val maxBurnoutTicks = Util.secondsToTicks(Cooldown.BURNOUT.seconds)
+            val maxBurnoutTicks = Time.secondsToTicks(Cooldown.BURNOUT.seconds)
             val maxTickDifference = tickNr - maxBurnoutTicks
             val isBurnout = agentsLastHacks.toList().filter { it < maxTickDifference }.count() <= 0
             if (isBurnout) {
@@ -506,7 +511,7 @@ data class Portal constructor(val name: String, val location: Coords,
             val lw = Dimensions.portalLineWidth
             val r = Dimensions.portalRadius.toInt()
             val w = (r * 2) + (2 * lw)
-            Faction.values().map {(it to health) to DrawUtil.renderBarImage(it.color, health, 5, w, lw) }
+            Faction.values().map { (it to health) to DrawUtil.renderBarImage(it.color, health, 5, w, lw) }
         }.toMap()
 
         private fun getCenterImage(faction: Faction, level: PortalLevel) = centerImages.get(faction to level)!!
@@ -540,6 +545,7 @@ data class Portal constructor(val name: String, val location: Coords,
             return Portal(Util.generatePortalName(), location, heatMap, vectorField,
                     slots, mutableSetOf(), mutableSetOf(), null)
         }
+
         fun createRandom(): Portal {
             val location = Coords.createRandomForPortal()
             return create(location)

@@ -2,9 +2,9 @@ package system
 
 import World
 import agent.Agent
+import config.Time
 import items.XmpBurster
 import util.SoundUtil
-import util.Util
 import util.data.Coords
 import util.data.Damage
 
@@ -12,8 +12,8 @@ import util.data.Damage
 object Queues {
     val attackQueue: MutableMap<Int, MutableMap<Coords, List<XmpBurster>>> = mutableMapOf()
     val damageQueue: MutableMap<Int, List<Damage>> = mutableMapOf()
-    val attackDelayTicks: Int = Util.secondsToTicks(10).toInt()
-    val damageDelayTicks: Int = Util.secondsToTicks(10).toInt()
+    val attackDelayTicks: Int = Time.secondsToTicks(10).toInt()
+    val damageDelayTicks: Int = Time.secondsToTicks(10).toInt()
 
     fun registerAttack(agent: Agent, xmps: List<XmpBurster>) {
         val attackFutureTick = World.tick + attackDelayTicks

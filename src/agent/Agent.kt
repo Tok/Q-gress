@@ -5,7 +5,12 @@ import Ctx
 import World
 import agent.action.Action
 import agent.action.ActionItem
-import config.*
+import agent.qvalue.QActions
+import agent.qvalue.QDestinations
+import agent.qvalue.QValue
+import config.Colors
+import config.Dimensions
+import config.Styles
 import items.QgressItem
 import items.deployable.Resonator
 import items.level.ResonatorLevel
@@ -14,7 +19,10 @@ import org.w3c.dom.HTMLInputElement
 import portal.Link
 import portal.Portal
 import system.Queues
-import util.*
+import util.DrawUtil
+import util.PathUtil
+import util.SoundUtil
+import util.Util
 import util.data.*
 import kotlin.browser.window
 import kotlin.math.max
@@ -32,7 +40,7 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         return strongest != null && pos.distanceTo(strongest) < range
     }
 
-    fun isBusy(tick: Int): Boolean = tick <= action.untilTick
+    fun isBusy(): Boolean = World.tick <= action.untilTick
     fun lineToPortal(portal: Portal) = Line(pos, portal.location)
     fun lineToDestination() = Line(pos, destination)
 
@@ -63,32 +71,24 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         this.ap += v
     }
 
+    fun onlyMove(): Agent = if (action.item == ActionItem.MOVE) moveCloserToDestinationPortal() else this
+
     fun act(): Agent {
-        //println("DEBUG: ${World.tick} $action")
-        val useLocationFix = false
-        if (isBusy(World.tick)) {
-            if (useLocationFix && Util.random() < 0.005) {
-                return doSomethingElse()
-            }
+        if (action.item == ActionItem.MOVE) {
+            return moveCloserToDestinationPortal()
+        }
+        if (isBusy()) {
             return this
         }
-        return when (action.item) {
-            ActionItem.RECHARGE -> rechargePortal()
-            ActionItem.RECYCLE -> recycleItems()
-            ActionItem.MOVE -> moveCloserToDestinationPortal()
-            ActionItem.ATTACK -> attackPortal()
-            ActionItem.DEPLOY -> deployPortal()
-            else -> doSomething()
-        }
+        return doSomething()
     }
 
     fun doSomething(): Agent {
-        if (!isAtActionPortal()) {
-            return doSomethingElse()
-        }
-        return when (actionPortal.owner?.faction) {
-            null -> doNeutralPortalAction()
-            this.faction -> doFriendlyPortalAction()
+        val portalFaction = actionPortal.owner?.faction
+        return when {
+            !isAtActionPortal() -> doAnywhereAction()
+            portalFaction == null -> doNeutralPortalAction()
+            portalFaction == this.faction -> doFriendlyPortalAction()
             else -> doEnemyPortalAction()
         }
     }
@@ -103,77 +103,75 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         return slider.valueAsNumber * value.weight
     }
 
-    private fun basicQvalues(): List<Pair<Double, () -> Agent>> {
-        val captureQ = if (MovementUtil.hasUncapturedPortals()) q(QValue.CAPTURE) else -1.0
-        val hackQ = if (isHackPossible()) q(QValue.HACK) else -1.0
-        val recycleQ = if (isDeploymentPossible()) q(QValue.RECYCLE) else -1.0
-        val rechargeQ = if (isXmFilled()) q(QValue.RECHARGE) else -1.0
-        val attackSomewhereQ = if (isAttackPossible()) q(QValue.ATTACK_SOMEHERE) else -1.0
-        val moveElsewhereQ = q(QValue.MOVE_ELSEWHERE)
+    private fun actionsForAnywhere(): List<Pair<Double, () -> Agent>> {
+        val moveElsewhereQ = q(QActions.MOVE_ELSEWHERE)
+        val recycleQ = if (isDeploymentPossible()) q(QActions.RECYCLE) else -1.0
+        val rechargeQ = if (isXmFilled()) q(QActions.RECHARGE) else -1.0
         return listOf(
-                captureQ to { MovementUtil.moveToUncapturedPortal(this) },
-                hackQ to { hackActionPortal() },
+                moveElsewhereQ to { moveElsewhere() },
                 recycleQ to { recycleItems() },
-                rechargeQ to { rechargePortal() },
-                attackSomewhereQ to { attackSomewhere() },
-                moveElsewhereQ to { moveElsewhere() }
+                rechargeQ to { rechargePortal() }
         )
     }
 
-    private fun neutralQvalues(): List<Pair<Double, () -> Agent>> {
-        val basicValues = basicQvalues()
-        val deployQ = if (isDeploymentPossible()) q(QValue.DEPLOY) else -1.0
-        return basicValues + listOf(deployQ to { deployPortal() })
+    private fun actionsForPortals(): List<Pair<Double, () -> Agent>> {
+        val basicValues = actionsForAnywhere()
+        val hackQ = if (isHackPossible()) q(QActions.HACK) else -1.0
+        return basicValues + listOf(hackQ to { hackActionPortal() })
     }
 
-    private fun friendlyQvalues(): List<Pair<Double, () -> Agent>> {
-        val basicValues = basicQvalues()
-        val deployQ = if (isDeploymentPossible()) q(QValue.DEPLOY) else -1.0
-        val linkQ = if (isLinkPossible()) q(QValue.LINK) else -1.0
+    private fun actionsForNeutralPortals(): List<Pair<Double, () -> Agent>> {
+        val basicValues = actionsForPortals()
+        val captureQ = q(QActions.DEPLOY)
+        return basicValues + listOf(captureQ to { deployPortal() })
+    }
+
+    private fun actionsForFriendlyPortals(): List<Pair<Double, () -> Agent>> {
+        val basicValues = actionsForPortals()
+        val deployQ = if (isDeploymentPossible()) q(QActions.DEPLOY) else -1.0
+        val linkQ = if (isLinkPossible()) q(QActions.LINK) else -1.0
         return basicValues + listOf(
                 deployQ to { deployPortal() },
                 linkQ to { createLink() }
         )
     }
 
-    private fun enemyQvalues(): List<Pair<Double, () -> Agent>> {
-        val basicValues = basicQvalues()
-        val attackQ = if (isLinkPossible()) q(QValue.ATTACK) else -1.0
+    private fun actionsForEnemyPortals(): List<Pair<Double, () -> Agent>> {
+        val basicValues = actionsForPortals()
+        val attackQ = q(QActions.ATTACK)
         return basicValues + listOf(attackQ to { attackPortal() })
     }
 
-    val defaultAction = { moveElsewhere() }
-    fun doSomethingElse(): Agent = Util.select(basicQvalues(), defaultAction).invoke()
-    fun doNeutralPortalAction(): Agent = Util.select(neutralQvalues(), defaultAction).invoke()
-    fun doFriendlyPortalAction(): Agent = Util.select(friendlyQvalues(), defaultAction).invoke()
-    fun doEnemyPortalAction(): Agent = Util.select(enemyQvalues(), defaultAction).invoke()
+    val defaultAction = { doNothing() }
+    fun doAnywhereAction(): Agent = Util.select(actionsForAnywhere(), defaultAction).invoke()
+    fun doNeutralPortalAction(): Agent = Util.select(actionsForNeutralPortals(), defaultAction).invoke()
+    fun doFriendlyPortalAction(): Agent = Util.select(actionsForFriendlyPortals(), defaultAction).invoke()
+    fun doEnemyPortalAction(): Agent = Util.select(actionsForEnemyPortals(), defaultAction).invoke()
 
     private fun moveElsewhere(): Agent {
-        val moveToNearQ = q(QValue.MOVE_TO_NEAR)
-        val moveToFriendlyQ = if (MovementUtil.hasFriendlyPortals(this)) q(QValue.MOVE_TO_FRIENDLY) else -1.0
-        val moveToRandomQ = q(QValue.MOVE_TO_RANDOM)
-        val qValues = listOf(
-            moveToNearQ to { MovementUtil.moveToNearestPortal(this) },
-            moveToFriendlyQ to { MovementUtil.moveToFriendlyHighLevelPortal(this) },
-            moveToRandomQ to { MovementUtil.moveToRandomPortal(this) }
-        )
-        val newAgent = Util.select(qValues, { MovementUtil.moveToNearestPortal(this) }).invoke()
-        newAgent.action.start(ActionItem.MOVE)
-        return newAgent
-    }
-
-    private fun attackSomewhere(): Agent {
-        val attackClosestQ = if (MovementUtil.hasEnemyPortals(this) && isAttackPossible()) q(QValue.ATTACK_CLOSE) else -1.0
-        val attackMostLinkedQ = if (MovementUtil.hasEnemyPortals(this) && isAttackPossible()) q(QValue.ATTACK_LINKS) else -1.0
-        val attackMostVulnerableQ = if (MovementUtil.hasEnemyPortals(this) && isAttackPossible()) q(QValue.ATTACK_WEAK) else -1.0
-        val actions = listOf(
-                attackClosestQ to { MovementUtil.attackClosePortal(this) },
-                attackMostLinkedQ to { MovementUtil.attackMostLinkedPortal(this) },
-                attackMostVulnerableQ to { MovementUtil.attackMostVulnerablePortal(this) }
-        )
-        val newAgent = Util.select(actions, { MovementUtil.attackClosePortal(this) }).invoke()
-        newAgent.action.start(ActionItem.ATTACK)
-        return newAgent
+        val agent = this
+        val hasEnemyPortals = MovementUtil.hasEnemyPortals(agent)
+        with(QDestinations) {
+            val randomQ = q(MOVE_TO_RANDOM)
+            val nearQ = q(MOVE_TO_NEAR)
+            val uncapturedQ = if (MovementUtil.hasUncapturedPortals()) q(MOVE_TO_UNCAPTURED) else -1.0
+            val friendlyQ = if (MovementUtil.hasFriendlyPortals(agent)) q(MOVE_TO_MOST_FRIENDLY) else -1.0
+            val nearEnemyQ = if (hasXmps() && hasEnemyPortals) q(MOVE_TO_NEAR_ENEMY) else -1.0
+            val weakEnemyQ = if (hasXmps() && hasEnemyPortals) q(MOVE_TO_WEAK_ENEMY) else -1.0
+            val strongEnemyQ = if (hasXmps() && hasEnemyPortals) q(MOVE_TO_STRONG_ENEMY) else -1.0
+            val qValues = listOf(
+                    randomQ to { MovementUtil.moveToRandomPortal(agent) },
+                    nearQ to { MovementUtil.moveToNearestPortal(agent) },
+                    uncapturedQ to { MovementUtil.moveToUncapturedPortal(agent) },
+                    friendlyQ to { MovementUtil.moveToFriendlyHighLevelPortal(agent) },
+                    nearEnemyQ to { MovementUtil.attackClosePortal(agent) },
+                    weakEnemyQ to { MovementUtil.attackMostVulnerablePortal(agent) },
+                    strongEnemyQ to { MovementUtil.attackMostLinkedPortal(agent) }
+            )
+            val newAgent = Util.select(qValues, { MovementUtil.moveToNearestPortal(agent) }).invoke()
+            newAgent.action.start(ActionItem.MOVE)
+            return newAgent
+        }
     }
 
     private fun moveCloserToDestinationPortal(): Agent {
@@ -191,7 +189,7 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         return this.copy(pos = Coords((pos.x + velocity.re).toInt(), (pos.y + velocity.im).toInt()))
     }
 
-    private fun isAttackPossible() = inventory.findXmps().isNotEmpty()
+    private fun hasXmps() = inventory.findXmps().isNotEmpty()
 
     private fun isArrived() = distanceToDestination() <= skills.inRangeSpeed()
     fun moveCloserInRange(): Agent {
@@ -230,7 +228,11 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
             }
             val maybeDestination = actionPortal.findStrongestResoPos()
             val isPassable = maybeDestination != null && maybeDestination.isPassable()
-            return if (isPassable) { maybeDestination!! } else { actionPortal.location }
+            return if (isPassable) {
+                maybeDestination!!
+            } else {
+                actionPortal.location
+            }
         }
 
         fun doAttack(): Agent {
@@ -280,7 +282,7 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
 
         fun doDeploy(): Agent {
             if (actionPortal.isEnemyOf(this)) {
-                return doSomethingElse()
+                return doNothing()
             }
             val allowedResoLevels: Map<ResonatorLevel, Int> = actionPortal.findAllowedResoLevels(this)
             val areMoreResosAllowed = allowedResoLevels.map { it.value }.sum() > 0

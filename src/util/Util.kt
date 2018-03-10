@@ -1,7 +1,6 @@
 package util
 
 import World
-import config.Time
 import portal.Portal
 import util.data.Coords
 import kotlin.math.PI
@@ -16,11 +15,7 @@ object Util {
 
     fun findNearestPortal(coords: Coords): Portal? {
         val nearest = findNearestPortals(coords)
-        return if (nearest.isNotEmpty()) {
-            nearest.first().second
-        } else {
-            null
-        }
+        return if (nearest.isNotEmpty()) nearest.first().second else null
     }
 
     fun clip(value: Int, from: Int, to: Int): Int = max(from, min(to, value))
@@ -177,9 +172,6 @@ object Util {
     fun degToRad(degrees: Double): Double = degrees * PI / 180
     fun radToDeg(radians: Double): Double = radians * 180 / PI
 
-    fun ticksToSeconds(ticks: Int) = ticks * Time.secondsPerTick
-    fun secondsToTicks(seconds: Int) = seconds / Time.secondsPerTick
-    fun ticksToTimestamp(ticks: Int) = Util.formatSeconds(ticksToSeconds(ticks).toInt())
     private fun fixTime(v: Int): String = if (v.toString().length <= 1) v.toString().padStart(2, '0') else v.toString()
     fun formatSeconds(absSeconds: Int): String {
         val seconds: Int = absSeconds % 60

@@ -5,6 +5,7 @@ import Ctx
 import World
 import config.Colors
 import config.Dimensions
+import config.Time
 import portal.Portal
 import util.*
 import util.data.Cell
@@ -122,8 +123,8 @@ data class NonFaction(var pos: Coords, val speed: Float,
 
         private fun findFarPortal(pos: Coords) =  World.allPortals.sortedByDescending { pos.distanceTo(it.location) }.first()
 
-        private val MIN_WAIT = Util.secondsToTicks(5)
-        private val MAX_WAIT = Util.secondsToTicks(45)
+        private val MIN_WAIT = Time.secondsToTicks(5)
+        private val MAX_WAIT = Time.secondsToTicks(45)
         private fun creatWaitTime() = Util.randomInt(MIN_WAIT, MAX_WAIT)
         private val image: Canvas = drawTemplate()
         private fun drawTemplate(): Canvas {

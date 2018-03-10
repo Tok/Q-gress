@@ -1,9 +1,17 @@
 package config
 
-object Time {
-    val minTickInterval = 20 //milliseconds
-    val secondsPerTick = 1
+import util.Util
 
-    private val globalSpeedFactor = 5F
+object Time {
+    private val secondsPerTick = 1
+    private val globalSpeedFactor = 1F
+
+    val minTickInterval = 20 //milliseconds
+
+    fun ticksToSeconds(ticks: Int) = ticks * secondsPerTick
+    fun secondsToTicks(seconds: Int) = seconds / secondsPerTick
+
+    fun ticksToTimestamp(ticks: Int) = Util.formatSeconds(ticksToSeconds(ticks))
+
     fun ticksPerFrame() = globalSpeedFactor * 100.0 / World.speed
 }

@@ -6,7 +6,9 @@ import ImprovedNoise
 import World
 import agent.Agent
 import agent.Faction
-import agent.QValue
+import agent.qvalue.QActions
+import agent.qvalue.QDestinations
+import agent.qvalue.QValue
 import config.*
 import config.Location
 import org.w3c.dom.*
@@ -63,13 +65,14 @@ object HtmlUtil {
         updateAgentCount(World.frogs, frogCount(), { _ -> Agent.createFrog(World.grid) })
         updateAgentCount(World.smurfs, smurfCount(), { _ -> Agent.createSmurf(World.grid) })
         World.allAgents.sortedBy { Util.random() } //TODO remove if necessary
-
-        val nextAgents = World.allAgents.map { it.act() }.toSet() //actual tick execution
+        val nextAgents = if (World.tick % 5 == 0) {
+            World.allAgents.map { it.act() }.toSet() //actual tick execution
+        } else {
+            World.allAgents.map { it.onlyMove() }.toSet()
+        }
         updateAgents(World.frogs, Faction.ENL, nextAgents)
         updateAgents(World.smurfs, Faction.RES, nextAgents)
-
         World.allNonFaction.forEach { it.act() }
-
         window.requestAnimationFrame({
             DrawUtil.redraw()
             DrawUtil.redrawUserInterface()
@@ -148,9 +151,22 @@ object HtmlUtil {
 
         controlDiv.append(buttonDiv)
 
+        val actionSliderDiv = createSliderDiv(QActions.values(), "floatLeft")
+        controlDiv.append(actionSliderDiv)
+        val destinationSliderDiv = createSliderDiv(QDestinations.values(), "floatRight")
+        controlDiv.append(destinationSliderDiv)
+
+        rootDiv.append(controlDiv)
+        controlDiv.addEventListener("mousemove", { event -> handleMouseMove(event) }, false)
+        rootDiv.addEventListener("mousemove", { event -> handleMouseMove(event) }, false)
+
+        initWorld()
+    }
+
+    private fun createSliderDiv(qValues: List<QValue>, className: String): HTMLDivElement {
         val qDiv = document.createElement("div") as HTMLDivElement
-        qDiv.addClass("qValues")
-        QValue.values().forEach { qValue ->
+        qDiv.addClass("qValues", "halfWidth", className)
+        qValues.forEach { qValue ->
             val sliderDiv = document.createElement("div") as HTMLDivElement
             Faction.factionValues().forEach { faction ->
                 val slider = document.createElement("input") as HTMLInputElement
@@ -180,13 +196,7 @@ object HtmlUtil {
             sliderDiv.append(qSliderLabel)
             qDiv.append(sliderDiv)
         }
-        controlDiv.append(qDiv)
-
-        rootDiv.append(controlDiv)
-        controlDiv.addEventListener("mousemove", { event -> handleMouseMove(event) }, false)
-        rootDiv.addEventListener("mousemove", { event -> handleMouseMove(event) }, false)
-
-        initWorld()
+        return qDiv
     }
 
     private fun qDisplay(qValue: String): String {

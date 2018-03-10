@@ -26,7 +26,9 @@ body {
     height: 800px;
     overflow: hidden;
 }
-
+.halfWidth {
+    width: 600px;
+}
 .container {
     position: relative;
 }
@@ -92,6 +94,7 @@ body {
     z-index: 100;
     padding-right: 5px;
     height: 100px;
+    width: 100%;
 }
 
 .enl {
@@ -224,7 +227,12 @@ body {
 .qValues {
     font-size: 13px;
     width: 370px;
+}
+.floatLeft {
     float: left;
+}
+.floatRight {
+    float: right;
 }
 .frogSlider { }
 .frogSlider::-moz-range-thumb {

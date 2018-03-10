@@ -5,15 +5,15 @@ import Ctx
 import World
 import agent.Faction
 import agent.NonFaction
-import agent.QValue
+import agent.qvalue.QActions
 import agent.action.ActionItem
 import config.*
 import items.XmpBurster
 import items.deployable.DeployableItem
 import items.level.LevelColor
 import items.level.PortalLevel
-import items.types.ShieldType
 import items.level.XmpLevel
+import items.types.ShieldType
 import org.w3c.dom.*
 import portal.Portal
 import system.Com
@@ -107,9 +107,10 @@ object DrawUtil {
                 fillRect(0.0, botOffset, w, h)
             }
             val qSliderHeight = 13.0 + 5.0 //defined in CSS
-            val qSliderDivHeight = qSliderHeight * QValue.values().count()
+            val qSliderDivHeight = qSliderHeight * QActions.values().count()
             val qSliderDivWidth = 370.0 //.qValues width
             fillRect(0.0, topOffset, qSliderDivWidth, qSliderDivHeight)
+            fillRect(w - qSliderDivWidth, topOffset, qSliderDivWidth, qSliderDivHeight)
             closePath()
         }
     }
@@ -268,7 +269,7 @@ object DrawUtil {
         World.uiCtx().fillRect(pos.xx() - 8, pos.yy() - half - 1, 164.0, Dimensions.tickFontSize + 2.0)
         World.uiCtx().fill()
         World.uiCtx().globalAlpha = 1.0
-        val stamp = Util.ticksToTimestamp(World.tick)
+        val stamp = Time.ticksToTimestamp(World.tick)
         drawText(World.uiCtx(), pos, stamp, Colors.white, Dimensions.tickFontSize, CODA)
         val tick = " Tick: " + World.tick
         drawText(World.uiCtx(), pos.copy(x = pos.x + 55), tick, Colors.white, Dimensions.tickFontSize, CODA)
@@ -350,6 +351,7 @@ object DrawUtil {
             val h = fontSize.toDouble() * count / maxCount
             drawRect(ctx, statPos, h, barWidth.toDouble(), color, Colors.black, lineWidth)
         }
+
         fun drawCounts(ctx: Ctx, items: List<DeployableItem>?, col: Coords, offset: Int, isShields: Boolean = false) {
             val pos = Coords(col.x + offset, col.y)
             val barWidth = 6
@@ -399,7 +401,7 @@ object DrawUtil {
             strokeTableText(pos, offset, rank, CanvasTextAlign.RIGHT)
             offset += 10
 
-            strokeTableHeaderText(headerPos, offset,"AP")
+            strokeTableHeaderText(headerPos, offset, "AP")
             strokeTableText(pos, offset + 44, agent.ap.toString(), CanvasTextAlign.RIGHT)
             offset += 50
 
@@ -543,15 +545,18 @@ object DrawUtil {
         val image = ActionItem.getIcon(item)
         World.uiCtx().drawImage(image, pos.xx(), pos.yy())
     }
+
     private fun strokeTableHeaderText(headerPos: Coords, offset: Int, text: String) {
         val pos = Coords(headerPos.x + offset, headerPos.y)
         strokeText(World.uiCtx(), pos, text, Colors.white, Dimensions.topAgentsFontSize, CODA, 3.0)
     }
+
     private fun strokeTableText(headerPos: Coords, offset: Int, text: String,
                                 textAlign: CanvasTextAlign = CanvasTextAlign.START, fillStyle: String = Colors.white) {
         val pos = Coords(headerPos.x + offset, headerPos.y)
         strokeText(World.uiCtx(), pos, text, fillStyle, Dimensions.topAgentsFontSize, CODA, 3.0, Colors.black, textAlign)
     }
+
     fun strokeText(ctx: Ctx, pos: Coords, text: String, fillStyle: String, fontSize: Int, fontName: String = CODA,
                    lineWidth: Double = 0.0, strokeStyle: String = Colors.black,
                    textAlign: CanvasTextAlign = CanvasTextAlign.START) {
