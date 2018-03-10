@@ -7908,7 +7908,10 @@ var QGress = function (_, Kotlin) {
       this.strokeTableText_0(pos, offset + 24 | 0, keyCount.toString(), 'right');
       offset = offset + 30 | 0;
       this.strokeTableHeaderText_0(headerPos, offset, 'Action');
-      this.strokeTableText_0(pos, offset, item.action.toString());
+      var iconRadius = numberToInt(Dimensions_getInstance().agentRadius);
+      var actionIconPos = new Coords(pos.x + offset - iconRadius | 0, pos.y - iconRadius | 0);
+      this.addIcon_0(actionIconPos, item.action.item);
+      this.strokeTableText_0(pos, offset + (iconRadius * 2 | 0) + 5 | 0, item.action.toString());
     }
   };
   DrawUtil.prototype.drawRect_0 = function (ctx, pos, h, w, fillStyle, strokeStyle, lineWidth) {
@@ -8018,6 +8021,10 @@ var QGress = function (_, Kotlin) {
     var xOff = (fontSize / 2 | 0) - 2 | 0;
     var yOff = fontSize / 3 | 0;
     ctx.fillText(text, coords.x - xOff, coords.y + yOff);
+  };
+  DrawUtil.prototype.addIcon_0 = function (pos, item) {
+    var image = ActionItem$Companion_getInstance().getIcon_5bvev3$(item);
+    World_getInstance().uiCtx().drawImage(image, pos.xx(), pos.yy());
   };
   DrawUtil.prototype.strokeTableHeaderText_0 = function (headerPos, offset, text) {
     var pos = new Coords(headerPos.x + offset | 0, headerPos.y);

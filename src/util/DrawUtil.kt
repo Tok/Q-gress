@@ -6,6 +6,7 @@ import World
 import agent.Faction
 import agent.NonFaction
 import agent.QValue
+import agent.action.ActionItem
 import config.*
 import items.XmpBurster
 import items.deployable.DeployableItem
@@ -428,7 +429,10 @@ object DrawUtil {
             offset += 30
 
             strokeTableHeaderText(headerPos, offset, "Action")
-            strokeTableText(pos, offset, agent.action.toString())
+            val iconRadius = Dimensions.agentRadius.toInt()
+            val actionIconPos = Coords(pos.x + offset - iconRadius, pos.y - iconRadius)
+            addIcon(actionIconPos, agent.action.item)
+            strokeTableText(pos, offset + (iconRadius * 2) + 5, agent.action.toString())
         }
     }
 
@@ -535,6 +539,10 @@ object DrawUtil {
         }
     }
 
+    private fun addIcon(pos: Coords, item: ActionItem) {
+        val image = ActionItem.getIcon(item)
+        World.uiCtx().drawImage(image, pos.xx(), pos.yy())
+    }
     private fun strokeTableHeaderText(headerPos: Coords, offset: Int, text: String) {
         val pos = Coords(headerPos.x + offset, headerPos.y)
         strokeText(World.uiCtx(), pos, text, Colors.white, Dimensions.topAgentsFontSize, CODA, 3.0)
