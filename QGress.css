@@ -5,11 +5,19 @@
     src: local('AmarilloUSAF'), url('fonts/amarurgt.woff') format('woff');
 }
 
+.amarillo {
+    font-family: 'AmarilloUSAF';
+}
+
 @font-face {
     font-family: 'Coda';
     font-style: normal;
     font-weight: normal;
     src: local('Coda'), url('fonts/Coda.ttf.woff') format('woff');
+}
+
+.coda {
+    font-family: 'Coda';
 }
 
 * {
@@ -187,6 +195,13 @@ body {
     background: #777777;
     cursor: pointer;
 }
+.qTitle {
+    font-family: "AmarilloUSAF";
+    margin-top: 3px;
+    margin-bottom: 3px;
+    margin-left: 5px;
+    margin-right: 5px;
+}
 .qSlider {
     height: 8px !important;
     width: 89px !important;
@@ -289,18 +304,15 @@ body {
 }
 #pauseButton {
     width: 55px;
+    height: 24px;
 }
 #locationSelect {
-    width: 144px;
-}
-#volumeSlider {
     width: 233px;
 }
 .mapboxgl-ctrl-bottom-left,
 .mapboxgl-ctrl-bottom-right {
     z-index: 999 !important;
 }
-
 /* See: http://aleclownes.com/2017/02/01/crt-display.html */
 .crt::before {
     content: " ";

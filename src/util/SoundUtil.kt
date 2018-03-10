@@ -17,13 +17,16 @@ import kotlin.browser.document
 
 object SoundUtil {
     val audioCtx = AudioContext()
-    private fun volume(): Double {
-        val volumeSlider = document.getElementById(HtmlUtil.VOLUME_SLIDER_ID) as HTMLInputElement
-        val volume = volumeSlider.valueAsNumber / 100
-        return volume
+
+    private fun isMuted(): Boolean {
+        val soundCheckbox = document.getElementById(HtmlUtil.SOUND_CHECKBOX_ID) as HTMLInputElement
+        return !soundCheckbox.checked
     }
 
+    private fun volume() = if (isMuted()) 0.0 else 1.0
+
     fun playPortalCreationSound(pos: Coords) {
+        if (isMuted()) return
         val duration = 0.5
         val pan = pos.x.toDouble() / Dimensions.width
         val oscNode = createLinearRampOscillator(OscillatorType.SINE, 120.0, 0.0, duration)
@@ -32,6 +35,7 @@ object SoundUtil {
     }
 
     fun playPortalRemovalSound(pos: Coords) {
+        if (isMuted()) return
         val duration = 0.5
         val pan = pos.x.toDouble() / Dimensions.width
         val oscNode = createLinearRampOscillator(OscillatorType.SINE, 60.0, 120.0, duration)
@@ -40,6 +44,7 @@ object SoundUtil {
     }
 
     fun playHackingSound(pos: Coords) {
+        if (isMuted()) return
         val freq = 500.0
         val osc = createStaticOscillator(OscillatorType.SINE, freq)
         val pan = pos.xx() / Dimensions.width
@@ -50,6 +55,7 @@ object SoundUtil {
     }
 
     fun playXmpSound(level: XmpLevel, pos: Coords) {
+        if (isMuted()) return
         val freq = 160.0 - (level.level * 5)
         val osc = createStaticOscillator(OscillatorType.SQUARE, freq)
         val pan = pos.xx() / Dimensions.width
@@ -60,6 +66,7 @@ object SoundUtil {
     }
 
     fun playDeploySound(pos: Coords, distanceToPortal: Int) {
+        if (isMuted()) return
         val ratio = distanceToPortal / Dimensions.maxDeploymentRange
         val gain = 0.10
         val duration = 0.2
@@ -74,6 +81,7 @@ object SoundUtil {
     }
 
     fun playLinkingSound(link: Link) {
+        if (isMuted()) return
         val ratio = link.getLine().calcLength() / World.diagonalLength()
         val gain = 0.30
         val duration = 0.04 + (0.16 * ratio)
@@ -89,6 +97,7 @@ object SoundUtil {
     }
 
     fun playFieldingSound(field: Field) {
+        if (isMuted()) return
         val areaRatio = field.calculateArea() / World.totalArea()
         val gain = 0.4
         val minDuration = 1.0 / Constants.phi

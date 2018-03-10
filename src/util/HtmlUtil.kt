@@ -34,7 +34,7 @@ object HtmlUtil {
     val SPEED_ID = "speed"
     val PAUSE_BUTTON_ID = "pauseButton"
     val LOCATION_DROPDOWN_ID = "locationSelect"
-    val VOLUME_SLIDER_ID = "volumeSlider"
+    val SOUND_CHECKBOX_ID = "soundCheckbox"
 
     private fun speedSetting(): Int = (document.getElementById(SPEED_ID) as HTMLInputElement).valueAsNumber.toInt()
     private fun frogCount(): Int = (document.getElementById(FROG_COUNT_ID) as HTMLInputElement).valueAsNumber.toInt()
@@ -122,50 +122,47 @@ object HtmlUtil {
         setLocationDropdownSelection(dropDown, selectionName)
         buttonDiv.append(dropDown)
 
-        val volumeSlider = document.createElement("input") as HTMLInputElement
-        with(volumeSlider) {
-            id = VOLUME_SLIDER_ID
-            type = "range"
-            min = "0"
-            max = "100"
-            value = "80"
-            addClass("slider", "volumeSlider")
-            val volumeSliderValue = document.createElement("span") as HTMLSpanElement
-            volumeSliderValue.addClass("label")
-            oninput = { _ -> volumeSliderValue.innerHTML = value + "% SOUND VOLUME"; null }
-            volumeSliderValue.innerHTML = value + "% VOLUME"
-            buttonDiv.append(volumeSlider)
-            buttonDiv.append(volumeSliderValue)
-        }
+        val soundCheckbox = document.createElement("input") as HTMLInputElement
+        soundCheckbox.id = SOUND_CHECKBOX_ID
+        soundCheckbox.type = "checkbox"
+        soundCheckbox.addClass("checkbox")
+        buttonDiv.append(soundCheckbox)
+        val soundLabel = document.createElement("span") as HTMLSpanElement
+        soundLabel.addClass("label")
+        soundLabel.id = "soundLabel"
+        soundLabel.innerHTML = "Sound"
+        buttonDiv.append(soundLabel)
 
         val satCheckbox = document.createElement("input") as HTMLInputElement
         satCheckbox.type = "checkbox"
         satCheckbox.addClass("checkbox")
         satCheckbox.onchange = { if (satCheckbox.checked) MapUtil.showSateliteMap() else MapUtil.hideSateliteMap() }
         buttonDiv.append(satCheckbox)
-        val label = document.createElement("span") as HTMLSpanElement
-        label.addClass("label")
-        label.id = "satCheckLabel"
-        label.innerHTML = "Satellite Map"
-        buttonDiv.append(label)
-
+        val satLabel = document.createElement("span") as HTMLSpanElement
+        satLabel.addClass("label")
+        satLabel.id = "satLabel"
+        satLabel.innerHTML = "Satellite"
+        buttonDiv.append(satLabel)
         controlDiv.append(buttonDiv)
 
-        val actionSliderDiv = createSliderDiv(QActions.values(), "floatLeft")
+        val actionSliderDiv = createSliderDiv(QActions.values(), "floatLeft", "Actions")
         controlDiv.append(actionSliderDiv)
-        val destinationSliderDiv = createSliderDiv(QDestinations.values(), "floatRight")
+        val destinationSliderDiv = createSliderDiv(QDestinations.values(), "floatRight", "Destinations")
         controlDiv.append(destinationSliderDiv)
 
         rootDiv.append(controlDiv)
         controlDiv.addEventListener("mousemove", { event -> handleMouseMove(event) }, false)
         rootDiv.addEventListener("mousemove", { event -> handleMouseMove(event) }, false)
-
         initWorld()
     }
 
-    private fun createSliderDiv(qValues: List<QValue>, className: String): HTMLDivElement {
+    private fun createSliderDiv(qValues: List<QValue>, className: String, labelText: String): HTMLDivElement {
         val qDiv = document.createElement("div") as HTMLDivElement
         qDiv.addClass("qValues", "halfWidth", className)
+        val destinationsLabel = document.createElement("div") as HTMLDivElement
+        destinationsLabel.addClass("label", "qTitle")
+        destinationsLabel.innerHTML = labelText
+        qDiv.append(destinationsLabel)
         qValues.forEach { qValue ->
             val sliderDiv = document.createElement("div") as HTMLDivElement
             Faction.factionValues().forEach { faction ->

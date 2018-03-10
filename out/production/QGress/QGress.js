@@ -7467,7 +7467,7 @@ var QGress = function (_, Kotlin) {
       $receiver.fillRect(0.0, botOffset, w, h);
     }
     var qSliderHeight = 13.0 + 5.0;
-    var qSliderDivHeight = qSliderHeight * QActions_getInstance().values().size;
+    var qSliderDivHeight = qSliderHeight * (QActions_getInstance().values().size + 1 | 0);
     var qSliderDivWidth = 370.0;
     $receiver.fillRect(0.0, topOffset, qSliderDivWidth, qSliderDivHeight);
     $receiver.fillRect(w - qSliderDivWidth, topOffset, qSliderDivWidth, qSliderDivHeight);
@@ -8112,7 +8112,7 @@ var QGress = function (_, Kotlin) {
     this.SPEED_ID = 'speed';
     this.PAUSE_BUTTON_ID = 'pauseButton';
     this.LOCATION_DROPDOWN_ID = 'locationSelect';
-    this.VOLUME_SLIDER_ID = 'volumeSlider';
+    this.SOUND_CHECKBOX_ID = 'soundCheckbox';
   }
   HtmlUtil.prototype.speedSetting_0 = function () {
     var tmp$;
@@ -8264,12 +8264,6 @@ var QGress = function (_, Kotlin) {
       return Unit;
     };
   }
-  function HtmlUtil$load$lambda$lambda_0(this$, closure$volumeSliderValue) {
-    return function (f) {
-      closure$volumeSliderValue.innerHTML = this$.value + '% SOUND VOLUME';
-      return null;
-    };
-  }
   function HtmlUtil$load$lambda_3(closure$satCheckbox) {
     return function (it) {
       if (closure$satCheckbox.checked)
@@ -8292,7 +8286,7 @@ var QGress = function (_, Kotlin) {
     };
   }
   HtmlUtil.prototype.load = function () {
-    var tmp$, tmp$_0, tmp$_1, tmp$_2, tmp$_3, tmp$_4, tmp$_5, tmp$_6;
+    var tmp$, tmp$_0, tmp$_1, tmp$_2, tmp$_3, tmp$_4, tmp$_5, tmp$_6, tmp$_7;
     var rootDiv = Kotlin.isType(tmp$ = document.getElementById('root'), HTMLDivElement) ? tmp$ : throwCCE();
     addClass(rootDiv, ['container']);
     World_getInstance().can = this.createCanvas_0('mainCanvas');
@@ -8322,34 +8316,30 @@ var QGress = function (_, Kotlin) {
     var selectionName = (tmp$_3 = this.getLocationNameFromUrl_0()) != null ? tmp$_3 : 'unknown';
     this.setLocationDropdownSelection_0(dropDown, selectionName);
     buttonDiv.append(dropDown);
-    var volumeSlider = Kotlin.isType(tmp$_4 = document.createElement('input'), HTMLInputElement) ? tmp$_4 : throwCCE();
-    var tmp$_7;
-    volumeSlider.id = this.VOLUME_SLIDER_ID;
-    volumeSlider.type = 'range';
-    volumeSlider.min = '0';
-    volumeSlider.max = '100';
-    volumeSlider.value = '80';
-    addClass(volumeSlider, ['slider', 'volumeSlider']);
-    var volumeSliderValue = Kotlin.isType(tmp$_7 = document.createElement('span'), HTMLSpanElement) ? tmp$_7 : throwCCE();
-    addClass(volumeSliderValue, ['label']);
-    volumeSlider.oninput = HtmlUtil$load$lambda$lambda_0(volumeSlider, volumeSliderValue);
-    volumeSliderValue.innerHTML = volumeSlider.value + '% VOLUME';
-    buttonDiv.append(volumeSlider);
-    buttonDiv.append(volumeSliderValue);
-    var satCheckbox = Kotlin.isType(tmp$_5 = document.createElement('input'), HTMLInputElement) ? tmp$_5 : throwCCE();
+    var soundCheckbox = Kotlin.isType(tmp$_4 = document.createElement('input'), HTMLInputElement) ? tmp$_4 : throwCCE();
+    soundCheckbox.id = this.SOUND_CHECKBOX_ID;
+    soundCheckbox.type = 'checkbox';
+    addClass(soundCheckbox, ['checkbox']);
+    buttonDiv.append(soundCheckbox);
+    var soundLabel = Kotlin.isType(tmp$_5 = document.createElement('span'), HTMLSpanElement) ? tmp$_5 : throwCCE();
+    addClass(soundLabel, ['label']);
+    soundLabel.id = 'soundLabel';
+    soundLabel.innerHTML = 'Sound';
+    buttonDiv.append(soundLabel);
+    var satCheckbox = Kotlin.isType(tmp$_6 = document.createElement('input'), HTMLInputElement) ? tmp$_6 : throwCCE();
     satCheckbox.type = 'checkbox';
     addClass(satCheckbox, ['checkbox']);
     satCheckbox.onchange = HtmlUtil$load$lambda_3(satCheckbox);
     buttonDiv.append(satCheckbox);
-    var label = Kotlin.isType(tmp$_6 = document.createElement('span'), HTMLSpanElement) ? tmp$_6 : throwCCE();
-    addClass(label, ['label']);
-    label.id = 'satCheckLabel';
-    label.innerHTML = 'Satellite Map';
-    buttonDiv.append(label);
+    var satLabel = Kotlin.isType(tmp$_7 = document.createElement('span'), HTMLSpanElement) ? tmp$_7 : throwCCE();
+    addClass(satLabel, ['label']);
+    satLabel.id = 'satLabel';
+    satLabel.innerHTML = 'Satellite';
+    buttonDiv.append(satLabel);
     controlDiv.append(buttonDiv);
-    var actionSliderDiv = this.createSliderDiv_1(QActions_getInstance().values(), 'floatLeft');
+    var actionSliderDiv = this.createSliderDiv_1(QActions_getInstance().values(), 'floatLeft', 'Actions');
     controlDiv.append(actionSliderDiv);
-    var destinationSliderDiv = this.createSliderDiv_1(QDestinations_getInstance().values(), 'floatRight');
+    var destinationSliderDiv = this.createSliderDiv_1(QDestinations_getInstance().values(), 'floatRight', 'Destinations');
     controlDiv.append(destinationSliderDiv);
     rootDiv.append(controlDiv);
     controlDiv.addEventListener('mousemove', HtmlUtil$load$lambda_4(this), false);
@@ -8362,22 +8352,26 @@ var QGress = function (_, Kotlin) {
       return null;
     };
   }
-  HtmlUtil.prototype.createSliderDiv_1 = function (qValues, className) {
-    var tmp$;
+  HtmlUtil.prototype.createSliderDiv_1 = function (qValues, className, labelText) {
+    var tmp$, tmp$_0;
     var qDiv = Kotlin.isType(tmp$ = document.createElement('div'), HTMLDivElement) ? tmp$ : throwCCE();
     addClass(qDiv, ['qValues', 'halfWidth', className]);
-    var tmp$_0;
-    tmp$_0 = qValues.iterator();
-    while (tmp$_0.hasNext()) {
-      var element = tmp$_0.next();
-      var tmp$_1, tmp$_2, tmp$_3;
-      var sliderDiv = Kotlin.isType(tmp$_1 = document.createElement('div'), HTMLDivElement) ? tmp$_1 : throwCCE();
-      var tmp$_4;
-      tmp$_4 = Faction$Companion_getInstance().factionValues().iterator();
-      while (tmp$_4.hasNext()) {
-        var element_0 = tmp$_4.next();
-        var tmp$_5, tmp$_6;
-        var slider = Kotlin.isType(tmp$_5 = document.createElement('input'), HTMLInputElement) ? tmp$_5 : throwCCE();
+    var destinationsLabel = Kotlin.isType(tmp$_0 = document.createElement('div'), HTMLDivElement) ? tmp$_0 : throwCCE();
+    addClass(destinationsLabel, ['label', 'qTitle']);
+    destinationsLabel.innerHTML = labelText;
+    qDiv.append(destinationsLabel);
+    var tmp$_1;
+    tmp$_1 = qValues.iterator();
+    while (tmp$_1.hasNext()) {
+      var element = tmp$_1.next();
+      var tmp$_2, tmp$_3, tmp$_4;
+      var sliderDiv = Kotlin.isType(tmp$_2 = document.createElement('div'), HTMLDivElement) ? tmp$_2 : throwCCE();
+      var tmp$_5;
+      tmp$_5 = Faction$Companion_getInstance().factionValues().iterator();
+      while (tmp$_5.hasNext()) {
+        var element_0 = tmp$_5.next();
+        var tmp$_6, tmp$_7;
+        var slider = Kotlin.isType(tmp$_6 = document.createElement('input'), HTMLInputElement) ? tmp$_6 : throwCCE();
         slider.id = element.sliderId + element_0.nickName;
         slider.type = 'range';
         slider.min = '0.00';
@@ -8385,17 +8379,17 @@ var QGress = function (_, Kotlin) {
         slider.step = '0.01';
         slider.value = '0.50';
         addClass(slider, ['slider', 'qSlider', element_0.abbr.toLowerCase() + 'Slider']);
-        var sliderValue = Kotlin.isType(tmp$_6 = document.createElement('span'), HTMLSpanElement) ? tmp$_6 : throwCCE();
+        var sliderValue = Kotlin.isType(tmp$_7 = document.createElement('span'), HTMLSpanElement) ? tmp$_7 : throwCCE();
         addClass(sliderValue, ['qSliderLabel', element_0.abbr.toLowerCase() + 'Label']);
         slider.oninput = HtmlUtil$createSliderDiv$lambda$lambda$lambda(slider, this, sliderValue);
         sliderValue.innerHTML = this.qDisplay_0(slider.value);
         sliderDiv.append(slider);
         sliderDiv.append(sliderValue);
       }
-      var qSliderLabel = Kotlin.isType(tmp$_2 = document.createElement('span'), HTMLSpanElement) ? tmp$_2 : throwCCE();
+      var qSliderLabel = Kotlin.isType(tmp$_3 = document.createElement('span'), HTMLSpanElement) ? tmp$_3 : throwCCE();
       addClass(qSliderLabel, ['qSliderTextLabel']);
       if (element.icon != null) {
-        var sliderImg = Kotlin.isType(tmp$_3 = document.createElement('img'), HTMLImageElement) ? tmp$_3 : throwCCE();
+        var sliderImg = Kotlin.isType(tmp$_4 = document.createElement('img'), HTMLImageElement) ? tmp$_4 : throwCCE();
         sliderImg.src = element.icon.toDataURL();
         qSliderLabel.innerHTML = sliderImg.outerHTML + ' ' + element.description;
       }
@@ -9304,13 +9298,17 @@ var QGress = function (_, Kotlin) {
     SoundUtil_instance = this;
     this.audioCtx = new AudioContext();
   }
-  SoundUtil.prototype.volume_0 = function () {
+  SoundUtil.prototype.isMuted_0 = function () {
     var tmp$;
-    var volumeSlider = Kotlin.isType(tmp$ = document.getElementById(HtmlUtil_getInstance().VOLUME_SLIDER_ID), HTMLInputElement) ? tmp$ : throwCCE();
-    var volume = volumeSlider.valueAsNumber / 100;
-    return volume;
+    var soundCheckbox = Kotlin.isType(tmp$ = document.getElementById(HtmlUtil_getInstance().SOUND_CHECKBOX_ID), HTMLInputElement) ? tmp$ : throwCCE();
+    return !soundCheckbox.checked;
+  };
+  SoundUtil.prototype.volume_0 = function () {
+    return this.isMuted_0() ? 0.0 : 1.0;
   };
   SoundUtil.prototype.playPortalCreationSound_lfj9be$ = function (pos) {
+    if (this.isMuted_0())
+      return;
     var duration = 0.5;
     var pan = pos.x / Dimensions_getInstance().width;
     var oscNode = this.createLinearRampOscillator_0(OscillatorType_getInstance().SINE, 120.0, 0.0, duration);
@@ -9318,6 +9316,8 @@ var QGress = function (_, Kotlin) {
     this.playSound_0(oscNode, panNode, 1.0, duration);
   };
   SoundUtil.prototype.playPortalRemovalSound_lfj9be$ = function (pos) {
+    if (this.isMuted_0())
+      return;
     var duration = 0.5;
     var pan = pos.x / Dimensions_getInstance().width;
     var oscNode = this.createLinearRampOscillator_0(OscillatorType_getInstance().SINE, 60.0, 120.0, duration);
@@ -9325,6 +9325,8 @@ var QGress = function (_, Kotlin) {
     this.playSound_0(oscNode, panNode, 1.0, duration);
   };
   SoundUtil.prototype.playHackingSound_lfj9be$ = function (pos) {
+    if (this.isMuted_0())
+      return;
     var freq = 500.0;
     var osc = this.createStaticOscillator_0(OscillatorType_getInstance().SINE, freq);
     var pan = pos.xx() / Dimensions_getInstance().width;
@@ -9334,6 +9336,8 @@ var QGress = function (_, Kotlin) {
     this.playSound_0(osc, panNode, gain, duration);
   };
   SoundUtil.prototype.playXmpSound_zbn281$ = function (level, pos) {
+    if (this.isMuted_0())
+      return;
     var freq = 160.0 - (level.level * 5 | 0);
     var osc = this.createStaticOscillator_0(OscillatorType_getInstance().SQUARE, freq);
     var pan = pos.xx() / Dimensions_getInstance().width;
@@ -9343,6 +9347,8 @@ var QGress = function (_, Kotlin) {
     this.playSound_0(osc, panNode, gain, duration);
   };
   SoundUtil.prototype.playDeploySound_s1df0o$ = function (pos, distanceToPortal) {
+    if (this.isMuted_0())
+      return;
     var ratio = distanceToPortal / Dimensions_getInstance().maxDeploymentRange;
     var gain = 0.1;
     var duration = 0.2;
@@ -9356,6 +9362,8 @@ var QGress = function (_, Kotlin) {
     this.playSound_0(oscNode, panNode, gain, duration);
   };
   SoundUtil.prototype.playLinkingSound_4tp95w$ = function (link) {
+    if (this.isMuted_0())
+      return;
     var ratio = link.getLine().calcLength() / World_getInstance().diagonalLength();
     var gain = 0.3;
     var duration = 0.04 + 0.16 * ratio;
@@ -9370,6 +9378,8 @@ var QGress = function (_, Kotlin) {
     this.playSound_0(oscNode, panNode, gain, duration);
   };
   SoundUtil.prototype.playFieldingSound_7ltq94$ = function (field) {
+    if (this.isMuted_0())
+      return;
     var areaRatio = field.calculateArea() / World_getInstance().totalArea() | 0;
     var gain = 0.4;
     var minDuration = 1.0 / Constants_getInstance().phi;
