@@ -350,7 +350,8 @@ object DrawUtil {
             val h = fontSize.toDouble() * count / maxCount
             drawRect(ctx, statPos, h, barWidth.toDouble(), color, Colors.black, lineWidth)
         }
-        fun drawCounts(ctx: Ctx, items: List<DeployableItem>?, pos: Coords, isShields: Boolean = false) {
+        fun drawCounts(ctx: Ctx, items: List<DeployableItem>?, col: Coords, offset: Int, isShields: Boolean = false) {
+            val pos = Coords(col.x + offset, col.y)
             val barWidth = 6
             val countPos = Coords(pos.x, pos.y)
             val totalWidth = 48
@@ -387,49 +388,49 @@ object DrawUtil {
         ctx.globalAlpha = 1.0
         val xPos = Dimensions.topAgentsLeftOffset
         val yOffset = Dimensions.topAgentsFontSize * 3 / 2
-        //val xOffset = (Dimensions.topAgentsInventoryFontSize * Constants.phi).toInt()
         val yFixOffset = Dimensions.height - Dimensions.topAgentsBottomOffset - (Config.topAgentsMessageLimit * yOffset)
         val headerPos = Coords(xPos, yFixOffset - yOffset)
         val top = World.allAgents.toList().sortedBy { -it.ap }.take(Config.topAgentsMessageLimit)
-        val headerText =
-                "Agent AP                                                                 " +
-                        "XMPs                         " +
-                        "Resos                       " +
-                        "Cubes                      " +
-                        "Shields               " +
-                        "Keys                " +
-                        "Action"
-        strokeText(ctx, headerPos, headerText, Colors.white, Dimensions.topAgentsInventoryFontSize, CODA, 2.0, Colors.black)
-
-        val invFontSize = Dimensions.topAgentsInventoryFontSize
         top.forEachIndexed { index, agent ->
             val rank = (index + 1).toString()
             val name = agent.toString()
-            val ap = agent.ap
-            val text = "$rank: $ap $name"
             val pos = Coords(xPos, yFixOffset + (yOffset * index))
-            strokeText(ctx, pos, text, agent.faction.color, Dimensions.topAgentsFontSize, CODA, 3.0, Colors.black)
 
-            val xmpColumnOffset = 180
-            drawCounts(ctx, agent.inventory.findXmps(), Coords(pos.x + xmpColumnOffset, pos.y))
+            var offset = 0
+            strokeTableText(pos, offset, rank, agent.faction.color)
 
-            val resoColumnOffset = xmpColumnOffset + 80
-            drawCounts(ctx, agent.inventory.findResonators(), Coords(pos.x + resoColumnOffset, pos.y))
+            offset += 20
+            strokeTableHeaderText(headerPos, offset,"AP")
+            strokeTableText(pos, offset, agent.ap.toString(), agent.faction.color)
 
-            val cubeColumnOffset = resoColumnOffset + 80
-            drawCounts(ctx, agent.inventory.findPowerCubes(), Coords(pos.x + cubeColumnOffset, pos.y))
+            offset += 50
+            strokeTableHeaderText(headerPos, offset, "Agent")
+            strokeTableText(pos, offset, name, agent.faction.color)
 
-            val shieldColumnOffset = cubeColumnOffset + 80
-            drawCounts(ctx, agent.inventory.findShields(), Coords(pos.x + shieldColumnOffset, pos.y), true)
+            offset += 100
+            strokeTableHeaderText(headerPos, offset, "XMPs")
+            drawCounts(ctx, agent.inventory.findXmps(), pos, offset)
 
+            offset += 80
+            strokeTableHeaderText(headerPos, offset, "Resos")
+            drawCounts(ctx, agent.inventory.findResonators(), pos, offset)
+
+            offset += 80
+            strokeTableHeaderText(headerPos, offset, "Cubes")
+            drawCounts(ctx, agent.inventory.findPowerCubes(), pos, offset)
+
+            offset += 80
+            strokeTableHeaderText(headerPos, offset, "Shields")
+            drawCounts(ctx, agent.inventory.findShields(), pos, offset, true)
+
+            offset += 80
             val keyCount = agent.inventory.keyCount()
-            val keyColumnOffset = shieldColumnOffset + 80
-            val keyPos = Coords(pos.x + keyColumnOffset, pos.y)
-            strokeText(ctx, keyPos, keyCount.toString(), Colors.white, invFontSize, CODA, 2.0, Colors.black, CanvasTextAlign.END)
+            strokeTableHeaderText(headerPos, offset, "Keys")
+            strokeTableText(pos, offset, keyCount.toString(), Colors.white)
 
-            val actionColumnOffset = keyColumnOffset + 80
-            val actionPos = Coords(pos.x + actionColumnOffset, pos.y)
-            strokeText(ctx, actionPos, agent.action.toString(), Colors.white, invFontSize, CODA, 2.0, Colors.black, CanvasTextAlign.END)
+            offset += 30
+            strokeTableHeaderText(headerPos, offset, "Action")
+            strokeTableText(pos, offset, agent.action.toString(), Colors.white)
         }
     }
 
@@ -536,7 +537,15 @@ object DrawUtil {
         }
     }
 
-    fun strokeText(ctx: Ctx, coords: Coords, text: String, fillStyle: String, fontSize: Int, fontName: String = CODA,
+    private fun strokeTableHeaderText(headerPos: Coords, offset: Int, text: String) {
+        val pos = Coords(headerPos.x + offset, headerPos.y)
+        strokeText(World.uiCtx(), pos, text, Colors.white, Dimensions.topAgentsFontSize, CODA, 3.0)
+    }
+    private fun strokeTableText(headerPos: Coords, offset: Int, text: String, fillStyle: String) {
+        val pos = Coords(headerPos.x + offset, headerPos.y)
+        strokeText(World.uiCtx(), pos, text, fillStyle, Dimensions.topAgentsFontSize, CODA, 3.0)
+    }
+    fun strokeText(ctx: Ctx, pos: Coords, text: String, fillStyle: String, fontSize: Int, fontName: String = CODA,
                    lineWidth: Double = 0.0, strokeStyle: String = Colors.black,
                    textAlign: CanvasTextAlign = CanvasTextAlign.START) {
         val xOff: Double = (fontSize / 2.0) - 2
@@ -551,9 +560,9 @@ object DrawUtil {
             if (lineWidth > 0.0) {
                 ctx.lineWidth = lineWidth
                 ctx.strokeStyle = strokeStyle
-                ctx.strokeText(text, coords.x - xOff, coords.y + yOff)
+                ctx.strokeText(text, pos.x - xOff, pos.y + yOff)
             }
-            ctx.fillText(text, coords.x - xOff, coords.y + yOff)
+            ctx.fillText(text, pos.x - xOff, pos.y + yOff)
             ctx.closePath()
             if (lineWidth > 0.0) {
                 ctx.stroke()

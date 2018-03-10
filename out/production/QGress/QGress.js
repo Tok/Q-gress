@@ -7726,10 +7726,11 @@ var QGress = function (_, Kotlin) {
   var mapCapacity = Kotlin.kotlin.collections.mapCapacity_za3lpa$;
   var LinkedHashMap_init_0 = Kotlin.kotlin.collections.LinkedHashMap_init_xf5xz2$;
   function DrawUtil$drawTopAgents$drawCounts(closure$fontSize, closure$lineWidth, this$DrawUtil, closure$drawBars) {
-    return function (ctx, items, pos, isShields) {
+    return function (ctx, items, col, offset, isShields) {
       if (isShields === void 0)
         isShields = false;
       var tmp$;
+      var pos = new Coords(col.x + offset | 0, col.y);
       var barWidth = 6;
       var countPos = new Coords(pos.x, pos.y);
       var totalWidth = 48;
@@ -7840,9 +7841,6 @@ var QGress = function (_, Kotlin) {
     var yFixOffset = Dimensions_getInstance().height - Dimensions_getInstance().topAgentsBottomOffset - Kotlin.imul(Config_getInstance().topAgentsMessageLimit, yOffset) | 0;
     var headerPos = new Coords(xPos, yFixOffset - yOffset | 0);
     var top = take(sortedWith(toList_0(World_getInstance().allAgents), new Comparator$ObjectLiteral_15(compareBy$lambda_14(DrawUtil$drawTopAgents$lambda))), Config_getInstance().topAgentsMessageLimit);
-    var headerText = 'Agent AP                                                                 ' + 'XMPs                         ' + 'Resos                       ' + 'Cubes                      ' + 'Shields               ' + 'Keys                ' + 'Action';
-    this.strokeText_lowmm9$(ctx, headerPos, headerText, Colors_getInstance().white, Dimensions_getInstance().topAgentsInventoryFontSize, this.CODA, 2.0, Colors_getInstance().black);
-    var invFontSize = Dimensions_getInstance().topAgentsInventoryFontSize;
     var tmp$, tmp$_0;
     var index = 0;
     tmp$ = top.iterator();
@@ -7851,25 +7849,34 @@ var QGress = function (_, Kotlin) {
       var index_0 = (tmp$_0 = index, index = tmp$_0 + 1 | 0, tmp$_0);
       var rank = (index_0 + 1 | 0).toString();
       var name = item.toString();
-      var ap = item.ap;
-      var text = rank + ': ' + ap + ' ' + name;
       var pos = new Coords(xPos, yFixOffset + Kotlin.imul(yOffset, index_0) | 0);
-      this.strokeText_lowmm9$(ctx, pos, text, item.faction.color, Dimensions_getInstance().topAgentsFontSize, this.CODA, 3.0, Colors_getInstance().black);
-      var xmpColumnOffset = 180;
-      drawCounts(ctx, item.inventory.findXmps(), new Coords(pos.x + xmpColumnOffset | 0, pos.y));
-      var resoColumnOffset = xmpColumnOffset + 80 | 0;
-      drawCounts(ctx, item.inventory.findResonators(), new Coords(pos.x + resoColumnOffset | 0, pos.y));
-      var cubeColumnOffset = resoColumnOffset + 80 | 0;
-      drawCounts(ctx, item.inventory.findPowerCubes(), new Coords(pos.x + cubeColumnOffset | 0, pos.y));
-      var shieldColumnOffset = cubeColumnOffset + 80 | 0;
-      drawCounts(ctx, item.inventory.findShields(), new Coords(pos.x + shieldColumnOffset | 0, pos.y), true);
+      var offset = 0;
+      this.strokeTableText_0(pos, offset, rank, item.faction.color);
+      offset = offset + 20 | 0;
+      this.strokeTableHeaderText_0(headerPos, offset, 'AP');
+      this.strokeTableText_0(pos, offset, item.ap.toString(), item.faction.color);
+      offset = offset + 50 | 0;
+      this.strokeTableHeaderText_0(headerPos, offset, 'Agent');
+      this.strokeTableText_0(pos, offset, name, item.faction.color);
+      offset = offset + 100 | 0;
+      this.strokeTableHeaderText_0(headerPos, offset, 'XMPs');
+      drawCounts(ctx, item.inventory.findXmps(), pos, offset);
+      offset = offset + 80 | 0;
+      this.strokeTableHeaderText_0(headerPos, offset, 'Resos');
+      drawCounts(ctx, item.inventory.findResonators(), pos, offset);
+      offset = offset + 80 | 0;
+      this.strokeTableHeaderText_0(headerPos, offset, 'Cubes');
+      drawCounts(ctx, item.inventory.findPowerCubes(), pos, offset);
+      offset = offset + 80 | 0;
+      this.strokeTableHeaderText_0(headerPos, offset, 'Shields');
+      drawCounts(ctx, item.inventory.findShields(), pos, offset, true);
+      offset = offset + 80 | 0;
       var keyCount = item.inventory.keyCount();
-      var keyColumnOffset = shieldColumnOffset + 80 | 0;
-      var keyPos = new Coords(pos.x + keyColumnOffset | 0, pos.y);
-      this.strokeText_lowmm9$(ctx, keyPos, keyCount.toString(), Colors_getInstance().white, invFontSize, this.CODA, 2.0, Colors_getInstance().black, 'end');
-      var actionColumnOffset = keyColumnOffset + 80 | 0;
-      var actionPos = new Coords(pos.x + actionColumnOffset | 0, pos.y);
-      this.strokeText_lowmm9$(ctx, actionPos, item.action.toString(), Colors_getInstance().white, invFontSize, this.CODA, 2.0, Colors_getInstance().black, 'end');
+      this.strokeTableHeaderText_0(headerPos, offset, 'Keys');
+      this.strokeTableText_0(pos, offset, keyCount.toString(), Colors_getInstance().white);
+      offset = offset + 30 | 0;
+      this.strokeTableHeaderText_0(headerPos, offset, 'Action');
+      this.strokeTableText_0(pos, offset, item.action.toString(), Colors_getInstance().white);
     }
   };
   DrawUtil.prototype.drawRect_0 = function (ctx, pos, h, w, fillStyle, strokeStyle, lineWidth) {
@@ -7980,7 +7987,15 @@ var QGress = function (_, Kotlin) {
     var yOff = fontSize / 3 | 0;
     ctx.fillText(text, coords.x - xOff, coords.y + yOff);
   };
-  DrawUtil.prototype.strokeText_lowmm9$ = function (ctx, coords, text, fillStyle, fontSize, fontName, lineWidth, strokeStyle, textAlign) {
+  DrawUtil.prototype.strokeTableHeaderText_0 = function (headerPos, offset, text) {
+    var pos = new Coords(headerPos.x + offset | 0, headerPos.y);
+    this.strokeText_lowmm9$(World_getInstance().uiCtx(), pos, text, Colors_getInstance().white, Dimensions_getInstance().topAgentsFontSize, this.CODA, 3.0);
+  };
+  DrawUtil.prototype.strokeTableText_0 = function (headerPos, offset, text, fillStyle) {
+    var pos = new Coords(headerPos.x + offset | 0, headerPos.y);
+    this.strokeText_lowmm9$(World_getInstance().uiCtx(), pos, text, fillStyle, Dimensions_getInstance().topAgentsFontSize, this.CODA, 3.0);
+  };
+  DrawUtil.prototype.strokeText_lowmm9$ = function (ctx, pos, text, fillStyle, fontSize, fontName, lineWidth, strokeStyle, textAlign) {
     if (fontName === void 0)
       fontName = this.CODA;
     if (lineWidth === void 0)
@@ -8002,9 +8017,9 @@ var QGress = function (_, Kotlin) {
     if (lineWidth > 0.0) {
       ctx.lineWidth = lineWidth;
       ctx.strokeStyle = strokeStyle;
-      ctx.strokeText(text, coords.x - xOff, coords.y + yOff);
+      ctx.strokeText(text, pos.x - xOff, pos.y + yOff);
     }
-    ctx.fillText(text, coords.x - xOff, coords.y + yOff);
+    ctx.fillText(text, pos.x - xOff, pos.y + yOff);
     ctx.closePath();
     if (lineWidth > 0.0) {
       ctx.stroke();
