@@ -7,7 +7,6 @@ import World
 import agent.Agent
 import agent.Faction
 import agent.QValue
-import agent.action.ActionItem
 import config.*
 import config.Location
 import org.w3c.dom.*
@@ -171,7 +170,13 @@ object HtmlUtil {
             }
             val qSliderLabel = document.createElement("span") as HTMLSpanElement
             qSliderLabel.addClass("qSliderTextLabel")
-            qSliderLabel.innerHTML = qValue.name
+            if (qValue.icon != null) {
+                val sliderImg = document.createElement("img") as HTMLImageElement
+                sliderImg.src = qValue.icon.toDataURL()
+                qSliderLabel.innerHTML = sliderImg.outerHTML + " " + qValue.description
+            } else {
+                qSliderLabel.innerHTML = qValue.description
+            }
             sliderDiv.append(qSliderLabel)
             qDiv.append(sliderDiv)
         }
@@ -185,7 +190,7 @@ object HtmlUtil {
     }
 
     private fun qDisplay(qValue: String): String {
-        val fixed = qValue.padEnd(4,'0')
+        val fixed = qValue.padEnd(4, '0')
         return when (fixed) {
             "0000" -> "0.00"
             "1000" -> "1.00"

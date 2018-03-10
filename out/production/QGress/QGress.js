@@ -6,31 +6,31 @@ var QGress = function (_, Kotlin) {
   var Kind_OBJECT = Kotlin.Kind.OBJECT;
   var Kind_CLASS = Kotlin.Kind.CLASS;
   var listOf = Kotlin.kotlin.collections.listOf_i5x0yv$;
+  var ensureNotNull = Kotlin.ensureNotNull;
+  var numberToInt = Kotlin.numberToInt;
   var equals = Kotlin.equals;
+  var to = Kotlin.kotlin.to_ujzrz7$;
+  var toMap = Kotlin.kotlin.collections.toMap_6hr0sd$;
   var sum = Kotlin.kotlin.collections.sum_plj8ka$;
   var throwCCE = Kotlin.throwCCE;
-  var to = Kotlin.kotlin.to_ujzrz7$;
   var listOf_0 = Kotlin.kotlin.collections.listOf_mh5how$;
   var plus = Kotlin.kotlin.collections.plus_mydzjv$;
   var println = Kotlin.kotlin.io.println_s8jyv4$;
-  var numberToInt = Kotlin.numberToInt;
-  var ensureNotNull = Kotlin.ensureNotNull;
   var first = Kotlin.kotlin.collections.first_2p1efm$;
   var Unit = Kotlin.kotlin.Unit;
   var take = Kotlin.kotlin.collections.take_ba2ldo$;
   var toList = Kotlin.kotlin.collections.toList_abgq59$;
   var toSet = Kotlin.kotlin.collections.toSet_7wnvza$;
   var zip = Kotlin.kotlin.collections.zip_45mdf7$;
-  var toMap = Kotlin.kotlin.collections.toMap_6hr0sd$;
   var distinct = Kotlin.kotlin.collections.distinct_7wnvza$;
   var filterNotNull = Kotlin.kotlin.collections.filterNotNull_m3lr2h$;
   var toString = Kotlin.toString;
   var hashCode = Kotlin.hashCode;
   var getValue = Kotlin.kotlin.collections.getValue_t9ocha$;
-  var IllegalStateException_init = Kotlin.kotlin.IllegalStateException_init_pdl1vj$;
   var IntRange = Kotlin.kotlin.ranges.IntRange;
   var Enum = Kotlin.kotlin.Enum;
   var throwISE = Kotlin.throwISE;
+  var IllegalStateException_init = Kotlin.kotlin.IllegalStateException_init_pdl1vj$;
   var eachCount = Kotlin.kotlin.collections.eachCount_kji7v9$;
   var firstOrNull = Kotlin.kotlin.collections.firstOrNull_2p1efm$;
   var math = Kotlin.kotlin.math;
@@ -162,27 +162,110 @@ var QGress = function (_, Kotlin) {
   Action.prototype.equals = function (other) {
     return this === other || (other !== null && (typeof other === 'object' && (Object.getPrototypeOf(this) === Object.getPrototypeOf(other) && (Kotlin.equals(this.item, other.item) && Kotlin.equals(this.untilTick, other.untilTick)))));
   };
-  function ActionItem(text, letter, durationSeconds, qName) {
+  function ActionItem(text, durationSeconds, qName) {
     ActionItem$Companion_getInstance();
     this.text = text;
-    this.letter = letter;
     this.durationSeconds = durationSeconds;
     this.qName = qName;
   }
+  var collectionSizeOrDefault = Kotlin.kotlin.collections.collectionSizeOrDefault_ba2ldo$;
+  var ArrayList_init = Kotlin.kotlin.collections.ArrayList_init_ww73n8$;
   function ActionItem$Companion() {
     ActionItem$Companion_instance = this;
-    this.MOVE = new ActionItem('moving', ' ', 1, 'Move');
-    this.WAIT = new ActionItem('waiting', 'o', 1, 'Wait');
-    this.RECHARGE = new ActionItem('recharge', 'r', 1, 'Recharge');
-    this.RECYCLE = new ActionItem('recycle', 'c', 1, 'Recycle');
-    this.HACK = new ActionItem('hacking', ' !', 5, 'Hack');
-    this.GLYPH = new ActionItem('glyphing', '?', 40, 'Glyph');
-    this.ATTACK = new ActionItem('attacking', '-', 5, 'Attack');
-    this.DEPLOY = new ActionItem('deploying', '+', 10, 'Deploy');
-    this.LINK = new ActionItem('linking', ' |', 10, 'Link');
+    this.MOVE = new ActionItem('moving', 1, 'Move');
+    this.WAIT = new ActionItem('waiting', 1, 'Wait');
+    this.RECHARGE = new ActionItem('recharge', 1, 'Recharge');
+    this.RECYCLE = new ActionItem('recycle', 1, 'Recycle');
+    this.HACK = new ActionItem('hacking', 5, 'Hack');
+    this.GLYPH = new ActionItem('glyphing', 40, 'Glyph');
+    this.ATTACK = new ActionItem('attacking', 5, 'Attack');
+    this.DEPLOY = new ActionItem('deploying', 10, 'Deploy');
+    this.LINK = new ActionItem('linking', 10, 'Link');
+    var $receiver = ActionItem$Companion_getInstance().values();
+    var destination = ArrayList_init(collectionSizeOrDefault($receiver, 10));
+    var tmp$;
+    tmp$ = $receiver.iterator();
+    while (tmp$.hasNext()) {
+      var item = tmp$.next();
+      destination.add_11rb$(to(item, this.drawTemplate_0(item, Faction$ENL_getInstance())));
+    }
+    this.enlImages_0 = toMap(destination);
+    var $receiver_0 = ActionItem$Companion_getInstance().values();
+    var destination_0 = ArrayList_init(collectionSizeOrDefault($receiver_0, 10));
+    var tmp$_0;
+    tmp$_0 = $receiver_0.iterator();
+    while (tmp$_0.hasNext()) {
+      var item_0 = tmp$_0.next();
+      destination_0.add_11rb$(to(item_0, this.drawTemplate_0(item_0, Faction$RES_getInstance())));
+    }
+    this.resImages_0 = toMap(destination_0);
+    var $receiver_1 = ActionItem$Companion_getInstance().values();
+    var destination_1 = ArrayList_init(collectionSizeOrDefault($receiver_1, 10));
+    var tmp$_1;
+    tmp$_1 = $receiver_1.iterator();
+    while (tmp$_1.hasNext()) {
+      var item_1 = tmp$_1.next();
+      destination_1.add_11rb$(to(item_1, this.drawTemplate_0(item_1, Faction$NONE_getInstance())));
+    }
+    this.nonImages_0 = toMap(destination_1);
   }
   ActionItem$Companion.prototype.values = function () {
-    return listOf([this.MOVE, this.WAIT, this.HACK, this.GLYPH, this.ATTACK, this.DEPLOY, this.LINK]);
+    return listOf([this.MOVE, this.WAIT, this.RECHARGE, this.RECYCLE, this.HACK, this.GLYPH, this.ATTACK, this.DEPLOY, this.LINK]);
+  };
+  ActionItem$Companion.prototype.getIcon_5bvev3$ = function (item, faction) {
+    if (faction === void 0)
+      faction = Faction$NONE_getInstance();
+    var tmp$, tmp$_0, tmp$_1;
+    switch (faction.name) {
+      case 'ENL':
+        return (tmp$ = this.enlImages_0.get_11rb$(item)) != null ? tmp$ : ensureNotNull(this.enlImages_0.get_11rb$(this.WAIT));
+      case 'RES':
+        return (tmp$_0 = this.resImages_0.get_11rb$(item)) != null ? tmp$_0 : ensureNotNull(this.resImages_0.get_11rb$(this.WAIT));
+      default:return (tmp$_1 = this.nonImages_0.get_11rb$(item)) != null ? tmp$_1 : ensureNotNull(this.nonImages_0.get_11rb$(this.WAIT));
+    }
+  };
+  function ActionItem$Companion$drawTemplate$drawAgentLine(closure$strokeStyle) {
+    return function (ctx, line) {
+      DrawUtil_getInstance().drawLine_1fs0nm$(ctx, line, closure$strokeStyle, 0.7);
+    };
+  }
+  function ActionItem$Companion$drawTemplate$drawAgentCircle(closure$strokeStyle) {
+    return function (ctx, circle) {
+      DrawUtil_getInstance().drawCircle_3kie0f$(ctx, circle, closure$strokeStyle, 1.0);
+    };
+  }
+  function ActionItem$Companion$drawTemplate$lambda(closure$r, closure$lw, closure$strokeStyle, closure$faction, closure$actionItem, closure$drawAgentCircle, this$ActionItem$, closure$h, closure$drawAgentLine, closure$w) {
+    return function (ctx) {
+      var tmp$;
+      var pos = new Coords(closure$r + closure$lw | 0, closure$r + closure$lw | 0);
+      var circle = new Circle(pos, closure$r);
+      DrawUtil_getInstance().drawCircle_3kie0f$(ctx, circle, closure$strokeStyle, closure$lw * 2.0, closure$faction.color);
+      tmp$ = closure$actionItem;
+      if (equals(tmp$, this$ActionItem$.HACK) || equals(tmp$, this$ActionItem$.RECYCLE) || equals(tmp$, this$ActionItem$.RECHARGE))
+        closure$drawAgentCircle(ctx, new Circle(pos, closure$r - 2 | 0));
+      else if (equals(tmp$, this$ActionItem$.DEPLOY) || equals(tmp$, this$ActionItem$.LINK)) {
+        closure$drawAgentLine(ctx, new Line(new Coords(closure$r + 1 | 0, 0), new Coords(closure$r + 1 | 0, closure$h)));
+        closure$drawAgentLine(ctx, new Line(new Coords(0, closure$r + 1 | 0), new Coords(closure$w, closure$r + 1 | 0)));
+      }
+       else if (equals(tmp$, this$ActionItem$.GLYPH))
+        closure$drawAgentLine(ctx, new Line(new Coords(0, closure$r), new Coords(closure$w, closure$r)));
+      else if (equals(tmp$, this$ActionItem$.ATTACK))
+        closure$drawAgentLine(ctx, new Line(new Coords(closure$r + 1 | 0, 0), new Coords(closure$r + 1 | 0, closure$h)));
+      else if (equals(tmp$, this$ActionItem$.MOVE))
+        closure$drawAgentCircle(ctx, new Circle(pos, closure$r - 1 | 0));
+      else
+        equals(tmp$, this$ActionItem$.WAIT);
+    };
+  }
+  ActionItem$Companion.prototype.drawTemplate_0 = function (actionItem, faction) {
+    var strokeStyle = Colors_getInstance().black;
+    var lw = Dimensions_getInstance().agentLineWidth;
+    var r = numberToInt(Dimensions_getInstance().agentRadius);
+    var w = (r * 2 | 0) + (2 * lw | 0) | 0;
+    var h = w;
+    var drawAgentLine = ActionItem$Companion$drawTemplate$drawAgentLine(strokeStyle);
+    var drawAgentCircle = ActionItem$Companion$drawTemplate$drawAgentCircle(strokeStyle);
+    return HtmlUtil_getInstance().prerender_yb5akz$(w, h, ActionItem$Companion$drawTemplate$lambda(r, lw, strokeStyle, faction, actionItem, drawAgentCircle, this, h, drawAgentLine, w));
   };
   ActionItem$Companion.$metadata$ = {
     kind: Kind_OBJECT,
@@ -205,30 +288,26 @@ var QGress = function (_, Kotlin) {
     return this.text;
   };
   ActionItem.prototype.component2 = function () {
-    return this.letter;
-  };
-  ActionItem.prototype.component3 = function () {
     return this.durationSeconds;
   };
-  ActionItem.prototype.component4 = function () {
+  ActionItem.prototype.component3 = function () {
     return this.qName;
   };
-  ActionItem.prototype.copy_7z05hs$ = function (text, letter, durationSeconds, qName) {
-    return new ActionItem(text === void 0 ? this.text : text, letter === void 0 ? this.letter : letter, durationSeconds === void 0 ? this.durationSeconds : durationSeconds, qName === void 0 ? this.qName : qName);
+  ActionItem.prototype.copy_h6sd2a$ = function (text, durationSeconds, qName) {
+    return new ActionItem(text === void 0 ? this.text : text, durationSeconds === void 0 ? this.durationSeconds : durationSeconds, qName === void 0 ? this.qName : qName);
   };
   ActionItem.prototype.toString = function () {
-    return 'ActionItem(text=' + Kotlin.toString(this.text) + (', letter=' + Kotlin.toString(this.letter)) + (', durationSeconds=' + Kotlin.toString(this.durationSeconds)) + (', qName=' + Kotlin.toString(this.qName)) + ')';
+    return 'ActionItem(text=' + Kotlin.toString(this.text) + (', durationSeconds=' + Kotlin.toString(this.durationSeconds)) + (', qName=' + Kotlin.toString(this.qName)) + ')';
   };
   ActionItem.prototype.hashCode = function () {
     var result = 0;
     result = result * 31 + Kotlin.hashCode(this.text) | 0;
-    result = result * 31 + Kotlin.hashCode(this.letter) | 0;
     result = result * 31 + Kotlin.hashCode(this.durationSeconds) | 0;
     result = result * 31 + Kotlin.hashCode(this.qName) | 0;
     return result;
   };
   ActionItem.prototype.equals = function (other) {
-    return this === other || (other !== null && (typeof other === 'object' && (Object.getPrototypeOf(this) === Object.getPrototypeOf(other) && (Kotlin.equals(this.text, other.text) && Kotlin.equals(this.letter, other.letter) && Kotlin.equals(this.durationSeconds, other.durationSeconds) && Kotlin.equals(this.qName, other.qName)))));
+    return this === other || (other !== null && (typeof other === 'object' && (Object.getPrototypeOf(this) === Object.getPrototypeOf(other) && (Kotlin.equals(this.text, other.text) && Kotlin.equals(this.durationSeconds, other.durationSeconds) && Kotlin.equals(this.qName, other.qName)))));
   };
   function Agent(faction, name, pos, skills, inventory, action, actionPortal, destination, ap, xm, velocity) {
     Agent$Companion_getInstance();
@@ -358,7 +437,6 @@ var QGress = function (_, Kotlin) {
   Agent.prototype.isHackPossible_0 = function () {
     return this.actionPortal.canHack_912u9o$(this);
   };
-  var ArrayList_init = Kotlin.kotlin.collections.ArrayList_init_ww73n8$;
   Agent.prototype.isDeploymentPossible_0 = function () {
     var tmp$ = !this.actionPortal.isEnemyOf_912u9o$(this);
     if (tmp$) {
@@ -376,7 +454,7 @@ var QGress = function (_, Kotlin) {
   };
   Agent.prototype.q_0 = function (value) {
     var tmp$;
-    var id = value.name + 'Slider' + this.faction.nickName;
+    var id = value.id + 'Slider' + this.faction.nickName;
     var slider = Kotlin.isType(tmp$ = window.document.getElementById(id), HTMLInputElement) ? tmp$ : throwCCE();
     return slider.valueAsNumber * value.weight;
   };
@@ -730,7 +808,6 @@ var QGress = function (_, Kotlin) {
     return it.level;
   }
   var LinkedHashMap_init = Kotlin.kotlin.collections.LinkedHashMap_init_q3lmfv$;
-  var collectionSizeOrDefault = Kotlin.kotlin.collections.collectionSizeOrDefault_ba2ldo$;
   var compareBy$lambda_1 = wrapFunction(function () {
     var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
     return function (closure$selector) {
@@ -1100,7 +1177,7 @@ var QGress = function (_, Kotlin) {
     return PathUtil_getInstance().posToShadowPos_lfj9be$(this.pos);
   };
   Agent.prototype.draw_f69bme$ = function (ctx) {
-    var image = Agent$Companion_getInstance().getAgentImage_0(this.faction, this.action.item);
+    var image = ActionItem$Companion_getInstance().getIcon_5bvev3$(this.action.item, this.faction);
     ctx.drawImage(image, this.pos.xx(), this.pos.yy());
     var xmBar = Agent$Companion_getInstance().getXmBarImage_0(this.faction, this.xmBarPercent());
     ctx.drawImage(xmBar, this.pos.xx(), this.pos.yy() - 3);
@@ -1126,45 +1203,27 @@ var QGress = function (_, Kotlin) {
   };
   function Agent$Companion() {
     Agent$Companion_instance = this;
-    var $receiver = ActionItem$Companion_getInstance().values();
-    var destination = ArrayList_init(collectionSizeOrDefault($receiver, 10));
+    var $receiver = Faction$values();
+    var destination = ArrayList_init();
     var tmp$;
-    tmp$ = $receiver.iterator();
-    while (tmp$.hasNext()) {
-      var item = tmp$.next();
-      destination.add_11rb$(to(item, this.drawAgentTemplate_0(Faction$ENL_getInstance(), item)));
-    }
-    this.enlImages_0 = toMap(destination);
-    var $receiver_0 = ActionItem$Companion_getInstance().values();
-    var destination_0 = ArrayList_init(collectionSizeOrDefault($receiver_0, 10));
-    var tmp$_0;
-    tmp$_0 = $receiver_0.iterator();
-    while (tmp$_0.hasNext()) {
-      var item_0 = tmp$_0.next();
-      destination_0.add_11rb$(to(item_0, this.drawAgentTemplate_0(Faction$RES_getInstance(), item_0)));
-    }
-    this.resImages_0 = toMap(destination_0);
-    var $receiver_1 = Faction$values();
-    var destination_1 = ArrayList_init();
-    var tmp$_1;
-    for (tmp$_1 = 0; tmp$_1 !== $receiver_1.length; ++tmp$_1) {
-      var element = $receiver_1[tmp$_1];
-      var $receiver_2 = new IntRange(0, 100);
-      var destination_2 = ArrayList_init(collectionSizeOrDefault($receiver_2, 10));
-      var tmp$_2;
-      tmp$_2 = $receiver_2.iterator();
-      while (tmp$_2.hasNext()) {
-        var item_1 = tmp$_2.next();
-        var tmp$_3 = destination_2.add_11rb$;
+    for (tmp$ = 0; tmp$ !== $receiver.length; ++tmp$) {
+      var element = $receiver[tmp$];
+      var $receiver_0 = new IntRange(0, 100);
+      var destination_0 = ArrayList_init(collectionSizeOrDefault($receiver_0, 10));
+      var tmp$_0;
+      tmp$_0 = $receiver_0.iterator();
+      while (tmp$_0.hasNext()) {
+        var item = tmp$_0.next();
+        var tmp$_1 = destination_0.add_11rb$;
         var lw = Dimensions_getInstance().agentLineWidth;
         var r = numberToInt(Dimensions_getInstance().agentRadius);
         var w = (r * 2 | 0) + (2 * lw | 0) | 0;
-        tmp$_3.call(destination_2, to(this.xmKey_0(element, item_1), DrawUtil_getInstance().renderBarImage_ewpgoy$(element.color, item_1, 3, w, lw)));
+        tmp$_1.call(destination_0, to(this.xmKey_0(element, item), DrawUtil_getInstance().renderBarImage_ewpgoy$(element.color, item, 3, w, lw)));
       }
-      var list = destination_2;
-      addAll(destination_1, list);
+      var list = destination_0;
+      addAll(destination, list);
     }
-    this.xmBarImages_0 = toMap(destination_1);
+    this.xmBarImages_0 = toMap(destination);
   }
   Agent$Companion.prototype.getXmCapacity_0 = function (level) {
     switch (level) {
@@ -1259,41 +1318,12 @@ var QGress = function (_, Kotlin) {
   Agent$Companion.prototype.xmKey_0 = function (faction, percent) {
     return faction.abbr + ':' + toString(percent);
   };
-  Agent$Companion.prototype.getAgentImage_0 = function (faction, actionItem) {
-    var tmp$;
-    switch (faction.name) {
-      case 'ENL':
-        tmp$ = getValue(this.enlImages_0, actionItem);
-        break;
-      case 'RES':
-        tmp$ = getValue(this.resImages_0, actionItem);
-        break;
-      default:throw IllegalStateException_init('Illegal faction: ' + faction);
-    }
-    return tmp$;
-  };
   Agent$Companion.prototype.getXmBarImage_0 = function (faction, percent) {
     if (!(percent >= 0 && percent <= 100)) {
       var message = 'Check failed.';
       throw IllegalStateException_init(message.toString());
     }
     return getValue(this.xmBarImages_0, this.xmKey_0(faction, percent));
-  };
-  function Agent$Companion$drawAgentTemplate$lambda(closure$r, closure$lw, closure$faction, closure$actionItem) {
-    return function (ctx) {
-      var pos = new Coords(closure$r + closure$lw | 0, closure$r + closure$lw | 0);
-      var strokeStyle = Colors_getInstance().black;
-      var circle = new Circle(pos, closure$r);
-      DrawUtil_getInstance().drawCircle_3kie0f$(ctx, circle, strokeStyle, closure$lw * 2.0, closure$faction.color);
-      DrawUtil_getInstance().drawText_omkwws$(ctx, pos.copy_vux9f0$(pos.x + 1 | 0), closure$actionItem.letter, strokeStyle, 13, DrawUtil_getInstance().CODA);
-    };
-  }
-  Agent$Companion.prototype.drawAgentTemplate_0 = function (faction, actionItem) {
-    var lw = Dimensions_getInstance().agentLineWidth;
-    var r = numberToInt(Dimensions_getInstance().agentRadius);
-    var w = (r * 2 | 0) + (2 * lw | 0) | 0;
-    var h = w;
-    return HtmlUtil_getInstance().prerender_yb5akz$(w, h, Agent$Companion$drawAgentTemplate$lambda(r, lw, faction, actionItem));
   };
   Agent$Companion.prototype.createFrog_5edep5$ = function (grid) {
     return this.create_0(grid, Faction$ENL_getInstance());
@@ -2220,29 +2250,33 @@ var QGress = function (_, Kotlin) {
   NonFaction.prototype.equals = function (other) {
     return this === other || (other !== null && (typeof other === 'object' && (Object.getPrototypeOf(this) === Object.getPrototypeOf(other) && (Kotlin.equals(this.pos, other.pos) && Kotlin.equals(this.speed, other.speed) && Kotlin.equals(this.destination, other.destination) && Kotlin.equals(this.vectorField, other.vectorField) && Kotlin.equals(this.busyUntil, other.busyUntil)))));
   };
-  function QValue(name, weight) {
+  function QValue(id, description, weight, icon) {
     QValue$Companion_getInstance();
-    this.name = name;
+    if (icon === void 0)
+      icon = null;
+    this.id = id;
+    this.description = description;
     this.weight = weight;
-    this.sliderId = this.name + 'Slider';
+    this.icon = icon;
+    this.sliderId = this.id + 'Slider';
   }
   function QValue$Companion() {
     QValue$Companion_instance = this;
-    this.CAPTURE = new QValue('. capture portal', 0.4);
-    this.HACK = new QValue('. hack portal', 0.5);
-    this.RECYCLE = new QValue('. recycle items', 0.3);
-    this.RECHARGE = new QValue('. recharge portal', 0.2);
-    this.DEPLOY = new QValue('+ deploy portal', 1.0);
-    this.LINK = new QValue('+ create link', 0.5);
-    this.ATTACK = new QValue('* attack portal', 1.0);
-    this.ATTACK_SOMEHERE = new QValue('-> attack enemy portal..', 0.02);
-    this.ATTACK_CLOSE = new QValue('--> ..closest', 1.0);
-    this.ATTACK_LINKS = new QValue('--> ..most linked', 0.5);
-    this.ATTACK_WEAK = new QValue('--> ..weakest', 0.8);
-    this.MOVE_ELSEWHERE = new QValue('-> move to another portal..', 0.005);
-    this.MOVE_TO_FRIENDLY = new QValue('--> ..friendly', 0.8);
-    this.MOVE_TO_NEAR = new QValue('--> ..nearest', 1.0);
-    this.MOVE_TO_RANDOM = new QValue('--> ..random', 0.5);
+    this.CAPTURE = new QValue('capture', 'capture', 0.4, ActionItem$Companion_getInstance().getIcon_5bvev3$(ActionItem$Companion_getInstance().DEPLOY));
+    this.HACK = new QValue('hack', 'hack portal', 0.5, ActionItem$Companion_getInstance().getIcon_5bvev3$(ActionItem$Companion_getInstance().HACK));
+    this.RECYCLE = new QValue('recycle', 'recycle items', 0.3, ActionItem$Companion_getInstance().getIcon_5bvev3$(ActionItem$Companion_getInstance().RECYCLE));
+    this.RECHARGE = new QValue('recharge', 'recharge portal', 0.2, ActionItem$Companion_getInstance().getIcon_5bvev3$(ActionItem$Companion_getInstance().RECHARGE));
+    this.DEPLOY = new QValue('deploy', 'deploy portal', 1.0, ActionItem$Companion_getInstance().getIcon_5bvev3$(ActionItem$Companion_getInstance().DEPLOY));
+    this.LINK = new QValue('link', 'create link', 0.5, ActionItem$Companion_getInstance().getIcon_5bvev3$(ActionItem$Companion_getInstance().LINK));
+    this.ATTACK = new QValue('attack', 'attack portal', 1.0, ActionItem$Companion_getInstance().getIcon_5bvev3$(ActionItem$Companion_getInstance().ATTACK));
+    this.ATTACK_SOMEHERE = new QValue('attackSomething', 'go attack enemy..', 0.02, ActionItem$Companion_getInstance().getIcon_5bvev3$(ActionItem$Companion_getInstance().MOVE));
+    this.ATTACK_CLOSE = new QValue('attackClosest', '..closest', 1.0);
+    this.ATTACK_LINKS = new QValue('attackMostLinked', '..most linked', 0.5);
+    this.ATTACK_WEAK = new QValue('attackWaekest', '..weakest', 0.8);
+    this.MOVE_ELSEWHERE = new QValue('MoveElsewhere', 'move elsewhere..', 0.005, ActionItem$Companion_getInstance().getIcon_5bvev3$(ActionItem$Companion_getInstance().MOVE));
+    this.MOVE_TO_FRIENDLY = new QValue('MoveToFriendlyPortal', '..to friendly portal', 0.8);
+    this.MOVE_TO_NEAR = new QValue('MoveToNearestPortal', '..to nearest portal', 1.0);
+    this.MOVE_TO_RANDOM = new QValue('MoveToRandomPortal', '..to random portal', 0.5);
   }
   QValue$Companion.prototype.values = function () {
     return listOf([this.CAPTURE, this.HACK, this.RECYCLE, this.RECHARGE, this.DEPLOY, this.LINK, this.ATTACK, this.ATTACK_SOMEHERE, this.ATTACK_CLOSE, this.ATTACK_LINKS, this.ATTACK_WEAK, this.MOVE_ELSEWHERE, this.MOVE_TO_NEAR, this.MOVE_TO_FRIENDLY, this.MOVE_TO_RANDOM]);
@@ -2265,25 +2299,33 @@ var QGress = function (_, Kotlin) {
     interfaces: []
   };
   QValue.prototype.component1 = function () {
-    return this.name;
+    return this.id;
   };
   QValue.prototype.component2 = function () {
+    return this.description;
+  };
+  QValue.prototype.component3 = function () {
     return this.weight;
   };
-  QValue.prototype.copy_io5o9c$ = function (name, weight) {
-    return new QValue(name === void 0 ? this.name : name, weight === void 0 ? this.weight : weight);
+  QValue.prototype.component4 = function () {
+    return this.icon;
+  };
+  QValue.prototype.copy_olu3qr$ = function (id, description, weight, icon) {
+    return new QValue(id === void 0 ? this.id : id, description === void 0 ? this.description : description, weight === void 0 ? this.weight : weight, icon === void 0 ? this.icon : icon);
   };
   QValue.prototype.toString = function () {
-    return 'QValue(name=' + Kotlin.toString(this.name) + (', weight=' + Kotlin.toString(this.weight)) + ')';
+    return 'QValue(id=' + Kotlin.toString(this.id) + (', description=' + Kotlin.toString(this.description)) + (', weight=' + Kotlin.toString(this.weight)) + (', icon=' + Kotlin.toString(this.icon)) + ')';
   };
   QValue.prototype.hashCode = function () {
     var result = 0;
-    result = result * 31 + Kotlin.hashCode(this.name) | 0;
+    result = result * 31 + Kotlin.hashCode(this.id) | 0;
+    result = result * 31 + Kotlin.hashCode(this.description) | 0;
     result = result * 31 + Kotlin.hashCode(this.weight) | 0;
+    result = result * 31 + Kotlin.hashCode(this.icon) | 0;
     return result;
   };
   QValue.prototype.equals = function (other) {
-    return this === other || (other !== null && (typeof other === 'object' && (Object.getPrototypeOf(this) === Object.getPrototypeOf(other) && (Kotlin.equals(this.name, other.name) && Kotlin.equals(this.weight, other.weight)))));
+    return this === other || (other !== null && (typeof other === 'object' && (Object.getPrototypeOf(this) === Object.getPrototypeOf(other) && (Kotlin.equals(this.id, other.id) && Kotlin.equals(this.description, other.description) && Kotlin.equals(this.weight, other.weight) && Kotlin.equals(this.icon, other.icon)))));
   };
   function Skills(speed, deployPrecision, glyphSkill, reliability) {
     Skills$Companion_getInstance();
@@ -7451,7 +7493,7 @@ var QGress = function (_, Kotlin) {
     }
     var qSliderHeight = 13.0 + 5.0;
     var qSliderDivHeight = qSliderHeight * QValue$Companion_getInstance().values().size;
-    var qSliderDivWidth = 410.0;
+    var qSliderDivWidth = 370.0;
     $receiver.fillRect(0.0, topOffset, qSliderDivWidth, qSliderDivHeight);
     $receiver.closePath();
   };
@@ -8324,14 +8366,14 @@ var QGress = function (_, Kotlin) {
     tmp$_9 = QValue$Companion_getInstance().values().iterator();
     while (tmp$_9.hasNext()) {
       var element = tmp$_9.next();
-      var tmp$_10, tmp$_11;
+      var tmp$_10, tmp$_11, tmp$_12;
       var sliderDiv = Kotlin.isType(tmp$_10 = document.createElement('div'), HTMLDivElement) ? tmp$_10 : throwCCE();
-      var tmp$_12;
-      tmp$_12 = Faction$Companion_getInstance().factionValues().iterator();
-      while (tmp$_12.hasNext()) {
-        var element_0 = tmp$_12.next();
-        var tmp$_13, tmp$_14;
-        var slider = Kotlin.isType(tmp$_13 = document.createElement('input'), HTMLInputElement) ? tmp$_13 : throwCCE();
+      var tmp$_13;
+      tmp$_13 = Faction$Companion_getInstance().factionValues().iterator();
+      while (tmp$_13.hasNext()) {
+        var element_0 = tmp$_13.next();
+        var tmp$_14, tmp$_15;
+        var slider = Kotlin.isType(tmp$_14 = document.createElement('input'), HTMLInputElement) ? tmp$_14 : throwCCE();
         slider.id = element.sliderId + element_0.nickName;
         slider.type = 'range';
         slider.min = '0.00';
@@ -8339,7 +8381,7 @@ var QGress = function (_, Kotlin) {
         slider.step = '0.01';
         slider.value = '0.50';
         addClass(slider, ['slider', 'qSlider', element_0.abbr.toLowerCase() + 'Slider']);
-        var sliderValue = Kotlin.isType(tmp$_14 = document.createElement('span'), HTMLSpanElement) ? tmp$_14 : throwCCE();
+        var sliderValue = Kotlin.isType(tmp$_15 = document.createElement('span'), HTMLSpanElement) ? tmp$_15 : throwCCE();
         addClass(sliderValue, ['qSliderLabel', element_0.abbr.toLowerCase() + 'Label']);
         slider.oninput = HtmlUtil$load$lambda$lambda$lambda(slider, this, sliderValue);
         sliderValue.innerHTML = this.qDisplay_0(slider.value);
@@ -8348,7 +8390,14 @@ var QGress = function (_, Kotlin) {
       }
       var qSliderLabel = Kotlin.isType(tmp$_11 = document.createElement('span'), HTMLSpanElement) ? tmp$_11 : throwCCE();
       addClass(qSliderLabel, ['qSliderTextLabel']);
-      qSliderLabel.innerHTML = element.name;
+      if (element.icon != null) {
+        var sliderImg = Kotlin.isType(tmp$_12 = document.createElement('img'), HTMLImageElement) ? tmp$_12 : throwCCE();
+        sliderImg.src = element.icon.toDataURL();
+        qSliderLabel.innerHTML = sliderImg.outerHTML + ' ' + element.description;
+      }
+       else {
+        qSliderLabel.innerHTML = element.description;
+      }
       sliderDiv.append(qSliderLabel);
       qDiv.append(sliderDiv);
     }

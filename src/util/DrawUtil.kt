@@ -107,7 +107,7 @@ object DrawUtil {
             }
             val qSliderHeight = 13.0 + 5.0 //defined in CSS
             val qSliderDivHeight = qSliderHeight * QValue.values().count()
-            val qSliderDivWidth = 410.0
+            val qSliderDivWidth = 370.0 //.qValues width
             fillRect(0.0, topOffset, qSliderDivWidth, qSliderDivHeight)
             closePath()
         }

@@ -98,7 +98,7 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
             && actionPortal.findAllowedResoLevels(this).map { it.value }.sum() > 0
 
     private fun q(value: QValue): Double {
-        val id = value.name + "Slider" + faction.nickName
+        val id = value.id + "Slider" + faction.nickName
         val slider = window.document.getElementById(id) as HTMLInputElement
         return slider.valueAsNumber * value.weight
     }
@@ -407,7 +407,7 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
     private fun shadowPos() = PathUtil.posToShadowPos(pos)
 
     fun draw(ctx: Ctx) {
-        val image = getAgentImage(faction, action.item)
+        val image = ActionItem.getIcon(action.item, faction)
         ctx.drawImage(image, pos.xx(), pos.yy())
         val xmBar = getXmBarImage(faction, xmBarPercent())
         ctx.drawImage(xmBar, pos.xx(), pos.yy() - 3)
@@ -479,8 +479,6 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
             else -> 2000
         }
 
-        private val enlImages = ActionItem.values().map { it to drawAgentTemplate(Faction.ENL, it) }.toMap()
-        private val resImages = ActionItem.values().map { it to drawAgentTemplate(Faction.RES, it) }.toMap()
         private fun xmKey(faction: Faction, percent: Int) = faction.abbr + ":" + percent
         private val xmBarImages = Faction.values().flatMap { fac ->
             (0..100).map {
@@ -491,31 +489,9 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
             }
         }.toMap()
 
-        private fun getAgentImage(faction: Faction, actionItem: ActionItem): Canvas {
-            return when (faction) {
-                Faction.ENL -> enlImages.getValue(actionItem)
-                Faction.RES -> resImages.getValue(actionItem)
-                else -> throw IllegalStateException("Illegal faction: $faction")
-            }
-        }
-
         private fun getXmBarImage(faction: Faction, percent: Int): Canvas {
             check(percent >= 0 && percent <= 100)
             return xmBarImages.getValue(xmKey(faction, percent))
-        }
-
-        private fun drawAgentTemplate(faction: Faction, actionItem: ActionItem): Canvas {
-            val lw = Dimensions.agentLineWidth
-            val r = Dimensions.agentRadius.toInt()
-            val w = (r * 2) + (2 * lw)
-            val h = w
-            return HtmlUtil.prerender(w, h, fun(ctx: Ctx) {
-                val pos = Coords(r + lw, r + lw)
-                val strokeStyle = Colors.black
-                val circle = Circle(pos, r.toDouble())
-                DrawUtil.drawCircle(ctx, circle, strokeStyle, lw * 2.0, faction.color)
-                DrawUtil.drawText(ctx, pos.copy(x = pos.x + 1), actionItem.letter, strokeStyle, 13, DrawUtil.CODA)
-            })
         }
 
         fun createFrog(grid: Map<Coords, Cell>) = create(grid, Faction.ENL)
