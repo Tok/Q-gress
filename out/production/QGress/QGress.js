@@ -2482,6 +2482,8 @@ var QGress = function (_, Kotlin) {
     this.muLeftOffset = 13;
     this.muBottomOffset = 89;
     this.pixelToMFactor = 0.5;
+    this.statsTopOffset = 13;
+    this.statsRightOffset = 170;
     this.topAgentsBottomOffset = 0;
     this.topAgentsLeftOffset = 210;
     this.topAgentsFontSize = 11;
@@ -2697,6 +2699,7 @@ var QGress = function (_, Kotlin) {
     this.isDrawTopAgents = true;
     this.use3DBuildings = true;
     this.vectorStyle = Styles$VectorStyle$CIRCLE_getInstance();
+    this.useBlackVectors = true;
     this.isDrawObstructedVectors = false;
     this.isDrawResoLineGradient = true;
     this.isFillMuDisplay = true;
@@ -7606,23 +7609,23 @@ var QGress = function (_, Kotlin) {
       this$DrawUtil.strokeText_lowmm9$(World_getInstance().uiCtx(), pos, text, color, closure$fontSize, this$DrawUtil.CODA, closure$lineWidth, Colors_getInstance().black, 'end');
     };
   }
-  function DrawUtil$drawStats$drawRow(closure$yStep, closure$drawCell) {
+  function DrawUtil$drawStats$drawRow(closure$yOff, closure$drawCell, closure$yStep) {
     return function (pos, header, enl, res, total) {
-      closure$drawCell(new Coords(pos, closure$yStep), header, Colors_getInstance().white);
-      closure$drawCell(new Coords(pos, closure$yStep * 2 | 0), enl.toString(), Faction$ENL_getInstance().color);
-      closure$drawCell(new Coords(pos, closure$yStep * 3 | 0), res.toString(), Faction$RES_getInstance().color);
-      closure$drawCell(new Coords(pos, closure$yStep * 4 | 0), total.toString(), Colors_getInstance().white);
+      closure$drawCell(new Coords(pos, closure$yOff), header, Colors_getInstance().white);
+      closure$drawCell(new Coords(pos, closure$yOff + closure$yStep | 0), enl.toString(), Faction$ENL_getInstance().color);
+      closure$drawCell(new Coords(pos, closure$yOff + (closure$yStep * 2 | 0) | 0), res.toString(), Faction$RES_getInstance().color);
+      closure$drawCell(new Coords(pos, closure$yOff + (closure$yStep * 3 | 0) | 0), total.toString(), Colors_getInstance().white);
     };
   }
   DrawUtil.prototype.drawStats = function () {
     var fontSize = Dimensions_getInstance().statsFontSize;
     var lineWidth = 3.0;
     var drawCell = DrawUtil$drawStats$drawCell(fontSize, this, lineWidth);
-    var rightXOffset = 300;
+    var yOff = Dimensions_getInstance().statsTopOffset;
     var yStep = (fontSize * 3 | 0) / 2 | 0;
     var xStep = 55;
-    var drawRow = DrawUtil$drawStats$drawRow(yStep, drawCell);
-    var xPos = Dimensions_getInstance().width - rightXOffset | 0;
+    var drawRow = DrawUtil$drawStats$drawRow(yOff, drawCell, yStep);
+    var xPos = Dimensions_getInstance().width - Dimensions_getInstance().statsRightOffset | 0;
     var $receiver = World_getInstance();
     var tmp$;
     tmp$ = (new IntRange(1, 4)).iterator();
@@ -7985,7 +7988,7 @@ var QGress = function (_, Kotlin) {
           break;
       }
       var lineWidth = 2.0;
-      var strokeStyle = ColorUtil_getInstance().getColor_p4p8i0$(closure$complex) + 'AA';
+      var strokeStyle = Styles_getInstance().useBlackVectors ? Colors_getInstance().black : ColorUtil_getInstance().getColor_p4p8i0$(closure$complex) + 'AA';
       this$DrawUtil.drawLine_1fs0nm$(ctx, closure$line, strokeStyle, lineWidth);
     };
   }

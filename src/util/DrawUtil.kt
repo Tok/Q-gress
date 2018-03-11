@@ -238,18 +238,17 @@ object DrawUtil {
             strokeText(World.uiCtx(), pos, text, color, fontSize, CODA, lineWidth, Colors.black, CanvasTextAlign.END)
         }
 
-        val rightXOffset = 300
+        val yOff = Dimensions.statsTopOffset
         val yStep = fontSize * 3 / 2
-
         val xStep = 55
         fun drawRow(pos: Int, header: String, enl: Int, res: Int, total: Int) {
-            drawCell(Coords(pos, yStep), header, Colors.white)
-            drawCell(Coords(pos, yStep * 2), enl.toString(), Faction.ENL.color)
-            drawCell(Coords(pos, yStep * 3), res.toString(), Faction.RES.color)
-            drawCell(Coords(pos, yStep * 4), total.toString(), Colors.white)
+            drawCell(Coords(pos, yOff), header, Colors.white)
+            drawCell(Coords(pos, yOff + yStep), enl.toString(), Faction.ENL.color)
+            drawCell(Coords(pos, yOff + yStep * 2), res.toString(), Faction.RES.color)
+            drawCell(Coords(pos, yOff + yStep * 3), total.toString(), Colors.white)
         }
 
-        val xPos = Dimensions.width - rightXOffset
+        val xPos = Dimensions.width - Dimensions.statsRightOffset
         return with(World) {
             (1..4).forEach { step ->
                 when (step) {
@@ -529,7 +528,7 @@ object DrawUtil {
                 }
             }
             val lineWidth = 2.0
-            val strokeStyle = ColorUtil.getColor(complex) + "AA"
+            val strokeStyle = if (Styles.useBlackVectors) Colors.black else ColorUtil.getColor(complex) + "AA"
             drawLine(ctx, line, strokeStyle, lineWidth)
         })
     }
