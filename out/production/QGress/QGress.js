@@ -2698,7 +2698,7 @@ var QGress = function (_, Kotlin) {
     this.isDrawResoLevels = false;
     this.isDrawTopAgents = true;
     this.use3DBuildings = true;
-    this.vectorStyle = Styles$VectorStyle$CIRCLE_getInstance();
+    this.vectorStyle = Styles$VectorStyle$SQUARE_getInstance();
     this.useBlackVectors = true;
     this.isDrawObstructedVectors = false;
     this.isDrawResoLineGradient = true;
@@ -4664,20 +4664,20 @@ var QGress = function (_, Kotlin) {
       receiver.closePath();
     };
   }
-  function Field$draw$drawRadial$calcStyle(this$Field) {
+  function Field$draw$drawLinear$calcStyle(this$Field) {
     return function (health) {
       return this$Field.owner.faction.fieldStyle + toString(Styles_getInstance().fieldTransparency * health / 100) + ')';
     };
   }
-  function Field$draw$drawRadial(this$Field, closure$ctx, closure$fullStyle) {
+  function Field$draw$drawLinear(this$Field, closure$ctx, closure$fullStyle) {
     return function (portal, first, second) {
-      var calcStyle = Field$draw$drawRadial$calcStyle(this$Field);
+      var calcStyle = Field$draw$drawLinear$calcStyle(this$Field);
       var originHp = calcStyle(portal.calcHealth());
       var receiver = closure$ctx;
       var closure$fullStyle_0 = closure$fullStyle;
-      var r = (new Line(portal.location, (new Line(first, second)).findClosestPointTo_lfj9be$(portal.location))).calcLength();
-      var gradient = World_getInstance().ctx().createRadialGradient(portal.x(), portal.y(), r * (Constants_getInstance().phi - 1), portal.x(), portal.y(), r);
-      gradient.addColorStop(0.0, originHp);
+      var point = (new Line(first, second)).findClosestPointTo_lfj9be$(portal.location);
+      var gradient = World_getInstance().ctx().createLinearGradient(portal.x(), portal.y(), point.xx(), point.yy());
+      gradient.addColorStop(0.1, originHp);
       gradient.addColorStop(1.0, closure$fullStyle_0);
       receiver.fillStyle = gradient;
       receiver.beginPath();
@@ -4691,14 +4691,14 @@ var QGress = function (_, Kotlin) {
   Field.prototype.draw_f69bme$ = function (ctx) {
     var fullStyle = this.owner.faction.fieldStyle + toString(Styles_getInstance().fieldTransparency) + ')';
     var drawCenter = Field$draw$drawCenter(ctx, fullStyle);
-    var drawRadial = Field$draw$drawRadial(this, ctx, fullStyle);
+    var drawLinear = Field$draw$drawLinear(this, ctx, fullStyle);
     var originAndPrimary = (new Line(this.origin.location, this.primaryAnchor.location)).center();
     var primaryAndSecondary = (new Line(this.primaryAnchor.location, this.secondaryAnchor.location)).center();
     var secondaryAndOrigin = (new Line(this.secondaryAnchor.location, this.origin.location)).center();
     drawCenter(originAndPrimary, primaryAndSecondary, secondaryAndOrigin);
-    drawRadial(this.origin, originAndPrimary, secondaryAndOrigin);
-    drawRadial(this.primaryAnchor, originAndPrimary, primaryAndSecondary);
-    drawRadial(this.secondaryAnchor, secondaryAndOrigin, primaryAndSecondary);
+    drawLinear(this.origin, originAndPrimary, secondaryAndOrigin);
+    drawLinear(this.primaryAnchor, originAndPrimary, primaryAndSecondary);
+    drawLinear(this.secondaryAnchor, secondaryAndOrigin, primaryAndSecondary);
   };
   Field.prototype.equals = function (other) {
     return Kotlin.isType(other, Field) && this.idSet.containsAll_brywnq$(other.idSet);
@@ -7988,8 +7988,8 @@ var QGress = function (_, Kotlin) {
           break;
       }
       var lineWidth = 2.0;
-      var strokeStyle = Styles_getInstance().useBlackVectors ? Colors_getInstance().black : ColorUtil_getInstance().getColor_p4p8i0$(closure$complex) + 'AA';
-      this$DrawUtil.drawLine_1fs0nm$(ctx, closure$line, strokeStyle, lineWidth);
+      var strokeStyle = Styles_getInstance().useBlackVectors ? Colors_getInstance().black : ColorUtil_getInstance().getColor_p4p8i0$(closure$complex);
+      this$DrawUtil.drawLine_1fs0nm$(ctx, closure$line, strokeStyle + 'AA', lineWidth);
     };
   }
   DrawUtil.prototype.createVectorImage_0 = function (w, h, complex, line) {

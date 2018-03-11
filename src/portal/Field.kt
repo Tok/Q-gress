@@ -66,18 +66,13 @@ data class Field private constructor(val origin: Portal, val primaryAnchor: Port
             }
         }
 
-        fun drawRadial(portal: Portal, first: Coords, second: Coords) {
+        fun drawLinear(portal: Portal, first: Coords, second: Coords) {
             fun calcStyle(health: Int) = owner.faction.fieldStyle + (Styles.fieldTransparency * health / 100) + ")"
             val originHp = calcStyle(portal.calcHealth())
             with(ctx) {
-                val r = Line(portal.location, Line(first, second).findClosestPointTo(portal.location)).calcLength()
-                val gradient = World.ctx().createRadialGradient( //FIXME switch back to linear
-                        portal.x(), portal.y(), r * (Constants.phi - 1),
-                        portal.x(), portal.y(), r
-                )
-                //val point = Line(first, second).findClosestPointTo(portal.location)
-                //val gradient = World.ctx().createLinearGradient(portal.x(), portal.y(), point.xx(), point.yy())
-                gradient.addColorStop(0.0, originHp)
+                val point = Line(first, second).findClosestPointTo(portal.location)
+                val gradient = World.ctx().createLinearGradient(portal.x(), portal.y(), point.xx(), point.yy())
+                gradient.addColorStop(0.1, originHp)
                 gradient.addColorStop(1.0, fullStyle)
                 fillStyle = gradient
                 beginPath()
@@ -94,9 +89,9 @@ data class Field private constructor(val origin: Portal, val primaryAnchor: Port
         val secondaryAndOrigin = Line(secondaryAnchor.location, origin.location).center()
 
         drawCenter(originAndPrimary, primaryAndSecondary, secondaryAndOrigin)
-        drawRadial(origin, originAndPrimary, secondaryAndOrigin)
-        drawRadial(primaryAnchor, originAndPrimary, primaryAndSecondary)
-        drawRadial(secondaryAnchor, secondaryAndOrigin, primaryAndSecondary)
+        drawLinear(origin, originAndPrimary, secondaryAndOrigin)
+        drawLinear(primaryAnchor, originAndPrimary, primaryAndSecondary)
+        drawLinear(secondaryAnchor, secondaryAndOrigin, primaryAndSecondary)
     }
 
     override fun equals(other: Any?) = other is Field && idSet.containsAll(other.idSet)

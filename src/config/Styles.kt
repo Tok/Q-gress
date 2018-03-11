@@ -18,7 +18,7 @@ object Styles {
 
     val use3DBuildings = true
 
-    val vectorStyle = VectorStyle.CIRCLE
+    val vectorStyle = VectorStyle.SQUARE
     val useBlackVectors = true
     val isDrawObstructedVectors = false
 

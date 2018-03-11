@@ -528,8 +528,8 @@ object DrawUtil {
                 }
             }
             val lineWidth = 2.0
-            val strokeStyle = if (Styles.useBlackVectors) Colors.black else ColorUtil.getColor(complex) + "AA"
-            drawLine(ctx, line, strokeStyle, lineWidth)
+            val strokeStyle = if (Styles.useBlackVectors) Colors.black else ColorUtil.getColor(complex)
+            drawLine(ctx, line, strokeStyle + "AA", lineWidth)
         })
     }
 
