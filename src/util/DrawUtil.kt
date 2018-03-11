@@ -435,6 +435,10 @@ object DrawUtil {
             val actionIconPos = Coords(pos.x + offset - iconRadius, pos.y - iconRadius)
             addIcon(actionIconPos, agent.action.item)
             strokeTableText(pos, offset + (iconRadius * 2) + 5, agent.action.toString())
+            offset += 64
+
+            strokeTableHeaderText(headerPos, offset, "Portal")
+            strokeTableText(pos, offset, agent.actionPortal.name)
         }
     }
 

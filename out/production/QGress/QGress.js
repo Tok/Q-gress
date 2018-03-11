@@ -2476,7 +2476,7 @@ var QGress = function (_, Kotlin) {
     this.topOffset = numberToInt(this.maxDeploymentRange) * Constants_getInstance().phi;
     this.botOffset = numberToInt(this.maxDeploymentRange) * Constants_getInstance().phi;
     this.comBottomOffset = 34;
-    this.comRightOffset = 377;
+    this.comRightOffset = 360;
     this.comFontSize = 11;
     this.muFontSize = 21;
     this.muLeftOffset = 13;
@@ -7888,6 +7888,9 @@ var QGress = function (_, Kotlin) {
       var actionIconPos = new Coords(pos.x + offset - iconRadius | 0, pos.y - iconRadius | 0);
       this.addIcon_0(actionIconPos, item.action.item);
       this.strokeTableText_0(pos, offset + (iconRadius * 2 | 0) + 5 | 0, item.action.toString());
+      offset = offset + 64 | 0;
+      this.strokeTableHeaderText_0(headerPos, offset, 'Portal');
+      this.strokeTableText_0(pos, offset, item.actionPortal.name);
     }
   };
   DrawUtil.prototype.drawRect_0 = function (ctx, pos, h, w, fillStyle, strokeStyle, lineWidth) {

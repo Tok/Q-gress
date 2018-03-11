@@ -24,7 +24,7 @@ object Dimensions {
     val botOffset = maxDeploymentRange.toInt() * Constants.phi
 
     val comBottomOffset = 34
-    val comRightOffset = 377
+    val comRightOffset = 360
     val comFontSize = 11
 
     val muFontSize = 21
