@@ -1,7 +1,7 @@
 package util.data
 
 import World
-import config.Dimensions
+import config.Dim
 import util.PathUtil
 import util.Util
 import kotlin.math.abs
@@ -36,8 +36,8 @@ data class Coords(val x: Int, val y: Int) {
         return GeoCoords(longitude, latitude) //longitude = -Y, latitude = X
     }
 
-    private fun isCloseForClick(location: Coords) = Line(location, this).calcLength() < Dimensions.portalRadius * 2
-    private fun isClose(location: Coords) = Line(location, this).calcLength() < Dimensions.minDistanceBetweenPortals
+    private fun isCloseForClick(location: Coords) = Line(location, this).calcLength() < Dim.portalRadius * 2
+    private fun isClose(location: Coords) = Line(location, this).calcLength() < Dim.minDistanceBetweenPortals
     private fun findClosePortalsForClick() = World.allPortals.filter { isCloseForClick(it.location) }
     private fun findClosePortals() = World.allPortals.filter { isClose(it.location) }
     fun hasClosePortalForClick() = findClosePortalsForClick().isNotEmpty()
@@ -46,7 +46,7 @@ data class Coords(val x: Int, val y: Int) {
     fun isPassable() = World.grid.isNotEmpty() && World.grid.get(toShadowPos())!!.isPassable
     fun findClosestPortal() = findClosePortals().first()
     fun isBuildable(): Boolean {
-        val r = Dimensions.minDistancePortalToImpassable.toInt()
+        val r = Dim.minDistancePortalToImpassable.toInt()
         return isPassable() && !hasClosePortal() &&
                 World.grid.get(Coords(x - r, y).toShadowPos())?.isPassable ?: false &&
                 World.grid.get(Coords(x + r, y).toShadowPos())?.isPassable ?: false &&
@@ -61,24 +61,24 @@ data class Coords(val x: Int, val y: Int) {
         private val defaultLat = 47.4220454 //X
         private val defaultLng = 9.3733032 //-Y
         private val latDist = 0.002
-        private val lngDist = latDist * Dimensions.height / Dimensions.width
+        private val lngDist = latDist * Dim.height / Dim.width
         private val minLat = defaultLat - latDist
         private val minLng = defaultLng + lngDist
-        private val pixelPartLat = latDist / Dimensions.width
-        private val pixelPartLng = lngDist / Dimensions.height
+        private val pixelPartLat = latDist / Dim.width
+        private val pixelPartLng = lngDist / Dim.height
 
-        private val xMax = Dimensions.maxDeploymentRange.toInt() * 2
-        private fun createRandomNoOffset() = Coords(Util.randomInt(Dimensions.width), Util.randomInt(Dimensions.height))
+        private val xMax = Dim.maxDeploymentRange.toInt() * 2
+        private fun createRandomNoOffset() = Coords(Util.randomInt(Dim.width), Util.randomInt(Dim.height))
         private fun createRandom(): Coords {
-            val x = Dimensions.leftOffset + Util.randomInt((Dimensions.width - Dimensions.leftOffset - Dimensions.rightOffset).toInt())
-            val y = Dimensions.topOffset + Util.randomInt((Dimensions.height - Dimensions.topOffset - Dimensions.botOffset).toInt())
+            val x = Dim.leftOffset + Util.randomInt((Dim.width - Dim.leftOffset - Dim.rightOffset).toInt())
+            val y = Dim.topOffset + Util.randomInt((Dim.height - Dim.topOffset - Dim.botOffset).toInt())
             return Coords(x.toInt(), y.toInt())
         }
 
         fun createRandomForPortal(): Coords {
             val grid = World.passableInActionArea()
-                    .filterNot { PathUtil.shadowPosToPos(it.key).x < Dimensions.maxDeploymentRange }
-                    .filterNot { PathUtil.shadowPosToPos(it.key).x > World.w() - Dimensions.maxDeploymentRange }
+                    .filterNot { PathUtil.shadowPosToPos(it.key).x < Dim.maxDeploymentRange }
+                    .filterNot { PathUtil.shadowPosToPos(it.key).x > World.w() - Dim.maxDeploymentRange }
                     .filterNot { PathUtil.shadowPosToPos(it.key).hasClosePortal() }
             check(grid.isNotEmpty()) //map is blocked or there is no more space left.
             val randomCell = Util.shuffle(grid.toList()).first()

@@ -1,10 +1,9 @@
 package system
 
 import Ctx
-import World
 import config.Colors
 import config.Config
-import config.Dimensions
+import config.Dim
 import util.DrawUtil
 import util.data.Coords
 
@@ -20,13 +19,13 @@ object Com {
 
     fun draw(ctx: Ctx) {
         val messages = messages.toList()
-        val xPos = Dimensions.width - Dimensions.comRightOffset
-        val yFixOffset = Dimensions.height - Dimensions.comBottomOffset
-        val yOffset = (Dimensions.comFontSize * 3 / 2)
+        val xPos = Dim.width - Dim.comRightOffset
+        val yFixOffset = Dim.height - Dim.comBottomOffset
+        val yOffset = (Dim.comFontSize * 3 / 2)
         val reversed = messages.reversed()
         reversed.forEachIndexed { index, text ->
             val pos = Coords(xPos, yFixOffset - (yOffset * index))
-            DrawUtil.strokeText(ctx, pos, text, Colors.white, Dimensions.comFontSize, DrawUtil.CODA, 1.5)
+            DrawUtil.strokeText(ctx, pos, text, Colors.white, Dim.comFontSize, DrawUtil.CODA, 1.5)
         }
     }
 }

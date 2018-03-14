@@ -2,8 +2,7 @@ package portal
 
 import Ctx
 import agent.Agent
-import config.Dimensions
-import items.deployable.Resonator
+import config.Dim
 import util.Util
 import util.data.Line
 
@@ -26,7 +25,7 @@ data class Link(val origin: Portal, val destination: Portal, val owner: Agent) {
         }
         with(ctx) {
             strokeStyle = gradient
-            lineWidth = Dimensions.linkLineWidth
+            lineWidth = Dim.linkLineWidth
             beginPath()
             moveTo(getLine().from.x.toDouble(), getLine().from.y.toDouble())
             lineTo(getLine().to.x.toDouble(), getLine().to.y.toDouble())

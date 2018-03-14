@@ -2,7 +2,7 @@ import agent.Agent
 import agent.Faction
 import agent.NonFaction
 import config.Config
-import config.Dimensions
+import config.Dim
 import org.khronos.webgl.Uint8Array
 import org.khronos.webgl.get
 import org.w3c.dom.CanvasRenderingContext2D
@@ -64,8 +64,8 @@ object World {
     fun wellPassableCells(): Map<Coords, Cell> = grid.filter { it.value.isPassableInAllDirections() }
     private fun passableOnScreen(): Map<Coords, Cell> = wellPassableCells().filterNot { it.key.isOffGrid() }
     fun passableInActionArea(): Map<Coords, Cell> = passableOnScreen()
-            .filterNot { it.key.y * PathUtil.RESOLUTION < Dimensions.topActionOffset }
-            .filterNot { it.key.y * PathUtil.RESOLUTION > (window.innerHeight - Dimensions.botActionOffset) }
+            .filterNot { it.key.y * PathUtil.RESOLUTION < Dim.topActionOffset }
+            .filterNot { it.key.y * PathUtil.RESOLUTION > (window.innerHeight - Dim.botActionOffset) }
 
     val frogs: MutableSet<Agent> = mutableSetOf()
     val smurfs: MutableSet<Agent> = mutableSetOf()

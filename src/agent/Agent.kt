@@ -9,7 +9,7 @@ import agent.qvalue.QActions
 import agent.qvalue.QDestinations
 import agent.qvalue.QValue
 import config.Colors
-import config.Dimensions
+import config.Dim
 import config.Styles
 import items.QgressItem
 import items.deployable.Resonator
@@ -34,7 +34,7 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
     fun key() = toString()
     fun distanceToDestination(): Double = pos.distanceTo(destination)
     fun distanceToPortal(portal: Portal): Double = pos.distanceTo(portal.location)
-    fun isAtActionPortal(): Boolean = distanceToPortal(actionPortal) < Dimensions.maxDeploymentRange
+    fun isAtActionPortal(): Boolean = distanceToPortal(actionPortal) < Dim.maxDeploymentRange
     fun isInAttackRange(range: Int): Boolean {
         val strongest = actionPortal.findStrongestResoPos()
         return strongest != null && pos.distanceTo(strongest) < range
@@ -273,7 +273,7 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
 
     fun deployPortal(): Agent {
         fun findExactDestination(): Coords {
-            val distance = skills.deployPrecision * Dimensions.maxDeploymentRange
+            val distance = skills.deployPrecision * Dim.maxDeploymentRange
             return actionPortal.findRandomPointNearPortal(distance.toInt())
         }
 
@@ -390,7 +390,7 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
     }
 
     private fun findPortalsInAttackRange(level: XmpLevel): List<Portal> {
-        val attackDistance = (level.rangeM * 0.5) + Dimensions.portalRadius
+        val attackDistance = (level.rangeM * 0.5) + Dim.portalRadius
         val enemyPortals = World.allPortals.filter { it.owner?.faction != this.faction }
         return enemyPortals.filter { it.location.distanceTo(this.pos) <= attackDistance }.sortedBy { it.location.distanceTo(this.pos) }
     }
@@ -418,8 +418,8 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
             DrawUtil.drawLine(ctx, lineToDestination(), Colors.destination, 1.0)
         }
         if (Styles.isDrawAgentRange) {
-            val deployCircle = Circle(pos, Dimensions.maxDeploymentRange)
-            DrawUtil.drawCircle(ctx, deployCircle, Colors.agentDeployCircle, Dimensions.agentDeployCircleLineWidth)
+            val deployCircle = Circle(pos, Dim.maxDeploymentRange)
+            DrawUtil.drawCircle(ctx, deployCircle, Colors.agentDeployCircle, Dim.agentDeployCircleLineWidth)
         }
     }
 
@@ -481,8 +481,8 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         private fun xmKey(faction: Faction, percent: Int) = faction.abbr + ":" + percent
         private val xmBarImages = Faction.values().flatMap { fac ->
             (0..100).map {
-                val lw = Dimensions.agentLineWidth
-                val r = Dimensions.agentRadius.toInt()
+                val lw = Dim.agentLineWidth
+                val r = Dim.agentRadius.toInt()
                 val w = (r * 2) + (2 * lw)
                 xmKey(fac, it) to DrawUtil.renderBarImage(fac.color, it, 3, w, lw)
             }

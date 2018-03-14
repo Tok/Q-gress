@@ -4,7 +4,7 @@ import Canvas
 import Ctx
 import World
 import config.Colors
-import config.Dimensions
+import config.Dim
 import config.Time
 import portal.Portal
 import util.*
@@ -20,7 +20,7 @@ data class NonFaction(var pos: Coords, val speed: Float,
     var velocity = Complex.ZERO
     fun distanceToDestination(): Double = pos.distanceTo(destination)
     fun distanceToPortal(portal: Portal): Double = pos.distanceTo(portal.location)
-    fun isAtDestination(): Boolean = distanceToDestination() < Dimensions.maxDeploymentRange // Constants.phi
+    fun isAtDestination(): Boolean = distanceToDestination() < Dim.maxDeploymentRange // Constants.phi
     fun isBusy(tick: Int): Boolean = tick <= busyUntil
     fun act() {
         if (isBusy(World.tick)) {
@@ -129,7 +129,7 @@ data class NonFaction(var pos: Coords, val speed: Float,
         private val image: Canvas = drawTemplate()
         private fun drawTemplate(): Canvas {
             val lineWidth = 2
-            val r = Dimensions.agentRadius.toInt()
+            val r = Dim.agentRadius.toInt()
             val w = r * 2 + (2 * lineWidth)
             val h = w
             return HtmlUtil.prerender(w, h, fun(ctx: Ctx) {

@@ -7,7 +7,7 @@ import agent.Agent
 import agent.Faction
 import agent.action.ActionItem
 import config.Colors
-import config.Dimensions
+import config.Dim
 import config.Styles
 import config.Time
 import items.PowerCube
@@ -452,7 +452,7 @@ data class Portal constructor(val name: String, val location: Coords,
             val alpha = reso.calcHealthPrecent().toDouble()
             drawResoLine(lineToPortal, resoLevel.getColor(), owner?.faction?.color ?: Faction.NONE.color, 1.0, alpha)
 
-            val resoCircle = Circle(Coords(x, y), Dimensions.resoRadius)
+            val resoCircle = Circle(Coords(x, y), Dim.resoRadius)
             DrawUtil.drawCircle(ctx, resoCircle, Colors.black, 2.0, resoLevel.getColor(), alpha)
             if (Styles.isDrawResoLevels) {
                 DrawUtil.drawText(ctx, Coords(x, y), reso.level.level.toString(), Colors.black, 8, DrawUtil.CODA)
@@ -483,7 +483,7 @@ data class Portal constructor(val name: String, val location: Coords,
 
     val nameImage = createNameImage()
     private fun createNameImage(): Canvas {
-        val fontSize = Dimensions.portalNameFontSize
+        val fontSize = Dim.portalNameFontSize
         val lineWidth = 2.0
         val w = 100
         val h = fontSize + (2 * lineWidth)
@@ -491,7 +491,7 @@ data class Portal constructor(val name: String, val location: Coords,
         val y = lineWidth + (fontSize * 2 / 3)
         return HtmlUtil.prerender(w, h.toInt(), fun(ctx: Ctx) {
             val coords = Coords(x.toInt(), y.toInt())
-            DrawUtil.strokeText(ctx, coords, name, Colors.white, Dimensions.portalNameFontSize, DrawUtil.CODA, lineWidth, Colors.black)
+            DrawUtil.strokeText(ctx, coords, name, Colors.white, Dim.portalNameFontSize, DrawUtil.CODA, lineWidth, Colors.black)
         })
     }
 
@@ -508,8 +508,8 @@ data class Portal constructor(val name: String, val location: Coords,
             Faction.values().map { (it to level) to renderPortalCenter(it.color, level) }
         }.toMap()
         private val healthBarImages: Map<Pair<Faction, Int>, Canvas> = (0..100).flatMap { health ->
-            val lw = Dimensions.portalLineWidth
-            val r = Dimensions.portalRadius.toInt()
+            val lw = Dim.portalLineWidth
+            val r = Dim.portalRadius.toInt()
             val w = (r * 2) + (2 * lw)
             Faction.values().map { (it to health) to DrawUtil.renderBarImage(it.color, health, 5, w, lw) }
         }.toMap()
@@ -518,8 +518,8 @@ data class Portal constructor(val name: String, val location: Coords,
         private fun getHealthBarImage(faction: Faction, health: Int) = healthBarImages.get(faction to health)!!
 
         fun renderPortalCenter(color: String, level: PortalLevel): Canvas {
-            val lw = Dimensions.portalLineWidth
-            val r = Dimensions.portalRadius.toInt()
+            val lw = Dim.portalLineWidth
+            val r = Dim.portalRadius.toInt()
             val w = (r * 2) + (2 * lw)
             val h = w
             return HtmlUtil.prerender(w, h, fun(ctx: Ctx) {

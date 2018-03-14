@@ -52,8 +52,8 @@ object DrawUtil {
     }
 
     private fun redraw(canvas: Canvas, ctx: Ctx, image: ImageData? = null) {
-        canvas.width = Dimensions.width
-        canvas.height = Dimensions.height
+        canvas.width = Dim.width
+        canvas.height = Dim.height
         if (image != null) {
             ctx.putImageData(image, 0.0, 0.0)
         } else {
@@ -64,8 +64,8 @@ object DrawUtil {
     fun drawLoadingText(text: String) {
         clearUserInterface()
         val fontSize = 21
-        val y = Dimensions.height / 2
-        val x = (Dimensions.width - (text.length * fontSize / 2)) / 2
+        val y = Dim.height / 2
+        val x = (Dim.width - (text.length * fontSize / 2)) / 2
         val lineWidth = 3.0
         val strokeStyle: String = Colors.black
         strokeText(World.uiCtx(), Coords(x, y), text, Colors.white, fontSize, AMARILLO, lineWidth, strokeStyle)
@@ -97,10 +97,10 @@ object DrawUtil {
     val qSliderHeight = 13.0 + 5.0 //defined in CSS
     val qSliderDivHeight = qSliderHeight * (QActions.values().count() + 1)
     val qSliderDivWidth = 370 //.qValues width
-    private val topArea = Line.create(0, 0, Dimensions.width, Dimensions.topActionOffset.toInt())
-    private val bottomArea = Line.create(0, Dimensions.height - Dimensions.botActionOffset.toInt(), Dimensions.width, Dimensions.height)
-    private fun leftSliderArea() = Line.create(0, Dimensions.topActionOffset.toInt(), qSliderDivWidth, qSliderDivHeight.toInt())
-    private fun rightSliderArea() = Line.create(Dimensions.width - qSliderDivWidth, Dimensions.topActionOffset.toInt(), qSliderDivWidth, qSliderDivHeight.toInt())
+    private val topArea = Line.create(0, 0, Dim.width, Dim.topActionOffset.toInt())
+    private val bottomArea = Line.create(0, Dim.height - Dim.botActionOffset.toInt(), Dim.width, Dim.height)
+    private fun leftSliderArea() = Line.create(0, Dim.topActionOffset.toInt(), qSliderDivWidth, qSliderDivHeight.toInt())
+    private fun rightSliderArea() = Line.create(Dim.width - qSliderDivWidth, Dim.topActionOffset.toInt(), qSliderDivWidth, qSliderDivHeight.toInt())
 
     fun drawActionLimits(isHighlightBottom: Boolean = true) {
         with(World.ctx()) {
@@ -121,7 +121,7 @@ object DrawUtil {
             return
         }
         val ctx = World.uiCtx()
-        val r = Dimensions.maxDeploymentRange * Constants.phi
+        val r = Dim.maxDeploymentRange * Constants.phi
         val circle = Circle(pos, r)
 
         val tempCan = document.createElement("canvas") as Canvas
@@ -170,7 +170,7 @@ object DrawUtil {
             }
         }
 
-        val r = Dimensions.maxDeploymentRange.toInt()
+        val r = Dim.maxDeploymentRange.toInt()
         val damageQueue: MutableMap<Int, List<Damage>> = Queues.damageQueue
         damageQueue.forEach { damageEntry: Map.Entry<Int, List<Damage>> ->
             val futureTick = damageEntry.key
@@ -223,7 +223,7 @@ object DrawUtil {
         val fillStyle = "#fece5a11"
         val lw = 8
         val ratio = (Queues.damageDelayTicks - ticksInFuture) / Queues.damageDelayTicks
-        val r = (xmpLevel.rangeM * Dimensions.pixelToMFactor * ratio).toInt()
+        val r = (xmpLevel.rangeM * Dim.pixelToMFactor * ratio).toInt()
         val w = (r * 2) + (2 * lw)
         val h = w
         return HtmlUtil.prerender(w, h, fun(ctx: Ctx) {
@@ -233,13 +233,13 @@ object DrawUtil {
     }
 
     fun drawStats() {
-        val fontSize = Dimensions.statsFontSize
+        val fontSize = Dim.statsFontSize
         val lineWidth = 3.0
         fun drawCell(pos: Coords, text: String, color: String) {
             strokeText(World.uiCtx(), pos, text, color, fontSize, CODA, lineWidth, Colors.black, CanvasTextAlign.END)
         }
 
-        val yOff = Dimensions.statsTopOffset
+        val yOff = Dim.statsTopOffset
         val yStep = fontSize * 3 / 2
         val xStep = 55
         fun drawRow(pos: Int, header: String, enl: Int, res: Int, total: Int) {
@@ -249,7 +249,7 @@ object DrawUtil {
             drawCell(Coords(pos, yOff + yStep * 3), total.toString(), Colors.white)
         }
 
-        val xPos = Dimensions.width - Dimensions.statsRightOffset
+        val xPos = Dim.width - Dim.statsRightOffset
         return with(World) {
             (1..4).forEach { step ->
                 when (step) {
@@ -263,16 +263,16 @@ object DrawUtil {
     }
 
     fun drawTick() {
-        val pos = Coords(13, Dimensions.height - Dimensions.tickBottomOffset)
-        val half = Dimensions.tickFontSize / 2
+        val pos = Coords(13, Dim.height - Dim.tickBottomOffset)
+        val half = Dim.tickFontSize / 2
         World.uiCtx().fillStyle = "#00000077"
-        World.uiCtx().fillRect(pos.xx() - 8, pos.yy() - half - 1, 164.0, Dimensions.tickFontSize + 2.0)
+        World.uiCtx().fillRect(pos.xx() - 8, pos.yy() - half - 1, 164.0, Dim.tickFontSize + 2.0)
         World.uiCtx().fill()
         World.uiCtx().globalAlpha = 1.0
         val stamp = Time.ticksToTimestamp(World.tick)
-        drawText(World.uiCtx(), pos, stamp, Colors.white, Dimensions.tickFontSize, CODA)
+        drawText(World.uiCtx(), pos, stamp, Colors.white, Dim.tickFontSize, CODA)
         val tick = " Tick: " + World.tick
-        drawText(World.uiCtx(), pos.copy(x = pos.x + 55), tick, Colors.white, Dimensions.tickFontSize, CODA)
+        drawText(World.uiCtx(), pos.copy(x = pos.x + 55), tick, Colors.white, Dim.tickFontSize, CODA)
     }
 
     fun renderBarImage(color: String, health: Int, h: Int, w: Int, lineWidth: Int): Canvas {
@@ -320,13 +320,13 @@ object DrawUtil {
         }
 
         fun drawMuRect(pos: Coords, part: Int, faction: Faction, mu: Int) {
-            val fromRect = Coords(pos.x, pos.y - Dimensions.muFontSize)
+            val fromRect = Coords(pos.x, pos.y - Dim.muFontSize)
             val width = 1.5 * part
-            val height = Dimensions.muFontSize.toDouble() * Constants.phi
+            val height = Dim.muFontSize.toDouble() * Constants.phi
             fillMuRect(fromRect, width, height, faction.color, faction.color, 3.0)
             val text = faction.abbr + " " + mu + "M"
             val textPos = Coords(pos.x + 21, pos.y - 3)
-            strokeText(World.uiCtx(), textPos, text, faction.color, Dimensions.muFontSize, AMARILLO)
+            strokeText(World.uiCtx(), textPos, text, faction.color, Dim.muFontSize, AMARILLO)
         }
 
         val enlMu = World.calcTotalMu(Faction.ENL)
@@ -334,16 +334,16 @@ object DrawUtil {
         val totalMu = enlMu + resMu
         val enlPart: Int = round((100.0 * enlMu) / totalMu).toInt()
         val resPart: Int = round((100.0 * resMu) / totalMu).toInt()
-        val xPos = Dimensions.muLeftOffset
-        val yPos = Dimensions.height - Dimensions.muBottomOffset
-        val enlPos = Coords(xPos, yPos - Dimensions.muFontSize * 2)
+        val xPos = Dim.muLeftOffset
+        val yPos = Dim.height - Dim.muBottomOffset
+        val enlPos = Coords(xPos, yPos - Dim.muFontSize * 2)
         val resPos = Coords(xPos, yPos)
         drawMuRect(enlPos, enlPart, Faction.ENL, enlMu)
         drawMuRect(resPos, resPart, Faction.RES, resMu)
     }
 
     fun drawTopAgents() {
-        val fontSize = Dimensions.topAgentsInventoryFontSize
+        val fontSize = Dim.topAgentsInventoryFontSize
         val lineWidth = 2.0
         fun drawBars(ctx: Ctx, barWidth: Int, level: Int, color: String, pos: Coords, count: Int, maxCount: Int) {
             val xOffset = (barWidth * level) - barWidth
@@ -387,9 +387,9 @@ object DrawUtil {
 
         val ctx = World.uiCtx()
         ctx.globalAlpha = 1.0
-        val xPos = Dimensions.topAgentsLeftOffset
-        val yOffset = Dimensions.topAgentsFontSize * 3 / 2
-        val yFixOffset = Dimensions.height - Dimensions.topAgentsBottomOffset - (Config.topAgentsMessageLimit * yOffset)
+        val xPos = Dim.topAgentsLeftOffset
+        val yOffset = Dim.topAgentsFontSize * 3 / 2
+        val yFixOffset = Dim.height - Dim.topAgentsBottomOffset - (Config.topAgentsMessageLimit * yOffset)
         val headerPos = Coords(xPos, yFixOffset - yOffset)
         val top = World.allAgents.toList().sortedBy { -it.ap }.take(Config.topAgentsMessageLimit)
         top.forEachIndexed { index, agent ->
@@ -431,7 +431,7 @@ object DrawUtil {
             offset += 30
 
             strokeTableHeaderText(headerPos, offset, "Action")
-            val iconRadius = Dimensions.agentRadius.toInt()
+            val iconRadius = Dim.agentRadius.toInt()
             val actionIconPos = Coords(pos.x + offset - iconRadius, pos.y - iconRadius)
             addIcon(actionIconPos, agent.action.item)
             strokeTableText(pos, offset + (iconRadius * 2) + 5, agent.action.toString())
@@ -476,7 +476,7 @@ object DrawUtil {
     }
 
     fun drawVectorField(vectorField: Map<Coords, Complex>) {
-        World.bgCtx().clearRect(0.0, 0.0, Dimensions.width.toDouble(), Dimensions.height.toDouble())
+        World.bgCtx().clearRect(0.0, 0.0, Dim.width.toDouble(), Dim.height.toDouble())
         val w = PathUtil.RESOLUTION - 1
         val h = PathUtil.RESOLUTION - 1
         with(World) {
@@ -552,13 +552,13 @@ object DrawUtil {
 
     private fun strokeTableHeaderText(headerPos: Coords, offset: Int, text: String) {
         val pos = Coords(headerPos.x + offset, headerPos.y)
-        strokeText(World.uiCtx(), pos, text, Colors.white, Dimensions.topAgentsFontSize, CODA, 3.0)
+        strokeText(World.uiCtx(), pos, text, Colors.white, Dim.topAgentsFontSize, CODA, 3.0)
     }
 
     private fun strokeTableText(headerPos: Coords, offset: Int, text: String,
                                 textAlign: CanvasTextAlign = CanvasTextAlign.START, fillStyle: String = Colors.white) {
         val pos = Coords(headerPos.x + offset, headerPos.y)
-        strokeText(World.uiCtx(), pos, text, fillStyle, Dimensions.topAgentsFontSize, CODA, 3.0, Colors.black, textAlign)
+        strokeText(World.uiCtx(), pos, text, fillStyle, Dim.topAgentsFontSize, CODA, 3.0, Colors.black, textAlign)
     }
 
     fun strokeText(ctx: Ctx, pos: Coords, text: String, fillStyle: String, fontSize: Int, fontName: String = CODA,

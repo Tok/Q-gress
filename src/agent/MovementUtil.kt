@@ -2,13 +2,11 @@ package agent
 
 import World
 import agent.action.ActionItem
-import config.Constants
-import config.Dimensions
+import config.Dim
 import items.level.PortalLevel
 import portal.Portal
 import util.Util
 import util.data.Complex
-import kotlin.math.min
 
 object MovementUtil {
     fun findUncapturedPortals() = World.allPortals.filter { it.isUncaptured() }
@@ -69,7 +67,7 @@ object MovementUtil {
     /* End All Portals */
 
     private fun goToDestinationPortal(agent: Agent, destination: Portal): Agent {
-        val distance = agent.skills.deployPrecision * Dimensions.maxDeploymentRange
+        val distance = agent.skills.deployPrecision * Dim.maxDeploymentRange
         val nextDest = destination.findRandomPointNearPortal(distance.toInt())
         agent.action.start(ActionItem.MOVE)
         return agent.copy(actionPortal = destination, destination = nextDest)

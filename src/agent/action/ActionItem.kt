@@ -4,7 +4,7 @@ import Canvas
 import Ctx
 import agent.Faction
 import config.Colors
-import config.Dimensions
+import config.Dim
 import util.DrawUtil
 import util.HtmlUtil
 import util.data.Circle
@@ -38,8 +38,8 @@ data class ActionItem(val text: String, val durationSeconds: Int, val qName: Str
 
         private fun drawTemplate(actionItem: ActionItem, faction: Faction): Canvas {
             val strokeStyle = Colors.black
-            val lw = Dimensions.agentLineWidth
-            val r = Dimensions.agentRadius.toInt()
+            val lw = Dim.agentLineWidth
+            val r = Dim.agentRadius.toInt()
             val w = (r * 2) + (2 * lw)
             val h = w
             fun drawAgentLine(ctx: Ctx, line: Line) = DrawUtil.drawLine(ctx, line, strokeStyle, 0.7)

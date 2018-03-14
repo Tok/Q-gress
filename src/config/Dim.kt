@@ -1,6 +1,6 @@
 package config
 
-object Dimensions {
+object Dim {
     val width = 1200 //Compare to dimensions defined in CSS
     val height = 800
 

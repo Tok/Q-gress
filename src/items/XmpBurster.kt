@@ -2,7 +2,7 @@ package items
 
 import agent.Agent
 import config.Constants
-import config.Dimensions
+import config.Dim
 import items.deployable.DeployableItem
 import items.deployable.Resonator
 import items.level.XmpLevel
@@ -17,7 +17,7 @@ data class XmpBurster(val level: XmpLevel, val owner: Agent) : DeployableItem {
         val resosInRange: List<Resonator> = agent.findResosInAttackRange(level)
         return resosInRange.map { reso ->
             val distanceToAgent: Double = reso.coords?.distanceTo(agent.pos)!!
-            val fixedDist = distanceToAgent * Dimensions.pixelToMFactor
+            val fixedDist = distanceToAgent * Dim.pixelToMFactor
             val distanceRatio = max(0.0, min(1.0, 1.0 - (fixedDist / level.rangeM)))
             val isCloseEnough = distanceRatio < (Constants.phi - 1)
             val isCritical = isCloseEnough && Util.random() <= CRIT_RATE
