@@ -71,16 +71,19 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         this.ap += v
     }
 
-    fun onlyMove(): Agent = if (action.item == ActionItem.MOVE) moveCloserToDestinationPortal() else this
+    fun isFastAction(): Boolean = action.item == ActionItem.MOVE || (action.item == ActionItem.ATTACK && !isAtActionPortal())
+    fun isMoveInRange(): Boolean = action.item == ActionItem.ATTACK && !isArrived()
 
-    fun act(): Agent {
-        if (action.item == ActionItem.MOVE) {
-            return moveCloserToDestinationPortal()
-        }
-        if (isBusy()) {
-            return this
-        }
-        return doSomething()
+    fun onlyMove(): Agent = when {
+        isFastAction() -> moveCloserToDestinationPortal()
+        isMoveInRange() -> moveCloserInRange()
+        else -> this
+    }
+
+    fun act(): Agent = when {
+        isBusy() -> this
+        isFastAction() -> moveCloserToDestinationPortal()
+        else -> doSomething()
     }
 
     fun doSomething(): Agent {
@@ -258,12 +261,6 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
             Queues.registerAttack(this, selectedXmps)
             inventory.consumeXmps(selectedXmps)
             action.end()
-            return this
-        }
-
-        if (action.item != ActionItem.ATTACK) {
-            action.start(ActionItem.ATTACK)
-            destination = findExactDestination()
             return this
         }
 

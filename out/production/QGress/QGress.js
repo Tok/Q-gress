@@ -396,19 +396,29 @@ var QGress = function (_, Kotlin) {
   Agent.prototype.addAp_za3lpa$ = function (v) {
     this.ap = this.ap + v | 0;
   };
-  Agent.prototype.onlyMove = function () {
+  Agent.prototype.isFastAction = function () {
+    var tmp$, tmp$_0;
+    return ((tmp$ = this.action.item) != null ? tmp$.equals(ActionItem$Companion_getInstance().MOVE) : null) || (((tmp$_0 = this.action.item) != null ? tmp$_0.equals(ActionItem$Companion_getInstance().ATTACK) : null) && !this.isAtActionPortal());
+  };
+  Agent.prototype.isMoveInRange = function () {
     var tmp$;
-    return ((tmp$ = this.action.item) != null ? tmp$.equals(ActionItem$Companion_getInstance().MOVE) : null) ? this.moveCloserToDestinationPortal_0() : this;
+    return ((tmp$ = this.action.item) != null ? tmp$.equals(ActionItem$Companion_getInstance().ATTACK) : null) && !this.isArrived_0();
+  };
+  Agent.prototype.onlyMove = function () {
+    if (this.isFastAction())
+      return this.moveCloserToDestinationPortal_0();
+    else if (this.isMoveInRange())
+      return this.moveCloserInRange();
+    else
+      return this;
   };
   Agent.prototype.act = function () {
-    var tmp$;
-    if ((tmp$ = this.action.item) != null ? tmp$.equals(ActionItem$Companion_getInstance().MOVE) : null) {
-      return this.moveCloserToDestinationPortal_0();
-    }
-    if (this.isBusy()) {
+    if (this.isBusy())
       return this;
-    }
-    return this.doSomething();
+    else if (this.isFastAction())
+      return this.moveCloserToDestinationPortal_0();
+    else
+      return this.doSomething();
   };
   Agent.prototype.doSomething = function () {
     var tmp$, tmp$_0;
@@ -761,21 +771,16 @@ var QGress = function (_, Kotlin) {
     };
   }
   Agent.prototype.attackPortal = function () {
-    var tmp$, tmp$_0;
+    var tmp$;
     var findExactDestination = Agent$attackPortal$findExactDestination(this);
     var doAttack = Agent$attackPortal$doAttack(this);
-    if (!((tmp$ = this.action.item) != null ? tmp$.equals(ActionItem$Companion_getInstance().ATTACK) : null)) {
-      this.action.start_fyi6w8$(ActionItem$Companion_getInstance().ATTACK);
-      this.destination = findExactDestination();
-      return this;
-    }
     if (!this.isAtActionPortal())
-      tmp$_0 = this.moveCloserToDestinationPortal_0();
+      tmp$ = this.moveCloserToDestinationPortal_0();
     else if (!this.isArrived_0())
-      tmp$_0 = this.moveCloserInRange();
+      tmp$ = this.moveCloserInRange();
     else
-      tmp$_0 = doAttack();
-    return tmp$_0;
+      tmp$ = doAttack();
+    return tmp$;
   };
   function Agent$deployPortal$findExactDestination(this$Agent) {
     return function () {
