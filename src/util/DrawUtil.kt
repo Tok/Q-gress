@@ -8,6 +8,7 @@ import agent.NonFaction
 import agent.qvalue.QActions
 import agent.action.ActionItem
 import config.*
+import config.Dim
 import items.XmpBurster
 import items.deployable.DeployableItem
 import items.level.LevelColor
