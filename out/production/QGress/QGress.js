@@ -7270,6 +7270,19 @@ var QGress = function (_, Kotlin) {
       tmp$ = new Coords(numberToInt(round(this.from.x + u * xDiff)), numberToInt(round(this.from.y + u * yDiff)));
     return tmp$;
   };
+  Line.prototype.isValidArea = function () {
+    return this.from.x < this.to.x && this.from.y < this.to.y;
+  };
+  Line.prototype.isPointInArea_lfj9be$ = function (point) {
+    if (!this.isValidArea()) {
+      var message = 'Invalid area ' + this + ' (' + this.from + ' is not of ' + this.to + ').';
+      throw IllegalStateException_init(message.toString());
+    }
+    return point.x >= this.from.x && point.y >= this.from.y && point.x <= this.to.x && point.y <= this.to.y;
+  };
+  Line.prototype.toString = function () {
+    return this.from.toString() + '-' + this.to.toString();
+  };
   function Line$Companion() {
     Line$Companion_instance = this;
   }
@@ -7302,9 +7315,6 @@ var QGress = function (_, Kotlin) {
   Line.prototype.copy_4fg3xo$ = function (from, to) {
     return new Line(from === void 0 ? this.from : from, to === void 0 ? this.to : to);
   };
-  Line.prototype.toString = function () {
-    return 'Line(from=' + Kotlin.toString(this.from) + (', to=' + Kotlin.toString(this.to)) + ')';
-  };
   Line.prototype.hashCode = function () {
     var result = 0;
     result = result * 31 + Kotlin.hashCode(this.from) | 0;
@@ -7323,6 +7333,8 @@ var QGress = function (_, Kotlin) {
     this.qSliderDivWidth = 370;
     this.topArea_0 = Line$Companion_getInstance().create_tjonv8$(0, 0, Dim_getInstance().width, numberToInt(Dim_getInstance().topActionOffset));
     this.bottomArea_0 = Line$Companion_getInstance().create_tjonv8$(0, Dim_getInstance().height - numberToInt(Dim_getInstance().botActionOffset) | 0, Dim_getInstance().width, Dim_getInstance().height);
+    this.leftSliderArea_0 = Line$Companion_getInstance().create_tjonv8$(0, numberToInt(Dim_getInstance().topActionOffset), this.qSliderDivWidth, numberToInt(this.qSliderDivHeight));
+    this.rightSliderArea_0 = Line$Companion_getInstance().create_tjonv8$(Dim_getInstance().width - this.qSliderDivWidth | 0, numberToInt(Dim_getInstance().topActionOffset), Dim_getInstance().width, numberToInt(this.qSliderDivHeight));
     var $receiver = new IntRange(0, 100);
     var destination = ArrayList_init(collectionSizeOrDefault($receiver, 10));
     var tmp$;
@@ -7488,12 +7500,6 @@ var QGress = function (_, Kotlin) {
       this.drawActionLimits_6taknv$();
     }
   };
-  DrawUtil.prototype.leftSliderArea_0 = function () {
-    return Line$Companion_getInstance().create_tjonv8$(0, numberToInt(Dim_getInstance().topActionOffset), this.qSliderDivWidth, numberToInt(this.qSliderDivHeight));
-  };
-  DrawUtil.prototype.rightSliderArea_0 = function () {
-    return Line$Companion_getInstance().create_tjonv8$(Dim_getInstance().width - this.qSliderDivWidth | 0, numberToInt(Dim_getInstance().topActionOffset), this.qSliderDivWidth, numberToInt(this.qSliderDivHeight));
-  };
   DrawUtil.prototype.drawActionLimits_6taknv$ = function (isHighlightBottom) {
     if (isHighlightBottom === void 0)
       isHighlightBottom = true;
@@ -7504,15 +7510,20 @@ var QGress = function (_, Kotlin) {
     if (isHighlightBottom) {
       $receiver.fillRect(this.bottomArea_0.fromX, this.bottomArea_0.fromY, this.bottomArea_0.toX, this.bottomArea_0.toY);
     }
-    $receiver.fillRect(this.leftSliderArea_0().fromX, this.leftSliderArea_0().fromY, this.leftSliderArea_0().toX, this.leftSliderArea_0().toY);
-    $receiver.fillRect(this.rightSliderArea_0().fromX, this.rightSliderArea_0().fromY, this.rightSliderArea_0().toX, this.rightSliderArea_0().toY);
+    $receiver.fillRect(this.leftSliderArea_0.fromX, this.leftSliderArea_0.fromY, this.leftSliderArea_0.toX, this.leftSliderArea_0.toY);
+    $receiver.fillRect(this.rightSliderArea_0.fromX, this.rightSliderArea_0.fromY, this.rightSliderArea_0.toX, this.rightSliderArea_0.toY);
     $receiver.closePath();
   };
   DrawUtil.prototype.highlightMouse_0 = function (pos) {
     var tmp$, tmp$_0, tmp$_1;
-    if (World_getInstance().shadowStreetMap == null) {
+    if (World_getInstance().shadowStreetMap == null)
       return;
-    }
+    else if (this.topArea_0.isPointInArea_lfj9be$(pos))
+      return;
+    else if (this.leftSliderArea_0.isPointInArea_lfj9be$(pos))
+      return;
+    else if (this.rightSliderArea_0.isPointInArea_lfj9be$(pos))
+      return;
     var ctx = World_getInstance().uiCtx();
     var r = Dim_getInstance().maxDeploymentRange * Constants_getInstance().phi;
     var circle = new Circle(pos, r);
@@ -7541,6 +7552,7 @@ var QGress = function (_, Kotlin) {
     var color = tmp$_1;
     var image = Portal$Companion_getInstance().renderPortalCenter_wc00gi$(color, PortalLevel$ZERO_getInstance());
     ctx.drawImage(image, pos.xx() - (image.width / 2 | 0), pos.yy() - (image.height / 2 | 0));
+    ctx.globalAlpha = 1.0;
   };
   DrawUtil.prototype.drawAttacks = function () {
     var attackQueue = Queues_getInstance().attackQueue;

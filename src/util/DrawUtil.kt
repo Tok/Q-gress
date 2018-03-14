@@ -100,8 +100,8 @@ object DrawUtil {
     val qSliderDivWidth = 370 //.qValues width
     private val topArea = Line.create(0, 0, Dim.width, Dim.topActionOffset.toInt())
     private val bottomArea = Line.create(0, Dim.height - Dim.botActionOffset.toInt(), Dim.width, Dim.height)
-    private fun leftSliderArea() = Line.create(0, Dim.topActionOffset.toInt(), qSliderDivWidth, qSliderDivHeight.toInt())
-    private fun rightSliderArea() = Line.create(Dim.width - qSliderDivWidth, Dim.topActionOffset.toInt(), qSliderDivWidth, qSliderDivHeight.toInt())
+    private val leftSliderArea = Line.create(0, Dim.topActionOffset.toInt(), qSliderDivWidth, qSliderDivHeight.toInt())
+    private val rightSliderArea = Line.create(Dim.width - qSliderDivWidth, Dim.topActionOffset.toInt(), Dim.width, qSliderDivHeight.toInt())
 
     fun drawActionLimits(isHighlightBottom: Boolean = true) {
         with(World.ctx()) {
@@ -111,15 +111,18 @@ object DrawUtil {
             if (isHighlightBottom) {
                 fillRect(bottomArea.fromX, bottomArea.fromY, bottomArea.toX, bottomArea.toY)
             }
-            fillRect(leftSliderArea().fromX, leftSliderArea().fromY, leftSliderArea().toX, leftSliderArea().toY)
-            fillRect(rightSliderArea().fromX, rightSliderArea().fromY, rightSliderArea().toX, rightSliderArea().toY)
+            fillRect(leftSliderArea.fromX, leftSliderArea.fromY, leftSliderArea.toX, leftSliderArea.toY)
+            fillRect(rightSliderArea.fromX, rightSliderArea.fromY, rightSliderArea.toX, rightSliderArea.toY)
             closePath()
         }
     }
 
     private fun highlightMouse(pos: Coords) {
-        if (World.shadowStreetMap == null) {
-            return
+        when {
+            World.shadowStreetMap == null -> return
+            topArea.isPointInArea(pos) -> return
+            leftSliderArea.isPointInArea(pos) -> return
+            rightSliderArea.isPointInArea(pos) -> return
         }
         val ctx = World.uiCtx()
         val r = Dim.maxDeploymentRange * Constants.phi
@@ -151,6 +154,7 @@ object DrawUtil {
         }
         val image = Portal.renderPortalCenter(color, PortalLevel.ZERO)
         ctx.drawImage(image, pos.xx() - (image.width / 2), pos.yy() - (image.height / 2))
+        ctx.globalAlpha = 1.0
     }
 
     fun drawAttacks() {
