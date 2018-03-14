@@ -94,23 +94,24 @@ object DrawUtil {
         }
     }
 
+    val qSliderHeight = 13.0 + 5.0 //defined in CSS
+    val qSliderDivHeight = qSliderHeight * (QActions.values().count() + 1)
+    val qSliderDivWidth = 370 //.qValues width
+    private val topArea = Line.create(0, 0, Dimensions.width, Dimensions.topActionOffset.toInt())
+    private val bottomArea = Line.create(0, Dimensions.height - Dimensions.botActionOffset.toInt(), Dimensions.width, Dimensions.height)
+    private fun leftSliderArea() = Line.create(0, Dimensions.topActionOffset.toInt(), qSliderDivWidth, qSliderDivHeight.toInt())
+    private fun rightSliderArea() = Line.create(Dimensions.width - qSliderDivWidth, Dimensions.topActionOffset.toInt(), qSliderDivWidth, qSliderDivHeight.toInt())
+
     fun drawActionLimits(isHighlightBottom: Boolean = true) {
-        val w = Dimensions.width.toDouble()
-        val h = Dimensions.height.toDouble()
-        val topOffset = Dimensions.topActionOffset
-        val botOffset = h - Dimensions.botActionOffset
         with(World.ctx()) {
             beginPath()
             fillStyle = "#00000077"
-            fillRect(0.0, 0.0, w, topOffset)
+            fillRect(topArea.fromX, topArea.fromY, topArea.toX, topArea.toY)
             if (isHighlightBottom) {
-                fillRect(0.0, botOffset, w, h)
+                fillRect(bottomArea.fromX, bottomArea.fromY, bottomArea.toX, bottomArea.toY)
             }
-            val qSliderHeight = 13.0 + 5.0 //defined in CSS
-            val qSliderDivHeight = qSliderHeight * (QActions.values().count() + 1)
-            val qSliderDivWidth = 370.0 //.qValues width
-            fillRect(0.0, topOffset, qSliderDivWidth, qSliderDivHeight)
-            fillRect(w - qSliderDivWidth, topOffset, qSliderDivWidth, qSliderDivHeight)
+            fillRect(leftSliderArea().fromX, leftSliderArea().fromY, leftSliderArea().toX, leftSliderArea().toY)
+            fillRect(rightSliderArea().fromX, rightSliderArea().fromY, rightSliderArea().toX, rightSliderArea().toY)
             closePath()
         }
     }

@@ -5,6 +5,10 @@ import kotlin.math.round
 import kotlin.math.sqrt
 
 data class Line(val from: Coords, val to: Coords) {
+    val fromX = from.x.toDouble()
+    val fromY = from.y.toDouble()
+    val toX = to.x.toDouble()
+    val toY = to.y.toDouble()
     fun key(): String = from.toString() + "<--->" + to.toString()
     fun calcXdiff(): Double = abs(from.x.toDouble() - to.x)
     fun calcYdiff(): Double = abs(from.y.toDouble() - to.y)
@@ -41,5 +45,9 @@ data class Line(val from: Coords, val to: Coords) {
             u > 1 -> Coords(to.x, to.y)
             else -> Coords(round(from.x + u * xDiff).toInt(), round(from.y + u * yDiff).toInt())
         }
+    }
+
+    companion object {
+        fun create(fromX: Int, fromY: Int, toX: Int, toY: Int) = Line(Coords(fromX, fromY), Coords(toX, toY))
     }
 }

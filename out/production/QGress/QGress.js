@@ -7207,8 +7207,13 @@ var QGress = function (_, Kotlin) {
     interfaces: []
   };
   function Line(from, to) {
+    Line$Companion_getInstance();
     this.from = from;
     this.to = to;
+    this.fromX = this.from.x;
+    this.fromY = this.from.y;
+    this.toX = this.to.x;
+    this.toY = this.to.y;
   }
   Line.prototype.key = function () {
     return this.from.toString() + '<--->' + this.to.toString();
@@ -7265,6 +7270,24 @@ var QGress = function (_, Kotlin) {
       tmp$ = new Coords(numberToInt(round(this.from.x + u * xDiff)), numberToInt(round(this.from.y + u * yDiff)));
     return tmp$;
   };
+  function Line$Companion() {
+    Line$Companion_instance = this;
+  }
+  Line$Companion.prototype.create_tjonv8$ = function (fromX, fromY, toX, toY) {
+    return new Line(new Coords(fromX, fromY), new Coords(toX, toY));
+  };
+  Line$Companion.$metadata$ = {
+    kind: Kind_OBJECT,
+    simpleName: 'Companion',
+    interfaces: []
+  };
+  var Line$Companion_instance = null;
+  function Line$Companion_getInstance() {
+    if (Line$Companion_instance === null) {
+      new Line$Companion();
+    }
+    return Line$Companion_instance;
+  }
   Line.$metadata$ = {
     kind: Kind_CLASS,
     simpleName: 'Line',
@@ -7295,6 +7318,11 @@ var QGress = function (_, Kotlin) {
     DrawUtil_instance = this;
     this.CODA = 'Coda';
     this.AMARILLO = 'AmarilloUSAF';
+    this.qSliderHeight = 13.0 + 5.0;
+    this.qSliderDivHeight = this.qSliderHeight * (QActions_getInstance().values().size + 1 | 0);
+    this.qSliderDivWidth = 370;
+    this.topArea_0 = Line$Companion_getInstance().create_tjonv8$(0, 0, Dimensions_getInstance().width, numberToInt(Dimensions_getInstance().topActionOffset));
+    this.bottomArea_0 = Line$Companion_getInstance().create_tjonv8$(0, Dimensions_getInstance().height - numberToInt(Dimensions_getInstance().botActionOffset) | 0, Dimensions_getInstance().width, Dimensions_getInstance().height);
     var $receiver = new IntRange(0, 100);
     var destination = ArrayList_init(collectionSizeOrDefault($receiver, 10));
     var tmp$;
@@ -7460,25 +7488,24 @@ var QGress = function (_, Kotlin) {
       this.drawActionLimits_6taknv$();
     }
   };
+  DrawUtil.prototype.leftSliderArea_0 = function () {
+    return Line$Companion_getInstance().create_tjonv8$(0, numberToInt(Dimensions_getInstance().topActionOffset), this.qSliderDivWidth, numberToInt(this.qSliderDivHeight));
+  };
+  DrawUtil.prototype.rightSliderArea_0 = function () {
+    return Line$Companion_getInstance().create_tjonv8$(Dimensions_getInstance().width - this.qSliderDivWidth | 0, numberToInt(Dimensions_getInstance().topActionOffset), this.qSliderDivWidth, numberToInt(this.qSliderDivHeight));
+  };
   DrawUtil.prototype.drawActionLimits_6taknv$ = function (isHighlightBottom) {
     if (isHighlightBottom === void 0)
       isHighlightBottom = true;
-    var w = Dimensions_getInstance().width;
-    var h = Dimensions_getInstance().height;
-    var topOffset = Dimensions_getInstance().topActionOffset;
-    var botOffset = h - Dimensions_getInstance().botActionOffset;
     var $receiver = World_getInstance().ctx();
     $receiver.beginPath();
     $receiver.fillStyle = '#00000077';
-    $receiver.fillRect(0.0, 0.0, w, topOffset);
+    $receiver.fillRect(this.topArea_0.fromX, this.topArea_0.fromY, this.topArea_0.toX, this.topArea_0.toY);
     if (isHighlightBottom) {
-      $receiver.fillRect(0.0, botOffset, w, h);
+      $receiver.fillRect(this.bottomArea_0.fromX, this.bottomArea_0.fromY, this.bottomArea_0.toX, this.bottomArea_0.toY);
     }
-    var qSliderHeight = 13.0 + 5.0;
-    var qSliderDivHeight = qSliderHeight * (QActions_getInstance().values().size + 1 | 0);
-    var qSliderDivWidth = 370.0;
-    $receiver.fillRect(0.0, topOffset, qSliderDivWidth, qSliderDivHeight);
-    $receiver.fillRect(w - qSliderDivWidth, topOffset, qSliderDivWidth, qSliderDivHeight);
+    $receiver.fillRect(this.leftSliderArea_0().fromX, this.leftSliderArea_0().fromY, this.leftSliderArea_0().toX, this.leftSliderArea_0().toY);
+    $receiver.fillRect(this.rightSliderArea_0().fromX, this.rightSliderArea_0().fromY, this.rightSliderArea_0().toX, this.rightSliderArea_0().toY);
     $receiver.closePath();
   };
   DrawUtil.prototype.highlightMouse_0 = function (pos) {
@@ -10577,6 +10604,9 @@ var QGress = function (_, Kotlin) {
   });
   var package$html = package$data.html || (package$data.html = {});
   package$html.AgentsTableWidget = AgentsTableWidget;
+  Object.defineProperty(Line, 'Companion', {
+    get: Line$Companion_getInstance
+  });
   package$data.Line = Line;
   Object.defineProperty(package$util, 'DrawUtil', {
     get: DrawUtil_getInstance
