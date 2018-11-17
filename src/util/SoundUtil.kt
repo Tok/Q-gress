@@ -23,7 +23,7 @@ object SoundUtil {
         return !soundCheckbox.checked
     }
 
-    private fun volume() = if (isMuted()) 0.0 else 1.0
+    private fun volume() = if (isMuted()) 0.0 else 0.4 //TODO create volume slider
 
     fun playPortalCreationSound(pos: Coords) {
         if (isMuted()) return
