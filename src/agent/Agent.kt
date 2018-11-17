@@ -74,15 +74,10 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
     private fun isFastAction(): Boolean = action.item == ActionItem.MOVE || (action.item == ActionItem.ATTACK && !isAtActionPortal())
     private fun isMoveInRange(): Boolean = action.item == ActionItem.ATTACK && !isArrived()
 
-    fun onlyMove(): Agent = when {
-        isFastAction() -> moveCloserToDestinationPortal()
-        isMoveInRange() -> moveCloserInRange()
-        else -> this
-    }
-
     fun act(): Agent = when {
         isBusy() -> this
         isFastAction() -> moveCloserToDestinationPortal()
+        isMoveInRange() -> moveCloserInRange()
         else -> doSomething()
     }
 

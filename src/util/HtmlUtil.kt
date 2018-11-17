@@ -62,11 +62,8 @@ object HtmlUtil {
         World.allAgents.clear()
         updateAgentCount(World.frogs, frogCount()) { Agent.createFrog(World.grid) }
         updateAgentCount(World.smurfs, smurfCount()) { Agent.createSmurf(World.grid) }
-        val nextAgents = if (World.tick % 5 == 0) {
-            World.allAgents.shuffled().map { it.act() }.toSet() //actual tick execution
-        } else {
-            World.allAgents.shuffled().map { it.onlyMove() }.toSet()
-        }
+
+        val nextAgents = World.allAgents.map { it.act() }.toSet()
         updateAgents(World.frogs, Faction.ENL, nextAgents)
         updateAgents(World.smurfs, Faction.RES, nextAgents)
         World.allNonFaction.forEach { it.act() }
@@ -185,7 +182,7 @@ object HtmlUtil {
                 slider.min = "0.00"
                 slider.max = "1.00"
                 slider.step = "0.01"
-                slider.value = "0.50"
+                slider.value = "0.10"
                 slider.addClass("slider", "qSlider", faction.abbr.toLowerCase() + "Slider")
                 val sliderValue = document.createElement("span") as HTMLSpanElement
                 sliderValue.addClass("qSliderLabel", faction.abbr.toLowerCase() + "Label")

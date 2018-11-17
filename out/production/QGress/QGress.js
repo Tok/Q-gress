@@ -55,7 +55,6 @@ var QGress = function (_, Kotlin) {
   var IllegalArgumentException_init = Kotlin.kotlin.IllegalArgumentException_init_pdl1vj$;
   var addClass = Kotlin.kotlin.dom.addClass_hhb33f$;
   var max = Kotlin.kotlin.collections.max_exjks8$;
-  var shuffled = Kotlin.kotlin.collections.shuffled_7wnvza$;
   var padEnd = Kotlin.kotlin.text.padEnd_vrc1nu$;
   var removeClass = Kotlin.kotlin.dom.removeClass_hhb33f$;
   var split = Kotlin.kotlin.text.split_ip8yn$;
@@ -410,19 +409,13 @@ var QGress = function (_, Kotlin) {
     var tmp$;
     return ((tmp$ = this.action.item) != null ? tmp$.equals(ActionItem$Companion_getInstance().ATTACK) : null) && !this.isArrived_0();
   };
-  Agent.prototype.onlyMove = function () {
-    if (this.isFastAction_0())
-      return this.moveCloserToDestinationPortal_0();
-    else if (this.isMoveInRange_0())
-      return this.moveCloserInRange_0();
-    else
-      return this;
-  };
   Agent.prototype.act = function () {
     if (this.isBusy_0())
       return this;
     else if (this.isFastAction_0())
       return this.moveCloserToDestinationPortal_0();
+    else if (this.isMoveInRange_0())
+      return this.moveCloserInRange_0();
     else
       return this.doSomething_0();
   };
@@ -8291,48 +8284,33 @@ var QGress = function (_, Kotlin) {
     return Unit;
   }
   HtmlUtil.prototype.tick_0 = function () {
-    var tmp$;
     if (!World_getInstance().isReady) {
       return;
     }
     World_getInstance().allAgents.clear();
     this.updateAgentCount_0(World_getInstance().frogs, this.frogCount_0(), HtmlUtil$tick$lambda);
     this.updateAgentCount_0(World_getInstance().smurfs, this.smurfCount_0(), HtmlUtil$tick$lambda_0);
-    if (World_getInstance().tick % 5 === 0) {
-      var $receiver = shuffled(World_getInstance().allAgents);
-      var destination = ArrayList_init(collectionSizeOrDefault($receiver, 10));
-      var tmp$_0;
-      tmp$_0 = $receiver.iterator();
-      while (tmp$_0.hasNext()) {
-        var item = tmp$_0.next();
-        destination.add_11rb$(item.act());
-      }
-      tmp$ = toSet(destination);
+    var $receiver = World_getInstance().allAgents;
+    var destination = ArrayList_init(collectionSizeOrDefault($receiver, 10));
+    var tmp$;
+    tmp$ = $receiver.iterator();
+    while (tmp$.hasNext()) {
+      var item = tmp$.next();
+      destination.add_11rb$(item.act());
     }
-     else {
-      var $receiver_0 = shuffled(World_getInstance().allAgents);
-      var destination_0 = ArrayList_init(collectionSizeOrDefault($receiver_0, 10));
-      var tmp$_1;
-      tmp$_1 = $receiver_0.iterator();
-      while (tmp$_1.hasNext()) {
-        var item_0 = tmp$_1.next();
-        destination_0.add_11rb$(item_0.onlyMove());
-      }
-      tmp$ = toSet(destination_0);
-    }
-    var nextAgents = tmp$;
+    var nextAgents = toSet(destination);
     this.updateAgents_0(World_getInstance().frogs, Faction$ENL_getInstance(), nextAgents);
     this.updateAgents_0(World_getInstance().smurfs, Faction$RES_getInstance(), nextAgents);
-    var tmp$_2;
-    tmp$_2 = World_getInstance().allNonFaction.iterator();
-    while (tmp$_2.hasNext()) {
-      var element = tmp$_2.next();
+    var tmp$_0;
+    tmp$_0 = World_getInstance().allNonFaction.iterator();
+    while (tmp$_0.hasNext()) {
+      var element = tmp$_0.next();
       element.act();
     }
     window.requestAnimationFrame(HtmlUtil$tick$lambda_1);
-    var tmp$_3;
-    tmp$_3 = World_getInstance();
-    tmp$_3.tick = tmp$_3.tick + 1 | 0;
+    var tmp$_1;
+    tmp$_1 = World_getInstance();
+    tmp$_1.tick = tmp$_1.tick + 1 | 0;
   };
   function HtmlUtil$load$lambda(this$HtmlUtil) {
     return function (event) {
@@ -8491,7 +8469,7 @@ var QGress = function (_, Kotlin) {
         slider.min = '0.00';
         slider.max = '1.00';
         slider.step = '0.01';
-        slider.value = '0.50';
+        slider.value = '0.10';
         addClass(slider, ['slider', 'qSlider', element_0.abbr.toLowerCase() + 'Slider']);
         var sliderValue = Kotlin.isType(tmp$_7 = document.createElement('span'), HTMLSpanElement) ? tmp$_7 : throwCCE();
         addClass(sliderValue, ['qSliderLabel', element_0.abbr.toLowerCase() + 'Label']);
