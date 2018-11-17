@@ -641,6 +641,7 @@ var QGress = function (_, Kotlin) {
     return this.closure$comparison(a, b);
   };
   Comparator$ObjectLiteral.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
+  var ArrayList_init_0 = Kotlin.kotlin.collections.ArrayList_init_287e2$;
   var mapNotNullTo$lambda = wrapFunction(function () {
     return function (closure$transform, closure$destination) {
       return function (element) {
@@ -663,7 +664,7 @@ var QGress = function (_, Kotlin) {
     var lowest = first(sortedWith(chargable, new Comparator$ObjectLiteral(compareBy$lambda(Agent$rechargePortal$lambda))));
     if (lowest != null) {
       var $receiver = lowest.resoSlots;
-      var destination = ArrayList_init();
+      var destination = ArrayList_init_0();
       var tmp$;
       tmp$ = $receiver.entries.iterator();
       while (tmp$.hasNext()) {
@@ -836,7 +837,7 @@ var QGress = function (_, Kotlin) {
         }
         var ownedInPortal = toList(destination_0);
         var $receiver_0 = this$Agent.inventory.items;
-        var destination_1 = ArrayList_init();
+        var destination_1 = ArrayList_init_0();
         var tmp$_1;
         tmp$_1 = $receiver_0.iterator();
         while (tmp$_1.hasNext()) {
@@ -859,7 +860,7 @@ var QGress = function (_, Kotlin) {
         while (tmp$_4.hasNext()) {
           var element_1 = tmp$_4.next();
           var this$Agent_1 = this$Agent;
-          var destination_3 = ArrayList_init();
+          var destination_3 = ArrayList_init_0();
           var tmp$_5;
           tmp$_5 = ownedInPortal.iterator();
           while (tmp$_5.hasNext()) {
@@ -871,7 +872,7 @@ var QGress = function (_, Kotlin) {
           var owned = destination_3.size;
           var a = element_1.level.deployablePerPlayer - owned | 0;
           var maxDeployable = Math_0.max(a, 0);
-          var destination_4 = ArrayList_init();
+          var destination_4 = ArrayList_init_0();
           var tmp$_9;
           tmp$_9 = inventoryResos.iterator();
           while (tmp$_9.hasNext()) {
@@ -948,7 +949,7 @@ var QGress = function (_, Kotlin) {
     if (this.hasKeys()) {
       var tmp$_1;
       if ((tmp$ = this.actionPortal.findLinkableForKeys_912u9o$(this)) != null) {
-        var destination = ArrayList_init();
+        var destination = ArrayList_init_0();
         var tmp$_2;
         tmp$_2 = tmp$.iterator();
         while (tmp$_2.hasNext()) {
@@ -974,13 +975,13 @@ var QGress = function (_, Kotlin) {
           destination_0.add_11rb$(Link$Companion_getInstance().create_6ezwqo$(this.actionPortal, item, this));
         }
         var linkLinks = filterNotNull(destination_0);
-        var destination_1 = ArrayList_init();
+        var destination_1 = ArrayList_init_0();
         var tmp$_5;
         tmp$_5 = linkLinks.iterator();
         while (tmp$_5.hasNext()) {
           var element_0 = tmp$_5.next();
           var $receiver = World_getInstance().allLines();
-          var destination_2 = ArrayList_init();
+          var destination_2 = ArrayList_init_0();
           var tmp$_6;
           tmp$_6 = $receiver.iterator();
           while (tmp$_6.hasNext()) {
@@ -1006,7 +1007,7 @@ var QGress = function (_, Kotlin) {
     if (this.hasKeys()) {
       var tmp$_1;
       if ((tmp$ = this.actionPortal.findLinkableForKeys_912u9o$(this)) != null) {
-        var destination = ArrayList_init();
+        var destination = ArrayList_init_0();
         var tmp$_2;
         tmp$_2 = tmp$.iterator();
         while (tmp$_2.hasNext()) {
@@ -1032,13 +1033,13 @@ var QGress = function (_, Kotlin) {
           destination_0.add_11rb$(Link$Companion_getInstance().create_6ezwqo$(this.actionPortal, item, this));
         }
         var linkLinks = filterNotNull(destination_0);
-        var destination_1 = ArrayList_init();
+        var destination_1 = ArrayList_init_0();
         var tmp$_5;
         tmp$_5 = linkLinks.iterator();
         while (tmp$_5.hasNext()) {
           var element_0 = tmp$_5.next();
           var $receiver = World_getInstance().allLines();
-          var destination_2 = ArrayList_init();
+          var destination_2 = ArrayList_init_0();
           var tmp$_6;
           tmp$_6 = $receiver.iterator();
           while (tmp$_6.hasNext()) {
@@ -1097,7 +1098,7 @@ var QGress = function (_, Kotlin) {
   Agent.prototype.findPortalsInAttackRange_0 = function (level) {
     var attackDistance = level.rangeM * 0.5 + Dim_getInstance().portalRadius;
     var $receiver = World_getInstance().allPortals;
-    var destination = ArrayList_init();
+    var destination = ArrayList_init_0();
     var tmp$;
     tmp$ = $receiver.iterator();
     while (tmp$.hasNext()) {
@@ -1107,7 +1108,7 @@ var QGress = function (_, Kotlin) {
         destination.add_11rb$(element);
     }
     var enemyPortals = destination;
-    var destination_0 = ArrayList_init();
+    var destination_0 = ArrayList_init_0();
     var tmp$_1;
     tmp$_1 = enemyPortals.iterator();
     while (tmp$_1.hasNext()) {
@@ -1121,7 +1122,7 @@ var QGress = function (_, Kotlin) {
   Agent.prototype.findResosInAttackRange_3vxbq7$ = function (level) {
     var attackDistance = level.rangeM * 0.5;
     var portals = this.findPortalsInAttackRange_0(level);
-    var destination = ArrayList_init();
+    var destination = ArrayList_init_0();
     var tmp$;
     tmp$ = portals.iterator();
     while (tmp$.hasNext()) {
@@ -1138,7 +1139,7 @@ var QGress = function (_, Kotlin) {
       addAll(destination, list);
     }
     var slots = destination;
-    var destination_1 = ArrayList_init();
+    var destination_1 = ArrayList_init_0();
     var tmp$_1;
     tmp$_1 = slots.iterator();
     while (tmp$_1.hasNext()) {
@@ -1188,7 +1189,7 @@ var QGress = function (_, Kotlin) {
   function Agent$Companion() {
     Agent$Companion_instance = this;
     var $receiver = Faction$values();
-    var destination = ArrayList_init();
+    var destination = ArrayList_init_0();
     var tmp$;
     for (tmp$ = 0; tmp$ !== $receiver.length; ++tmp$) {
       var element = $receiver[tmp$];
@@ -1458,13 +1459,13 @@ var QGress = function (_, Kotlin) {
   Faction.valueOf_61zpoe$ = Faction$valueOf;
   function Inventory(items) {
     if (items === void 0) {
-      items = ArrayList_init();
+      items = ArrayList_init_0();
     }
     this.items = items;
   }
   Inventory.prototype.findKeys = function () {
     var $receiver = this.items;
-    var destination = ArrayList_init();
+    var destination = ArrayList_init_0();
     var tmp$;
     tmp$ = $receiver.iterator();
     while (tmp$.hasNext()) {
@@ -1484,7 +1485,7 @@ var QGress = function (_, Kotlin) {
   };
   Inventory.prototype.findXmps = function () {
     var $receiver = this.items;
-    var destination = ArrayList_init();
+    var destination = ArrayList_init_0();
     var tmp$;
     tmp$ = $receiver.iterator();
     while (tmp$.hasNext()) {
@@ -1504,7 +1505,7 @@ var QGress = function (_, Kotlin) {
   };
   Inventory.prototype.findResonators = function () {
     var $receiver = this.items;
-    var destination = ArrayList_init();
+    var destination = ArrayList_init_0();
     var tmp$;
     tmp$ = $receiver.iterator();
     while (tmp$.hasNext()) {
@@ -1524,7 +1525,7 @@ var QGress = function (_, Kotlin) {
   };
   Inventory.prototype.findPowerCubes = function () {
     var $receiver = this.items;
-    var destination = ArrayList_init();
+    var destination = ArrayList_init_0();
     var tmp$;
     tmp$ = $receiver.iterator();
     while (tmp$.hasNext()) {
@@ -1544,7 +1545,7 @@ var QGress = function (_, Kotlin) {
   };
   Inventory.prototype.findShields = function () {
     var $receiver = this.items;
-    var destination = ArrayList_init();
+    var destination = ArrayList_init_0();
     var tmp$;
     tmp$ = $receiver.iterator();
     while (tmp$.hasNext()) {
@@ -1598,7 +1599,7 @@ var QGress = function (_, Kotlin) {
   };
   Inventory.prototype.keyCount = function () {
     var $receiver = this.items;
-    var destination = ArrayList_init();
+    var destination = ArrayList_init_0();
     var tmp$;
     tmp$ = $receiver.iterator();
     while (tmp$.hasNext()) {
@@ -1610,7 +1611,7 @@ var QGress = function (_, Kotlin) {
   };
   Inventory.prototype.xmpCount = function () {
     var $receiver = this.items;
-    var destination = ArrayList_init();
+    var destination = ArrayList_init_0();
     var tmp$;
     tmp$ = $receiver.iterator();
     while (tmp$.hasNext()) {
@@ -1622,7 +1623,7 @@ var QGress = function (_, Kotlin) {
   };
   Inventory.prototype.usCount = function () {
     var $receiver = this.items;
-    var destination = ArrayList_init();
+    var destination = ArrayList_init_0();
     var tmp$;
     tmp$ = $receiver.iterator();
     while (tmp$.hasNext()) {
@@ -1637,7 +1638,7 @@ var QGress = function (_, Kotlin) {
   };
   Inventory.prototype.resoCount = function () {
     var $receiver = this.items;
-    var destination = ArrayList_init();
+    var destination = ArrayList_init_0();
     var tmp$;
     tmp$ = $receiver.iterator();
     while (tmp$.hasNext()) {
@@ -1649,7 +1650,7 @@ var QGress = function (_, Kotlin) {
   };
   Inventory.prototype.shieldCount = function () {
     var $receiver = this.items;
-    var destination = ArrayList_init();
+    var destination = ArrayList_init_0();
     var tmp$;
     tmp$ = $receiver.iterator();
     while (tmp$.hasNext()) {
@@ -1661,7 +1662,7 @@ var QGress = function (_, Kotlin) {
   };
   Inventory.prototype.powerCubeCount = function () {
     var $receiver = this.items;
-    var destination = ArrayList_init();
+    var destination = ArrayList_init_0();
     var tmp$;
     tmp$ = $receiver.iterator();
     while (tmp$.hasNext()) {
@@ -1688,7 +1689,7 @@ var QGress = function (_, Kotlin) {
   groupingBy$ObjectLiteral.$metadata$ = {kind: Kind_CLASS, interfaces: [Grouping]};
   Inventory.prototype.toString = function () {
     var $receiver = this.items;
-    var destination = ArrayList_init();
+    var destination = ArrayList_init_0();
     var tmp$;
     tmp$ = $receiver.iterator();
     while (tmp$.hasNext()) {
@@ -1741,7 +1742,7 @@ var QGress = function (_, Kotlin) {
   }
   MovementUtil.prototype.findUncapturedPortals = function () {
     var $receiver = World_getInstance().allPortals;
-    var destination = ArrayList_init();
+    var destination = ArrayList_init_0();
     var tmp$;
     tmp$ = $receiver.iterator();
     while (tmp$.hasNext()) {
@@ -1756,7 +1757,7 @@ var QGress = function (_, Kotlin) {
   };
   MovementUtil.prototype.findEnemyPortals_912u9o$ = function (agent) {
     var $receiver = World_getInstance().allPortals;
-    var destination = ArrayList_init();
+    var destination = ArrayList_init_0();
     var tmp$;
     tmp$ = $receiver.iterator();
     while (tmp$.hasNext()) {
@@ -1771,7 +1772,7 @@ var QGress = function (_, Kotlin) {
   };
   MovementUtil.prototype.findFriendlyPortals_912u9o$ = function (agent) {
     var $receiver = World_getInstance().allPortals;
-    var destination = ArrayList_init();
+    var destination = ArrayList_init_0();
     var tmp$;
     tmp$ = $receiver.iterator();
     while (tmp$.hasNext()) {
@@ -1811,7 +1812,7 @@ var QGress = function (_, Kotlin) {
       throw IllegalStateException_init(message.toString());
     }
     var $receiver = World_getInstance().allPortals;
-    var destination = ArrayList_init();
+    var destination = ArrayList_init_0();
     var tmp$;
     tmp$ = $receiver.iterator();
     while (tmp$.hasNext()) {
@@ -1837,7 +1838,7 @@ var QGress = function (_, Kotlin) {
       throw IllegalStateException_init(message.toString());
     }
     var $receiver = World_getInstance().allPortals;
-    var destination = ArrayList_init();
+    var destination = ArrayList_init_0();
     var tmp$_1;
     tmp$_1 = $receiver.iterator();
     while (tmp$_1.hasNext()) {
@@ -1867,7 +1868,7 @@ var QGress = function (_, Kotlin) {
     }
      while (false);
     var maxLevel = (tmp$_0 = (tmp$ = maxBy$result) != null ? tmp$.getLevel() : null) != null ? tmp$_0 : PortalLevel$ZERO_getInstance();
-    var destination_0 = ArrayList_init();
+    var destination_0 = ArrayList_init_0();
     var tmp$_2;
     tmp$_2 = friendlyPortals.iterator();
     while (tmp$_2.hasNext()) {
@@ -2101,8 +2102,8 @@ var QGress = function (_, Kotlin) {
     NonFaction$Companion_instance = this;
     this.OFFSCREEN_DISTANCE_0 = Kotlin.imul(PathUtil_getInstance().RESOLUTION, MapUtil_getInstance().OFFSCREEN_CELL_ROWS / 2 | 0);
     this.useOffscreenEdgeDestinations = false;
-    this.OFFSCREEN_EDGES = listOf([new Coords(-60, -60), new Coords(World_getInstance().w() + this.OFFSCREEN_DISTANCE_0 | 0, -60), new Coords(-60, World_getInstance().h() + this.OFFSCREEN_DISTANCE_0 | 0), new Coords(World_getInstance().w() + this.OFFSCREEN_DISTANCE_0 | 0, World_getInstance().h() + this.OFFSCREEN_DISTANCE_0 | 0)]);
-    this.DESTINATIONS = listOf([new Coords(World_getInstance().w() / 3 | 0, -60), new Coords((World_getInstance().w() * 2 | 0) / 3 | 0, -60), new Coords(-60, World_getInstance().h() / 3 | 0), new Coords(-60, (World_getInstance().h() * 2 | 0) / 3 | 0), new Coords(World_getInstance().w() + this.OFFSCREEN_DISTANCE_0 | 0, World_getInstance().h() / 3 | 0), new Coords(World_getInstance().w() + this.OFFSCREEN_DISTANCE_0 | 0, (World_getInstance().h() * 2 | 0) / 3 | 0), new Coords(World_getInstance().w() / 3 | 0, World_getInstance().h() + this.OFFSCREEN_DISTANCE_0 | 0), new Coords((World_getInstance().w() * 2 | 0) / 3 | 0, World_getInstance().h() + this.OFFSCREEN_DISTANCE_0 | 0)]);
+    this.OFFSCREEN_EDGES = listOf([new Coords(-this.OFFSCREEN_DISTANCE_0 | 0, -this.OFFSCREEN_DISTANCE_0 | 0), new Coords(World_getInstance().w() + this.OFFSCREEN_DISTANCE_0 | 0, -this.OFFSCREEN_DISTANCE_0 | 0), new Coords(-this.OFFSCREEN_DISTANCE_0 | 0, World_getInstance().h() + this.OFFSCREEN_DISTANCE_0 | 0), new Coords(World_getInstance().w() + this.OFFSCREEN_DISTANCE_0 | 0, World_getInstance().h() + this.OFFSCREEN_DISTANCE_0 | 0)]);
+    this.DESTINATIONS = listOf([new Coords(World_getInstance().w() / 3 | 0, -this.OFFSCREEN_DISTANCE_0 | 0), new Coords((World_getInstance().w() * 2 | 0) / 3 | 0, -this.OFFSCREEN_DISTANCE_0 | 0), new Coords(-this.OFFSCREEN_DISTANCE_0 | 0, World_getInstance().h() / 3 | 0), new Coords(-this.OFFSCREEN_DISTANCE_0 | 0, (World_getInstance().h() * 2 | 0) / 3 | 0), new Coords(World_getInstance().w() + this.OFFSCREEN_DISTANCE_0 | 0, World_getInstance().h() / 3 | 0), new Coords(World_getInstance().w() + this.OFFSCREEN_DISTANCE_0 | 0, (World_getInstance().h() * 2 | 0) / 3 | 0), new Coords(World_getInstance().w() / 3 | 0, World_getInstance().h() + this.OFFSCREEN_DISTANCE_0 | 0), new Coords((World_getInstance().w() * 2 | 0) / 3 | 0, World_getInstance().h() + this.OFFSCREEN_DISTANCE_0 | 0)]);
     this.fields = LinkedHashMap_init();
     this.MIN_WAIT_0 = Time_getInstance().secondsToTicks_za3lpa$(5);
     this.MAX_WAIT_0 = Time_getInstance().secondsToTicks_za3lpa$(45);
@@ -2824,7 +2825,7 @@ var QGress = function (_, Kotlin) {
   }
   LinkAmp$Companion.prototype.calculateImprovedRange_awbt68$ = function (allModsInPortal, range) {
     var tmp$;
-    var destination = ArrayList_init();
+    var destination = ArrayList_init_0();
     var tmp$_0;
     tmp$_0 = allModsInPortal.iterator();
     while (tmp$_0.hasNext()) {
@@ -2934,7 +2935,7 @@ var QGress = function (_, Kotlin) {
   };
   Comparator$ObjectLiteral_9.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
   Multihack$Companion.prototype.calculateImprovedBurnout_6l8466$ = function (allModsInPortal) {
-    var destination = ArrayList_init();
+    var destination = ArrayList_init_0();
     var tmp$;
     tmp$ = allModsInPortal.iterator();
     while (tmp$.hasNext()) {
@@ -4705,18 +4706,29 @@ var QGress = function (_, Kotlin) {
     drawLinear(this.primaryAnchor, originAndPrimary, primaryAndSecondary);
     drawLinear(this.secondaryAnchor, secondaryAndOrigin, primaryAndSecondary);
   };
+  Field.prototype.toString = function () {
+    return this.calculateArea().toString() + 'MU';
+  };
   Field.prototype.equals = function (other) {
     return Kotlin.isType(other, Field) && this.idSet.containsAll_brywnq$(other.idSet);
   };
-  Field.prototype.toString = function () {
-    return this.calculateArea().toString() + 'MU';
+  Field.prototype.hashCode = function () {
+    var $receiver = this.idSet;
+    var destination = ArrayList_init(collectionSizeOrDefault($receiver, 10));
+    var tmp$;
+    tmp$ = $receiver.iterator();
+    while (tmp$.hasNext()) {
+      var item = tmp$.next();
+      destination.add_11rb$(item.hashCode() / 3 | 0);
+    }
+    return sum(destination);
   };
   function Field$Companion() {
     Field$Companion_instance = this;
   }
   Field$Companion.prototype.isPossible_rsiz9u$ = function (origin, primaryAnchor, secondaryAnchor) {
     var $receiver = World_getInstance().allPortals;
-    var destination = ArrayList_init();
+    var destination = ArrayList_init_0();
     var tmp$;
     tmp$ = $receiver.iterator();
     while (tmp$.hasNext()) {
@@ -4724,13 +4736,12 @@ var QGress = function (_, Kotlin) {
       var list = element.fields;
       addAll(destination, list);
     }
-    var destination_0 = ArrayList_init();
+    var destination_0 = ArrayList_init_0();
     var tmp$_0;
     tmp$_0 = destination.iterator();
     while (tmp$_0.hasNext()) {
       var element_0 = tmp$_0.next();
-      var tmp$_1;
-      if ((tmp$_1 = element_0.idSet) != null ? tmp$_1.equals(linkedSetOf([origin, primaryAnchor, secondaryAnchor])) : null)
+      if (equals(element_0.idSet, linkedSetOf([origin, primaryAnchor, secondaryAnchor])))
         destination_0.add_11rb$(element_0);
     }
     return destination_0.isEmpty();
@@ -4772,14 +4783,6 @@ var QGress = function (_, Kotlin) {
   };
   Field.prototype.copy_veg84i$ = function (origin, primaryAnchor, secondaryAnchor, owner) {
     return new Field(origin === void 0 ? this.origin : origin, primaryAnchor === void 0 ? this.primaryAnchor : primaryAnchor, secondaryAnchor === void 0 ? this.secondaryAnchor : secondaryAnchor, owner === void 0 ? this.owner : owner);
-  };
-  Field.prototype.hashCode = function () {
-    var result = 0;
-    result = result * 31 + Kotlin.hashCode(this.origin) | 0;
-    result = result * 31 + Kotlin.hashCode(this.primaryAnchor) | 0;
-    result = result * 31 + Kotlin.hashCode(this.secondaryAnchor) | 0;
-    result = result * 31 + Kotlin.hashCode(this.owner) | 0;
-    return result;
   };
   function HackResult(items, cooldown) {
     this.items = items;
@@ -4864,19 +4867,22 @@ var QGress = function (_, Kotlin) {
     ctx.closePath();
     ctx.stroke();
   };
+  Link.prototype.toString = function () {
+    return this.origin.toString() + ' --> ' + this.destination.toString();
+  };
   Link.prototype.equals = function (other) {
     var tmp$, tmp$_0, tmp$_1, tmp$_2;
     return Kotlin.isType(other, Link) && (((tmp$ = this.origin) != null ? tmp$.equals(other.origin) : null) && ((tmp$_0 = this.destination) != null ? tmp$_0.equals(other.destination) : null) || (((tmp$_1 = this.origin) != null ? tmp$_1.equals(other.destination) : null) && ((tmp$_2 = this.destination) != null ? tmp$_2.equals(other.origin) : null)));
   };
-  Link.prototype.toString = function () {
-    return this.origin.toString() + ' --> ' + this.destination.toString();
+  Link.prototype.hashCode = function () {
+    return this.origin.hashCode() + this.destination.hashCode() | 0;
   };
   function Link$Companion() {
     Link$Companion_instance = this;
   }
   Link$Companion.prototype.isPossible_4tp95w$ = function (link) {
     var $receiver = World_getInstance().allLinks();
-    var destination = ArrayList_init();
+    var destination = ArrayList_init_0();
     var tmp$;
     tmp$ = $receiver.iterator();
     while (tmp$.hasNext()) {
@@ -4922,13 +4928,6 @@ var QGress = function (_, Kotlin) {
   };
   Link.prototype.copy_6ezwqo$ = function (origin, destination, owner) {
     return new Link(origin === void 0 ? this.origin : origin, destination === void 0 ? this.destination : destination, owner === void 0 ? this.owner : owner);
-  };
-  Link.prototype.hashCode = function () {
-    var result = 0;
-    result = result * 31 + Kotlin.hashCode(this.origin) | 0;
-    result = result * 31 + Kotlin.hashCode(this.destination) | 0;
-    result = result * 31 + Kotlin.hashCode(this.owner) | 0;
-    return result;
   };
   function LinkResult(link, maybeFields) {
     this.link = link;
@@ -5147,7 +5146,7 @@ var QGress = function (_, Kotlin) {
   };
   Portal.prototype.isCoveredByField = function () {
     var $receiver = World_getInstance().allFields();
-    var destination = ArrayList_init();
+    var destination = ArrayList_init_0();
     var tmp$;
     tmp$ = $receiver.iterator();
     while (tmp$.hasNext()) {
@@ -5163,13 +5162,13 @@ var QGress = function (_, Kotlin) {
   };
   Portal.prototype.isInside = function () {
     var $receiver = this.findConnectedPortals();
-    var destination = ArrayList_init();
+    var destination = ArrayList_init_0();
     var tmp$;
     tmp$ = $receiver.iterator();
     while (tmp$.hasNext()) {
       var element = tmp$.next();
       var $receiver_0 = element.fields;
-      var destination_0 = ArrayList_init();
+      var destination_0 = ArrayList_init_0();
       var tmp$_0;
       tmp$_0 = $receiver_0.iterator();
       while (tmp$_0.hasNext()) {
@@ -5335,7 +5334,7 @@ var QGress = function (_, Kotlin) {
   };
   Portal.prototype.findIncomingFrom = function () {
     var $receiver = World_getInstance().allLinks();
-    var destination = ArrayList_init();
+    var destination = ArrayList_init_0();
     var tmp$;
     tmp$ = $receiver.iterator();
     while (tmp$.hasNext()) {
@@ -5372,7 +5371,7 @@ var QGress = function (_, Kotlin) {
   Portal.prototype.findLinkableForKeys_912u9o$ = function (agent) {
     var keyset = ensureNotNull(agent.inventory.findUniqueKeys());
     var $receiver = World_getInstance().allPortals;
-    var destination = ArrayList_init();
+    var destination = ArrayList_init_0();
     var tmp$;
     tmp$ = $receiver.iterator();
     while (tmp$.hasNext()) {
@@ -5380,7 +5379,7 @@ var QGress = function (_, Kotlin) {
       var list = element.links;
       addAll(destination, list);
     }
-    var destination_0 = ArrayList_init();
+    var destination_0 = ArrayList_init_0();
     var tmp$_0;
     tmp$_0 = destination.iterator();
     while (tmp$_0.hasNext()) {
@@ -5396,13 +5395,13 @@ var QGress = function (_, Kotlin) {
       var item = tmp$_1.next();
       destination_1.add_11rb$(item.portal);
     }
-    var destination_2 = ArrayList_init();
+    var destination_2 = ArrayList_init_0();
     var tmp$_2;
     tmp$_2 = destination_1.iterator();
     while (tmp$_2.hasNext()) {
       var element_1 = tmp$_2.next();
       var line = new Line(this.location, element_1.location);
-      var destination_3 = ArrayList_init();
+      var destination_3 = ArrayList_init_0();
       var tmp$_3;
       tmp$_3 = allLinks.iterator();
       while (tmp$_3.hasNext()) {
@@ -5414,7 +5413,7 @@ var QGress = function (_, Kotlin) {
         destination_2.add_11rb$(element_1);
     }
     var nonIntersecting = destination_2;
-    var destination_4 = ArrayList_init();
+    var destination_4 = ArrayList_init_0();
     var tmp$_4;
     tmp$_4 = nonIntersecting.iterator();
     while (tmp$_4.hasNext()) {
@@ -5435,7 +5434,7 @@ var QGress = function (_, Kotlin) {
       agent.removeXm_za3lpa$(250);
       var connectedToTarget = target.findConnectedPortals();
       var connectedToHere = this.findConnectedPortals();
-      var destination = ArrayList_init();
+      var destination = ArrayList_init_0();
       var tmp$;
       tmp$ = connectedToTarget.iterator();
       while (tmp$.hasNext()) {
@@ -5473,7 +5472,7 @@ var QGress = function (_, Kotlin) {
     var a = this.calculateLevel();
     var b = agent.getLevel();
     var level = Math_0.min(a, b);
-    var newStuff = ArrayList_init();
+    var newStuff = ArrayList_init_0();
     newStuff.addAll_brywnq$(this.obtainResos_0(level, agent));
     newStuff.addAll_brywnq$(this.obtainXmps_0(level, agent));
     newStuff.addAll_brywnq$(this.obtainShields_0(agent));
@@ -5491,7 +5490,7 @@ var QGress = function (_, Kotlin) {
     return toMutableList(filterNotNull(newStuff));
   };
   Portal.prototype.obtainResos_0 = function (level, agent) {
-    var stuff = ArrayList_init();
+    var stuff = ArrayList_init_0();
     var $receiver = Quality$values();
     var destination = ArrayList_init($receiver.length);
     var tmp$;
@@ -5508,7 +5507,7 @@ var QGress = function (_, Kotlin) {
     return stuff;
   };
   Portal.prototype.obtainXmps_0 = function (level, agent) {
-    var stuff = ArrayList_init();
+    var stuff = ArrayList_init_0();
     var $receiver = Quality$values();
     var destination = ArrayList_init($receiver.length);
     var tmp$;
@@ -5525,7 +5524,7 @@ var QGress = function (_, Kotlin) {
     return stuff;
   };
   Portal.prototype.obtainShields_0 = function (agent) {
-    var stuff = ArrayList_init();
+    var stuff = ArrayList_init_0();
     var $receiver = ShieldType$values();
     var tmp$;
     for (tmp$ = 0; tmp$ !== $receiver.length; ++tmp$) {
@@ -5537,7 +5536,7 @@ var QGress = function (_, Kotlin) {
     return stuff;
   };
   Portal.prototype.obtainPowerCubes_0 = function (level, agent) {
-    var stuff = ArrayList_init();
+    var stuff = ArrayList_init_0();
     var $receiver = Quality$values();
     var destination = ArrayList_init($receiver.length);
     var tmp$;
@@ -5554,7 +5553,7 @@ var QGress = function (_, Kotlin) {
     return stuff;
   };
   Portal.prototype.obtainVirus_0 = function (agent) {
-    var stuff = ArrayList_init();
+    var stuff = ArrayList_init_0();
     var $receiver = VirusType$values();
     var tmp$;
     for (tmp$ = 0; tmp$ !== $receiver.length; ++tmp$) {
@@ -5584,7 +5583,7 @@ var QGress = function (_, Kotlin) {
       var maxBurnoutTicks = Time_getInstance().secondsToTicks_za3lpa$(Cooldown$BURNOUT_getInstance().seconds);
       var maxTickDifference = tickNr - maxBurnoutTicks | 0;
       var $receiver = toList_0(agentsLastHacks);
-      var destination = ArrayList_init();
+      var destination = ArrayList_init_0();
       var tmp$;
       tmp$ = $receiver.iterator();
       while (tmp$.hasNext()) {
@@ -5640,6 +5639,7 @@ var QGress = function (_, Kotlin) {
       agent.removeXm_za3lpa$(1000);
     }
   };
+  var checkIndexOverflow = Kotlin.kotlin.collections.checkIndexOverflow_za3lpa$;
   Portal.prototype.deploy_en6fu0$ = function (agent, resos, distance) {
     var isCapture = this.owner == null;
     if (isCapture) {
@@ -5665,7 +5665,7 @@ var QGress = function (_, Kotlin) {
     tmp$_0 = resos.entries.iterator();
     while (tmp$_0.hasNext()) {
       var item = tmp$_0.next();
-      var index_0 = (tmp$_0_0 = index, index = tmp$_0_0 + 1 | 0, tmp$_0_0);
+      var index_0 = checkIndexOverflow((tmp$_0_0 = index, index = tmp$_0_0 + 1 | 0, tmp$_0_0));
       var octant = item.key;
       var resonator = item.value;
       var tmp$_1, tmp$_2;
@@ -5734,7 +5734,7 @@ var QGress = function (_, Kotlin) {
       var element_2 = tmp$_4.next();
       var tmp$_5;
       var $receiver = element_2.inventory.findKeys();
-      var destination = ArrayList_init();
+      var destination = ArrayList_init_0();
       var tmp$_6;
       tmp$_6 = $receiver.iterator();
       while (tmp$_6.hasNext()) {
@@ -5934,14 +5934,14 @@ var QGress = function (_, Kotlin) {
     var yOffset = 18;
     ctx.drawImage(this.nameImage, this.location.xx() - xOffset, this.location.yy() + yOffset);
   };
+  Portal.prototype.toString = function () {
+    return this.name;
+  };
   Portal.prototype.equals = function (other) {
     return Kotlin.isType(other, Portal) && equals(this.id, other.id);
   };
   Portal.prototype.hashCode = function () {
     return hashCode(this.id) * 31 | 0;
-  };
-  Portal.prototype.toString = function () {
-    return this.name;
   };
   function Portal$createNameImage$lambda(closure$x, closure$y, this$Portal, closure$lineWidth) {
     return function (ctx) {
@@ -5961,7 +5961,7 @@ var QGress = function (_, Kotlin) {
   function Portal$Companion() {
     Portal$Companion_instance = this;
     var $receiver = PortalLevel$values();
-    var destination = ArrayList_init();
+    var destination = ArrayList_init_0();
     var tmp$;
     for (tmp$ = 0; tmp$ !== $receiver.length; ++tmp$) {
       var element = $receiver[tmp$];
@@ -5977,7 +5977,7 @@ var QGress = function (_, Kotlin) {
     }
     this.centerImages_0 = toMap(destination);
     var $receiver_1 = new IntRange(0, 100);
-    var destination_1 = ArrayList_init();
+    var destination_1 = ArrayList_init_0();
     var tmp$_1;
     tmp$_1 = $receiver_1.iterator();
     while (tmp$_1.hasNext()) {
@@ -6008,7 +6008,7 @@ var QGress = function (_, Kotlin) {
       return emptyList();
     }
     var $receiver = World_getInstance().factionPortals_bip15f$(agent.faction);
-    var destination = ArrayList_init();
+    var destination = ArrayList_init_0();
     var tmp$;
     tmp$ = $receiver.iterator();
     while (tmp$.hasNext()) {
@@ -6017,7 +6017,7 @@ var QGress = function (_, Kotlin) {
         destination.add_11rb$(element);
     }
     var chargeable = toSet(destination);
-    var destination_0 = ArrayList_init();
+    var destination_0 = ArrayList_init_0();
     var tmp$_0;
     tmp$_0 = chargeable.iterator();
     while (tmp$_0.hasNext()) {
@@ -6274,7 +6274,7 @@ var QGress = function (_, Kotlin) {
   }
   function Com() {
     Com_instance = this;
-    this.messages = ArrayList_init();
+    this.messages = ArrayList_init_0();
   }
   Com.prototype.addMessage_61zpoe$ = function (message) {
     this.messages.add_11rb$(message);
@@ -6293,7 +6293,7 @@ var QGress = function (_, Kotlin) {
     tmp$ = reversed_0.iterator();
     while (tmp$.hasNext()) {
       var item = tmp$.next();
-      var pos = new Coords(xPos, yFixOffset - Kotlin.imul(yOffset, (tmp$_0 = index, index = tmp$_0 + 1 | 0, tmp$_0)) | 0);
+      var pos = new Coords(xPos, yFixOffset - Kotlin.imul(yOffset, checkIndexOverflow((tmp$_0 = index, index = tmp$_0 + 1 | 0, tmp$_0))) | 0);
       DrawUtil_getInstance().strokeText_lowmm9$(ctx, pos, item, Colors_getInstance().white, Dim_getInstance().comFontSize, DrawUtil_getInstance().CODA, 1.5);
     }
   };
@@ -6313,7 +6313,7 @@ var QGress = function (_, Kotlin) {
     Cycle_instance = this;
     this.durationH = 175;
     this.numberOfCheckpoints = 35;
-    this.checkpoints = ArrayList_init();
+    this.checkpoints = ArrayList_init_0();
   }
   Cycle.$metadata$ = {
     kind: Kind_OBJECT,
@@ -6343,7 +6343,7 @@ var QGress = function (_, Kotlin) {
     attackMap.put_xwzc9p$(agent.pos, xmps);
     this.attackQueue.put_xwzc9p$(attackFutureTick, attackMap);
     var damageFutureTick = World_getInstance().tick + this.damageDelayTicks | 0;
-    var destination = ArrayList_init();
+    var destination = ArrayList_init_0();
     var tmp$;
     tmp$ = xmps.iterator();
     while (tmp$.hasNext()) {
@@ -6747,7 +6747,7 @@ var QGress = function (_, Kotlin) {
   };
   Coords.prototype.getSurrounding_vux9f0$ = function (w, h) {
     var $receiver = listOf([new Coords(this.x - 1 | 0, this.y - 1 | 0), new Coords(this.x, this.y - 1 | 0), new Coords(this.x + 1 | 0, this.y - 1 | 0), new Coords(this.x - 1 | 0, this.y), new Coords(this.x + 1 | 0, this.y), new Coords(this.x - 1 | 0, this.y + 1 | 0), new Coords(this.x, this.y + 1 | 0), new Coords(this.x + 1 | 0, this.y + 1 | 0)]);
-    var destination = ArrayList_init();
+    var destination = ArrayList_init_0();
     var tmp$;
     tmp$ = $receiver.iterator();
     while (tmp$.hasNext()) {
@@ -6770,7 +6770,7 @@ var QGress = function (_, Kotlin) {
   };
   Coords.prototype.findClosePortalsForClick_0 = function () {
     var $receiver = World_getInstance().allPortals;
-    var destination = ArrayList_init();
+    var destination = ArrayList_init_0();
     var tmp$;
     tmp$ = $receiver.iterator();
     while (tmp$.hasNext()) {
@@ -6782,7 +6782,7 @@ var QGress = function (_, Kotlin) {
   };
   Coords.prototype.findClosePortals_0 = function () {
     var $receiver = World_getInstance().allPortals;
-    var destination = ArrayList_init();
+    var destination = ArrayList_init_0();
     var tmp$;
     tmp$ = $receiver.iterator();
     while (tmp$.hasNext()) {
@@ -6815,11 +6815,11 @@ var QGress = function (_, Kotlin) {
   Coords.prototype.toString = function () {
     return 'X' + this.x + ':Y' + this.y;
   };
-  Coords.prototype.hashCode = function () {
-    return hashCode(this.toString()) * 1337 | 0;
-  };
   Coords.prototype.equals = function (other) {
     return Kotlin.isType(other, Coords) && this.x === other.x && this.y === other.y;
+  };
+  Coords.prototype.hashCode = function () {
+    return (hashCode(this.x) * 31 | 0) + hashCode(this.y) | 0;
   };
   function Coords$Companion() {
     Coords$Companion_instance = this;
@@ -7354,7 +7354,7 @@ var QGress = function (_, Kotlin) {
     }
     this.critDamageImages_0 = toMap(destination_0);
     var $receiver_1 = XmpLevel$values();
-    var destination_1 = ArrayList_init();
+    var destination_1 = ArrayList_init_0();
     var tmp$_1;
     for (tmp$_1 = 0; tmp$_1 !== $receiver_1.length; ++tmp$_1) {
       var element = $receiver_1[tmp$_1];
@@ -7780,7 +7780,7 @@ var QGress = function (_, Kotlin) {
     };
   }
   var mapCapacity = Kotlin.kotlin.collections.mapCapacity_za3lpa$;
-  var LinkedHashMap_init_0 = Kotlin.kotlin.collections.LinkedHashMap_init_xf5xz2$;
+  var LinkedHashMap_init_0 = Kotlin.kotlin.collections.LinkedHashMap_init_bwtc7$;
   function DrawUtil$drawTopAgents$drawCounts(closure$fontSize, closure$lineWidth, this$DrawUtil, closure$drawBars) {
     return function (ctx, items, col, offset, isShields) {
       if (isShields === void 0)
@@ -7805,7 +7805,7 @@ var QGress = function (_, Kotlin) {
           var tmp$_0_0;
           var value = destination.get_11rb$(key);
           if (value == null) {
-            var answer = ArrayList_init();
+            var answer = ArrayList_init_0();
             destination.put_xwzc9p$(key, answer);
             tmp$_0_0 = answer;
           }
@@ -7901,7 +7901,7 @@ var QGress = function (_, Kotlin) {
     tmp$ = top.iterator();
     while (tmp$.hasNext()) {
       var item = tmp$.next();
-      var index_0 = (tmp$_0 = index, index = tmp$_0 + 1 | 0, tmp$_0);
+      var index_0 = checkIndexOverflow((tmp$_0 = index, index = tmp$_0 + 1 | 0, tmp$_0));
       var rank = (index_0 + 1 | 0).toString();
       var name = item.toString();
       var pos = new Coords(xPos, yFixOffset + Kotlin.imul(yOffset, index_0) | 0);
@@ -8178,7 +8178,7 @@ var QGress = function (_, Kotlin) {
   };
   HtmlUtil.prototype.updateAgents_0 = function (agents, faction, nextAgents) {
     agents.clear();
-    var destination = ArrayList_init();
+    var destination = ArrayList_init_0();
     var tmp$;
     tmp$ = nextAgents.iterator();
     while (tmp$.hasNext()) {
@@ -9078,7 +9078,7 @@ var QGress = function (_, Kotlin) {
   }
   function MapUtil$createGrid$nextRow(this$MapUtil, closure$isOffScreen) {
     return function (tempCtx, h, x) {
-      var $receiver = new IntRange(-10, h + this$MapUtil.OFFSCREEN_CELL_ROWS - 1 | 0);
+      var $receiver = new IntRange(-this$MapUtil.OFFSCREEN_CELL_ROWS | 0, h + this$MapUtil.OFFSCREEN_CELL_ROWS - 1 | 0);
       var destination = ArrayList_init(collectionSizeOrDefault($receiver, 10));
       var tmp$;
       tmp$ = $receiver.iterator();
@@ -9127,8 +9127,8 @@ var QGress = function (_, Kotlin) {
       tempCan.blur();
     }
     tempCtx.drawImage(unscaledCan, 0.0, 0.0, w, h);
-    var $receiver = new IntRange(-10, w + this.OFFSCREEN_CELL_ROWS - 1 | 0);
-    var destination = ArrayList_init();
+    var $receiver = new IntRange(-this.OFFSCREEN_CELL_ROWS | 0, w + this.OFFSCREEN_CELL_ROWS - 1 | 0);
+    var destination = ArrayList_init_0();
     var tmp$_4;
     tmp$_4 = $receiver.iterator();
     while (tmp$_4.hasNext()) {
@@ -9311,7 +9311,7 @@ var QGress = function (_, Kotlin) {
   };
   PathUtil.prototype.findUnmarkedSurrounding_0 = function (node, passable, heatMap) {
     var $receiver = this.findAllSurrounding_0(node);
-    var destination = ArrayList_init();
+    var destination = ArrayList_init_0();
     var tmp$;
     tmp$ = $receiver.iterator();
     while (tmp$.hasNext()) {
@@ -9319,7 +9319,7 @@ var QGress = function (_, Kotlin) {
       if (!heatMap.containsKey_11rb$(element))
         destination.add_11rb$(element);
     }
-    var destination_0 = ArrayList_init();
+    var destination_0 = ArrayList_init_0();
     var tmp$_0;
     tmp$_0 = destination.iterator();
     while (tmp$_0.hasNext()) {
@@ -9561,7 +9561,7 @@ var QGress = function (_, Kotlin) {
   };
   Util.prototype.shuffle_bemo1h$ = function (items) {
     var tmp$;
-    var result = ArrayList_init();
+    var result = ArrayList_init_0();
     result.addAll_brywnq$(items);
     tmp$ = result.size - 1 | 0;
     for (var i = 0; i <= tmp$; i++) {
@@ -9592,7 +9592,7 @@ var QGress = function (_, Kotlin) {
   };
   Comparator$ObjectLiteral_18.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
   Util.prototype.select_4u7aq8$ = function (probabilityList, default_0) {
-    var destination = ArrayList_init();
+    var destination = ArrayList_init_0();
     var tmp$;
     tmp$ = probabilityList.iterator();
     while (tmp$.hasNext()) {
@@ -9725,7 +9725,7 @@ var QGress = function (_, Kotlin) {
     this.smurfs = LinkedHashSet_init();
     this.allAgents = LinkedHashSet_init();
     this.allNonFaction = LinkedHashSet_init();
-    this.allPortals = ArrayList_init();
+    this.allPortals = ArrayList_init_0();
   }
   Object.defineProperty(World.prototype, 'can', {
     get: function () {
@@ -9888,6 +9888,7 @@ var QGress = function (_, Kotlin) {
     return this.allAgents.size;
   };
   var Collection = Kotlin.kotlin.collections.Collection;
+  var checkCountOverflow = Kotlin.kotlin.collections.checkCountOverflow_za3lpa$;
   World.prototype.countAgents_bip15f$ = function (fact) {
     var $receiver = this.allAgents;
     var count$result;
@@ -9901,9 +9902,8 @@ var QGress = function (_, Kotlin) {
       tmp$ = $receiver.iterator();
       while (tmp$.hasNext()) {
         var element = tmp$.next();
-        if (element.faction.equals(fact)) {
-          count = count + 1 | 0;
-        }
+        if (element.faction.equals(fact))
+          checkCountOverflow((count = count + 1 | 0, count));
       }
       count$result = count;
     }
@@ -9915,7 +9915,7 @@ var QGress = function (_, Kotlin) {
   };
   World.prototype.enlPortals = function () {
     var $receiver = this.allPortals;
-    var destination = ArrayList_init();
+    var destination = ArrayList_init_0();
     var tmp$;
     tmp$ = $receiver.iterator();
     while (tmp$.hasNext()) {
@@ -9928,7 +9928,7 @@ var QGress = function (_, Kotlin) {
   };
   World.prototype.resPortals = function () {
     var $receiver = this.allPortals;
-    var destination = ArrayList_init();
+    var destination = ArrayList_init_0();
     var tmp$;
     tmp$ = $receiver.iterator();
     while (tmp$.hasNext()) {
@@ -9941,7 +9941,7 @@ var QGress = function (_, Kotlin) {
   };
   World.prototype.unclaimedPortals = function () {
     var $receiver = this.allPortals;
-    var destination = ArrayList_init();
+    var destination = ArrayList_init_0();
     var tmp$;
     tmp$ = $receiver.iterator();
     while (tmp$.hasNext()) {
@@ -9953,7 +9953,7 @@ var QGress = function (_, Kotlin) {
   };
   World.prototype.factionPortals_bip15f$ = function (fact) {
     var $receiver = this.allPortals;
-    var destination = ArrayList_init();
+    var destination = ArrayList_init_0();
     var tmp$;
     tmp$ = $receiver.iterator();
     while (tmp$.hasNext()) {
@@ -9972,7 +9972,7 @@ var QGress = function (_, Kotlin) {
   };
   World.prototype.allLinks = function () {
     var $receiver = this.allPortals;
-    var destination = ArrayList_init();
+    var destination = ArrayList_init_0();
     var tmp$;
     tmp$ = $receiver.iterator();
     while (tmp$.hasNext()) {
@@ -9987,7 +9987,7 @@ var QGress = function (_, Kotlin) {
   };
   World.prototype.countLinks_bip15f$ = function (fact) {
     var $receiver = this.allLinks();
-    var destination = ArrayList_init();
+    var destination = ArrayList_init_0();
     var tmp$;
     tmp$ = $receiver.iterator();
     while (tmp$.hasNext()) {
@@ -9999,7 +9999,7 @@ var QGress = function (_, Kotlin) {
   };
   World.prototype.allFields = function () {
     var $receiver = this.allPortals;
-    var destination = ArrayList_init();
+    var destination = ArrayList_init_0();
     var tmp$;
     tmp$ = $receiver.iterator();
     while (tmp$.hasNext()) {
@@ -10014,7 +10014,7 @@ var QGress = function (_, Kotlin) {
   };
   World.prototype.countFields_bip15f$ = function (fact) {
     var $receiver = this.allFields();
-    var destination = ArrayList_init();
+    var destination = ArrayList_init_0();
     var tmp$;
     tmp$ = $receiver.iterator();
     while (tmp$.hasNext()) {
@@ -10037,7 +10037,7 @@ var QGress = function (_, Kotlin) {
   };
   World.prototype.calcTotalMu_bip15f$ = function (fact) {
     var $receiver = this.allFields();
-    var destination = ArrayList_init();
+    var destination = ArrayList_init_0();
     var tmp$;
     tmp$ = $receiver.iterator();
     while (tmp$.hasNext()) {
@@ -10071,7 +10071,7 @@ var QGress = function (_, Kotlin) {
     for (var x = 0; x < w; x++) {
       for (var y = 0; y < h; y++) {
         var rawNoise = noiseMap[x][y];
-        var noisepoint = numberToInt((1 + -1 * rawNoise) * 0.5 * kotlin_js_internal_ByteCompanionObject.MAX_VALUE);
+        var noisepoint = numberToInt((1 + -1 * rawNoise) * 0.5 * 127);
         setPixel(imageData, x, y, noisepoint, noisepoint, noisepoint);
       }
     }

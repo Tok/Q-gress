@@ -477,9 +477,9 @@ data class Portal constructor(val name: String, val location: Coords,
         ctx.drawImage(nameImage, location.xx() - xOffset, location.yy() + yOffset)
     }
 
+    override fun toString() = name
     override fun equals(other: Any?) = other is Portal && id.equals(other.id)
     override fun hashCode() = id.hashCode() * 31
-    override fun toString() = name
 
     val nameImage = createNameImage()
     private fun createNameImage(): Canvas {

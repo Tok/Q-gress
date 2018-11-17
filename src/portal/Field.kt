@@ -94,8 +94,10 @@ data class Field private constructor(val origin: Portal, val primaryAnchor: Port
         drawLinear(secondaryAnchor, secondaryAndOrigin, primaryAndSecondary)
     }
 
-    override fun equals(other: Any?) = other is Field && idSet.containsAll(other.idSet)
     override fun toString() = calculateArea().toString() + "MU"
+    //equals and hashCode symmetrical
+    override fun equals(other: Any?) = other is Field && idSet.containsAll(other.idSet)
+    override fun hashCode() = idSet.map { it.hashCode() / 3 }.sum()
 
     companion object {
         fun isPossible(origin: Portal,
