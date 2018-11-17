@@ -11,7 +11,7 @@ object QActions {
     //at all portals
     val HACK = QValue("hack", 0.5, "hack portal", ActionItem.getIcon(ActionItem.HACK))
 
-    //at friendly or neurtral portals
+    //at friendly or neutral portals
     val DEPLOY = QValue("deploy", 0.5, "deploy portal", ActionItem.getIcon(ActionItem.DEPLOY))
 
     //at friendly portals

@@ -11,7 +11,7 @@ import kotlin.math.min
  * Recycled from https://github.com/Tok/Zir-Watchface/blob/master/Wearable/src/main/kotlin/zir/teq/wearable/watchface/util/ColorUtil.kt
  */
 object ColorUtil {
-    val MAX_RGB = 0xFF
+    private const val MAX_RGB = 0xFF
     fun getColor(c: Complex): String = getColorFromMagnitudeAndPhase(c.magnitude.toDouble(), c.phase)
     private fun getColorFromMagnitudeAndPhase(magnitude: Double, phase: Double): String {
         if (magnitude <= 1.0 / MAX_RGB) {
@@ -42,6 +42,6 @@ object ColorUtil {
         3 -> Triple(0.0, 1.0 - fraction, 1.0) //Cyan -> Blue
         4 -> Triple(fraction, 0.0, 1.0) //Blue -> Magenta
         5 -> Triple(1.0, 0.0, 1.0 - fraction) //Magenta -> Red
-        else -> throw IllegalArgumentException("Out of range: " + range)
+        else -> throw IllegalArgumentException("Out of range: $range")
     }
 }

@@ -9,7 +9,7 @@ import kotlin.math.max
 import kotlin.math.min
 
 object Util {
-    fun findNearestPortals(coords: Coords): Set<Pair<Double, Portal>> {
+    private fun findNearestPortals(coords: Coords): Set<Pair<Double, Portal>> {
         return World.allPortals.map { it.location.distanceTo(coords) to it }.sortedBy { it.first }.toSet()
     }
 
@@ -21,19 +21,19 @@ object Util {
     fun clip(value: Int, from: Int, to: Int): Int = max(from, min(to, value))
     fun clipDouble(value: Double, from: Double, to: Double): Double = max(from, min(to, value))
 
-    fun random(): Double = js("Math.random();") //native JS replacement for reprecated kotlin.js.Math.random()
+    fun random(): Double = js("Math.random();") as Double //native JS replacement for deprecated kotlin.js.Math.random()
 
-    fun randomDouble(max: Double) = random() * max
+    private fun randomDouble(max: Double) = random() * max
     fun randomInt(max: Int) = randomInt(0, max)
     fun randomInt(min: Int, max: Int): Int {
         val list = IntRange(min, max).toList()
-        return list.get((random() * list.size).toInt())
+        return list[(random() * list.size).toInt()]
     }
 
     fun <T> shuffle(items: List<T>): List<T> {
         val result = mutableListOf<T>()
         result.addAll(items)
-        for (i in 0..result.size - 1) {
+        for (i in 0 until result.size) {
             val pos = randomInt(result.size - 1)
             val temp: T = result[i]
             result[i] = result[pos]
@@ -92,12 +92,10 @@ object Util {
     private fun generateName(minLength: Int, maxLength: Int): String {
         val length = minLength + randomInt(maxLength - minLength)
         val firstLetter = select(generateFirstSelection(), ' ')
-        val name = firstLetter + IntRange(1, length).map { _ -> select(generateSelection(), ' ') }.joinToString("");
+        val name = firstLetter + IntRange(1, length).map { select(generateSelection(), ' ') }.joinToString("")
         val temp = name.substring(0, 1).toUpperCase() + name.substring(1).toLowerCase()
         return if (temp.endsWith('-')) temp.dropLast(1) else temp
     }
-
-    private fun moreChars(count: Int, c: Char): List<Char> = IntRange(0, count / 10).map { _ -> c }.toList()
 
     /**
      * Relative letter frequency of english words
@@ -177,7 +175,6 @@ object Util {
         val seconds: Int = absSeconds % 60
         val minutes: Int = floor(absSeconds / 60.0).toInt() % 60
         val hours: Int = floor(absSeconds / 3600.0).toInt()
-        val hhMMss = fixTime(hours) + ":" + fixTime(minutes) + ":" + fixTime(seconds)
-        return hhMMss
+        return fixTime(hours) + ":" + fixTime(minutes) + ":" + fixTime(seconds)
     }
 }

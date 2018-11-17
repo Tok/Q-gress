@@ -5,10 +5,11 @@ import Ctx
 import World
 import agent.Faction
 import agent.NonFaction
-import agent.qvalue.QActions
 import agent.action.ActionItem
+import agent.qvalue.QActions
 import config.*
 import config.Dim
+import config.Styles.VectorStyle.*
 import items.XmpBurster
 import items.deployable.DeployableItem
 import items.level.LevelColor
@@ -26,8 +27,8 @@ import kotlin.math.max
 import kotlin.math.round
 
 object DrawUtil {
-    val CODA = "Coda"
-    val AMARILLO = "AmarilloUSAF"
+    const val CODA = "Coda"
+    const val AMARILLO = "AmarilloUSAF"
 
     fun redraw() {
         with(World) {
@@ -47,7 +48,7 @@ object DrawUtil {
     }
 
     fun clearBackground() = redraw(World.bgCan, World.bgCtx(), if (Styles.isDrawNoiseMap) World.noiseImage else null)
-    fun clearUserInterface() = redraw(World.uiCan, World.uiCtx())
+    private fun clearUserInterface() = redraw(World.uiCan, World.uiCtx())
     fun clear() = {
         redraw(World.can, World.ctx())
     }
@@ -95,9 +96,9 @@ object DrawUtil {
         }
     }
 
-    val qSliderHeight = 13.0 + 5.0 //defined in CSS
-    val qSliderDivHeight = qSliderHeight * (QActions.values().count() + 1)
-    val qSliderDivWidth = 370 //.qValues width
+    private const val qSliderHeight = 13.0 + 5.0 //defined in CSS
+    private val qSliderDivHeight = qSliderHeight * (QActions.values().count() + 1)
+    private const val qSliderDivWidth = 370 //.qValues width
     private val topArea = Line.create(0, 0, Dim.width, Dim.topActionOffset.toInt())
     private val bottomArea = Line.create(0, Dim.height - Dim.botActionOffset.toInt(), Dim.width, Dim.height)
     private val leftSliderArea = Line.create(0, Dim.topActionOffset.toInt(), qSliderDivWidth, qSliderDivHeight.toInt())
@@ -145,19 +146,17 @@ object DrawUtil {
 
         ctx.globalAlpha = 0.5
 
-        val color = if (pos.hasClosePortalForClick()) {
-            Colors.orange
-        } else if (pos.isBuildable()) {
-            Colors.white
-        } else {
-            Colors.red
+        val color = when {
+            pos.hasClosePortalForClick() -> Colors.orange
+            pos.isBuildable() -> Colors.white
+            else -> Colors.red
         }
         val image = Portal.renderPortalCenter(color, PortalLevel.ZERO)
         ctx.drawImage(image, pos.xx() - (image.width / 2), pos.yy() - (image.height / 2))
         ctx.globalAlpha = 1.0
     }
 
-    fun drawAttacks() {
+    private fun drawAttacks() {
         val attackQueue: MutableMap<Int, MutableMap<Coords, List<XmpBurster>>> = Queues.attackQueue
         attackQueue.forEach { tickEntry: Map.Entry<Int, MutableMap<Coords, List<XmpBurster>>> ->
             val futureTick = tickEntry.key
@@ -167,7 +166,7 @@ object DrawUtil {
                 val pos = attackEntry.key
                 val bursters = attackEntry.value
                 bursters.forEach { xmp ->
-                    val image = damageCircleImages.get(xmp.level to ticksInFuture)
+                    val image = damageCircleImages[xmp.level to ticksInFuture]
                     if (image != null) { //FIXME
                         World.ctx().drawImage(image, pos.xx() - (image.width / 2), pos.yy() - (image.height / 2))
                     }
@@ -210,11 +209,11 @@ object DrawUtil {
         val lineWidth = 3.0
         val w = (fontSize * 5) + (2 * lineWidth)
         val h = fontSize + (2 * lineWidth)
-        return HtmlUtil.prerender(w.toInt(), h.toInt(), fun(ctx: Ctx) {
+        return HtmlUtil.preRender(w.toInt(), h.toInt(), fun(ctx: Ctx) {
             val coords = Coords(lineWidth.toInt() + (fontSize * 3 / 2), lineWidth.toInt() + (fontSize / 2))
             val clipped = max(damageValue, 1).toString()
             val color = if (isCritical) Colors.critDamage else Colors.damage
-            val text = "-" + clipped + "%"
+            val text = "-$clipped%"
             strokeText(ctx, coords, text, Colors.white, fontSize, CODA, lineWidth, color)
         })
     }
@@ -231,13 +230,13 @@ object DrawUtil {
         val r = (xmpLevel.rangeM * Dim.pixelToMFactor * ratio).toInt()
         val w = (r * 2) + (2 * lw)
         val h = w
-        return HtmlUtil.prerender(w, h, fun(ctx: Ctx) {
+        return HtmlUtil.preRender(w, h, fun(ctx: Ctx) {
             val attackCircle = Circle(Coords(r + lw, r + lw), r.toDouble())
             drawCircle(ctx, attackCircle, strokeStyle, lw.toDouble(), fillStyle)
         })
     }
 
-    fun drawStats() {
+    private fun drawStats() {
         val fontSize = Dim.statsFontSize
         val lineWidth = 3.0
         fun drawCell(pos: Coords, text: String, color: String) {
@@ -267,7 +266,7 @@ object DrawUtil {
         }
     }
 
-    fun drawTick() {
+    private fun drawTick() {
         val pos = Coords(13, Dim.height - Dim.tickBottomOffset)
         val half = Dim.tickFontSize / 2
         World.uiCtx().fillStyle = "#00000077"
@@ -282,7 +281,7 @@ object DrawUtil {
 
     fun renderBarImage(color: String, health: Int, h: Int, w: Int, lineWidth: Int): Canvas {
         val pWidth = health * w / 100
-        return HtmlUtil.prerender(w, h, fun(ctx: Ctx) {
+        return HtmlUtil.preRender(w, h, fun(ctx: Ctx) {
             if (color != Colors.white) {
                 val path = Path2D()
                 path.moveTo(0.0, 0.0)
@@ -304,7 +303,7 @@ object DrawUtil {
         })
     }
 
-    fun drawMindUnits() {
+    private fun drawMindUnits() {
         //TODO only redraw if updated.
         fun fillMuRect(from: Coords, width: Double, height: Double,
                        fillStyle: String, strokeStyle: String, lineWidth: Double) {
@@ -347,7 +346,7 @@ object DrawUtil {
         drawMuRect(resPos, resPart, Faction.RES, resMu)
     }
 
-    fun drawTopAgents() {
+    private fun drawTopAgents() {
         val fontSize = Dim.topAgentsInventoryFontSize
         val lineWidth = 2.0
         fun drawBars(ctx: Ctx, barWidth: Int, level: Int, color: String, pos: Coords, count: Int, maxCount: Int) {
@@ -372,7 +371,7 @@ object DrawUtil {
                 val maxCount = countsByLevel.map { it.value }.max() ?: 0
                 if (isShields) {
                     (1..4).forEach { level ->
-                        val count = countsByLevel.get(level) ?: 0
+                        val count = countsByLevel[level] ?: 0
                         if (count > 0) {
                             val color = ShieldType.getColorForLevel(level)
                             drawBars(ctx, barWidth * 2, level, color, pos, count, maxCount)
@@ -380,9 +379,9 @@ object DrawUtil {
                     }
                 } else {
                     (1..8).forEach { level ->
-                        val count = countsByLevel.get(level) ?: 0
+                        val count = countsByLevel[level] ?: 0
                         if (count > 0) {
-                            val color = LevelColor.map.get(level) ?: "#FFFFFF"
+                            val color = LevelColor.map[level] ?: "#FFFFFF"
                             drawBars(ctx, barWidth, level, color, pos, count, maxCount)
                         }
                     }
@@ -480,20 +479,18 @@ object DrawUtil {
         portal.drawCenter(World.bgCtx(), false)
     }
 
-    fun drawVectorField(vectorField: Map<Coords, Complex>) {
+    private fun drawVectorField(vectorField: Map<Coords, Complex>) {
         World.bgCtx().clearRect(0.0, 0.0, Dim.width.toDouble(), Dim.height.toDouble())
         val w = PathUtil.RESOLUTION - 1
         val h = PathUtil.RESOLUTION - 1
-        with(World) {
-            vectorField.forEach {
-                fun isWalkable() = World.grid.get(it.key)?.isPassable ?: false
-                if (Styles.isDrawObstructedVectors || isWalkable()) {
-                    val vectorImageData = getOrCreateVectorImageData(w, h, it.value)
-                    val pos = PathUtil.shadowPosToPos(it.key)
-                    val isBlocked = HtmlUtil.isBlockedForVector(pos)
-                    if (!isBlocked) {
-                        World.bgCtx().putImageData(vectorImageData, pos.xx(), pos.yy())
-                    }
+        vectorField.forEach {
+            fun isWalkable() = World.grid[it.key]?.isPassable ?: false
+            if (Styles.isDrawObstructedVectors || isWalkable()) {
+                val vectorImageData = getOrCreateVectorImageData(w, h, it.value)
+                val pos = PathUtil.shadowPosToPos(it.key)
+                val isBlocked = HtmlUtil.isBlockedForVector(pos)
+                if (!isBlocked) {
+                    World.bgCtx().putImageData(vectorImageData, pos.xx(), pos.yy())
                 }
             }
         }
@@ -502,33 +499,32 @@ object DrawUtil {
     private val VECTORS = mutableMapOf<Line, ImageData>()
     private fun getOrCreateVectorImageData(w: Int, h: Int, complex: Complex): ImageData {
         val center = PathUtil.RESOLUTION / 2
-        val scale = center
-        val scaled = Complex.fromMagnitudeAndPhase(complex.magnitude * scale, complex.phase)
+        val scaled = Complex.fromMagnitudeAndPhase(complex.magnitude * center, complex.phase)
         val line = Line(Coords(center, center), Coords(center + scaled.re.toInt(), center + scaled.im.toInt()))
-        val maybeImage = VECTORS.get(line)
-        if (maybeImage != null) {
-            return maybeImage
+        val maybeImage = VECTORS[line]
+        return if (maybeImage != null) {
+            maybeImage
         } else {
             val newImageCan = createVectorImage(w, h, complex, line)
             val newImageCtx = newImageCan.getContext("2d") as Ctx
             val imageData = newImageCtx.getImageData(0.toDouble(), 0.toDouble(), w.toDouble(), h.toDouble())
-            VECTORS.put(line, imageData)
-            return imageData
+            VECTORS[line] = imageData
+            imageData
         }
     }
 
     private fun createVectorImage(w: Int, h: Int, complex: Complex, line: Line): Canvas {
-        return HtmlUtil.prerender(w, h, fun(ctx: Ctx) {
+        return HtmlUtil.preRender(w, h, fun(ctx: Ctx) {
             ctx.fillStyle = "#ffffff22"
             when (Styles.vectorStyle) {
-                Styles.VectorStyle.CIRCLE -> {
+                CIRCLE -> {
                     val r = w / 2.0
                     val path = Path2D()
                     path.moveTo(r, r)
                     path.arc(r, r, r, 0.0, 2.0 * kotlin.math.PI)
                     ctx.fill(path)
                 }
-                Styles.VectorStyle.SQUARE -> {
+                SQUARE -> {
                     ctx.fillRect(1.0, 1.0, w.toDouble(), h.toDouble())
                     ctx.fill()
                 }
@@ -540,14 +536,12 @@ object DrawUtil {
     }
 
     fun drawText(ctx: Ctx, coords: Coords, text: String, fillStyle: String, fontSize: Int, fontName: String) {
-        with(World) {
-            ctx.textAlign = CanvasTextAlign.START
-            ctx.font = fontSize.toString() + "px '$fontName'"
-            ctx.fillStyle = fillStyle
-            val xOff = (fontSize / 2) - 2
-            val yOff = fontSize / 3
-            ctx.fillText(text, coords.x.toDouble() - xOff, coords.y.toDouble() + yOff)
-        }
+        ctx.textAlign = CanvasTextAlign.START
+        ctx.font = fontSize.toString() + "px '$fontName'"
+        ctx.fillStyle = fillStyle
+        val xOff = (fontSize / 2) - 2
+        val yOff = fontSize / 3
+        ctx.fillText(text, coords.x.toDouble() - xOff, coords.y.toDouble() + yOff)
     }
 
     private fun addIcon(pos: Coords, item: ActionItem) {
@@ -571,58 +565,52 @@ object DrawUtil {
                    textAlign: CanvasTextAlign = CanvasTextAlign.START) {
         val xOff: Double = (fontSize / 2.0) - 2
         val yOff: Double = fontSize / 3.0
-        with(World) {
-            ctx.beginPath()
-            ctx.font = fontSize.toString() + "px '$fontName'"
-            ctx.fillStyle = fillStyle
-            ctx.lineCap = CanvasLineCap.ROUND
-            ctx.lineJoin = CanvasLineJoin.ROUND
-            ctx.textAlign = textAlign
-            if (lineWidth > 0.0) {
-                ctx.lineWidth = lineWidth
-                ctx.strokeStyle = strokeStyle
-                ctx.strokeText(text, pos.x - xOff, pos.y + yOff)
-            }
-            ctx.fillText(text, pos.x - xOff, pos.y + yOff)
-            ctx.closePath()
-            if (lineWidth > 0.0) {
-                ctx.stroke()
-            }
+        ctx.beginPath()
+        ctx.font = fontSize.toString() + "px '$fontName'"
+        ctx.fillStyle = fillStyle
+        ctx.lineCap = CanvasLineCap.ROUND
+        ctx.lineJoin = CanvasLineJoin.ROUND
+        ctx.textAlign = textAlign
+        if (lineWidth > 0.0) {
+            ctx.lineWidth = lineWidth
+            ctx.strokeStyle = strokeStyle
+            ctx.strokeText(text, pos.x - xOff, pos.y + yOff)
+        }
+        ctx.fillText(text, pos.x - xOff, pos.y + yOff)
+        ctx.closePath()
+        if (lineWidth > 0.0) {
+            ctx.stroke()
         }
     }
 
     fun drawCircle(ctx: Ctx, circle: Circle, strokeStyle: String, lineWidth: Double, fillStyle: String? = null, alpha: Double = 1.0) {
-        with(World) {
-            ctx.globalAlpha = alpha
-            ctx.strokeStyle = strokeStyle
-            ctx.lineWidth = lineWidth
-            ctx.beginPath()
-            ctx.arc(circle.center.xx(), circle.center.yy(), circle.radius, 0.0, 2.0 * PI)
-            ctx.closePath()
-            ctx.stroke()
-            if (fillStyle != null) {
-                ctx.fillStyle = fillStyle
-                ctx.fill()
-            }
-            ctx.globalAlpha = 1.0
+        ctx.globalAlpha = alpha
+        ctx.strokeStyle = strokeStyle
+        ctx.lineWidth = lineWidth
+        ctx.beginPath()
+        ctx.arc(circle.center.xx(), circle.center.yy(), circle.radius, 0.0, 2.0 * PI)
+        ctx.closePath()
+        ctx.stroke()
+        if (fillStyle != null) {
+            ctx.fillStyle = fillStyle
+            ctx.fill()
         }
+        ctx.globalAlpha = 1.0
     }
 
-    fun drawPath(ctx: Ctx, path: Path2D, strokeStyle: String, lineWidth: Double, fillStyle: String? = null, alpha: Double = 1.0) {
-        with(World) {
-            ctx.globalAlpha = alpha
-            if (fillStyle != null) {
-                ctx.fillStyle = fillStyle
-                ctx.fill(path)
-            }
-            ctx.strokeStyle = strokeStyle
-            ctx.lineWidth = lineWidth
-            ctx.beginPath()
-            ctx.stroke(path)
-            ctx.closePath()
-            ctx.stroke()
-            ctx.globalAlpha = 1.0
+    private fun drawPath(ctx: Ctx, path: Path2D, strokeStyle: String, lineWidth: Double, fillStyle: String? = null, alpha: Double = 1.0) {
+        ctx.globalAlpha = alpha
+        if (fillStyle != null) {
+            ctx.fillStyle = fillStyle
+            ctx.fill(path)
         }
+        ctx.strokeStyle = strokeStyle
+        ctx.lineWidth = lineWidth
+        ctx.beginPath()
+        ctx.stroke(path)
+        ctx.closePath()
+        ctx.stroke()
+        ctx.globalAlpha = 1.0
     }
 
     fun drawLine(ctx: Ctx, line: Line, strokeStyle: String, lineWidth: Double) {

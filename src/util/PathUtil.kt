@@ -8,9 +8,9 @@ import util.data.Complex
 import util.data.Coords
 
 object PathUtil {
-    val MIN_HEAT = 35
-    val MAX_HEAT = 100
-    val RESOLUTION = 12
+    const val MIN_HEAT = 35
+    const val MAX_HEAT = 100
+    const val RESOLUTION = 12
     fun w() = Dim.width / RESOLUTION
     fun h() = Dim.height / RESOLUTION
     fun posToShadowPos(pos: Coords) = Coords(pos.x / RESOLUTION, pos.y / RESOLUTION)
@@ -25,9 +25,9 @@ object PathUtil {
             sameHeat.forEach { entry ->
                 val succs = findUnmarkedSurrounding(entry.key, passable, heatMap)
                 succs.forEach { succ ->
-                    val cell = World.grid.get(succ)
+                    val cell = World.grid[succ]
                     val cost = cell?.movementPenalty ?: MAX_HEAT
-                    heatMap.put(succ, heat + cost)
+                    heatMap[succ] = heat + cost
                     hasMaybeMore = true
                 }
             }
@@ -36,7 +36,7 @@ object PathUtil {
         }
 
         var heat = 0
-        heatMap.put(posToShadowPos(goal), heat)
+        heatMap[posToShadowPos(goal)] = heat
         while (createWaveFront(heat++)) {
         }
 
@@ -66,10 +66,10 @@ object PathUtil {
             val rightPos = Coords(it.key.x + 1, it.key.y)
             val upPos = Coords(it.key.x, it.key.y - 1)
             val downPos = Coords(it.key.x, it.key.y + 1)
-            val left = heatMap.get(leftPos) ?: maxHeat
-            val right = heatMap.get(rightPos) ?: maxHeat
-            val up = heatMap.get(upPos) ?: maxHeat
-            val down = heatMap.get(downPos) ?: maxHeat
+            val left = heatMap[leftPos] ?: maxHeat
+            val right = heatMap[rightPos] ?: maxHeat
+            val up = heatMap[upPos] ?: maxHeat
+            val down = heatMap[downPos] ?: maxHeat
             val rawer = Complex(left - right, up - down)
             val raw = Complex.fromMagnitudeAndPhase(1F, rawer.phase) //FIXME use terrain penalty
             it.key to raw
@@ -87,10 +87,10 @@ object PathUtil {
     private fun smoothVectorMap(map: Map<Coords, Complex>): Map<Coords, Complex> {
         return map.map {
             val pos = it.key
-            val up = map.get(Coords(pos.x, pos.y - 1)) ?: Complex.ZERO
-            val down = map.get(Coords(pos.x, pos.y + 1)) ?: Complex.ZERO
-            val left = map.get(Coords(pos.x - 1, pos.y)) ?: Complex.ZERO
-            val right = map.get(Coords(pos.x + 1, pos.y)) ?: Complex.ZERO
+            val up = map[Coords(pos.x, pos.y - 1)] ?: Complex.ZERO
+            val down = map[Coords(pos.x, pos.y + 1)] ?: Complex.ZERO
+            val left = map[Coords(pos.x - 1, pos.y)] ?: Complex.ZERO
+            val right = map[Coords(pos.x + 1, pos.y)] ?: Complex.ZERO
             val sum = up + down + left + right
             it.key to Complex.fromMagnitudeAndPhase(1F, sum.phase) //FIXME use terrain penalty
         }.toMap()

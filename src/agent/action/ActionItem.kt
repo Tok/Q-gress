@@ -29,10 +29,10 @@ data class ActionItem(val text: String, val durationSeconds: Int, val qName: Str
         private val resImages = ActionItem.values().map { it to drawTemplate(it, Faction.RES) }.toMap()
         private val nonImages = ActionItem.values().map { it to drawTemplate(it, Faction.NONE) }.toMap()
         fun getIcon(item: ActionItem, faction: Faction = Faction.NONE): Canvas {
-            when (faction) {
-                Faction.ENL -> return enlImages.get(item) ?: enlImages.get(WAIT)!!
-                Faction.RES -> return resImages.get(item) ?: resImages.get(WAIT)!!
-                else -> return nonImages.get(item) ?: nonImages.get(WAIT)!!
+            return when (faction) {
+                Faction.ENL -> enlImages[item] ?: enlImages[WAIT]!!
+                Faction.RES -> resImages[item] ?: resImages[WAIT]!!
+                else -> nonImages[item] ?: nonImages[WAIT]!!
             }
         }
 
@@ -44,7 +44,7 @@ data class ActionItem(val text: String, val durationSeconds: Int, val qName: Str
             val h = w
             fun drawAgentLine(ctx: Ctx, line: Line) = DrawUtil.drawLine(ctx, line, strokeStyle, 0.7)
             fun drawAgentCircle(ctx: Ctx, circle: Circle) = DrawUtil.drawCircle(ctx, circle, strokeStyle, 1.0)
-            return HtmlUtil.prerender(w, h, fun(ctx: Ctx) {
+            return HtmlUtil.preRender(w, h, fun(ctx: Ctx) {
                 val pos = Coords(r + lw, r + lw)
                 val circle = Circle(pos, r.toDouble())
                 DrawUtil.drawCircle(ctx, circle, strokeStyle, lw * 2.0, faction.color)

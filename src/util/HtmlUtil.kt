@@ -27,14 +27,14 @@ import kotlin.dom.removeClass
 import kotlin.js.Json
 
 object HtmlUtil {
-    var intervalID = 0
+    private var intervalID = 0
 
-    val FROG_COUNT_ID = "numberOfFrogs"
-    val SMURF_COUNT_ID = "numberOfSmurfs"
-    val SPEED_ID = "speed"
-    val PAUSE_BUTTON_ID = "pauseButton"
-    val LOCATION_DROPDOWN_ID = "locationSelect"
-    val SOUND_CHECKBOX_ID = "soundCheckbox"
+    private const val FROG_COUNT_ID = "numberOfFrogs"
+    private const val SMURF_COUNT_ID = "numberOfSmurfs"
+    private const val SPEED_ID = "speed"
+    private const val PAUSE_BUTTON_ID = "pauseButton"
+    private const val LOCATION_DROPDOWN_ID = "locationSelect"
+    const val SOUND_CHECKBOX_ID = "soundCheckbox"
 
     private fun speedSetting(): Int = (document.getElementById(SPEED_ID) as HTMLInputElement).valueAsNumber.toInt()
     private fun frogCount(): Int = (document.getElementById(FROG_COUNT_ID) as HTMLInputElement).valueAsNumber.toInt()
@@ -62,8 +62,8 @@ object HtmlUtil {
             return
         }
         World.allAgents.clear()
-        updateAgentCount(World.frogs, frogCount(), { _ -> Agent.createFrog(World.grid) })
-        updateAgentCount(World.smurfs, smurfCount(), { _ -> Agent.createSmurf(World.grid) })
+        updateAgentCount(World.frogs, frogCount()) { Agent.createFrog(World.grid) }
+        updateAgentCount(World.smurfs, smurfCount()) { Agent.createSmurf(World.grid) }
         World.allAgents.sortedBy { Util.random() } //TODO remove if necessary
         val nextAgents = if (World.tick % 5 == 0) {
             World.allAgents.map { it.act() }.toSet() //actual tick execution
@@ -73,10 +73,10 @@ object HtmlUtil {
         updateAgents(World.frogs, Faction.ENL, nextAgents)
         updateAgents(World.smurfs, Faction.RES, nextAgents)
         World.allNonFaction.forEach { it.act() }
-        window.requestAnimationFrame({
+        window.requestAnimationFrame {
             DrawUtil.redraw()
             DrawUtil.redrawUserInterface()
-        })
+        }
         World.tick++
     }
 
@@ -111,13 +111,13 @@ object HtmlUtil {
         controlDiv.append(createSliderDiv("smurfSlider", Config.startSmurfs, Config.maxSmurfs,
                 SMURF_COUNT_ID, " Smurfs", 0))
         val buttonDiv = document.createElement("div") as HTMLDivElement
-        val pauseButton = createButton("button", "Stop", {
-            intervalID = pauseHandler(intervalID, { tick() })
-        })
+        val pauseButton = createButton("button", "Stop") {
+            intervalID = pauseHandler(intervalID) { tick() }
+        }
         pauseButton.id = PAUSE_BUTTON_ID
         buttonDiv.append(pauseButton)
 
-        val dropDown = createDropdown(LOCATION_DROPDOWN_ID, { mapChangeHandler() })
+        val dropDown = createDropdown(LOCATION_DROPDOWN_ID) { mapChangeHandler() }
         val selectionName = getLocationNameFromUrl() ?: "unknown"
         setLocationDropdownSelection(dropDown, selectionName)
         buttonDiv.append(dropDown)
@@ -125,6 +125,7 @@ object HtmlUtil {
         val soundCheckbox = document.createElement("input") as HTMLInputElement
         soundCheckbox.id = SOUND_CHECKBOX_ID
         soundCheckbox.type = "checkbox"
+        soundCheckbox.checked = true
         soundCheckbox.addClass("checkbox")
         buttonDiv.append(soundCheckbox)
         val soundLabel = document.createElement("span") as HTMLSpanElement
@@ -134,9 +135,11 @@ object HtmlUtil {
         buttonDiv.append(soundLabel)
 
         val satCheckbox = document.createElement("input") as HTMLInputElement
+        satCheckbox.id = "satCheckbox"
         satCheckbox.type = "checkbox"
+        satCheckbox.checked = true
         satCheckbox.addClass("checkbox")
-        satCheckbox.onchange = { if (satCheckbox.checked) MapUtil.showSateliteMap() else MapUtil.hideSateliteMap() }
+        satCheckbox.onchange = { if (satCheckbox.checked) MapUtil.showSatelliteMap() else MapUtil.hideSatelliteMap() }
         buttonDiv.append(satCheckbox)
         val satLabel = document.createElement("span") as HTMLSpanElement
         satLabel.addClass("label")
@@ -176,7 +179,7 @@ object HtmlUtil {
                 slider.addClass("slider", "qSlider", faction.abbr.toLowerCase() + "Slider")
                 val sliderValue = document.createElement("span") as HTMLSpanElement
                 sliderValue.addClass("qSliderLabel", faction.abbr.toLowerCase() + "Label")
-                slider.oninput = { _ -> sliderValue.innerHTML = qDisplay(slider.value); null }
+                slider.oninput = { sliderValue.innerHTML = qDisplay(slider.value); null }
                 sliderValue.innerHTML = qDisplay(slider.value)
                 sliderDiv.append(slider)
                 sliderDiv.append(sliderValue)
@@ -214,7 +217,7 @@ object HtmlUtil {
         resetInterval()
         World.resetAllCanvas()
         val maybeCenter = getSelectedCenterFromUrl()
-        val center = if (!maybeCenter.toString().equals("0,0")) maybeCenter else Location.random().toJSON()
+        val center = if (maybeCenter.toString() != "0,0") maybeCenter else Location.random().toJSON()
         MapUtil.loadMaps(center, onMapload())
     }
 
@@ -224,19 +227,19 @@ object HtmlUtil {
         } else 0
     }
 
-    fun pauseHandler(intervalID: Int, tickFunction: () -> Unit): Int {
+    private fun pauseHandler(intervalID: Int, tickFunction: () -> Unit): Int {
         val pauseButton = document.getElementById(PAUSE_BUTTON_ID) as HTMLButtonElement
-        if (intervalID != -1) {
+        return if (intervalID != -1) {
             pauseButton.innerText = "Start"
             document.defaultView?.clearInterval(intervalID)
-            return -1
+            -1
         } else {
             pauseButton.innerText = "Stop"
-            return document.defaultView?.setInterval({ tickFunction() }, Time.minTickInterval) ?: 0
+            document.defaultView?.setInterval({ tickFunction() }, Time.minTickInterval) ?: 0
         }
     }
 
-    fun isBlockedByMapbox(pos: Coords) = isInMapboxArea(pos) || isInOsmArea(pos)
+    private fun isBlockedByMapbox(pos: Coords) = isInMapboxArea(pos) || isInOsmArea(pos)
     fun isBlockedForVector(pos: Coords) = isBlockedByMapbox(pos)
 
     private fun isInPositionArea(pos: Coords): Boolean {
@@ -263,13 +266,17 @@ object HtmlUtil {
     private fun handleMouseClick(event: Event) {
         if (event is MouseEvent) {
             val pos = findMousePosition(World.uiCan, event)
-            if (pos.hasClosePortalForClick()) {
-                SoundUtil.playPortalRemovalSound(pos)
-                document.defaultView?.setTimeout(pos.findClosestPortal().destroy(World.tick), 0)
-            } else if (pos.isBuildable()) {
-                SoundUtil.playPortalCreationSound(pos)
-                document.defaultView?.setTimeout(World.allPortals.add(Portal.create(pos)), 0)
-            } else {
+            when {
+                pos.hasClosePortalForClick() -> {
+                    SoundUtil.playPortalRemovalSound(pos)
+                    document.defaultView?.setTimeout(pos.findClosestPortal().destroy(World.tick), 0)
+                }
+                pos.isBuildable() -> {
+                    SoundUtil.playPortalCreationSound(pos)
+                    document.defaultView?.setTimeout(World.allPortals.add(Portal.create(pos)), 0)
+                }
+                else -> {
+                }
             }
         } else {
             println("WARN: Unhandled event: $event.")
@@ -309,7 +316,7 @@ object HtmlUtil {
         slider.addClass("slider", className)
         val sliderValue = document.createElement("span") as HTMLSpanElement
         sliderValue.addClass("label")
-        slider.oninput = { _ -> sliderValue.innerHTML = slider.value + suffix; null }
+        slider.oninput = { sliderValue.innerHTML = slider.value + suffix; null }
         div.appendChild(slider)
         div.appendChild(sliderValue)
         sliderValue.innerHTML = slider.value + suffix
@@ -354,7 +361,7 @@ object HtmlUtil {
         return canvas
     }
 
-    fun prerender(w: Int, h: Int, drawFun: (CanvasRenderingContext2D) -> Unit): Canvas {
+    fun preRender(w: Int, h: Int, drawFun: (CanvasRenderingContext2D) -> Unit): Canvas {
         val offscreen = createOffscreenCanvas(w, h)
         val offscreenCtx = getContext2D(offscreen)
         drawFun(offscreenCtx)
@@ -393,6 +400,8 @@ object HtmlUtil {
 
     private fun createAgentsAndPortals(callback: () -> Unit) = createPortals(fun() { createAgents(callback) })
 
+    private fun isShowSatelliteMap() = (document.getElementById("satCheckbox") as HTMLInputElement).checked
+
     private fun onMapload() =
             fun(grid: Map<Coords, Cell>) {
                 World.grid = grid
@@ -401,10 +410,13 @@ object HtmlUtil {
                 }
                 DrawUtil.drawGrid()
                 DrawUtil.drawActionLimits(false)
-                createAgentsAndPortals({
+                createAgentsAndPortals {
                     DrawUtil.drawLoadingText("Ready.")
                     World.isReady = true
-                })
+                }
+                if (isShowSatelliteMap()) {
+                    MapUtil.showSatelliteMap()
+                }
             }
 
     private fun mapChangeHandler() {
@@ -420,8 +432,8 @@ object HtmlUtil {
         val url = document.location?.href
         val token = Constants.token()
         val target = Constants.targetUrl() + token
-        val newUrl = if (url?.contains(token) ?: false) {
-            url?.split(token)!![0] + token
+        val newUrl = if (url?.contains(token) == true) {
+            url.split(token)[0] + token
         } else {
             target
         }
@@ -432,22 +444,22 @@ object HtmlUtil {
 
     private fun getCenterFromDropdown(): Json {
         val dropdown = document.getElementById(LOCATION_DROPDOWN_ID) as HTMLSelectElement
-        val selection = dropdown.get(dropdown.selectedIndex) as HTMLOptionElement
+        val selection = dropdown[dropdown.selectedIndex] as HTMLOptionElement
         return JSON.parse(selection.value)
     }
 
     private fun getLocationNameFromDropdown(): String {
         val dropdown = document.getElementById(LOCATION_DROPDOWN_ID) as HTMLSelectElement
-        val selection = dropdown.get(dropdown.selectedIndex) as HTMLOptionElement
+        val selection = dropdown[dropdown.selectedIndex] as HTMLOptionElement
         return selection.text
     }
 
     private fun setLocationDropdownSelection(dropdown: HTMLSelectElement, name: String) {
         val cleanName = name.replace("%20", " ")
         var hasMatch = false
-        (0..dropdown.options.length - 1).forEach {
+        (0 until dropdown.options.length).forEach {
             val option = dropdown.options[it] as HTMLOptionElement
-            if (option.label.equals(cleanName)) {
+            if (option.label == cleanName) {
                 dropdown.selectedIndex = it
                 hasMatch = true
             }
@@ -463,7 +475,7 @@ object HtmlUtil {
 
     private fun getSelectedCenterFromUrl(): Json {
         val geo: GeoCoords? = getLngLatFromUrl()
-        return if (geo != null) geo.toJson() else getCenterFromDropdown()
+        return geo?.toJson() ?: getCenterFromDropdown()
     }
 
     private fun getLocationNameFromUrl(): String? {
@@ -483,6 +495,6 @@ object HtmlUtil {
     }
 
     private fun addParameters(url: String, lng: String, lat: String, name: String): String {
-        return url + "?lng=" + lng + "&lat=" + lat + "&name=" + name
+        return "$url?lng=$lng&lat=$lat&name=$name"
     }
 }

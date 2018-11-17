@@ -17,11 +17,11 @@ data class NonFaction(var pos: Coords, val speed: Float,
                       var destination: Coords, var vectorField: Map<Coords, Complex>,
                       var busyUntil: Int) {
     val isDrunk = Util.random() <= 0.02 //TODO
-    var velocity = Complex.ZERO
-    fun distanceToDestination(): Double = pos.distanceTo(destination)
-    fun distanceToPortal(portal: Portal): Double = pos.distanceTo(portal.location)
-    fun isAtDestination(): Boolean = distanceToDestination() < Dim.maxDeploymentRange // Constants.phi
-    fun isBusy(tick: Int): Boolean = tick <= busyUntil
+    private var velocity = Complex.ZERO
+    private fun distanceToDestination(): Double = pos.distanceTo(destination)
+    private fun distanceToPortal(portal: Portal): Double = pos.distanceTo(portal.location)
+    private fun isAtDestination(): Boolean = distanceToDestination() < Dim.maxDeploymentRange // Constants.phi
+    private fun isBusy(tick: Int): Boolean = tick <= busyUntil
     fun act() {
         if (isBusy(World.tick)) {
             if (Util.random() < 0.001) { //stop waiting and go somewhere random
@@ -42,20 +42,20 @@ data class NonFaction(var pos: Coords, val speed: Float,
         if (isAtDestination()) {
             wait()
         } else {
-            val force = vectorField.get(PathUtil.posToShadowPos(pos))
+            val force = vectorField[PathUtil.posToShadowPos(pos)]
             velocity = MovementUtil.move(velocity, force, speed)
             this.pos = Coords((pos.x + velocity.re).toInt(), (pos.y + velocity.im).toInt())
         }
     }
 
-    fun isOffScreen() = pos.x < 0 || pos.y < 0 || pos.x >= World.w() || pos.y >= World.h()
+    private fun isOffScreen() = pos.x < 0 || pos.y < 0 || pos.x >= World.w() || pos.y >= World.h()
 
-    fun wait() {
+    private fun wait() {
         this.velocity = Complex.ZERO
         this.busyUntil = World.tick + creatWaitTime()
     }
 
-    fun moveElsewhere() {
+    private fun moveElsewhere() {
         return if (!isOffScreen() && Util.random() < 0.96) {
             moveToRandomOffscreenDestination()
         } else if (Util.random() < 0.7) {
@@ -65,19 +65,19 @@ data class NonFaction(var pos: Coords, val speed: Float,
         }
     }
 
-    fun moveToRandomOffscreenDestination() {
+    private fun moveToRandomOffscreenDestination() {
         val destination = Util.shuffle(DESTINATIONS).first()
         this.vectorField = getOrCreateVectorField(destination)
         this.destination = destination
     }
 
-    fun moveToFarPortal() {
+    private fun moveToFarPortal() {
         val portal = findFarPortal(pos)
         this.vectorField = portal.vectorField
         this.destination = portal.location
     }
 
-    fun moveToRandomPortal() {
+    private fun moveToRandomPortal() {
         val randomTarget: Portal = World.allPortals[(Util.random() * (World.allPortals.size - 1)).toInt()]
         this.vectorField = randomTarget.vectorField
         this.destination = randomTarget.location
@@ -109,15 +109,15 @@ data class NonFaction(var pos: Coords, val speed: Float,
                 Coords(World.w() * 2 / 3, World.h() + OFFSCREEN_DISTANCE)
         )
 
-        val fields = mutableMapOf<Coords, Map<Coords, Complex>>()
+        private val fields = mutableMapOf<Coords, Map<Coords, Complex>>()
         fun getOrCreateVectorField(destination: Coords): Map<Coords, Complex> {
-            val maybeField = fields.get(destination)
-            if (maybeField != null && maybeField.isNotEmpty()) {
-                return maybeField
+            val maybeField = fields[destination]
+            return if (maybeField != null && maybeField.isNotEmpty()) {
+                maybeField
             } else {
                 val newField = PathUtil.calculateVectorField(PathUtil.generateHeatMap(destination))
-                fields.put(destination, newField)
-                return newField
+                fields[destination] = newField
+                newField
             }
         }
 
@@ -132,7 +132,7 @@ data class NonFaction(var pos: Coords, val speed: Float,
             val r = Dim.agentRadius.toInt()
             val w = r * 2 + (2 * lineWidth)
             val h = w
-            return HtmlUtil.prerender(w, h, fun(ctx: Ctx) {
+            return HtmlUtil.preRender(w, h, fun(ctx: Ctx) {
                 val fillStyle = "#ffffff"
                 val strokeStyle = Colors.black
                 val circle = Circle(Coords(r + lineWidth, r + lineWidth), r.toDouble())
@@ -140,8 +140,8 @@ data class NonFaction(var pos: Coords, val speed: Float,
             })
         }
 
-        val maxSpeed = 3F
-        val minSpeed = 1F
+        private const val maxSpeed = 3F
+        private const val minSpeed = 1F
         fun create(grid: Map<Coords, Cell>): NonFaction {
             val position = Coords.createRandomPassable(grid)
             val speed = minSpeed + (Util.random().toFloat() * (maxSpeed - minSpeed))

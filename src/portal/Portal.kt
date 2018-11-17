@@ -36,7 +36,7 @@ data class Portal constructor(val name: String, val location: Coords,
                               val resoSlots: MutableMap<Octant, ResonatorSlot>,
                               val links: MutableSet<Link>, val fields: MutableSet<Field>,
                               var owner: Agent?) {
-    val lastHacks: MutableMap<String, MutableList<Int>> = mutableMapOf()
+    private val lastHacks: MutableMap<String, MutableList<Int>> = mutableMapOf()
     val id: String = "P-" + location.x + ":" + location.y + "-" + name
     fun isDeprecated() = resoSlots.isEmpty()
 
@@ -44,17 +44,17 @@ data class Portal constructor(val name: String, val location: Coords,
     fun isEnemyOf(agent: Agent) = owner != null && owner?.faction != agent.faction
     fun isFriendlyTo(agent: Agent) = owner != null && owner?.faction == agent.faction
 
-    fun isCoveredByField() = World.allFields().filter { it.isCoveringPortal(this) }.isNotEmpty()
-    fun isLinkable(agent: Agent): Boolean = this.owner?.faction == agent.faction && isFullyDeployed()
-    fun isInside(): Boolean = findConnectedPortals().filter { connected ->
+    private fun isCoveredByField() = World.allFields().any { it.isCoveringPortal(this) }
+    private fun isLinkable(agent: Agent): Boolean = this.owner?.faction == agent.faction && isFullyDeployed()
+    private fun isInside(): Boolean = findConnectedPortals().none { connected ->
         connected.fields.filter { field -> field.idSet.contains(this) }.count() > 1
-    }.isEmpty()
+    }
 
     fun canHack(agent: Agent): Boolean = handleCooldown(agent, true) == Cooldown.NONE
     fun canLinkOut(agent: Agent) = isLinkable(agent) && (links.isEmpty() || links.count() < 8) &&
             !isCoveredByField() && isInside()
 
-    fun calculateLevel() = if (owner == null) 0 else clipLevel(resoSlots.values.map {
+    private fun calculateLevel() = if (owner == null) 0 else clipLevel(resoSlots.values.map {
         (it.resonator?.level?.level ?: 0)
     }.sum() / 8)
 
@@ -89,32 +89,32 @@ data class Portal constructor(val name: String, val location: Coords,
     fun findStrongestResoPos(): Coords? = findStrongestReso()?.coords
     fun calcHealth(): Int {
         val resos = getAllResos()
-        val health = resos.map { it.calcHealthPrecent() }.sum() / resos.count()
+        val health = resos.map { it.calcHealthPercent() }.sum() / resos.count()
         return Util.clip(health, 0, 100)
     }
 
-    fun calcTotalXm(): Int = getAllResos().map { it.energy }.sum()
+    private fun calcTotalXm(): Int = getAllResos().map { it.energy }.sum()
     fun calculateLinkingRangeInMeters() = {
         val x = averageResoLevel() //kotlin.math.pow?
         if (isFullyDeployed()) 160 * x * x * x * x else 0.0
     }
 
-    fun findOutgoingTo(): List<Portal> = links.map { it.destination }
-    fun findIncomingFrom(): List<Portal> = World.allLinks().filter { it.destination == this }.map { it.origin }
+    private fun findOutgoingTo(): List<Portal> = links.map { it.destination }
+    private fun findIncomingFrom(): List<Portal> = World.allLinks().filter { it.destination == this }.map { it.origin }
 
     fun findRandomPointNearPortal(distance: Int): Coords {
         val angle = Util.random() * PI
         val xOffset: Int = (distance * cos(angle)).toInt()
         val yOffset: Int = (distance * sin(angle)).toInt()
         val point = location.copy(x = location.x + xOffset, y = location.y + yOffset)
-        if (World.grid.get(PathUtil.posToShadowPos(point))?.isPassable ?: false) {
-            return point
+        return if (World.grid[PathUtil.posToShadowPos(point)]?.isPassable == true) {
+            point
         } else {
-            return findRandomPointNearPortal(distance)
+            findRandomPointNearPortal(distance)
         }
     }
 
-    fun findConnectedPortals(): List<Portal> = findOutgoingTo() + findIncomingFrom()
+    private fun findConnectedPortals(): List<Portal> = findOutgoingTo() + findIncomingFrom()
 
     fun findLinkableForKeys(agent: Agent): List<Portal>? {
         val keyset = agent.inventory.findUniqueKeys()!!
@@ -246,11 +246,11 @@ data class Portal constructor(val name: String, val location: Coords,
             agentsLastHacks.sort()
             val lastHack = agentsLastHacks.last()
             val ticksSinceLastHack: Int = tickNr - lastHack
-            val timeDiff = Time.secondsToTicks(Cooldown.FIVE.seconds).toInt() - ticksSinceLastHack
-            val cooldown = Cooldown.valueOf(Time.ticksToSeconds(timeDiff).toInt())
+            val timeDiff = Time.secondsToTicks(Cooldown.FIVE.seconds) - ticksSinceLastHack
+            val cooldown = Cooldown.valueOf(Time.ticksToSeconds(timeDiff))
             if (cooldown == Cooldown.NONE && !readOnly) {
                 agentsLastHacks.add(tickNr)
-                lastHacks.put(key, mutableListOf(tickNr))
+                lastHacks[key] = mutableListOf(tickNr)
             }
             return cooldown
         }
@@ -264,24 +264,24 @@ data class Portal constructor(val name: String, val location: Coords,
             } else {
                 if (!readOnly) {
                     agentsLastHacks.add(tickNr)
-                    lastHacks.put(key, mutableListOf(tickNr))
+                    lastHacks[key] = mutableListOf(tickNr)
                 }
                 return Cooldown.NONE //reset
             }
         }
 
         val isFirstHack = !lastHacks.containsKey(key)
-        if (isFirstHack) {
+        return if (isFirstHack) {
             if (!readOnly) {
-                lastHacks.put(key, mutableListOf(World.tick))
+                lastHacks[key] = mutableListOf(World.tick)
             }
-            return Cooldown.NONE
+            Cooldown.NONE
         } else {
             val agentsLastHacks: MutableList<Int> = lastHacks.get(key)!!
             if (agentsLastHacks.count() < MAX_HACKS) {
-                return cool(agentsLastHacks, World.tick)
+                cool(agentsLastHacks, World.tick)
             } else {
-                return burn(agentsLastHacks, World.tick)
+                burn(agentsLastHacks, World.tick)
             }
         }
     }
@@ -311,14 +311,14 @@ data class Portal constructor(val name: String, val location: Coords,
         val initialResoCount = resoSlots.filterValues { !it.isEmpty() }.size
         val firstResoCount = max(resos.size, (8 - initialResoCount))
         resos.asIterable().forEachIndexed { index, (octant, resonator) ->
-            val oldReso = resoSlots.get(octant)
+            val oldReso = resoSlots[octant]
             if (isCapture && index == 0) {
                 agent.addAp(500)
             } else if (index < firstResoCount) {
                 agent.addAp(125)
             } else if (index == firstResoCount && firstResoCount + initialResoCount == 8) {
                 agent.addAp(250)
-            } else if (!(oldReso?.isOwnedBy(agent) ?: false)) {
+            } else if (oldReso?.isOwnedBy(agent) != true) {
                 agent.addAp(65)
             }
             agent.removeXm(resonator.level.level * 20)
@@ -326,7 +326,7 @@ data class Portal constructor(val name: String, val location: Coords,
             val newDistance = (if (oldDistance == 0) distance else oldDistance) ?: distance
             //println("DEBUG: $agent deploys ${resonator} to $octant at $this. $distance $oldDistance")
             val slot = ResonatorSlot(agent.key(), resonator, newDistance)
-            resoSlots.put(octant, slot)
+            resoSlots[octant] = slot
             val xx = location.x + octant.calcXOffset(slot.distance)
             val yy = location.y + octant.calcYOffset(slot.distance)
             resonator.deploy(this, octant, Coords(xx, yy))
@@ -339,20 +339,20 @@ data class Portal constructor(val name: String, val location: Coords,
         links.clear()
         fields.clear()
         owner = null
-        findIncomingFrom().forEach { connctedPortal ->
-            connctedPortal.links.forEach { link ->
+        findIncomingFrom().forEach { connectedPortal ->
+            connectedPortal.links.forEach { link ->
                 if (link.destination == this || link.origin == this) {
-                    connctedPortal.links.remove(link)
+                    connectedPortal.links.remove(link)
                 }
             }
-            connctedPortal.fields.forEach { field ->
+            connectedPortal.fields.forEach { field ->
                 if (field.idSet.contains(this)) {
-                    connctedPortal.fields.remove(field)
+                    connectedPortal.fields.remove(field)
                 }
             }
         }
         World.allAgents.forEach { agent ->
-            val portalKeys: List<PortalKey>? = agent.inventory.findKeys().filter { key -> key.portal.equals(this) }.toList()
+            val portalKeys: List<PortalKey>? = agent.inventory.findKeys().filter { key -> key.portal == this }.toList()
             if (portalKeys != null) {
                 agent.inventory.items.removeAll(portalKeys)
             }
@@ -366,23 +366,19 @@ data class Portal constructor(val name: String, val location: Coords,
     }
 
     fun removeReso(octant: Octant, agent: Agent?) {
-        resoSlots.put(octant, ResonatorSlot(null, null, 0))
+        resoSlots[octant] = ResonatorSlot(null, null, 0)
         val numberOfResosLeft = resoSlots.filter { it.value.resonator != null }.count()
         if (numberOfResosLeft < 2) {
             findConnectedPortals().forEach { connctedPortal ->
                 connctedPortal.links.forEach { link ->
                     if (link.destination == this) {
-                        if (agent != null) {
-                            agent.addAp(187)
-                        }
+                        agent?.addAp(187)
                         connctedPortal.links.remove(link)
                     }
                 }
                 connctedPortal.fields.forEach { field ->
                     if (field.primaryAnchor == this || field.secondaryAnchor == this) {
-                        if (agent != null) {
-                            agent.addAp(750)
-                        }
+                        agent?.addAp(750)
                         connctedPortal.fields.remove(field)
                     }
                 }
@@ -396,14 +392,14 @@ data class Portal constructor(val name: String, val location: Coords,
     }
 
     fun findAllowedResoLevels(agent: Agent): Map<ResonatorLevel, Int> {
-        if (owner == null || owner?.faction == agent.faction) {
-            return ResonatorLevel.values().map { level ->
+        return if (owner == null || owner?.faction == agent.faction) {
+            ResonatorLevel.values().map { level ->
                 level to level.deployablePerPlayer - resoSlots.filter { slot ->
                     slot.value.isOwnedBy(agent) && slot.value.resonator?.level?.level == level.level
                 }.count()
             }.toMap()
         } else {
-            return mapOf()
+            mapOf()
         }
     }
 
@@ -449,7 +445,7 @@ data class Portal constructor(val name: String, val location: Coords,
             val y = location.y + octant.calcYOffset(slot.distance)
 
             val lineToPortal = Line(Coords(x, y), location)
-            val alpha = reso.calcHealthPrecent().toDouble()
+            val alpha = reso.calcHealthPercent().toDouble()
             drawResoLine(lineToPortal, resoLevel.getColor(), owner?.faction?.color ?: Faction.NONE.color, 1.0, alpha)
 
             val resoCircle = Circle(Coords(x, y), Dim.resoRadius)
@@ -478,10 +474,10 @@ data class Portal constructor(val name: String, val location: Coords,
     }
 
     override fun toString() = name
-    override fun equals(other: Any?) = other is Portal && id.equals(other.id)
+    override fun equals(other: Any?) = other is Portal && id == other.id
     override fun hashCode() = id.hashCode() * 31
 
-    val nameImage = createNameImage()
+    private val nameImage = createNameImage()
     private fun createNameImage(): Canvas {
         val fontSize = Dim.portalNameFontSize
         val lineWidth = 2.0
@@ -489,7 +485,7 @@ data class Portal constructor(val name: String, val location: Coords,
         val h = fontSize + (2 * lineWidth)
         val x = lineWidth + (fontSize / 2)
         val y = lineWidth + (fontSize * 2 / 3)
-        return HtmlUtil.prerender(w, h.toInt(), fun(ctx: Ctx) {
+        return HtmlUtil.preRender(w, h.toInt(), fun(ctx: Ctx) {
             val coords = Coords(x.toInt(), y.toInt())
             DrawUtil.strokeText(ctx, coords, name, Colors.white, Dim.portalNameFontSize, DrawUtil.CODA, lineWidth, Colors.black)
         })
@@ -501,7 +497,7 @@ data class Portal constructor(val name: String, val location: Coords,
                 return listOf()
             }
             val chargeable = World.factionPortals(agent.faction).filter { it.calcHealth() <= 90 }.toSet()
-            return chargeable.filter { agent.keySet()!!.map { it.portal }.contains(it) }
+            return chargeable.filter { agent.keySet()!!.map { a -> a.portal }.contains(it) }
         }
 
         private val centerImages: Map<Pair<Faction, PortalLevel>, Canvas> = PortalLevel.values().flatMap { level ->
@@ -514,15 +510,15 @@ data class Portal constructor(val name: String, val location: Coords,
             Faction.values().map { (it to health) to DrawUtil.renderBarImage(it.color, health, 5, w, lw) }
         }.toMap()
 
-        private fun getCenterImage(faction: Faction, level: PortalLevel) = centerImages.get(faction to level)!!
-        private fun getHealthBarImage(faction: Faction, health: Int) = healthBarImages.get(faction to health)!!
+        private fun getCenterImage(faction: Faction, level: PortalLevel) = centerImages[faction to level]!!
+        private fun getHealthBarImage(faction: Faction, health: Int) = healthBarImages[faction to health]!!
 
         fun renderPortalCenter(color: String, level: PortalLevel): Canvas {
             val lw = Dim.portalLineWidth
             val r = Dim.portalRadius.toInt()
             val w = (r * 2) + (2 * lw)
             val h = w
-            return HtmlUtil.prerender(w, h, fun(ctx: Ctx) {
+            return HtmlUtil.preRender(w, h, fun(ctx: Ctx) {
                 val portalCircle = Circle(Coords(r + lw, r + lw), r.toDouble())
                 DrawUtil.drawCircle(ctx, portalCircle, Colors.black, 2.0, color)
                 val pos = Coords(r + lw + if (level.value > 1) 0 else 1, r + lw)
@@ -530,12 +526,12 @@ data class Portal constructor(val name: String, val location: Coords,
             })
         }
 
-        val XM_LEAK = 0.2
-        val XM_LEAK_FREQ_MIN = 20
-        val XM_LEAK_RADIUS_M = 40
-        val DECAY_FREQ_H = 24
+        const val XM_LEAK = 0.2
+        const val XM_LEAK_FREQ_MIN = 20
+        const val XM_LEAK_RADIUS_M = 40
+        const val DECAY_FREQ_H = 24
 
-        val MAX_HACKS = 4 //TODO implement multihacks
+        const val MAX_HACKS = 4 //TODO implement multihacks
         private fun clipLevel(level: Int): Int = max(1, min(level, 8))
         fun create(location: Coords): Portal {
             val emptySlot = ResonatorSlot(null, null, 0)

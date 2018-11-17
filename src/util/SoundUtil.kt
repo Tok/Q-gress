@@ -16,7 +16,7 @@ import util.data.Coords
 import kotlin.browser.document
 
 object SoundUtil {
-    val audioCtx = AudioContext()
+    private val audioCtx = AudioContext()
 
     private fun isMuted(): Boolean {
         val soundCheckbox = document.getElementById(HtmlUtil.SOUND_CHECKBOX_ID) as HTMLInputElement

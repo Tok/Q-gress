@@ -12,7 +12,7 @@ enum class PortalLevel(val value: Int, val display: String) {
     EIGHT(8, "8");
 
     fun toInt(): Int = value
-    fun getColor(): String = LevelColor.map.get(value) ?: "#FFFFFF"
+    fun getColor(): String = LevelColor.map[value] ?: "#FFFFFF"
 
     companion object {
         fun findByValue(value: Int): PortalLevel = PortalLevel.values().find { it.value == value }!!

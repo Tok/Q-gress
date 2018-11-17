@@ -19,7 +19,7 @@ enum class UltraStrikeLevel(val level: Int, val damage: Int, val rangeM: Int, va
     fun critDamage(): Int = damage * 3
 
     override fun toInt() = level
-    override fun getColor(): String = LevelColor.map.get(level) ?: "#FFFFFF"
+    override fun getColor(): String = LevelColor.map[level] ?: "#FFFFFF"
 
     companion object {
         fun find(level: Int, quality: Quality): UltraStrikeLevel = valueOf(clipLevel(level + quality.addLevels))

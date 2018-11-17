@@ -17,10 +17,10 @@ enum class XmpLevel(val level: Int, val damage: Int, val rangeM: Int, val xmCost
     fun calculateRecycleXm(): Int = level * 20
 
     override fun toInt() = level
-    override fun getColor(): String = LevelColor.map.get(level) ?: "#FFFFFF"
+    override fun getColor(): String = LevelColor.map[level] ?: "#FFFFFF"
 
     companion object {
-        fun find(level: Int, quality: Quality): XmpLevel = valueOf(Companion.clipLevel(level + quality.addLevels))
+        fun find(level: Int, quality: Quality): XmpLevel = valueOf(clipLevel(level + quality.addLevels))
         fun valueOf(level: Int) = XmpLevel.values().find { it.level == clipLevel(level) }!!
         private fun clipLevel(level: Int): Int = max(1, min(level, 8))
     }

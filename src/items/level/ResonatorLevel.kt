@@ -17,7 +17,7 @@ enum class ResonatorLevel(val level: Int, val deployablePerPlayer: Int, val ener
     fun calculateRecycleXm(): Int = level * 20
 
     override fun toInt() = level
-    override fun getColor(): String = LevelColor.map.get(level) ?: "#FFFFFF"
+    override fun getColor(): String = LevelColor.map[level] ?: "#FFFFFF"
 
     companion object {
         fun valueOf(level: Int) = values().find { it.level == clipLevel(level) }!!

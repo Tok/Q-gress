@@ -45,11 +45,11 @@ object MovementUtil {
     fun attackMostLinkedPortal(a: Agent) = goAttack(a, findEnemyPortals(a).sortedBy { it.links.size }.firstOrNull())
     fun attackMostVulnerablePortal(a: Agent) = goAttack(a, findEnemyPortals(a).sortedBy { -it.calcHealth() }.firstOrNull())
     private fun goAttack(agent: Agent, target: Portal?): Agent  {
-        if (target != null) {
-            return goToDestinationPortal(agent, target)
+        return if (target != null) {
+            goToDestinationPortal(agent, target)
         } else {
             agent.action.end()
-            return agent
+            agent
         }
     }
     /* End Enemy Portals */

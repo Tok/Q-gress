@@ -1,8 +1,6 @@
 package config
 
 object Config {
-    val seed = 111
-
     val startPortals = 8
     val startFrogs = 50
     val startSmurfs = 50

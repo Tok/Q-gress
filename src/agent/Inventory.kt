@@ -27,12 +27,12 @@ data class Inventory(val items: MutableList<QgressItem> = mutableListOf()) {
     fun consumeResos(resos: List<Resonator>) = items.removeAll(resos)
 
     fun keyCount(): Int = items.filter { it is PortalKey }.count()
-    fun xmpCount(): Int = items.filter { it is XmpBurster }.count()
-    fun usCount(): Int = items.filter { it is UltraStrike }.count()
-    fun weaponCount(): Int = xmpCount() + usCount()
-    fun resoCount(): Int = items.filter { it is Resonator }.count()
-    fun shieldCount(): Int = items.filter { it is Shield }.count()
-    fun powerCubeCount(): Int = items.filter { it is PowerCube }.count()
+    private fun xmpCount(): Int = items.filter { it is XmpBurster }.count()
+    private fun usCount(): Int = items.filter { it is UltraStrike }.count()
+    private fun weaponCount(): Int = xmpCount() + usCount()
+    private fun resoCount(): Int = items.filter { it is Resonator }.count()
+    private fun shieldCount(): Int = items.filter { it is Shield }.count()
+    private fun powerCubeCount(): Int = items.filter { it is PowerCube }.count()
 
     override fun toString(): String {
         val filtered = items.filterNot { it is PortalKey || it is XmpBurster || it is Resonator }

@@ -44,7 +44,7 @@ data class Complex(val re: Float, val im: Float = 0F) {
             Complex(re) -> re.toString()
             Complex(im) -> im.toString() + "*i"
             else -> {
-                val imString = if (im < 0F) "-" + -im else "+" + im
+                val imString = if (im < 0F) "-" + -im else "+$im"
                 return re.toString() + imString + "*i"
             }
         }

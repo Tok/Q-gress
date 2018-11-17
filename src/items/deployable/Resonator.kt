@@ -10,8 +10,8 @@ import kotlin.math.max
 data class Resonator(val level: ResonatorLevel, val owner: Agent, var energy: Int,
                      var portal: Portal? = null, var octant: Octant? = null, var coords: Coords? = null) : DeployableItem {
     //TODO move location and octant to ResonatorSlot
-    fun calcHealthPrecent() = energy * 100 / level.energy
-    fun isAtCriticalLevel() = calcHealthPrecent() < 20
+    fun calcHealthPercent() = energy * 100 / level.energy
+    fun isAtCriticalLevel() = calcHealthPercent() < 20
     fun recharge(agent: Agent, xm: Int) {
         val rest = max((energy + xm) - level.energy, 0)
         val energy = xm - rest
@@ -22,7 +22,7 @@ data class Resonator(val level: ResonatorLevel, val owner: Agent, var energy: In
     private fun decayEnergy() = (level.energy * DECAY_RATIO).toInt()
 
     fun decay() {
-        energy = energy - decayEnergy()
+        energy -= decayEnergy()
         if (energy <= 0) {
             portal?.removeReso(octant!!, null)
         }
@@ -47,7 +47,7 @@ data class Resonator(val level: ResonatorLevel, val owner: Agent, var energy: In
     override fun getLevel(): Int = level.level
 
     companion object {
-        val DECAY_RATIO = 0.15
+        const val DECAY_RATIO = 0.15
         fun create(level: ResonatorLevel, agent: Agent) = Resonator(level, agent, level.energy)
         fun create(level: Int, agent: Agent) = create(ResonatorLevel.valueOf(level), agent)
     }

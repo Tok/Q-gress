@@ -61,7 +61,7 @@ object World {
     lateinit var grid: Map<Coords, Cell>
 
     fun passableCells(): Map<Coords, Cell> = grid.filter { it.value.isPassable }
-    fun wellPassableCells(): Map<Coords, Cell> = grid.filter { it.value.isPassableInAllDirections() }
+    private fun wellPassableCells(): Map<Coords, Cell> = grid.filter { it.value.isPassableInAllDirections() }
     private fun passableOnScreen(): Map<Coords, Cell> = wellPassableCells().filterNot { it.key.isOffGrid() }
     fun passableInActionArea(): Map<Coords, Cell> = passableOnScreen()
             .filterNot { it.key.y * PathUtil.RESOLUTION < Dim.topActionOffset }
@@ -71,7 +71,7 @@ object World {
     val smurfs: MutableSet<Agent> = mutableSetOf()
     val allAgents: MutableSet<Agent> = mutableSetOf()
     fun countAgents() = allAgents.count()
-    fun countAgents(fact: Faction) = allAgents.count { it.faction.equals(fact) }
+    fun countAgents(fact: Faction) = allAgents.count { it.faction == fact }
 
     val allNonFaction: MutableSet<NonFaction> = mutableSetOf()
     fun countNonFaction() = allNonFaction.count()
@@ -96,7 +96,7 @@ object World {
 
     fun calcTotalMu(fact: Faction) = allFields().filter { it.owner.faction == fact }.map { it.calculateMu() }.sum()
 
-    fun imageDataIndex(x: Int, y: Int, w: Int) = (x + (y * w)) * 4
+    private fun imageDataIndex(x: Int, y: Int, w: Int) = (x + (y * w)) * 4
     fun createNoiseImage(noiseMap: Array<DoubleArray>, w: Int, h: Int, alpha: Double = 1.0): ImageData {
         fun setPixel(imageData: ImageData, x: Int, y: Int, r: Int, g: Int, b: Int) {
             val index = imageDataIndex(x, y, imageData.width)
@@ -107,8 +107,8 @@ object World {
             for (x in 0 until w) {
                 for (y in 0 until h) {
                     val rawNoise = noiseMap[x][y]
-                    val noisepoint = ((1 + (-1 * rawNoise)) * 0.5 * Byte.MAX_VALUE.toInt()).toInt() //- 96
-                    setPixel(imageData, x, y, noisepoint, noisepoint, noisepoint)
+                    val noisePoint = ((1 + (-1 * rawNoise)) * 0.5 * Byte.MAX_VALUE.toInt()).toInt() //- 96
+                    setPixel(imageData, x, y, noisePoint, noisePoint, noisePoint)
                 }
             }
             return imageData
@@ -120,7 +120,7 @@ object World {
             val imageData: ImageData = bgCtx().createImageData(w.toDouble(), h.toDouble())
             for (x in 0 until w) {
                 for (y in 0 until h) {
-                    val rawNoise = streetMap.get(imageDataIndex(x, y, imageData.width))
+                    val rawNoise = streetMap[imageDataIndex(x, y, imageData.width)]
                     val index = imageDataIndex(x, h - 1 - y, imageData.width)
                     imageData.data.set(arrayOf(rawNoise, rawNoise, rawNoise, (Byte.MAX_VALUE * 1.0).toByte()), index)
                 }
@@ -137,7 +137,7 @@ object World {
                 val total = Config.startNonFaction
                 val realCount = total - count + realSize
                 DrawUtil.drawLoadingText("Creating Non-Faction ($realCount/$total)")
-                (0..realSize).forEach {
+                (0..realSize).forEach { _ ->
                     val newNonFaction = NonFaction.create(World.grid)
                     World.allNonFaction.add(newNonFaction)
                 }

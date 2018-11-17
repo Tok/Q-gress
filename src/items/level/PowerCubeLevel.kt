@@ -4,7 +4,7 @@ import portal.Quality
 import kotlin.math.max
 import kotlin.math.min
 
-enum class PowerCubeLevel(val level: Int, val xmValue: Int) : ItemLevel {
+enum class PowerCubeLevel(val level: Int, private val xmValue: Int) : ItemLevel {
     ONE(1, 1000),
     TWO(2, 2000),
     THREE(3,3000),
@@ -17,7 +17,7 @@ enum class PowerCubeLevel(val level: Int, val xmValue: Int) : ItemLevel {
     fun calculateRecycleXm(): Int = xmValue
 
     override fun toInt() = level
-    override fun getColor(): String = LevelColor.map.get(level) ?: "#FFFFFF"
+    override fun getColor(): String = LevelColor.map[level] ?: "#FFFFFF"
 
     companion object {
         fun find(level: Int, quality: Quality): PowerCubeLevel = valueOf(clipLevel(level + quality.addLevels))

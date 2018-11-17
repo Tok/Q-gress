@@ -8,10 +8,9 @@ import util.data.Line
 
 data class Link(val origin: Portal, val destination: Portal, val owner: Agent) {
     fun getLine() = Line(origin.location, destination.location)
-    private fun getReverseLine() = Line(destination.location, origin.location)
 
     fun draw(ctx: Ctx) {
-        val byHealth = listOf<Portal>(origin, destination).sortedBy { it.calcHealth() }
+        val byHealth = listOf(origin, destination).sortedBy { it.calcHealth() }
         val minTransparency = 0.2
         val lowHpTransparency = Util.clipDouble(byHealth.last().calcHealth() * 0.01, minTransparency, 1.0)
         val highHpTransparency = Util.clipDouble(byHealth.first().calcHealth() * 0.01, minTransparency, 1.0)
@@ -42,10 +41,10 @@ data class Link(val origin: Portal, val destination: Portal, val owner: Agent) {
     override fun hashCode() = origin.hashCode() + destination.hashCode()
 
     companion object {
-        fun isPossible(link: Link): Boolean = World.allLinks().filter {
+        fun isPossible(link: Link): Boolean = World.allLinks().none {
             (it.origin.location == link.origin.location && it.destination.location == link.destination.location)
                     || (it.origin.location == link.destination.location && it.destination.location == link.origin.location)
-        }.isEmpty()
+        }
 
         fun create(origin: Portal, destination: Portal, owner: Agent): Link? {
             val newLink = Link(origin, destination, owner)

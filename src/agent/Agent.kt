@@ -32,25 +32,25 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
                  val inventory: Inventory, val action: Action, var actionPortal: Portal, var destination: Coords,
                  var ap: Int = 0, var xm: Int = 0, var velocity: Complex = Complex.ZERO) {
     fun key() = toString()
-    fun distanceToDestination(): Double = pos.distanceTo(destination)
+    private fun distanceToDestination(): Double = pos.distanceTo(destination)
     fun distanceToPortal(portal: Portal): Double = pos.distanceTo(portal.location)
-    fun isAtActionPortal(): Boolean = distanceToPortal(actionPortal) < Dim.maxDeploymentRange
-    fun isInAttackRange(range: Int): Boolean {
+    private fun isAtActionPortal(): Boolean = distanceToPortal(actionPortal) < Dim.maxDeploymentRange
+    private fun isInAttackRange(range: Int): Boolean {
         val strongest = actionPortal.findStrongestResoPos()
         return strongest != null && pos.distanceTo(strongest) < range
     }
 
-    fun isBusy(): Boolean = World.tick <= action.untilTick
-    fun lineToPortal(portal: Portal) = Line(pos, portal.location)
-    fun lineToDestination() = Line(pos, destination)
+    private fun isBusy(): Boolean = World.tick <= action.untilTick
+    private fun lineToPortal(portal: Portal) = Line(pos, portal.location)
+    private fun lineToDestination() = Line(pos, destination)
 
     fun getLevel(): Int = getLevel(this.ap)
-    fun getXmCapacity(): Int = getXmCapacity(getLevel())
+    private fun getXmCapacity(): Int = getXmCapacity(getLevel())
 
     private fun calcAbsXmBar() = min(getXmCapacity(), max(0, xm))
-    fun xmBarPercent() = calcAbsXmBar() * 100 / getXmCapacity()
-    fun isXmBarEmpty() = xmBarPercent() == 0
-    fun isXmFilled() = xmBarPercent() >= 80
+    private fun xmBarPercent() = calcAbsXmBar() * 100 / getXmCapacity()
+    private fun isXmBarEmpty() = xmBarPercent() == 0
+    private fun isXmFilled() = xmBarPercent() >= 80
     fun removeXm(v: Int) {
         if (xm - v <= 0) {
             this.xm = 0
@@ -59,7 +59,7 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         }
     }
 
-    fun addXm(v: Int) {
+    private fun addXm(v: Int) {
         if (xm + v >= getXmCapacity()) {
             this.xm = getXmCapacity()
         } else {
@@ -71,8 +71,8 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         this.ap += v
     }
 
-    fun isFastAction(): Boolean = action.item == ActionItem.MOVE || (action.item == ActionItem.ATTACK && !isAtActionPortal())
-    fun isMoveInRange(): Boolean = action.item == ActionItem.ATTACK && !isArrived()
+    private fun isFastAction(): Boolean = action.item == ActionItem.MOVE || (action.item == ActionItem.ATTACK && !isAtActionPortal())
+    private fun isMoveInRange(): Boolean = action.item == ActionItem.ATTACK && !isArrived()
 
     fun onlyMove(): Agent = when {
         isFastAction() -> moveCloserToDestinationPortal()
@@ -86,7 +86,7 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         else -> doSomething()
     }
 
-    fun doSomething(): Agent {
+    private fun doSomething(): Agent {
         val portalFaction = actionPortal.owner?.faction
         return when {
             !isAtActionPortal() -> doAnywhereAction()
@@ -145,11 +145,11 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         return basicValues + listOf(attackQ to { attackPortal() })
     }
 
-    val defaultAction = { doNothing() }
-    fun doAnywhereAction(): Agent = Util.select(actionsForAnywhere(), defaultAction).invoke()
-    fun doNeutralPortalAction(): Agent = Util.select(actionsForNeutralPortals(), defaultAction).invoke()
-    fun doFriendlyPortalAction(): Agent = Util.select(actionsForFriendlyPortals(), defaultAction).invoke()
-    fun doEnemyPortalAction(): Agent = Util.select(actionsForEnemyPortals(), defaultAction).invoke()
+    private val defaultAction = { doNothing() }
+    private fun doAnywhereAction(): Agent = Util.select(actionsForAnywhere(), defaultAction).invoke()
+    private fun doNeutralPortalAction(): Agent = Util.select(actionsForNeutralPortals(), defaultAction).invoke()
+    private fun doFriendlyPortalAction(): Agent = Util.select(actionsForFriendlyPortals(), defaultAction).invoke()
+    private fun doEnemyPortalAction(): Agent = Util.select(actionsForEnemyPortals(), defaultAction).invoke()
 
     private fun moveElsewhere(): Agent {
         val agent = this
@@ -183,11 +183,11 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
             return doNothing()
         }
         if (isAtActionPortal()) {
-            return if (action.item.equals(ActionItem.ATTACK)) this else doNothing()
+            return if (action.item == ActionItem.ATTACK) this else doNothing()
         }
         addXm(2) //FIXME
 
-        val force = actionPortal.vectorField.get(PathUtil.posToShadowPos(pos))
+        val force = actionPortal.vectorField[PathUtil.posToShadowPos(pos)]
         velocity = MovementUtil.move(velocity, force, skills.speed)
         return this.copy(pos = Coords((pos.x + velocity.re).toInt(), (pos.y + velocity.im).toInt()))
     }
@@ -195,7 +195,7 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
     private fun hasXmps() = inventory.findXmps().isNotEmpty()
 
     private fun isArrived() = distanceToDestination() <= skills.inRangeSpeed()
-    fun moveCloserInRange(): Agent {
+    private fun moveCloserInRange(): Agent {
         val part = skills.inRangeSpeed() / distanceToDestination()
         val rawDiffX = (pos.xDiff(destination) * part).toInt()
         val rawDiffY = (pos.yDiff(destination) * part).toInt()
@@ -204,15 +204,15 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         return this.copy(pos = Coords(rawNextX, rawNextY))
     }
 
-    fun rechargePortal(): Agent {
+    private fun rechargePortal(): Agent {
         if (!hasKeys()) {
             return this
         }
-        val chargable = Portal.findChargeableForKeys(this)
-        if (chargable!!.isEmpty()) {
+        val chargeable = Portal.findChargeableForKeys(this)
+        if (chargeable!!.isEmpty()) {
             return this
         }
-        val lowest: Portal? = chargable.sortedBy { it.calcHealth() }.first()
+        val lowest: Portal? = chargeable.sortedBy { it.calcHealth() }.first()
         if (lowest != null) {
             val resos = lowest.resoSlots.mapNotNull { it.value.resonator }
             resos.forEach { it.recharge(this, 1000 / resos.count()) }
@@ -220,11 +220,11 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         return this
     }
 
-    fun recycleItems(): Agent {
+    private fun recycleItems(): Agent {
         return this //TODO implement..
     }
 
-    fun attackPortal(): Agent {
+    private fun attackPortal(): Agent {
         fun findExactDestination(): Coords {
             if (actionPortal.calcHealth() > 0.5) {
                 return actionPortal.location
@@ -271,7 +271,7 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         }
     }
 
-    fun deployPortal(): Agent {
+    private fun deployPortal(): Agent {
         fun findExactDestination(): Coords {
             val distance = skills.deployPrecision * Dim.maxDeploymentRange
             return actionPortal.findRandomPointNearPortal(distance.toInt())
@@ -319,7 +319,7 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         return doDeploy()
     }
 
-    fun doNothing(): Agent {
+    private fun doNothing(): Agent {
         action.start(ActionItem.WAIT)
         return this
     }
@@ -327,7 +327,7 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
     fun keySet() = inventory.findUniqueKeys()
     fun hasKeys() = keySet() != null && keySet()!!.isNotEmpty()
 
-    fun isLinkPossible(): Boolean {
+    private fun isLinkPossible(): Boolean {
         if (!actionPortal.canLinkOut(this)) {
             return false
         }
@@ -338,9 +338,9 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
             if (linkOptions != null && linkOptions.isNotEmpty()) {
                 val linkLinks: List<Link> = linkOptions.map { Link.create(actionPortal, it, this) }.filterNotNull()
                 val nonCrossing = linkLinks.filter { link ->
-                    World.allLines().filter {
+                    World.allLines().none {
                         it.doesIntersect(link.getLine())
-                    }.isEmpty()
+                    }
                 }
                 val hasLinkOptions = nonCrossing.isNotEmpty()
                 return hasLinkOptions
@@ -349,7 +349,7 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         return false
     }
 
-    fun createLink(): Agent {
+    private fun createLink(): Agent {
         if (!actionPortal.canLinkOut(this)) {
             return doNothing()
         }
@@ -360,9 +360,9 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
             if (linkOptions != null && linkOptions.isNotEmpty()) {
                 val linkLinks: List<Link> = linkOptions.map { Link.create(actionPortal, it, this) }.filterNotNull()
                 val nonCrossing = linkLinks.filter { link ->
-                    World.allLines().filter {
+                    World.allLines().none {
                         it.doesIntersect(link.getLine())
-                    }.isEmpty()
+                    }
                 }
                 val hasLinkOptions = nonCrossing.isNotEmpty()
                 if (hasLinkOptions) {
@@ -375,7 +375,7 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         return this
     }
 
-    fun hackActionPortal(): Agent {
+    private fun hackActionPortal(): Agent {
         if (isAtActionPortal() && actionPortal.canHack(this)) {
             val hackResult = actionPortal.tryHack(this)
             SoundUtil.playHackingSound(actionPortal.location)
@@ -398,7 +398,7 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
     fun findResosInAttackRange(level: XmpLevel): List<Resonator> {
         val attackDistance = level.rangeM * 0.5
         val portals = findPortalsInAttackRange(level)
-        val slots = portals.flatMap { it.resoSlots.map { it.value } }
+        val slots = portals.flatMap { it.resoSlots.map { s -> s.value } }
         val resosInRange = slots.filter { it.resonator != null && it.resonator.coords?.distanceTo(this.pos)!! <= attackDistance }
         return resosInRange.map { it.resonator }.filterNotNull()
     }
@@ -489,7 +489,7 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         }.toMap()
 
         private fun getXmBarImage(faction: Faction, percent: Int): Canvas {
-            check(percent >= 0 && percent <= 100)
+            check(percent in 0..100)
             return xmBarImages.getValue(xmKey(faction, percent))
         }
 
@@ -499,7 +499,7 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
             val initialAp = Util.randomInt(1000000)
             val initialXm = getXmCapacity(getLevel(initialAp))
             val coords = Coords.createRandomPassable(grid)
-            val actionPortal = Util.findNearestPortal(coords) ?: World.allPortals.get(0) //FIXME
+            val actionPortal = Util.findNearestPortal(coords) ?: World.allPortals[0] //FIXME
             return Agent(faction, Util.generateAgentName(), coords, Skills.createRandom(),
                     Inventory(), Action.create(), actionPortal, actionPortal.location, initialAp, initialXm)
         }

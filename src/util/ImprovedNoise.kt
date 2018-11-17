@@ -1,11 +1,10 @@
 import util.Util
-import util.data.Dim
 import kotlin.math.floor
 
 //Partially transpiled from Ken Perlins 'ImprovedNoise' JAVA reference implementation, see: http://mrl.nyu.edu/~perlin/noise/
 object ImprovedNoise {
     val p = IntArray(512)
-    val permutation = intArrayOf(
+    private val permutation = intArrayOf(
             151, 160, 137, 91, 90, 15, 131, 13, 201, 95, 96, 53, 194, 233, 7, 225, 140, 36, 103, 30, 69, 142, 8, 99,
             37, 240, 21, 10, 23, 190, 6, 148, 247, 120, 234, 75, 0, 26, 197, 62, 94, 252, 219, 203, 117, 35, 11, 32,
             57, 177, 33, 88, 237, 149, 56, 87, 174, 20, 125, 136, 171, 168, 68, 175, 74, 165, 71, 134, 139, 48, 27,
@@ -24,7 +23,7 @@ object ImprovedNoise {
     }
 
     fun noiseColorInt(x: Double, y: Double) = 255 * (((noise(x, y) + 1)) / 2)
-    fun noise(x: Double, y: Double, z: Double = 0.0): Double {
+    private fun noise(x: Double, y: Double, z: Double = 0.0): Double {
         fun fade(t: Double): Double = t * t * t * (t * (t * 6 - 15) + 10)
         fun lerp(t: Double, a: Double, b: Double) = a + t * (b - a)
         fun grad(hash: Int, x: Double, y: Double, z: Double): Double {
@@ -46,21 +45,21 @@ object ImprovedNoise {
         val u = fade(xx) // COMPUTE FADE CURVES
         val v = fade(yy) // FOR EACH OF X,Y,Z.
         val w = fade(zz)
-        val A = p[xxx] + yyy
-        val AA = p[A] + zzz
-        val AB = p[A + 1] + zzz // HASH COORDINATES OF
-        val B = p[xxx + 1] + yyy
-        val BA = p[B] + zzz
-        val BB = p[B + 1] + zzz // THE 8 CUBE CORNERS,
+        val a = p[xxx] + yyy
+        val aa = p[a] + zzz
+        val ab = p[a + 1] + zzz // HASH COORDINATES OF
+        val b = p[xxx + 1] + yyy
+        val ba = p[b] + zzz
+        val bb = p[b + 1] + zzz // THE 8 CUBE CORNERS,
 
-        return lerp(w, lerp(v, lerp(u, grad(p[AA], xx, yy, zz),     // AND ADD
-                grad(p[BA], xx - 1, yy, zz)),                    // BLENDED
-                lerp(u, grad(p[AB], xx, yy - 1, zz),             // RESULTS
-                        grad(p[BB], xx - 1, yy - 1, zz))),    // FROM  8
-                lerp(v, lerp(u, grad(p[AA + 1], xx, yy, zz - 1), // CORNERS
-                        grad(p[BA + 1], xx - 1, yy, zz - 1)), // OF CUBE
-                        lerp(u, grad(p[AB + 1], xx, yy - 1, zz - 1),
-                                grad(p[BB + 1], xx - 1, yy - 1, zz - 1))))
+        return lerp(w, lerp(v, lerp(u, grad(p[aa], xx, yy, zz),     // AND ADD
+                grad(p[ba], xx - 1, yy, zz)),                    // BLENDED
+                lerp(u, grad(p[ab], xx, yy - 1, zz),             // RESULTS
+                        grad(p[bb], xx - 1, yy - 1, zz))),    // FROM  8
+                lerp(v, lerp(u, grad(p[aa + 1], xx, yy, zz - 1), // CORNERS
+                        grad(p[ba + 1], xx - 1, yy, zz - 1)), // OF CUBE
+                        lerp(u, grad(p[ab + 1], xx, yy - 1, zz - 1),
+                                grad(p[bb + 1], xx - 1, yy - 1, zz - 1))))
     }
     fun generateRawMap(width: Int, height: Int, wavelength: Double = 5 + (Util.random() * 5)): Array<DoubleArray> {
         val frequency = wavelength / width
@@ -74,18 +73,16 @@ object ImprovedNoise {
         return noise
     }
     fun generateEdgeMap(width: Int, height: Int, wavelength: Double = 10.0): Array<DoubleArray> {
-        with (World) {
-            val frequency = wavelength / width
-            val noise: Array<DoubleArray> = Array(width) { DoubleArray(height) }
-            val z = Util.random() * 1000
-            val steps = 5.0
-            for (x in 0 until width) {
-                for (y in 0 until height) {
-                    val raw = ImprovedNoise.noise(x * frequency, y * frequency, z * frequency)
-                    noise[x][y] = floor((raw + 0.5) * steps) / steps
-                }
+        val frequency = wavelength / width
+        val noise: Array<DoubleArray> = Array(width) { DoubleArray(height) }
+        val z = Util.random() * 1000
+        val steps = 5.0
+        for (x in 0 until width) {
+            for (y in 0 until height) {
+                val raw = ImprovedNoise.noise(x * frequency, y * frequency, z * frequency)
+                noise[x][y] = floor((raw + 0.5) * steps) / steps
             }
-            return noise
         }
+        return noise
     }
 }

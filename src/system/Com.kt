@@ -8,7 +8,7 @@ import util.DrawUtil
 import util.data.Coords
 
 object Com {
-    val messages: MutableList<String> = mutableListOf()
+    private val messages: MutableList<String> = mutableListOf()
 
     fun addMessage(message: String) {
         messages.add(message)

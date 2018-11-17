@@ -102,9 +102,9 @@ data class Field private constructor(val origin: Portal, val primaryAnchor: Port
     companion object {
         fun isPossible(origin: Portal,
                        primaryAnchor: Portal, secondaryAnchor: Portal): Boolean {
-            return World.allPortals.flatMap { it.fields }.filter {
+            return World.allPortals.flatMap { it.fields }.none {
                 it.idSet == linkedSetOf(origin, primaryAnchor, secondaryAnchor)
-            }.isEmpty()
+            }
         }
 
         fun create(origin: Portal, primaryAnchor: Portal, secondaryAnchor: Portal, owner: Agent): Field? {
