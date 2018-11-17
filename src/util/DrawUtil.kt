@@ -96,13 +96,10 @@ object DrawUtil {
         }
     }
 
-    private const val qSliderHeight = 13.0 + 5.0 //defined in CSS
-    private val qSliderDivHeight = qSliderHeight * (QActions.values().count() + 1)
-    private const val qSliderDivWidth = 370 //.qValues width
-    private val topArea = Line.create(0, 0, Dim.width, Dim.topActionOffset.toInt())
+    private val topArea = Line.create(0, 0, Dim.width, HtmlUtil.topActionOffset())
     private val bottomArea = Line.create(0, Dim.height - Dim.botActionOffset.toInt(), Dim.width, Dim.height)
-    private val leftSliderArea = Line.create(0, Dim.topActionOffset.toInt(), qSliderDivWidth, qSliderDivHeight.toInt())
-    private val rightSliderArea = Line.create(Dim.width - qSliderDivWidth, Dim.topActionOffset.toInt(), Dim.width, qSliderDivHeight.toInt())
+    private val leftSliderArea = Line.create(0, HtmlUtil.topActionOffset(), HtmlUtil.leftSliderWidth(), HtmlUtil.leftSliderHeight())
+    private val rightSliderArea = Line.create(Dim.width - HtmlUtil.rightSliderWidth(), HtmlUtil.topActionOffset(), Dim.width, HtmlUtil.rightSliderHeight())
 
     fun drawActionLimits(isHighlightBottom: Boolean = true) {
         with(World.ctx()) {

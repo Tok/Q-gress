@@ -15,7 +15,6 @@ object Dim {
     val agentDeployCircleLineWidth = 1.0
     val linkLineWidth = 3.0
 
-    val topActionOffset = 105.0
     val botActionOffset = 160.0
 
     val leftOffset = maxDeploymentRange.toInt() * Constants.phi //no portals will be placed here

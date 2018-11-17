@@ -55,6 +55,7 @@ var QGress = function (_, Kotlin) {
   var IllegalArgumentException_init = Kotlin.kotlin.IllegalArgumentException_init_pdl1vj$;
   var addClass = Kotlin.kotlin.dom.addClass_hhb33f$;
   var max = Kotlin.kotlin.collections.max_exjks8$;
+  var shuffled = Kotlin.kotlin.collections.shuffled_7wnvza$;
   var padEnd = Kotlin.kotlin.text.padEnd_vrc1nu$;
   var removeClass = Kotlin.kotlin.dom.removeClass_hhb33f$;
   var split = Kotlin.kotlin.text.split_ip8yn$;
@@ -2505,7 +2506,6 @@ var QGress = function (_, Kotlin) {
     this.agentLineWidth = 1;
     this.agentDeployCircleLineWidth = 1.0;
     this.linkLineWidth = 3.0;
-    this.topActionOffset = 105.0;
     this.botActionOffset = 160.0;
     this.leftOffset = numberToInt(this.maxDeploymentRange) * Constants_getInstance().phi;
     this.rightOffset = numberToInt(this.maxDeploymentRange) * Constants_getInstance().phi;
@@ -2794,21 +2794,17 @@ var QGress = function (_, Kotlin) {
   }
   function Time() {
     Time_instance = this;
-    this.secondsPerTick_0 = 1;
-    this.globalSpeedFactor_0 = 1.0;
     this.minTickInterval = 20;
+    this.secondsPerTick_0 = 1;
   }
   Time.prototype.ticksToSeconds_za3lpa$ = function (ticks) {
-    return Kotlin.imul(ticks, this.secondsPerTick_0);
+    return ticks * 1 | 0;
   };
   Time.prototype.secondsToTicks_za3lpa$ = function (seconds) {
-    return seconds / this.secondsPerTick_0 | 0;
+    return seconds / 1 | 0;
   };
   Time.prototype.ticksToTimestamp_za3lpa$ = function (ticks) {
     return Util_getInstance().formatSeconds_za3lpa$(this.ticksToSeconds_za3lpa$(ticks));
-  };
-  Time.prototype.ticksPerFrame = function () {
-    return this.globalSpeedFactor_0 * 100.0 / World_getInstance().speed;
   };
   Time.$metadata$ = {
     kind: Kind_OBJECT,
@@ -7418,13 +7414,10 @@ var QGress = function (_, Kotlin) {
     DrawUtil_instance = this;
     this.CODA = 'Coda';
     this.AMARILLO = 'AmarilloUSAF';
-    this.qSliderHeight_0 = 13.0 + 5.0;
-    this.qSliderDivHeight_0 = this.qSliderHeight_0 * (QActions_getInstance().values().size + 1 | 0);
-    this.qSliderDivWidth_0 = 370;
-    this.topArea_0 = Line$Companion_getInstance().create_tjonv8$(0, 0, Dim_getInstance().width, numberToInt(Dim_getInstance().topActionOffset));
+    this.topArea_0 = Line$Companion_getInstance().create_tjonv8$(0, 0, Dim_getInstance().width, HtmlUtil_getInstance().topActionOffset());
     this.bottomArea_0 = Line$Companion_getInstance().create_tjonv8$(0, Dim_getInstance().height - numberToInt(Dim_getInstance().botActionOffset) | 0, Dim_getInstance().width, Dim_getInstance().height);
-    this.leftSliderArea_0 = Line$Companion_getInstance().create_tjonv8$(0, numberToInt(Dim_getInstance().topActionOffset), 370, numberToInt(this.qSliderDivHeight_0));
-    this.rightSliderArea_0 = Line$Companion_getInstance().create_tjonv8$(Dim_getInstance().width - 370 | 0, numberToInt(Dim_getInstance().topActionOffset), Dim_getInstance().width, numberToInt(this.qSliderDivHeight_0));
+    this.leftSliderArea_0 = Line$Companion_getInstance().create_tjonv8$(0, HtmlUtil_getInstance().topActionOffset(), HtmlUtil_getInstance().leftSliderWidth(), HtmlUtil_getInstance().leftSliderHeight());
+    this.rightSliderArea_0 = Line$Companion_getInstance().create_tjonv8$(Dim_getInstance().width - HtmlUtil_getInstance().rightSliderWidth() | 0, HtmlUtil_getInstance().topActionOffset(), Dim_getInstance().width, HtmlUtil_getInstance().rightSliderHeight());
     var $receiver = new IntRange(0, 100);
     var destination = ArrayList_init(collectionSizeOrDefault($receiver, 10));
     var tmp$;
@@ -8241,15 +8234,10 @@ var QGress = function (_, Kotlin) {
     this.intervalID_0 = 0;
     this.FROG_COUNT_ID_0 = 'numberOfFrogs';
     this.SMURF_COUNT_ID_0 = 'numberOfSmurfs';
-    this.SPEED_ID_0 = 'speed';
     this.PAUSE_BUTTON_ID_0 = 'pauseButton';
     this.LOCATION_DROPDOWN_ID_0 = 'locationSelect';
     this.SOUND_CHECKBOX_ID = 'soundCheckbox';
   }
-  HtmlUtil.prototype.speedSetting_0 = function () {
-    var tmp$;
-    return numberToInt((Kotlin.isType(tmp$ = document.getElementById(this.SPEED_ID_0), HTMLInputElement) ? tmp$ : throwCCE()).valueAsNumber);
-  };
   HtmlUtil.prototype.frogCount_0 = function () {
     var tmp$;
     return numberToInt((Kotlin.isType(tmp$ = document.getElementById(this.FROG_COUNT_ID_0), HTMLInputElement) ? tmp$ : throwCCE()).valueAsNumber);
@@ -8298,29 +8286,10 @@ var QGress = function (_, Kotlin) {
     return Agent$Companion_getInstance().createSmurf_5edep5$(World_getInstance().grid);
   }
   function HtmlUtil$tick$lambda_1(it) {
-    return Util_getInstance().random();
-  }
-  function HtmlUtil$tick$lambda_2(it) {
     DrawUtil_getInstance().redraw();
     DrawUtil_getInstance().redrawUserInterface();
     return Unit;
   }
-  var compareBy$lambda_15 = wrapFunction(function () {
-    var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
-    return function (closure$selector) {
-      return function (a, b) {
-        var selector = closure$selector;
-        return compareValues(selector(a), selector(b));
-      };
-    };
-  });
-  function Comparator$ObjectLiteral_16(closure$comparison) {
-    this.closure$comparison = closure$comparison;
-  }
-  Comparator$ObjectLiteral_16.prototype.compare = function (a, b) {
-    return this.closure$comparison(a, b);
-  };
-  Comparator$ObjectLiteral_16.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
   HtmlUtil.prototype.tick_0 = function () {
     var tmp$;
     if (!World_getInstance().isReady) {
@@ -8329,9 +8298,8 @@ var QGress = function (_, Kotlin) {
     World_getInstance().allAgents.clear();
     this.updateAgentCount_0(World_getInstance().frogs, this.frogCount_0(), HtmlUtil$tick$lambda);
     this.updateAgentCount_0(World_getInstance().smurfs, this.smurfCount_0(), HtmlUtil$tick$lambda_0);
-    sortedWith(World_getInstance().allAgents, new Comparator$ObjectLiteral_16(compareBy$lambda_15(HtmlUtil$tick$lambda_1)));
     if (World_getInstance().tick % 5 === 0) {
-      var $receiver = World_getInstance().allAgents;
+      var $receiver = shuffled(World_getInstance().allAgents);
       var destination = ArrayList_init(collectionSizeOrDefault($receiver, 10));
       var tmp$_0;
       tmp$_0 = $receiver.iterator();
@@ -8342,7 +8310,7 @@ var QGress = function (_, Kotlin) {
       tmp$ = toSet(destination);
     }
      else {
-      var $receiver_0 = World_getInstance().allAgents;
+      var $receiver_0 = shuffled(World_getInstance().allAgents);
       var destination_0 = ArrayList_init(collectionSizeOrDefault($receiver_0, 10));
       var tmp$_1;
       tmp$_1 = $receiver_0.iterator();
@@ -8361,7 +8329,7 @@ var QGress = function (_, Kotlin) {
       var element = tmp$_2.next();
       element.act();
     }
-    window.requestAnimationFrame(HtmlUtil$tick$lambda_2);
+    window.requestAnimationFrame(HtmlUtil$tick$lambda_1);
     var tmp$_3;
     tmp$_3 = World_getInstance();
     tmp$_3.tick = tmp$_3.tick + 1 | 0;
@@ -8372,114 +8340,124 @@ var QGress = function (_, Kotlin) {
       return Unit;
     };
   }
-  function HtmlUtil$load$lambda_0(this$HtmlUtil) {
-    return function (it) {
-      World_getInstance().speed = this$HtmlUtil.speedSetting_0();
-      return Unit;
-    };
-  }
   function HtmlUtil$load$lambda$lambda(this$HtmlUtil) {
     return function () {
       this$HtmlUtil.tick_0();
       return Unit;
     };
   }
-  function HtmlUtil$load$lambda_1(this$HtmlUtil) {
+  function HtmlUtil$load$lambda_0(this$HtmlUtil) {
     return function (it) {
       this$HtmlUtil.intervalID_0 = this$HtmlUtil.pauseHandler_0(this$HtmlUtil.intervalID_0, HtmlUtil$load$lambda$lambda(this$HtmlUtil));
       return Unit;
     };
   }
-  function HtmlUtil$load$lambda_2(this$HtmlUtil) {
+  function HtmlUtil$load$lambda_1(this$HtmlUtil) {
     return function (it) {
       this$HtmlUtil.mapChangeHandler_0();
       return Unit;
     };
   }
-  function HtmlUtil$load$lambda_3(closure$satCheckbox) {
-    return function (it) {
-      if (closure$satCheckbox.checked)
-        MapUtil_getInstance().showSatelliteMap();
-      else
-        MapUtil_getInstance().hideSatelliteMap();
-      return Unit;
-    };
-  }
-  function HtmlUtil$load$lambda_4(this$HtmlUtil) {
+  function HtmlUtil$load$lambda_2(this$HtmlUtil) {
     return function (event) {
       this$HtmlUtil.handleMouseMove_0(event);
       return Unit;
     };
   }
-  function HtmlUtil$load$lambda_5(this$HtmlUtil) {
+  function HtmlUtil$load$lambda_3(this$HtmlUtil) {
     return function (event) {
       this$HtmlUtil.handleMouseMove_0(event);
       return Unit;
     };
   }
   HtmlUtil.prototype.load = function () {
-    var tmp$, tmp$_0, tmp$_1, tmp$_2, tmp$_3, tmp$_4, tmp$_5, tmp$_6, tmp$_7;
+    var tmp$, tmp$_0, tmp$_1;
     var rootDiv = Kotlin.isType(tmp$ = document.getElementById('root'), HTMLDivElement) ? tmp$ : throwCCE();
     addClass(rootDiv, ['container']);
     World_getInstance().can = this.createCanvas_0('mainCanvas');
     World_getInstance().bgCan = this.createCanvas_0('backgroundCanvas');
     World_getInstance().uiCan = this.createCanvas_0('uiCanvas');
     World_getInstance().uiCan.addEventListener('click', HtmlUtil$load$lambda(this), false);
-    var canvasDiv = Kotlin.isType(tmp$_0 = document.createElement('div'), HTMLDivElement) ? tmp$_0 : throwCCE();
-    canvasDiv.append(World_getInstance().uiCan);
-    canvasDiv.append(World_getInstance().bgCan);
-    canvasDiv.append(World_getInstance().can);
-    rootDiv.append(canvasDiv);
-    var controlDiv = Kotlin.isType(tmp$_1 = document.createElement('div'), HTMLDivElement) ? tmp$_1 : throwCCE();
-    addClass(controlDiv, ['controls']);
-    var speed = 100;
-    var minSpeed = 100;
-    var maxSpeed = 300;
-    var speedSlider = this.createSliderDiv_0('speedSlider', speed, maxSpeed, this.SPEED_ID_0, '% Speed', minSpeed);
-    speedSlider.oninput = HtmlUtil$load$lambda_0(this);
-    controlDiv.append(speedSlider);
-    controlDiv.append(this.createSliderDiv_0('frogSlider', Config_getInstance().startFrogs, Config_getInstance().maxFrogs, this.FROG_COUNT_ID_0, ' Frogs', 0));
-    controlDiv.append(this.createSliderDiv_0('smurfSlider', Config_getInstance().startSmurfs, Config_getInstance().maxSmurfs, this.SMURF_COUNT_ID_0, ' Smurfs', 0));
-    var buttonDiv = Kotlin.isType(tmp$_2 = document.createElement('div'), HTMLDivElement) ? tmp$_2 : throwCCE();
-    var pauseButton = this.createButton_0('button', 'Stop', HtmlUtil$load$lambda_1(this));
+    rootDiv.append(this.createCanvasDiv_0());
+    var controlDiv = this.createControlDiv_0();
+    var buttonDiv = Kotlin.isType(tmp$_0 = document.createElement('div'), HTMLDivElement) ? tmp$_0 : throwCCE();
+    var pauseButton = this.createButton_0('button', 'Stop', HtmlUtil$load$lambda_0(this));
     pauseButton.id = this.PAUSE_BUTTON_ID_0;
     buttonDiv.append(pauseButton);
-    var dropDown = this.createDropdown_0(this.LOCATION_DROPDOWN_ID_0, HtmlUtil$load$lambda_2(this));
-    var selectionName = (tmp$_3 = this.getLocationNameFromUrl_0()) != null ? tmp$_3 : 'unknown';
+    var dropDown = this.createDropdown_0(this.LOCATION_DROPDOWN_ID_0, HtmlUtil$load$lambda_1(this));
+    var selectionName = (tmp$_1 = this.getLocationNameFromUrl_0()) != null ? tmp$_1 : 'unknown';
     this.setLocationDropdownSelection_0(dropDown, selectionName);
     buttonDiv.append(dropDown);
-    var soundCheckbox = Kotlin.isType(tmp$_4 = document.createElement('input'), HTMLInputElement) ? tmp$_4 : throwCCE();
-    soundCheckbox.id = this.SOUND_CHECKBOX_ID;
-    soundCheckbox.type = 'checkbox';
-    soundCheckbox.checked = true;
-    addClass(soundCheckbox, ['checkbox']);
-    buttonDiv.append(soundCheckbox);
-    var soundLabel = Kotlin.isType(tmp$_5 = document.createElement('span'), HTMLSpanElement) ? tmp$_5 : throwCCE();
-    addClass(soundLabel, ['label']);
-    soundLabel.id = 'soundLabel';
-    soundLabel.innerHTML = 'Sound';
-    buttonDiv.append(soundLabel);
-    var satCheckbox = Kotlin.isType(tmp$_6 = document.createElement('input'), HTMLInputElement) ? tmp$_6 : throwCCE();
-    satCheckbox.id = 'satCheckbox';
-    satCheckbox.type = 'checkbox';
-    satCheckbox.checked = true;
-    addClass(satCheckbox, ['checkbox']);
-    satCheckbox.onchange = HtmlUtil$load$lambda_3(satCheckbox);
-    buttonDiv.append(satCheckbox);
-    var satLabel = Kotlin.isType(tmp$_7 = document.createElement('span'), HTMLSpanElement) ? tmp$_7 : throwCCE();
-    addClass(satLabel, ['label']);
-    satLabel.id = 'satLabel';
-    satLabel.innerHTML = 'Satellite';
-    buttonDiv.append(satLabel);
+    buttonDiv.append(this.createSoundSpan_0());
+    buttonDiv.append(this.createSatSpan_0());
     controlDiv.append(buttonDiv);
-    var actionSliderDiv = this.createSliderDiv_1(QActions_getInstance().values(), 'floatLeft', 'Actions');
+    var actionSliderDiv = this.createSliderDiv_0('left-sliders', QActions_getInstance().values(), 'floatLeft', 'Actions');
     controlDiv.append(actionSliderDiv);
-    var destinationSliderDiv = this.createSliderDiv_1(QDestinations_getInstance().values(), 'floatRight', 'Destinations');
+    var destinationSliderDiv = this.createSliderDiv_0('right-sliders', QDestinations_getInstance().values(), 'floatRight', 'Destinations');
     controlDiv.append(destinationSliderDiv);
     rootDiv.append(controlDiv);
-    controlDiv.addEventListener('mousemove', HtmlUtil$load$lambda_4(this), false);
-    rootDiv.addEventListener('mousemove', HtmlUtil$load$lambda_5(this), false);
+    controlDiv.addEventListener('mousemove', HtmlUtil$load$lambda_2(this), false);
+    rootDiv.addEventListener('mousemove', HtmlUtil$load$lambda_3(this), false);
     this.initWorld_0();
+  };
+  HtmlUtil.prototype.createSoundSpan_0 = function () {
+    var tmp$, tmp$_0, tmp$_1;
+    var span = Kotlin.isType(tmp$ = document.createElement('span'), HTMLSpanElement) ? tmp$ : throwCCE();
+    var checkbox = Kotlin.isType(tmp$_0 = document.createElement('input'), HTMLInputElement) ? tmp$_0 : throwCCE();
+    checkbox.id = this.SOUND_CHECKBOX_ID;
+    checkbox.type = 'checkbox';
+    checkbox.checked = true;
+    addClass(checkbox, ['checkbox']);
+    span.append(checkbox);
+    var label = Kotlin.isType(tmp$_1 = document.createElement('span'), HTMLSpanElement) ? tmp$_1 : throwCCE();
+    addClass(label, ['label']);
+    label.id = 'soundLabel';
+    label.innerHTML = 'Sound';
+    span.append(label);
+    return span;
+  };
+  function HtmlUtil$createSatSpan$lambda(closure$checkbox) {
+    return function (it) {
+      if (closure$checkbox.checked)
+        MapUtil_getInstance().showSatelliteMap();
+      else
+        MapUtil_getInstance().hideSatelliteMap();
+      return Unit;
+    };
+  }
+  HtmlUtil.prototype.createSatSpan_0 = function () {
+    var tmp$, tmp$_0, tmp$_1;
+    var span = Kotlin.isType(tmp$ = document.createElement('span'), HTMLSpanElement) ? tmp$ : throwCCE();
+    var checkbox = Kotlin.isType(tmp$_0 = document.createElement('input'), HTMLInputElement) ? tmp$_0 : throwCCE();
+    checkbox.id = 'satCheckbox';
+    checkbox.type = 'checkbox';
+    checkbox.checked = true;
+    addClass(checkbox, ['checkbox']);
+    checkbox.onchange = HtmlUtil$createSatSpan$lambda(checkbox);
+    span.append(checkbox);
+    var label = Kotlin.isType(tmp$_1 = document.createElement('span'), HTMLSpanElement) ? tmp$_1 : throwCCE();
+    addClass(label, ['label']);
+    label.id = 'satLabel';
+    label.innerHTML = 'Satellite';
+    span.append(label);
+    return span;
+  };
+  HtmlUtil.prototype.createCanvasDiv_0 = function () {
+    var tmp$;
+    var div = Kotlin.isType(tmp$ = document.createElement('div'), HTMLDivElement) ? tmp$ : throwCCE();
+    div.append(World_getInstance().uiCan);
+    div.append(World_getInstance().bgCan);
+    div.append(World_getInstance().can);
+    return div;
+  };
+  HtmlUtil.prototype.createControlDiv_0 = function () {
+    var tmp$;
+    var div = Kotlin.isType(tmp$ = document.createElement('div'), HTMLDivElement) ? tmp$ : throwCCE();
+    div.id = 'top-controls';
+    addClass(div, ['controls']);
+    div.append(this.createSliderDiv_1('frogSlider', Config_getInstance().startFrogs, Config_getInstance().maxFrogs, this.FROG_COUNT_ID_0, ' Frogs', 0));
+    div.append(this.createSliderDiv_1('smurfSlider', Config_getInstance().startSmurfs, Config_getInstance().maxSmurfs, this.SMURF_COUNT_ID_0, ' Smurfs', 0));
+    return div;
   };
   function HtmlUtil$createSliderDiv$lambda$lambda$lambda(closure$slider, this$HtmlUtil, closure$sliderValue) {
     return function (it) {
@@ -8487,9 +8465,10 @@ var QGress = function (_, Kotlin) {
       return null;
     };
   }
-  HtmlUtil.prototype.createSliderDiv_1 = function (qValues, className, labelText) {
+  HtmlUtil.prototype.createSliderDiv_0 = function (id, qValues, className, labelText) {
     var tmp$, tmp$_0;
     var qDiv = Kotlin.isType(tmp$ = document.createElement('div'), HTMLDivElement) ? tmp$ : throwCCE();
+    qDiv.id = id;
     addClass(qDiv, ['qValues', 'halfWidth', className]);
     var destinationsLabel = Kotlin.isType(tmp$_0 = document.createElement('div'), HTMLDivElement) ? tmp$_0 : throwCCE();
     addClass(destinationsLabel, ['label', 'qTitle']);
@@ -8572,7 +8551,7 @@ var QGress = function (_, Kotlin) {
   HtmlUtil.prototype.resetInterval_0 = function () {
     var tmp$, tmp$_0, tmp$_1;
     if (Config_getInstance().isAutostart) {
-      tmp$_1 = (tmp$_0 = (tmp$ = document.defaultView) != null ? tmp$.setInterval(HtmlUtil$resetInterval$lambda(this), Time_getInstance().minTickInterval) : null) != null ? tmp$_0 : 0;
+      tmp$_1 = (tmp$_0 = (tmp$ = document.defaultView) != null ? tmp$.setInterval(HtmlUtil$resetInterval$lambda(this), 20) : null) != null ? tmp$_0 : 0;
     }
      else
       tmp$_1 = 0;
@@ -8594,7 +8573,7 @@ var QGress = function (_, Kotlin) {
     }
      else {
       pauseButton.innerText = 'Stop';
-      tmp$_3 = (tmp$_2 = (tmp$_1 = document.defaultView) != null ? tmp$_1.setInterval(HtmlUtil$pauseHandler$lambda(tickFunction), Time_getInstance().minTickInterval) : null) != null ? tmp$_2 : 0;
+      tmp$_3 = (tmp$_2 = (tmp$_1 = document.defaultView) != null ? tmp$_1.setInterval(HtmlUtil$pauseHandler$lambda(tickFunction), 20) : null) != null ? tmp$_2 : 0;
     }
     return tmp$_3;
   };
@@ -8663,7 +8642,7 @@ var QGress = function (_, Kotlin) {
       return null;
     };
   }
-  HtmlUtil.prototype.createSliderDiv_0 = function (className, value, max, id, suffix, min) {
+  HtmlUtil.prototype.createSliderDiv_1 = function (className, value, max, id, suffix, min) {
     if (min === void 0)
       min = 0;
     var tmp$, tmp$_0, tmp$_1;
@@ -8682,6 +8661,26 @@ var QGress = function (_, Kotlin) {
     div.appendChild(sliderValue);
     sliderValue.innerHTML = slider.value + suffix;
     return div;
+  };
+  HtmlUtil.prototype.topActionOffset = function () {
+    var tmp$, tmp$_0;
+    return (tmp$_0 = (tmp$ = document.getElementById('top-controls')) != null ? tmp$.clientHeight : null) != null ? tmp$_0 : 82;
+  };
+  HtmlUtil.prototype.leftSliderHeight = function () {
+    var tmp$, tmp$_0;
+    return (tmp$_0 = (tmp$ = document.getElementById('left-sliders')) != null ? tmp$.clientHeight : null) != null ? tmp$_0 : 144;
+  };
+  HtmlUtil.prototype.leftSliderWidth = function () {
+    var tmp$, tmp$_0;
+    return (tmp$_0 = (tmp$ = document.getElementById('left-sliders')) != null ? tmp$.clientWidth : null) != null ? tmp$_0 : 370;
+  };
+  HtmlUtil.prototype.rightSliderHeight = function () {
+    var tmp$, tmp$_0;
+    return (tmp$_0 = (tmp$ = document.getElementById('right-sliders')) != null ? tmp$.clientHeight : null) != null ? tmp$_0 : 144;
+  };
+  HtmlUtil.prototype.rightSliderWidth = function () {
+    var tmp$, tmp$_0;
+    return (tmp$_0 = (tmp$ = document.getElementById('right-sliders')) != null ? tmp$.clientWidth : null) != null ? tmp$_0 : 370;
   };
   HtmlUtil.prototype.createButton_0 = function (className, text, callback) {
     var tmp$;
@@ -9450,7 +9449,7 @@ var QGress = function (_, Kotlin) {
     return !soundCheckbox.checked;
   };
   SoundUtil.prototype.volume_0 = function () {
-    return this.isMuted_0() ? 0.0 : 1.0;
+    return this.isMuted_0() ? 0.0 : 0.4;
   };
   SoundUtil.prototype.playPortalCreationSound_lfj9be$ = function (pos) {
     if (this.isMuted_0())
@@ -9603,7 +9602,7 @@ var QGress = function (_, Kotlin) {
   function Util$findNearestPortals$lambda(it) {
     return it.first;
   }
-  var compareBy$lambda_16 = wrapFunction(function () {
+  var compareBy$lambda_15 = wrapFunction(function () {
     var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
     return function (closure$selector) {
       return function (a, b) {
@@ -9612,13 +9611,13 @@ var QGress = function (_, Kotlin) {
       };
     };
   });
-  function Comparator$ObjectLiteral_17(closure$comparison) {
+  function Comparator$ObjectLiteral_16(closure$comparison) {
     this.closure$comparison = closure$comparison;
   }
-  Comparator$ObjectLiteral_17.prototype.compare = function (a, b) {
+  Comparator$ObjectLiteral_16.prototype.compare = function (a, b) {
     return this.closure$comparison(a, b);
   };
-  Comparator$ObjectLiteral_17.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
+  Comparator$ObjectLiteral_16.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
   Util.prototype.findNearestPortals_0 = function (coords) {
     var $receiver = World_getInstance().allPortals;
     var destination = ArrayList_init(collectionSizeOrDefault($receiver, 10));
@@ -9628,7 +9627,7 @@ var QGress = function (_, Kotlin) {
       var item = tmp$.next();
       destination.add_11rb$(to(item.location.distanceTo_lfj9be$(coords), item));
     }
-    return toSet(sortedWith(destination, new Comparator$ObjectLiteral_17(compareBy$lambda_16(Util$findNearestPortals$lambda))));
+    return toSet(sortedWith(destination, new Comparator$ObjectLiteral_16(compareBy$lambda_15(Util$findNearestPortals$lambda))));
   };
   Util.prototype.findNearestPortal_lfj9be$ = function (coords) {
     var nearest = this.findNearestPortals_0(coords);
@@ -9672,7 +9671,7 @@ var QGress = function (_, Kotlin) {
   function Util$select$lambda(it) {
     return it.first;
   }
-  var compareBy$lambda_17 = wrapFunction(function () {
+  var compareBy$lambda_16 = wrapFunction(function () {
     var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
     return function (closure$selector) {
       return function (a, b) {
@@ -9681,13 +9680,13 @@ var QGress = function (_, Kotlin) {
       };
     };
   });
-  function Comparator$ObjectLiteral_18(closure$comparison) {
+  function Comparator$ObjectLiteral_17(closure$comparison) {
     this.closure$comparison = closure$comparison;
   }
-  Comparator$ObjectLiteral_18.prototype.compare = function (a, b) {
+  Comparator$ObjectLiteral_17.prototype.compare = function (a, b) {
     return this.closure$comparison(a, b);
   };
-  Comparator$ObjectLiteral_18.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
+  Comparator$ObjectLiteral_17.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
   Util.prototype.select_4u7aq8$ = function (probabilityList, default_0) {
     var destination = ArrayList_init_0();
     var tmp$;
@@ -9712,7 +9711,7 @@ var QGress = function (_, Kotlin) {
     var rand = this.randomDouble_0(total);
     var accu = {v: 0.0};
     var tmp$_1;
-    tmp$_1 = sortedWith(list, new Comparator$ObjectLiteral_18(compareBy$lambda_17(Util$select$lambda))).iterator();
+    tmp$_1 = sortedWith(list, new Comparator$ObjectLiteral_17(compareBy$lambda_16(Util$select$lambda))).iterator();
     while (tmp$_1.hasNext()) {
       var element_1 = tmp$_1.next();
       accu.v += element_1.first;
@@ -9801,7 +9800,6 @@ var QGress = function (_, Kotlin) {
     this.bgCan_izup8r$_0 = this.bgCan_izup8r$_0;
     this.uiCan_s0t3x6$_0 = this.uiCan_s0t3x6$_0;
     this.mousePos = null;
-    this.speed = 100;
     this.noiseMap_ft1fdo$_0 = this.noiseMap_ft1fdo$_0;
     this.noiseImage_c4tqbn$_0 = this.noiseImage_c4tqbn$_0;
     this.shadowStreetMap = null;
@@ -9954,7 +9952,7 @@ var QGress = function (_, Kotlin) {
     tmp$ = $receiver.entries.iterator();
     while (tmp$.hasNext()) {
       var element = tmp$.next();
-      if (!((element.key.y * 12 | 0) < Dim_getInstance().topActionOffset)) {
+      if (!((element.key.y * 12 | 0) < HtmlUtil_getInstance().topActionOffset())) {
         destination.put_xwzc9p$(element.key, element.value);
       }
     }

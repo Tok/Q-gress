@@ -31,12 +31,10 @@ object HtmlUtil {
 
     private const val FROG_COUNT_ID = "numberOfFrogs"
     private const val SMURF_COUNT_ID = "numberOfSmurfs"
-    private const val SPEED_ID = "speed"
     private const val PAUSE_BUTTON_ID = "pauseButton"
     private const val LOCATION_DROPDOWN_ID = "locationSelect"
     const val SOUND_CHECKBOX_ID = "soundCheckbox"
 
-    private fun speedSetting(): Int = (document.getElementById(SPEED_ID) as HTMLInputElement).valueAsNumber.toInt()
     private fun frogCount(): Int = (document.getElementById(FROG_COUNT_ID) as HTMLInputElement).valueAsNumber.toInt()
     private fun smurfCount(): Int = (document.getElementById(SMURF_COUNT_ID) as HTMLInputElement).valueAsNumber.toInt()
 
@@ -64,11 +62,10 @@ object HtmlUtil {
         World.allAgents.clear()
         updateAgentCount(World.frogs, frogCount()) { Agent.createFrog(World.grid) }
         updateAgentCount(World.smurfs, smurfCount()) { Agent.createSmurf(World.grid) }
-        World.allAgents.sortedBy { Util.random() } //TODO remove if necessary
         val nextAgents = if (World.tick % 5 == 0) {
-            World.allAgents.map { it.act() }.toSet() //actual tick execution
+            World.allAgents.shuffled().map { it.act() }.toSet() //actual tick execution
         } else {
-            World.allAgents.map { it.onlyMove() }.toSet()
+            World.allAgents.shuffled().map { it.onlyMove() }.toSet()
         }
         updateAgents(World.frogs, Faction.ENL, nextAgents)
         updateAgents(World.smurfs, Faction.RES, nextAgents)
@@ -89,27 +86,9 @@ object HtmlUtil {
         World.bgCan = createCanvas("backgroundCanvas")
         World.uiCan = createCanvas("uiCanvas")
         World.uiCan.addEventListener("click", { event -> handleMouseClick(event) }, false)
+        rootDiv.append(createCanvasDiv())
 
-        val canvasDiv = document.createElement("div") as HTMLDivElement
-        canvasDiv.append(World.uiCan)
-        canvasDiv.append(World.bgCan)
-        canvasDiv.append(World.can)
-
-        rootDiv.append(canvasDiv)
-
-        val controlDiv = document.createElement("div") as HTMLDivElement
-        controlDiv.addClass("controls")
-
-        val speed = 100
-        val minSpeed = 100
-        val maxSpeed = 300
-        val speedSlider = createSliderDiv("speedSlider", speed, maxSpeed, SPEED_ID, "% Speed", minSpeed)
-        speedSlider.oninput = { World.speed = speedSetting(); Unit }
-        controlDiv.append(speedSlider)
-        controlDiv.append(createSliderDiv("frogSlider", Config.startFrogs, Config.maxFrogs,
-                FROG_COUNT_ID, " Frogs", 0))
-        controlDiv.append(createSliderDiv("smurfSlider", Config.startSmurfs, Config.maxSmurfs,
-                SMURF_COUNT_ID, " Smurfs", 0))
+        val controlDiv = createControlDiv()
         val buttonDiv = document.createElement("div") as HTMLDivElement
         val pauseButton = createButton("button", "Stop") {
             intervalID = pauseHandler(intervalID) { tick() }
@@ -122,35 +101,13 @@ object HtmlUtil {
         setLocationDropdownSelection(dropDown, selectionName)
         buttonDiv.append(dropDown)
 
-        val soundCheckbox = document.createElement("input") as HTMLInputElement
-        soundCheckbox.id = SOUND_CHECKBOX_ID
-        soundCheckbox.type = "checkbox"
-        soundCheckbox.checked = true
-        soundCheckbox.addClass("checkbox")
-        buttonDiv.append(soundCheckbox)
-        val soundLabel = document.createElement("span") as HTMLSpanElement
-        soundLabel.addClass("label")
-        soundLabel.id = "soundLabel"
-        soundLabel.innerHTML = "Sound"
-        buttonDiv.append(soundLabel)
-
-        val satCheckbox = document.createElement("input") as HTMLInputElement
-        satCheckbox.id = "satCheckbox"
-        satCheckbox.type = "checkbox"
-        satCheckbox.checked = true
-        satCheckbox.addClass("checkbox")
-        satCheckbox.onchange = { if (satCheckbox.checked) MapUtil.showSatelliteMap() else MapUtil.hideSatelliteMap() }
-        buttonDiv.append(satCheckbox)
-        val satLabel = document.createElement("span") as HTMLSpanElement
-        satLabel.addClass("label")
-        satLabel.id = "satLabel"
-        satLabel.innerHTML = "Satellite"
-        buttonDiv.append(satLabel)
+        buttonDiv.append(createSoundSpan())
+        buttonDiv.append(createSatSpan())
         controlDiv.append(buttonDiv)
 
-        val actionSliderDiv = createSliderDiv(QActions.values(), "floatLeft", "Actions")
+        val actionSliderDiv = createSliderDiv("left-sliders", QActions.values(), "floatLeft", "Actions")
         controlDiv.append(actionSliderDiv)
-        val destinationSliderDiv = createSliderDiv(QDestinations.values(), "floatRight", "Destinations")
+        val destinationSliderDiv = createSliderDiv("right-sliders", QDestinations.values(), "floatRight", "Destinations")
         controlDiv.append(destinationSliderDiv)
 
         rootDiv.append(controlDiv)
@@ -159,8 +116,61 @@ object HtmlUtil {
         initWorld()
     }
 
-    private fun createSliderDiv(qValues: List<QValue>, className: String, labelText: String): HTMLDivElement {
+    private fun createSoundSpan(): HTMLSpanElement {
+        val span = document.createElement("span") as HTMLSpanElement
+        val checkbox = document.createElement("input") as HTMLInputElement
+        checkbox.id = SOUND_CHECKBOX_ID
+        checkbox.type = "checkbox"
+        checkbox.checked = true
+        checkbox.addClass("checkbox")
+        span.append(checkbox)
+        val label = document.createElement("span") as HTMLSpanElement
+        label.addClass("label")
+        label.id = "soundLabel"
+        label.innerHTML = "Sound"
+        span.append(label)
+        return span
+    }
+
+    private fun createSatSpan(): HTMLSpanElement {
+        val span = document.createElement("span") as HTMLSpanElement
+        val checkbox = document.createElement("input") as HTMLInputElement
+        checkbox.id = "satCheckbox"
+        checkbox.type = "checkbox"
+        checkbox.checked = true
+        checkbox.addClass("checkbox")
+        checkbox.onchange = { if (checkbox.checked) MapUtil.showSatelliteMap() else MapUtil.hideSatelliteMap() }
+        span.append(checkbox)
+        val label = document.createElement("span") as HTMLSpanElement
+        label.addClass("label")
+        label.id = "satLabel"
+        label.innerHTML = "Satellite"
+        span.append(label)
+        return span
+    }
+
+    private fun createCanvasDiv(): HTMLDivElement {
+        val div = document.createElement("div") as HTMLDivElement
+        div.append(World.uiCan)
+        div.append(World.bgCan)
+        div.append(World.can)
+        return div
+    }
+
+    private fun createControlDiv(): HTMLDivElement {
+        val div = document.createElement("div") as HTMLDivElement
+        div.id = "top-controls"
+        div.addClass("controls")
+        div.append(createSliderDiv("frogSlider", Config.startFrogs, Config.maxFrogs,
+                FROG_COUNT_ID, " Frogs", 0))
+        div.append(createSliderDiv("smurfSlider", Config.startSmurfs, Config.maxSmurfs,
+                SMURF_COUNT_ID, " Smurfs", 0))
+        return div
+    }
+
+    private fun createSliderDiv(id: String, qValues: List<QValue>, className: String, labelText: String): HTMLDivElement {
         val qDiv = document.createElement("div") as HTMLDivElement
+        qDiv.id = id
         qDiv.addClass("qValues", "halfWidth", className)
         val destinationsLabel = document.createElement("div") as HTMLDivElement
         destinationsLabel.addClass("label", "qTitle")
@@ -322,6 +332,12 @@ object HtmlUtil {
         sliderValue.innerHTML = slider.value + suffix
         return div
     }
+
+    fun topActionOffset(): Int = document.getElementById("top-controls")?.clientHeight ?: 82
+    fun leftSliderHeight(): Int = document.getElementById("left-sliders")?.clientHeight ?: 144
+    fun leftSliderWidth(): Int = document.getElementById("left-sliders")?.clientWidth ?: 370
+    fun rightSliderHeight(): Int = document.getElementById("right-sliders")?.clientHeight ?: 144
+    fun rightSliderWidth(): Int = document.getElementById("right-sliders")?.clientWidth ?: 370
 
     private fun createButton(className: String, text: String, callback: ((Event) -> Unit)?): HTMLButtonElement {
         val button = document.createElement("BUTTON") as HTMLButtonElement

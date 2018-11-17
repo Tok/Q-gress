@@ -46,7 +46,6 @@ object World {
 
     //var center: JSON = MapUtil.INITIAL_MAP_CENTER
     var mousePos: Coords? = null
-    var speed: Int = 100
 
     fun w() = can.width
     fun shadowW() = w() / PathUtil.RESOLUTION
@@ -64,7 +63,7 @@ object World {
     private fun wellPassableCells(): Map<Coords, Cell> = grid.filter { it.value.isPassableInAllDirections() }
     private fun passableOnScreen(): Map<Coords, Cell> = wellPassableCells().filterNot { it.key.isOffGrid() }
     fun passableInActionArea(): Map<Coords, Cell> = passableOnScreen()
-            .filterNot { it.key.y * PathUtil.RESOLUTION < Dim.topActionOffset }
+            .filterNot { it.key.y * PathUtil.RESOLUTION < HtmlUtil.topActionOffset() }
             .filterNot { it.key.y * PathUtil.RESOLUTION > (window.innerHeight - Dim.botActionOffset) }
 
     val frogs: MutableSet<Agent> = mutableSetOf()
