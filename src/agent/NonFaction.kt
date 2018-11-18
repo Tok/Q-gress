@@ -13,7 +13,7 @@ import util.data.Circle
 import util.data.Complex
 import util.data.Coords
 
-data class NonFaction(var pos: Coords, val speed: Float,
+data class NonFaction(var pos: Coords, val speed: Float, val size: AgentSize,
                       var destination: Coords, var vectorField: Map<Coords, Complex>,
                       var busyUntil: Int) {
     val isDrunk = Util.random() <= 0.02 //TODO
@@ -52,7 +52,7 @@ data class NonFaction(var pos: Coords, val speed: Float,
 
     private fun wait() {
         this.velocity = Complex.ZERO
-        this.busyUntil = World.tick + creatWaitTime()
+        this.busyUntil = World.tick + createWaitTime()
     }
 
     private fun moveElsewhere() {
@@ -83,7 +83,7 @@ data class NonFaction(var pos: Coords, val speed: Float,
         this.destination = randomTarget.location
     }
 
-    fun draw(ctx: Ctx) = ctx.drawImage(NonFaction.image, pos.xx(), pos.yy())
+    fun draw(ctx: Ctx) = ctx.drawImage(NonFaction.image(size.offset), pos.xx(), pos.yy())
 
     companion object {
         private val OFFSCREEN_DISTANCE = PathUtil.RESOLUTION * (MapUtil.OFFSCREEN_CELL_ROWS / 2)
@@ -125,11 +125,11 @@ data class NonFaction(var pos: Coords, val speed: Float,
 
         private val MIN_WAIT = Time.secondsToTicks(5)
         private val MAX_WAIT = Time.secondsToTicks(45)
-        private fun creatWaitTime() = Util.randomInt(MIN_WAIT, MAX_WAIT)
-        private val image: Canvas = drawTemplate()
-        private fun drawTemplate(): Canvas {
+        private fun createWaitTime() = Util.randomInt(MIN_WAIT, MAX_WAIT)
+        private fun image(sizeOffset: Int): Canvas = drawTemplate(sizeOffset)
+        private fun drawTemplate(sizeOffset: Int): Canvas {
             val lineWidth = 2
-            val r = Dim.agentRadius.toInt()
+            val r = Dim.agentRadius.toInt() + sizeOffset
             val w = r * 2 + (2 * lineWidth)
             val h = w
             return HtmlUtil.preRender(w, h, fun(ctx: Ctx) {
@@ -142,16 +142,18 @@ data class NonFaction(var pos: Coords, val speed: Float,
 
         private const val maxSpeed = 3F
         private const val minSpeed = 1F
+
         fun create(grid: Map<Coords, Cell>): NonFaction {
             val position = Coords.createRandomPassable(grid)
             val speed = minSpeed + (Util.random().toFloat() * (maxSpeed - minSpeed))
+            val size = AgentSize.createRandom()
             val newNonFaction = if (Util.random() < 0.1) { //move to offscreen destination
                 val destination = Util.shuffle(DESTINATIONS).first()
                 val vectorField = getOrCreateVectorField(destination)
-                NonFaction(position, speed, destination, vectorField, World.tick)
+                NonFaction(position, speed, size, destination, vectorField, World.tick)
             } else { //move to random portal
                 val portal = World.allPortals[(Util.random() * (World.allPortals.size - 1)).toInt()]
-                NonFaction(position, speed, portal.location, portal.vectorField, World.tick)
+                NonFaction(position, speed, size, portal.location, portal.vectorField, World.tick)
             }
             DrawUtil.drawNonFaction(newNonFaction)
             return newNonFaction

@@ -1414,6 +1414,54 @@ var QGress = function (_, Kotlin) {
   Agent.prototype.copy_lmq102$ = function (faction, name, pos, skills, inventory, action, actionPortal, destination, ap, xm, velocity) {
     return new Agent(faction === void 0 ? this.faction : faction, name === void 0 ? this.name : name, pos === void 0 ? this.pos : pos, skills === void 0 ? this.skills : skills, inventory === void 0 ? this.inventory : inventory, action === void 0 ? this.action : action, actionPortal === void 0 ? this.actionPortal : actionPortal, destination === void 0 ? this.destination : destination, ap === void 0 ? this.ap : ap, xm === void 0 ? this.xm : xm, velocity === void 0 ? this.velocity : velocity);
   };
+  function AgentSize(offset) {
+    AgentSize$Companion_getInstance();
+    this.offset = offset;
+  }
+  function AgentSize$Companion() {
+    AgentSize$Companion_instance = this;
+  }
+  AgentSize$Companion.prototype.randomOffset_0 = function () {
+    var rand = Util_getInstance().random();
+    return rand < 0.05 ? 1 : rand < 0.2 ? -1 : 0;
+  };
+  AgentSize$Companion.prototype.createRandom = function () {
+    return new AgentSize(this.randomOffset_0());
+  };
+  AgentSize$Companion.$metadata$ = {
+    kind: Kind_OBJECT,
+    simpleName: 'Companion',
+    interfaces: []
+  };
+  var AgentSize$Companion_instance = null;
+  function AgentSize$Companion_getInstance() {
+    if (AgentSize$Companion_instance === null) {
+      new AgentSize$Companion();
+    }
+    return AgentSize$Companion_instance;
+  }
+  AgentSize.$metadata$ = {
+    kind: Kind_CLASS,
+    simpleName: 'AgentSize',
+    interfaces: []
+  };
+  AgentSize.prototype.component1 = function () {
+    return this.offset;
+  };
+  AgentSize.prototype.copy_za3lpa$ = function (offset) {
+    return new AgentSize(offset === void 0 ? this.offset : offset);
+  };
+  AgentSize.prototype.toString = function () {
+    return 'AgentSize(offset=' + Kotlin.toString(this.offset) + ')';
+  };
+  AgentSize.prototype.hashCode = function () {
+    var result = 0;
+    result = result * 31 + Kotlin.hashCode(this.offset) | 0;
+    return result;
+  };
+  AgentSize.prototype.equals = function (other) {
+    return this === other || (other !== null && (typeof other === 'object' && (Object.getPrototypeOf(this) === Object.getPrototypeOf(other) && Kotlin.equals(this.offset, other.offset))));
+  };
   function Faction(name, ordinal, abbr, nickName, color, fieldStyle) {
     Enum.call(this);
     this.abbr = abbr;
@@ -2049,10 +2097,11 @@ var QGress = function (_, Kotlin) {
     }
     return MovementUtil_instance;
   }
-  function NonFaction(pos, speed, destination, vectorField, busyUntil) {
+  function NonFaction(pos, speed, size, destination, vectorField, busyUntil) {
     NonFaction$Companion_getInstance();
     this.pos = pos;
     this.speed = speed;
+    this.size = size;
     this.destination = destination;
     this.vectorField = vectorField;
     this.busyUntil = busyUntil;
@@ -2099,7 +2148,7 @@ var QGress = function (_, Kotlin) {
   };
   NonFaction.prototype.wait_0 = function () {
     this.velocity_0 = Complex$Companion_getInstance().ZERO;
-    this.busyUntil = World_getInstance().tick + NonFaction$Companion_getInstance().creatWaitTime_0() | 0;
+    this.busyUntil = World_getInstance().tick + NonFaction$Companion_getInstance().createWaitTime_0() | 0;
   };
   NonFaction.prototype.moveElsewhere_0 = function () {
     var tmp$;
@@ -2130,7 +2179,7 @@ var QGress = function (_, Kotlin) {
     this.destination = randomTarget.location;
   };
   NonFaction.prototype.draw_f69bme$ = function (ctx) {
-    ctx.drawImage(NonFaction$Companion_getInstance().image_0, this.pos.xx(), this.pos.yy());
+    ctx.drawImage(NonFaction$Companion_getInstance().image_0(this.size.offset), this.pos.xx(), this.pos.yy());
   };
   function NonFaction$Companion() {
     NonFaction$Companion_instance = this;
@@ -2141,7 +2190,6 @@ var QGress = function (_, Kotlin) {
     this.fields_0 = LinkedHashMap_init();
     this.MIN_WAIT_0 = Time_getInstance().secondsToTicks_za3lpa$(5);
     this.MAX_WAIT_0 = Time_getInstance().secondsToTicks_za3lpa$(45);
-    this.image_0 = this.drawTemplate_0();
     this.maxSpeed_0 = 3.0;
     this.minSpeed_0 = 1.0;
   }
@@ -2186,8 +2234,11 @@ var QGress = function (_, Kotlin) {
   NonFaction$Companion.prototype.findFarPortal_0 = function (pos) {
     return first(sortedWith(World_getInstance().allPortals, new Comparator$ObjectLiteral_8(compareByDescending$lambda(NonFaction$Companion$findFarPortal$lambda(pos)))));
   };
-  NonFaction$Companion.prototype.creatWaitTime_0 = function () {
+  NonFaction$Companion.prototype.createWaitTime_0 = function () {
     return Util_getInstance().randomInt_vux9f0$(this.MIN_WAIT_0, this.MAX_WAIT_0);
+  };
+  NonFaction$Companion.prototype.image_0 = function (sizeOffset) {
+    return this.drawTemplate_0(sizeOffset);
   };
   function NonFaction$Companion$drawTemplate$lambda(closure$r, closure$lineWidth) {
     return function (ctx) {
@@ -2197,9 +2248,9 @@ var QGress = function (_, Kotlin) {
       DrawUtil_getInstance().drawCircle_3kie0f$(ctx, circle, strokeStyle, closure$lineWidth, fillStyle);
     };
   }
-  NonFaction$Companion.prototype.drawTemplate_0 = function () {
+  NonFaction$Companion.prototype.drawTemplate_0 = function (sizeOffset) {
     var lineWidth = 2;
-    var r = numberToInt(Dim_getInstance().agentRadius);
+    var r = numberToInt(Dim_getInstance().agentRadius) + sizeOffset | 0;
     var w = (r * 2 | 0) + (2 * lineWidth | 0) | 0;
     var h = w;
     return HtmlUtil_getInstance().preRender_yb5akz$(w, h, NonFaction$Companion$drawTemplate$lambda(r, lineWidth));
@@ -2208,14 +2259,15 @@ var QGress = function (_, Kotlin) {
     var tmp$;
     var position = Coords$Companion_getInstance().createRandomPassable_5edep5$(grid);
     var speed = this.minSpeed_0 + Util_getInstance().random() * (this.maxSpeed_0 - this.minSpeed_0);
+    var size = AgentSize$Companion_getInstance().createRandom();
     if (Util_getInstance().random() < 0.1) {
       var destination = first(Util_getInstance().shuffle_bemo1h$(this.DESTINATIONS));
       var vectorField = this.getOrCreateVectorField_lfj9be$(destination);
-      tmp$ = new NonFaction(position, speed, destination, vectorField, World_getInstance().tick);
+      tmp$ = new NonFaction(position, speed, size, destination, vectorField, World_getInstance().tick);
     }
      else {
       var portal = World_getInstance().allPortals.get_za3lpa$(numberToInt(Util_getInstance().random() * (World_getInstance().allPortals.size - 1 | 0)));
-      tmp$ = new NonFaction(position, speed, portal.location, portal.vectorField, World_getInstance().tick);
+      tmp$ = new NonFaction(position, speed, size, portal.location, portal.vectorField, World_getInstance().tick);
     }
     var newNonFaction = tmp$;
     DrawUtil_getInstance().drawNonFaction_3mzr9k$(newNonFaction);
@@ -2245,31 +2297,35 @@ var QGress = function (_, Kotlin) {
     return this.speed;
   };
   NonFaction.prototype.component3 = function () {
-    return this.destination;
+    return this.size;
   };
   NonFaction.prototype.component4 = function () {
-    return this.vectorField;
+    return this.destination;
   };
   NonFaction.prototype.component5 = function () {
+    return this.vectorField;
+  };
+  NonFaction.prototype.component6 = function () {
     return this.busyUntil;
   };
-  NonFaction.prototype.copy_b92bfo$ = function (pos, speed, destination, vectorField, busyUntil) {
-    return new NonFaction(pos === void 0 ? this.pos : pos, speed === void 0 ? this.speed : speed, destination === void 0 ? this.destination : destination, vectorField === void 0 ? this.vectorField : vectorField, busyUntil === void 0 ? this.busyUntil : busyUntil);
+  NonFaction.prototype.copy_ehy33n$ = function (pos, speed, size, destination, vectorField, busyUntil) {
+    return new NonFaction(pos === void 0 ? this.pos : pos, speed === void 0 ? this.speed : speed, size === void 0 ? this.size : size, destination === void 0 ? this.destination : destination, vectorField === void 0 ? this.vectorField : vectorField, busyUntil === void 0 ? this.busyUntil : busyUntil);
   };
   NonFaction.prototype.toString = function () {
-    return 'NonFaction(pos=' + Kotlin.toString(this.pos) + (', speed=' + Kotlin.toString(this.speed)) + (', destination=' + Kotlin.toString(this.destination)) + (', vectorField=' + Kotlin.toString(this.vectorField)) + (', busyUntil=' + Kotlin.toString(this.busyUntil)) + ')';
+    return 'NonFaction(pos=' + Kotlin.toString(this.pos) + (', speed=' + Kotlin.toString(this.speed)) + (', size=' + Kotlin.toString(this.size)) + (', destination=' + Kotlin.toString(this.destination)) + (', vectorField=' + Kotlin.toString(this.vectorField)) + (', busyUntil=' + Kotlin.toString(this.busyUntil)) + ')';
   };
   NonFaction.prototype.hashCode = function () {
     var result = 0;
     result = result * 31 + Kotlin.hashCode(this.pos) | 0;
     result = result * 31 + Kotlin.hashCode(this.speed) | 0;
+    result = result * 31 + Kotlin.hashCode(this.size) | 0;
     result = result * 31 + Kotlin.hashCode(this.destination) | 0;
     result = result * 31 + Kotlin.hashCode(this.vectorField) | 0;
     result = result * 31 + Kotlin.hashCode(this.busyUntil) | 0;
     return result;
   };
   NonFaction.prototype.equals = function (other) {
-    return this === other || (other !== null && (typeof other === 'object' && (Object.getPrototypeOf(this) === Object.getPrototypeOf(other) && (Kotlin.equals(this.pos, other.pos) && Kotlin.equals(this.speed, other.speed) && Kotlin.equals(this.destination, other.destination) && Kotlin.equals(this.vectorField, other.vectorField) && Kotlin.equals(this.busyUntil, other.busyUntil)))));
+    return this === other || (other !== null && (typeof other === 'object' && (Object.getPrototypeOf(this) === Object.getPrototypeOf(other) && (Kotlin.equals(this.pos, other.pos) && Kotlin.equals(this.speed, other.speed) && Kotlin.equals(this.size, other.size) && Kotlin.equals(this.destination, other.destination) && Kotlin.equals(this.vectorField, other.vectorField) && Kotlin.equals(this.busyUntil, other.busyUntil)))));
   };
   function QActions() {
     QActions_instance = this;
@@ -10233,6 +10289,10 @@ var QGress = function (_, Kotlin) {
     get: Agent$Companion_getInstance
   });
   package$agent.Agent = Agent;
+  Object.defineProperty(AgentSize, 'Companion', {
+    get: AgentSize$Companion_getInstance
+  });
+  package$agent.AgentSize = AgentSize;
   Object.defineProperty(Faction, 'NONE', {
     get: Faction$NONE_getInstance
   });
