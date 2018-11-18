@@ -156,6 +156,7 @@ data class NonFaction(var pos: Coords, val speed: Float, val size: AgentSize,
                 val portal = World.allPortals[(Util.random() * (World.allPortals.size - 1)).toInt()]
                 NonFaction(position, speed, size, portal.location, portal.vectorField, World.tick)
             }
+            SoundUtil.playNpcCreationSound(newNonFaction)
             DrawUtil.drawNonFaction(newNonFaction)
             return newNonFaction
         }

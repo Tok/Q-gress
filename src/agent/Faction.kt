@@ -8,7 +8,7 @@ enum class Faction(val abbr: String, val nickName: String, val color: String, va
     RES("RES", "Smurf", "#0088FF", "rgba(0, 136, 255, ");
 
     companion object {
-        fun factionValues() = listOf(ENL, RES)
+        fun all() = listOf(ENL, RES)
         fun createRandom() = if (Util.random() < 0.5) ENL else RES
     }
 }

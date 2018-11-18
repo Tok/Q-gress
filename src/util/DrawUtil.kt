@@ -18,7 +18,9 @@ import items.level.XmpLevel
 import items.types.ShieldType
 import org.w3c.dom.*
 import portal.Portal
+import system.Checkpoint
 import system.Com
+import system.Cycle
 import system.Queues
 import util.data.*
 import kotlin.browser.document
@@ -77,10 +79,11 @@ object DrawUtil {
     fun drawAllNonFaction(ctx: Ctx) = World.allNonFaction.forEach { it.draw(ctx) }
     fun drawAllPortals(ctx: Ctx) = World.allPortals.forEach { it.drawCenter(ctx) }
 
-    fun redrawUserInterface() {
+    fun redrawUserInterface(tick: Int, enlMu: Int, resMu: Int) {
         clearUserInterface()
+        drawMindUnits(enlMu, resMu)
+        drawCycle()
         drawTick()
-        drawMindUnits()
         drawStats()
         if (Styles.isDrawCom) {
             Com.draw(World.uiCtx())
@@ -300,7 +303,7 @@ object DrawUtil {
         })
     }
 
-    private fun drawMindUnits() {
+    private fun drawMindUnits(enlMu: Int, resMu: Int) {
         //TODO only redraw if updated.
         fun fillMuRect(from: Coords, width: Double, height: Double,
                        fillStyle: String, strokeStyle: String, lineWidth: Double) {
@@ -329,9 +332,6 @@ object DrawUtil {
             val textPos = Coords(pos.x + 21, pos.y - 3)
             strokeText(World.uiCtx(), textPos, text, faction.color, Dim.muFontSize, AMARILLO)
         }
-
-        val enlMu = World.calcTotalMu(Faction.ENL)
-        val resMu = World.calcTotalMu(Faction.RES)
         val totalMu = enlMu + resMu
         val enlPart: Int = round((100.0 * enlMu) / totalMu).toInt()
         val resPart: Int = round((100.0 * resMu) / totalMu).toInt()
@@ -341,6 +341,14 @@ object DrawUtil {
         val resPos = Coords(xPos, yPos)
         drawMuRect(enlPos, enlPart, Faction.ENL, enlMu)
         drawMuRect(resPos, resPart, Faction.RES, resMu)
+    }
+
+    private fun drawCycle() {
+        if (Cycle.INSTANCE.image != null) {
+            val xPos = Dim.width - Dim.cycleRightOffset
+            val yPos = Dim.cycleTopOffset
+            World.uiCtx().drawImage(Cycle.INSTANCE.image, xPos.toDouble(), yPos.toDouble())
+        }
     }
 
     private fun drawTopAgents() {
@@ -512,7 +520,7 @@ object DrawUtil {
 
     private fun createVectorImage(w: Int, h: Int, complex: Complex, line: Line): Canvas {
         return HtmlUtil.preRender(w, h, fun(ctx: Ctx) {
-            ctx.fillStyle = "#ffffff22"
+            ctx.fillStyle = "#ffffff44"
             when (Styles.vectorStyle) {
                 CIRCLE -> {
                     val r = w / 2.0
@@ -610,7 +618,8 @@ object DrawUtil {
         ctx.globalAlpha = 1.0
     }
 
-    fun drawLine(ctx: Ctx, line: Line, strokeStyle: String, lineWidth: Double) {
+    fun drawLine(ctx: Ctx, line: Line, strokeStyle: String, lineWidth: Double, alpha: Double = 1.0) {
+        ctx.globalAlpha = alpha
         ctx.strokeStyle = strokeStyle
         ctx.lineWidth = lineWidth
         ctx.beginPath()
@@ -618,5 +627,6 @@ object DrawUtil {
         ctx.lineTo(line.to.xx(), line.to.yy())
         ctx.closePath()
         ctx.stroke()
+        ctx.globalAlpha = 1.0
     }
 }

@@ -49,6 +49,9 @@ var QGress = function (_, Kotlin) {
   var mutableListOf = Kotlin.kotlin.collections.mutableListOf_i5x0yv$;
   var toMutableMap = Kotlin.kotlin.collections.toMutableMap_abgq59$;
   var reversed = Kotlin.kotlin.collections.reversed_7wnvza$;
+  var takeLast = Kotlin.kotlin.collections.takeLast_yzln2o$;
+  var putAll = Kotlin.kotlin.collections.putAll_cweazw$;
+  var zipWithNext = Kotlin.kotlin.collections.zipWithNext_7wnvza$;
   var toByte = Kotlin.toByte;
   var kotlin_js_internal_ByteCompanionObject = Kotlin.kotlin.js.internal.ByteCompanionObject;
   var Triple = Kotlin.kotlin.Triple;
@@ -106,6 +109,8 @@ var QGress = function (_, Kotlin) {
   Octant.prototype.constructor = Octant;
   Quality.prototype = Object.create(Enum.prototype);
   Quality.prototype.constructor = Quality;
+  Cycle.prototype = Object.create(Enum.prototype);
+  Cycle.prototype.constructor = Cycle;
   function Action(item, untilTick) {
     Action$Companion_getInstance();
     this.item = item;
@@ -231,7 +236,7 @@ var QGress = function (_, Kotlin) {
   };
   function ActionItem$Companion$drawTemplate$drawAgentLine(closure$strokeStyle) {
     return function (ctx, line) {
-      DrawUtil_getInstance().drawLine_1fs0nm$(ctx, line, closure$strokeStyle, 0.7);
+      DrawUtil_getInstance().drawLine_ovbgws$(ctx, line, closure$strokeStyle, 0.7);
     };
   }
   function ActionItem$Companion$drawTemplate$drawAgentCircle(closure$strokeStyle) {
@@ -1201,8 +1206,8 @@ var QGress = function (_, Kotlin) {
   };
   Agent.prototype.drawRadius_f69bme$ = function (ctx) {
     if (Styles_getInstance().isDrawDestination) {
-      DrawUtil_getInstance().drawLine_1fs0nm$(ctx, this.lineToPortal_0(this.actionPortal), Colors_getInstance().nextPortal, 1.0);
-      DrawUtil_getInstance().drawLine_1fs0nm$(ctx, this.lineToDestination_0(), Colors_getInstance().destination, 1.0);
+      DrawUtil_getInstance().drawLine_ovbgws$(ctx, this.lineToPortal_0(this.actionPortal), Colors_getInstance().nextPortal, 1.0);
+      DrawUtil_getInstance().drawLine_ovbgws$(ctx, this.lineToDestination_0(), Colors_getInstance().destination, 1.0);
     }
     if (Styles_getInstance().isDrawAgentRange) {
       var deployCircle = new Circle(this.pos, Dim_getInstance().maxDeploymentRange);
@@ -1497,7 +1502,7 @@ var QGress = function (_, Kotlin) {
   function Faction$Companion() {
     Faction$Companion_instance = this;
   }
-  Faction$Companion.prototype.factionValues = function () {
+  Faction$Companion.prototype.all = function () {
     return listOf([Faction$ENL_getInstance(), Faction$RES_getInstance()]);
   };
   Faction$Companion.prototype.createRandom = function () {
@@ -2272,6 +2277,7 @@ var QGress = function (_, Kotlin) {
       tmp$ = new NonFaction(position, speed, size, portal.location, portal.vectorField, World_getInstance().tick);
     }
     var newNonFaction = tmp$;
+    SoundUtil_getInstance().playNpcCreationSound_3mzr9k$(newNonFaction);
     DrawUtil_getInstance().drawNonFaction_3mzr9k$(newNonFaction);
     return newNonFaction;
   };
@@ -2501,9 +2507,9 @@ var QGress = function (_, Kotlin) {
   }
   function Config() {
     Config_instance = this;
-    this.startPortals = 8;
-    this.startFrogs = 50;
-    this.startSmurfs = 50;
+    this.startPortals = 5;
+    this.startFrogs = 20;
+    this.startSmurfs = 20;
     this.maxFrogs = 100;
     this.maxSmurfs = 100;
     this.startNonFaction = numberToInt((this.startFrogs + this.startSmurfs | 0) * Constants_getInstance().phi);
@@ -2582,6 +2588,9 @@ var QGress = function (_, Kotlin) {
     this.pixelToMFactor = 0.5;
     this.statsTopOffset = 13;
     this.statsRightOffset = 170;
+    this.cycleRightOffset = 470;
+    this.cycleTopOffset = 3;
+    this.cycleH = 72;
     this.topAgentsBottomOffset = 0;
     this.topAgentsLeftOffset = 210;
     this.topAgentsFontSize = 11;
@@ -6392,22 +6401,67 @@ var QGress = function (_, Kotlin) {
   ResonatorSlot.prototype.equals = function (other) {
     return this === other || (other !== null && (typeof other === 'object' && (Object.getPrototypeOf(this) === Object.getPrototypeOf(other) && (Kotlin.equals(this.owner, other.owner) && Kotlin.equals(this.resonator, other.resonator) && Kotlin.equals(this.distance, other.distance)))));
   };
-  function Checkpoint() {
-    Checkpoint_instance = this;
+  function Checkpoint(enlMu, resMu) {
+    Checkpoint$Companion_getInstance();
+    this.enlMu = enlMu;
+    this.resMu = resMu;
+  }
+  Checkpoint.prototype.total = function () {
+    return this.enlMu + this.resMu | 0;
+  };
+  Checkpoint.prototype.mu_bip15f$ = function (faction) {
+    switch (faction.name) {
+      case 'ENL':
+        return this.enlMu;
+      case 'RES':
+        return this.resMu;
+      case 'NONE':
+        return 0;
+      default:return Kotlin.noWhenBranchMatched();
+    }
+  };
+  function Checkpoint$Companion() {
+    Checkpoint$Companion_instance = this;
     this.durationH = 5;
   }
-  Checkpoint.$metadata$ = {
+  Checkpoint$Companion.$metadata$ = {
     kind: Kind_OBJECT,
+    simpleName: 'Companion',
+    interfaces: []
+  };
+  var Checkpoint$Companion_instance = null;
+  function Checkpoint$Companion_getInstance() {
+    if (Checkpoint$Companion_instance === null) {
+      new Checkpoint$Companion();
+    }
+    return Checkpoint$Companion_instance;
+  }
+  Checkpoint.$metadata$ = {
+    kind: Kind_CLASS,
     simpleName: 'Checkpoint',
     interfaces: []
   };
-  var Checkpoint_instance = null;
-  function Checkpoint_getInstance() {
-    if (Checkpoint_instance === null) {
-      new Checkpoint();
-    }
-    return Checkpoint_instance;
-  }
+  Checkpoint.prototype.component1 = function () {
+    return this.enlMu;
+  };
+  Checkpoint.prototype.component2 = function () {
+    return this.resMu;
+  };
+  Checkpoint.prototype.copy_vux9f0$ = function (enlMu, resMu) {
+    return new Checkpoint(enlMu === void 0 ? this.enlMu : enlMu, resMu === void 0 ? this.resMu : resMu);
+  };
+  Checkpoint.prototype.toString = function () {
+    return 'Checkpoint(enlMu=' + Kotlin.toString(this.enlMu) + (', resMu=' + Kotlin.toString(this.resMu)) + ')';
+  };
+  Checkpoint.prototype.hashCode = function () {
+    var result = 0;
+    result = result * 31 + Kotlin.hashCode(this.enlMu) | 0;
+    result = result * 31 + Kotlin.hashCode(this.resMu) | 0;
+    return result;
+  };
+  Checkpoint.prototype.equals = function (other) {
+    return this === other || (other !== null && (typeof other === 'object' && (Object.getPrototypeOf(this) === Object.getPrototypeOf(other) && (Kotlin.equals(this.enlMu, other.enlMu) && Kotlin.equals(this.resMu, other.resMu)))));
+  };
   function Com() {
     Com_instance = this;
     this.messages_0 = ArrayList_init_0();
@@ -6445,24 +6499,180 @@ var QGress = function (_, Kotlin) {
     }
     return Com_instance;
   }
-  function Cycle() {
-    Cycle_instance = this;
-    this.durationH = 175;
-    this.numberOfCheckpoints = 35;
-    this.checkpoints = ArrayList_init_0();
+  function Cycle(name, ordinal, checkpoints, image) {
+    Enum.call(this);
+    this.checkpoints = checkpoints;
+    this.image = image;
+    this.name$ = name;
+    this.ordinal$ = ordinal;
   }
-  Cycle.$metadata$ = {
+  function Cycle_initFields() {
+    Cycle_initFields = function () {
+    };
+    Cycle$INSTANCE_instance = new Cycle('INSTANCE', 0, LinkedHashMap_init(), null);
+    Cycle$Companion_getInstance();
+  }
+  var Cycle$INSTANCE_instance;
+  function Cycle$INSTANCE_getInstance() {
+    Cycle_initFields();
+    return Cycle$INSTANCE_instance;
+  }
+  function Cycle$Companion() {
+    Cycle$Companion_instance = this;
+    this.durationH_0 = 175;
+    this.numberOfCheckpoints_0 = 35;
+    this.ticksPerCheckpoint_0 = Time_getInstance().secondsToTicks_za3lpa$(300);
+  }
+  Cycle$Companion.prototype.isNew_0 = function (tick) {
+    return tick % this.ticksPerCheckpoint_0 === 0;
+  };
+  function Cycle$Companion$updateCheckpoints$lambda(closure$tick) {
+    return function (it) {
+      return closure$tick;
+    };
+  }
+  var compareBy$lambda_14 = wrapFunction(function () {
+    var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
+    return function (closure$selector) {
+      return function (a, b) {
+        var selector = closure$selector;
+        return compareValues(selector(a), selector(b));
+      };
+    };
+  });
+  function Comparator$ObjectLiteral_15(closure$comparison) {
+    this.closure$comparison = closure$comparison;
+  }
+  Comparator$ObjectLiteral_15.prototype.compare = function (a, b) {
+    return this.closure$comparison(a, b);
+  };
+  Comparator$ObjectLiteral_15.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
+  Cycle$Companion.prototype.updateCheckpoints_qt1dr2$ = function (tick, enlMu, resMu) {
+    if (this.isNew_0(tick)) {
+      var cp = new Checkpoint(enlMu, resMu);
+      var limit = 34;
+      var old = takeLast(sortedWith(toList(Cycle$INSTANCE_getInstance().checkpoints), new Comparator$ObjectLiteral_15(compareBy$lambda_14(Cycle$Companion$updateCheckpoints$lambda(tick)))), limit);
+      Cycle$INSTANCE_getInstance().checkpoints.clear();
+      putAll(Cycle$INSTANCE_getInstance().checkpoints, old);
+      Cycle$INSTANCE_getInstance().checkpoints.put_xwzc9p$(tick, cp);
+      SoundUtil_getInstance().playCheckpointSound_2xtf47$(cp);
+      Cycle$INSTANCE_getInstance().image = this.createImage_0();
+    }
+  };
+  function Cycle$Companion$createImage$drawCheckpointDot(closure$r, closure$lineWidth, closure$dotAlpha) {
+    return function (ctx, pos, style) {
+      var circle = new Circle(pos, closure$r);
+      DrawUtil_getInstance().drawCircle_3kie0f$(ctx, circle, Colors_getInstance().black, closure$lineWidth, style, closure$dotAlpha);
+    };
+  }
+  function Cycle$Companion$createImage$drawCheckpoint$calcY(mu, maxTotal) {
+    return Dim_getInstance().cycleH - (Kotlin.imul(mu, Dim_getInstance().cycleH) / maxTotal | 0) | 0;
+  }
+  function Cycle$Companion$createImage$drawCheckpoint(closure$r, closure$lineWidth, closure$lineAlpha, closure$drawCheckpointDot) {
+    return function (ctx, index, withNext, maxTotal) {
+      var calcY = Cycle$Companion$createImage$drawCheckpoint$calcY;
+      var w = 7;
+      var x = Kotlin.imul(index, w);
+      var $receiver = Faction$Companion_getInstance().all();
+      var tmp$;
+      tmp$ = $receiver.iterator();
+      while (tmp$.hasNext()) {
+        var element = tmp$.next();
+        var closure$r_0 = closure$r;
+        var closure$lineWidth_0 = closure$lineWidth;
+        var closure$lineAlpha_0 = closure$lineAlpha;
+        var closure$drawCheckpointDot_0 = closure$drawCheckpointDot;
+        var y = calcY(withNext.first.mu_bip15f$(element), maxTotal);
+        var current = new Coords(x, y + numberToInt(closure$r_0) | 0);
+        var nextY = calcY(withNext.second.mu_bip15f$(element), maxTotal);
+        var next = new Coords(x + w | 0, nextY + numberToInt(closure$r_0) | 0);
+        if (index > 0) {
+          DrawUtil_getInstance().drawLine_ovbgws$(ctx, new Line(current, next), element.color, closure$lineWidth_0, closure$lineAlpha_0);
+        }
+        closure$drawCheckpointDot_0(ctx, next, element.color);
+      }
+    };
+  }
+  function Cycle$Companion$createImage$lambda(closure$drawCheckpoint) {
+    return function (ctx) {
+      var tmp$, tmp$_0;
+      var checkpoints = Cycle$INSTANCE_getInstance().checkpoints;
+      var $receiver = checkpoints.values;
+      var maxBy$result;
+      maxBy$break: do {
+        var iterator = $receiver.iterator();
+        if (!iterator.hasNext()) {
+          maxBy$result = null;
+          break maxBy$break;
+        }
+        var maxElem = iterator.next();
+        var maxValue = maxElem.total();
+        while (iterator.hasNext()) {
+          var e = iterator.next();
+          var v = e.total();
+          if (Kotlin.compareTo(maxValue, v) < 0) {
+            maxElem = e;
+            maxValue = v;
+          }
+        }
+        maxBy$result = maxElem;
+      }
+       while (false);
+      var maxTotal = (tmp$_0 = (tmp$ = maxBy$result) != null ? tmp$.total() : null) != null ? tmp$_0 : 0;
+      var $receiver_0 = zipWithNext(checkpoints.values);
+      var destination = ArrayList_init(collectionSizeOrDefault($receiver_0, 10));
+      var tmp$_1, tmp$_0_0;
+      var index = 0;
+      tmp$_1 = $receiver_0.iterator();
+      while (tmp$_1.hasNext()) {
+        var item = tmp$_1.next();
+        var tmp$_2 = destination.add_11rb$;
+        closure$drawCheckpoint(ctx, checkIndexOverflow((tmp$_0_0 = index, index = tmp$_0_0 + 1 | 0, tmp$_0_0)), item, maxTotal);
+        tmp$_2.call(destination, Unit);
+      }
+    };
+  }
+  Cycle$Companion.prototype.createImage_0 = function () {
+    var h = Dim_getInstance().cycleH + 8 | 0;
+    var w = 253;
+    var lineAlpha = 0.5;
+    var dotAlpha = 0.5;
+    var lineWidth = 1.0;
+    var r = 2.0;
+    var drawCheckpointDot = Cycle$Companion$createImage$drawCheckpointDot(r, lineWidth, dotAlpha);
+    var drawCheckpoint = Cycle$Companion$createImage$drawCheckpoint(r, lineWidth, lineAlpha, drawCheckpointDot);
+    return HtmlUtil_getInstance().preRender_yb5akz$(w, h, Cycle$Companion$createImage$lambda(drawCheckpoint));
+  };
+  Cycle$Companion.$metadata$ = {
     kind: Kind_OBJECT,
-    simpleName: 'Cycle',
+    simpleName: 'Companion',
     interfaces: []
   };
-  var Cycle_instance = null;
-  function Cycle_getInstance() {
-    if (Cycle_instance === null) {
-      new Cycle();
+  var Cycle$Companion_instance = null;
+  function Cycle$Companion_getInstance() {
+    Cycle_initFields();
+    if (Cycle$Companion_instance === null) {
+      new Cycle$Companion();
     }
-    return Cycle_instance;
+    return Cycle$Companion_instance;
   }
+  Cycle.$metadata$ = {
+    kind: Kind_CLASS,
+    simpleName: 'Cycle',
+    interfaces: [Enum]
+  };
+  function Cycle$values() {
+    return [Cycle$INSTANCE_getInstance()];
+  }
+  Cycle.values = Cycle$values;
+  function Cycle$valueOf(name) {
+    switch (name) {
+      case 'INSTANCE':
+        return Cycle$INSTANCE_getInstance();
+      default:throwISE('No enum constant system.Cycle.' + name);
+    }
+  }
+  Cycle.valueOf_61zpoe$ = Cycle$valueOf;
   function Queues() {
     Queues_instance = this;
     this.attackQueue = LinkedHashMap_init();
@@ -7652,10 +7862,11 @@ var QGress = function (_, Kotlin) {
       element.drawCenter_j4cg6b$(ctx);
     }
   };
-  DrawUtil.prototype.redrawUserInterface = function () {
+  DrawUtil.prototype.redrawUserInterface_qt1dr2$ = function (tick, enlMu, resMu) {
     this.clearUserInterface_0();
+    this.drawMindUnits_0(enlMu, resMu);
+    this.drawCycle_0();
     this.drawTick_0();
-    this.drawMindUnits_0();
     this.drawStats_0();
     if (Styles_getInstance().isDrawCom) {
       Com_getInstance().draw_f69bme$(World_getInstance().uiCtx());
@@ -7923,11 +8134,9 @@ var QGress = function (_, Kotlin) {
       this$DrawUtil.strokeText_lowmm9$(World_getInstance().uiCtx(), textPos, text, faction.color, Dim_getInstance().muFontSize, this$DrawUtil.AMARILLO);
     };
   }
-  DrawUtil.prototype.drawMindUnits_0 = function () {
+  DrawUtil.prototype.drawMindUnits_0 = function (enlMu, resMu) {
     var fillMuRect = DrawUtil$drawMindUnits$fillMuRect;
     var drawMuRect = DrawUtil$drawMindUnits$drawMuRect(fillMuRect, this);
-    var enlMu = World_getInstance().calcTotalMu_bip15f$(Faction$ENL_getInstance());
-    var resMu = World_getInstance().calcTotalMu_bip15f$(Faction$RES_getInstance());
     var totalMu = enlMu + resMu | 0;
     var enlPart = numberToInt(round(100.0 * enlMu / totalMu));
     var resPart = numberToInt(round(100.0 * resMu / totalMu));
@@ -7937,6 +8146,13 @@ var QGress = function (_, Kotlin) {
     var resPos = new Coords(xPos, yPos);
     drawMuRect(enlPos, enlPart, Faction$ENL_getInstance(), enlMu);
     drawMuRect(resPos, resPart, Faction$RES_getInstance(), resMu);
+  };
+  DrawUtil.prototype.drawCycle_0 = function () {
+    if (Cycle$INSTANCE_getInstance().image != null) {
+      var xPos = Dim_getInstance().width - Dim_getInstance().cycleRightOffset | 0;
+      var yPos = Dim_getInstance().cycleTopOffset;
+      World_getInstance().uiCtx().drawImage(Cycle$INSTANCE_getInstance().image, xPos, yPos);
+    }
   };
   function DrawUtil$drawTopAgents$drawBars(closure$fontSize, closure$lineWidth, this$DrawUtil) {
     return function (ctx, barWidth, level, color, pos, count, maxCount) {
@@ -8035,7 +8251,7 @@ var QGress = function (_, Kotlin) {
   function DrawUtil$drawTopAgents$lambda(it) {
     return -it.ap | 0;
   }
-  var compareBy$lambda_14 = wrapFunction(function () {
+  var compareBy$lambda_15 = wrapFunction(function () {
     var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
     return function (closure$selector) {
       return function (a, b) {
@@ -8044,13 +8260,13 @@ var QGress = function (_, Kotlin) {
       };
     };
   });
-  function Comparator$ObjectLiteral_15(closure$comparison) {
+  function Comparator$ObjectLiteral_16(closure$comparison) {
     this.closure$comparison = closure$comparison;
   }
-  Comparator$ObjectLiteral_15.prototype.compare = function (a, b) {
+  Comparator$ObjectLiteral_16.prototype.compare = function (a, b) {
     return this.closure$comparison(a, b);
   };
-  Comparator$ObjectLiteral_15.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
+  Comparator$ObjectLiteral_16.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
   DrawUtil.prototype.drawTopAgents_0 = function () {
     var fontSize = Dim_getInstance().topAgentsInventoryFontSize;
     var lineWidth = 2.0;
@@ -8062,7 +8278,7 @@ var QGress = function (_, Kotlin) {
     var yOffset = (Dim_getInstance().topAgentsFontSize * 3 | 0) / 2 | 0;
     var yFixOffset = Dim_getInstance().height - Dim_getInstance().topAgentsBottomOffset - Kotlin.imul(Config_getInstance().topAgentsMessageLimit, yOffset) | 0;
     var headerPos = new Coords(xPos, yFixOffset - yOffset | 0);
-    var top = take(sortedWith(toList_0(World_getInstance().allAgents), new Comparator$ObjectLiteral_15(compareBy$lambda_14(DrawUtil$drawTopAgents$lambda))), Config_getInstance().topAgentsMessageLimit);
+    var top = take(sortedWith(toList_0(World_getInstance().allAgents), new Comparator$ObjectLiteral_16(compareBy$lambda_15(DrawUtil$drawTopAgents$lambda))), Config_getInstance().topAgentsMessageLimit);
     var tmp$, tmp$_0;
     var index = 0;
     tmp$ = top.iterator();
@@ -8183,7 +8399,7 @@ var QGress = function (_, Kotlin) {
   };
   function DrawUtil$createVectorImage$lambda(closure$w, closure$h, closure$complex, closure$line, this$DrawUtil) {
     return function (ctx) {
-      ctx.fillStyle = '#ffffff22';
+      ctx.fillStyle = '#ffffff44';
       switch (Styles_getInstance().vectorStyle.name) {
         case 'CIRCLE':
           var r = closure$w / 2.0;
@@ -8199,7 +8415,7 @@ var QGress = function (_, Kotlin) {
       }
       var lineWidth = 2.0;
       var strokeStyle = Styles_getInstance().useBlackVectors ? Colors_getInstance().black : ColorUtil_getInstance().getColor_p4p8i0$(closure$complex);
-      this$DrawUtil.drawLine_1fs0nm$(ctx, closure$line, strokeStyle + 'AA', lineWidth);
+      this$DrawUtil.drawLine_ovbgws$(ctx, closure$line, strokeStyle + 'AA', lineWidth);
     };
   }
   DrawUtil.prototype.createVectorImage_0 = function (w, h, complex, line) {
@@ -8295,7 +8511,10 @@ var QGress = function (_, Kotlin) {
     ctx.stroke();
     ctx.globalAlpha = 1.0;
   };
-  DrawUtil.prototype.drawLine_1fs0nm$ = function (ctx, line, strokeStyle, lineWidth) {
+  DrawUtil.prototype.drawLine_ovbgws$ = function (ctx, line, strokeStyle, lineWidth, alpha) {
+    if (alpha === void 0)
+      alpha = 1.0;
+    ctx.globalAlpha = alpha;
     ctx.strokeStyle = strokeStyle;
     ctx.lineWidth = lineWidth;
     ctx.beginPath();
@@ -8303,6 +8522,7 @@ var QGress = function (_, Kotlin) {
     ctx.lineTo(line.to.xx(), line.to.yy());
     ctx.closePath();
     ctx.stroke();
+    ctx.globalAlpha = 1.0;
   };
   DrawUtil.$metadata$ = {
     kind: Kind_OBJECT,
@@ -8374,7 +8594,10 @@ var QGress = function (_, Kotlin) {
   }
   function HtmlUtil$tick$lambda_1(it) {
     DrawUtil_getInstance().redraw();
-    DrawUtil_getInstance().redrawUserInterface();
+    var enlMu = World_getInstance().calcTotalMu_bip15f$(Faction$ENL_getInstance());
+    var resMu = World_getInstance().calcTotalMu_bip15f$(Faction$RES_getInstance());
+    Cycle$Companion_getInstance().updateCheckpoints_qt1dr2$(World_getInstance().tick, enlMu, resMu);
+    DrawUtil_getInstance().redrawUserInterface_qt1dr2$(World_getInstance().tick, enlMu, resMu);
     return Unit;
   }
   HtmlUtil.prototype.tick_0 = function () {
@@ -8453,8 +8676,7 @@ var QGress = function (_, Kotlin) {
     rootDiv.append(this.createCanvasDiv_0());
     var controlDiv = this.createControlDiv_0();
     var buttonDiv = Kotlin.isType(tmp$_0 = document.createElement('div'), HTMLDivElement) ? tmp$_0 : throwCCE();
-    var pauseButton = this.createButton_0('button', 'Stop', HtmlUtil$load$lambda_0(this));
-    pauseButton.id = this.PAUSE_BUTTON_ID_0;
+    var pauseButton = this.createButton_0(this.PAUSE_BUTTON_ID_0, 'button', 'Stop', HtmlUtil$load$lambda_0(this));
     buttonDiv.append(pauseButton);
     var dropDown = this.createDropdown_0(this.LOCATION_DROPDOWN_ID_0, HtmlUtil$load$lambda_1(this));
     var selectionName = (tmp$_1 = this.getLocationNameFromUrl_0()) != null ? tmp$_1 : 'unknown';
@@ -8553,7 +8775,7 @@ var QGress = function (_, Kotlin) {
       var tmp$_2, tmp$_3, tmp$_4;
       var sliderDiv = Kotlin.isType(tmp$_2 = document.createElement('div'), HTMLDivElement) ? tmp$_2 : throwCCE();
       var tmp$_5;
-      tmp$_5 = Faction$Companion_getInstance().factionValues().iterator();
+      tmp$_5 = Faction$Companion_getInstance().all().iterator();
       while (tmp$_5.hasNext()) {
         var element_0 = tmp$_5.next();
         var tmp$_6, tmp$_7;
@@ -8563,7 +8785,7 @@ var QGress = function (_, Kotlin) {
         slider.min = '0.00';
         slider.max = '1.00';
         slider.step = '0.01';
-        slider.value = '0.10';
+        slider.value = '0.20';
         addClass(slider, ['slider', 'qSlider', element_0.abbr.toLowerCase() + 'Slider']);
         var sliderValue = Kotlin.isType(tmp$_7 = document.createElement('span'), HTMLSpanElement) ? tmp$_7 : throwCCE();
         addClass(sliderValue, ['qSliderLabel', element_0.abbr.toLowerCase() + 'Label']);
@@ -8754,9 +8976,10 @@ var QGress = function (_, Kotlin) {
     var tmp$, tmp$_0;
     return (tmp$_0 = (tmp$ = document.getElementById('right-sliders')) != null ? tmp$.clientWidth : null) != null ? tmp$_0 : 370;
   };
-  HtmlUtil.prototype.createButton_0 = function (className, text, callback) {
+  HtmlUtil.prototype.createButton_0 = function (id, className, text, callback) {
     var tmp$;
     var button = Kotlin.isType(tmp$ = document.createElement('BUTTON'), HTMLButtonElement) ? tmp$ : throwCCE();
+    button.id = id;
     addClass(button, [className]);
     button.onclick = callback;
     button.innerText = text;
@@ -9535,6 +9758,27 @@ var QGress = function (_, Kotlin) {
     var panNode = this.createStaticPan_0(pan);
     this.playSound_0(oscNode, panNode, 1.0, duration);
   };
+  SoundUtil.prototype.playCheckpointSound_2xtf47$ = function (checkpoint) {
+    if (this.isMuted_0())
+      return;
+    var duration = 0.05;
+    var pan = 0.5;
+    var oscNode = this.createLinearRampOscillator_0(OscillatorType_getInstance().SINE, 440.0, 440.0, duration);
+    var panNode = this.createStaticPan_0(pan);
+    this.playSound_0(oscNode, panNode, 0.5, duration);
+  };
+  SoundUtil.prototype.playNpcCreationSound_3mzr9k$ = function (npc) {
+    if (this.isMuted_0())
+      return;
+    var duration = 0.02;
+    var pan = npc.pos.xx() / Dim_getInstance().width;
+    var offset = -(npc.size.offset * 120.0);
+    var start = 660.0;
+    var end = 660.0 + offset;
+    var oscNode = this.createLinearRampOscillator_0(OscillatorType_getInstance().SINE, start, end, duration);
+    var panNode = this.createStaticPan_0(pan);
+    this.playSound_0(oscNode, panNode, 0.2, duration);
+  };
   SoundUtil.prototype.playHackingSound_lfj9be$ = function (pos) {
     if (this.isMuted_0())
       return;
@@ -9668,7 +9912,7 @@ var QGress = function (_, Kotlin) {
   function Util$findNearestPortals$lambda(it) {
     return it.first;
   }
-  var compareBy$lambda_15 = wrapFunction(function () {
+  var compareBy$lambda_16 = wrapFunction(function () {
     var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
     return function (closure$selector) {
       return function (a, b) {
@@ -9677,13 +9921,13 @@ var QGress = function (_, Kotlin) {
       };
     };
   });
-  function Comparator$ObjectLiteral_16(closure$comparison) {
+  function Comparator$ObjectLiteral_17(closure$comparison) {
     this.closure$comparison = closure$comparison;
   }
-  Comparator$ObjectLiteral_16.prototype.compare = function (a, b) {
+  Comparator$ObjectLiteral_17.prototype.compare = function (a, b) {
     return this.closure$comparison(a, b);
   };
-  Comparator$ObjectLiteral_16.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
+  Comparator$ObjectLiteral_17.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
   Util.prototype.findNearestPortals_0 = function (coords) {
     var $receiver = World_getInstance().allPortals;
     var destination = ArrayList_init(collectionSizeOrDefault($receiver, 10));
@@ -9693,7 +9937,7 @@ var QGress = function (_, Kotlin) {
       var item = tmp$.next();
       destination.add_11rb$(to(item.location.distanceTo_lfj9be$(coords), item));
     }
-    return toSet(sortedWith(destination, new Comparator$ObjectLiteral_16(compareBy$lambda_15(Util$findNearestPortals$lambda))));
+    return toSet(sortedWith(destination, new Comparator$ObjectLiteral_17(compareBy$lambda_16(Util$findNearestPortals$lambda))));
   };
   Util.prototype.findNearestPortal_lfj9be$ = function (coords) {
     var nearest = this.findNearestPortals_0(coords);
@@ -9737,7 +9981,7 @@ var QGress = function (_, Kotlin) {
   function Util$select$lambda(it) {
     return it.first;
   }
-  var compareBy$lambda_16 = wrapFunction(function () {
+  var compareBy$lambda_17 = wrapFunction(function () {
     var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
     return function (closure$selector) {
       return function (a, b) {
@@ -9746,13 +9990,13 @@ var QGress = function (_, Kotlin) {
       };
     };
   });
-  function Comparator$ObjectLiteral_17(closure$comparison) {
+  function Comparator$ObjectLiteral_18(closure$comparison) {
     this.closure$comparison = closure$comparison;
   }
-  Comparator$ObjectLiteral_17.prototype.compare = function (a, b) {
+  Comparator$ObjectLiteral_18.prototype.compare = function (a, b) {
     return this.closure$comparison(a, b);
   };
-  Comparator$ObjectLiteral_17.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
+  Comparator$ObjectLiteral_18.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
   Util.prototype.select_4u7aq8$ = function (probabilityList, default_0) {
     var destination = ArrayList_init_0();
     var tmp$;
@@ -9777,7 +10021,7 @@ var QGress = function (_, Kotlin) {
     var rand = this.randomDouble_0(total);
     var accu = {v: 0.0};
     var tmp$_1;
-    tmp$_1 = sortedWith(list, new Comparator$ObjectLiteral_17(compareBy$lambda_16(Util$select$lambda))).iterator();
+    tmp$_1 = sortedWith(list, new Comparator$ObjectLiteral_18(compareBy$lambda_17(Util$select$lambda))).iterator();
     while (tmp$_1.hasNext()) {
       var element_1 = tmp$_1.next();
       accu.v += element_1.first;
@@ -10729,16 +10973,21 @@ var QGress = function (_, Kotlin) {
   });
   package$portal.Quality = Quality;
   package$portal.ResonatorSlot = ResonatorSlot;
-  var package$system = _.system || (_.system = {});
-  Object.defineProperty(package$system, 'Checkpoint', {
-    get: Checkpoint_getInstance
+  Object.defineProperty(Checkpoint, 'Companion', {
+    get: Checkpoint$Companion_getInstance
   });
+  var package$system = _.system || (_.system = {});
+  package$system.Checkpoint = Checkpoint;
   Object.defineProperty(package$system, 'Com', {
     get: Com_getInstance
   });
-  Object.defineProperty(package$system, 'Cycle', {
-    get: Cycle_getInstance
+  Object.defineProperty(Cycle, 'INSTANCE', {
+    get: Cycle$INSTANCE_getInstance
   });
+  Object.defineProperty(Cycle, 'Companion', {
+    get: Cycle$Companion_getInstance
+  });
+  package$system.Cycle = Cycle;
   Object.defineProperty(package$system, 'Queues', {
     get: Queues_getInstance
   });

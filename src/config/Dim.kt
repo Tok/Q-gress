@@ -35,6 +35,10 @@ object Dim {
     val statsTopOffset = 13
     val statsRightOffset = 170
 
+    val cycleRightOffset = 470
+    val cycleTopOffset = 3
+    val cycleH = 72
+
     val topAgentsBottomOffset = 0
     val topAgentsLeftOffset = 210
     val topAgentsFontSize = 11

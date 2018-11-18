@@ -1,6 +1,7 @@
 package util
 
 import World
+import agent.NonFaction
 import config.Constants
 import config.Dim
 import config.OscillatorType
@@ -12,6 +13,7 @@ import items.level.XmpLevel
 import org.w3c.dom.HTMLInputElement
 import portal.Field
 import portal.Link
+import system.Checkpoint
 import util.data.Coords
 import kotlin.browser.document
 
@@ -41,6 +43,27 @@ object SoundUtil {
         val oscNode = createLinearRampOscillator(OscillatorType.SINE, 60.0, 120.0, duration)
         val panNode = createStaticPan(pan)
         playSound(oscNode, panNode, 1.0, duration)
+    }
+
+    fun playCheckpointSound(checkpoint: Checkpoint) {
+        if (isMuted()) return
+        val duration = 0.05
+        val pan = 0.5
+        val oscNode = createLinearRampOscillator(OscillatorType.SINE, 440.0, 440.0, duration)
+        val panNode = createStaticPan(pan)
+        playSound(oscNode, panNode, 0.5, duration)
+    }
+
+    fun playNpcCreationSound(npc: NonFaction) {
+        if (isMuted()) return
+        val duration = 0.02
+        val pan = npc.pos.xx() / Dim.width
+        val offset = -(npc.size.offset * 120.0)
+        val start = 660.0
+        val end = 660.0 + offset
+        val oscNode = createLinearRampOscillator(OscillatorType.SINE, start, end, duration)
+        val panNode = createStaticPan(pan)
+        playSound(oscNode, panNode, 0.2, duration)
     }
 
     fun playHackingSound(pos: Coords) {

@@ -16,6 +16,7 @@ import org.w3c.dom.events.Event
 import org.w3c.dom.events.MouseEvent
 import org.w3c.dom.url.URL
 import portal.Portal
+import system.Cycle
 import util.data.Cell
 import util.data.Coords
 import util.data.GeoCoords
@@ -69,7 +70,10 @@ object HtmlUtil {
         World.allNonFaction.forEach { it.act() }
         window.requestAnimationFrame {
             DrawUtil.redraw()
-            DrawUtil.redrawUserInterface()
+            val enlMu = World.calcTotalMu(Faction.ENL)
+            val resMu = World.calcTotalMu(Faction.RES)
+            Cycle.updateCheckpoints(World.tick, enlMu, resMu)
+            DrawUtil.redrawUserInterface(World.tick, enlMu, resMu)
         }
         World.tick++
     }
@@ -87,10 +91,9 @@ object HtmlUtil {
 
         val controlDiv = createControlDiv()
         val buttonDiv = document.createElement("div") as HTMLDivElement
-        val pauseButton = createButton("button", "Stop") {
+        val pauseButton = createButton(PAUSE_BUTTON_ID, "button", "Stop") {
             intervalID = pauseHandler(intervalID) { tick() }
         }
-        pauseButton.id = PAUSE_BUTTON_ID
         buttonDiv.append(pauseButton)
 
         val dropDown = createDropdown(LOCATION_DROPDOWN_ID) { mapChangeHandler() }
@@ -175,14 +178,14 @@ object HtmlUtil {
         qDiv.append(destinationsLabel)
         qValues.forEach { qValue ->
             val sliderDiv = document.createElement("div") as HTMLDivElement
-            Faction.factionValues().forEach { faction ->
+            Faction.all().forEach { faction ->
                 val slider = document.createElement("input") as HTMLInputElement
                 slider.id = qValue.sliderId + faction.nickName
                 slider.type = "range"
                 slider.min = "0.00"
                 slider.max = "1.00"
                 slider.step = "0.01"
-                slider.value = "0.10"
+                slider.value = "0.20"
                 slider.addClass("slider", "qSlider", faction.abbr.toLowerCase() + "Slider")
                 val sliderValue = document.createElement("span") as HTMLSpanElement
                 sliderValue.addClass("qSliderLabel", faction.abbr.toLowerCase() + "Label")
@@ -336,8 +339,9 @@ object HtmlUtil {
     fun rightSliderHeight(): Int = document.getElementById("right-sliders")?.clientHeight ?: 144
     fun rightSliderWidth(): Int = document.getElementById("right-sliders")?.clientWidth ?: 370
 
-    private fun createButton(className: String, text: String, callback: ((Event) -> Unit)?): HTMLButtonElement {
+    private fun createButton(id: String, className: String, text: String, callback: ((Event) -> Unit)?): HTMLButtonElement {
         val button = document.createElement("BUTTON") as HTMLButtonElement
+        button.id = id
         button.addClass(className)
         button.onclick = callback
         button.innerText = text

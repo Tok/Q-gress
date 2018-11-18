@@ -1,9 +1,9 @@
 package config
 
 object Config {
-    val startPortals = 8
-    val startFrogs = 50
-    val startSmurfs = 50
+    val startPortals = 5
+    val startFrogs = 20
+    val startSmurfs = 20
 
     val maxFrogs = 100
     val maxSmurfs = 100
