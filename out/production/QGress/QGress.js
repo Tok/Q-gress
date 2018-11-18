@@ -2111,7 +2111,7 @@ var QGress = function (_, Kotlin) {
     this.destination = destination;
     this.vectorField = vectorField;
     this.busyUntil = busyUntil;
-    this.swarmTendency_0 = 0.1;
+    this.swarmTendency_0 = 0.04;
     this.swarmChance_0 = this.swarmTendency_0 - this.swarmTendency_0 * 0.5 * this.size.offset;
     this.isDrunk_0 = Util_getInstance().random() <= 0.02;
     this.velocity_0 = Complex$Companion_getInstance().ZERO;
@@ -2181,7 +2181,7 @@ var QGress = function (_, Kotlin) {
         var nearPos = nearestNpc.pos;
         var re = -(this.pos.xx() - nearPos.xx());
         var im = -(this.pos.yy() - nearPos.yy());
-        var acceleration = 5.0;
+        var acceleration = 2.0;
         tmp$_0 = new Complex(re * acceleration, im * acceleration);
       }
        else {
@@ -7909,7 +7909,7 @@ var QGress = function (_, Kotlin) {
     var y = 36 + (Dim_getInstance().height / 2 | 0) | 0;
     var x = numberToInt(Dim_getInstance().width / 2.0 - 240 / 2.0 - (w / 2 | 0)) - 4 | 0;
     var strokeStyle = '#000000ff';
-    var lineWidth = 3.0;
+    var lineWidth = 1.0;
     var tmp$;
     tmp$ = (new IntRange(0, of)).iterator();
     while (tmp$.hasNext()) {

@@ -88,7 +88,7 @@ object DrawUtil {
         val y = 2 + 34 + (Dim.height / 2)
         val x = ((Dim.width / 2.0) - (loadingBarLength / 2.0) - (w / 2)).toInt() - 4
         val strokeStyle = "#000000ff"
-        val lineWidth = 3.0
+        val lineWidth = 1.0
         (0..of).forEach {
             val pos = Coords(x + (it * w), y)
             val fillStyle = if (it <= value) "#ffffffdd" else "#ffffff44"

@@ -17,7 +17,7 @@ import util.data.Coords
 data class NonFaction(var pos: Coords, val speed: Float, val size: AgentSize,
                       var destination: Coords, var vectorField: Map<Coords, Complex>,
                       var busyUntil: Int) {
-    private val swarmTendency = 0.1
+    private val swarmTendency = 0.04
     private val swarmChance = swarmTendency - (swarmTendency * 0.5 * size.offset)
 
     private val isDrunk = Util.random() <= 0.02 //TODO
@@ -54,7 +54,7 @@ data class NonFaction(var pos: Coords, val speed: Float, val size: AgentSize,
                 val nearPos = nearestNpc.pos
                 val re = -(this.pos.xx() - nearPos.xx()).toFloat()
                 val im = -(this.pos.yy() - nearPos.yy()).toFloat()
-                val acceleration = 5.0F
+                val acceleration = 2.0F
                 Complex(re * acceleration, im * acceleration)
             } else {
                 vectorField[PathUtil.posToShadowPos(pos)]
