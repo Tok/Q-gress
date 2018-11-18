@@ -421,6 +421,7 @@ object HtmlUtil {
 
     private fun onMapload() =
             fun(grid: Map<Coords, Cell>) {
+                MapUtil.hideSatelliteMap()
                 World.grid = grid
                 if (World.grid.isEmpty()) {
                     println("ERROR: Grid is empty!")
@@ -430,9 +431,11 @@ object HtmlUtil {
                 createAgentsAndPortals {
                     DrawUtil.drawLoadingText("Ready.")
                     World.isReady = true
-                }
-                if (isShowSatelliteMap()) {
-                    MapUtil.showSatelliteMap()
+                    if (isShowSatelliteMap()) {
+                        if (isShowSatelliteMap()) {
+                            MapUtil.showSatelliteMap()
+                        }
+                    }
                 }
             }
 
