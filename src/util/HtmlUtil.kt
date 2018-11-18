@@ -282,7 +282,6 @@ object HtmlUtil {
                     document.defaultView?.setTimeout(pos.findClosestPortal().destroy(World.tick), 0)
                 }
                 pos.isBuildable() -> {
-                    SoundUtil.playPortalCreationSound(pos)
                     document.defaultView?.setTimeout(World.allPortals.add(Portal.create(pos)), 0)
                 }
                 else -> {

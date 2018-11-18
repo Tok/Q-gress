@@ -538,6 +538,7 @@ data class Portal constructor(val name: String, val location: Coords,
             val slots: MutableMap<Octant, ResonatorSlot> = Octant.values().map { it to emptySlot }.toMap().toMutableMap()
             val heatMap = PathUtil.generateHeatMap(location)
             val vectorField = PathUtil.calculateVectorField(heatMap)
+            SoundUtil.playPortalCreationSound(location)
             return Portal(Util.generatePortalName(), location, heatMap, vectorField,
                     slots, mutableSetOf(), mutableSetOf(), null)
         }
