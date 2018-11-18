@@ -1,13 +1,13 @@
 package config
 
 object Config {
-    val startPortals = 5
-    val startFrogs = 20
-    val startSmurfs = 20
+    val startPortals = 8
+    val startFrogs = 34
+    val startSmurfs = 34
 
-    val maxFrogs = 100
-    val maxSmurfs = 100
-    val startNonFaction = ((startFrogs + startSmurfs) * Constants.phi).toInt()
+    val maxFrogs = 144
+    val maxSmurfs = 144
+    val startNonFaction = 610
 
     val isAutostart = true
     val isHighlighActionLimit = true

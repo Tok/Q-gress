@@ -74,8 +74,8 @@ object HtmlUtil {
             val resMu = World.calcTotalMu(Faction.RES)
             Cycle.updateCheckpoints(World.tick, enlMu, resMu)
             DrawUtil.redrawUserInterface(World.tick, enlMu, resMu)
+            World.tick++
         }
-        World.tick++
     }
 
     fun load() {

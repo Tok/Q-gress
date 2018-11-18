@@ -2507,12 +2507,12 @@ var QGress = function (_, Kotlin) {
   }
   function Config() {
     Config_instance = this;
-    this.startPortals = 5;
-    this.startFrogs = 20;
-    this.startSmurfs = 20;
-    this.maxFrogs = 100;
-    this.maxSmurfs = 100;
-    this.startNonFaction = numberToInt((this.startFrogs + this.startSmurfs | 0) * Constants_getInstance().phi);
+    this.startPortals = 8;
+    this.startFrogs = 34;
+    this.startSmurfs = 34;
+    this.maxFrogs = 144;
+    this.maxSmurfs = 144;
+    this.startNonFaction = 610;
     this.isAutostart = true;
     this.isHighlighActionLimit = true;
     this.vectorSmoothCount = 3;
@@ -8602,6 +8602,9 @@ var QGress = function (_, Kotlin) {
     var resMu = World_getInstance().calcTotalMu_bip15f$(Faction$RES_getInstance());
     Cycle$Companion_getInstance().updateCheckpoints_qt1dr2$(World_getInstance().tick, enlMu, resMu);
     DrawUtil_getInstance().redrawUserInterface_qt1dr2$(World_getInstance().tick, enlMu, resMu);
+    var tmp$;
+    tmp$ = World_getInstance();
+    tmp$.tick = tmp$.tick + 1 | 0;
     return Unit;
   }
   HtmlUtil.prototype.tick_0 = function () {
@@ -8629,9 +8632,6 @@ var QGress = function (_, Kotlin) {
       element.act();
     }
     window.requestAnimationFrame(HtmlUtil$tick$lambda_1);
-    var tmp$_1;
-    tmp$_1 = World_getInstance();
-    tmp$_1.tick = tmp$_1.tick + 1 | 0;
   };
   function HtmlUtil$load$lambda(this$HtmlUtil) {
     return function (event) {
@@ -9755,7 +9755,7 @@ var QGress = function (_, Kotlin) {
       return;
     var freq = 330;
     var osc = this.createNoiseOscillator_0(freq);
-    this.playSound_0(osc, this.createNoisePan_0(), 0.1, 13.0);
+    this.playSound_0(osc, this.createNoisePan_0(), 0.15, 13.0);
   };
   SoundUtil.prototype.playOffScreenLocationCreationSound = function () {
     var center = new Coords(Dim_getInstance().width / 2 | 0, Dim_getInstance().height / 2 | 0);
