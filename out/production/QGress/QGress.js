@@ -53,6 +53,7 @@ var QGress = function (_, Kotlin) {
   var kotlin_js_internal_ByteCompanionObject = Kotlin.kotlin.js.internal.ByteCompanionObject;
   var Triple = Kotlin.kotlin.Triple;
   var IllegalArgumentException_init = Kotlin.kotlin.IllegalArgumentException_init_pdl1vj$;
+  var toDoubleOrNull = Kotlin.kotlin.text.toDoubleOrNull_pdl1vz$;
   var addClass = Kotlin.kotlin.dom.addClass_hhb33f$;
   var max = Kotlin.kotlin.collections.max_exjks8$;
   var padEnd = Kotlin.kotlin.text.padEnd_vrc1nu$;
@@ -61,7 +62,6 @@ var QGress = function (_, Kotlin) {
   var contains = Kotlin.kotlin.text.contains_li3zpu$;
   var replace = Kotlin.kotlin.text.replace_680rmw$;
   var until = Kotlin.kotlin.ranges.until_dqglrj$;
-  var toDouble = Kotlin.kotlin.text.toDouble_pdl1vz$;
   var trimMargin = Kotlin.kotlin.text.trimMargin_rjktp$;
   var toMap_0 = Kotlin.kotlin.collections.toMap_abgq59$;
   var listOfNotNull = Kotlin.kotlin.collections.listOfNotNull_jurz7g$;
@@ -383,20 +383,13 @@ var QGress = function (_, Kotlin) {
     return this.xmBarPercent_0() >= 80;
   };
   Agent.prototype.removeXm_za3lpa$ = function (v) {
-    if ((this.xm - v | 0) <= 0) {
-      this.xm = 0;
-    }
-     else {
-      this.xm = this.xm - v | 0;
-    }
+    var value = this.xm - v | 0;
+    this.xm = value > 0 ? value : 0;
   };
   Agent.prototype.addXm_0 = function (v) {
-    if ((this.xm + v | 0) >= this.getXmCapacity_0()) {
-      this.xm = this.getXmCapacity_0();
-    }
-     else {
-      this.xm = this.xm + v | 0;
-    }
+    var value = this.xm + v | 0;
+    var cap = this.getXmCapacity_0();
+    this.xm = value < cap ? value : cap;
   };
   Agent.prototype.addAp_za3lpa$ = function (v) {
     this.ap = this.ap + v | 0;
@@ -942,6 +935,17 @@ var QGress = function (_, Kotlin) {
     return tmp$;
   };
   var Collection = Kotlin.kotlin.collections.Collection;
+  var mapNotNullTo$lambda_0 = wrapFunction(function () {
+    return function (closure$transform, closure$destination) {
+      return function (element) {
+        var tmp$;
+        if ((tmp$ = closure$transform(element)) != null) {
+          closure$destination.add_11rb$(tmp$);
+        }
+        return Unit;
+      };
+    };
+  });
   Agent.prototype.isLinkPossible_0 = function () {
     var tmp$, tmp$_0;
     if (!this.actionPortal.canLinkOut_912u9o$(this)) {
@@ -962,50 +966,57 @@ var QGress = function (_, Kotlin) {
       }
        else
         tmp$_1 = null;
-      var linkOptions = (tmp$_0 = tmp$_1) != null ? distinct(tmp$_0) : null;
-      var tmp$_3 = linkOptions != null;
-      if (tmp$_3) {
-        tmp$_3 = !linkOptions.isEmpty();
-      }
-      if (tmp$_3) {
-        var destination_0 = ArrayList_init(collectionSizeOrDefault(linkOptions, 10));
-        var tmp$_4;
-        tmp$_4 = linkOptions.iterator();
-        while (tmp$_4.hasNext()) {
-          var item = tmp$_4.next();
-          destination_0.add_11rb$(Link$Companion_getInstance().create_6ezwqo$(this.actionPortal, item, this));
+      var targetOptions = (tmp$_0 = tmp$_1) != null ? distinct(tmp$_0) : null;
+      if ((targetOptions != null ? !targetOptions.isEmpty() : null) === true) {
+        var destination_0 = ArrayList_init_0();
+        var tmp$_3;
+        tmp$_3 = targetOptions.iterator();
+        while (tmp$_3.hasNext()) {
+          var element_0 = tmp$_3.next();
+          var tmp$_0_0;
+          if ((tmp$_0_0 = Link$Companion_getInstance().create_6ezwqo$(this.actionPortal, element_0, this)) != null) {
+            destination_0.add_11rb$(tmp$_0_0);
+          }
         }
-        var linkLinks = filterNotNull(destination_0);
-        var destination_1 = ArrayList_init_0();
-        var tmp$_5;
-        tmp$_5 = linkLinks.iterator();
-        loop_label: while (tmp$_5.hasNext()) {
-          var element_0 = tmp$_5.next();
-          var $receiver = World_getInstance().allLines();
-          var none$result;
-          none$break: do {
-            var tmp$_6;
-            if (Kotlin.isType($receiver, Collection) && $receiver.isEmpty()) {
-              none$result = true;
-              break none$break;
-            }
-            tmp$_6 = $receiver.iterator();
-            while (tmp$_6.hasNext()) {
-              var element_1 = tmp$_6.next();
-              if (element_1.doesIntersect_589y3w$(element_0.getLine())) {
-                none$result = false;
+        var linkOptions = destination_0;
+        var any$result;
+        any$break: do {
+          var tmp$_4;
+          if (Kotlin.isType(linkOptions, Collection) && linkOptions.isEmpty()) {
+            any$result = false;
+            break any$break;
+          }
+          tmp$_4 = linkOptions.iterator();
+          loop_label: while (tmp$_4.hasNext()) {
+            var element_1 = tmp$_4.next();
+            var $receiver = World_getInstance().allLines();
+            var none$result;
+            none$break: do {
+              var tmp$_5;
+              if (Kotlin.isType($receiver, Collection) && $receiver.isEmpty()) {
+                none$result = true;
                 break none$break;
               }
+              tmp$_5 = $receiver.iterator();
+              while (tmp$_5.hasNext()) {
+                var element_2 = tmp$_5.next();
+                if (element_2.doesIntersect_589y3w$(element_1.getLine())) {
+                  none$result = false;
+                  break none$break;
+                }
+              }
+              none$result = true;
             }
-            none$result = true;
+             while (false);
+            if (none$result) {
+              any$result = true;
+              break any$break;
+            }
           }
-           while (false);
-          if (none$result)
-            destination_1.add_11rb$(element_0);
+          any$result = false;
         }
-        var nonCrossing = destination_1;
-        var hasLinkOptions = !nonCrossing.isEmpty();
-        return hasLinkOptions;
+         while (false);
+        return any$result;
       }
     }
     return false;
@@ -7105,6 +7116,7 @@ var QGress = function (_, Kotlin) {
     return this === other || (other !== null && (typeof other === 'object' && (Object.getPrototypeOf(this) === Object.getPrototypeOf(other) && (Kotlin.equals(this.center, other.center) && Kotlin.equals(this.radius, other.radius)))));
   };
   function GeoCoords(lng, lat) {
+    GeoCoords$Companion_getInstance();
     this.lng = lng;
     this.lat = lat;
   }
@@ -7127,6 +7139,30 @@ var QGress = function (_, Kotlin) {
   GeoCoords.prototype.toString = function () {
     return 'Geo-' + this.lng + ':' + this.lat;
   };
+  function GeoCoords$Companion() {
+    GeoCoords$Companion_instance = this;
+  }
+  GeoCoords$Companion.prototype.fromStrings_rkkr90$ = function (lngString, latString) {
+    var lng = lngString != null ? toDoubleOrNull(lngString) : null;
+    var lat = latString != null ? toDoubleOrNull(latString) : null;
+    if (lng == null)
+      return null;
+    if (lat == null)
+      return null;
+    return new GeoCoords(lng, lat);
+  };
+  GeoCoords$Companion.$metadata$ = {
+    kind: Kind_OBJECT,
+    simpleName: 'Companion',
+    interfaces: []
+  };
+  var GeoCoords$Companion_instance = null;
+  function GeoCoords$Companion_getInstance() {
+    if (GeoCoords$Companion_instance === null) {
+      new GeoCoords$Companion();
+    }
+    return GeoCoords$Companion_instance;
+  }
   GeoCoords.$metadata$ = {
     kind: Kind_CLASS,
     simpleName: 'GeoCoords',
@@ -8862,17 +8898,11 @@ var QGress = function (_, Kotlin) {
     return url.searchParams.get('name');
   };
   HtmlUtil.prototype.getLngLatFromUrl_0 = function () {
-    var tmp$, tmp$_0, tmp$_1;
+    var tmp$, tmp$_0;
     var url = new URL((tmp$_0 = (tmp$ = document.location) != null ? tmp$.href : null) != null ? tmp$_0 : '');
     var lngString = url.searchParams.get('lng');
     var latString = url.searchParams.get('lat');
-    if (lngString != null && latString != null) {
-      tmp$_1 = new GeoCoords(toDouble(lngString), toDouble(latString));
-    }
-     else {
-      tmp$_1 = null;
-    }
-    return tmp$_1;
+    return GeoCoords$Companion_getInstance().fromStrings_rkkr90$(lngString, latString);
   };
   HtmlUtil.prototype.addParameters_0 = function (url, lng, lat, name) {
     return url + '?lng=' + lng + '&lat=' + lat + '&name=' + name;
@@ -10669,6 +10699,9 @@ var QGress = function (_, Kotlin) {
   package$data.Damage = Damage;
   package$data.Dim = Dim_0;
   package$data.GeoCircle = GeoCircle;
+  Object.defineProperty(GeoCoords, 'Companion', {
+    get: GeoCoords$Companion_getInstance
+  });
   package$data.GeoCoords = GeoCoords;
   package$data.GeoLine = GeoLine;
   Object.defineProperty(AgentsTableWidget, 'Companion', {

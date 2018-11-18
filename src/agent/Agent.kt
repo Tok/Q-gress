@@ -51,20 +51,16 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
     private fun xmBarPercent() = calcAbsXmBar() * 100 / getXmCapacity()
     private fun isXmBarEmpty() = xmBarPercent() == 0
     private fun isXmFilled() = xmBarPercent() >= 80
+
     fun removeXm(v: Int) {
-        if (xm - v <= 0) {
-            this.xm = 0
-        } else {
-            this.xm -= v
-        }
+        val value = xm - v
+        this.xm = if (value > 0) value else 0
     }
 
     private fun addXm(v: Int) {
-        if (xm + v >= getXmCapacity()) {
-            this.xm = getXmCapacity()
-        } else {
-            this.xm += v
-        }
+        val value = xm + v
+        val cap = getXmCapacity()
+        this.xm = if (value < cap) value else cap
     }
 
     fun addAp(v: Int) {
@@ -327,18 +323,16 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
             return false
         }
         if (hasKeys()) {
-            val linkOptions: List<Portal>? = actionPortal.findLinkableForKeys(this)?.filter {
+            val targetOptions: List<Portal>? = actionPortal.findLinkableForKeys(this)?.filter {
                 it != actionPortal && it.owner != null && !it.isDeprecated()
             }?.distinct()
-            if (linkOptions != null && linkOptions.isNotEmpty()) {
-                val linkLinks: List<Link> = linkOptions.map { Link.create(actionPortal, it, this) }.filterNotNull()
-                val nonCrossing = linkLinks.filter { link ->
-                    World.allLines().none {
-                        it.doesIntersect(link.getLine())
-                    }
+            if (targetOptions?.isNotEmpty() == true) {
+                val linkOptions: List<Link> = targetOptions.mapNotNull {
+                    Link.create(actionPortal, it, this)
                 }
-                val hasLinkOptions = nonCrossing.isNotEmpty()
-                return hasLinkOptions
+                return linkOptions.any { link ->
+                    World.allLines().none { it.doesIntersect(link.getLine()) }
+                }
             }
         }
         return false

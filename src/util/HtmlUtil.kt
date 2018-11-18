@@ -500,11 +500,7 @@ object HtmlUtil {
         val url = URL(document.location?.href ?: "")
         val lngString = url.searchParams.get("lng")
         val latString = url.searchParams.get("lat")
-        return if (lngString != null && latString != null) {
-            GeoCoords(lngString.toDouble(), latString.toDouble())
-        } else {
-            null
-        }
+        return GeoCoords.fromStrings(lngString, latString)
     }
 
     private fun addParameters(url: String, lng: String, lat: String, name: String): String {

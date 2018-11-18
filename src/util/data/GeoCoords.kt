@@ -14,4 +14,13 @@ data class GeoCoords(val lng: Double, val lat: Double) {
     }
     fun toJson(): Json = JSON.parse("""[$lng,$lat]""")
     override fun toString() = "Geo-$lng:$lat"
+    companion object {
+        fun fromStrings(lngString: String?, latString: String?): GeoCoords? {
+            val lng: Double? = lngString?.toDoubleOrNull()
+            val lat: Double? = latString?.toDoubleOrNull()
+            if (lng == null) return null
+            if (lat == null) return null
+            return GeoCoords(lng, lat)
+        }
+    }
 }
