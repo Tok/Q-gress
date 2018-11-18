@@ -9,6 +9,8 @@ object Config {
     val maxSmurfs = 144
     val startNonFaction = 610
 
+    val isNpcSwarming = true
+
     val isAutostart = true
     val isHighlighActionLimit = true
     val vectorSmoothCount = 3

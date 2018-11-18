@@ -4,6 +4,7 @@ import Canvas
 import Ctx
 import World
 import config.Colors
+import config.Config
 import config.Dim
 import config.Time
 import portal.Portal
@@ -16,7 +17,11 @@ import util.data.Coords
 data class NonFaction(var pos: Coords, val speed: Float, val size: AgentSize,
                       var destination: Coords, var vectorField: Map<Coords, Complex>,
                       var busyUntil: Int) {
-    val isDrunk = Util.random() <= 0.02 //TODO
+    private val swarmTendency = 0.1
+    private val swarmChance = swarmTendency - (swarmTendency * 0.5 * size.offset)
+
+    private val isDrunk = Util.random() <= 0.02 //TODO
+
     private var velocity = Complex.ZERO
     private fun distanceToDestination(): Double = pos.distanceTo(destination)
     private fun distanceToPortal(portal: Portal): Double = pos.distanceTo(portal.location)
@@ -42,7 +47,18 @@ data class NonFaction(var pos: Coords, val speed: Float, val size: AgentSize,
         if (isAtDestination()) {
             wait()
         } else {
-            val force = vectorField[PathUtil.posToShadowPos(pos)]
+            val force = if (Config.isNpcSwarming && Util.random() < swarmChance) {
+                val nearestNpc: NonFaction = World.allNonFaction.filterNot { it == this }.minBy {
+                    it.pos.distanceTo(this.pos)
+                } ?: this
+                val nearPos = nearestNpc.pos
+                val re = -(this.pos.xx() - nearPos.xx()).toFloat()
+                val im = -(this.pos.yy() - nearPos.yy()).toFloat()
+                val acceleration = 5.0F
+                Complex(re * acceleration, im * acceleration)
+            } else {
+                vectorField[PathUtil.posToShadowPos(pos)]
+            }
             velocity = MovementUtil.move(velocity, force, speed)
             this.pos = Coords((pos.x + velocity.re).toInt(), (pos.y + velocity.im).toInt())
         }
@@ -141,13 +157,15 @@ data class NonFaction(var pos: Coords, val speed: Float, val size: AgentSize,
             })
         }
 
-        private const val maxSpeed = 3F
-        private const val minSpeed = 1F
+        private const val maxSpeed = 2.5F
+        private const val minSpeed = 1.5F
 
         fun create(grid: Map<Coords, Cell>): NonFaction {
             val position = Coords.createRandomPassable(grid)
-            val speed = minSpeed + (Util.random().toFloat() * (maxSpeed - minSpeed))
             val size = AgentSize.createRandom()
+            val min = minSpeed - size.offset
+            val max = maxSpeed - size.offset
+            val speed = min + (Util.random().toFloat() * (max - min))
             val newNonFaction = if (Util.random() < 0.1) { //move to offscreen destination
                 val destination = Util.shuffle(DESTINATIONS).first()
                 val vectorField = getOrCreateVectorField(destination)
