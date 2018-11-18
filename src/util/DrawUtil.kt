@@ -6,10 +6,10 @@ import World
 import agent.Faction
 import agent.NonFaction
 import agent.action.ActionItem
-import agent.qvalue.QActions
 import config.*
 import config.Dim
-import config.Styles.VectorStyle.*
+import config.Styles.VectorStyle.CIRCLE
+import config.Styles.VectorStyle.SQUARE
 import items.XmpBurster
 import items.deployable.DeployableItem
 import items.level.LevelColor

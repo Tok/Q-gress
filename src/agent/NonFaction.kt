@@ -83,7 +83,7 @@ data class NonFaction(var pos: Coords, val speed: Float, val size: AgentSize,
         this.destination = randomTarget.location
     }
 
-    fun draw(ctx: Ctx) = ctx.drawImage(NonFaction.image(size.offset), pos.xx(), pos.yy())
+    fun draw(ctx: Ctx) = ctx.drawImage(NonFaction.image(size), pos.xx(), pos.yy())
 
     companion object {
         private val OFFSCREEN_DISTANCE = PathUtil.RESOLUTION * (MapUtil.OFFSCREEN_CELL_ROWS / 2)
@@ -121,12 +121,13 @@ data class NonFaction(var pos: Coords, val speed: Float, val size: AgentSize,
             }
         }
 
-        private fun findFarPortal(pos: Coords) =  World.allPortals.sortedByDescending { pos.distanceTo(it.location) }.first()
+        private fun findFarPortal(pos: Coords) = World.allPortals.sortedByDescending { pos.distanceTo(it.location) }.first()
 
+        private val images = mapOf(-1 to drawTemplate(-1), 0 to drawTemplate(0), 1 to drawTemplate(1))
         private val MIN_WAIT = Time.secondsToTicks(5)
         private val MAX_WAIT = Time.secondsToTicks(45)
         private fun createWaitTime() = Util.randomInt(MIN_WAIT, MAX_WAIT)
-        private fun image(sizeOffset: Int): Canvas = drawTemplate(sizeOffset)
+        private fun image(size: AgentSize): Canvas = images.get(size.offset) ?: drawTemplate(0)
         private fun drawTemplate(sizeOffset: Int): Canvas {
             val lineWidth = 2
             val r = Dim.agentRadius.toInt() + sizeOffset

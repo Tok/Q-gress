@@ -33,11 +33,11 @@ var QGress = function (_, Kotlin) {
   var IllegalStateException_init = Kotlin.kotlin.IllegalStateException_init_pdl1vj$;
   var eachCount = Kotlin.kotlin.collections.eachCount_kji7v9$;
   var firstOrNull = Kotlin.kotlin.collections.firstOrNull_2p1efm$;
+  var mapOf = Kotlin.kotlin.collections.mapOf_qfcya0$;
   var math = Kotlin.kotlin.math;
   var asList = Kotlin.kotlin.collections.asList_us0mfu$;
   var Kind_INTERFACE = Kotlin.Kind.INTERFACE;
   var NotImplementedError = Kotlin.kotlin.NotImplementedError;
-  var mapOf = Kotlin.kotlin.collections.mapOf_qfcya0$;
   var toList_0 = Kotlin.kotlin.collections.toList_7wnvza$;
   var last = Kotlin.kotlin.collections.last_2p1efm$;
   var linkedSetOf = Kotlin.kotlin.collections.linkedSetOf_i5x0yv$;
@@ -2179,7 +2179,7 @@ var QGress = function (_, Kotlin) {
     this.destination = randomTarget.location;
   };
   NonFaction.prototype.draw_f69bme$ = function (ctx) {
-    ctx.drawImage(NonFaction$Companion_getInstance().image_0(this.size.offset), this.pos.xx(), this.pos.yy());
+    ctx.drawImage(NonFaction$Companion_getInstance().image_0(this.size), this.pos.xx(), this.pos.yy());
   };
   function NonFaction$Companion() {
     NonFaction$Companion_instance = this;
@@ -2188,6 +2188,7 @@ var QGress = function (_, Kotlin) {
     this.OFFSCREEN_EDGES = listOf([new Coords(-this.OFFSCREEN_DISTANCE_0 | 0, -this.OFFSCREEN_DISTANCE_0 | 0), new Coords(World_getInstance().w() + this.OFFSCREEN_DISTANCE_0 | 0, -this.OFFSCREEN_DISTANCE_0 | 0), new Coords(-this.OFFSCREEN_DISTANCE_0 | 0, World_getInstance().h() + this.OFFSCREEN_DISTANCE_0 | 0), new Coords(World_getInstance().w() + this.OFFSCREEN_DISTANCE_0 | 0, World_getInstance().h() + this.OFFSCREEN_DISTANCE_0 | 0)]);
     this.DESTINATIONS = listOf([new Coords(World_getInstance().w() / 3 | 0, -this.OFFSCREEN_DISTANCE_0 | 0), new Coords((World_getInstance().w() * 2 | 0) / 3 | 0, -this.OFFSCREEN_DISTANCE_0 | 0), new Coords(-this.OFFSCREEN_DISTANCE_0 | 0, World_getInstance().h() / 3 | 0), new Coords(-this.OFFSCREEN_DISTANCE_0 | 0, (World_getInstance().h() * 2 | 0) / 3 | 0), new Coords(World_getInstance().w() + this.OFFSCREEN_DISTANCE_0 | 0, World_getInstance().h() / 3 | 0), new Coords(World_getInstance().w() + this.OFFSCREEN_DISTANCE_0 | 0, (World_getInstance().h() * 2 | 0) / 3 | 0), new Coords(World_getInstance().w() / 3 | 0, World_getInstance().h() + this.OFFSCREEN_DISTANCE_0 | 0), new Coords((World_getInstance().w() * 2 | 0) / 3 | 0, World_getInstance().h() + this.OFFSCREEN_DISTANCE_0 | 0)]);
     this.fields_0 = LinkedHashMap_init();
+    this.images_0 = mapOf([to(-1, this.drawTemplate_0(-1)), to(0, this.drawTemplate_0(0)), to(1, this.drawTemplate_0(1))]);
     this.MIN_WAIT_0 = Time_getInstance().secondsToTicks_za3lpa$(5);
     this.MAX_WAIT_0 = Time_getInstance().secondsToTicks_za3lpa$(45);
     this.maxSpeed_0 = 3.0;
@@ -2237,8 +2238,9 @@ var QGress = function (_, Kotlin) {
   NonFaction$Companion.prototype.createWaitTime_0 = function () {
     return Util_getInstance().randomInt_vux9f0$(this.MIN_WAIT_0, this.MAX_WAIT_0);
   };
-  NonFaction$Companion.prototype.image_0 = function (sizeOffset) {
-    return this.drawTemplate_0(sizeOffset);
+  NonFaction$Companion.prototype.image_0 = function (size) {
+    var tmp$;
+    return (tmp$ = this.images_0.get_11rb$(size.offset)) != null ? tmp$ : this.drawTemplate_0(0);
   };
   function NonFaction$Companion$drawTemplate$lambda(closure$r, closure$lineWidth) {
     return function (ctx) {
