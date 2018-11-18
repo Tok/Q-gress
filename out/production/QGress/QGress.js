@@ -6218,6 +6218,7 @@ var QGress = function (_, Kotlin) {
     var slots = toMutableMap(toMap(destination));
     var heatMap = PathUtil_getInstance().generateHeatMap_lfj9be$(location);
     var vectorField = PathUtil_getInstance().calculateVectorField_8eqwnz$(heatMap);
+    SoundUtil_getInstance().playPortalCreationSound_xv7m3c$(location);
     return new Portal(Util_getInstance().generatePortalName(), location, heatMap, vectorField, slots, LinkedHashSet_init(), LinkedHashSet_init(), null);
   };
   Portal$Companion.prototype.createRandom = function () {
@@ -7249,6 +7250,9 @@ var QGress = function (_, Kotlin) {
     }
     var random = this.createRandomNoOffset_0();
     if (ensureNotNull(grid.get_11rb$(PathUtil_getInstance().posToShadowPos_lfj9be$(random))).isPassable) {
+      if (random.isOffGrid()) {
+        SoundUtil_getInstance().playOffScreenLocationCreationSound();
+      }
       tmp$ = random;
     }
      else {
@@ -8828,6 +8832,7 @@ var QGress = function (_, Kotlin) {
     var noiseAlpha = 0.8;
     var w = Dim_getInstance().width;
     var h = Dim_getInstance().height;
+    SoundUtil_getInstance().playNoiseGenSound();
     World_getInstance().noiseMap = ImprovedNoise_getInstance().generateEdgeMap_224j3y$(w, h);
     World_getInstance().noiseImage = World_getInstance().createNoiseImage_bd1o91$(World_getInstance().noiseMap, w, h, noiseAlpha);
     this.resetInterval_0();
@@ -8900,10 +8905,8 @@ var QGress = function (_, Kotlin) {
         SoundUtil_getInstance().playPortalRemovalSound_lfj9be$(pos);
         (tmp$ = document.defaultView) != null ? tmp$.setTimeout(pos.findClosestPortal().destroy_za3lpa$(World_getInstance().tick), 0) : null;
       }
-       else if (pos.isBuildable()) {
-        SoundUtil_getInstance().playPortalCreationSound_lfj9be$(pos);
+       else if (pos.isBuildable())
         (tmp$_0 = document.defaultView) != null ? tmp$_0.setTimeout(World_getInstance().allPortals.add_11rb$(Portal$Companion_getInstance().create_lfj9be$(pos)), 0) : null;
-      }
     }
      else {
       println('WARN: Unhandled event: ' + event + '.');
@@ -9082,23 +9085,28 @@ var QGress = function (_, Kotlin) {
     var tmp$;
     return (Kotlin.isType(tmp$ = document.getElementById('satCheckbox'), HTMLInputElement) ? tmp$ : throwCCE()).checked;
   };
-  function HtmlUtil$onMapload$lambda$lambda() {
-    DrawUtil_getInstance().drawLoadingText_61zpoe$('Ready.');
-    World_getInstance().isReady = true;
-    return Unit;
+  function HtmlUtil$onMapload$lambda$lambda(this$HtmlUtil) {
+    return function () {
+      DrawUtil_getInstance().drawLoadingText_61zpoe$('Ready.');
+      World_getInstance().isReady = true;
+      if (this$HtmlUtil.isShowSatelliteMap_0()) {
+        if (this$HtmlUtil.isShowSatelliteMap_0()) {
+          MapUtil_getInstance().showSatelliteMap();
+        }
+      }
+      return Unit;
+    };
   }
   function HtmlUtil$onMapload$lambda(this$HtmlUtil) {
     return function (grid) {
+      MapUtil_getInstance().hideSatelliteMap();
       World_getInstance().grid = grid;
       if (World_getInstance().grid.isEmpty()) {
         println('ERROR: Grid is empty!');
       }
       DrawUtil_getInstance().drawGrid();
       DrawUtil_getInstance().drawActionLimits_6taknv$(false);
-      this$HtmlUtil.createAgentsAndPortals_0(HtmlUtil$onMapload$lambda$lambda);
-      if (this$HtmlUtil.isShowSatelliteMap_0()) {
-        MapUtil_getInstance().showSatelliteMap();
-      }
+      this$HtmlUtil.createAgentsAndPortals_0(HtmlUtil$onMapload$lambda$lambda(this$HtmlUtil));
     };
   }
   HtmlUtil.prototype.onMapload_0 = function () {
@@ -9523,8 +9531,10 @@ var QGress = function (_, Kotlin) {
   };
   MapUtil.prototype.showSatelliteMap = function () {
     var tmp$, tmp$_0;
-    (tmp$ = document.getElementById(this.INITIAL_MAP_0)) != null ? addClass(tmp$, [this.INVISIBLE_0]) : null;
-    (tmp$_0 = document.getElementById(this.MAP_0)) != null ? removeClass(tmp$_0, [this.INVISIBLE_0]) : null;
+    if (World_getInstance().isReady) {
+      (tmp$ = document.getElementById(this.INITIAL_MAP_0)) != null ? addClass(tmp$, [this.INVISIBLE_0]) : null;
+      (tmp$_0 = document.getElementById(this.MAP_0)) != null ? removeClass(tmp$_0, [this.INVISIBLE_0]) : null;
+    }
   };
   MapUtil.prototype.hideSatelliteMap = function () {
     var tmp$, tmp$_0;
@@ -9740,14 +9750,26 @@ var QGress = function (_, Kotlin) {
   SoundUtil.prototype.volume_0 = function () {
     return this.isMuted_0() ? 0.0 : 0.4;
   };
-  SoundUtil.prototype.playPortalCreationSound_lfj9be$ = function (pos) {
+  SoundUtil.prototype.playNoiseGenSound = function () {
+    if (this.isMuted_0())
+      return;
+    var freq = 330;
+    var osc = this.createNoiseOscillator_0(freq);
+    this.playSound_0(osc, this.createNoisePan_0(), 0.1, 13.0);
+  };
+  SoundUtil.prototype.playOffScreenLocationCreationSound = function () {
+    var center = new Coords(Dim_getInstance().width / 2 | 0, Dim_getInstance().height / 2 | 0);
+    return this.playPortalCreationSound_xv7m3c$(center, 0.5);
+  };
+  SoundUtil.prototype.playPortalCreationSound_xv7m3c$ = function (pos, gain) {
+    if (gain === void 0)
+      gain = 1.0;
     if (this.isMuted_0())
       return;
     var duration = 0.5;
     var pan = pos.x / Dim_getInstance().width;
     var oscNode = this.createLinearRampOscillator_0(OscillatorType_getInstance().SINE, 120.0, 0.0, duration);
-    var panNode = this.createStaticPan_0(pan);
-    this.playSound_0(oscNode, panNode, 1.0, duration);
+    this.playSound_0(oscNode, this.createStaticPan_0(pan), gain, duration);
   };
   SoundUtil.prototype.playPortalRemovalSound_lfj9be$ = function (pos) {
     if (this.isMuted_0())
@@ -9755,8 +9777,7 @@ var QGress = function (_, Kotlin) {
     var duration = 0.5;
     var pan = pos.x / Dim_getInstance().width;
     var oscNode = this.createLinearRampOscillator_0(OscillatorType_getInstance().SINE, 60.0, 120.0, duration);
-    var panNode = this.createStaticPan_0(pan);
-    this.playSound_0(oscNode, panNode, 1.0, duration);
+    this.playSound_0(oscNode, this.createStaticPan_0(pan), 1.0, duration);
   };
   SoundUtil.prototype.playCheckpointSound_2xtf47$ = function (checkpoint) {
     if (this.isMuted_0())
@@ -9764,8 +9785,7 @@ var QGress = function (_, Kotlin) {
     var duration = 0.05;
     var pan = 0.5;
     var oscNode = this.createLinearRampOscillator_0(OscillatorType_getInstance().SINE, 440.0, 440.0, duration);
-    var panNode = this.createStaticPan_0(pan);
-    this.playSound_0(oscNode, panNode, 0.5, duration);
+    this.playSound_0(oscNode, this.createStaticPan_0(pan), 0.5, duration);
   };
   SoundUtil.prototype.playNpcCreationSound_3mzr9k$ = function (npc) {
     if (this.isMuted_0())
@@ -9776,8 +9796,7 @@ var QGress = function (_, Kotlin) {
     var start = 660.0;
     var end = 660.0 + offset;
     var oscNode = this.createLinearRampOscillator_0(OscillatorType_getInstance().SINE, start, end, duration);
-    var panNode = this.createStaticPan_0(pan);
-    this.playSound_0(oscNode, panNode, 0.2, duration);
+    this.playSound_0(oscNode, this.createStaticPan_0(pan), 0.2, duration);
   };
   SoundUtil.prototype.playHackingSound_lfj9be$ = function (pos) {
     if (this.isMuted_0())
@@ -9785,10 +9804,9 @@ var QGress = function (_, Kotlin) {
     var freq = 500.0;
     var osc = this.createStaticOscillator_0(OscillatorType_getInstance().SINE, freq);
     var pan = pos.xx() / Dim_getInstance().width;
-    var panNode = this.createStaticPan_0(pan);
     var gain = 0.04;
     var duration = 0.02;
-    this.playSound_0(osc, panNode, gain, duration);
+    this.playSound_0(osc, this.createStaticPan_0(pan), gain, duration);
   };
   SoundUtil.prototype.playXmpSound_zbn281$ = function (level, pos) {
     if (this.isMuted_0())
@@ -9796,10 +9814,9 @@ var QGress = function (_, Kotlin) {
     var freq = 160.0 - (level.level * 5 | 0);
     var osc = this.createStaticOscillator_0(OscillatorType_getInstance().SQUARE, freq);
     var pan = pos.xx() / Dim_getInstance().width;
-    var panNode = this.createStaticPan_0(pan);
     var gain = 0.04 + level.level * 0.006;
     var duration = 0.005 + 0.001 * level.level;
-    this.playSound_0(osc, panNode, gain, duration);
+    this.playSound_0(osc, this.createStaticPan_0(pan), gain, duration);
   };
   SoundUtil.prototype.playDeploySound_s1df0o$ = function (pos, distanceToPortal) {
     if (this.isMuted_0())
@@ -9813,8 +9830,7 @@ var QGress = function (_, Kotlin) {
     var endFreq = minFreq + baseFreq * ratio * 2;
     var pan = pos.x / Dim_getInstance().width;
     var oscNode = this.createLinearRampOscillator_0(OscillatorType_getInstance().SINE, startFreq, endFreq, duration);
-    var panNode = this.createStaticPan_0(pan);
-    this.playSound_0(oscNode, panNode, gain, duration);
+    this.playSound_0(oscNode, this.createStaticPan_0(pan), gain, duration);
   };
   SoundUtil.prototype.playLinkingSound_4tp95w$ = function (link) {
     if (this.isMuted_0())
@@ -9869,6 +9885,22 @@ var QGress = function (_, Kotlin) {
     node.frequency.setTargetAtTime(freq, this.now_0(), 0.0);
     return node;
   };
+  SoundUtil.prototype.createNoiseOscillator_0 = function (maxFreq) {
+    var node = this.audioCtx_0.createOscillator();
+    node.type = OscillatorType_getInstance().SQUARE;
+    var n = this.now_0();
+    var timeConstant = 0.01;
+    var max = 1000;
+    var tmp$;
+    tmp$ = (new IntRange(0, max)).iterator();
+    while (tmp$.hasNext()) {
+      var element = tmp$.next();
+      var freq = Util_getInstance().randomInt_za3lpa$(maxFreq - (Kotlin.imul(maxFreq, element) / max | 0) | 0);
+      var tc = timeConstant * element;
+      node.frequency.setTargetAtTime(freq, n + tc, timeConstant);
+    }
+    return node;
+  };
   SoundUtil.prototype.createLinearRampOscillator_0 = function (type, startFreq, endFreq, duration) {
     var node = this.createStaticOscillator_0(type, startFreq);
     node.frequency.linearRampToValueAtTime(endFreq, this.now_0() + duration);
@@ -9882,6 +9914,21 @@ var QGress = function (_, Kotlin) {
   SoundUtil.prototype.createStaticPan_0 = function (pan) {
     var node = this.audioCtx_0.createStereoPanner();
     node.pan.setTargetAtTime(pan, this.now_0(), 0.0);
+    return node;
+  };
+  SoundUtil.prototype.createNoisePan_0 = function () {
+    var node = this.audioCtx_0.createStereoPanner();
+    var timeConstant = 0.01;
+    var max = 1000;
+    var n = this.now_0();
+    var tmp$;
+    tmp$ = (new IntRange(0, max)).iterator();
+    while (tmp$.hasNext()) {
+      var element = tmp$.next();
+      var pan = Util_getInstance().randomInt_za3lpa$(Dim_getInstance().width) / Dim_getInstance().width;
+      var tc = timeConstant * element;
+      node.pan.setTargetAtTime(pan, n + tc, timeConstant);
+    }
     return node;
   };
   SoundUtil.prototype.createLinearRampPan_0 = function (startPan, endPan, duration) {
@@ -10301,9 +10348,6 @@ var QGress = function (_, Kotlin) {
     }
      while (false);
     return count$result;
-  };
-  World.prototype.countNonFaction = function () {
-    return this.allNonFaction.size;
   };
   World.prototype.enlPortals = function () {
     var $receiver = this.allPortals;

@@ -27,13 +27,24 @@ object SoundUtil {
 
     private fun volume() = if (isMuted()) 0.0 else 0.4 //TODO create volume slider
 
-    fun playPortalCreationSound(pos: Coords) {
+    fun playNoiseGenSound() {
+        if (isMuted()) return
+        val freq = 330
+        val osc = createNoiseOscillator(freq)
+        playSound(osc, createNoisePan(), 0.15, 13.0)
+    }
+
+    fun playOffScreenLocationCreationSound() {
+        val center = Coords(Dim.width / 2, Dim.height / 2)
+        return playPortalCreationSound(center, 0.5)
+    }
+
+    fun playPortalCreationSound(pos: Coords, gain: Double = 1.0) {
         if (isMuted()) return
         val duration = 0.5
         val pan = pos.x.toDouble() / Dim.width
         val oscNode = createLinearRampOscillator(OscillatorType.SINE, 120.0, 0.0, duration)
-        val panNode = createStaticPan(pan)
-        playSound(oscNode, panNode, 1.0, duration)
+        playSound(oscNode, createStaticPan(pan), gain, duration)
     }
 
     fun playPortalRemovalSound(pos: Coords) {
@@ -41,8 +52,7 @@ object SoundUtil {
         val duration = 0.5
         val pan = pos.x.toDouble() / Dim.width
         val oscNode = createLinearRampOscillator(OscillatorType.SINE, 60.0, 120.0, duration)
-        val panNode = createStaticPan(pan)
-        playSound(oscNode, panNode, 1.0, duration)
+        playSound(oscNode, createStaticPan(pan), 1.0, duration)
     }
 
     fun playCheckpointSound(checkpoint: Checkpoint) {
@@ -50,8 +60,7 @@ object SoundUtil {
         val duration = 0.05
         val pan = 0.5
         val oscNode = createLinearRampOscillator(OscillatorType.SINE, 440.0, 440.0, duration)
-        val panNode = createStaticPan(pan)
-        playSound(oscNode, panNode, 0.5, duration)
+        playSound(oscNode, createStaticPan(pan), 0.5, duration)
     }
 
     fun playNpcCreationSound(npc: NonFaction) {
@@ -62,8 +71,7 @@ object SoundUtil {
         val start = 660.0
         val end = 660.0 + offset
         val oscNode = createLinearRampOscillator(OscillatorType.SINE, start, end, duration)
-        val panNode = createStaticPan(pan)
-        playSound(oscNode, panNode, 0.2, duration)
+        playSound(oscNode, createStaticPan(pan), 0.2, duration)
     }
 
     fun playHackingSound(pos: Coords) {
@@ -71,10 +79,9 @@ object SoundUtil {
         val freq = 500.0
         val osc = createStaticOscillator(OscillatorType.SINE, freq)
         val pan = pos.xx() / Dim.width
-        val panNode = createStaticPan(pan)
         val gain = 0.04
         val duration = 0.02
-        playSound(osc, panNode, gain, duration)
+        playSound(osc, createStaticPan(pan), gain, duration)
     }
 
     fun playXmpSound(level: XmpLevel, pos: Coords) {
@@ -82,10 +89,9 @@ object SoundUtil {
         val freq = 160.0 - (level.level * 5)
         val osc = createStaticOscillator(OscillatorType.SQUARE, freq)
         val pan = pos.xx() / Dim.width
-        val panNode = createStaticPan(pan)
         val gain = (0.04 + (level.level * 0.006))
         val duration = 0.005 + (0.001 * level.level)
-        playSound(osc, panNode, gain, duration)
+        playSound(osc, createStaticPan(pan), gain, duration)
     }
 
     fun playDeploySound(pos: Coords, distanceToPortal: Int) {
@@ -99,8 +105,7 @@ object SoundUtil {
         val endFreq = minFreq + (baseFreq * ratio * 2)
         val pan = pos.x.toDouble() / Dim.width
         val oscNode = createLinearRampOscillator(OscillatorType.SINE, startFreq, endFreq, duration)
-        val panNode = createStaticPan(pan)
-        playSound(oscNode, panNode, gain, duration)
+        playSound(oscNode, createStaticPan(pan), gain, duration)
     }
 
     fun playLinkingSound(link: Link) {
@@ -157,6 +162,20 @@ object SoundUtil {
         return node
     }
 
+    private fun createNoiseOscillator(maxFreq: Int): OscillatorNode {
+        val node = audioCtx.createOscillator()
+        node.type = OscillatorType.SQUARE
+        val n = now()
+        val timeConstant = 0.01
+        val max = 1000
+        (0..max).forEach {
+            val freq = Util.randomInt(maxFreq - (maxFreq * it / max)).toDouble()
+            val tc = timeConstant * it
+            node.frequency.setTargetAtTime(freq, n + tc, timeConstant)
+        }
+        return node
+    }
+
     private fun createLinearRampOscillator(type: String, startFreq: Double, endFreq: Double, duration: Double): OscillatorNode {
         val node = createStaticOscillator(type, startFreq)
         node.frequency.linearRampToValueAtTime(endFreq, now() + duration)
@@ -172,6 +191,20 @@ object SoundUtil {
     private fun createStaticPan(pan: Double): StereoPannerNode {
         val node = audioCtx.createStereoPanner()
         node.pan.setTargetAtTime(pan, now(), 0.0)
+        return node
+    }
+
+    private fun createNoisePan(): StereoPannerNode {
+        val node = audioCtx.createStereoPanner()
+        val timeConstant = 0.01
+        val max = 1000
+        val n = now()
+        (0..max).forEach {
+            val pan = Util.randomInt(Dim.width).toDouble() / Dim.width
+            val tc = timeConstant * it
+            node.pan.setTargetAtTime(pan, n + tc, timeConstant)
+        }
+
         return node
     }
 

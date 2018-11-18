@@ -73,7 +73,6 @@ object World {
     fun countAgents(fact: Faction) = allAgents.count { it.faction == fact }
 
     val allNonFaction: MutableSet<NonFaction> = mutableSetOf()
-    fun countNonFaction() = allNonFaction.count()
 
     val allPortals: MutableList<Portal> = mutableListOf()
     fun enlPortals() = allPortals.filter { it.owner?.faction == Faction.ENL }

@@ -3,6 +3,7 @@ package util.data
 import World
 import config.Dim
 import util.PathUtil
+import util.SoundUtil
 import util.Util
 import kotlin.math.abs
 import kotlin.math.sqrt
@@ -93,6 +94,9 @@ data class Coords(val x: Int, val y: Int) {
             check(grid.isNotEmpty())
             val random = createRandomNoOffset()
             return if (grid[PathUtil.posToShadowPos(random)]!!.isPassable) {
+                if (random.isOffGrid()) {
+                    SoundUtil.playOffScreenLocationCreationSound()
+                }
                 random
             } else {
                 if (retries > 0) {

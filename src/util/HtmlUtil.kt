@@ -222,6 +222,7 @@ object HtmlUtil {
         val noiseAlpha = 0.8
         val w = Dim.width
         val h = Dim.height
+        SoundUtil.playNoiseGenSound()
         World.noiseMap = ImprovedNoise.generateEdgeMap(w, h)
         World.noiseImage = World.createNoiseImage(World.noiseMap, w, h, noiseAlpha)
         resetInterval()
