@@ -65,14 +65,35 @@ object DrawUtil {
         }
     }
 
-    fun drawLoadingText(text: String) {
+    private const val loadingBarLength = 240
+    private const val loadingFontSize = 21
+
+    fun drawLoading(text: String, value: Int, of: Int) {
         clearUserInterface()
-        val fontSize = 21
+        drawLoadingText(text)
+        drawLoadingBar(value, of)
+    }
+
+    fun drawLoadingText(text: String) {
         val y = Dim.height / 2
-        val x = (Dim.width - (text.length * fontSize / 2)) / 2
+        val x = ((Dim.width / 2.0) - (loadingBarLength / 2.0)).toInt()
         val lineWidth = 3.0
         val strokeStyle: String = Colors.black
-        strokeText(World.uiCtx(), Coords(x, y), text, Colors.white, fontSize, AMARILLO, lineWidth, strokeStyle)
+        strokeText(World.uiCtx(), Coords(x, y), text, Colors.white, loadingFontSize, AMARILLO, lineWidth, strokeStyle)
+    }
+
+    private fun drawLoadingBar(value: Int, of: Int) {
+        val h = loadingFontSize
+        val w = (loadingBarLength / of)
+        val y = 2 + 34 + (Dim.height / 2)
+        val x = ((Dim.width / 2.0) - (loadingBarLength / 2.0) - (w / 2)).toInt() - 4
+        val strokeStyle = "#000000ff"
+        val lineWidth = 3.0
+        (0..of).forEach {
+            val pos = Coords(x + (it * w), y)
+            val fillStyle = if (it <= value) "#ffffffdd" else "#ffffff44"
+            drawRect(World.uiCtx(), pos, h.toDouble(), w.toDouble(), fillStyle, strokeStyle, lineWidth)
+        }
     }
 
     fun drawNonFaction(nonFaction: NonFaction) = nonFaction.draw(World.ctx())

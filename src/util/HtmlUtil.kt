@@ -6,6 +6,7 @@ import ImprovedNoise
 import World
 import agent.Agent
 import agent.Faction
+import agent.NonFaction
 import agent.qvalue.QActions
 import agent.qvalue.QDestinations
 import agent.qvalue.QValue
@@ -395,7 +396,9 @@ object HtmlUtil {
                     val total = Config.startPortals
                     val realCount = total - count + 1
                     val newPortal = Portal.createRandom()
-                    DrawUtil.drawLoadingText("Creating Portal ($realCount/$total)")
+                    val text = "Creating Portal ($realCount/$total)"
+                    val barTotal = Config.startPortals + NonFaction.offscreenTotal()
+                    DrawUtil.drawLoading(text, realCount, barTotal)
                     DrawUtil.drawVectorField(newPortal)
                     World.allPortals.add(newPortal)
                     createPortal(callback, count - 1)

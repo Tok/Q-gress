@@ -33,6 +33,7 @@ var QGress = function (_, Kotlin) {
   var IllegalStateException_init = Kotlin.kotlin.IllegalStateException_init_pdl1vj$;
   var eachCount = Kotlin.kotlin.collections.eachCount_kji7v9$;
   var firstOrNull = Kotlin.kotlin.collections.firstOrNull_2p1efm$;
+  var emptyList = Kotlin.kotlin.collections.emptyList_287e2$;
   var mapOf = Kotlin.kotlin.collections.mapOf_qfcya0$;
   var math = Kotlin.kotlin.math;
   var asList = Kotlin.kotlin.collections.asList_us0mfu$;
@@ -2110,7 +2111,9 @@ var QGress = function (_, Kotlin) {
     this.destination = destination;
     this.vectorField = vectorField;
     this.busyUntil = busyUntil;
-    this.isDrunk = Util_getInstance().random() <= 0.02;
+    this.swarmTendency_0 = 0.1;
+    this.swarmChance_0 = this.swarmTendency_0 - this.swarmTendency_0 * 0.5 * this.size.offset;
+    this.isDrunk_0 = Util_getInstance().random() <= 0.02;
     this.velocity_0 = Complex$Companion_getInstance().ZERO;
   }
   NonFaction.prototype.distanceToDestination_0 = function () {
@@ -2126,6 +2129,7 @@ var QGress = function (_, Kotlin) {
     return tick <= this.busyUntil;
   };
   NonFaction.prototype.act = function () {
+    var tmp$, tmp$_0;
     if (this.isBusy_0(World_getInstance().tick)) {
       if (Util_getInstance().random() < 0.001) {
         this.busyUntil = World_getInstance().tick;
@@ -2143,7 +2147,47 @@ var QGress = function (_, Kotlin) {
       this.wait_0();
     }
      else {
-      var force = this.vectorField.get_11rb$(PathUtil_getInstance().posToShadowPos_lfj9be$(this.pos));
+      if (Config_getInstance().isNpcSwarming && Util_getInstance().random() < this.swarmChance_0) {
+        var $receiver = World_getInstance().allNonFaction;
+        var destination = ArrayList_init_0();
+        var tmp$_1;
+        tmp$_1 = $receiver.iterator();
+        while (tmp$_1.hasNext()) {
+          var element = tmp$_1.next();
+          if (!(element != null ? element.equals(this) : null))
+            destination.add_11rb$(element);
+        }
+        var minBy$result;
+        minBy$break: do {
+          var iterator = destination.iterator();
+          if (!iterator.hasNext()) {
+            minBy$result = null;
+            break minBy$break;
+          }
+          var minElem = iterator.next();
+          var minValue = minElem.pos.distanceTo_lfj9be$(this.pos);
+          while (iterator.hasNext()) {
+            var e = iterator.next();
+            var v = e.pos.distanceTo_lfj9be$(this.pos);
+            if (Kotlin.compareTo(minValue, v) > 0) {
+              minElem = e;
+              minValue = v;
+            }
+          }
+          minBy$result = minElem;
+        }
+         while (false);
+        var nearestNpc = (tmp$ = minBy$result) != null ? tmp$ : this;
+        var nearPos = nearestNpc.pos;
+        var re = -(this.pos.xx() - nearPos.xx());
+        var im = -(this.pos.yy() - nearPos.yy());
+        var acceleration = 5.0;
+        tmp$_0 = new Complex(re * acceleration, im * acceleration);
+      }
+       else {
+        tmp$_0 = this.vectorField.get_11rb$(PathUtil_getInstance().posToShadowPos_lfj9be$(this.pos));
+      }
+      var force = tmp$_0;
       this.velocity_0 = MovementUtil_getInstance().move_75inmo$(this.velocity_0, force, this.speed);
       this.pos = new Coords(numberToInt(this.pos.x + this.velocity_0.re), numberToInt(this.pos.y + this.velocity_0.im));
     }
@@ -2169,7 +2213,7 @@ var QGress = function (_, Kotlin) {
     return tmp$;
   };
   NonFaction.prototype.moveToRandomOffscreenDestination_0 = function () {
-    var destination = first(Util_getInstance().shuffle_bemo1h$(NonFaction$Companion_getInstance().DESTINATIONS));
+    var destination = first(Util_getInstance().shuffle_bemo1h$(NonFaction$Companion_getInstance().DESTINATIONS_0));
     this.vectorField = NonFaction$Companion_getInstance().getOrCreateVectorField_lfj9be$(destination);
     this.destination = destination;
   };
@@ -2188,17 +2232,24 @@ var QGress = function (_, Kotlin) {
   };
   function NonFaction$Companion() {
     NonFaction$Companion_instance = this;
-    this.OFFSCREEN_DISTANCE_0 = 60;
     this.useOffscreenEdgeDestinations = false;
-    this.OFFSCREEN_EDGES = listOf([new Coords(-this.OFFSCREEN_DISTANCE_0 | 0, -this.OFFSCREEN_DISTANCE_0 | 0), new Coords(World_getInstance().w() + this.OFFSCREEN_DISTANCE_0 | 0, -this.OFFSCREEN_DISTANCE_0 | 0), new Coords(-this.OFFSCREEN_DISTANCE_0 | 0, World_getInstance().h() + this.OFFSCREEN_DISTANCE_0 | 0), new Coords(World_getInstance().w() + this.OFFSCREEN_DISTANCE_0 | 0, World_getInstance().h() + this.OFFSCREEN_DISTANCE_0 | 0)]);
-    this.DESTINATIONS = listOf([new Coords(World_getInstance().w() / 3 | 0, -this.OFFSCREEN_DISTANCE_0 | 0), new Coords((World_getInstance().w() * 2 | 0) / 3 | 0, -this.OFFSCREEN_DISTANCE_0 | 0), new Coords(-this.OFFSCREEN_DISTANCE_0 | 0, World_getInstance().h() / 3 | 0), new Coords(-this.OFFSCREEN_DISTANCE_0 | 0, (World_getInstance().h() * 2 | 0) / 3 | 0), new Coords(World_getInstance().w() + this.OFFSCREEN_DISTANCE_0 | 0, World_getInstance().h() / 3 | 0), new Coords(World_getInstance().w() + this.OFFSCREEN_DISTANCE_0 | 0, (World_getInstance().h() * 2 | 0) / 3 | 0), new Coords(World_getInstance().w() / 3 | 0, World_getInstance().h() + this.OFFSCREEN_DISTANCE_0 | 0), new Coords((World_getInstance().w() * 2 | 0) / 3 | 0, World_getInstance().h() + this.OFFSCREEN_DISTANCE_0 | 0)]);
+    this.OFFSCREEN_DISTANCE_0 = 60;
+    this.DESTINATIONS_0 = listOf([new Coords(World_getInstance().w() / 3 | 0, -this.OFFSCREEN_DISTANCE_0 | 0), new Coords((World_getInstance().w() * 2 | 0) / 3 | 0, -this.OFFSCREEN_DISTANCE_0 | 0), new Coords(-this.OFFSCREEN_DISTANCE_0 | 0, World_getInstance().h() / 3 | 0), new Coords(-this.OFFSCREEN_DISTANCE_0 | 0, (World_getInstance().h() * 2 | 0) / 3 | 0), new Coords(World_getInstance().w() + this.OFFSCREEN_DISTANCE_0 | 0, World_getInstance().h() / 3 | 0), new Coords(World_getInstance().w() + this.OFFSCREEN_DISTANCE_0 | 0, (World_getInstance().h() * 2 | 0) / 3 | 0), new Coords(World_getInstance().w() / 3 | 0, World_getInstance().h() + this.OFFSCREEN_DISTANCE_0 | 0), new Coords((World_getInstance().w() * 2 | 0) / 3 | 0, World_getInstance().h() + this.OFFSCREEN_DISTANCE_0 | 0)]);
+    this.OFFSCREEN_EDGES_0 = listOf([new Coords(-this.OFFSCREEN_DISTANCE_0 | 0, -this.OFFSCREEN_DISTANCE_0 | 0), new Coords(World_getInstance().w() + this.OFFSCREEN_DISTANCE_0 | 0, -this.OFFSCREEN_DISTANCE_0 | 0), new Coords(-this.OFFSCREEN_DISTANCE_0 | 0, World_getInstance().h() + this.OFFSCREEN_DISTANCE_0 | 0), new Coords(World_getInstance().w() + this.OFFSCREEN_DISTANCE_0 | 0, World_getInstance().h() + this.OFFSCREEN_DISTANCE_0 | 0)]);
+    this.OFFSCREEN_0 = plus(this.DESTINATIONS_0, this.useOffscreenEdgeDestinations ? this.OFFSCREEN_EDGES_0 : emptyList());
     this.fields_0 = LinkedHashMap_init();
     this.images_0 = mapOf([to(-1, this.drawTemplate_0(-1)), to(0, this.drawTemplate_0(0)), to(1, this.drawTemplate_0(1))]);
     this.MIN_WAIT_0 = Time_getInstance().secondsToTicks_za3lpa$(5);
     this.MAX_WAIT_0 = Time_getInstance().secondsToTicks_za3lpa$(45);
-    this.maxSpeed_0 = 3.0;
-    this.minSpeed_0 = 1.0;
+    this.maxSpeed_0 = 2.5;
+    this.minSpeed_0 = 1.5;
   }
+  NonFaction$Companion.prototype.offscreenCount = function () {
+    return this.fields_0.size;
+  };
+  NonFaction$Companion.prototype.offscreenTotal = function () {
+    return this.OFFSCREEN_0.size;
+  };
   NonFaction$Companion.prototype.getOrCreateVectorField_lfj9be$ = function (destination) {
     var tmp$;
     var maybeField = this.fields_0.get_11rb$(destination);
@@ -2210,6 +2261,7 @@ var QGress = function (_, Kotlin) {
       tmp$ = maybeField;
     }
      else {
+      SoundUtil_getInstance().playOffScreenLocationCreationSound();
       var newField = PathUtil_getInstance().calculateVectorField_8eqwnz$(PathUtil_getInstance().generateHeatMap_lfj9be$(destination));
       this.fields_0.put_xwzc9p$(destination, newField);
       tmp$ = newField;
@@ -2265,10 +2317,12 @@ var QGress = function (_, Kotlin) {
   NonFaction$Companion.prototype.create_5edep5$ = function (grid) {
     var tmp$;
     var position = Coords$Companion_getInstance().createRandomPassable_5edep5$(grid);
-    var speed = this.minSpeed_0 + Util_getInstance().random() * (this.maxSpeed_0 - this.minSpeed_0);
     var size = AgentSize$Companion_getInstance().createRandom();
+    var min = this.minSpeed_0 - size.offset;
+    var max = this.maxSpeed_0 - size.offset;
+    var speed = min + Util_getInstance().random() * (max - min);
     if (Util_getInstance().random() < 0.1) {
-      var destination = first(Util_getInstance().shuffle_bemo1h$(this.DESTINATIONS));
+      var destination = first(Util_getInstance().shuffle_bemo1h$(this.OFFSCREEN_0));
       var vectorField = this.getOrCreateVectorField_lfj9be$(destination);
       tmp$ = new NonFaction(position, speed, size, destination, vectorField, World_getInstance().tick);
     }
@@ -2513,6 +2567,7 @@ var QGress = function (_, Kotlin) {
     this.maxFrogs = 144;
     this.maxSmurfs = 144;
     this.startNonFaction = 610;
+    this.isNpcSwarming = true;
     this.isAutostart = true;
     this.isHighlighActionLimit = true;
     this.vectorSmoothCount = 3;
@@ -6147,7 +6202,6 @@ var QGress = function (_, Kotlin) {
     this.DECAY_FREQ_H = 24;
     this.MAX_HACKS = 4;
   }
-  var emptyList = Kotlin.kotlin.collections.emptyList_287e2$;
   Portal$Companion.prototype.findChargeableForKeys_912u9o$ = function (agent) {
     if (!agent.hasKeys()) {
       return emptyList();
@@ -7250,9 +7304,6 @@ var QGress = function (_, Kotlin) {
     }
     var random = this.createRandomNoOffset_0();
     if (ensureNotNull(grid.get_11rb$(PathUtil_getInstance().posToShadowPos_lfj9be$(random))).isPassable) {
-      if (random.isOffGrid()) {
-        SoundUtil_getInstance().playOffScreenLocationCreationSound();
-      }
       tmp$ = random;
     }
      else {
@@ -7715,6 +7766,8 @@ var QGress = function (_, Kotlin) {
     DrawUtil_instance = this;
     this.CODA = 'Coda';
     this.AMARILLO = 'AmarilloUSAF';
+    this.loadingBarLength_0 = 240;
+    this.loadingFontSize_0 = 21;
     this.topArea_0 = Line$Companion_getInstance().create_tjonv8$(0, 0, Dim_getInstance().width, HtmlUtil_getInstance().topActionOffset());
     this.bottomArea_0 = Line$Companion_getInstance().create_tjonv8$(0, Dim_getInstance().height - numberToInt(Dim_getInstance().botActionOffset) | 0, Dim_getInstance().width, Dim_getInstance().height);
     this.leftSliderArea_0 = Line$Companion_getInstance().create_tjonv8$(0, HtmlUtil_getInstance().topActionOffset(), HtmlUtil_getInstance().leftSliderWidth(), HtmlUtil_getInstance().leftSliderHeight());
@@ -7838,14 +7891,33 @@ var QGress = function (_, Kotlin) {
       ctx.clearRect(0.0, 0.0, canvas.width, canvas.height);
     }
   };
-  DrawUtil.prototype.drawLoadingText_61zpoe$ = function (text) {
+  DrawUtil.prototype.drawLoading_3m52m6$ = function (text, value, of) {
     this.clearUserInterface_0();
-    var fontSize = 21;
+    this.drawLoadingText_61zpoe$(text);
+    this.drawLoadingBar_0(value, of);
+  };
+  DrawUtil.prototype.drawLoadingText_61zpoe$ = function (text) {
     var y = Dim_getInstance().height / 2 | 0;
-    var x = (Dim_getInstance().width - (Kotlin.imul(text.length, fontSize) / 2 | 0) | 0) / 2 | 0;
+    var x = numberToInt(Dim_getInstance().width / 2.0 - 240 / 2.0);
     var lineWidth = 3.0;
     var strokeStyle = Colors_getInstance().black;
-    this.strokeText_lowmm9$(World_getInstance().uiCtx(), new Coords(x, y), text, Colors_getInstance().white, fontSize, this.AMARILLO, lineWidth, strokeStyle);
+    this.strokeText_lowmm9$(World_getInstance().uiCtx(), new Coords(x, y), text, Colors_getInstance().white, 21, this.AMARILLO, lineWidth, strokeStyle);
+  };
+  DrawUtil.prototype.drawLoadingBar_0 = function (value, of) {
+    var h = 21;
+    var w = 240 / of | 0;
+    var y = 36 + (Dim_getInstance().height / 2 | 0) | 0;
+    var x = numberToInt(Dim_getInstance().width / 2.0 - 240 / 2.0 - (w / 2 | 0)) - 4 | 0;
+    var strokeStyle = '#000000ff';
+    var lineWidth = 3.0;
+    var tmp$;
+    tmp$ = (new IntRange(0, of)).iterator();
+    while (tmp$.hasNext()) {
+      var element = tmp$.next();
+      var pos = new Coords(x + Kotlin.imul(element, w) | 0, y);
+      var fillStyle = element <= value ? '#ffffffdd' : '#ffffff44';
+      this.drawRect_0(World_getInstance().uiCtx(), pos, h, w, fillStyle, strokeStyle, lineWidth);
+    }
   };
   DrawUtil.prototype.drawNonFaction_3mzr9k$ = function (nonFaction) {
     nonFaction.draw_f69bme$(World_getInstance().ctx());
@@ -9047,7 +9119,9 @@ var QGress = function (_, Kotlin) {
         var total = Config_getInstance().startPortals;
         var realCount = total - closure$count + 1 | 0;
         var newPortal = Portal$Companion_getInstance().createRandom();
-        DrawUtil_getInstance().drawLoadingText_61zpoe$('Creating Portal (' + realCount + '/' + total + ')');
+        var text = 'Creating Portal (' + realCount + '/' + total + ')';
+        var barTotal = Config_getInstance().startPortals + NonFaction$Companion_getInstance().offscreenTotal() | 0;
+        DrawUtil_getInstance().drawLoading_3m52m6$(text, realCount, barTotal);
         DrawUtil_getInstance().drawVectorField_hv9zn6$(newPortal);
         World_getInstance().allPortals.add_11rb$(newPortal);
         closure$createPortal(closure$callback, closure$count - 1 | 0);
@@ -10533,7 +10607,10 @@ var QGress = function (_, Kotlin) {
         var realSize = Math_0.min(a, b);
         var total = Config_getInstance().startNonFaction;
         var realCount = total - closure$count + realSize | 0;
-        DrawUtil_getInstance().drawLoadingText_61zpoe$('Creating Non-Faction (' + realCount + '/' + total + ')');
+        var text = 'Creating Non-Faction (' + realCount + '/' + total + ')';
+        var barValue = Config_getInstance().startPortals + NonFaction$Companion_getInstance().offscreenCount() | 0;
+        var barTotal = Config_getInstance().startPortals + NonFaction$Companion_getInstance().offscreenTotal() | 0;
+        DrawUtil_getInstance().drawLoading_3m52m6$(text, barValue, barTotal);
         var tmp$;
         tmp$ = (new IntRange(0, realSize)).iterator();
         while (tmp$.hasNext()) {

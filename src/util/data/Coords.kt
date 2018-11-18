@@ -94,9 +94,6 @@ data class Coords(val x: Int, val y: Int) {
             check(grid.isNotEmpty())
             val random = createRandomNoOffset()
             return if (grid[PathUtil.posToShadowPos(random)]!!.isPassable) {
-                if (random.isOffGrid()) {
-                    SoundUtil.playOffScreenLocationCreationSound()
-                }
                 random
             } else {
                 if (retries > 0) {

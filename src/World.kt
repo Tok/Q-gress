@@ -12,6 +12,7 @@ import portal.Portal
 import util.DrawUtil
 import util.HtmlUtil
 import util.PathUtil
+import util.SoundUtil
 import util.data.Cell
 import util.data.Coords
 import kotlin.browser.document
@@ -134,7 +135,10 @@ object World {
                 val realSize = kotlin.math.min(batchSize, count)
                 val total = Config.startNonFaction
                 val realCount = total - count + realSize
-                DrawUtil.drawLoadingText("Creating Non-Faction ($realCount/$total)")
+                val text = "Creating Non-Faction ($realCount/$total)"
+                val barValue = Config.startPortals + NonFaction.offscreenCount()
+                val barTotal = Config.startPortals + NonFaction.offscreenTotal()
+                DrawUtil.drawLoading(text, barValue, barTotal)
                 (0..realSize).forEach { _ ->
                     val newNonFaction = NonFaction.create(World.grid)
                     World.allNonFaction.add(newNonFaction)

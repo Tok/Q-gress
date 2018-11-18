@@ -102,15 +102,9 @@ data class NonFaction(var pos: Coords, val speed: Float, val size: AgentSize,
     fun draw(ctx: Ctx) = ctx.drawImage(NonFaction.image(size), pos.xx(), pos.yy())
 
     companion object {
-        private val OFFSCREEN_DISTANCE = PathUtil.RESOLUTION * (MapUtil.OFFSCREEN_CELL_ROWS / 2)
         val useOffscreenEdgeDestinations = false //TODO reactivate?
-        val OFFSCREEN_EDGES = listOf(
-                Coords(-OFFSCREEN_DISTANCE, -OFFSCREEN_DISTANCE),
-                Coords(World.w() + OFFSCREEN_DISTANCE, -OFFSCREEN_DISTANCE),
-                Coords(-OFFSCREEN_DISTANCE, World.h() + OFFSCREEN_DISTANCE),
-                Coords(World.w() + OFFSCREEN_DISTANCE, World.h() + OFFSCREEN_DISTANCE)
-        )
-        val DESTINATIONS = listOf(
+        private val OFFSCREEN_DISTANCE = PathUtil.RESOLUTION * (MapUtil.OFFSCREEN_CELL_ROWS / 2)
+        private val DESTINATIONS = listOf(
                 //NORTH
                 Coords(World.w() / 3, -OFFSCREEN_DISTANCE),
                 Coords(World.w() * 2 / 3, -OFFSCREEN_DISTANCE),
@@ -124,13 +118,23 @@ data class NonFaction(var pos: Coords, val speed: Float, val size: AgentSize,
                 Coords(World.w() / 3, World.h() + OFFSCREEN_DISTANCE),
                 Coords(World.w() * 2 / 3, World.h() + OFFSCREEN_DISTANCE)
         )
+        private val OFFSCREEN_EDGES = listOf(
+                Coords(-OFFSCREEN_DISTANCE, -OFFSCREEN_DISTANCE),
+                Coords(World.w() + OFFSCREEN_DISTANCE, -OFFSCREEN_DISTANCE),
+                Coords(-OFFSCREEN_DISTANCE, World.h() + OFFSCREEN_DISTANCE),
+                Coords(World.w() + OFFSCREEN_DISTANCE, World.h() + OFFSCREEN_DISTANCE)
+        )
+        private val OFFSCREEN = DESTINATIONS + (if(useOffscreenEdgeDestinations) OFFSCREEN_EDGES else emptyList())
 
         private val fields = mutableMapOf<Coords, Map<Coords, Complex>>()
+        fun offscreenCount(): Int = fields.count()
+        fun offscreenTotal(): Int = OFFSCREEN.count()
         fun getOrCreateVectorField(destination: Coords): Map<Coords, Complex> {
             val maybeField = fields[destination]
             return if (maybeField != null && maybeField.isNotEmpty()) {
                 maybeField
             } else {
+                SoundUtil.playOffScreenLocationCreationSound()
                 val newField = PathUtil.calculateVectorField(PathUtil.generateHeatMap(destination))
                 fields[destination] = newField
                 newField
@@ -167,7 +171,7 @@ data class NonFaction(var pos: Coords, val speed: Float, val size: AgentSize,
             val max = maxSpeed - size.offset
             val speed = min + (Util.random().toFloat() * (max - min))
             val newNonFaction = if (Util.random() < 0.1) { //move to offscreen destination
-                val destination = Util.shuffle(DESTINATIONS).first()
+                val destination = Util.shuffle(OFFSCREEN).first()
                 val vectorField = getOrCreateVectorField(destination)
                 NonFaction(position, speed, size, destination, vectorField, World.tick)
             } else { //move to random portal
