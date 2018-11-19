@@ -389,16 +389,12 @@ object HtmlUtil {
     fun getContext2D(canvas: Canvas): Ctx = canvas.getContext("2d") as Ctx
 
     private fun createPortals(callback: () -> Unit) {
-        World.allPortals.clear()
         fun createPortal(callback: () -> Unit, count: Int) {
             document.defaultView?.setTimeout(fun() {
                 if (count > 0) {
-                    val total = Config.startPortals
-                    val realCount = total - count + 1
                     val newPortal = Portal.createRandom()
-                    val left = total - realCount + 1
-                    val text = "Creating Portal $left"
-                    DrawUtil.drawLoading(text)
+                    DrawUtil.drawLoading()
+                    DrawUtil.drawLoadingText("Creating Portal $count")
                     DrawUtil.drawVectorField(newPortal)
                     World.allPortals.add(newPortal)
                     createPortal(callback, count - 1)
@@ -408,12 +404,12 @@ object HtmlUtil {
             }, 0)
         }
         DrawUtil.drawLoadingText("Creating Portals..")
+        World.allPortals.clear()
         createPortal(callback, Config.startPortals)
     }
 
     private fun createAgents(callback: () -> Unit) {
         DrawUtil.drawLoadingText("Creating Non-Faction..")
-        DrawUtil.clearBackground()
         World.allNonFaction.clear()
         World.createNonFaction(callback, Config.startNonFaction)
     }
@@ -432,6 +428,7 @@ object HtmlUtil {
                 DrawUtil.drawGrid()
                 DrawUtil.drawActionLimits(false)
                 createAgentsAndPortals {
+                    DrawUtil.clearBackground()
                     DrawUtil.drawLoadingText("Ready.")
                     World.isReady = true
                     if (isShowSatelliteMap()) {

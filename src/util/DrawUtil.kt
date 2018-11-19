@@ -32,8 +32,8 @@ object DrawUtil {
     const val AMARILLO = "AmarilloUSAF"
 
     fun redraw() {
+        clear()
         with(World) {
-            redraw(can, ctx())
             allAgents.forEach { it.drawRadius(ctx()) }
             allPortals.forEach { it.drawResonators(ctx()) }
             allNonFaction.forEach { it.draw(ctx()) }
@@ -48,11 +48,12 @@ object DrawUtil {
         }
     }
 
-    fun clearBackground() = redraw(World.bgCan, World.bgCtx(), if (Styles.isDrawNoiseMap) World.noiseImage else null)
-    private fun clearUserInterface() = redraw(World.uiCan, World.uiCtx())
-    fun clear() = {
-        redraw(World.can, World.ctx())
+    fun clear() = redraw(World.can, World.ctx())
+    fun clearBackground() {
+        val maybeImage: ImageData? = if (Styles.isDrawNoiseMap) World.noiseImage else null
+        redraw(World.bgCan, World.bgCtx(), maybeImage)
     }
+    private fun clearUserInterface() = redraw(World.uiCan, World.uiCtx())
 
     private fun redraw(canvas: Canvas, ctx: Ctx, image: ImageData? = null) {
         canvas.width = Dim.width
@@ -64,18 +65,21 @@ object DrawUtil {
         }
     }
 
-    fun drawLoading(text: String) {
-        clearUserInterface()
-        drawLoadingText(text)
+    private fun clearUiLine(y: Double, h: Double) {
+        World.uiCtx().clearRect(0.0, y, World.uiCan.width.toDouble(), h)
+    }
+
+    fun drawLoading() {
         with(Config) {
             val vecCount = World.countPortals() + NonFaction.offscreenCount()
-            val vecY = 2 + 34 + (Dim.height / 2)
-            val vecX = ((Dim.width / 2.0) - (Dim.loadingBarLength / 2.0)).toInt() - 8
+            val vecY = 2.0 + 34.0 + (Dim.height / 2.0)
+            val vecX = ((Dim.width / 2.0) - (Dim.loadingBarLength / 2.0)) - 13.0
             val vecTot = startPortals + NonFaction.offscreenTotal()
-            val vecH = 21
+            val vecH = 21.0
+            val npcY = vecY + vecH - 13.0
+            val npcH = 8.0
+            clearUiLine(vecY - vecH - 1, vecH + npcH + 2)
             drawVectorLoadingBar(vecX, vecY, vecH, vecCount, vecTot)
-            val npcY = vecY + vecH - 13
-            val npcH = 8
             drawNpcLoadingBar(vecX, npcY, npcH, World.countNonFaction(), startNonFaction)
         }
     }
@@ -85,32 +89,31 @@ object DrawUtil {
         val x = ((Dim.width / 2.0) - (Dim.loadingBarLength / 2.0)).toInt()
         val lineWidth = 3.0
         val strokeStyle: String = Colors.black
-        strokeText(World.uiCtx(), Coords(x, y), text, Colors.white, Dim.loadingFontSize, AMARILLO, lineWidth, strokeStyle)
+        val h = Dim.loadingFontSize
+        val hh = h / 2
+        clearUiLine(y.toDouble() - hh - 1, h.toDouble() + 2)
+        strokeText(World.uiCtx(), Coords(x, y), text, Colors.white, h, AMARILLO, lineWidth, strokeStyle)
     }
 
-    private fun drawVectorLoadingBar(x: Int, y: Int, h: Int, value: Int, of: Int) {
+    private fun drawVectorLoadingBar(x: Double, y: Double, h: Double, value: Int, of: Int) {
         val w = Dim.loadingBarLength / of
         val strokeStyle = "#000000ff"
         val lineWidth = 1.0
-        (1..of).forEach {
-            val xx = x + (it * w) - w
-            val fillStyle = if (it <= value) "#ffffffdd" else "#ffffff44"
-            drawExactRect(World.uiCtx(), xx, y.toDouble(), h.toDouble(), w, fillStyle, strokeStyle, lineWidth)
+        (0 until of).forEach {
+            val xx = x + (it * w)
+            val fillStyle = if (it <= value) "#ffffffbb" else "#ffffff44"
+            drawExactRect(World.uiCtx(), xx, y, h, w, fillStyle, strokeStyle, lineWidth)
         }
     }
 
-    private fun drawNpcLoadingBar(x: Int, y: Int, h: Int, value: Int, of: Int) {
-        val w = Dim.loadingBarLength / of
+    private fun drawNpcLoadingBar(x: Double, y: Double, h: Double, value: Int, of: Int) {
         val lineWidth = 1.0
-        val strokeStyle = "#00000000"
-        (1..of).forEach {
-            val xx = x + (it * w)
-            val fillStyle = if (it <= value) "#ffffffdd" else "#ffffff44"
-            drawExactRect(World.uiCtx(), xx, y.toDouble(), h.toDouble(), w, fillStyle, strokeStyle, lineWidth)
-        }
-        val borderFillStyle = "#00000000"
-        val borderStrokeStyle = "#000000ff"
-        drawExactRect(World.uiCtx(), x.toDouble(), y.toDouble(), h.toDouble(), Dim.loadingBarLength, borderFillStyle, borderStrokeStyle, lineWidth)
+        val stroke = "#000000ff"
+        val borderFill = "#ffffff44"
+        drawExactRect(World.uiCtx(), x, y, h, Dim.loadingBarLength, borderFill, stroke, lineWidth)
+        val fill = "#ffffffbb"
+        val w = Dim.loadingBarLength * value / of
+        drawExactRect(World.uiCtx(), x, y, h, w, fill, stroke, lineWidth)
     }
 
     fun drawNonFaction(nonFaction: NonFaction) = nonFaction.draw(World.ctx())
@@ -513,7 +516,6 @@ object DrawUtil {
     }
 
     fun drawGrid() {
-        clearBackground()
         with(World) {
             if (isReady) {
                 grid.forEach {

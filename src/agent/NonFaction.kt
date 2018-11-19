@@ -134,8 +134,9 @@ data class NonFaction(var pos: Coords, val speed: Float, val size: AgentSize,
             return if (maybeField != null && maybeField.isNotEmpty()) {
                 maybeField
             } else {
-                SoundUtil.playOffScreenLocationCreationSound()
                 val newField = PathUtil.calculateVectorField(PathUtil.generateHeatMap(destination))
+                DrawUtil.drawLoading()
+                SoundUtil.playOffScreenLocationCreationSound()
                 DrawUtil.drawVectorField(newField)
                 fields[destination] = newField
                 newField

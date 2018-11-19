@@ -1,7 +1,6 @@
 import agent.Agent
 import agent.Faction
 import agent.NonFaction
-import config.Config
 import config.Dim
 import org.khronos.webgl.Uint8Array
 import org.khronos.webgl.get
@@ -12,7 +11,6 @@ import portal.Portal
 import util.DrawUtil
 import util.HtmlUtil
 import util.PathUtil
-import util.SoundUtil
 import util.data.Cell
 import util.data.Coords
 import kotlin.browser.document
@@ -130,20 +128,13 @@ object World {
     }
 
     fun createNonFaction(callback: () -> Unit, count: Int) {
-        val batchSize = 1
         document.defaultView?.setTimeout(fun() {
             if (count > 0) {
-                val realSize = kotlin.math.min(batchSize, count)
-                val total = Config.startNonFaction
-                val realCount = total - count + realSize
-                val left = total - realCount
-                val text = "Creating Non-Faction $left"
-                DrawUtil.drawLoading(text)
-                (0..realSize).forEach { _ ->
-                    val newNonFaction = NonFaction.create(World.grid)
-                    World.allNonFaction.add(newNonFaction)
-                }
-                createNonFaction(callback, count - realSize)
+                DrawUtil.drawLoadingText("Creating Non-Faction $count")
+                DrawUtil.drawLoading()
+                val newNonFaction = NonFaction.create(World.grid)
+                World.allNonFaction.add(newNonFaction)
+                createNonFaction(callback, count - 1)
             } else {
                 callback()
             }

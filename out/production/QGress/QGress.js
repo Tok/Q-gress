@@ -59,13 +59,13 @@ var QGress = function (_, Kotlin) {
   var IllegalArgumentException_init = Kotlin.kotlin.IllegalArgumentException_init_pdl1vj$;
   var toDoubleOrNull = Kotlin.kotlin.text.toDoubleOrNull_pdl1vz$;
   var addClass = Kotlin.kotlin.dom.addClass_hhb33f$;
+  var until = Kotlin.kotlin.ranges.until_dqglrj$;
   var max = Kotlin.kotlin.collections.max_exjks8$;
   var padEnd = Kotlin.kotlin.text.padEnd_vrc1nu$;
   var removeClass = Kotlin.kotlin.dom.removeClass_hhb33f$;
   var split = Kotlin.kotlin.text.split_ip8yn$;
   var contains = Kotlin.kotlin.text.contains_li3zpu$;
   var replace = Kotlin.kotlin.text.replace_680rmw$;
-  var until = Kotlin.kotlin.ranges.until_dqglrj$;
   var trimMargin = Kotlin.kotlin.text.trimMargin_rjktp$;
   var toMap_0 = Kotlin.kotlin.collections.toMap_abgq59$;
   var listOfNotNull = Kotlin.kotlin.collections.listOfNotNull_jurz7g$;
@@ -2269,8 +2269,9 @@ var QGress = function (_, Kotlin) {
       tmp$ = maybeField;
     }
      else {
-      SoundUtil_getInstance().playOffScreenLocationCreationSound();
       var newField = PathUtil_getInstance().calculateVectorField_8eqwnz$(PathUtil_getInstance().generateHeatMap_lfj9be$(destination));
+      DrawUtil_getInstance().drawLoading();
+      SoundUtil_getInstance().playOffScreenLocationCreationSound();
       DrawUtil_getInstance().drawVectorField_v4iyov$(newField);
       this.fields_0.put_xwzc9p$(destination, newField);
       tmp$ = newField;
@@ -7863,8 +7864,8 @@ var QGress = function (_, Kotlin) {
     this.VECTORS_0 = LinkedHashMap_init();
   }
   DrawUtil.prototype.redraw = function () {
+    this.clear();
     var $receiver = World_getInstance();
-    this.redraw_0($receiver.can, $receiver.ctx());
     var tmp$;
     tmp$ = $receiver.allAgents.iterator();
     while (tmp$.hasNext()) {
@@ -7917,20 +7918,15 @@ var QGress = function (_, Kotlin) {
       }
     }
   };
+  DrawUtil.prototype.clear = function () {
+    this.redraw_0(World_getInstance().can, World_getInstance().ctx());
+  };
   DrawUtil.prototype.clearBackground = function () {
-    this.redraw_0(World_getInstance().bgCan, World_getInstance().bgCtx(), Styles_getInstance().isDrawNoiseMap ? World_getInstance().noiseImage : null);
+    var maybeImage = Styles_getInstance().isDrawNoiseMap ? World_getInstance().noiseImage : null;
+    this.redraw_0(World_getInstance().bgCan, World_getInstance().bgCtx(), maybeImage);
   };
   DrawUtil.prototype.clearUserInterface_0 = function () {
     this.redraw_0(World_getInstance().uiCan, World_getInstance().uiCtx());
-  };
-  function DrawUtil$clear$lambda(this$DrawUtil) {
-    return function () {
-      this$DrawUtil.redraw_0(World_getInstance().can, World_getInstance().ctx());
-      return Unit;
-    };
-  }
-  DrawUtil.prototype.clear = function () {
-    return DrawUtil$clear$lambda(this);
   };
   DrawUtil.prototype.redraw_0 = function (canvas, ctx, image) {
     if (image === void 0)
@@ -7944,18 +7940,20 @@ var QGress = function (_, Kotlin) {
       ctx.clearRect(0.0, 0.0, canvas.width, canvas.height);
     }
   };
-  DrawUtil.prototype.drawLoading_61zpoe$ = function (text) {
-    this.clearUserInterface_0();
-    this.drawLoadingText_61zpoe$(text);
+  DrawUtil.prototype.clearUiLine_0 = function (y, h) {
+    World_getInstance().uiCtx().clearRect(0.0, y, World_getInstance().uiCan.width, h);
+  };
+  DrawUtil.prototype.drawLoading = function () {
     var $receiver = Config_getInstance();
     var vecCount = World_getInstance().countPortals() + NonFaction$Companion_getInstance().offscreenCount() | 0;
-    var vecY = 36 + (Dim_getInstance().height / 2 | 0) | 0;
-    var vecX = numberToInt(Dim_getInstance().width / 2.0 - Dim_getInstance().loadingBarLength / 2.0) - 8 | 0;
+    var vecY = 2.0 + 34.0 + Dim_getInstance().height / 2.0;
+    var vecX = Dim_getInstance().width / 2.0 - Dim_getInstance().loadingBarLength / 2.0 - 13.0;
     var vecTot = $receiver.startPortals + NonFaction$Companion_getInstance().offscreenTotal() | 0;
-    var vecH = 21;
+    var vecH = 21.0;
+    var npcY = vecY + vecH - 13.0;
+    var npcH = 8.0;
+    this.clearUiLine_0(vecY - vecH - 1, vecH + npcH + 2);
     this.drawVectorLoadingBar_0(vecX, vecY, vecH, vecCount, vecTot);
-    var npcY = vecY + vecH - 13 | 0;
-    var npcH = 8;
     this.drawNpcLoadingBar_0(vecX, npcY, npcH, World_getInstance().countNonFaction(), $receiver.startNonFaction);
   };
   DrawUtil.prototype.drawLoadingText_61zpoe$ = function (text) {
@@ -7963,36 +7961,32 @@ var QGress = function (_, Kotlin) {
     var x = numberToInt(Dim_getInstance().width / 2.0 - Dim_getInstance().loadingBarLength / 2.0);
     var lineWidth = 3.0;
     var strokeStyle = Colors_getInstance().black;
-    this.strokeText_lowmm9$(World_getInstance().uiCtx(), new Coords(x, y), text, Colors_getInstance().white, 21, this.AMARILLO, lineWidth, strokeStyle);
+    var h = 21;
+    var hh = h / 2 | 0;
+    this.clearUiLine_0(y - hh - 1, h + 2);
+    this.strokeText_lowmm9$(World_getInstance().uiCtx(), new Coords(x, y), text, Colors_getInstance().white, h, this.AMARILLO, lineWidth, strokeStyle);
   };
   DrawUtil.prototype.drawVectorLoadingBar_0 = function (x, y, h, value, of) {
     var w = Dim_getInstance().loadingBarLength / of;
     var strokeStyle = '#000000ff';
     var lineWidth = 1.0;
     var tmp$;
-    tmp$ = (new IntRange(1, of)).iterator();
+    tmp$ = until(0, of).iterator();
     while (tmp$.hasNext()) {
       var element = tmp$.next();
-      var xx = x + element * w - w;
-      var fillStyle = element <= value ? '#ffffffdd' : '#ffffff44';
+      var xx = x + element * w;
+      var fillStyle = element <= value ? '#ffffffbb' : '#ffffff44';
       this.drawExactRect_0(World_getInstance().uiCtx(), xx, y, h, w, fillStyle, strokeStyle, lineWidth);
     }
   };
   DrawUtil.prototype.drawNpcLoadingBar_0 = function (x, y, h, value, of) {
-    var w = Dim_getInstance().loadingBarLength / of;
     var lineWidth = 1.0;
-    var strokeStyle = '#00000000';
-    var tmp$;
-    tmp$ = (new IntRange(1, of)).iterator();
-    while (tmp$.hasNext()) {
-      var element = tmp$.next();
-      var xx = x + element * w;
-      var fillStyle = element <= value ? '#ffffffdd' : '#ffffff44';
-      this.drawExactRect_0(World_getInstance().uiCtx(), xx, y, h, w, fillStyle, strokeStyle, lineWidth);
-    }
-    var borderFillStyle = '#00000000';
-    var borderStrokeStyle = '#000000ff';
-    this.drawExactRect_0(World_getInstance().uiCtx(), x, y, h, Dim_getInstance().loadingBarLength, borderFillStyle, borderStrokeStyle, lineWidth);
+    var stroke = '#000000ff';
+    var borderFill = '#ffffff44';
+    this.drawExactRect_0(World_getInstance().uiCtx(), x, y, h, Dim_getInstance().loadingBarLength, borderFill, stroke, lineWidth);
+    var fill = '#ffffffbb';
+    var w = Dim_getInstance().loadingBarLength * value / of;
+    this.drawExactRect_0(World_getInstance().uiCtx(), x, y, h, w, fill, stroke, lineWidth);
   };
   DrawUtil.prototype.drawNonFaction_3mzr9k$ = function (nonFaction) {
     nonFaction.draw_f69bme$(World_getInstance().ctx());
@@ -8492,7 +8486,6 @@ var QGress = function (_, Kotlin) {
     ctx.stroke();
   };
   DrawUtil.prototype.drawGrid = function () {
-    this.clearBackground();
     var $receiver = World_getInstance();
     if ($receiver.isReady) {
       var tmp$;
@@ -9197,12 +9190,9 @@ var QGress = function (_, Kotlin) {
   function HtmlUtil$createPortals$createPortal$lambda(closure$count, closure$callback, closure$createPortal) {
     return function () {
       if (closure$count > 0) {
-        var total = Config_getInstance().startPortals;
-        var realCount = total - closure$count + 1 | 0;
         var newPortal = Portal$Companion_getInstance().createRandom();
-        var left = total - realCount + 1 | 0;
-        var text = 'Creating Portal ' + left;
-        DrawUtil_getInstance().drawLoading_61zpoe$(text);
+        DrawUtil_getInstance().drawLoading();
+        DrawUtil_getInstance().drawLoadingText_61zpoe$('Creating Portal ' + closure$count);
         DrawUtil_getInstance().drawVectorField_hv9zn6$(newPortal);
         World_getInstance().allPortals.add_11rb$(newPortal);
         closure$createPortal(closure$callback, closure$count - 1 | 0);
@@ -9217,14 +9207,13 @@ var QGress = function (_, Kotlin) {
     (tmp$ = document.defaultView) != null ? tmp$.setTimeout(HtmlUtil$createPortals$createPortal$lambda(count, callback, HtmlUtil$createPortals$createPortal), 0) : null;
   }
   HtmlUtil.prototype.createPortals_0 = function (callback) {
-    World_getInstance().allPortals.clear();
     var createPortal = HtmlUtil$createPortals$createPortal;
     DrawUtil_getInstance().drawLoadingText_61zpoe$('Creating Portals..');
+    World_getInstance().allPortals.clear();
     createPortal(callback, Config_getInstance().startPortals);
   };
   HtmlUtil.prototype.createAgents_0 = function (callback) {
     DrawUtil_getInstance().drawLoadingText_61zpoe$('Creating Non-Faction..');
-    DrawUtil_getInstance().clearBackground();
     World_getInstance().allNonFaction.clear();
     World_getInstance().createNonFaction_fzludj$(callback, Config_getInstance().startNonFaction);
   };
@@ -9242,6 +9231,7 @@ var QGress = function (_, Kotlin) {
   };
   function HtmlUtil$onMapload$lambda$lambda(this$HtmlUtil) {
     return function () {
+      DrawUtil_getInstance().clearBackground();
       DrawUtil_getInstance().drawLoadingText_61zpoe$('Ready.');
       World_getInstance().isReady = true;
       if (this$HtmlUtil.isShowSatelliteMap_0()) {
@@ -10683,25 +10673,14 @@ var QGress = function (_, Kotlin) {
     }
     return imageData;
   };
-  function World$createNonFaction$lambda(closure$count, closure$batchSize, closure$callback, this$World) {
+  function World$createNonFaction$lambda(closure$count, closure$callback, this$World) {
     return function () {
       if (closure$count > 0) {
-        var a = closure$batchSize;
-        var b = closure$count;
-        var realSize = Math_0.min(a, b);
-        var total = Config_getInstance().startNonFaction;
-        var realCount = total - closure$count + realSize | 0;
-        var left = total - realCount | 0;
-        var text = 'Creating Non-Faction ' + left;
-        DrawUtil_getInstance().drawLoading_61zpoe$(text);
-        var tmp$;
-        tmp$ = (new IntRange(0, realSize)).iterator();
-        while (tmp$.hasNext()) {
-          var element = tmp$.next();
-          var newNonFaction = NonFaction$Companion_getInstance().create_5edep5$(World_getInstance().grid);
-          World_getInstance().allNonFaction.add_11rb$(newNonFaction);
-        }
-        this$World.createNonFaction_fzludj$(closure$callback, closure$count - realSize | 0);
+        DrawUtil_getInstance().drawLoadingText_61zpoe$('Creating Non-Faction ' + closure$count);
+        DrawUtil_getInstance().drawLoading();
+        var newNonFaction = NonFaction$Companion_getInstance().create_5edep5$(World_getInstance().grid);
+        World_getInstance().allNonFaction.add_11rb$(newNonFaction);
+        this$World.createNonFaction_fzludj$(closure$callback, closure$count - 1 | 0);
       }
        else {
         closure$callback();
@@ -10710,8 +10689,7 @@ var QGress = function (_, Kotlin) {
   }
   World.prototype.createNonFaction_fzludj$ = function (callback, count) {
     var tmp$;
-    var batchSize = 1;
-    (tmp$ = document.defaultView) != null ? tmp$.setTimeout(World$createNonFaction$lambda(count, batchSize, callback, this), 0) : null;
+    (tmp$ = document.defaultView) != null ? tmp$.setTimeout(World$createNonFaction$lambda(count, callback, this), 0) : null;
   };
   World.$metadata$ = {
     kind: Kind_OBJECT,
