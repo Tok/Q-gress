@@ -23,7 +23,7 @@ object Dim {
     val botOffset = maxDeploymentRange.toInt() * Constants.phi
 
     val comBottomOffset = 34
-    val comRightOffset = 360
+    val comRightOffset = 340
     val comFontSize = 11
 
     val muFontSize = 21
@@ -34,6 +34,9 @@ object Dim {
 
     val statsTopOffset = 13
     val statsRightOffset = 170
+
+    const val loadingBarLength = 377.0
+    const val loadingFontSize = 21
 
     val cycleRightOffset = 470
     val cycleTopOffset = 3

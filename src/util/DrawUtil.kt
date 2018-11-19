@@ -18,7 +18,6 @@ import items.level.XmpLevel
 import items.types.ShieldType
 import org.w3c.dom.*
 import portal.Portal
-import system.Checkpoint
 import system.Com
 import system.Cycle
 import system.Queues
@@ -65,35 +64,53 @@ object DrawUtil {
         }
     }
 
-    private const val loadingBarLength = 240
-    private const val loadingFontSize = 21
-
-    fun drawLoading(text: String, value: Int, of: Int) {
+    fun drawLoading(text: String) {
         clearUserInterface()
         drawLoadingText(text)
-        drawLoadingBar(value, of)
+        with(Config) {
+            val vecCount = World.countPortals() + NonFaction.offscreenCount()
+            val vecY = 2 + 34 + (Dim.height / 2)
+            val vecX = ((Dim.width / 2.0) - (Dim.loadingBarLength / 2.0)).toInt() - 8
+            val vecTot = startPortals + NonFaction.offscreenTotal()
+            val vecH = 21
+            drawVectorLoadingBar(vecX, vecY, vecH, vecCount, vecTot)
+            val npcY = vecY + vecH - 13
+            val npcH = 8
+            drawNpcLoadingBar(vecX, npcY, npcH, World.countNonFaction(), startNonFaction)
+        }
     }
 
     fun drawLoadingText(text: String) {
         val y = Dim.height / 2
-        val x = ((Dim.width / 2.0) - (loadingBarLength / 2.0)).toInt()
+        val x = ((Dim.width / 2.0) - (Dim.loadingBarLength / 2.0)).toInt()
         val lineWidth = 3.0
         val strokeStyle: String = Colors.black
-        strokeText(World.uiCtx(), Coords(x, y), text, Colors.white, loadingFontSize, AMARILLO, lineWidth, strokeStyle)
+        strokeText(World.uiCtx(), Coords(x, y), text, Colors.white, Dim.loadingFontSize, AMARILLO, lineWidth, strokeStyle)
     }
 
-    private fun drawLoadingBar(value: Int, of: Int) {
-        val h = loadingFontSize
-        val w = (loadingBarLength / of)
-        val y = 2 + 34 + (Dim.height / 2)
-        val x = ((Dim.width / 2.0) - (loadingBarLength / 2.0) - (w / 2)).toInt() - 4
+    private fun drawVectorLoadingBar(x: Int, y: Int, h: Int, value: Int, of: Int) {
+        val w = Dim.loadingBarLength / of
         val strokeStyle = "#000000ff"
         val lineWidth = 1.0
-        (0..of).forEach {
-            val pos = Coords(x + (it * w), y)
+        (1..of).forEach {
+            val xx = x + (it * w) - w
             val fillStyle = if (it <= value) "#ffffffdd" else "#ffffff44"
-            drawRect(World.uiCtx(), pos, h.toDouble(), w.toDouble(), fillStyle, strokeStyle, lineWidth)
+            drawExactRect(World.uiCtx(), xx, y.toDouble(), h.toDouble(), w, fillStyle, strokeStyle, lineWidth)
         }
+    }
+
+    private fun drawNpcLoadingBar(x: Int, y: Int, h: Int, value: Int, of: Int) {
+        val w = Dim.loadingBarLength / of
+        val lineWidth = 1.0
+        val strokeStyle = "#00000000"
+        (1..of).forEach {
+            val xx = x + (it * w)
+            val fillStyle = if (it <= value) "#ffffffdd" else "#ffffff44"
+            drawExactRect(World.uiCtx(), xx, y.toDouble(), h.toDouble(), w, fillStyle, strokeStyle, lineWidth)
+        }
+        val borderFillStyle = "#00000000"
+        val borderStrokeStyle = "#000000ff"
+        drawExactRect(World.uiCtx(), x.toDouble(), y.toDouble(), h.toDouble(), Dim.loadingBarLength, borderFillStyle, borderStrokeStyle, lineWidth)
     }
 
     fun drawNonFaction(nonFaction: NonFaction) = nonFaction.draw(World.ctx())
@@ -353,6 +370,7 @@ object DrawUtil {
             val textPos = Coords(pos.x + 21, pos.y - 3)
             strokeText(World.uiCtx(), textPos, text, faction.color, Dim.muFontSize, AMARILLO)
         }
+
         val totalMu = enlMu + resMu
         val enlPart: Int = round((100.0 * enlMu) / totalMu).toInt()
         val resPart: Int = round((100.0 * resMu) / totalMu).toInt()
@@ -431,6 +449,10 @@ object DrawUtil {
             strokeTableText(pos, offset, rank, CanvasTextAlign.RIGHT)
             offset += 10
 
+            strokeTableHeaderText(headerPos, offset, "XM")
+            strokeTableText(pos, offset + 28, agent.xm.toString(), CanvasTextAlign.RIGHT)
+            offset += 34
+
             strokeTableHeaderText(headerPos, offset, "AP")
             strokeTableText(pos, offset + 44, agent.ap.toString(), CanvasTextAlign.RIGHT)
             offset += 50
@@ -474,13 +496,18 @@ object DrawUtil {
 
     private fun drawRect(ctx: Ctx, pos: Coords, h: Double, w: Double,
                          fillStyle: String, strokeStyle: String, lineWidth: Double) {
+        drawExactRect(ctx, pos.xx(), pos.yy(), h, w, fillStyle, strokeStyle, lineWidth)
+    }
+
+    private fun drawExactRect(ctx: Ctx, x: Double, y: Double, h: Double, w: Double,
+                              fillStyle: String, strokeStyle: String, lineWidth: Double) {
         ctx.fillStyle = fillStyle
-        ctx.fillRect(pos.xx(), pos.yy(), w, -h)
+        ctx.fillRect(x, y, w, -h)
         ctx.fill()
         ctx.strokeStyle = strokeStyle
         ctx.lineWidth = lineWidth
         ctx.beginPath()
-        ctx.strokeRect(pos.xx(), pos.yy(), w, -h)
+        ctx.strokeRect(x, y, w, -h)
         ctx.closePath()
         ctx.stroke()
     }
@@ -505,7 +532,7 @@ object DrawUtil {
         portal.drawCenter(World.bgCtx(), false)
     }
 
-    private fun drawVectorField(vectorField: Map<Coords, Complex>) {
+    fun drawVectorField(vectorField: Map<Coords, Complex>) {
         World.bgCtx().clearRect(0.0, 0.0, Dim.width.toDouble(), Dim.height.toDouble())
         val w = PathUtil.RESOLUTION - 1
         val h = PathUtil.RESOLUTION - 1

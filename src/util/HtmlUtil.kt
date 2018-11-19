@@ -396,9 +396,9 @@ object HtmlUtil {
                     val total = Config.startPortals
                     val realCount = total - count + 1
                     val newPortal = Portal.createRandom()
-                    val text = "Creating Portal ($realCount/$total)"
-                    val barTotal = Config.startPortals + NonFaction.offscreenTotal()
-                    DrawUtil.drawLoading(text, realCount, barTotal)
+                    val left = total - realCount + 1
+                    val text = "Creating Portal $left"
+                    DrawUtil.drawLoading(text)
                     DrawUtil.drawVectorField(newPortal)
                     World.allPortals.add(newPortal)
                     createPortal(callback, count - 1)

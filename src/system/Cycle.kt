@@ -16,6 +16,7 @@ enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>, var image: Canvas
     INSTANCE(mutableMapOf(), null);
 
     companion object {
+        private const val xmPerCycle = 100 //FIXME tune
         private const val durationH = 175
         private const val numberOfCheckpoints = 35
         private val ticksPerCheckpoint = Time.secondsToTicks(300) //TODO tune
@@ -30,6 +31,16 @@ enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>, var image: Canvas
                 INSTANCE.checkpoints[tick] = cp
                 SoundUtil.playCheckpointSound(cp)
                 INSTANCE.image = createImage()
+
+                val atPortal = World.allAgents.filter { it.isAtActionPortal() }
+                atPortal.forEach { it.addXm(it.actionPortal.leakXm()) }
+
+                val notAtPortal = World.allAgents.filterNot { it.isAtActionPortal() }
+                notAtPortal.forEach { agent ->
+                    val closeNpcs = World.allNonFaction.filter { npc -> npc.pos.distanceTo(agent.pos) < Dim.agentRadius }
+                    val xm = closeNpcs.count() * 50
+                    agent.addXm(xm)
+                }
             }
         }
 

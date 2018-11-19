@@ -136,6 +136,7 @@ data class NonFaction(var pos: Coords, val speed: Float, val size: AgentSize,
             } else {
                 SoundUtil.playOffScreenLocationCreationSound()
                 val newField = PathUtil.calculateVectorField(PathUtil.generateHeatMap(destination))
+                DrawUtil.drawVectorField(newField)
                 fields[destination] = newField
                 newField
             }

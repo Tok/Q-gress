@@ -34,7 +34,7 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
     fun key() = toString()
     private fun distanceToDestination(): Double = pos.distanceTo(destination)
     fun distanceToPortal(portal: Portal): Double = pos.distanceTo(portal.location)
-    private fun isAtActionPortal(): Boolean = distanceToPortal(actionPortal) < Dim.maxDeploymentRange
+    fun isAtActionPortal(): Boolean = distanceToPortal(actionPortal) < Dim.maxDeploymentRange
     private fun isInAttackRange(range: Int): Boolean {
         val strongest = actionPortal.findStrongestResoPos()
         return strongest != null && pos.distanceTo(strongest) < range
@@ -57,7 +57,7 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         this.xm = if (value > 0) value else 0
     }
 
-    private fun addXm(v: Int) {
+    fun addXm(v: Int) {
         val value = xm + v
         val cap = getXmCapacity()
         this.xm = if (value < cap) value else cap
@@ -176,7 +176,6 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         if (isAtActionPortal()) {
             return if (action.item == ActionItem.ATTACK) this else doNothing()
         }
-        addXm(2) //FIXME
 
         val force = actionPortal.vectorField[PathUtil.posToShadowPos(pos)]
         velocity = MovementUtil.move(velocity, force, skills.speed)
@@ -485,7 +484,7 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         fun createFrog(grid: Map<Coords, Cell>) = create(grid, Faction.ENL)
         fun createSmurf(grid: Map<Coords, Cell>) = create(grid, Faction.RES)
         private fun create(grid: Map<Coords, Cell>, faction: Faction): Agent {
-            val initialAp = Util.randomInt(1000000)
+            val initialAp = 0
             val initialXm = getXmCapacity(getLevel(initialAp))
             val coords = Coords.createRandomPassable(grid)
             val actionPortal = Util.findNearestPortal(coords) ?: World.allPortals[0] //FIXME

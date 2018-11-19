@@ -350,7 +350,7 @@ var QGress = function (_, Kotlin) {
   Agent.prototype.distanceToPortal_hv9zn6$ = function (portal) {
     return this.pos.distanceTo_lfj9be$(portal.location);
   };
-  Agent.prototype.isAtActionPortal_0 = function () {
+  Agent.prototype.isAtActionPortal = function () {
     return this.distanceToPortal_hv9zn6$(this.actionPortal) < Dim_getInstance().maxDeploymentRange;
   };
   Agent.prototype.isInAttackRange_0 = function (range) {
@@ -392,7 +392,7 @@ var QGress = function (_, Kotlin) {
     var value = this.xm - v | 0;
     this.xm = value > 0 ? value : 0;
   };
-  Agent.prototype.addXm_0 = function (v) {
+  Agent.prototype.addXm_za3lpa$ = function (v) {
     var value = this.xm + v | 0;
     var cap = this.getXmCapacity_0();
     this.xm = value < cap ? value : cap;
@@ -402,7 +402,7 @@ var QGress = function (_, Kotlin) {
   };
   Agent.prototype.isFastAction_0 = function () {
     var tmp$, tmp$_0;
-    return ((tmp$ = this.action.item) != null ? tmp$.equals(ActionItem$Companion_getInstance().MOVE) : null) || (((tmp$_0 = this.action.item) != null ? tmp$_0.equals(ActionItem$Companion_getInstance().ATTACK) : null) && !this.isAtActionPortal_0());
+    return ((tmp$ = this.action.item) != null ? tmp$.equals(ActionItem$Companion_getInstance().MOVE) : null) || (((tmp$_0 = this.action.item) != null ? tmp$_0.equals(ActionItem$Companion_getInstance().ATTACK) : null) && !this.isAtActionPortal());
   };
   Agent.prototype.isMoveInRange_0 = function () {
     var tmp$;
@@ -421,7 +421,7 @@ var QGress = function (_, Kotlin) {
   Agent.prototype.doSomething_0 = function () {
     var tmp$, tmp$_0;
     var portalFaction = (tmp$ = this.actionPortal.owner) != null ? tmp$.faction : null;
-    if (!this.isAtActionPortal_0())
+    if (!this.isAtActionPortal())
       tmp$_0 = this.doAnywhereAction_0();
     else if (portalFaction == null)
       tmp$_0 = this.doNeutralPortalAction_0();
@@ -596,10 +596,9 @@ var QGress = function (_, Kotlin) {
       println('WARN: moveCloserToDestination: World is not ready.');
       return this.doNothing_0();
     }
-    if (this.isAtActionPortal_0()) {
+    if (this.isAtActionPortal()) {
       return ((tmp$ = this.action.item) != null ? tmp$.equals(ActionItem$Companion_getInstance().ATTACK) : null) ? this : this.doNothing_0();
     }
-    this.addXm_0(2);
     var force = this.actionPortal.vectorField.get_11rb$(PathUtil_getInstance().posToShadowPos_lfj9be$(this.pos));
     this.velocity = MovementUtil_getInstance().move_75inmo$(this.velocity, force, this.skills.speed);
     return this.copy_lmq102$(void 0, void 0, new Coords(numberToInt(this.pos.x + this.velocity.re), numberToInt(this.pos.y + this.velocity.im)));
@@ -774,7 +773,7 @@ var QGress = function (_, Kotlin) {
     var tmp$;
     var findExactDestination = Agent$attackPortal$findExactDestination(this);
     var doAttack = Agent$attackPortal$doAttack(this);
-    if (!this.isAtActionPortal_0())
+    if (!this.isAtActionPortal())
       tmp$ = this.moveCloserToDestinationPortal_0();
     else if (!this.isArrived_0())
       tmp$ = this.moveCloserInRange_0();
@@ -1100,7 +1099,7 @@ var QGress = function (_, Kotlin) {
     return this;
   };
   Agent.prototype.hackActionPortal_0 = function () {
-    if (this.isAtActionPortal_0() && this.actionPortal.canHack_912u9o$(this)) {
+    if (this.isAtActionPortal() && this.actionPortal.canHack_912u9o$(this)) {
       var hackResult = this.actionPortal.tryHack_912u9o$(this);
       SoundUtil_getInstance().playHackingSound_lfj9be$(this.actionPortal.location);
       var isSuccess = hackResult.items != null;
@@ -1356,7 +1355,7 @@ var QGress = function (_, Kotlin) {
   };
   Agent$Companion.prototype.create_0 = function (grid, faction) {
     var tmp$;
-    var initialAp = Util_getInstance().randomInt_za3lpa$(1000000);
+    var initialAp = 0;
     var initialXm = this.getXmCapacity_0(this.getLevel_0(initialAp));
     var coords = Coords$Companion_getInstance().createRandomPassable_5edep5$(grid);
     var actionPortal = (tmp$ = Util_getInstance().findNearestPortal_lfj9be$(coords)) != null ? tmp$ : World_getInstance().allPortals.get_za3lpa$(0);
@@ -2263,6 +2262,7 @@ var QGress = function (_, Kotlin) {
      else {
       SoundUtil_getInstance().playOffScreenLocationCreationSound();
       var newField = PathUtil_getInstance().calculateVectorField_8eqwnz$(PathUtil_getInstance().generateHeatMap_lfj9be$(destination));
+      DrawUtil_getInstance().drawVectorField_v4iyov$(newField);
       this.fields_0.put_xwzc9p$(destination, newField);
       tmp$ = newField;
     }
@@ -2635,7 +2635,7 @@ var QGress = function (_, Kotlin) {
     this.topOffset = numberToInt(this.maxDeploymentRange) * Constants_getInstance().phi;
     this.botOffset = numberToInt(this.maxDeploymentRange) * Constants_getInstance().phi;
     this.comBottomOffset = 34;
-    this.comRightOffset = 360;
+    this.comRightOffset = 340;
     this.comFontSize = 11;
     this.muFontSize = 21;
     this.muLeftOffset = 13;
@@ -2643,6 +2643,8 @@ var QGress = function (_, Kotlin) {
     this.pixelToMFactor = 0.5;
     this.statsTopOffset = 13;
     this.statsRightOffset = 170;
+    this.loadingBarLength = 377.0;
+    this.loadingFontSize = 21;
     this.cycleRightOffset = 470;
     this.cycleTopOffset = 3;
     this.cycleH = 72;
@@ -6574,6 +6576,7 @@ var QGress = function (_, Kotlin) {
   }
   function Cycle$Companion() {
     Cycle$Companion_instance = this;
+    this.xmPerCycle_0 = 100;
     this.durationH_0 = 175;
     this.numberOfCheckpoints_0 = 35;
     this.ticksPerCheckpoint_0 = Time_getInstance().secondsToTicks_za3lpa$(300);
@@ -6612,6 +6615,49 @@ var QGress = function (_, Kotlin) {
       Cycle$INSTANCE_getInstance().checkpoints.put_xwzc9p$(tick, cp);
       SoundUtil_getInstance().playCheckpointSound_2xtf47$(cp);
       Cycle$INSTANCE_getInstance().image = this.createImage_0();
+      var $receiver = World_getInstance().allAgents;
+      var destination = ArrayList_init_0();
+      var tmp$;
+      tmp$ = $receiver.iterator();
+      while (tmp$.hasNext()) {
+        var element = tmp$.next();
+        if (element.isAtActionPortal())
+          destination.add_11rb$(element);
+      }
+      var atPortal = destination;
+      var tmp$_0;
+      tmp$_0 = atPortal.iterator();
+      while (tmp$_0.hasNext()) {
+        var element_0 = tmp$_0.next();
+        element_0.addXm_za3lpa$(element_0.actionPortal.leakXm());
+      }
+      var $receiver_0 = World_getInstance().allAgents;
+      var destination_0 = ArrayList_init_0();
+      var tmp$_1;
+      tmp$_1 = $receiver_0.iterator();
+      while (tmp$_1.hasNext()) {
+        var element_1 = tmp$_1.next();
+        if (!element_1.isAtActionPortal())
+          destination_0.add_11rb$(element_1);
+      }
+      var notAtPortal = destination_0;
+      var tmp$_2;
+      tmp$_2 = notAtPortal.iterator();
+      while (tmp$_2.hasNext()) {
+        var element_2 = tmp$_2.next();
+        var $receiver_1 = World_getInstance().allNonFaction;
+        var destination_1 = ArrayList_init_0();
+        var tmp$_3;
+        tmp$_3 = $receiver_1.iterator();
+        while (tmp$_3.hasNext()) {
+          var element_3 = tmp$_3.next();
+          if (element_3.pos.distanceTo_lfj9be$(element_2.pos) < Dim_getInstance().agentRadius)
+            destination_1.add_11rb$(element_3);
+        }
+        var closeNpcs = destination_1;
+        var xm = closeNpcs.size * 50 | 0;
+        element_2.addXm_za3lpa$(xm);
+      }
     }
   };
   function Cycle$Companion$createImage$drawCheckpointDot(closure$r, closure$lineWidth, closure$dotAlpha) {
@@ -7766,8 +7812,6 @@ var QGress = function (_, Kotlin) {
     DrawUtil_instance = this;
     this.CODA = 'Coda';
     this.AMARILLO = 'AmarilloUSAF';
-    this.loadingBarLength_0 = 240;
-    this.loadingFontSize_0 = 21;
     this.topArea_0 = Line$Companion_getInstance().create_tjonv8$(0, 0, Dim_getInstance().width, HtmlUtil_getInstance().topActionOffset());
     this.bottomArea_0 = Line$Companion_getInstance().create_tjonv8$(0, Dim_getInstance().height - numberToInt(Dim_getInstance().botActionOffset) | 0, Dim_getInstance().width, Dim_getInstance().height);
     this.leftSliderArea_0 = Line$Companion_getInstance().create_tjonv8$(0, HtmlUtil_getInstance().topActionOffset(), HtmlUtil_getInstance().leftSliderWidth(), HtmlUtil_getInstance().leftSliderHeight());
@@ -7891,33 +7935,55 @@ var QGress = function (_, Kotlin) {
       ctx.clearRect(0.0, 0.0, canvas.width, canvas.height);
     }
   };
-  DrawUtil.prototype.drawLoading_3m52m6$ = function (text, value, of) {
+  DrawUtil.prototype.drawLoading_61zpoe$ = function (text) {
     this.clearUserInterface_0();
     this.drawLoadingText_61zpoe$(text);
-    this.drawLoadingBar_0(value, of);
+    var $receiver = Config_getInstance();
+    var vecCount = World_getInstance().countPortals() + NonFaction$Companion_getInstance().offscreenCount() | 0;
+    var vecY = 36 + (Dim_getInstance().height / 2 | 0) | 0;
+    var vecX = numberToInt(Dim_getInstance().width / 2.0 - Dim_getInstance().loadingBarLength / 2.0) - 8 | 0;
+    var vecTot = $receiver.startPortals + NonFaction$Companion_getInstance().offscreenTotal() | 0;
+    var vecH = 21;
+    this.drawVectorLoadingBar_0(vecX, vecY, vecH, vecCount, vecTot);
+    var npcY = vecY + vecH - 13 | 0;
+    var npcH = 8;
+    this.drawNpcLoadingBar_0(vecX, npcY, npcH, World_getInstance().countNonFaction(), $receiver.startNonFaction);
   };
   DrawUtil.prototype.drawLoadingText_61zpoe$ = function (text) {
     var y = Dim_getInstance().height / 2 | 0;
-    var x = numberToInt(Dim_getInstance().width / 2.0 - 240 / 2.0);
+    var x = numberToInt(Dim_getInstance().width / 2.0 - Dim_getInstance().loadingBarLength / 2.0);
     var lineWidth = 3.0;
     var strokeStyle = Colors_getInstance().black;
     this.strokeText_lowmm9$(World_getInstance().uiCtx(), new Coords(x, y), text, Colors_getInstance().white, 21, this.AMARILLO, lineWidth, strokeStyle);
   };
-  DrawUtil.prototype.drawLoadingBar_0 = function (value, of) {
-    var h = 21;
-    var w = 240 / of | 0;
-    var y = 36 + (Dim_getInstance().height / 2 | 0) | 0;
-    var x = numberToInt(Dim_getInstance().width / 2.0 - 240 / 2.0 - (w / 2 | 0)) - 4 | 0;
+  DrawUtil.prototype.drawVectorLoadingBar_0 = function (x, y, h, value, of) {
+    var w = Dim_getInstance().loadingBarLength / of;
     var strokeStyle = '#000000ff';
     var lineWidth = 1.0;
     var tmp$;
-    tmp$ = (new IntRange(0, of)).iterator();
+    tmp$ = (new IntRange(1, of)).iterator();
     while (tmp$.hasNext()) {
       var element = tmp$.next();
-      var pos = new Coords(x + Kotlin.imul(element, w) | 0, y);
+      var xx = x + element * w - w;
       var fillStyle = element <= value ? '#ffffffdd' : '#ffffff44';
-      this.drawRect_0(World_getInstance().uiCtx(), pos, h, w, fillStyle, strokeStyle, lineWidth);
+      this.drawExactRect_0(World_getInstance().uiCtx(), xx, y, h, w, fillStyle, strokeStyle, lineWidth);
     }
+  };
+  DrawUtil.prototype.drawNpcLoadingBar_0 = function (x, y, h, value, of) {
+    var w = Dim_getInstance().loadingBarLength / of;
+    var lineWidth = 1.0;
+    var strokeStyle = '#00000000';
+    var tmp$;
+    tmp$ = (new IntRange(1, of)).iterator();
+    while (tmp$.hasNext()) {
+      var element = tmp$.next();
+      var xx = x + element * w;
+      var fillStyle = element <= value ? '#ffffffdd' : '#ffffff44';
+      this.drawExactRect_0(World_getInstance().uiCtx(), xx, y, h, w, fillStyle, strokeStyle, lineWidth);
+    }
+    var borderFillStyle = '#00000000';
+    var borderStrokeStyle = '#000000ff';
+    this.drawExactRect_0(World_getInstance().uiCtx(), x, y, h, Dim_getInstance().loadingBarLength, borderFillStyle, borderStrokeStyle, lineWidth);
   };
   DrawUtil.prototype.drawNonFaction_3mzr9k$ = function (nonFaction) {
     nonFaction.draw_f69bme$(World_getInstance().ctx());
@@ -8367,6 +8433,9 @@ var QGress = function (_, Kotlin) {
       var offset = 0;
       this.strokeTableText_0(pos, offset, rank, 'right');
       offset = offset + 10 | 0;
+      this.strokeTableHeaderText_0(headerPos, offset, 'XM');
+      this.strokeTableText_0(pos, offset + 28 | 0, item.xm.toString(), 'right');
+      offset = offset + 34 | 0;
       this.strokeTableHeaderText_0(headerPos, offset, 'AP');
       this.strokeTableText_0(pos, offset + 44 | 0, item.ap.toString(), 'right');
       offset = offset + 50 | 0;
@@ -8400,13 +8469,16 @@ var QGress = function (_, Kotlin) {
     }
   };
   DrawUtil.prototype.drawRect_0 = function (ctx, pos, h, w, fillStyle, strokeStyle, lineWidth) {
+    this.drawExactRect_0(ctx, pos.xx(), pos.yy(), h, w, fillStyle, strokeStyle, lineWidth);
+  };
+  DrawUtil.prototype.drawExactRect_0 = function (ctx, x, y, h, w, fillStyle, strokeStyle, lineWidth) {
     ctx.fillStyle = fillStyle;
-    ctx.fillRect(pos.xx(), pos.yy(), w, -h);
+    ctx.fillRect(x, y, w, -h);
     ctx.fill();
     ctx.strokeStyle = strokeStyle;
     ctx.lineWidth = lineWidth;
     ctx.beginPath();
-    ctx.strokeRect(pos.xx(), pos.yy(), w, -h);
+    ctx.strokeRect(x, y, w, -h);
     ctx.closePath();
     ctx.stroke();
   };
@@ -8427,7 +8499,7 @@ var QGress = function (_, Kotlin) {
     }
   };
   DrawUtil.prototype.drawVectorField_hv9zn6$ = function (portal) {
-    this.drawVectorField_0(portal.vectorField);
+    this.drawVectorField_v4iyov$(portal.vectorField);
     portal.drawCenter_j4cg6b$(World_getInstance().bgCtx(), false);
   };
   function DrawUtil$drawVectorField$lambda$isWalkable(closure$it) {
@@ -8436,7 +8508,7 @@ var QGress = function (_, Kotlin) {
       return (tmp$_0 = (tmp$ = World_getInstance().grid.get_11rb$(closure$it.key)) != null ? tmp$.isPassable : null) != null ? tmp$_0 : false;
     };
   }
-  DrawUtil.prototype.drawVectorField_0 = function (vectorField) {
+  DrawUtil.prototype.drawVectorField_v4iyov$ = function (vectorField) {
     World_getInstance().bgCtx().clearRect(0.0, 0.0, Dim_getInstance().width, Dim_getInstance().height);
     var w = 11;
     var h = 11;
@@ -9119,9 +9191,9 @@ var QGress = function (_, Kotlin) {
         var total = Config_getInstance().startPortals;
         var realCount = total - closure$count + 1 | 0;
         var newPortal = Portal$Companion_getInstance().createRandom();
-        var text = 'Creating Portal (' + realCount + '/' + total + ')';
-        var barTotal = Config_getInstance().startPortals + NonFaction$Companion_getInstance().offscreenTotal() | 0;
-        DrawUtil_getInstance().drawLoading_3m52m6$(text, realCount, barTotal);
+        var left = total - realCount + 1 | 0;
+        var text = 'Creating Portal ' + left;
+        DrawUtil_getInstance().drawLoading_61zpoe$(text);
         DrawUtil_getInstance().drawVectorField_hv9zn6$(newPortal);
         World_getInstance().allPortals.add_11rb$(newPortal);
         closure$createPortal(closure$callback, closure$count - 1 | 0);
@@ -10423,6 +10495,9 @@ var QGress = function (_, Kotlin) {
      while (false);
     return count$result;
   };
+  World.prototype.countNonFaction = function () {
+    return this.allNonFaction.size;
+  };
   World.prototype.enlPortals = function () {
     var $receiver = this.allPortals;
     var destination = ArrayList_init_0();
@@ -10607,10 +10682,9 @@ var QGress = function (_, Kotlin) {
         var realSize = Math_0.min(a, b);
         var total = Config_getInstance().startNonFaction;
         var realCount = total - closure$count + realSize | 0;
-        var text = 'Creating Non-Faction (' + realCount + '/' + total + ')';
-        var barValue = Config_getInstance().startPortals + NonFaction$Companion_getInstance().offscreenCount() | 0;
-        var barTotal = Config_getInstance().startPortals + NonFaction$Companion_getInstance().offscreenTotal() | 0;
-        DrawUtil_getInstance().drawLoading_3m52m6$(text, barValue, barTotal);
+        var left = total - realCount | 0;
+        var text = 'Creating Non-Faction ' + left;
+        DrawUtil_getInstance().drawLoading_61zpoe$(text);
         var tmp$;
         tmp$ = (new IntRange(0, realSize)).iterator();
         while (tmp$.hasNext()) {

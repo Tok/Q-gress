@@ -74,6 +74,7 @@ object World {
     fun countAgents(fact: Faction) = allAgents.count { it.faction == fact }
 
     val allNonFaction: MutableSet<NonFaction> = mutableSetOf()
+    fun countNonFaction() = allNonFaction.count()
 
     val allPortals: MutableList<Portal> = mutableListOf()
     fun enlPortals() = allPortals.filter { it.owner?.faction == Faction.ENL }
@@ -135,10 +136,9 @@ object World {
                 val realSize = kotlin.math.min(batchSize, count)
                 val total = Config.startNonFaction
                 val realCount = total - count + realSize
-                val text = "Creating Non-Faction ($realCount/$total)"
-                val barValue = Config.startPortals + NonFaction.offscreenCount()
-                val barTotal = Config.startPortals + NonFaction.offscreenTotal()
-                DrawUtil.drawLoading(text, barValue, barTotal)
+                val left = total - realCount
+                val text = "Creating Non-Faction $left"
+                DrawUtil.drawLoading(text)
                 (0..realSize).forEach { _ ->
                     val newNonFaction = NonFaction.create(World.grid)
                     World.allNonFaction.add(newNonFaction)
