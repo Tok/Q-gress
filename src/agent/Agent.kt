@@ -212,10 +212,13 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
 
     private fun recycleItems(): Agent {
         //TODO improve
-        val cube: PowerCube? = inventory.findPowerCubes().first()
-        if (cube != null) {
-            addXm(cube.level.calculateRecycleXm())
-            inventory.consumeCubes(listOf(cube))
+        val cubes: List<PowerCube> = inventory.findPowerCubes()
+        if (cubes.isNotEmpty()) {
+            val cube: PowerCube = cubes.first()
+            if (cube != null) {
+                addXm(cube.level.calculateRecycleXm())
+                inventory.consumeCubes(listOf(cube))
+            }
         }
         return this
     }

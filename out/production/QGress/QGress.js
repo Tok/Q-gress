@@ -681,10 +681,13 @@ var QGress = function (_, Kotlin) {
     return this;
   };
   Agent.prototype.recycleItems_0 = function () {
-    var cube = first(this.inventory.findPowerCubes());
-    if (cube != null) {
-      this.addXm_za3lpa$(cube.level.calculateRecycleXm());
-      this.inventory.consumeCubes_lz36jp$(listOf_0(cube));
+    var cubes = this.inventory.findPowerCubes();
+    if (!cubes.isEmpty()) {
+      var cube = first(cubes);
+      if (cube != null) {
+        this.addXm_za3lpa$(cube.level.calculateRecycleXm());
+        this.inventory.consumeCubes_lz36jp$(listOf_0(cube));
+      }
     }
     return this;
   };
