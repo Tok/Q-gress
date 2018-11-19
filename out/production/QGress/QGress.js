@@ -339,6 +339,7 @@ var QGress = function (_, Kotlin) {
     this.ap = ap;
     this.xm = xm;
     this.velocity = velocity;
+    this.apFactor_0 = 50;
     this.defaultAction_0 = Agent$defaultAction$lambda(this);
   }
   Agent.prototype.key = function () {
@@ -389,16 +390,13 @@ var QGress = function (_, Kotlin) {
     return this.xmBarPercent_0() >= 80;
   };
   Agent.prototype.removeXm_za3lpa$ = function (v) {
-    var value = this.xm - v | 0;
-    this.xm = value > 0 ? value : 0;
+    this.xm = Util_getInstance().clip_qt1dr2$(this.xm - v | 0, 0, this.getXmCapacity_0());
   };
   Agent.prototype.addXm_za3lpa$ = function (v) {
-    var value = this.xm + v | 0;
-    var cap = this.getXmCapacity_0();
-    this.xm = value < cap ? value : cap;
+    this.xm = Util_getInstance().clip_qt1dr2$(this.xm + v | 0, 0, this.getXmCapacity_0());
   };
   Agent.prototype.addAp_za3lpa$ = function (v) {
-    this.ap = this.ap + v | 0;
+    this.ap = this.ap + Kotlin.imul(v, this.apFactor_0) | 0;
   };
   Agent.prototype.isFastAction_0 = function () {
     var tmp$, tmp$_0;
@@ -472,7 +470,7 @@ var QGress = function (_, Kotlin) {
   }
   Agent.prototype.actionsForAnywhere_0 = function () {
     var moveElsewhereQ = this.q_0(QActions_getInstance().MOVE_ELSEWHERE);
-    var recycleQ = this.isDeploymentPossible_0() ? this.q_0(QActions_getInstance().RECYCLE) : -1.0;
+    var recycleQ = this.xm < (this.getXmCapacity_0() / 10 | 0) ? this.q_0(QActions_getInstance().RECYCLE) : -1.0;
     var rechargeQ = this.isXmFilled_0() ? this.q_0(QActions_getInstance().RECHARGE) : -1.0;
     return listOf([to(moveElsewhereQ, Agent$actionsForAnywhere$lambda(this)), to(recycleQ, Agent$actionsForAnywhere$lambda_0(this)), to(rechargeQ, Agent$actionsForAnywhere$lambda_1(this))]);
   };
@@ -683,6 +681,11 @@ var QGress = function (_, Kotlin) {
     return this;
   };
   Agent.prototype.recycleItems_0 = function () {
+    var cube = first(this.inventory.findPowerCubes());
+    if (cube != null) {
+      this.addXm_za3lpa$(cube.level.calculateRecycleXm());
+      this.inventory.consumeCubes_lz36jp$(listOf_0(cube));
+    }
     return this;
   };
   function Agent$attackPortal$findExactDestination(this$Agent) {
@@ -1681,6 +1684,9 @@ var QGress = function (_, Kotlin) {
   };
   Inventory.prototype.consumeResos_tvxik5$ = function (resos) {
     return this.items.removeAll_brywnq$(resos);
+  };
+  Inventory.prototype.consumeCubes_lz36jp$ = function (cubes) {
+    return this.items.removeAll_brywnq$(cubes);
   };
   Inventory.prototype.keyCount = function () {
     var $receiver = this.items;

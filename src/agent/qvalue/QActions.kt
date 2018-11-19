@@ -21,7 +21,9 @@ object QActions {
     val ATTACK = QValue("attack", 0.5, "attack portal", ActionItem.getIcon(ActionItem.ATTACK))
 
     fun values() = listOf(
-            MOVE_ELSEWHERE, RECYCLE, RECHARGE,
+            MOVE_ELSEWHERE,
+            RECYCLE,
+            RECHARGE,
             HACK,
             DEPLOY,
             LINK,

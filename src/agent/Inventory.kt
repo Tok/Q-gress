@@ -25,6 +25,7 @@ data class Inventory(val items: MutableList<QgressItem> = mutableListOf()) {
 
     fun consumeXmps(xmps: List<XmpBurster>) = items.removeAll(xmps)
     fun consumeResos(resos: List<Resonator>) = items.removeAll(resos)
+    fun consumeCubes(cubes: List<PowerCube>) = items.removeAll(cubes)
 
     fun keyCount(): Int = items.filter { it is PortalKey }.count()
     private fun xmpCount(): Int = items.filter { it is XmpBurster }.count()

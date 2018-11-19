@@ -11,6 +11,7 @@ import agent.qvalue.QValue
 import config.Colors
 import config.Dim
 import config.Styles
+import items.PowerCube
 import items.QgressItem
 import items.deployable.Resonator
 import items.level.ResonatorLevel
@@ -25,6 +26,7 @@ import util.SoundUtil
 import util.Util
 import util.data.*
 import kotlin.browser.window
+import kotlin.math.absoluteValue
 import kotlin.math.max
 import kotlin.math.min
 
@@ -53,18 +55,16 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
     private fun isXmFilled() = xmBarPercent() >= 80
 
     fun removeXm(v: Int) {
-        val value = xm - v
-        this.xm = if (value > 0) value else 0
+        this.xm = Util.clip(xm - v, 0, getXmCapacity())
     }
 
     fun addXm(v: Int) {
-        val value = xm + v
-        val cap = getXmCapacity()
-        this.xm = if (value < cap) value else cap
+        this.xm = Util.clip(xm + v, 0, getXmCapacity())
     }
 
+    private val apFactor = 50
     fun addAp(v: Int) {
-        this.ap += v
+        this.ap += v * apFactor
     }
 
     private fun isFastAction(): Boolean = action.item == ActionItem.MOVE || (action.item == ActionItem.ATTACK && !isAtActionPortal())
@@ -99,7 +99,7 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
 
     private fun actionsForAnywhere(): List<Pair<Double, () -> Agent>> {
         val moveElsewhereQ = q(QActions.MOVE_ELSEWHERE)
-        val recycleQ = if (isDeploymentPossible()) q(QActions.RECYCLE) else -1.0
+        val recycleQ = if (xm < getXmCapacity() / 10) q(QActions.RECYCLE) else -1.0
         val rechargeQ = if (isXmFilled()) q(QActions.RECHARGE) else -1.0
         return listOf(
                 moveElsewhereQ to { moveElsewhere() },
@@ -211,7 +211,13 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
     }
 
     private fun recycleItems(): Agent {
-        return this //TODO implement..
+        //TODO improve
+        val cube: PowerCube? = inventory.findPowerCubes().first()
+        if (cube != null) {
+            addXm(cube.level.calculateRecycleXm())
+            inventory.consumeCubes(listOf(cube))
+        }
+        return this
     }
 
     private fun attackPortal(): Agent {
