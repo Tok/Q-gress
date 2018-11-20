@@ -9716,86 +9716,103 @@ var QGress = function (_, Kotlin) {
   PathUtil.prototype.shadowPosToPos_lfj9be$ = function (pos) {
     return new Coords(pos.x * 12 | 0, pos.y * 12 | 0);
   };
-  function PathUtil$generateHeatMap$createWaveFront(closure$heatMap, closure$passable, this$PathUtil) {
-    return function (heat) {
-      var tmp$;
-      var $receiver = closure$heatMap;
-      var destination = LinkedHashMap_init();
-      var tmp$_0;
-      tmp$_0 = $receiver.entries.iterator();
-      while (tmp$_0.hasNext()) {
-        var element = tmp$_0.next();
-        if (element.value === heat) {
-          destination.put_xwzc9p$(element.key, element.value);
-        }
-      }
-      var sameHeat = destination;
-      var hasMaybeMore = {v: false};
-      var tmp$_1;
-      tmp$_1 = sameHeat.entries.iterator();
-      while (tmp$_1.hasNext()) {
-        var element_0 = tmp$_1.next();
-        var closure$passable_0 = closure$passable;
-        var closure$heatMap_0 = closure$heatMap;
-        var succs = this$PathUtil.findUnmarkedSurrounding_0(element_0.key, closure$passable_0, closure$heatMap_0);
-        var tmp$_2;
-        tmp$_2 = succs.iterator();
-        while (tmp$_2.hasNext()) {
-          var element_1 = tmp$_2.next();
-          var tmp$_3;
-          var cell = World_getInstance().grid.get_11rb$(element_1);
-          var cost = (tmp$_3 = cell != null ? cell.movementPenalty : null) != null ? tmp$_3 : 100;
-          var value = heat + cost | 0;
-          closure$heatMap_0.put_xwzc9p$(element_1, value);
-          hasMaybeMore.v = true;
-        }
-      }
-      var $receiver_0 = closure$heatMap;
-      var destination_0 = ArrayList_init($receiver_0.size);
-      var tmp$_4;
-      tmp$_4 = $receiver_0.entries.iterator();
-      while (tmp$_4.hasNext()) {
-        var item = tmp$_4.next();
-        destination_0.add_11rb$(item.value);
-      }
-      var overcount = heat - ((tmp$ = max(destination_0)) != null ? tmp$ : 0) | 0;
-      return hasMaybeMore.v || overcount < 100;
-    };
-  }
-  function PathUtil$generateHeatMap$nextLayer(this$PathUtil) {
-    return function (map) {
-      var layer = LinkedHashMap_init();
-      var tmp$;
-      tmp$ = map.entries.iterator();
-      while (tmp$.hasNext()) {
-        var element = tmp$.next();
-        var this$PathUtil_0 = this$PathUtil;
-        var tmp$_0;
-        tmp$_0 = element.key.getSurrounding_vux9f0$(this$PathUtil_0.w(), this$PathUtil_0.h()).iterator();
-        while (tmp$_0.hasNext()) {
-          var element_0 = tmp$_0.next();
-          if (!map.containsKey_11rb$(element_0)) {
-            layer.put_xwzc9p$(element_0, element.value + 100 | 0);
-          }
-        }
-      }
-      return toMap_0(layer);
-    };
-  }
-  PathUtil.prototype.generateHeatMap_lfj9be$ = function (goal) {
+  PathUtil.prototype.calcPosCost_0 = function (pos, heat) {
+    var tmp$, tmp$_0;
+    return heat + ((tmp$_0 = (tmp$ = World_getInstance().grid.get_11rb$(pos)) != null ? tmp$.movementPenalty : null) != null ? tmp$_0 : 100) | 0;
+  };
+  PathUtil.prototype.posToCost_0 = function (positions, heat) {
+    var destination = ArrayList_init(collectionSizeOrDefault(positions, 10));
     var tmp$;
+    tmp$ = positions.iterator();
+    while (tmp$.hasNext()) {
+      var item = tmp$.next();
+      destination.add_11rb$(to(item, this.calcPosCost_0(item, heat)));
+    }
+    return toMap(destination);
+  };
+  PathUtil.prototype.mergeMaps_0 = function (maps) {
+    var destination = ArrayList_init_0();
+    var tmp$;
+    tmp$ = maps.iterator();
+    while (tmp$.hasNext()) {
+      var element = tmp$.next();
+      var destination_0 = ArrayList_init(element.size);
+      var tmp$_0;
+      tmp$_0 = element.entries.iterator();
+      while (tmp$_0.hasNext()) {
+        var item = tmp$_0.next();
+        destination_0.add_11rb$(to(item.key, item.value));
+      }
+      var list = destination_0;
+      addAll(destination, list);
+    }
+    return toMap(destination);
+  };
+  PathUtil.prototype.findSuccessors_0 = function (currentMap, passable, sameHeat, heat) {
+    var destination = ArrayList_init(collectionSizeOrDefault(sameHeat, 10));
+    var tmp$;
+    tmp$ = sameHeat.iterator();
+    while (tmp$.hasNext()) {
+      var item = tmp$.next();
+      var tmp$_0 = destination.add_11rb$;
+      var successors = this.findUnmarkedSurrounding_0(item, passable, currentMap);
+      tmp$_0.call(destination, to(this.posToCost_0(successors, heat), !successors.isEmpty()));
+    }
+    return toMap(destination);
+  };
+  PathUtil.prototype.calcFront_0 = function (currentMap, passable, sameHeat, heat) {
+    var result = this.findSuccessors_0(currentMap, passable, sameHeat, heat);
+    var front = this.mergeMaps_0(result.keys);
+    var hasMore = result.values.contains_11rb$(true);
+    return to(front, hasMore);
+  };
+  PathUtil.prototype.createWaveFront_0 = function (currentHeatMap, passable, heat, max) {
+    var destination = LinkedHashMap_init();
+    var tmp$;
+    tmp$ = currentHeatMap.entries.iterator();
+    while (tmp$.hasNext()) {
+      var element = tmp$.next();
+      if (element.value === heat) {
+        destination.put_xwzc9p$(element.key, element.value);
+      }
+    }
+    var sameHeat = destination;
+    var tmp$_0 = this.calcFront_0(currentHeatMap, passable, sameHeat.keys, heat);
+    var layer = tmp$_0.component1()
+    , hasMaybeMore = tmp$_0.component2();
+    return to(layer, hasMaybeMore);
+  };
+  PathUtil.prototype.generateHeatMap_lfj9be$ = function (goal) {
+    var tmp$, tmp$_0;
     var passable = World_getInstance().passableCells();
-    var heatMap = LinkedHashMap_init();
-    var createWaveFront = PathUtil$generateHeatMap$createWaveFront(heatMap, passable, this);
     var heat = 0;
+    var maxHeat = 0;
+    var map = LinkedHashMap_init();
     var key = this.posToShadowPos_lfj9be$(goal);
     var value = heat;
-    heatMap.put_xwzc9p$(key, value);
-    while (createWaveFront((tmp$ = heat, heat = tmp$ + 1 | 0, tmp$))) {
+    map.put_xwzc9p$(key, value);
+    while (true) {
+      var tmp$_1 = this.createWaveFront_0(map, passable, (tmp$ = heat, heat = tmp$ + 1 | 0, tmp$), maxHeat);
+      var layer = tmp$_1.component1()
+      , hasMaybeMore = tmp$_1.component2();
+      map.putAll_a2k3zr$(layer);
+      var destination = ArrayList_init(layer.size);
+      var tmp$_2;
+      tmp$_2 = layer.entries.iterator();
+      while (tmp$_2.hasNext()) {
+        var item = tmp$_2.next();
+        destination.add_11rb$(item.value);
+      }
+      var layerMax = (tmp$_0 = max(destination)) != null ? tmp$_0 : 0;
+      var a = maxHeat;
+      maxHeat = Math_0.max(a, layerMax);
+      var overCount = heat - maxHeat | 0;
+      var hasMore = hasMaybeMore || overCount < 100;
+      if (!hasMore) {
+        break;
+      }
     }
-    var nextLayer = PathUtil$generateHeatMap$nextLayer(this);
-    heatMap.putAll_a2k3zr$(nextLayer(heatMap));
-    return heatMap;
+    return map;
   };
   PathUtil.prototype.calculateVectorField_8eqwnz$ = function (heatMap) {
     var maxHeat = ensureNotNull(max(heatMap.values));
@@ -9866,7 +9883,7 @@ var QGress = function (_, Kotlin) {
       if (passable.containsKey_11rb$(element_0))
         destination_0.add_11rb$(element_0);
     }
-    return destination_0;
+    return toSet(destination_0);
   };
   PathUtil.prototype.findAllSurrounding_0 = function (node) {
     return listOfNotNull([new Coords(node.x - 1 | 0, node.y - 1 | 0), new Coords(node.x - 1 | 0, node.y), new Coords(node.x - 1 | 0, node.y + 1 | 0), new Coords(node.x, node.y - 1 | 0), new Coords(node.x, node.y + 1 | 0), new Coords(node.x + 1 | 0, node.y - 1 | 0), new Coords(node.x + 1 | 0, node.y), new Coords(node.x + 1 | 0, node.y + 1 | 0)]);

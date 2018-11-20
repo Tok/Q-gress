@@ -6,6 +6,7 @@ import config.Dim
 import util.data.Cell
 import util.data.Complex
 import util.data.Coords
+import kotlin.math.max
 
 object PathUtil {
     const val MIN_HEAT = 35
@@ -16,47 +17,56 @@ object PathUtil {
     fun posToShadowPos(pos: Coords) = Coords(pos.x / RESOLUTION, pos.y / RESOLUTION)
     fun shadowPosToPos(pos: Coords) = Coords(pos.x * RESOLUTION, pos.y * RESOLUTION)
 
+    private fun calcPosCost(pos: Coords, heat: Int) =
+            heat + (World.grid[pos]?.movementPenalty ?: MAX_HEAT)
+
+    private fun posToCost(positions: Set<Coords>, heat: Int) =
+            positions.map { pos -> pos to calcPosCost(pos, heat) }.toMap()
+
+    private fun mergeMaps(maps: Set<Map<Coords, Int>>) =
+            maps.flatMap { m -> m.map { it.key to it.value } }.toMap()
+
+    private fun findSuccessors(currentMap: Map<Coords, Int>,
+                               passable: Map<Coords, Cell>,
+                               sameHeat: Set<Coords>, heat: Int) =
+            sameHeat.map { pos ->
+                val successors = findUnmarkedSurrounding(pos, passable, currentMap)
+                posToCost(successors, heat) to successors.isNotEmpty()
+            }.toMap()
+
+    private fun calcFront(currentMap: Map<Coords, Int>, passable: Map<Coords, Cell>,
+                          sameHeat: Set<Coords>, heat: Int): Pair<Map<Coords, Int>, Boolean> {
+        val result = findSuccessors(currentMap, passable, sameHeat, heat)
+        val front = mergeMaps(result.keys)
+        val hasMore = result.values.contains(true)
+        return front to hasMore
+    }
+
+    private fun createWaveFront(currentHeatMap: Map<Coords, Int>, passable: Map<Coords, Cell>
+                                , heat: Int, max: Int): Pair<Map<Coords, Int>, Boolean> {
+        val sameHeat: Map<Coords, Int> = currentHeatMap.filter { it.value == heat }
+        val (layer, hasMaybeMore) = calcFront(currentHeatMap, passable, sameHeat.keys, heat)
+        return layer to hasMaybeMore
+    }
+
     fun generateHeatMap(goal: Coords): Map<Coords, Int> {
         val passable = World.passableCells()
-        val heatMap = mutableMapOf<Coords, Int>()
-        fun createWaveFront(heat: Int): Boolean {
-            val sameHeat = heatMap.filter { it.value == heat }
-            var hasMaybeMore = false
-            sameHeat.forEach { entry ->
-                val succs = findUnmarkedSurrounding(entry.key, passable, heatMap)
-                succs.forEach { succ ->
-                    val cell = World.grid[succ]
-                    val cost = cell?.movementPenalty ?: MAX_HEAT
-                    heatMap[succ] = heat + cost
-                    hasMaybeMore = true
-                }
-            }
-            val overcount = heat - (heatMap.map { it.value }.max() ?: 0)
-            return hasMaybeMore || overcount < MAX_HEAT
-        }
-
         var heat = 0
-        heatMap[posToShadowPos(goal)] = heat
-        while (createWaveFront(heat++)) {
-        }
-
-        fun nextLayer(map: Map<Coords, Int>): Map<Coords, Int> {
-            val layer = mutableMapOf<Coords, Int>()
-            map.forEach { original ->
-                original.key.getSurrounding(w(), h()).forEach { surrounding ->
-                    if (!map.containsKey(surrounding)) {
-                        layer.put(surrounding, original.value + MAX_HEAT)
-                    }
-                }
+        var maxHeat = 0
+        val map = mutableMapOf<Coords, Int>()
+        map[posToShadowPos(goal)] = heat
+        while (true) {
+            val (layer, hasMaybeMore) = createWaveFront(map, passable, heat++, maxHeat)
+            map.putAll(layer)
+            val layerMax = (layer.map { it.value }.max() ?: 0)
+            maxHeat = max(maxHeat, layerMax)
+            val overCount = heat - maxHeat
+            val hasMore = hasMaybeMore || overCount < MAX_HEAT
+            if (!hasMore) {
+                break
             }
-            return layer.toMap()
         }
-
-        heatMap.putAll(nextLayer(heatMap))
-        //heatMap.putAll(nextLayer(heatMap))
-        //heatMap.putAll(nextLayer(heatMap))
-
-        return heatMap
+        return map
     }
 
     fun calculateVectorField(heatMap: Map<Coords, Int>): Map<Coords, Complex> {
@@ -96,11 +106,12 @@ object PathUtil {
         }.toMap()
     }
 
-    private fun findUnmarkedSurrounding(node: Coords, passable: Map<Coords, Cell>, heatMap: Map<Coords, Int>): List<Coords> {
-        return findAllSurrounding(node)
-                .filterNot { heatMap.containsKey(it) }
-                .filter { passable.containsKey(it) }
-    }
+    private fun findUnmarkedSurrounding(node: Coords, passable: Map<Coords, Cell>,
+                                        heatMap: Map<Coords, Int>): Set<Coords> =
+            findAllSurrounding(node)
+                    .filterNot { heatMap.containsKey(it) }
+                    .filter { passable.containsKey(it) }
+                    .toSet()
 
     private fun findAllSurrounding(node: Coords): List<Coords> {
         return listOfNotNull(
