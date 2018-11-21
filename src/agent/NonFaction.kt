@@ -8,6 +8,7 @@ import config.Config
 import config.Dim
 import config.Time
 import portal.Portal
+import system.display.VectorFields
 import system.display.loading.Loading
 import util.*
 import util.data.Cell
@@ -142,7 +143,7 @@ data class NonFaction(var pos: Coords, val speed: Float, val size: AgentSize,
                 val newField = PathUtil.calculateVectorField(PathUtil.generateHeatMap(destination))
                 Loading.draw()
                 SoundUtil.playOffScreenLocationCreationSound()
-                DrawUtil.drawVectorField(newField)
+                VectorFields.draw(newField)
                 fields[destination] = newField
                 newField
             }

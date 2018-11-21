@@ -18,8 +18,10 @@ import org.w3c.dom.url.URL
 import portal.Portal
 import portal.XmMap
 import system.Cycle
+import system.display.VectorFields
 import system.display.loading.Loading
 import system.display.loading.LoadingText
+import system.display.ui.ActionLimitsDisplay
 import util.data.Cell
 import util.data.Coords
 import util.data.GeoCoords
@@ -399,7 +401,7 @@ object HtmlUtil {
                     val newPortal = Portal.createRandom()
                     Loading.draw()
                     LoadingText.draw("Creating Portal $count")
-                    DrawUtil.drawVectorField(newPortal)
+                    VectorFields.draw(newPortal)
                     World.allPortals.add(newPortal)
                     createPortal(callback, count - 1)
                 } else {
@@ -430,7 +432,7 @@ object HtmlUtil {
                     println("ERROR: Grid is empty!")
                 }
                 DrawUtil.drawGrid()
-                DrawUtil.drawActionLimits(false)
+                ActionLimitsDisplay.draw(false)
                 createAgentsAndPortals {
                     DrawUtil.clearBackground()
                     LoadingText.draw("Ready.")

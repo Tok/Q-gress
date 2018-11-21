@@ -58,7 +58,10 @@ data class Portal constructor(val name: String, val location: Coords,
         (it.resonator?.level?.level ?: 0)
     }.sum() / 8)
 
-    fun getLevel() = PortalLevel.findByValue(calculateLevel())
+    fun getLevel() =
+            if (World.isReady) PortalLevel.findByValue(calculateLevel())
+            else PortalLevel.ZERO
+
     fun x() = location.x.toDouble()
     fun y() = location.y.toDouble()
 
@@ -412,6 +415,7 @@ data class Portal constructor(val name: String, val location: Coords,
             (calculateLevel() * 750) + offset
         }
     }
+
     fun decayResonators(): Unit = getAllResos().forEach { it.decay() }
 
     fun drawResonators(ctx: Ctx) {

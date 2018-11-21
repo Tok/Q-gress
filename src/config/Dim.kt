@@ -55,5 +55,4 @@ object Dim {
     val tickFontSize = 12
 
     val portalNameFontSize = 12
-    val statsFontSize = 13
 }

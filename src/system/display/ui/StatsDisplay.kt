@@ -1,17 +1,18 @@
-package system.display
+package system.display.ui
 
 import World
 import agent.Faction
 import config.Colors
 import config.Dim
 import org.w3c.dom.END
+import system.display.Display
 import util.DrawUtil
 import util.data.Coords
 
-object StatsDisplay {
-    val fontSize = Dim.statsFontSize
-    val lineWidth = 3.0
-    fun draw() {
+object StatsDisplay : Display {
+    private const val fontSize = 13
+    private const val lineWidth = 3.0
+    override fun draw() {
         fun drawCell(pos: Coords, text: String, color: String) {
             DrawUtil.strokeText(World.uiCtx(), pos, text, color, fontSize, DrawUtil.CODA, lineWidth, Colors.black, org.w3c.dom.CanvasTextAlign.END)
         }

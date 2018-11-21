@@ -1,4 +1,4 @@
-package system.display
+package system.display.ui.table
 
 import Ctx
 import World
@@ -13,7 +13,7 @@ import org.w3c.dom.START
 import util.DrawUtil
 import util.data.Coords
 
-object TopAgentsDisplay : TableDisplay() {
+object TopAgentsDisplay : UiTable() {
     fun draw() {
         val fontSize = Dim.topAgentsInventoryFontSize
         val lineWidth = 2.0

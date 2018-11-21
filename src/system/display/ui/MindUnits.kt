@@ -1,4 +1,4 @@
-package system.display
+package system.display.ui
 
 import World
 import agent.Faction
@@ -9,7 +9,7 @@ import util.DrawUtil
 import util.data.Coords
 import kotlin.math.round
 
-object MuDisplay {
+object MindUnits {
     fun draw(enlMu: Int, resMu: Int) {
         //TODO only redraw if updated.
         fun fillMuRect(from: Coords, width: Double, height: Double,

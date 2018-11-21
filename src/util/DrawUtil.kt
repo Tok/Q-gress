@@ -4,27 +4,23 @@ import Canvas
 import Ctx
 import World
 import agent.NonFaction
-import agent.action.ActionItem
 import config.*
-import config.Dim
-import config.Styles.VectorStyle.CIRCLE
-import config.Styles.VectorStyle.SQUARE
-import items.XmpBurster
-import items.deployable.DeployableItem
-import items.level.LevelColor
 import items.level.PortalLevel
-import items.level.XmpLevel
-import items.types.ShieldType
 import org.w3c.dom.*
 import portal.Portal
 import portal.XmMap
 import system.Com
-import system.Queues
 import system.display.*
-import util.data.*
+import system.display.ui.ActionLimitsDisplay
+import system.display.ui.CycleDisplay
+import system.display.ui.MindUnits
+import system.display.ui.StatsDisplay
+import system.display.ui.table.TopAgentsDisplay
+import util.data.Circle
+import util.data.Coords
+import util.data.Line
 import kotlin.browser.document
 import kotlin.math.PI
-import kotlin.math.max
 
 object DrawUtil {
     const val CODA = "Coda"
@@ -41,7 +37,7 @@ object DrawUtil {
             allLinks().forEach { it.draw(ctx()) }
             allPortals.forEach { it.drawCenter(ctx()) }
             allAgents.forEach { it.draw(ctx()) }
-            DrawUtil.drawAttacks()
+            Attacks.draw()
             if (Styles.isDrawPortalNames) {
                 allPortals.forEach { it.drawName(ctx()) }
             }
@@ -72,7 +68,7 @@ object DrawUtil {
 
     fun redrawUserInterface(enlMu: Int, resMu: Int) {
         clearUserInterface()
-        MuDisplay.draw(enlMu, resMu)
+        MindUnits.draw(enlMu, resMu)
         CycleDisplay.draw()
         TickDisplay.draw()
         StatsDisplay.draw()
@@ -86,35 +82,14 @@ object DrawUtil {
             highlightMouse(World.mousePos!!)
         }
         if (Config.isHighlighActionLimit) {
-            drawActionLimits()
-        }
-    }
-
-    private val topArea = Line.create(0, 0, Dim.width, HtmlUtil.topActionOffset())
-    private val bottomArea = Line.create(0, Dim.height - Dim.botActionOffset.toInt(), Dim.width, Dim.height)
-    private val leftSliderArea = Line.create(0, HtmlUtil.topActionOffset(), HtmlUtil.leftSliderWidth(), HtmlUtil.leftSliderHeight())
-    private val rightSliderArea = Line.create(Dim.width - HtmlUtil.rightSliderWidth(), HtmlUtil.topActionOffset(), Dim.width, HtmlUtil.rightSliderHeight())
-
-    fun drawActionLimits(isHighlightBottom: Boolean = true) {
-        with(World.ctx()) {
-            beginPath()
-            fillStyle = "#00000077"
-            fillRect(topArea.fromX, topArea.fromY, topArea.toX, topArea.toY)
-            if (isHighlightBottom) {
-                fillRect(bottomArea.fromX, bottomArea.fromY, bottomArea.toX, bottomArea.toY)
-            }
-            fillRect(leftSliderArea.fromX, leftSliderArea.fromY, leftSliderArea.toX, leftSliderArea.toY)
-            fillRect(rightSliderArea.fromX, rightSliderArea.fromY, rightSliderArea.toX, rightSliderArea.toY)
-            closePath()
+            ActionLimitsDisplay.draw()
         }
     }
 
     private fun highlightMouse(pos: Coords) {
         when {
             World.shadowStreetMap == null -> return
-            topArea.isPointInArea(pos) -> return
-            leftSliderArea.isPointInArea(pos) -> return
-            rightSliderArea.isPointInArea(pos) -> return
+            ActionLimitsDisplay.isInLimit(pos) -> return
         }
         val ctx = World.uiCtx()
         val r = Dim.maxDeploymentRange * Constants.phi
@@ -147,86 +122,6 @@ object DrawUtil {
         ctx.globalAlpha = 1.0
     }
 
-    private fun drawAttacks() {
-        val attackQueue: MutableMap<Int, MutableMap<Coords, List<XmpBurster>>> = Queues.attackQueue
-        attackQueue.forEach { tickEntry: Map.Entry<Int, MutableMap<Coords, List<XmpBurster>>> ->
-            val futureTick = tickEntry.key
-            val ticksInFuture = futureTick - World.tick
-            val attackMap: MutableMap<Coords, List<XmpBurster>> = tickEntry.value
-            attackMap.forEach { attackEntry: Map.Entry<Coords, List<XmpBurster>> ->
-                val pos = attackEntry.key
-                val bursters = attackEntry.value
-                bursters.forEach { xmp ->
-                    val image = damageCircleImages[xmp.level to ticksInFuture]
-                    if (image != null) { //FIXME
-                        World.ctx().drawImage(image, pos.xx() - (image.width / 2), pos.yy() - (image.height / 2))
-                    }
-                }
-            }
-        }
-
-        val r = Dim.maxDeploymentRange.toInt()
-        val damageQueue: MutableMap<Int, List<Damage>> = Queues.damageQueue
-        damageQueue.forEach { damageEntry: Map.Entry<Int, List<Damage>> ->
-            val futureTick = damageEntry.key
-            val ticksInFuture = futureTick - World.tick
-            val ratio = (Queues.damageDelayTicks - ticksInFuture) / Queues.damageDelayTicks
-            val damageList: List<Damage> = damageEntry.value
-            damageList.forEach { damage: Damage ->
-                val pos = damage.pos
-                val lineWidth = 3
-                val newPos = pos.copy(y = pos.y - ratio - lineWidth, x = pos.x - r + lineWidth)
-                val image = getImage(damage)
-                World.ctx().drawImage(image, newPos.xx(), newPos.yy())
-            }
-        }
-        Queues.endTick(World.tick)
-    }
-
-    private fun getImage(damage: Damage): Canvas {
-        val damagePercent = kotlin.math.min(damage.value, 100)
-        return if (damage.isCritical) {
-            critDamageImages.getValue(damagePercent)
-        } else {
-            damageImages.getValue(damagePercent)
-        }
-    }
-
-    private val damageImages: Map<Int, Canvas> = (0..100).map { it to createDamageImage(it, false) }.toMap()
-    private val critDamageImages: Map<Int, Canvas> = (0..100).map { it to createDamageImage(it, true) }.toMap()
-
-    private fun createDamageImage(damageValue: Int, isCritical: Boolean): Canvas {
-        val fontSize = 11
-        val lineWidth = 3.0
-        val w = (fontSize * 5) + (2 * lineWidth)
-        val h = fontSize + (2 * lineWidth)
-        return HtmlUtil.preRender(w.toInt(), h.toInt(), fun(ctx: Ctx) {
-            val coords = Coords(lineWidth.toInt() + (fontSize * 3 / 2), lineWidth.toInt() + (fontSize / 2))
-            val clipped = max(damageValue, 1).toString()
-            val color = if (isCritical) Colors.critDamage else Colors.damage
-            val text = "-$clipped%"
-            strokeText(ctx, coords, text, Colors.white, fontSize, CODA, lineWidth, color)
-        })
-    }
-
-    private val damageCircleImages: Map<Pair<XmpLevel, Int>, Canvas> = XmpLevel.values().flatMap { xmpLevel ->
-        (0..Queues.attackDelayTicks).map { ticksInFuture -> (xmpLevel to ticksInFuture) to createDamageCircleImage(xmpLevel, ticksInFuture) }
-    }.toMap()
-
-    private fun createDamageCircleImage(xmpLevel: XmpLevel, ticksInFuture: Int): Canvas {
-        val strokeStyle = "#ff731533"
-        val fillStyle = "#fece5a11"
-        val lw = 8
-        val ratio = (Queues.damageDelayTicks - ticksInFuture) / Queues.damageDelayTicks
-        val r = (xmpLevel.rangeM * Dim.pixelToMFactor * ratio).toInt()
-        val w = (r * 2) + (2 * lw)
-        val h = w
-        return HtmlUtil.preRender(w, h, fun(ctx: Ctx) {
-            val attackCircle = Circle(Coords(r + lw, r + lw), r.toDouble())
-            drawCircle(ctx, attackCircle, strokeStyle, lw.toDouble(), fillStyle)
-        })
-    }
-
     fun renderBarImage(color: String, health: Int, h: Int, w: Int, lineWidth: Int): Canvas {
         val pWidth = health * w / 100
         return HtmlUtil.preRender(w, h, fun(ctx: Ctx) {
@@ -252,7 +147,7 @@ object DrawUtil {
     }
 
     fun drawRect(ctx: Ctx, pos: Coords, h: Double, w: Double,
-                         fillStyle: String, strokeStyle: String, lineWidth: Double) {
+                 fillStyle: String, strokeStyle: String, lineWidth: Double) {
         drawExactRect(ctx, pos.xx(), pos.yy(), h, w, fillStyle, strokeStyle, lineWidth)
     }
 
@@ -281,67 +176,6 @@ object DrawUtil {
                 }
             }
         }
-    }
-
-    fun drawVectorField(portal: Portal) {
-        drawVectorField(portal.vectorField)
-        portal.drawCenter(World.bgCtx(), false)
-    }
-
-    fun drawVectorField(vectorField: Map<Coords, Complex>) {
-        World.bgCtx().clearRect(0.0, 0.0, Dim.width.toDouble(), Dim.height.toDouble())
-        val w = PathUtil.RESOLUTION - 1
-        val h = PathUtil.RESOLUTION - 1
-        vectorField.forEach {
-            fun isWalkable() = World.grid[it.key]?.isPassable ?: false
-            if (Styles.isDrawObstructedVectors || isWalkable()) {
-                val vectorImageData = getOrCreateVectorImageData(w, h, it.value)
-                val pos = PathUtil.shadowPosToPos(it.key)
-                val isBlocked = HtmlUtil.isBlockedForVector(pos)
-                if (!isBlocked) {
-                    World.bgCtx().putImageData(vectorImageData, pos.xx(), pos.yy())
-                }
-            }
-        }
-    }
-
-    private val VECTORS = mutableMapOf<Line, ImageData>()
-    private fun getOrCreateVectorImageData(w: Int, h: Int, complex: Complex): ImageData {
-        val center = PathUtil.RESOLUTION / 2
-        val scaled = Complex.fromMagnitudeAndPhase(complex.magnitude * center, complex.phase)
-        val line = Line(Coords(center, center), Coords(center + scaled.re.toInt(), center + scaled.im.toInt()))
-        val maybeImage = VECTORS[line]
-        return if (maybeImage != null) {
-            maybeImage
-        } else {
-            val newImageCan = createVectorImage(w, h, complex, line)
-            val newImageCtx = newImageCan.getContext("2d") as Ctx
-            val imageData = newImageCtx.getImageData(0.toDouble(), 0.toDouble(), w.toDouble(), h.toDouble())
-            VECTORS[line] = imageData
-            imageData
-        }
-    }
-
-    private fun createVectorImage(w: Int, h: Int, complex: Complex, line: Line): Canvas {
-        return HtmlUtil.preRender(w, h, fun(ctx: Ctx) {
-            ctx.fillStyle = "#ffffff44"
-            when (Styles.vectorStyle) {
-                CIRCLE -> {
-                    val r = w / 2.0
-                    val path = Path2D()
-                    path.moveTo(r, r)
-                    path.arc(r, r, r, 0.0, 2.0 * kotlin.math.PI)
-                    ctx.fill(path)
-                }
-                SQUARE -> {
-                    ctx.fillRect(1.0, 1.0, w.toDouble(), h.toDouble())
-                    ctx.fill()
-                }
-            }
-            val lineWidth = 2.0
-            val strokeStyle = if (Styles.useBlackVectors) Colors.black else ColorUtil.getColor(complex)
-            drawLine(ctx, line, strokeStyle + "AA", lineWidth)
-        })
     }
 
     fun drawText(ctx: Ctx, coords: Coords, text: String, fillStyle: String, fontSize: Int, fontName: String) {

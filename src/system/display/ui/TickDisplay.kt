@@ -7,8 +7,8 @@ import config.Time
 import util.DrawUtil
 import util.data.Coords
 
-object TickDisplay {
-    fun draw() {
+object TickDisplay : Display {
+    override fun draw() {
         val pos = Coords(13, Dim.height - Dim.tickBottomOffset)
         val half = Dim.tickFontSize / 2
         with(World.uiCtx()) {
