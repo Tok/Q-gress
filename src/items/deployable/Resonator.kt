@@ -13,16 +13,21 @@ data class Resonator(val level: ResonatorLevel, val owner: Agent, var energy: In
     fun calcHealthPercent() = energy * 100 / level.energy
     fun isAtCriticalLevel() = calcHealthPercent() < 20
     fun recharge(agent: Agent, xm: Int) {
-        val rest = max((energy + xm) - level.energy, 0)
-        val energy = xm - rest
-        agent.removeXm(energy)
-        agent.addAp(10) //FIXME
-        this.energy += energy
+        val capacity = level.energy - energy
+        if (capacity >= xm) {
+            this.energy += xm
+            agent.removeXm(xm)
+        } else {
+            val diff = xm - capacity
+            this.energy += diff
+            agent.removeXm(diff)
+        }
+        agent.addAp(10)
     }
     private fun decayEnergy() = (level.energy * DECAY_RATIO).toInt()
 
     fun decay() {
-        energy -= decayEnergy()
+        this.energy = max(0, energy - decayEnergy())
         if (energy <= 0) {
             portal?.removeReso(octant!!, null)
         }

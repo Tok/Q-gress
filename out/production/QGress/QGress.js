@@ -16,8 +16,8 @@ var QGress = function (_, Kotlin) {
   var listOf_0 = Kotlin.kotlin.collections.listOf_mh5how$;
   var plus = Kotlin.kotlin.collections.plus_mydzjv$;
   var println = Kotlin.kotlin.io.println_s8jyv4$;
-  var first = Kotlin.kotlin.collections.first_2p1efm$;
   var Unit = Kotlin.kotlin.Unit;
+  var first = Kotlin.kotlin.collections.first_2p1efm$;
   var take = Kotlin.kotlin.collections.take_ba2ldo$;
   var toList = Kotlin.kotlin.collections.toList_abgq59$;
   var toSet = Kotlin.kotlin.collections.toSet_7wnvza$;
@@ -49,13 +49,13 @@ var QGress = function (_, Kotlin) {
   var sort = Kotlin.kotlin.collections.sort_4wi501$;
   var mutableListOf = Kotlin.kotlin.collections.mutableListOf_i5x0yv$;
   var toMutableMap = Kotlin.kotlin.collections.toMutableMap_abgq59$;
+  var Triple = Kotlin.kotlin.Triple;
   var reversed = Kotlin.kotlin.collections.reversed_7wnvza$;
   var takeLast = Kotlin.kotlin.collections.takeLast_yzln2o$;
   var putAll = Kotlin.kotlin.collections.putAll_cweazw$;
   var zipWithNext = Kotlin.kotlin.collections.zipWithNext_7wnvza$;
   var toByte = Kotlin.toByte;
   var kotlin_js_internal_ByteCompanionObject = Kotlin.kotlin.js.internal.ByteCompanionObject;
-  var Triple = Kotlin.kotlin.Triple;
   var IllegalArgumentException_init = Kotlin.kotlin.IllegalArgumentException_init_pdl1vj$;
   var toDoubleOrNull = Kotlin.kotlin.text.toDoubleOrNull_pdl1vz$;
   var addClass = Kotlin.kotlin.dom.addClass_hhb33f$;
@@ -370,18 +370,18 @@ var QGress = function (_, Kotlin) {
   Agent.prototype.getLevel = function () {
     return Agent$Companion_getInstance().getLevel_0(this.ap);
   };
-  Agent.prototype.getXmCapacity_0 = function () {
-    return Agent$Companion_getInstance().getXmCapacity_0(this.getLevel());
+  Agent.prototype.xmCapacity_0 = function () {
+    return Agent$Companion_getInstance().xmCapacity_0(this.getLevel());
   };
   var Math_0 = Math;
   Agent.prototype.calcAbsXmBar_0 = function () {
-    var tmp$ = this.getXmCapacity_0();
+    var tmp$ = this.xmCapacity_0();
     var b = this.xm;
     var b_0 = Math_0.max(0, b);
     return Math_0.min(tmp$, b_0);
   };
   Agent.prototype.xmBarPercent_0 = function () {
-    return (this.calcAbsXmBar_0() * 100 | 0) / this.getXmCapacity_0() | 0;
+    return (this.calcAbsXmBar_0() * 100 | 0) / this.xmCapacity_0() | 0;
   };
   Agent.prototype.isXmBarEmpty_0 = function () {
     return this.xmBarPercent_0() === 0;
@@ -390,10 +390,10 @@ var QGress = function (_, Kotlin) {
     return this.xmBarPercent_0() >= 80;
   };
   Agent.prototype.removeXm_za3lpa$ = function (v) {
-    this.xm = Util_getInstance().clip_qt1dr2$(this.xm - v | 0, 0, this.getXmCapacity_0());
+    this.xm = Util_getInstance().clip_qt1dr2$(this.xm - v | 0, 0, this.xmCapacity_0());
   };
   Agent.prototype.addXm_za3lpa$ = function (v) {
-    this.xm = Util_getInstance().clip_qt1dr2$(this.xm + v | 0, 0, this.getXmCapacity_0());
+    this.xm = Util_getInstance().clip_qt1dr2$(this.xm + v | 0, 0, this.xmCapacity_0());
   };
   Agent.prototype.addAp_za3lpa$ = function (v) {
     this.ap = this.ap + Kotlin.imul(v, this.apFactor_0) | 0;
@@ -407,14 +407,18 @@ var QGress = function (_, Kotlin) {
     return ((tmp$ = this.action.item) != null ? tmp$.equals(ActionItem$Companion_getInstance().ATTACK) : null) && !this.isArrived_0();
   };
   Agent.prototype.act = function () {
+    var tmp$;
     if (this.isBusy_0())
-      return this;
+      tmp$ = this;
     else if (this.isFastAction_0())
-      return this.moveCloserToDestinationPortal_0();
+      tmp$ = this.moveCloserToDestinationPortal_0();
     else if (this.isMoveInRange_0())
-      return this.moveCloserInRange_0();
+      tmp$ = this.moveCloserInRange_0();
     else
-      return this.doSomething_0();
+      tmp$ = this.doSomething_0();
+    var next = tmp$;
+    next.collectXm_0();
+    return next;
   };
   Agent.prototype.doSomething_0 = function () {
     var tmp$, tmp$_0;
@@ -470,7 +474,7 @@ var QGress = function (_, Kotlin) {
   }
   Agent.prototype.actionsForAnywhere_0 = function () {
     var moveElsewhereQ = this.q_0(QActions_getInstance().MOVE_ELSEWHERE);
-    var recycleQ = this.xm < (this.getXmCapacity_0() / 10 | 0) ? this.q_0(QActions_getInstance().RECYCLE) : -1.0;
+    var recycleQ = this.xm < (this.xmCapacity_0() / 10 | 0) ? this.q_0(QActions_getInstance().RECYCLE) : -1.0;
     var rechargeQ = this.isXmFilled_0() ? this.q_0(QActions_getInstance().RECHARGE) : -1.0;
     return listOf([to(moveElsewhereQ, Agent$actionsForAnywhere$lambda(this)), to(recycleQ, Agent$actionsForAnywhere$lambda_0(this)), to(rechargeQ, Agent$actionsForAnywhere$lambda_1(this))]);
   };
@@ -615,6 +619,17 @@ var QGress = function (_, Kotlin) {
     var rawNextY = this.pos.y - rawDiffY | 0;
     return this.copy_lmq102$(void 0, void 0, new Coords(rawNextX, rawNextY));
   };
+  Agent.prototype.collectXm_0 = function () {
+    var heaps = XmMap_getInstance().findXmInRange_lfj9be$(this.pos);
+    var tmp$;
+    tmp$ = heaps.entries.iterator();
+    while (tmp$.hasNext()) {
+      var element = tmp$.next();
+      if (this.xm >= this.xmCapacity_0())
+        this.addXm_za3lpa$(element.value.xm);
+      element.value.collect();
+    }
+  };
   function Agent$rechargePortal$lambda(it) {
     return it.calcHealth();
   }
@@ -684,10 +699,8 @@ var QGress = function (_, Kotlin) {
     var cubes = this.inventory.findPowerCubes();
     if (!cubes.isEmpty()) {
       var cube = first(cubes);
-      if (cube != null) {
-        this.addXm_za3lpa$(cube.level.calculateRecycleXm());
-        this.inventory.consumeCubes_lz36jp$(listOf_0(cube));
-      }
+      this.addXm_za3lpa$(cube.level.calculateRecycleXm());
+      this.inventory.consumeCubes_lz36jp$(listOf_0(cube));
     }
     return this;
   };
@@ -1253,7 +1266,7 @@ var QGress = function (_, Kotlin) {
     }
     this.xmBarImages_0 = toMap(destination);
   }
-  Agent$Companion.prototype.getXmCapacity_0 = function (level) {
+  Agent$Companion.prototype.xmCapacity_0 = function (level) {
     switch (level) {
       case 1:
         return 3000;
@@ -1362,7 +1375,7 @@ var QGress = function (_, Kotlin) {
   Agent$Companion.prototype.create_0 = function (grid, faction) {
     var tmp$;
     var initialAp = 0;
-    var initialXm = this.getXmCapacity_0(this.getLevel_0(initialAp));
+    var initialXm = this.xmCapacity_0(this.getLevel_0(initialAp));
     var coords = Coords$Companion_getInstance().createRandomPassable_5edep5$(grid);
     var actionPortal = (tmp$ = Util_getInstance().findNearestPortal_lfj9be$(coords)) != null ? tmp$ : World_getInstance().allPortals.get_za3lpa$(0);
     return new Agent(faction, Util_getInstance().generateAgentName(), coords, Skills$Companion_getInstance().createRandom(), new Inventory(), Action$Companion_getInstance().create(), actionPortal, actionPortal.location, initialAp, initialXm);
@@ -1434,7 +1447,7 @@ var QGress = function (_, Kotlin) {
   }
   AgentSize$Companion.prototype.randomOffset_0 = function () {
     var rand = Util_getInstance().random();
-    return rand < 0.05 ? 1 : rand < 0.2 ? -1 : 0;
+    return rand < 0.03 ? 1 : 0;
   };
   AgentSize$Companion.prototype.createRandom = function () {
     return new AgentSize(this.randomOffset_0());
@@ -2119,7 +2132,7 @@ var QGress = function (_, Kotlin) {
     this.destination = destination;
     this.vectorField = vectorField;
     this.busyUntil = busyUntil;
-    this.swarmTendency_0 = 0.04;
+    this.swarmTendency_0 = 0.03;
     this.swarmChance_0 = this.swarmTendency_0 - this.swarmTendency_0 * 0.5 * this.size.offset;
     this.isDrunk_0 = Util_getInstance().random() <= 0.02;
     this.velocity_0 = Complex$Companion_getInstance().ZERO;
@@ -2187,10 +2200,15 @@ var QGress = function (_, Kotlin) {
          while (false);
         var nearestNpc = (tmp$ = minBy$result) != null ? tmp$ : this;
         var nearPos = nearestNpc.pos;
-        var re = -(this.pos.xx() - nearPos.xx());
-        var im = -(this.pos.yy() - nearPos.yy());
-        var acceleration = 2.0;
-        tmp$_0 = new Complex(re * acceleration, im * acceleration);
+        if (nearPos.distanceTo_lfj9be$(this.pos) < Dim_getInstance().agentRadius) {
+          var re = -(this.pos.xx() - nearPos.xx());
+          var im = -(this.pos.yy() - nearPos.yy());
+          var acceleration = 1.2;
+          tmp$_0 = new Complex(re * acceleration, im * acceleration);
+        }
+         else {
+          tmp$_0 = Complex_init(this.pos.x, this.pos.y);
+        }
       }
        else {
         tmp$_0 = this.vectorField.get_11rb$(PathUtil_getInstance().posToShadowPos_lfj9be$(this.pos));
@@ -2311,7 +2329,7 @@ var QGress = function (_, Kotlin) {
   };
   function NonFaction$Companion$drawTemplate$lambda(closure$r, closure$lineWidth) {
     return function (ctx) {
-      var fillStyle = '#ffffff';
+      var fillStyle = Colors_getInstance().npcColor;
       var strokeStyle = Colors_getInstance().black;
       var circle = new Circle(new Coords(closure$r + closure$lineWidth | 0, closure$r + closure$lineWidth | 0), closure$r);
       DrawUtil_getInstance().drawCircle_3kie0f$(ctx, circle, strokeStyle, closure$lineWidth, fillStyle);
@@ -2556,6 +2574,7 @@ var QGress = function (_, Kotlin) {
     this.orange = '#ff7315';
     this.damage = '#ff7315';
     this.critDamage = '#e40000';
+    this.npcColor = '#dddddd';
   }
   Colors.$metadata$ = {
     kind: Kind_OBJECT,
@@ -2571,12 +2590,12 @@ var QGress = function (_, Kotlin) {
   }
   function Config() {
     Config_instance = this;
-    this.startPortals = 8;
+    this.startPortals = 13;
     this.startFrogs = 34;
     this.startSmurfs = 34;
     this.maxFrogs = 144;
     this.maxSmurfs = 144;
-    this.startNonFaction = 610;
+    this.startNonFaction = 377;
     this.isNpcSwarming = true;
     this.isAutostart = true;
     this.isHighlighActionLimit = true;
@@ -2640,6 +2659,9 @@ var QGress = function (_, Kotlin) {
     this.agentDeployCircleLineWidth = 1.0;
     this.linkLineWidth = 3.0;
     this.botActionOffset = 160.0;
+    this.portalXmSpawnRadius = 40;
+    this.npcXmSpawnRadius = 10;
+    this.agentXmCollectionRadius = this.maxDeploymentRange;
     this.leftOffset = numberToInt(this.maxDeploymentRange) * Constants_getInstance().phi;
     this.rightOffset = numberToInt(this.maxDeploymentRange) * Constants_getInstance().phi;
     this.topOffset = numberToInt(this.maxDeploymentRange) * Constants_getInstance().phi;
@@ -3183,19 +3205,25 @@ var QGress = function (_, Kotlin) {
     return this.calcHealthPercent() < 20;
   };
   Resonator.prototype.recharge_2b7tta$ = function (agent, xm) {
-    var a = this.energy + xm - this.level.energy | 0;
-    var rest = Math_0.max(a, 0);
-    var energy = xm - rest | 0;
-    agent.removeXm_za3lpa$(energy);
+    var capacity = this.level.energy - this.energy | 0;
+    if (capacity >= xm) {
+      this.energy = this.energy + xm | 0;
+      agent.removeXm_za3lpa$(xm);
+    }
+     else {
+      var diff = xm - capacity | 0;
+      this.energy = this.energy + diff | 0;
+      agent.removeXm_za3lpa$(diff);
+    }
     agent.addAp_za3lpa$(10);
-    this.energy = this.energy + energy | 0;
   };
   Resonator.prototype.decayEnergy_0 = function () {
     return numberToInt(this.level.energy * Resonator$Companion_getInstance().DECAY_RATIO);
   };
   Resonator.prototype.decay = function () {
     var tmp$;
-    this.energy = this.energy - this.decayEnergy_0() | 0;
+    var b = this.energy - this.decayEnergy_0() | 0;
+    this.energy = Math_0.max(0, b);
     if (this.energy <= 0) {
       (tmp$ = this.portal) != null ? (tmp$.removeReso_j436sm$(ensureNotNull(this.octant), null), Unit) : null;
     }
@@ -5399,7 +5427,7 @@ var QGress = function (_, Kotlin) {
   Portal.prototype.calculateLevel_0 = function () {
     var tmp$;
     if (this.owner == null)
-      tmp$ = 0;
+      tmp$ = 1;
     else {
       var tmp$_0 = Portal$Companion_getInstance();
       var $receiver = this.resoSlots.values;
@@ -6047,7 +6075,17 @@ var QGress = function (_, Kotlin) {
     return tmp$_0;
   };
   Portal.prototype.leakXm = function () {
-    return numberToInt(this.calcTotalXm_0() * Portal$Companion_getInstance().XM_LEAK);
+    var tmp$, tmp$_0;
+    var fluct = Util_getInstance().randomInt_za3lpa$(300);
+    var offset = Util_getInstance().randomBool() ? fluct : -fluct | 0;
+    tmp$_0 = this.location;
+    if (this.getLevel().toInt() <= 4.5) {
+      tmp$ = (this.calculateLevel_0() * 1000 | 0) + offset | 0;
+    }
+     else {
+      tmp$ = (this.calculateLevel_0() * 750 | 0) + offset | 0;
+    }
+    return to(tmp$_0, tmp$);
   };
   Portal.prototype.decayResonators = function () {
     var tmp$;
@@ -6208,10 +6246,6 @@ var QGress = function (_, Kotlin) {
       addAll(destination_1, list_0);
     }
     this.healthBarImages_0 = toMap(destination_1);
-    this.XM_LEAK = 0.2;
-    this.XM_LEAK_FREQ_MIN = 20;
-    this.XM_LEAK_RADIUS_M = 40;
-    this.DECAY_FREQ_H = 24;
     this.MAX_HACKS = 4;
   }
   Portal$Companion.prototype.findChargeableForKeys_912u9o$ = function (agent) {
@@ -6468,6 +6502,198 @@ var QGress = function (_, Kotlin) {
   ResonatorSlot.prototype.equals = function (other) {
     return this === other || (other !== null && (typeof other === 'object' && (Object.getPrototypeOf(this) === Object.getPrototypeOf(other) && (Kotlin.equals(this.owner, other.owner) && Kotlin.equals(this.resonator, other.resonator) && Kotlin.equals(this.distance, other.distance)))));
   };
+  function XmHeap(cores, isCollected) {
+    XmHeap$Companion_getInstance();
+    if (isCollected === void 0)
+      isCollected = false;
+    this.cores_0 = cores;
+    this.isCollected_0 = isCollected;
+    this.xm = this.cores_0.first + this.cores_0.second + this.cores_0.third | 0;
+    this.IMAGE_0 = XmHeap$Companion_getInstance().drawHeapTemplate_0();
+  }
+  XmHeap.prototype.isCollected = function () {
+    return this.isCollected_0;
+  };
+  XmHeap.prototype.collect = function () {
+    this.isCollected_0 = true;
+  };
+  XmHeap.prototype.draw_lfj9be$ = function (position) {
+    World_getInstance().ctx().drawImage(this.IMAGE_0, position.xx(), position.yy());
+  };
+  function XmHeap$Companion() {
+    XmHeap$Companion_instance = this;
+    this.coreCount_0 = 3;
+    this.strayXmMinDistance = 8;
+    this.CORE_IMAGE_0 = this.drawCoreTemplate_0();
+    this.minCapacity_0 = 35;
+    this.maxCapacity_0 = 100;
+    this.capacity = 65;
+  }
+  function XmHeap$Companion$drawHeapTemplate$lambda(closure$r, closure$scatter, this$XmHeap$) {
+    return function (ctx) {
+      var $receiver = new IntRange(0, 3);
+      var tmp$;
+      tmp$ = $receiver.iterator();
+      while (tmp$.hasNext()) {
+        var element = tmp$.next();
+        var closure$r_0 = closure$r;
+        var closure$scatter_0 = closure$scatter;
+        var this$XmHeap$_0 = this$XmHeap$;
+        var pos = (new Coords(closure$r_0, closure$r_0)).randomNearPoint_za3lpa$(closure$scatter_0);
+        ctx.drawImage(this$XmHeap$_0.CORE_IMAGE_0, pos.xx(), pos.yy());
+      }
+    };
+  }
+  XmHeap$Companion.prototype.drawHeapTemplate_0 = function () {
+    var scatter = 5;
+    var w = 15;
+    var h = 15;
+    var r = 5;
+    return HtmlUtil_getInstance().preRender_yb5akz$(w, h, XmHeap$Companion$drawHeapTemplate$lambda(r, scatter, this));
+  };
+  function XmHeap$Companion$drawCoreTemplate$lambda(closure$r, closure$stroke, closure$lineWidth, closure$fill, closure$alpha) {
+    return function (ctx) {
+      var circle = new Circle(new Coords(closure$r, closure$r), closure$r);
+      DrawUtil_getInstance().drawCircle_3kie0f$(ctx, circle, closure$stroke, closure$lineWidth, closure$fill, closure$alpha);
+    };
+  }
+  XmHeap$Companion.prototype.drawCoreTemplate_0 = function () {
+    var r = 2;
+    var w = 4;
+    var h = 4;
+    var stroke = Colors_getInstance().white + '33';
+    var lineWidth = 1.0;
+    var fill = Colors_getInstance().white;
+    var alpha = 0.4;
+    return HtmlUtil_getInstance().preRender_yb5akz$(w, h, XmHeap$Companion$drawCoreTemplate$lambda(r, stroke, lineWidth, fill, alpha));
+  };
+  XmHeap$Companion.prototype.createCore_0 = function () {
+    return Util_getInstance().randomInt_vux9f0$(35, 100);
+  };
+  XmHeap$Companion.prototype.createCores_0 = function () {
+    return new Triple(this.createCore_0(), this.createCore_0(), this.createCore_0());
+  };
+  XmHeap$Companion.prototype.create = function () {
+    return new XmHeap(this.createCores_0());
+  };
+  XmHeap$Companion.$metadata$ = {
+    kind: Kind_OBJECT,
+    simpleName: 'Companion',
+    interfaces: []
+  };
+  var XmHeap$Companion_instance = null;
+  function XmHeap$Companion_getInstance() {
+    if (XmHeap$Companion_instance === null) {
+      new XmHeap$Companion();
+    }
+    return XmHeap$Companion_instance;
+  }
+  XmHeap.$metadata$ = {
+    kind: Kind_CLASS,
+    simpleName: 'XmHeap',
+    interfaces: []
+  };
+  XmHeap.prototype.component1_0 = function () {
+    return this.cores_0;
+  };
+  XmHeap.prototype.component2_0 = function () {
+    return this.isCollected_0;
+  };
+  XmHeap.prototype.copy_g6oo13$ = function (cores, isCollected) {
+    return new XmHeap(cores === void 0 ? this.cores_0 : cores, isCollected === void 0 ? this.isCollected_0 : isCollected);
+  };
+  XmHeap.prototype.toString = function () {
+    return 'XmHeap(cores=' + Kotlin.toString(this.cores_0) + (', isCollected=' + Kotlin.toString(this.isCollected_0)) + ')';
+  };
+  XmHeap.prototype.hashCode = function () {
+    var result = 0;
+    result = result * 31 + Kotlin.hashCode(this.cores_0) | 0;
+    result = result * 31 + Kotlin.hashCode(this.isCollected_0) | 0;
+    return result;
+  };
+  XmHeap.prototype.equals = function (other) {
+    return this === other || (other !== null && (typeof other === 'object' && (Object.getPrototypeOf(this) === Object.getPrototypeOf(other) && (Kotlin.equals(this.cores_0, other.cores_0) && Kotlin.equals(this.isCollected_0, other.isCollected_0)))));
+  };
+  function XmMap() {
+    XmMap_instance = this;
+    this.strayXm_0 = LinkedHashMap_init();
+  }
+  XmMap.prototype.updateStrayXm = function () {
+    var $receiver = this.strayXm_0;
+    var destination = LinkedHashMap_init();
+    var tmp$;
+    tmp$ = $receiver.entries.iterator();
+    while (tmp$.hasNext()) {
+      var element = tmp$.next();
+      if (!element.value.isCollected()) {
+        destination.put_xwzc9p$(element.key, element.value);
+      }
+    }
+    var unCollectedXm = destination;
+    this.strayXm_0.clear();
+    this.strayXm_0.putAll_a2k3zr$(unCollectedXm);
+  };
+  XmMap.prototype.createStrayXm_lfj9be$ = function (location) {
+    var $receiver = this.strayXm_0.keys;
+    var none$result;
+    none$break: do {
+      var tmp$;
+      if (Kotlin.isType($receiver, Collection) && $receiver.isEmpty()) {
+        none$result = true;
+        break none$break;
+      }
+      tmp$ = $receiver.iterator();
+      while (tmp$.hasNext()) {
+        var element = tmp$.next();
+        if (element.distanceTo_lfj9be$(location) < 8) {
+          none$result = false;
+          break none$break;
+        }
+      }
+      none$result = true;
+    }
+     while (false);
+    if (none$result) {
+      var $receiver_0 = this.strayXm_0;
+      var value = XmHeap$Companion_getInstance().create();
+      $receiver_0.put_xwzc9p$(location, value);
+    }
+  };
+  XmMap.prototype.findXmInRange_lfj9be$ = function (pos) {
+    var $receiver = this.strayXm_0;
+    var destination = LinkedHashMap_init();
+    var tmp$;
+    tmp$ = $receiver.entries.iterator();
+    while (tmp$.hasNext()) {
+      var element = tmp$.next();
+      if (element.key.distanceTo_lfj9be$(pos) <= Dim_getInstance().agentXmCollectionRadius) {
+        destination.put_xwzc9p$(element.key, element.value);
+      }
+    }
+    return destination;
+  };
+  XmMap.prototype.draw = function () {
+    var tmp$;
+    tmp$ = this.strayXm_0.entries.iterator();
+    while (tmp$.hasNext()) {
+      var element = tmp$.next();
+      var pos = element.key;
+      var heap = element.value;
+      heap.draw_lfj9be$(pos);
+    }
+  };
+  XmMap.$metadata$ = {
+    kind: Kind_OBJECT,
+    simpleName: 'XmMap',
+    interfaces: []
+  };
+  var XmMap_instance = null;
+  function XmMap_getInstance() {
+    if (XmMap_instance === null) {
+      new XmMap();
+    }
+    return XmMap_instance;
+  }
   function Checkpoint(enlMu, resMu) {
     Checkpoint$Companion_getInstance();
     this.enlMu = enlMu;
@@ -6625,49 +6851,52 @@ var QGress = function (_, Kotlin) {
       Cycle$INSTANCE_getInstance().checkpoints.put_xwzc9p$(tick, cp);
       SoundUtil_getInstance().playCheckpointSound_2xtf47$(cp);
       Cycle$INSTANCE_getInstance().image = this.createImage_0();
-      var $receiver = World_getInstance().allAgents;
-      var destination = ArrayList_init_0();
-      var tmp$;
-      tmp$ = $receiver.iterator();
-      while (tmp$.hasNext()) {
-        var element = tmp$.next();
-        if (element.isAtActionPortal())
-          destination.add_11rb$(element);
-      }
-      var atPortal = destination;
-      var tmp$_0;
-      tmp$_0 = atPortal.iterator();
-      while (tmp$_0.hasNext()) {
-        var element_0 = tmp$_0.next();
-        element_0.addXm_za3lpa$(element_0.actionPortal.leakXm());
-      }
-      var $receiver_0 = World_getInstance().allAgents;
-      var destination_0 = ArrayList_init_0();
+      this.spawnXm_0();
+    }
+  };
+  Cycle$Companion.prototype.spawnXm_0 = function () {
+    var $receiver = World_getInstance().allPortals;
+    var destination = ArrayList_init(collectionSizeOrDefault($receiver, 10));
+    var tmp$;
+    tmp$ = $receiver.iterator();
+    while (tmp$.hasNext()) {
+      var item = tmp$.next();
+      destination.add_11rb$(item.leakXm());
+    }
+    var destination_0 = ArrayList_init_0();
+    var tmp$_0;
+    tmp$_0 = destination.iterator();
+    while (tmp$_0.hasNext()) {
+      var element = tmp$_0.next();
+      var pos = element.component1()
+      , xm = element.component2();
+      var heapCount = xm / 65 | 0;
+      var $receiver_0 = new IntRange(0, heapCount);
+      var destination_1 = ArrayList_init(collectionSizeOrDefault($receiver_0, 10));
       var tmp$_1;
       tmp$_1 = $receiver_0.iterator();
       while (tmp$_1.hasNext()) {
-        var element_1 = tmp$_1.next();
-        if (!element_1.isAtActionPortal())
-          destination_0.add_11rb$(element_1);
+        var item_0 = tmp$_1.next();
+        destination_1.add_11rb$(pos.randomNearPoint_za3lpa$(Dim_getInstance().portalXmSpawnRadius));
       }
-      var notAtPortal = destination_0;
-      var tmp$_2;
-      tmp$_2 = notAtPortal.iterator();
-      while (tmp$_2.hasNext()) {
-        var element_2 = tmp$_2.next();
-        var $receiver_1 = World_getInstance().allNonFaction;
-        var destination_1 = ArrayList_init_0();
-        var tmp$_3;
-        tmp$_3 = $receiver_1.iterator();
-        while (tmp$_3.hasNext()) {
-          var element_3 = tmp$_3.next();
-          if (element_3.pos.distanceTo_lfj9be$(element_2.pos) < Dim_getInstance().agentRadius)
-            destination_1.add_11rb$(element_3);
-        }
-        var closeNpcs = destination_1;
-        var xm = closeNpcs.size * 50 | 0;
-        element_2.addXm_za3lpa$(xm);
-      }
+      var list = destination_1;
+      addAll(destination_0, list);
+    }
+    var tmp$_2;
+    tmp$_2 = destination_0.iterator();
+    while (tmp$_2.hasNext()) {
+      var element_0 = tmp$_2.next();
+      XmMap_getInstance().createStrayXm_lfj9be$(element_0);
+    }
+    var $receiver_1 = World_getInstance().allNonFaction;
+    var destination_2 = ArrayList_init(collectionSizeOrDefault($receiver_1, 10));
+    var tmp$_3;
+    tmp$_3 = $receiver_1.iterator();
+    while (tmp$_3.hasNext()) {
+      var item_1 = tmp$_3.next();
+      var tmp$_4 = destination_2.add_11rb$;
+      XmMap_getInstance().createStrayXm_lfj9be$(item_1.pos.randomNearPoint_za3lpa$(Dim_getInstance().npcXmSpawnRadius));
+      tmp$_4.call(destination_2, Unit);
     }
   };
   function Cycle$Companion$createImage$drawCheckpointDot(closure$r, closure$lineWidth, closure$dotAlpha) {
@@ -6682,8 +6911,8 @@ var QGress = function (_, Kotlin) {
   function Cycle$Companion$createImage$drawCheckpoint(closure$r, closure$lineWidth, closure$lineAlpha, closure$drawCheckpointDot) {
     return function (ctx, index, withNext, maxTotal) {
       var calcY = Cycle$Companion$createImage$drawCheckpoint$calcY;
-      var w = 7;
-      var x = Kotlin.imul(index, w);
+      var ww = 7;
+      var x = Kotlin.imul(index, ww);
       var $receiver = Faction$Companion_getInstance().all();
       var tmp$;
       tmp$ = $receiver.iterator();
@@ -6696,7 +6925,7 @@ var QGress = function (_, Kotlin) {
         var y = calcY(withNext.first.mu_bip15f$(element), maxTotal);
         var current = new Coords(x, y + numberToInt(closure$r_0) | 0);
         var nextY = calcY(withNext.second.mu_bip15f$(element), maxTotal);
-        var next = new Coords(x + w | 0, nextY + numberToInt(closure$r_0) | 0);
+        var next = new Coords(x + ww | 0, nextY + numberToInt(closure$r_0) | 0);
         if (index > 0) {
           DrawUtil_getInstance().drawLine_ovbgws$(ctx, new Line(current, next), element.color, closure$lineWidth_0, closure$lineAlpha_0);
         }
@@ -7225,6 +7454,11 @@ var QGress = function (_, Kotlin) {
         destination.add_11rb$(element);
     }
     return destination;
+  };
+  Coords.prototype.randomNearPoint_za3lpa$ = function (radius) {
+    var r = radius * Util_getInstance().random();
+    var t = Constants_getInstance().tau * Util_getInstance().random();
+    return new Coords(this.x + numberToInt(r * Math_0.cos(t)) | 0, this.y + numberToInt(r * Math_0.sin(t)) | 0);
   };
   Coords.prototype.toGeo = function () {
     var latitude = Coords$Companion_getInstance().minLat_0 + this.x * Coords$Companion_getInstance().pixelPartLat_0;
@@ -7866,6 +8100,7 @@ var QGress = function (_, Kotlin) {
   DrawUtil.prototype.redraw = function () {
     this.clear();
     var $receiver = World_getInstance();
+    XmMap_getInstance().draw();
     var tmp$;
     tmp$ = $receiver.allAgents.iterator();
     while (tmp$.hasNext()) {
@@ -8007,7 +8242,7 @@ var QGress = function (_, Kotlin) {
       element.drawCenter_j4cg6b$(ctx);
     }
   };
-  DrawUtil.prototype.redrawUserInterface_qt1dr2$ = function (tick, enlMu, resMu) {
+  DrawUtil.prototype.redrawUserInterface_vux9f0$ = function (enlMu, resMu) {
     this.clearUserInterface_0();
     this.drawMindUnits_0(enlMu, resMu);
     this.drawCycle_0();
@@ -8747,7 +8982,7 @@ var QGress = function (_, Kotlin) {
     var enlMu = World_getInstance().calcTotalMu_bip15f$(Faction$ENL_getInstance());
     var resMu = World_getInstance().calcTotalMu_bip15f$(Faction$RES_getInstance());
     Cycle$Companion_getInstance().updateCheckpoints_qt1dr2$(World_getInstance().tick, enlMu, resMu);
-    DrawUtil_getInstance().redrawUserInterface_qt1dr2$(World_getInstance().tick, enlMu, resMu);
+    DrawUtil_getInstance().redrawUserInterface_vux9f0$(enlMu, resMu);
     var tmp$;
     tmp$ = World_getInstance();
     tmp$.tick = tmp$.tick + 1 | 0;
@@ -8769,6 +9004,7 @@ var QGress = function (_, Kotlin) {
       destination.add_11rb$(item.act());
     }
     var nextAgents = toSet(destination);
+    XmMap_getInstance().updateStrayXm();
     this.updateAgents_0(World_getInstance().frogs, Faction$ENL_getInstance(), nextAgents);
     this.updateAgents_0(World_getInstance().smurfs, Faction$RES_getInstance(), nextAgents);
     var tmp$_0;
@@ -9766,7 +10002,7 @@ var QGress = function (_, Kotlin) {
     var hasMore = result.values.contains_11rb$(true);
     return to(front, hasMore);
   };
-  PathUtil.prototype.createWaveFront_0 = function (currentHeatMap, passable, heat, max) {
+  PathUtil.prototype.createWaveFront_0 = function (currentHeatMap, passable, heat) {
     var destination = LinkedHashMap_init();
     var tmp$;
     tmp$ = currentHeatMap.entries.iterator();
@@ -9792,7 +10028,7 @@ var QGress = function (_, Kotlin) {
     var value = heat;
     map.put_xwzc9p$(key, value);
     while (true) {
-      var tmp$_1 = this.createWaveFront_0(map, passable, (tmp$ = heat, heat = tmp$ + 1 | 0, tmp$), maxHeat);
+      var tmp$_1 = this.createWaveFront_0(map, passable, (tmp$ = heat, heat = tmp$ + 1 | 0, tmp$));
       var layer = tmp$_1.component1()
       , hasMaybeMore = tmp$_1.component2();
       map.putAll_a2k3zr$(layer);
@@ -10163,6 +10399,9 @@ var QGress = function (_, Kotlin) {
   Util.prototype.random = function () {
     var tmp$;
     return typeof (tmp$ = Math.random()) === 'number' ? tmp$ : throwCCE();
+  };
+  Util.prototype.randomBool = function () {
+    return this.random() <= 0.5;
   };
   Util.prototype.randomDouble_0 = function (max) {
     return this.random() * max;
@@ -11172,6 +11411,13 @@ var QGress = function (_, Kotlin) {
   });
   package$portal.Quality = Quality;
   package$portal.ResonatorSlot = ResonatorSlot;
+  Object.defineProperty(XmHeap, 'Companion', {
+    get: XmHeap$Companion_getInstance
+  });
+  package$portal.XmHeap = XmHeap;
+  Object.defineProperty(package$portal, 'XmMap', {
+    get: XmMap_getInstance
+  });
   Object.defineProperty(Checkpoint, 'Companion', {
     get: Checkpoint$Companion_getInstance
   });

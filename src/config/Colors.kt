@@ -17,4 +17,6 @@ object Colors {
 
     const val damage = "#ff7315"
     const val critDamage = "#e40000"
+
+    const val npcColor = "#dddddd"
 }

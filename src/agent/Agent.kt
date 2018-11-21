@@ -19,6 +19,7 @@ import items.level.XmpLevel
 import org.w3c.dom.HTMLInputElement
 import portal.Link
 import portal.Portal
+import portal.XmMap
 import system.Queues
 import util.DrawUtil
 import util.PathUtil
@@ -26,7 +27,6 @@ import util.SoundUtil
 import util.Util
 import util.data.*
 import kotlin.browser.window
-import kotlin.math.absoluteValue
 import kotlin.math.max
 import kotlin.math.min
 
@@ -47,19 +47,19 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
     private fun lineToDestination() = Line(pos, destination)
 
     fun getLevel(): Int = getLevel(this.ap)
-    private fun getXmCapacity(): Int = getXmCapacity(getLevel())
+    private fun xmCapacity(): Int = xmCapacity(getLevel())
 
-    private fun calcAbsXmBar() = min(getXmCapacity(), max(0, xm))
-    private fun xmBarPercent() = calcAbsXmBar() * 100 / getXmCapacity()
+    private fun calcAbsXmBar() = min(xmCapacity(), max(0, xm))
+    private fun xmBarPercent() = calcAbsXmBar() * 100 / xmCapacity()
     private fun isXmBarEmpty() = xmBarPercent() == 0
     private fun isXmFilled() = xmBarPercent() >= 80
 
     fun removeXm(v: Int) {
-        this.xm = Util.clip(xm - v, 0, getXmCapacity())
+        this.xm = Util.clip(xm - v, 0, xmCapacity())
     }
 
     fun addXm(v: Int) {
-        this.xm = Util.clip(xm + v, 0, getXmCapacity())
+        this.xm = Util.clip(xm + v, 0, xmCapacity())
     }
 
     private val apFactor = 50
@@ -70,11 +70,15 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
     private fun isFastAction(): Boolean = action.item == ActionItem.MOVE || (action.item == ActionItem.ATTACK && !isAtActionPortal())
     private fun isMoveInRange(): Boolean = action.item == ActionItem.ATTACK && !isArrived()
 
-    fun act(): Agent = when {
-        isBusy() -> this
-        isFastAction() -> moveCloserToDestinationPortal()
-        isMoveInRange() -> moveCloserInRange()
-        else -> doSomething()
+    fun act(): Agent {
+        val next = when {
+            isBusy() -> this
+            isFastAction() -> moveCloserToDestinationPortal()
+            isMoveInRange() -> moveCloserInRange()
+            else -> doSomething()
+        }
+        next.collectXm()
+        return next
     }
 
     private fun doSomething(): Agent {
@@ -99,7 +103,7 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
 
     private fun actionsForAnywhere(): List<Pair<Double, () -> Agent>> {
         val moveElsewhereQ = q(QActions.MOVE_ELSEWHERE)
-        val recycleQ = if (xm < getXmCapacity() / 10) q(QActions.RECYCLE) else -1.0
+        val recycleQ = if (xm < xmCapacity() / 10) q(QActions.RECYCLE) else -1.0
         val rechargeQ = if (isXmFilled()) q(QActions.RECHARGE) else -1.0
         return listOf(
                 moveElsewhereQ to { moveElsewhere() },
@@ -194,6 +198,15 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         return this.copy(pos = Coords(rawNextX, rawNextY))
     }
 
+    private fun collectXm() {
+        val heaps = XmMap.findXmInRange(pos)
+        heaps.forEach { heap ->
+            if (xm >= xmCapacity())
+            addXm(heap.value.xm)
+            heap.value.collect()
+        }
+    }
+
     private fun rechargePortal(): Agent {
         if (!hasKeys()) {
             return this
@@ -215,10 +228,8 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         val cubes: List<PowerCube> = inventory.findPowerCubes()
         if (cubes.isNotEmpty()) {
             val cube: PowerCube = cubes.first()
-            if (cube != null) {
-                addXm(cube.level.calculateRecycleXm())
-                inventory.consumeCubes(listOf(cube))
-            }
+            addXm(cube.level.calculateRecycleXm())
+            inventory.consumeCubes(listOf(cube))
         }
         return this
     }
@@ -425,7 +436,7 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
     override fun hashCode() = this.key().hashCode() * 31
 
     companion object {
-        private fun getXmCapacity(level: Int): Int = when (level) {
+        private fun xmCapacity(level: Int): Int = when (level) {
             1 -> 3000
             2 -> 4000
             3 -> 5000
@@ -494,7 +505,7 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         fun createSmurf(grid: Map<Coords, Cell>) = create(grid, Faction.RES)
         private fun create(grid: Map<Coords, Cell>, faction: Faction): Agent {
             val initialAp = 0
-            val initialXm = getXmCapacity(getLevel(initialAp))
+            val initialXm = xmCapacity(getLevel(initialAp))
             val coords = Coords.createRandomPassable(grid)
             val actionPortal = Util.findNearestPortal(coords) ?: World.allPortals[0] //FIXME
             return Agent(faction, Util.generateAgentName(), coords, Skills.createRandom(),

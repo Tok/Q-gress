@@ -1,11 +1,14 @@
 package util.data
 
 import World
+import config.Constants
 import config.Dim
 import util.PathUtil
 import util.SoundUtil
 import util.Util
 import kotlin.math.abs
+import kotlin.math.cos
+import kotlin.math.sin
 import kotlin.math.sqrt
 
 data class Coords(val x: Int, val y: Int) {
@@ -30,6 +33,12 @@ data class Coords(val x: Int, val y: Int) {
             Coords(x, y + 1),
             Coords(x + 1, y + 1)
     ).filter { it.x in 0..(w - 1) && it.y in 0..(h - 1) }
+
+    fun randomNearPoint(radius: Int): Coords {
+        val r = radius * Util.random()
+        val t = Constants.tau * Util.random()
+        return Coords(x + (r * cos(t)).toInt(), y + (r * sin(t)).toInt())
+    }
 
     fun toGeo(): GeoCoords {
         val latitude = minLat + (x * pixelPartLat)

@@ -55,7 +55,7 @@ object SoundUtil {
         playSound(oscNode, createStaticPan(pan), 1.0, duration)
     }
 
-    fun playCheckpointSound(checkpoint: Checkpoint) {
+    fun playCheckpointSound(@Suppress("UNUSED_PARAMETER") checkpoint: Checkpoint) {
         if (isMuted()) return
         val duration = 0.05
         val pan = 0.5

@@ -2,10 +2,13 @@ package system
 
 import Canvas
 import Ctx
+import World
 import agent.Faction
 import config.Dim
 import config.Time
 import org.w3c.dom.CanvasRenderingContext2D
+import portal.XmHeap
+import portal.XmMap
 import util.DrawUtil
 import util.HtmlUtil
 import util.SoundUtil
@@ -31,16 +34,23 @@ enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>, var image: Canvas
                 INSTANCE.checkpoints[tick] = cp
                 SoundUtil.playCheckpointSound(cp)
                 INSTANCE.image = createImage()
+                spawnXm()
+            }
+        }
 
-                val atPortal = World.allAgents.filter { it.isAtActionPortal() }
-                atPortal.forEach { it.addXm(it.actionPortal.leakXm()) }
+        private fun spawnXm() {
+            World.allPortals.map { it.leakXm() }
+                    .flatMap { (pos, xm) ->
+                        val heapCount = xm / XmHeap.capacity
+                        (0..heapCount).map {
+                            pos.randomNearPoint(Dim.portalXmSpawnRadius)
+                        }
+                    }.forEach {
+                        XmMap.createStrayXm(it)
+                    }
 
-                val notAtPortal = World.allAgents.filterNot { it.isAtActionPortal() }
-                notAtPortal.forEach { agent ->
-                    val closeNpcs = World.allNonFaction.filter { npc -> npc.pos.distanceTo(agent.pos) < Dim.agentRadius }
-                    val xm = closeNpcs.count() * 50
-                    agent.addXm(xm)
-                }
+            World.allNonFaction.map {
+                XmMap.createStrayXm(it.pos.randomNearPoint(Dim.npcXmSpawnRadius))
             }
         }
 
@@ -59,13 +69,13 @@ enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>, var image: Canvas
 
             fun drawCheckpoint(ctx: CanvasRenderingContext2D, index: Int, withNext: Pair<Checkpoint, Checkpoint>, maxTotal: Int) {
                 fun calcY(mu: Int, maxTotal: Int) = Dim.cycleH - (mu * Dim.cycleH / maxTotal)
-                val w = 7
-                val x = (index * w)
+                val ww = 7
+                val x = (index * ww)
                 Faction.all().forEach { faction ->
                     val y = calcY(withNext.first.mu(faction), maxTotal)
                     val current = Coords(x, y + r.toInt())
                     val nextY = calcY(withNext.second.mu(faction), maxTotal)
-                    val next = Coords(x + w, nextY + r.toInt())
+                    val next = Coords(x + ww, nextY + r.toInt())
                     if (index > 0) {
                         DrawUtil.drawLine(ctx, Line(current, next), faction.color, lineWidth, lineAlpha)
                     }

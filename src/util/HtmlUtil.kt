@@ -6,7 +6,6 @@ import ImprovedNoise
 import World
 import agent.Agent
 import agent.Faction
-import agent.NonFaction
 import agent.qvalue.QActions
 import agent.qvalue.QDestinations
 import agent.qvalue.QValue
@@ -17,6 +16,7 @@ import org.w3c.dom.events.Event
 import org.w3c.dom.events.MouseEvent
 import org.w3c.dom.url.URL
 import portal.Portal
+import portal.XmMap
 import system.Cycle
 import util.data.Cell
 import util.data.Coords
@@ -66,6 +66,8 @@ object HtmlUtil {
         updateAgentCount(World.smurfs, smurfCount()) { Agent.createSmurf(World.grid) }
 
         val nextAgents = World.allAgents.map { it.act() }.toSet()
+        XmMap.updateStrayXm()
+
         updateAgents(World.frogs, Faction.ENL, nextAgents)
         updateAgents(World.smurfs, Faction.RES, nextAgents)
         World.allNonFaction.forEach { it.act() }
@@ -74,7 +76,7 @@ object HtmlUtil {
             val enlMu = World.calcTotalMu(Faction.ENL)
             val resMu = World.calcTotalMu(Faction.RES)
             Cycle.updateCheckpoints(World.tick, enlMu, resMu)
-            DrawUtil.redrawUserInterface(World.tick, enlMu, resMu)
+            DrawUtil.redrawUserInterface(enlMu, resMu)
             World.tick++
         }
     }

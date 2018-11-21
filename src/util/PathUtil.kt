@@ -42,8 +42,8 @@ object PathUtil {
         return front to hasMore
     }
 
-    private fun createWaveFront(currentHeatMap: Map<Coords, Int>, passable: Map<Coords, Cell>
-                                , heat: Int, max: Int): Pair<Map<Coords, Int>, Boolean> {
+    private fun createWaveFront(currentHeatMap: Map<Coords, Int>, passable: Map<Coords, Cell>,
+                                heat: Int): Pair<Map<Coords, Int>, Boolean> {
         val sameHeat: Map<Coords, Int> = currentHeatMap.filter { it.value == heat }
         val (layer, hasMaybeMore) = calcFront(currentHeatMap, passable, sameHeat.keys, heat)
         return layer to hasMaybeMore
@@ -56,7 +56,7 @@ object PathUtil {
         val map = mutableMapOf<Coords, Int>()
         map[posToShadowPos(goal)] = heat
         while (true) {
-            val (layer, hasMaybeMore) = createWaveFront(map, passable, heat++, maxHeat)
+            val (layer, hasMaybeMore) = createWaveFront(map, passable, heat++)
             map.putAll(layer)
             val layerMax = (layer.map { it.value }.max() ?: 0)
             maxHeat = max(maxHeat, layerMax)

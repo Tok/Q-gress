@@ -17,7 +17,7 @@ import util.data.Coords
 data class NonFaction(var pos: Coords, val speed: Float, val size: AgentSize,
                       var destination: Coords, var vectorField: Map<Coords, Complex>,
                       var busyUntil: Int) {
-    private val swarmTendency = 0.04
+    private val swarmTendency = 0.03
     private val swarmChance = swarmTendency - (swarmTendency * 0.5 * size.offset)
 
     private val isDrunk = Util.random() <= 0.02 //TODO
@@ -52,10 +52,14 @@ data class NonFaction(var pos: Coords, val speed: Float, val size: AgentSize,
                     it.pos.distanceTo(this.pos)
                 } ?: this
                 val nearPos = nearestNpc.pos
-                val re = -(this.pos.xx() - nearPos.xx()).toFloat()
-                val im = -(this.pos.yy() - nearPos.yy()).toFloat()
-                val acceleration = 2.0F
-                Complex(re * acceleration, im * acceleration)
+                if (nearPos.distanceTo(pos) < Dim.agentRadius) {
+                    val re = -(this.pos.xx() - nearPos.xx()).toFloat()
+                    val im = -(this.pos.yy() - nearPos.yy()).toFloat()
+                    val acceleration = 1.2F
+                    Complex(re * acceleration, im * acceleration)
+                } else {
+                    Complex(pos.x, pos.y)
+                }
             } else {
                 vectorField[PathUtil.posToShadowPos(pos)]
             }
@@ -156,7 +160,7 @@ data class NonFaction(var pos: Coords, val speed: Float, val size: AgentSize,
             val w = r * 2 + (2 * lineWidth)
             val h = w
             return HtmlUtil.preRender(w, h, fun(ctx: Ctx) {
-                val fillStyle = "#ffffff"
+                val fillStyle = Colors.npcColor
                 val strokeStyle = Colors.black
                 val circle = Circle(Coords(r + lineWidth, r + lineWidth), r.toDouble())
                 DrawUtil.drawCircle(ctx, circle, strokeStyle, lineWidth.toDouble(), fillStyle)

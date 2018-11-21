@@ -54,7 +54,7 @@ data class Portal constructor(val name: String, val location: Coords,
     fun canLinkOut(agent: Agent) = isLinkable(agent) && (links.isEmpty() || links.count() < 8) &&
             !isCoveredByField() && isInside()
 
-    private fun calculateLevel() = if (owner == null) 0 else clipLevel(resoSlots.values.map {
+    private fun calculateLevel() = if (owner == null) 1 else clipLevel(resoSlots.values.map {
         (it.resonator?.level?.level ?: 0)
     }.sum() / 8)
 
@@ -403,7 +403,15 @@ data class Portal constructor(val name: String, val location: Coords,
         }
     }
 
-    fun leakXm(): Int = (calcTotalXm() * XM_LEAK).toInt()
+    fun leakXm(): Pair<Coords, Int> {
+        val fluct = Util.randomInt(300)
+        val offset = if (Util.randomBool()) fluct else -fluct
+        return location to if (getLevel().toInt() <= 4.5) {
+            (calculateLevel() * 1000) + offset
+        } else {
+            (calculateLevel() * 750) + offset
+        }
+    }
     fun decayResonators(): Unit = getAllResos().forEach { it.decay() }
 
     fun drawResonators(ctx: Ctx) {
@@ -525,11 +533,6 @@ data class Portal constructor(val name: String, val location: Coords,
                 DrawUtil.drawText(ctx, pos, level.display, Colors.black, 13, DrawUtil.CODA)
             })
         }
-
-        const val XM_LEAK = 0.2
-        const val XM_LEAK_FREQ_MIN = 20
-        const val XM_LEAK_RADIUS_M = 40
-        const val DECAY_FREQ_H = 24
 
         const val MAX_HACKS = 4 //TODO implement multihacks
         private fun clipLevel(level: Int): Int = max(1, min(level, 8))

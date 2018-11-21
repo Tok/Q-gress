@@ -18,6 +18,7 @@ import items.level.XmpLevel
 import items.types.ShieldType
 import org.w3c.dom.*
 import portal.Portal
+import portal.XmMap
 import system.Com
 import system.Cycle
 import system.Queues
@@ -34,6 +35,7 @@ object DrawUtil {
     fun redraw() {
         clear()
         with(World) {
+            XmMap.draw()
             allAgents.forEach { it.drawRadius(ctx()) }
             allPortals.forEach { it.drawResonators(ctx()) }
             allNonFaction.forEach { it.draw(ctx()) }
@@ -53,6 +55,7 @@ object DrawUtil {
         val maybeImage: ImageData? = if (Styles.isDrawNoiseMap) World.noiseImage else null
         redraw(World.bgCan, World.bgCtx(), maybeImage)
     }
+
     private fun clearUserInterface() = redraw(World.uiCan, World.uiCtx())
 
     private fun redraw(canvas: Canvas, ctx: Ctx, image: ImageData? = null) {
@@ -120,7 +123,7 @@ object DrawUtil {
     fun drawAllNonFaction(ctx: Ctx) = World.allNonFaction.forEach { it.draw(ctx) }
     fun drawAllPortals(ctx: Ctx) = World.allPortals.forEach { it.drawCenter(ctx) }
 
-    fun redrawUserInterface(tick: Int, enlMu: Int, resMu: Int) {
+    fun redrawUserInterface(enlMu: Int, resMu: Int) {
         clearUserInterface()
         drawMindUnits(enlMu, resMu)
         drawCycle()

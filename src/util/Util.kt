@@ -23,6 +23,7 @@ object Util {
 
     fun random(): Double = js("Math.random();") as Double //native JS replacement for deprecated kotlin.js.Math.random()
 
+    fun randomBool() = random() <= 0.5
     private fun randomDouble(max: Double) = random() * max
     fun randomInt(max: Int) = randomInt(0, max)
     fun randomInt(min: Int, max: Int): Int {

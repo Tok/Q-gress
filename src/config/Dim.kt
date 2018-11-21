@@ -17,6 +17,10 @@ object Dim {
 
     val botActionOffset = 160.0
 
+    val portalXmSpawnRadius = 40
+    val npcXmSpawnRadius = 10
+    val agentXmCollectionRadius = maxDeploymentRange
+
     val leftOffset = maxDeploymentRange.toInt() * Constants.phi //no portals will be placed here
     val rightOffset = maxDeploymentRange.toInt() * Constants.phi
     val topOffset = maxDeploymentRange.toInt() * Constants.phi
