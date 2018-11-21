@@ -4,6 +4,7 @@ import Canvas
 import Ctx
 import World
 import config.Colors
+import config.Constants
 import config.Dim
 import config.Styles
 import org.w3c.dom.ImageData
@@ -41,10 +42,21 @@ object VectorFields {
     }
 
     private val VECTORS = mutableMapOf<Line, ImageData>()
+
+    private fun createLine(center: Int, scaled: Complex): Line {
+        val re = scaled.re.toInt()
+        val im = scaled.im.toInt()
+        val negRe = (re / Constants.phi).toInt()
+        val negIm = (im / Constants.phi).toInt()
+        val from = Coords(center - negRe, center - negIm)
+        val to = Coords(center + re, center + im)
+        return Line(from, to)
+    }
+
     private fun getOrCreateVectorImageData(w: Int, h: Int, complex: Complex): ImageData {
         val center = PathUtil.RESOLUTION / 2
         val scaled = Complex.fromMagnitudeAndPhase(complex.magnitude * center, complex.phase)
-        val line = Line(Coords(center, center), Coords(center + scaled.re.toInt(), center + scaled.im.toInt()))
+        val line = createLine(center, scaled)
         val maybeImage = VECTORS[line]
         return if (maybeImage != null) {
             maybeImage
@@ -57,25 +69,30 @@ object VectorFields {
         }
     }
 
+    private fun drawCircle(ctx: Ctx, r: Double) {
+        val path = Path2D()
+        path.moveTo(r, r)
+        path.arc(r, r, r, 0.0, 2.0 * kotlin.math.PI)
+        ctx.fill(path)
+    }
+
+    private fun drawSquare(ctx: Ctx, w: Int, h: Int) {
+        ctx.fillRect(1.0, 1.0, w.toDouble(), h.toDouble())
+        ctx.fill()
+    }
+
+    private fun stroke(complex: Complex) =
+            if (Styles.useColorVectors) ColorUtil.getColor(complex) + "AA" else Colors.black + "AA"
+
     private fun createVectorImage(w: Int, h: Int, complex: Complex, line: Line): Canvas {
         return HtmlUtil.preRender(w, h, fun(ctx: Ctx) {
             ctx.fillStyle = "#ffffff44"
             when (Styles.vectorStyle) {
-                Styles.VectorStyle.CIRCLE -> {
-                    val r = w / 2.0
-                    val path = Path2D()
-                    path.moveTo(r, r)
-                    path.arc(r, r, r, 0.0, 2.0 * kotlin.math.PI)
-                    ctx.fill(path)
-                }
-                Styles.VectorStyle.SQUARE -> {
-                    ctx.fillRect(1.0, 1.0, w.toDouble(), h.toDouble())
-                    ctx.fill()
-                }
+                Styles.VectorStyle.CIRCLE -> drawCircle(ctx, w / 2.0)
+                Styles.VectorStyle.SQUARE -> drawSquare(ctx, w, h)
             }
             val lineWidth = 2.0
-            val strokeStyle = if (Styles.useBlackVectors) Colors.black else ColorUtil.getColor(complex)
-            DrawUtil.drawLine(ctx, line, strokeStyle + "AA", lineWidth)
+            DrawUtil.drawLine(ctx, line, stroke(complex), lineWidth)
         })
     }
 }

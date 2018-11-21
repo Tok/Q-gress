@@ -19,7 +19,7 @@ object Styles {
     val use3DBuildings = true
 
     val vectorStyle = VectorStyle.SQUARE
-    val useBlackVectors = true
+    val useColorVectors = false
     val isDrawObstructedVectors = false
 
     //settings with impact on performance
