@@ -18,6 +18,8 @@ import org.w3c.dom.url.URL
 import portal.Portal
 import portal.XmMap
 import system.Cycle
+import system.loading.Loading
+import system.loading.LoadingText
 import util.data.Cell
 import util.data.Coords
 import util.data.GeoCoords
@@ -395,8 +397,8 @@ object HtmlUtil {
             document.defaultView?.setTimeout(fun() {
                 if (count > 0) {
                     val newPortal = Portal.createRandom()
-                    DrawUtil.drawLoading()
-                    DrawUtil.drawLoadingText("Creating Portal $count")
+                    Loading.draw()
+                    LoadingText.draw("Creating Portal $count")
                     DrawUtil.drawVectorField(newPortal)
                     World.allPortals.add(newPortal)
                     createPortal(callback, count - 1)
@@ -405,13 +407,13 @@ object HtmlUtil {
                 }
             }, 0)
         }
-        DrawUtil.drawLoadingText("Creating Portals..")
+        LoadingText.draw("Creating Portals..")
         World.allPortals.clear()
         createPortal(callback, Config.startPortals)
     }
 
     private fun createAgents(callback: () -> Unit) {
-        DrawUtil.drawLoadingText("Creating Non-Faction..")
+        LoadingText.draw("Creating Non-Faction..")
         World.allNonFaction.clear()
         World.createNonFaction(callback, Config.startNonFaction)
     }
@@ -431,7 +433,7 @@ object HtmlUtil {
                 DrawUtil.drawActionLimits(false)
                 createAgentsAndPortals {
                     DrawUtil.clearBackground()
-                    DrawUtil.drawLoadingText("Ready.")
+                    LoadingText.draw("Ready.")
                     World.isReady = true
                     if (isShowSatelliteMap()) {
                         if (isShowSatelliteMap()) {

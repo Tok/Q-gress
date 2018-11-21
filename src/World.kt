@@ -8,6 +8,8 @@ import org.w3c.dom.CanvasRenderingContext2D
 import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.ImageData
 import portal.Portal
+import system.loading.Loading
+import system.loading.LoadingText
 import util.DrawUtil
 import util.HtmlUtil
 import util.PathUtil
@@ -130,8 +132,8 @@ object World {
     fun createNonFaction(callback: () -> Unit, count: Int) {
         document.defaultView?.setTimeout(fun() {
             if (count > 0) {
-                DrawUtil.drawLoadingText("Creating Non-Faction $count")
-                DrawUtil.drawLoading()
+                LoadingText.draw("Creating Non-Faction $count")
+                Loading.draw()
                 val newNonFaction = NonFaction.create(World.grid)
                 World.allNonFaction.add(newNonFaction)
                 createNonFaction(callback, count - 1)

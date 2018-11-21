@@ -8,6 +8,7 @@ import config.Config
 import config.Dim
 import config.Time
 import portal.Portal
+import system.loading.Loading
 import util.*
 import util.data.Cell
 import util.data.Circle
@@ -128,7 +129,7 @@ data class NonFaction(var pos: Coords, val speed: Float, val size: AgentSize,
                 Coords(-OFFSCREEN_DISTANCE, World.h() + OFFSCREEN_DISTANCE),
                 Coords(World.w() + OFFSCREEN_DISTANCE, World.h() + OFFSCREEN_DISTANCE)
         )
-        private val OFFSCREEN = DESTINATIONS + (if(useOffscreenEdgeDestinations) OFFSCREEN_EDGES else emptyList())
+        private val OFFSCREEN = DESTINATIONS + (if (useOffscreenEdgeDestinations) OFFSCREEN_EDGES else emptyList())
 
         private val fields = mutableMapOf<Coords, Map<Coords, Complex>>()
         fun offscreenCount(): Int = fields.count()
@@ -139,7 +140,7 @@ data class NonFaction(var pos: Coords, val speed: Float, val size: AgentSize,
                 maybeField
             } else {
                 val newField = PathUtil.calculateVectorField(PathUtil.generateHeatMap(destination))
-                DrawUtil.drawLoading()
+                Loading.draw()
                 SoundUtil.playOffScreenLocationCreationSound()
                 DrawUtil.drawVectorField(newField)
                 fields[destination] = newField

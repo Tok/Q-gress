@@ -1,6 +1,8 @@
 package config
 
 object Colors {
+    const val transparent = "#00000000"
+
     const val background = "000000"
     const val nextPortal = "#aaaaaa"
     const val destination = "#333333"
@@ -11,7 +13,7 @@ object Colors {
     const val res = "#0088FF"
 
     const val black = "#000000"
-    const val white = "#ffffffff"
+    const val white = "#ffffff"
     const val red = "#ff0000"
     const val orange = "#ff7315"
 
