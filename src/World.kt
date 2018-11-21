@@ -8,9 +8,8 @@ import org.w3c.dom.CanvasRenderingContext2D
 import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.ImageData
 import portal.Portal
-import system.loading.Loading
-import system.loading.LoadingText
-import util.DrawUtil
+import system.display.loading.Loading
+import system.display.loading.LoadingText
 import util.HtmlUtil
 import util.PathUtil
 import util.data.Cell

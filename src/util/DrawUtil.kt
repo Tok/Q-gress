@@ -3,7 +3,6 @@ package util
 import Canvas
 import Ctx
 import World
-import agent.Faction
 import agent.NonFaction
 import agent.action.ActionItem
 import config.*
@@ -20,13 +19,12 @@ import org.w3c.dom.*
 import portal.Portal
 import portal.XmMap
 import system.Com
-import system.Cycle
 import system.Queues
+import system.display.*
 import util.data.*
 import kotlin.browser.document
 import kotlin.math.PI
 import kotlin.math.max
-import kotlin.math.round
 
 object DrawUtil {
     const val CODA = "Coda"
@@ -74,15 +72,15 @@ object DrawUtil {
 
     fun redrawUserInterface(enlMu: Int, resMu: Int) {
         clearUserInterface()
-        drawMindUnits(enlMu, resMu)
-        drawCycle()
-        drawTick()
-        drawStats()
+        MuDisplay.draw(enlMu, resMu)
+        CycleDisplay.draw()
+        TickDisplay.draw()
+        StatsDisplay.draw()
         if (Styles.isDrawCom) {
             Com.draw(World.uiCtx())
         }
         if (Styles.isDrawTopAgents) {
-            drawTopAgents()
+            TopAgentsDisplay.draw()
         }
         if (World.mousePos != null) {
             highlightMouse(World.mousePos!!)
@@ -229,49 +227,6 @@ object DrawUtil {
         })
     }
 
-    private fun drawStats() {
-        val fontSize = Dim.statsFontSize
-        val lineWidth = 3.0
-        fun drawCell(pos: Coords, text: String, color: String) {
-            strokeText(World.uiCtx(), pos, text, color, fontSize, CODA, lineWidth, Colors.black, CanvasTextAlign.END)
-        }
-
-        val yOff = Dim.statsTopOffset
-        val yStep = fontSize * 3 / 2
-        val xStep = 55
-        fun drawRow(pos: Int, header: String, enl: Int, res: Int, total: Int) {
-            drawCell(Coords(pos, yOff), header, Colors.white)
-            drawCell(Coords(pos, yOff + yStep), enl.toString(), Faction.ENL.color)
-            drawCell(Coords(pos, yOff + yStep * 2), res.toString(), Faction.RES.color)
-            drawCell(Coords(pos, yOff + yStep * 3), total.toString(), Colors.white)
-        }
-
-        val xPos = Dim.width - Dim.statsRightOffset
-        return with(World) {
-            (1..4).forEach { step ->
-                when (step) {
-                    1 -> drawRow(xPos, "Agents", countAgents(Faction.ENL), countAgents(Faction.RES), countAgents())
-                    2 -> drawRow(xPos + xStep, "Portals", countPortals(Faction.ENL), countPortals(Faction.RES), countPortals())
-                    3 -> drawRow(xPos + (xStep * 2), "Links", countLinks(Faction.ENL), countLinks(Faction.RES), countLinks())
-                    4 -> drawRow(xPos + (xStep * 3), "Fields", countFields(Faction.ENL), countFields(Faction.RES), countFields())
-                }
-            }
-        }
-    }
-
-    private fun drawTick() {
-        val pos = Coords(13, Dim.height - Dim.tickBottomOffset)
-        val half = Dim.tickFontSize / 2
-        World.uiCtx().fillStyle = "#00000077"
-        World.uiCtx().fillRect(pos.xx() - 8, pos.yy() - half - 1, 164.0, Dim.tickFontSize + 2.0)
-        World.uiCtx().fill()
-        World.uiCtx().globalAlpha = 1.0
-        val stamp = Time.ticksToTimestamp(World.tick)
-        drawText(World.uiCtx(), pos, stamp, Colors.white, Dim.tickFontSize, CODA)
-        val tick = " Tick: " + World.tick
-        drawText(World.uiCtx(), pos.copy(x = pos.x + 55), tick, Colors.white, Dim.tickFontSize, CODA)
-    }
-
     fun renderBarImage(color: String, health: Int, h: Int, w: Int, lineWidth: Int): Canvas {
         val pWidth = health * w / 100
         return HtmlUtil.preRender(w, h, fun(ctx: Ctx) {
@@ -296,160 +251,7 @@ object DrawUtil {
         })
     }
 
-    private fun drawMindUnits(enlMu: Int, resMu: Int) {
-        //TODO only redraw if updated.
-        fun fillMuRect(from: Coords, width: Double, height: Double,
-                       fillStyle: String, strokeStyle: String, lineWidth: Double) {
-            with(World) {
-                if (Styles.isFillMuDisplay) {
-                    uiCtx().globalAlpha = 0.3
-                    uiCtx().fillStyle = fillStyle
-                    uiCtx().fillRect(from.x.toDouble(), from.y.toDouble(), width, height)
-                }
-                uiCtx().strokeStyle = strokeStyle
-                uiCtx().globalAlpha = 1.0
-                uiCtx().lineWidth = lineWidth
-                uiCtx().beginPath()
-                uiCtx().strokeRect(from.x.toDouble(), from.y.toDouble(), width, height)
-                uiCtx().closePath()
-                uiCtx().stroke()
-            }
-        }
-
-        fun drawMuRect(pos: Coords, part: Int, faction: Faction, mu: Int) {
-            val fromRect = Coords(pos.x, pos.y - Dim.muFontSize)
-            val width = 1.5 * part
-            val height = Dim.muFontSize.toDouble() * Constants.phi
-            fillMuRect(fromRect, width, height, faction.color, faction.color, 3.0)
-            val text = faction.abbr + " " + mu + "M"
-            val textPos = Coords(pos.x + 21, pos.y - 3)
-            strokeText(World.uiCtx(), textPos, text, faction.color, Dim.muFontSize, AMARILLO)
-        }
-
-        val totalMu = enlMu + resMu
-        val enlPart: Int = round((100.0 * enlMu) / totalMu).toInt()
-        val resPart: Int = round((100.0 * resMu) / totalMu).toInt()
-        val xPos = Dim.muLeftOffset
-        val yPos = Dim.height - Dim.muBottomOffset
-        val enlPos = Coords(xPos, yPos - Dim.muFontSize * 2)
-        val resPos = Coords(xPos, yPos)
-        drawMuRect(enlPos, enlPart, Faction.ENL, enlMu)
-        drawMuRect(resPos, resPart, Faction.RES, resMu)
-    }
-
-    private fun drawCycle() {
-        if (Cycle.INSTANCE.image != null) {
-            val xPos = Dim.width - Dim.cycleRightOffset
-            val yPos = Dim.cycleTopOffset
-            World.uiCtx().drawImage(Cycle.INSTANCE.image, xPos.toDouble(), yPos.toDouble())
-        }
-    }
-
-    private fun drawTopAgents() {
-        val fontSize = Dim.topAgentsInventoryFontSize
-        val lineWidth = 2.0
-        fun drawBars(ctx: Ctx, barWidth: Int, level: Int, color: String, pos: Coords, count: Int, maxCount: Int) {
-            val xOffset = (barWidth * level) - barWidth
-            val statPos = Coords(pos.x + xOffset, pos.y + (fontSize / 2))
-            val h = fontSize.toDouble() * count / maxCount
-            drawRect(ctx, statPos, h, barWidth.toDouble(), color, Colors.black, lineWidth)
-        }
-
-        fun drawCounts(ctx: Ctx, items: List<DeployableItem>?, col: Coords, offset: Int, isShields: Boolean = false) {
-            val pos = Coords(col.x + offset, col.y)
-            val barWidth = 6
-            val totalWidth = 48
-            val statPos = Coords(pos.x, pos.y + (fontSize / 2))
-            drawRect(ctx, statPos, 0.0, totalWidth.toDouble(), Colors.black, Colors.black, lineWidth)
-            if (items == null || items.isEmpty()) {
-                strokeText(ctx, pos, "0", Colors.white, fontSize, CODA, lineWidth, Colors.black, CanvasTextAlign.RIGHT)
-            } else {
-                strokeText(ctx, pos, items.size.toString(), Colors.white, fontSize, CODA, lineWidth, Colors.black, CanvasTextAlign.RIGHT)
-                val itemsByLevel: Map<Int, List<DeployableItem>> = items.groupBy { it.getLevel() }
-                val countsByLevel: Map<Int, Int> = itemsByLevel.mapValues { it.value.count() }
-                val maxCount = countsByLevel.map { it.value }.max() ?: 0
-                if (isShields) {
-                    (1..4).forEach { level ->
-                        val count = countsByLevel[level] ?: 0
-                        if (count > 0) {
-                            val color = ShieldType.getColorForLevel(level)
-                            drawBars(ctx, barWidth * 2, level, color, pos, count, maxCount)
-                        }
-                    }
-                } else {
-                    (1..8).forEach { level ->
-                        val count = countsByLevel[level] ?: 0
-                        if (count > 0) {
-                            val color = LevelColor.map[level] ?: "#FFFFFF"
-                            drawBars(ctx, barWidth, level, color, pos, count, maxCount)
-                        }
-                    }
-                }
-            }
-        }
-
-        val ctx = World.uiCtx()
-        ctx.globalAlpha = 1.0
-        val xPos = Dim.topAgentsLeftOffset
-        val yOffset = Dim.topAgentsFontSize * 3 / 2
-        val yFixOffset = Dim.height - Dim.topAgentsBottomOffset - (Config.topAgentsMessageLimit * yOffset)
-        val headerPos = Coords(xPos, yFixOffset - yOffset)
-        val top = World.allAgents.toList().sortedBy { -it.ap }.take(Config.topAgentsMessageLimit)
-        top.forEachIndexed { index, agent ->
-            val rank = (index + 1).toString()
-            val name = agent.toString()
-            val pos = Coords(xPos, yFixOffset + (yOffset * index))
-            var offset = 0
-
-            strokeTableText(pos, offset, rank, CanvasTextAlign.RIGHT)
-            offset += 10
-
-            strokeTableHeaderText(headerPos, offset, "XM")
-            strokeTableText(pos, offset + 28, agent.xm.toString(), CanvasTextAlign.RIGHT)
-            offset += 34
-
-            strokeTableHeaderText(headerPos, offset, "AP")
-            strokeTableText(pos, offset + 44, agent.ap.toString(), CanvasTextAlign.RIGHT)
-            offset += 50
-
-            strokeTableHeaderText(headerPos, offset, "Agent")
-            strokeTableText(pos, offset, name, CanvasTextAlign.START, agent.faction.color)
-            offset += 100
-
-            strokeTableHeaderText(headerPos, offset, "XMPs")
-            drawCounts(ctx, agent.inventory.findXmps(), pos, offset)
-            offset += 70
-
-            strokeTableHeaderText(headerPos, offset, "Resos")
-            drawCounts(ctx, agent.inventory.findResonators(), pos, offset)
-            offset += 70
-
-            strokeTableHeaderText(headerPos, offset, "Cubes")
-            drawCounts(ctx, agent.inventory.findPowerCubes(), pos, offset)
-            offset += 70
-
-            strokeTableHeaderText(headerPos, offset, "Shields")
-            drawCounts(ctx, agent.inventory.findShields(), pos, offset, true)
-            offset += 60
-
-            val keyCount = agent.inventory.keyCount()
-            strokeTableHeaderText(headerPos, offset, "Keys")
-            strokeTableText(pos, offset + 24, keyCount.toString(), CanvasTextAlign.RIGHT)
-            offset += 30
-
-            strokeTableHeaderText(headerPos, offset, "Action")
-            val iconRadius = Dim.agentRadius.toInt()
-            val actionIconPos = Coords(pos.x + offset - iconRadius, pos.y - iconRadius)
-            addIcon(actionIconPos, agent.action.item)
-            strokeTableText(pos, offset + (iconRadius * 2) + 5, agent.action.toString())
-            offset += 64
-
-            strokeTableHeaderText(headerPos, offset, "Portal")
-            strokeTableText(pos, offset, agent.actionPortal.name)
-        }
-    }
-
-    private fun drawRect(ctx: Ctx, pos: Coords, h: Double, w: Double,
+    fun drawRect(ctx: Ctx, pos: Coords, h: Double, w: Double,
                          fillStyle: String, strokeStyle: String, lineWidth: Double) {
         drawExactRect(ctx, pos.xx(), pos.yy(), h, w, fillStyle, strokeStyle, lineWidth)
     }
@@ -549,22 +351,6 @@ object DrawUtil {
         val xOff = (fontSize / 2) - 2
         val yOff = fontSize / 3
         ctx.fillText(text, coords.x.toDouble() - xOff, coords.y.toDouble() + yOff)
-    }
-
-    private fun addIcon(pos: Coords, item: ActionItem) {
-        val image = ActionItem.getIcon(item)
-        World.uiCtx().drawImage(image, pos.xx(), pos.yy())
-    }
-
-    private fun strokeTableHeaderText(headerPos: Coords, offset: Int, text: String) {
-        val pos = Coords(headerPos.x + offset, headerPos.y)
-        strokeText(World.uiCtx(), pos, text, Colors.white, Dim.topAgentsFontSize, CODA, 3.0)
-    }
-
-    private fun strokeTableText(headerPos: Coords, offset: Int, text: String,
-                                textAlign: CanvasTextAlign = CanvasTextAlign.START, fillStyle: String = Colors.white) {
-        val pos = Coords(headerPos.x + offset, headerPos.y)
-        strokeText(World.uiCtx(), pos, text, fillStyle, Dim.topAgentsFontSize, CODA, 3.0, Colors.black, textAlign)
     }
 
     fun strokeText(ctx: Ctx, pos: Coords, text: String, fillStyle: String, fontSize: Int, fontName: String = CODA,

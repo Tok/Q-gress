@@ -8,7 +8,7 @@ import config.Config
 import config.Dim
 import config.Time
 import portal.Portal
-import system.loading.Loading
+import system.display.loading.Loading
 import util.*
 import util.data.Cell
 import util.data.Circle

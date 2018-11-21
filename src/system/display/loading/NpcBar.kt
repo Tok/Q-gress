@@ -1,4 +1,4 @@
-package system.loading
+package system.display.loading
 
 import World
 import config.Dim

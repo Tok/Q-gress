@@ -18,8 +18,8 @@ import org.w3c.dom.url.URL
 import portal.Portal
 import portal.XmMap
 import system.Cycle
-import system.loading.Loading
-import system.loading.LoadingText
+import system.display.loading.Loading
+import system.display.loading.LoadingText
 import util.data.Cell
 import util.data.Coords
 import util.data.GeoCoords
