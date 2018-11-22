@@ -10,8 +10,8 @@ object Dim {
     val minDistancePortalToImpassable = portalRadius
     val resoRadius = 2.0
     val maxDeploymentRange = 34.0
-    val agentRadius = 3.0
-    val agentLineWidth = 1
+    val agentRadius = 3
+    val agentLineWidth = 2
     val agentDeployCircleLineWidth = 1.0
     val linkLineWidth = 3.0
 

@@ -24,18 +24,18 @@ data class XmHeap(private val cores: Triple<Int, Int, Int>, private var isCollec
 
     companion object {
         private const val coreCount = 3
-        const val strayXmMinDistance = 8
+        const val strayXmMinDistance = 21
 
         private val CORE_IMAGE = drawCoreTemplate()
         private fun drawHeapTemplate(): Canvas {
-            val scatter = 5
-            val w = 15
-            val h = 15
             val r = 5
+            val scatter = 13
+            val w = 2 * (scatter + r + 1)
+            val h = w
             return HtmlUtil.preRender(w, h, fun(ctx: Ctx) {
-                (0..coreCount).forEach {
-                    val pos = Coords(r, r).randomNearPoint(scatter)
-                    ctx.drawImage(CORE_IMAGE, pos.xx(), pos.yy())
+                (1..coreCount).forEach {
+                    val p = Coords(w / 2, h / 2).randomNearPoint(scatter)
+                    ctx.drawImage(CORE_IMAGE, p.xx(), p.yy())
                 }
             })
         }

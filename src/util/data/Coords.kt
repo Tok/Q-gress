@@ -15,6 +15,7 @@ data class Coords(val x: Int, val y: Int) {
     fun xx() = x.toDouble()
     fun yy() = y.toDouble()
     fun isOffGrid() = x < 0 || y < 0 || x >= World.shadowW() || y >= World.shadowH()
+    fun isOffScreen() = x < 0 || y < 0 || x >= World.w() || y >= World.h()
     fun xDiff(other: Coords) = x - other.x
     fun yDiff(other: Coords) = y - other.y
     fun distanceTo(other: Coords): Double {
@@ -94,7 +95,7 @@ data class Coords(val x: Int, val y: Int) {
             check(grid.isNotEmpty()) //map is blocked or there is no more space left.
             val randomCell = Util.shuffle(grid.toList()).first()
             val pos = PathUtil.shadowPosToPos(randomCell.first)
-            val offset = PathUtil.RESOLUTION / 2
+            val offset = PathUtil.res / 2
             return Coords(pos.x + offset, pos.y + offset)
         }
 

@@ -6,6 +6,7 @@ import ImprovedNoise
 import World
 import agent.Agent
 import agent.Faction
+import agent.NonFaction
 import agent.qvalue.QActions
 import agent.qvalue.QDestinations
 import agent.qvalue.QValue
@@ -34,46 +35,21 @@ import kotlin.js.Json
 
 object HtmlUtil {
     private var intervalID = 0
-
-    private const val FROG_COUNT_ID = "numberOfFrogs"
-    private const val SMURF_COUNT_ID = "numberOfSmurfs"
     private const val PAUSE_BUTTON_ID = "pauseButton"
     private const val LOCATION_DROPDOWN_ID = "locationSelect"
     const val SOUND_CHECKBOX_ID = "soundCheckbox"
-
-    private fun frogCount(): Int = (document.getElementById(FROG_COUNT_ID) as HTMLInputElement).valueAsNumber.toInt()
-    private fun smurfCount(): Int = (document.getElementById(SMURF_COUNT_ID) as HTMLInputElement).valueAsNumber.toInt()
-
-    private fun updateAgents(agents: MutableSet<Agent>, faction: Faction, nextAgents: Set<Agent>) {
-        agents.clear()
-        agents.addAll(nextAgents.filter { it.faction == faction })
-    }
-
-    private fun updateAgentCount(agents: MutableSet<Agent>, newCount: Int, creationFuncion: (Int) -> Agent) {
-        if (newCount < agents.size) {
-            World.allAgents.addAll(agents.take(newCount))
-        } else {
-            World.allAgents.addAll(agents)
-            if (newCount > agents.size) {
-                val diff = newCount - agents.size
-                World.allAgents.addAll((1..diff).map { creationFuncion(it) }.toSet())
-            }
-        }
-    }
 
     private fun tick() {
         if (!World.isReady) {
             return
         }
-        World.allAgents.clear()
-        updateAgentCount(World.frogs, frogCount()) { Agent.createFrog(World.grid) }
-        updateAgentCount(World.smurfs, smurfCount()) { Agent.createSmurf(World.grid) }
 
         val nextAgents = World.allAgents.map { it.act() }.toSet()
         XmMap.updateStrayXm()
 
-        updateAgents(World.frogs, Faction.ENL, nextAgents)
-        updateAgents(World.smurfs, Faction.RES, nextAgents)
+        World.allAgents.clear()
+        World.allAgents.addAll(nextAgents)
+
         World.allNonFaction.forEach { it.act() }
         window.requestAnimationFrame {
             DrawUtil.redraw()
@@ -98,6 +74,7 @@ object HtmlUtil {
 
         val controlDiv = createControlDiv()
         val buttonDiv = document.createElement("div") as HTMLDivElement
+        buttonDiv.addClass("buttonDiv")
         val pauseButton = createButton(PAUSE_BUTTON_ID, "button", "Stop") {
             intervalID = pauseHandler(intervalID) { tick() }
         }
@@ -128,7 +105,7 @@ object HtmlUtil {
         val checkbox = document.createElement("input") as HTMLInputElement
         checkbox.id = SOUND_CHECKBOX_ID
         checkbox.type = "checkbox"
-        checkbox.checked = true
+        checkbox.checked = Config.isSoundOn
         checkbox.addClass("checkbox")
         span.append(checkbox)
         val label = document.createElement("span") as HTMLSpanElement
@@ -144,7 +121,7 @@ object HtmlUtil {
         val checkbox = document.createElement("input") as HTMLInputElement
         checkbox.id = "satCheckbox"
         checkbox.type = "checkbox"
-        checkbox.checked = true
+        checkbox.checked = Config.isSatOn
         checkbox.addClass("checkbox")
         checkbox.onchange = { if (checkbox.checked) MapUtil.showSatelliteMap() else MapUtil.hideSatelliteMap() }
         span.append(checkbox)
@@ -168,10 +145,6 @@ object HtmlUtil {
         val div = document.createElement("div") as HTMLDivElement
         div.id = "top-controls"
         div.addClass("controls")
-        div.append(createSliderDiv("frogSlider", Config.startFrogs, Config.maxFrogs,
-                FROG_COUNT_ID, " Frogs", 0))
-        div.append(createSliderDiv("smurfSlider", Config.startSmurfs, Config.maxSmurfs,
-                SMURF_COUNT_ID, " Smurfs", 0))
         return div
     }
 
@@ -321,25 +294,6 @@ object HtmlUtil {
         return Coords(x.toInt(), y.toInt())
     }
 
-    private fun createSliderDiv(className: String, value: Int, max: Int,
-                                id: String, suffix: String, min: Int = 0): HTMLDivElement {
-        val div = document.createElement("div") as HTMLDivElement
-        val slider = document.createElement("INPUT") as HTMLInputElement
-        slider.id = id
-        slider.type = "range"
-        slider.min = min.toString()
-        slider.max = max.toString()
-        slider.value = value.toString()
-        slider.addClass("slider", className)
-        val sliderValue = document.createElement("span") as HTMLSpanElement
-        sliderValue.addClass("label")
-        slider.oninput = { sliderValue.innerHTML = slider.value + suffix; null }
-        div.appendChild(slider)
-        div.appendChild(sliderValue)
-        sliderValue.innerHTML = slider.value + suffix
-        return div
-    }
-
     fun topActionOffset(): Int = document.getElementById("top-controls")?.clientHeight ?: 82
     fun leftSliderHeight(): Int = document.getElementById("left-sliders")?.clientHeight ?: 144
     fun leftSliderWidth(): Int = document.getElementById("left-sliders")?.clientWidth ?: 370
@@ -415,9 +369,20 @@ object HtmlUtil {
     }
 
     private fun createAgents(callback: () -> Unit) {
+        World.allAgents.clear()
+        LoadingText.draw("Creating Frogs..")
+        (1..Config.startFrogs).forEach {
+            World.allAgents.add(Agent.createFrog(World.grid))
+        }
+
+        LoadingText.draw("Creating Smurfs..")
+        (1..Config.startSmurfs).forEach {
+            World.allAgents.add(Agent.createSmurf(World.grid))
+        }
+
         LoadingText.draw("Creating Non-Faction..")
         World.allNonFaction.clear()
-        World.createNonFaction(callback, Config.startNonFaction)
+        World.createNonFaction(callback, Config.maxNonFaction)
     }
 
     private fun createAgentsAndPortals(callback: () -> Unit) = createPortals(fun() { createAgents(callback) })
@@ -434,13 +399,11 @@ object HtmlUtil {
                 DrawUtil.drawGrid()
                 ActionLimitsDisplay.draw(false)
                 createAgentsAndPortals {
-                    DrawUtil.clearBackground()
                     LoadingText.draw("Ready.")
+                    DrawUtil.clearBackground()
                     World.isReady = true
                     if (isShowSatelliteMap()) {
-                        if (isShowSatelliteMap()) {
-                            MapUtil.showSatelliteMap()
-                        }
+                        MapUtil.showSatelliteMap()
                     }
                 }
             }

@@ -25,9 +25,10 @@ object VectorFields {
     }
 
     fun draw(vectorField: Map<Coords, Complex>) {
+        if (World.isReady) return
         World.bgCtx().clearRect(0.0, 0.0, Dim.width.toDouble(), Dim.height.toDouble())
-        val w = PathUtil.RESOLUTION - 1
-        val h = PathUtil.RESOLUTION - 1
+        val w = PathUtil.res - 1
+        val h = PathUtil.res - 1
         vectorField.forEach {
             fun isWalkable() = World.grid[it.key]?.isPassable ?: false
             if (Styles.isDrawObstructedVectors || isWalkable()) {
@@ -54,7 +55,7 @@ object VectorFields {
     }
 
     private fun getOrCreateVectorImageData(w: Int, h: Int, complex: Complex): ImageData {
-        val center = PathUtil.RESOLUTION / 2
+        val center = PathUtil.res / 2
         val scaled = Complex.fromMagnitudeAndPhase(complex.magnitude * center, complex.phase)
         val line = createLine(center, scaled)
         val maybeImage = VECTORS[line]

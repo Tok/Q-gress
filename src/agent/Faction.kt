@@ -7,6 +7,9 @@ enum class Faction(val abbr: String, val nickName: String, val color: String, va
     ENL("ENL", "Frog", "#03DC03", "rgba(3, 220, 3, "),
     RES("RES", "Smurf", "#0088FF", "rgba(0, 136, 255, ");
 
+    fun isEnemy(faction: Faction): Boolean = (faction == ENL && this == RES) ||
+            (faction == RES && this == ENL)
+
     companion object {
         fun all() = listOf(ENL, RES)
         fun createRandom() = if (Util.random() < 0.5) ENL else RES

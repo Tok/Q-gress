@@ -20,6 +20,7 @@ import util.data.Circle
 import util.data.Coords
 import util.data.Line
 import kotlin.browser.document
+import kotlin.dom.clear
 import kotlin.math.PI
 
 object DrawUtil {
@@ -171,7 +172,9 @@ object DrawUtil {
                     val pos = PathUtil.shadowPosToPos(it.key)
                     val cell = it.value
                     bgCtx().fillStyle = cell.getColor()
-                    bgCtx().fillRect(pos.xx() + 1, pos.yy() + 1, PathUtil.RESOLUTION.toDouble() - 1, PathUtil.RESOLUTION.toDouble() - 1)
+                    val w = PathUtil.res.toDouble() - 1
+                    val h = w
+                    bgCtx().fillRect(pos.xx() + 1, pos.yy() + 1, w, h)
                     bgCtx().fill()
                 }
             }

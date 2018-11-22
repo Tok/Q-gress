@@ -18,21 +18,20 @@ Q-Gress was never tested on Mobile and is exclusively designed for desktop brows
     * Move to next agent
     * Move to group of agents
     * Move to random agent
-  * ~~Fix attacking~~
-  * ~~Improve deployment~~
-  * Allow more link variability
+  * Fix attacking
+  * Improve deployment
 - Implement inventory limit
 - More Items
-  * Power Cubes
+  * ~~Power Cubes~~
 - Map
-  * Implement location changing
-  * Dropdown with predefined scenarios or maps
+  * ~~Implement location changing~~
+  * ~~Dropdown with predefined scenarios or maps~~
 - UI
-  * Add Sliders to control the Q-values (defined in Agent.kt)
+  * ~~Add Sliders to control the Q-values (defined in Agent.kt)~~
 
 ### Medium Priority
 - Improve agent characteristics
-  * action preferences
+  * ~~action preferences~~
   * tendency to randomly create long links
   * deployment skills
     * tendency to move in good range
@@ -41,7 +40,7 @@ Q-Gress was never tested on Mobile and is exclusively designed for desktop brows
 - Implement glyphing
 - Improved controls
 - UI
-  * Calculate and display cycles
+  * ~~Calculate and display cycles~~
 
 ### Low Priority
 - ~~Agent level up~~

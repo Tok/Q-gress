@@ -139,6 +139,9 @@ body {
     margin-left: 5px;
     font-family: "Coda", "Lucida Console";
 }
+.buttonDiv {
+    height: 100px;
+}
 .select {
     height: 21px;
     margin-top: 5px;
@@ -179,12 +182,6 @@ body {
     margin-bottom: 8px;
     color: #ffffff;
     text-shadow: -1px 0px black, 0px 1px black, 1px 0px black, 0px -1px black;
-}
-.volumeSlider {
-    width: 233px !important;
-}
-.volumeSlider:hover {
-    opacity: 1;
 }
 .volumeSlider::-webkit-slider-thumb {
     -webkit-appearance: none;
@@ -248,59 +245,6 @@ body {
 }
 .floatRight {
     float: right;
-}
-.frogSlider { }
-.frogSlider::-moz-range-thumb {
-    width: 21px;
-    height: 21px;
-    border-radius: 62%;
-    background: #03dc03;
-    cursor: pointer;
-}
-.frogSlider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 21px;
-    height: 21px;
-    border-radius: 62%;
-    background: #03dc03;
-    cursor: pointer;
-}
-
-.smurfSlider { }
-.smurfSlider::-moz-range-thumb {
-    width: 21px;
-    height: 21px;
-    border-radius: 62%;
-    background: #0088ff;
-    cursor: pointer;
-}
-.smurfSlider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 21px;
-    height: 21px;
-    border-radius: 62%;
-    background: #0088ff;
-    cursor: pointer;
-}
-
-.speedSlider { }
-.speedSlider::-moz-range-thumb {
-    width: 21px;
-    height: 21px;
-    border-radius: 62%;
-    background: #777777;
-    cursor: pointer;
-}
-.speedSlider::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 21px;
-    height: 21px;
-    border-radius: 62%;
-    background: #777777;
-    cursor: pointer;
 }
 #pauseButton {
     width: 55px;

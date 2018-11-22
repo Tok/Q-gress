@@ -416,7 +416,9 @@ data class Portal constructor(val name: String, val location: Coords,
         }
     }
 
-    fun decayResonators(): Unit = getAllResos().forEach { it.decay() }
+    fun decay() {
+        getAllResos().forEach { it.decay() }
+    }
 
     fun drawResonators(ctx: Ctx) {
         fun drawResoLine(line: Line, levelColor: String, factionColor: String, lineWidth: Double, alpha: Double = 1.0) {

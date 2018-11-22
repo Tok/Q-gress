@@ -23,9 +23,11 @@ enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>, var image: Canvas
         private const val durationH = 175
         private const val numberOfCheckpoints = 35
         private val ticksPerCheckpoint = Time.secondsToTicks(300) //TODO tune
-        private fun isNew(tick: Int) = tick % ticksPerCheckpoint == 0
+        private val ticksPerCycle = Time.secondsToTicks(1800) //TODO tune
+        private fun isNewCheckpoint(tick: Int) = tick % ticksPerCheckpoint == 0
+        private fun isNewCycle(tick: Int) = tick % ticksPerCycle == 0
         fun updateCheckpoints(tick: Int, enlMu: Int, resMu: Int) {
-            if (isNew(tick)) {
+            if (isNewCheckpoint(tick)) {
                 val cp = Checkpoint(enlMu, resMu)
                 val limit = numberOfCheckpoints - 1
                 val old = INSTANCE.checkpoints.toList().sortedBy { tick }.takeLast(limit)
@@ -34,10 +36,14 @@ enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>, var image: Canvas
                 INSTANCE.checkpoints[tick] = cp
                 SoundUtil.playCheckpointSound(cp)
                 INSTANCE.image = createImage()
+            }
+            if (isNewCycle(tick)) {
                 spawnXm()
+                World.allPortals.forEach { it.decay() }
             }
         }
 
+        private const val npcXmSpawnRatio = 0.05
         private fun spawnXm() {
             World.allPortals.map { it.leakXm() }
                     .flatMap { (pos, xm) ->
@@ -45,13 +51,12 @@ enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>, var image: Canvas
                         (0..heapCount).map {
                             pos.randomNearPoint(Dim.portalXmSpawnRadius)
                         }
-                    }.forEach {
-                        XmMap.createStrayXm(it)
-                    }
+                    }.forEach { XmMap.createStrayXm(it) }
 
-            World.allNonFaction.map {
-                XmMap.createStrayXm(it.pos.randomNearPoint(Dim.npcXmSpawnRadius))
-            }
+            World.allNonFaction.filterNot { it.pos.isOffScreen() }
+                    .shuffled()
+                    .take((World.allNonFaction.size * npcXmSpawnRatio).toInt())
+                    .map { XmMap.createStrayXm(it.pos.randomNearPoint(Dim.npcXmSpawnRadius)) }
         }
 
         private fun createImage(): Canvas {

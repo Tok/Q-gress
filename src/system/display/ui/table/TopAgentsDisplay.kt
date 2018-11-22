@@ -107,11 +107,11 @@ object TopAgentsDisplay : UiTable() {
             offset += 30
 
             strokeTableHeaderText(headerPos, offset, "Action")
-            val iconRadius = Dim.agentRadius.toInt()
-            val actionIconPos = Coords(pos.x + offset - iconRadius, pos.y - iconRadius)
+            val iconRadius = Dim.agentRadius
+            val actionIconPos = Coords(pos.x + offset - iconRadius, pos.y - iconRadius - 2)
             addIcon(actionIconPos, agent.action.item)
-            strokeTableText(pos, offset + (iconRadius * 2) + 5, agent.action.toString())
-            offset += 64
+            strokeTableText(pos, offset + (iconRadius * 2) + 7, agent.action.toString())
+            offset += 70
 
             strokeTableHeaderText(headerPos, offset, "Portal")
             strokeTableText(pos, offset, agent.actionPortal.name)

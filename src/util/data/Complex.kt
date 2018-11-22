@@ -1,5 +1,7 @@
 package util.data
 
+import config.Constants
+import util.Util
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.sin
@@ -60,5 +62,10 @@ data class Complex(val re: Float, val im: Float = 0F) {
         fun valueOf(magnitude: Float, phase: Double) = fromMagnitudeAndPhase(magnitude, phase)
         fun fromMagnitudeAndPhase(magnitude: Float, phase: Double) =
                 Complex(magnitude * cos(phase).toFloat(), magnitude * sin(phase).toFloat())
+        fun random(): Complex {
+            val mag = Util.random().toFloat()
+            val phase = Constants.tau * Util.random()
+            return Complex.fromMagnitudeAndPhase(mag, phase)
+        }
     }
 }

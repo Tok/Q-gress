@@ -1,12 +1,11 @@
 package util
 
 import World
+import config.Constants
 import portal.Portal
+import util.data.Complex
 import util.data.Coords
-import kotlin.math.PI
-import kotlin.math.floor
-import kotlin.math.max
-import kotlin.math.min
+import kotlin.math.*
 
 object Util {
     private fun findNearestPortals(coords: Coords): Set<Pair<Double, Portal>> {
@@ -20,10 +19,12 @@ object Util {
 
     fun clip(value: Int, from: Int, to: Int): Int = max(from, min(to, value))
     fun clipDouble(value: Double, from: Double, to: Double): Double = max(from, min(to, value))
+    fun clipFloat(value: Float, from: Float, to: Float): Float = max(from, min(to, value))
 
     fun random(): Double = js("Math.random();") as Double //native JS replacement for deprecated kotlin.js.Math.random()
 
     fun randomBool() = random() <= 0.5
+
     private fun randomDouble(max: Double) = random() * max
     fun randomInt(max: Int) = randomInt(0, max)
     fun randomInt(min: Int, max: Int): Int {

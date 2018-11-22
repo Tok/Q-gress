@@ -11,11 +11,12 @@ import kotlin.math.max
 object PathUtil {
     const val MIN_HEAT = 35
     const val MAX_HEAT = 100
-    const val RESOLUTION = 12
-    fun w() = Dim.width / RESOLUTION
-    fun h() = Dim.height / RESOLUTION
-    fun posToShadowPos(pos: Coords) = Coords(pos.x / RESOLUTION, pos.y / RESOLUTION)
-    fun shadowPosToPos(pos: Coords) = Coords(pos.x * RESOLUTION, pos.y * RESOLUTION)
+    const val res = Config.pathResolution
+
+    fun w() = Dim.width / res
+    fun h() = Dim.height / res
+    fun posToShadowPos(pos: Coords) = Coords(pos.x / res, pos.y / res)
+    fun shadowPosToPos(pos: Coords) = Coords(pos.x * res, pos.y * res)
 
     private fun calcPosCost(pos: Coords, heat: Int) =
             heat + (World.grid[pos]?.movementPenalty ?: MAX_HEAT)

@@ -1,6 +1,7 @@
 import agent.Agent
 import agent.Faction
 import agent.NonFaction
+import config.Config
 import config.Dim
 import org.khronos.webgl.Uint8Array
 import org.khronos.webgl.get
@@ -48,9 +49,9 @@ object World {
     var mousePos: Coords? = null
 
     fun w() = can.width
-    fun shadowW() = w() / PathUtil.RESOLUTION
+    fun shadowW() = w() / PathUtil.res
     fun h() = can.height
-    fun shadowH() = h() / PathUtil.RESOLUTION
+    fun shadowH() = h() / PathUtil.res
     fun diagonalLength() = sqrt((can.width * can.width).toDouble() + (can.height * can.height)).toInt()
     fun totalArea() = can.width * can.height
 
@@ -63,14 +64,15 @@ object World {
     private fun wellPassableCells(): Map<Coords, Cell> = grid.filter { it.value.isPassableInAllDirections() }
     private fun passableOnScreen(): Map<Coords, Cell> = wellPassableCells().filterNot { it.key.isOffGrid() }
     fun passableInActionArea(): Map<Coords, Cell> = passableOnScreen()
-            .filterNot { it.key.y * PathUtil.RESOLUTION < HtmlUtil.topActionOffset() }
-            .filterNot { it.key.y * PathUtil.RESOLUTION > (window.innerHeight - Dim.botActionOffset) }
+            .filterNot { it.key.y * PathUtil.res < HtmlUtil.topActionOffset() }
+            .filterNot { it.key.y * PathUtil.res > (window.innerHeight - Dim.botActionOffset) }
 
-    val frogs: MutableSet<Agent> = mutableSetOf()
-    val smurfs: MutableSet<Agent> = mutableSetOf()
     val allAgents: MutableSet<Agent> = mutableSetOf()
+    val frogs = allAgents.filter { it.faction == Faction.ENL }.toSet()
+    val smurfs = allAgents.filter { it.faction == Faction.RES }.toSet()
     fun countAgents() = allAgents.count()
     fun countAgents(fact: Faction) = allAgents.count { it.faction == fact }
+    fun canRecruitMore(fact: Faction) = countAgents(fact) < Config.maxFrogs
 
     val allNonFaction: MutableSet<NonFaction> = mutableSetOf()
     fun countNonFaction() = allNonFaction.count()

@@ -27,7 +27,7 @@ abstract class Loading {
             val npcH = 8.0
             clearUiLine(vecY - vecH - 1, vecH + npcH + 2)
             VectorBar.draw(vecX, vecY, vecH, vecCount, vecTot)
-            NpcBar.draw(vecX, npcY, npcH, World.countNonFaction(), Config.startNonFaction)
+            NpcBar.draw(vecX, npcY, npcH, World.countNonFaction(), Config.maxNonFaction)
         }
     }
 }

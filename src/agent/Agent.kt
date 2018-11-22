@@ -5,10 +5,10 @@ import Ctx
 import World
 import agent.action.Action
 import agent.action.ActionItem
-import agent.qvalue.QActions
+import agent.action.ActionSelector
 import agent.qvalue.QDestinations
-import agent.qvalue.QValue
 import config.Colors
+import config.Config
 import config.Dim
 import config.Styles
 import items.PowerCube
@@ -16,17 +16,16 @@ import items.QgressItem
 import items.deployable.Resonator
 import items.level.ResonatorLevel
 import items.level.XmpLevel
-import org.w3c.dom.HTMLInputElement
 import portal.Link
 import portal.Portal
 import portal.XmMap
+import system.Com
 import system.Queues
 import util.DrawUtil
 import util.PathUtil
 import util.SoundUtil
 import util.Util
 import util.data.*
-import kotlin.browser.window
 import kotlin.math.max
 import kotlin.math.min
 
@@ -47,12 +46,12 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
     private fun lineToDestination() = Line(pos, destination)
 
     fun getLevel(): Int = getLevel(this.ap)
-    private fun xmCapacity(): Int = xmCapacity(getLevel())
+    fun xmCapacity(): Int = xmCapacity(getLevel())
 
     private fun calcAbsXmBar() = min(xmCapacity(), max(0, xm))
     private fun xmBarPercent() = calcAbsXmBar() * 100 / xmCapacity()
     private fun isXmBarEmpty() = xmBarPercent() == 0
-    private fun isXmFilled() = xmBarPercent() >= 80
+    fun isXmFilled() = xmBarPercent() >= 80
 
     fun removeXm(v: Int) {
         this.xm = Util.clip(xm - v, 0, xmCapacity())
@@ -62,9 +61,8 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         this.xm = Util.clip(xm + v, 0, xmCapacity())
     }
 
-    private val apFactor = 50
     fun addAp(v: Int) {
-        this.ap += v * apFactor
+        this.ap += v * Config.apMultiplier
     }
 
     private fun isFastAction(): Boolean = action.item == ActionItem.MOVE || (action.item == ActionItem.ATTACK && !isAtActionPortal())
@@ -75,88 +73,27 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
             isBusy() -> this
             isFastAction() -> moveCloserToDestinationPortal()
             isMoveInRange() -> moveCloserInRange()
-            else -> doSomething()
+            else -> ActionSelector.doSomething(this)
         }
         next.collectXm()
         return next
     }
 
-    private fun doSomething(): Agent {
-        val portalFaction = actionPortal.owner?.faction
-        return when {
-            !isAtActionPortal() -> doAnywhereAction()
-            portalFaction == null -> doNeutralPortalAction()
-            portalFaction == this.faction -> doFriendlyPortalAction()
-            else -> doEnemyPortalAction()
-        }
-    }
-
-    private fun isHackPossible() = actionPortal.canHack(this)
-    private fun isDeploymentPossible() = !actionPortal.isEnemyOf(this)
+    fun isHackPossible() = actionPortal.canHack(this)
+    fun isDeploymentPossible() = !actionPortal.isEnemyOf(this)
             && actionPortal.findAllowedResoLevels(this).map { it.value }.sum() > 0
 
-    private fun q(value: QValue): Double {
-        val id = value.id + "Slider" + faction.nickName
-        val slider = window.document.getElementById(id) as HTMLInputElement
-        return slider.valueAsNumber * value.weight
-    }
-
-    private fun actionsForAnywhere(): List<Pair<Double, () -> Agent>> {
-        val moveElsewhereQ = q(QActions.MOVE_ELSEWHERE)
-        val recycleQ = if (xm < xmCapacity() / 10) q(QActions.RECYCLE) else -1.0
-        val rechargeQ = if (isXmFilled()) q(QActions.RECHARGE) else -1.0
-        return listOf(
-                moveElsewhereQ to { moveElsewhere() },
-                recycleQ to { recycleItems() },
-                rechargeQ to { rechargePortal() }
-        )
-    }
-
-    private fun actionsForPortals(): List<Pair<Double, () -> Agent>> {
-        val basicValues = actionsForAnywhere()
-        val hackQ = if (isHackPossible()) q(QActions.HACK) else -1.0
-        return basicValues + listOf(hackQ to { hackActionPortal() })
-    }
-
-    private fun actionsForNeutralPortals(): List<Pair<Double, () -> Agent>> {
-        val basicValues = actionsForPortals()
-        val captureQ = q(QActions.DEPLOY)
-        return basicValues + listOf(captureQ to { deployPortal() })
-    }
-
-    private fun actionsForFriendlyPortals(): List<Pair<Double, () -> Agent>> {
-        val basicValues = actionsForPortals()
-        val deployQ = if (isDeploymentPossible()) q(QActions.DEPLOY) else -1.0
-        val linkQ = if (isLinkPossible()) q(QActions.LINK) else -1.0
-        return basicValues + listOf(
-                deployQ to { deployPortal() },
-                linkQ to { createLink() }
-        )
-    }
-
-    private fun actionsForEnemyPortals(): List<Pair<Double, () -> Agent>> {
-        val basicValues = actionsForPortals()
-        val attackQ = q(QActions.ATTACK)
-        return basicValues + listOf(attackQ to { attackPortal() })
-    }
-
-    private val defaultAction = { doNothing() }
-    private fun doAnywhereAction(): Agent = Util.select(actionsForAnywhere(), defaultAction).invoke()
-    private fun doNeutralPortalAction(): Agent = Util.select(actionsForNeutralPortals(), defaultAction).invoke()
-    private fun doFriendlyPortalAction(): Agent = Util.select(actionsForFriendlyPortals(), defaultAction).invoke()
-    private fun doEnemyPortalAction(): Agent = Util.select(actionsForEnemyPortals(), defaultAction).invoke()
-
-    private fun moveElsewhere(): Agent {
+    fun moveElsewhere(): Agent {
         val agent = this
         val hasEnemyPortals = MovementUtil.hasEnemyPortals(agent)
         with(QDestinations) {
-            val randomQ = q(MOVE_TO_RANDOM)
-            val nearQ = q(MOVE_TO_NEAR)
-            val uncapturedQ = if (MovementUtil.hasUncapturedPortals()) q(MOVE_TO_UNCAPTURED) else -1.0
-            val friendlyQ = if (MovementUtil.hasFriendlyPortals(agent)) q(MOVE_TO_MOST_FRIENDLY) else -1.0
-            val nearEnemyQ = if (hasXmps() && hasEnemyPortals) q(MOVE_TO_NEAR_ENEMY) else -1.0
-            val weakEnemyQ = if (hasXmps() && hasEnemyPortals) q(MOVE_TO_WEAK_ENEMY) else -1.0
-            val strongEnemyQ = if (hasXmps() && hasEnemyPortals) q(MOVE_TO_STRONG_ENEMY) else -1.0
+            val randomQ = ActionSelector.q(faction, MOVE_TO_RANDOM)
+            val nearQ = ActionSelector.q(faction, MOVE_TO_NEAR)
+            val uncapturedQ = if (MovementUtil.hasUncapturedPortals()) ActionSelector.q(faction, MOVE_TO_UNCAPTURED) else -1.0
+            val friendlyQ = if (MovementUtil.hasFriendlyPortals(agent)) ActionSelector.q(faction, MOVE_TO_MOST_FRIENDLY) else -1.0
+            val nearEnemyQ = if (hasXmps() && hasEnemyPortals) ActionSelector.q(faction, MOVE_TO_NEAR_ENEMY) else -1.0
+            val weakEnemyQ = if (hasXmps() && hasEnemyPortals) ActionSelector.q(faction, MOVE_TO_WEAK_ENEMY) else -1.0
+            val strongEnemyQ = if (hasXmps() && hasEnemyPortals) ActionSelector.q(faction, MOVE_TO_STRONG_ENEMY) else -1.0
             val qValues = listOf(
                     randomQ to { MovementUtil.moveToRandomPortal(agent) },
                     nearQ to { MovementUtil.moveToNearestPortal(agent) },
@@ -189,10 +126,11 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
     private fun hasXmps() = inventory.findXmps().isNotEmpty()
 
     private fun isArrived() = distanceToDestination() <= skills.inRangeSpeed()
-    private fun moveCloserInRange(): Agent {
-        val part = skills.inRangeSpeed() / distanceToDestination()
-        val rawDiffX = (pos.xDiff(destination) * part).toInt()
-        val rawDiffY = (pos.yDiff(destination) * part).toInt()
+    private fun moveCloserInRange(): Agent = moveCloserTo(destination)
+    private fun moveCloserTo(dest: Coords): Agent {
+        val part = skills.inRangeSpeed() / pos.distanceTo(dest)
+        val rawDiffX = (pos.xDiff(dest) * part).toInt()
+        val rawDiffY = (pos.yDiff(dest) * part).toInt()
         val rawNextX = pos.x - rawDiffX
         val rawNextY = pos.y - rawDiffY
         return this.copy(pos = Coords(rawNextX, rawNextY))
@@ -201,13 +139,14 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
     private fun collectXm() {
         val heaps = XmMap.findXmInRange(pos)
         heaps.forEach { heap ->
-            if (xm >= xmCapacity())
-            addXm(heap.value.xm)
-            heap.value.collect()
+            if (xm < xmCapacity()) {
+                addXm(heap.value.xm)
+                heap.value.collect()
+            }
         }
     }
 
-    private fun rechargePortal(): Agent {
+    fun rechargePortal(): Agent {
         if (!hasKeys()) {
             return this
         }
@@ -223,7 +162,25 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         return this
     }
 
-    private fun recycleItems(): Agent {
+    fun recruitNewAgents(): Agent {
+        if (action.item != ActionItem.RECRUIT) {
+            this.action.start(ActionItem.RECRUIT)
+            if (Util.random() < NonFaction.changeToBeRecruited) {
+                val npc = NonFaction.findNearestTo(pos)
+                World.allNonFaction.remove(npc)
+                val newAgent = when (faction) {
+                    Faction.ENL -> Agent.createFrog(World.grid)
+                    Faction.RES -> Agent.createSmurf(World.grid)
+                    else -> throw IllegalStateException("$this is $faction NPC.")
+                }
+                Com.addMessage("$newAgent has completed the tutorial.")
+                World.allAgents.add(newAgent)
+            }
+        }
+        return this
+    }
+
+    fun recycleItems(): Agent {
         //TODO improve
         val cubes: List<PowerCube> = inventory.findPowerCubes()
         if (cubes.isNotEmpty()) {
@@ -234,7 +191,7 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         return this
     }
 
-    private fun attackPortal(): Agent {
+    fun attackPortal(): Agent {
         fun findExactDestination(): Coords {
             if (actionPortal.calcHealth() > 0.5) {
                 return actionPortal.location
@@ -281,7 +238,7 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         }
     }
 
-    private fun deployPortal(): Agent {
+    fun deployPortal(): Agent {
         fun findExactDestination(): Coords {
             val distance = skills.deployPrecision * Dim.maxDeploymentRange
             return actionPortal.findRandomPointNearPortal(distance.toInt())
@@ -329,7 +286,7 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         return doDeploy()
     }
 
-    private fun doNothing(): Agent {
+    fun doNothing(): Agent {
         action.start(ActionItem.WAIT)
         return this
     }
@@ -337,7 +294,7 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
     fun keySet() = inventory.findUniqueKeys()
     fun hasKeys() = keySet() != null && keySet()!!.isNotEmpty()
 
-    private fun isLinkPossible(): Boolean {
+    fun isLinkPossible(): Boolean {
         if (!actionPortal.canLinkOut(this)) {
             return false
         }
@@ -357,7 +314,7 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         return false
     }
 
-    private fun createLink(): Agent {
+    fun createLink(): Agent {
         if (!actionPortal.canLinkOut(this)) {
             return doNothing()
         }
@@ -383,7 +340,7 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         return this
     }
 
-    private fun hackActionPortal(): Agent {
+    fun hackActionPortal(): Agent {
         if (isAtActionPortal() && actionPortal.canHack(this)) {
             val hackResult = actionPortal.tryHack(this)
             SoundUtil.playHackingSound(actionPortal.location)
@@ -490,8 +447,8 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         private val xmBarImages = Faction.values().flatMap { fac ->
             (0..100).map {
                 val lw = Dim.agentLineWidth
-                val r = Dim.agentRadius.toInt()
-                val w = (r * 2) + (2 * lw)
+                val r = Dim.agentRadius
+                val w = (r + lw) * 2
                 xmKey(fac, it) to DrawUtil.renderBarImage(fac.color, it, 3, w, lw)
             }
         }.toMap()

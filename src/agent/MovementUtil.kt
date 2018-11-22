@@ -7,6 +7,7 @@ import items.level.PortalLevel
 import portal.Portal
 import util.Util
 import util.data.Complex
+import kotlin.math.min
 
 object MovementUtil {
     fun findUncapturedPortals() = World.allPortals.filter { it.isUncaptured() }
@@ -42,9 +43,10 @@ object MovementUtil {
 
     /* Enemy Portals */
     fun attackClosePortal(a: Agent) = goAttack(a, findEnemyPortals(a).sortedBy { a.distanceToPortal(it) }.firstOrNull())
+
     fun attackMostLinkedPortal(a: Agent) = goAttack(a, findEnemyPortals(a).sortedBy { it.links.size }.firstOrNull())
     fun attackMostVulnerablePortal(a: Agent) = goAttack(a, findEnemyPortals(a).sortedBy { -it.calcHealth() }.firstOrNull())
-    private fun goAttack(agent: Agent, target: Portal?): Agent  {
+    private fun goAttack(agent: Agent, target: Portal?): Agent {
         return if (target != null) {
             goToDestinationPortal(agent, target)
         } else {
@@ -73,12 +75,20 @@ object MovementUtil {
         return agent.copy(actionPortal = destination, destination = nextDest)
     }
 
-    fun move(vector: Complex, force: Complex?, speed: Float): Complex {
-        return if (force != null) {
-            val sum = vector + vector + vector + force + force
-            return sum.copyWithNewMagnitude(speed)
+    fun move(velocity: Complex, force: Complex?, speed: Float): Complex {
+        if (Util.random() > 0.2) { //TODO tune
+            return velocity
+        }
+        return if (force != null && force != Complex.ZERO) {
+            val sum = velocity + force
+            val newMag = min(sum.mag, speed)
+            return sum.copyWithNewMagnitude(newMag)
         } else {
-            vector
+            if (velocity != Complex.ZERO) {
+                velocity
+            } else {
+                Complex.random()
+            }
         }
     }
 }

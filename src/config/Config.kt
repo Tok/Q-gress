@@ -1,21 +1,37 @@
 package config
 
-object Config {
-    val startPortals = 13
-    val startFrogs = 34
-    val startSmurfs = 34
+import agent.Faction
+import util.HtmlUtil
 
-    val maxFrogs = 144
-    val maxSmurfs = 144
-    val startNonFaction = 377
+object Config {
+    val startPortals = if (HtmlUtil.isLocal()) 8 else 8
+    val startFrogs = if (HtmlUtil.isLocal()) 4 else 4
+    val startSmurfs = if (HtmlUtil.isLocal()) 4 else 4
+
+    val maxFrogs = 100
+    val maxSmurfs = 100
+    val maxNonFaction = maxFrogs + maxSmurfs
+    fun maxFor(faction: Faction) = when (faction) {
+        Faction.ENL -> maxFrogs
+        Faction.RES -> maxSmurfs
+        else -> maxNonFaction
+    }
+
+    const val apMultiplier = 10
 
     val isNpcSwarming = true
 
+    val isSoundOn = true
+    val isSatOn = false
+
     val isAutostart = true
     val isHighlighActionLimit = true
-    val vectorSmoothCount = 3
+    val vectorSmoothCount = 8
     val shadowBlurCount = 3
 
     val comMessageLimit = 8
     val topAgentsMessageLimit = 8
+
+
+    const val pathResolution = 10
 }
