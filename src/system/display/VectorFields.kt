@@ -92,7 +92,7 @@ object VectorFields {
                 Styles.VectorStyle.CIRCLE -> drawCircle(ctx, w / 2.0)
                 Styles.VectorStyle.SQUARE -> drawSquare(ctx, w, h)
             }
-            val lineWidth = 2.0
+            val lineWidth = 1.0
             DrawUtil.drawLine(ctx, line, stroke(complex), lineWidth)
         })
     }
