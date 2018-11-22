@@ -11,6 +11,7 @@ import org.w3c.dom.ImageData
 import portal.Portal
 import system.display.loading.Loading
 import system.display.loading.LoadingText
+import system.display.ui.ActionLimitsDisplay
 import util.HtmlUtil
 import util.PathUtil
 import util.data.Cell
@@ -63,9 +64,9 @@ object World {
     fun passableCells(): Map<Coords, Cell> = grid.filter { it.value.isPassable }
     private fun wellPassableCells(): Map<Coords, Cell> = grid.filter { it.value.isPassableInAllDirections() }
     private fun passableOnScreen(): Map<Coords, Cell> = wellPassableCells().filterNot { it.key.isOffGrid() }
+
     fun passableInActionArea(): Map<Coords, Cell> = passableOnScreen()
-            .filterNot { it.key.y * PathUtil.res < HtmlUtil.topActionOffset() }
-            .filterNot { it.key.y * PathUtil.res > (window.innerHeight - Dim.botActionOffset) }
+            .filter { ActionLimitsDisplay.isNotBlocked(PathUtil.shadowPosToPos(it.key)) }
 
     val allAgents: MutableSet<Agent> = mutableSetOf()
     val frogs = allAgents.filter { it.faction == Faction.ENL }.toSet()

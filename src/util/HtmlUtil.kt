@@ -294,7 +294,7 @@ object HtmlUtil {
         return Coords(x.toInt(), y.toInt())
     }
 
-    fun topActionOffset(): Int = document.getElementById("top-controls")?.clientHeight ?: 82
+    fun topActionOffset(): Int = document.getElementById("top-controls")?.clientHeight ?: 100
     fun leftSliderHeight(): Int = document.getElementById("left-sliders")?.clientHeight ?: 144
     fun leftSliderWidth(): Int = document.getElementById("left-sliders")?.clientWidth ?: 370
     fun rightSliderHeight(): Int = document.getElementById("right-sliders")?.clientHeight ?: 144

@@ -36,8 +36,8 @@ object DrawUtil {
             allNonFaction.forEach { it.draw(ctx()) }
             allFields().forEach { it.draw(ctx()) }
             allLinks().forEach { it.draw(ctx()) }
-            allPortals.forEach { it.drawCenter(ctx()) }
             allAgents.forEach { it.draw(ctx()) }
+            allPortals.forEach { it.drawCenter(ctx()) }
             Attacks.draw()
             if (Styles.isDrawPortalNames) {
                 allPortals.forEach { it.drawName(ctx()) }
@@ -90,7 +90,7 @@ object DrawUtil {
     private fun highlightMouse(pos: Coords) {
         when {
             World.shadowStreetMap == null -> return
-            ActionLimitsDisplay.isInLimit(pos) -> return
+            ActionLimitsDisplay.isBlocked(pos) -> return
         }
         val ctx = World.uiCtx()
         val r = Dim.maxDeploymentRange * Constants.phi
