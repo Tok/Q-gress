@@ -266,7 +266,7 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
                             val deployable = actionPortal.resoSlots.filter { it.value.resonator?.level?.level ?: 0 < reso.level.level }.toList()
                             if (!deployable.isEmpty()) {
                                 val deployMap = Util.shuffle(deployable).zip(resos).map { it.first.first to it.second }.toMap()
-                                val distance = distanceToPortal(actionPortal)
+                                val distance = max(distanceToPortal(actionPortal), Dim.minDeploymentRange)
                                 actionPortal.deploy(this, deployMap, distance.toInt())
                                 SoundUtil.playDeploySound(actionPortal.location, distance.toInt())
                                 //return this.copy(action = Action.start(ActionItem.DEPLOY, World.tick))
