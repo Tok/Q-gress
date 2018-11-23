@@ -110,7 +110,6 @@ data class NonFaction(var pos: Coords, val speed: Float, val size: AgentSize,
 
     companion object {
         val changeToBeRecruited = 0.05
-        val useOffscreenEdgeDestinations = true //TODO
         private val OFFSCREEN_DISTANCE = PathUtil.res * (MapUtil.OFFSCREEN_CELL_ROWS / 2)
         private val DESTINATIONS = listOf(
                 //NORTH
@@ -132,7 +131,7 @@ data class NonFaction(var pos: Coords, val speed: Float, val size: AgentSize,
                 Coords(-OFFSCREEN_DISTANCE, World.h() + OFFSCREEN_DISTANCE),
                 Coords(World.w() + OFFSCREEN_DISTANCE, World.h() + OFFSCREEN_DISTANCE)
         )
-        val OFFSCREEN = DESTINATIONS + (if (useOffscreenEdgeDestinations) OFFSCREEN_EDGES else emptyList())
+        val OFFSCREEN = DESTINATIONS + (if (Config.useOffscreenEdgeDestinations) OFFSCREEN_EDGES else emptyList())
         fun prepareOffscreenLocations() = OFFSCREEN.forEach {
             NonFaction.getOrCreateVectorField(it)
         }

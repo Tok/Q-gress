@@ -270,7 +270,6 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
                                 actionPortal.deploy(this, deployMap, distance.toInt())
                                 SoundUtil.playDeploySound(actionPortal.location, distance.toInt())
                                 //return this.copy(action = Action.start(ActionItem.DEPLOY, World.tick))
-
                             }
                         }
                     }

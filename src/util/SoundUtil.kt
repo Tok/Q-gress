@@ -63,6 +63,14 @@ object SoundUtil {
         playSound(oscNode, createStaticPan(pan), 0.5, duration)
     }
 
+    fun playCycleSound() {
+        if (isMuted()) return
+        val duration = 0.01
+        val pan = 0.5
+        val oscNode = createLinearRampOscillator(OscillatorType.SINE, 220.0, 220.0, duration)
+        playSound(oscNode, createStaticPan(pan), 0.5, duration)
+    }
+
     fun playNpcCreationSound(npc: NonFaction) {
         if (isMuted()) return
         val duration = 0.02

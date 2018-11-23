@@ -32,6 +32,9 @@ object Config {
     val comMessageLimit = 8
     val topAgentsMessageLimit = 8
 
+    val ticksPerCheckpoint = Time.secondsToTicks(300)
+    val ticksPerCycle = Time.secondsToTicks(1800)
 
     const val pathResolution = 10
+    const val useOffscreenEdgeDestinations = false
 }

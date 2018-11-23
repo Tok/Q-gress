@@ -4,6 +4,8 @@ import Canvas
 import Ctx
 import World
 import agent.Faction
+import config.Colors
+import config.Config
 import config.Dim
 import config.Time
 import org.w3c.dom.CanvasRenderingContext2D
@@ -19,27 +21,25 @@ enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>, var image: Canvas
     INSTANCE(mutableMapOf(), null);
 
     companion object {
-        private const val xmPerCycle = 100 //FIXME tune
-        private const val durationH = 175
         private const val numberOfCheckpoints = 35
-        private val ticksPerCheckpoint = Time.secondsToTicks(300) //TODO tune
-        private val ticksPerCycle = Time.secondsToTicks(1800) //TODO tune
-        private fun isNewCheckpoint(tick: Int) = tick % ticksPerCheckpoint == 0
-        private fun isNewCycle(tick: Int) = tick % ticksPerCycle == 0
+        private fun isNewCheckpoint(tick: Int) = tick % Config.ticksPerCheckpoint == 0
+        private fun isNewCycle(tick: Int) = tick % Config.ticksPerCycle == 0
         fun updateCheckpoints(tick: Int, enlMu: Int, resMu: Int) {
             if (isNewCheckpoint(tick)) {
-                val cp = Checkpoint(enlMu, resMu)
+                val cp = Checkpoint(enlMu, resMu, isNewCycle(tick))
                 val limit = numberOfCheckpoints - 1
                 val old = INSTANCE.checkpoints.toList().sortedBy { tick }.takeLast(limit)
                 INSTANCE.checkpoints.clear()
                 INSTANCE.checkpoints.putAll(old)
                 INSTANCE.checkpoints[tick] = cp
-                SoundUtil.playCheckpointSound(cp)
                 INSTANCE.image = createImage()
-            }
-            if (isNewCycle(tick)) {
-                spawnXm()
-                World.allPortals.forEach { it.decay() }
+                if (cp.isCycleEnd) {
+                    spawnXm()
+                    SoundUtil.playCycleSound()
+                    World.allPortals.forEach { it.decay() }
+                } else {
+                    SoundUtil.playCheckpointSound(cp)
+                }
             }
         }
 
@@ -59,38 +59,58 @@ enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>, var image: Canvas
                     .map { XmMap.createStrayXm(it.pos.randomNearPoint(Dim.npcXmSpawnRadius)) }
         }
 
+        val ww = 8
         private fun createImage(): Canvas {
-            val h = Dim.cycleH + 8
-            val w = 7 * Cycle.numberOfCheckpoints + 8
+            val off = 4
+            val h = Dim.cycleH + (2 * off)
+            val w = (ww * Cycle.numberOfCheckpoints) + (2 * off)
             val lineAlpha = 0.5
             val dotAlpha = 0.5
             val lineWidth = 1.0
             val r = 2.0
 
-            fun drawCheckpointDot(ctx: Ctx, pos: Coords, style: String) {
-                val circle = util.data.Circle(pos, r)
+            fun drawCheckpointDot(ctx: Ctx, pos: Coords, style: String, isCycleEnded: Boolean) {
+                val radius = if (isCycleEnded) r + 1 else r
+                val circle = util.data.Circle(pos, radius)
                 util.DrawUtil.drawCircle(ctx, circle, config.Colors.black, lineWidth, style, dotAlpha)
             }
 
             fun drawCheckpoint(ctx: CanvasRenderingContext2D, index: Int, withNext: Pair<Checkpoint, Checkpoint>, maxTotal: Int) {
                 fun calcY(mu: Int, maxTotal: Int) = Dim.cycleH - (mu * Dim.cycleH / maxTotal)
-                val ww = 7
                 val x = (index * ww)
                 Faction.all().forEach { faction ->
                     val y = calcY(withNext.first.mu(faction), maxTotal)
-                    val current = Coords(x, y + r.toInt())
+                    val current = Coords(x, y + r.toInt() + 2)
                     val nextY = calcY(withNext.second.mu(faction), maxTotal)
-                    val next = Coords(x + ww, nextY + r.toInt())
+                    val next = Coords(x + ww, nextY + r.toInt() + 2)
+                    val top = Coords(x + ww, 0)
+                    val bot = Coords(x + ww, h - 3)
+                    val lw = if (withNext.second.isCycleEnd) 2.0 else 0.3
+                    DrawUtil.drawLine(ctx, Line(top, bot), Colors.white, lw, 0.3)
                     if (index > 0) {
                         DrawUtil.drawLine(ctx, Line(current, next), faction.color, lineWidth, lineAlpha)
                     }
-                    drawCheckpointDot(ctx, next, faction.color)
+                    drawCheckpointDot(ctx, next, faction.color, withNext.second.isCycleEnd)
                 }
+            }
+
+            fun drawBackground(ctx: Ctx) {
+                    DrawUtil.drawRect(ctx, Coords(0, 0), -h.toDouble(), w.toDouble(),
+                            "#00000077", "#00000077", 0.0)
+            }
+
+            fun drawBaseLine(ctx: Ctx) {
+                val y = h - off
+                val from = Coords(off, y)
+                val to = Coords(w - off, y)
+                DrawUtil.drawLine(ctx, Line(from, to), Colors.white, 2.0, 0.3)
             }
 
             return HtmlUtil.preRender(w, h, fun(ctx: Ctx) {
                 val checkpoints = Cycle.INSTANCE.checkpoints
                 val maxTotal = checkpoints.values.maxBy { it.total() }?.total() ?: 0
+                drawBackground(ctx)
+                drawBaseLine(ctx)
                 checkpoints.values.zipWithNext().mapIndexed { i, pair ->
                     drawCheckpoint(ctx, i, pair, maxTotal)
                 }

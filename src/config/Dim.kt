@@ -43,9 +43,9 @@ object Dim {
     const val loadingBarLength = 377.0
     const val loadingFontSize = 21
 
-    val cycleRightOffset = 470
+    val cycleRightOffset = 510
     val cycleTopOffset = 3
-    val cycleH = 72
+    val cycleH = 86
 
     val topAgentsBottomOffset = 0
     val topAgentsLeftOffset = 210
