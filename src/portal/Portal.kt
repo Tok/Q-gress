@@ -337,7 +337,7 @@ data class Portal constructor(val name: String, val location: Coords,
         agent.inventory.consumeResos(resos.map { it.value })
     }
 
-    fun destroy(tick: Int) {
+    fun destroy(tick: Int, isRemovePortal: Boolean) {
         resoSlots.clear()
         links.clear()
         fields.clear()
@@ -365,7 +365,9 @@ data class Portal constructor(val name: String, val location: Coords,
                 agent.action.untilTick = tick + 1
             }
         }
-        World.allPortals.remove(this)
+        if (isRemovePortal) {
+            World.allPortals.remove(this)
+        }
     }
 
     fun removeReso(octant: Octant, agent: Agent?) {
@@ -390,7 +392,7 @@ data class Portal constructor(val name: String, val location: Coords,
             fields.clear()
         }
         if (numberOfResosLeft <= 0) {
-            owner = null
+            destroy(World.tick, false)
         }
     }
 
@@ -418,6 +420,9 @@ data class Portal constructor(val name: String, val location: Coords,
 
     fun decay() {
         getAllResos().forEach { it.decay() }
+        if (getAllResos().isEmpty()) {
+            destroy(World.tick, false)
+        }
     }
 
     fun drawResonators(ctx: Ctx) {

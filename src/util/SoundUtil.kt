@@ -2,6 +2,7 @@ package util
 
 import World
 import agent.NonFaction
+import config.Config
 import config.Constants
 import config.Dim
 import config.OscillatorType
@@ -40,7 +41,7 @@ object SoundUtil {
     }
 
     fun playPortalCreationSound(pos: Coords, gain: Double = 1.0) {
-        if (isMuted()) return
+        if (!Config.isPlayInitialSound || isMuted()) return
         val duration = 0.5
         val pan = pos.x.toDouble() / Dim.width
         val oscNode = createLinearRampOscillator(OscillatorType.SINE, 120.0, 0.0, duration)

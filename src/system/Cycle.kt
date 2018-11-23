@@ -63,7 +63,7 @@ enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>, var image: Canvas
         private fun createImage(): Canvas {
             val off = 4
             val h = Dim.cycleH + (2 * off)
-            val w = (ww * Cycle.numberOfCheckpoints) + (2 * off)
+            val w = (ww * Cycle.numberOfCheckpoints - 1) + (2 * off)
             val lineAlpha = 0.5
             val dotAlpha = 0.5
             val lineWidth = 1.0
@@ -95,14 +95,14 @@ enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>, var image: Canvas
             }
 
             fun drawBackground(ctx: Ctx) {
-                    DrawUtil.drawRect(ctx, Coords(0, 0), -h.toDouble(), w.toDouble(),
+                    DrawUtil.drawRect(ctx, Coords(0, 0), -h.toDouble(), w.toDouble() - 8,
                             "#00000077", "#00000077", 0.0)
             }
 
             fun drawBaseLine(ctx: Ctx) {
                 val y = h - off
                 val from = Coords(off, y)
-                val to = Coords(w - off, y)
+                val to = Coords(w - off - 8, y)
                 DrawUtil.drawLine(ctx, Line(from, to), Colors.white, 2.0, 0.3)
             }
 

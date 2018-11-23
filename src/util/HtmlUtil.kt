@@ -165,7 +165,7 @@ object HtmlUtil {
                 slider.min = "0.00"
                 slider.max = "1.00"
                 slider.step = "0.01"
-                slider.value = "0.20"
+                slider.value = "0.10"
                 slider.addClass("slider", "qSlider", faction.abbr.toLowerCase() + "Slider")
                 val sliderValue = document.createElement("span") as HTMLSpanElement
                 sliderValue.addClass("qSliderLabel", faction.abbr.toLowerCase() + "Label")
@@ -260,7 +260,7 @@ object HtmlUtil {
             when {
                 pos.hasClosePortalForClick() -> {
                     SoundUtil.playPortalRemovalSound(pos)
-                    document.defaultView?.setTimeout(pos.findClosestPortal().destroy(World.tick), 0)
+                    document.defaultView?.setTimeout(pos.findClosestPortal().destroy(World.tick, true), 0)
                 }
                 pos.isBuildable() -> {
                     document.defaultView?.setTimeout(World.allPortals.add(Portal.create(pos)), 0)
@@ -296,9 +296,9 @@ object HtmlUtil {
 
     fun topActionOffset(): Int = document.getElementById("top-controls")?.clientHeight ?: 100
     fun leftSliderHeight(): Int = document.getElementById("left-sliders")?.clientHeight ?: 144
-    fun leftSliderWidth(): Int = document.getElementById("left-sliders")?.clientWidth ?: 370
+    fun leftSliderWidth(): Int = document.getElementById("left-sliders")?.clientWidth ?: 233
     fun rightSliderHeight(): Int = document.getElementById("right-sliders")?.clientHeight ?: 144
-    fun rightSliderWidth(): Int = document.getElementById("right-sliders")?.clientWidth ?: 370
+    fun rightSliderWidth(): Int = document.getElementById("right-sliders")?.clientWidth ?: 233
 
     private fun createButton(id: String, className: String, text: String, callback: ((Event) -> Unit)?): HTMLButtonElement {
         val button = document.createElement("BUTTON") as HTMLButtonElement
@@ -354,7 +354,7 @@ object HtmlUtil {
                 if (count > 0) {
                     val newPortal = Portal.createRandom()
                     Loading.draw()
-                    LoadingText.draw("Creating Portal $count")
+                    LoadingText.draw("Creating Portal ${newPortal.name}")
                     VectorFields.draw(newPortal)
                     World.allPortals.add(newPortal)
                     createPortal(callback, count - 1)
