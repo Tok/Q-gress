@@ -10590,7 +10590,7 @@ var QGress = function (_, Kotlin) {
     return this.isMuted_0() ? 0.0 : 0.4;
   };
   SoundUtil.prototype.playNoiseGenSound = function () {
-    if (this.isMuted_0())
+    if (!Config_getInstance().isPlayInitialSound || this.isMuted_0())
       return;
     var freq = 330;
     var osc = this.createNoiseOscillator_0(freq);
@@ -10603,7 +10603,7 @@ var QGress = function (_, Kotlin) {
   SoundUtil.prototype.playPortalCreationSound_xv7m3c$ = function (pos, gain) {
     if (gain === void 0)
       gain = 1.0;
-    if (!Config_getInstance().isPlayInitialSound || this.isMuted_0())
+    if (this.isMuted_0())
       return;
     var duration = 0.5;
     var pan = pos.x / Dim_getInstance().width;

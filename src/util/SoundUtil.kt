@@ -29,7 +29,7 @@ object SoundUtil {
     private fun volume() = if (isMuted()) 0.0 else 0.4 //TODO create volume slider
 
     fun playNoiseGenSound() {
-        if (isMuted()) return
+        if (!Config.isPlayInitialSound || isMuted()) return
         val freq = 330
         val osc = createNoiseOscillator(freq)
         playSound(osc, createNoisePan(), 0.15, 13.0)
@@ -41,7 +41,7 @@ object SoundUtil {
     }
 
     fun playPortalCreationSound(pos: Coords, gain: Double = 1.0) {
-        if (!Config.isPlayInitialSound || isMuted()) return
+        if (isMuted()) return
         val duration = 0.5
         val pan = pos.x.toDouble() / Dim.width
         val oscNode = createLinearRampOscillator(OscillatorType.SINE, 120.0, 0.0, duration)
