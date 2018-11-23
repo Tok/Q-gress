@@ -33,15 +33,15 @@ object DrawUtil {
             XmMap.draw()
             allAgents.forEach { it.drawRadius(ctx()) }
             allPortals.forEach { it.drawResonators(ctx()) }
-            allNonFaction.forEach { it.draw(ctx()) }
-            allFields().forEach { it.draw(ctx()) }
-            allLinks().forEach { it.draw(ctx()) }
-            allAgents.forEach { it.draw(ctx()) }
-            allPortals.forEach { it.drawCenter(ctx()) }
-            Attacks.draw()
             if (Styles.isDrawPortalNames) {
                 allPortals.forEach { it.drawName(ctx()) }
             }
+            allNonFaction.forEach { it.draw(ctx()) }
+            allAgents.forEach { it.draw(ctx()) }
+            allFields().forEach { it.draw(ctx()) }
+            allLinks().forEach { it.draw(ctx()) }
+            allPortals.forEach { it.drawCenter(ctx()) }
+            Attacks.draw()
         }
     }
 

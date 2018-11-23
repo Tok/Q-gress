@@ -2735,7 +2735,8 @@ var QGress = function (_, Kotlin) {
     this.startSmurfs = HtmlUtil_getInstance().isLocal() ? 4 : 4;
     this.maxFrogs = 20;
     this.maxSmurfs = 20;
-    this.maxNonFaction = this.maxFrogs + this.maxSmurfs | 0;
+    var b = this.maxFrogs + this.maxSmurfs | 0;
+    this.maxNonFaction = Math_0.max(100, b);
     this.apMultiplier = 10;
     this.isNpcSwarming = true;
     this.isSoundOn = true;
@@ -9153,45 +9154,45 @@ var QGress = function (_, Kotlin) {
       var element_0 = tmp$_0.next();
       element_0.drawResonators_f69bme$($receiver.ctx());
     }
-    var tmp$_1;
-    tmp$_1 = $receiver.allNonFaction.iterator();
-    while (tmp$_1.hasNext()) {
-      var element_1 = tmp$_1.next();
-      element_1.draw_f69bme$($receiver.ctx());
+    if (Styles_getInstance().isDrawPortalNames) {
+      var tmp$_1;
+      tmp$_1 = $receiver.allPortals.iterator();
+      while (tmp$_1.hasNext()) {
+        var element_1 = tmp$_1.next();
+        element_1.drawName_f69bme$($receiver.ctx());
+      }
     }
     var tmp$_2;
-    tmp$_2 = $receiver.allFields().iterator();
+    tmp$_2 = $receiver.allNonFaction.iterator();
     while (tmp$_2.hasNext()) {
       var element_2 = tmp$_2.next();
       element_2.draw_f69bme$($receiver.ctx());
     }
     var tmp$_3;
-    tmp$_3 = $receiver.allLinks().iterator();
+    tmp$_3 = $receiver.allAgents.iterator();
     while (tmp$_3.hasNext()) {
       var element_3 = tmp$_3.next();
       element_3.draw_f69bme$($receiver.ctx());
     }
     var tmp$_4;
-    tmp$_4 = $receiver.allAgents.iterator();
+    tmp$_4 = $receiver.allFields().iterator();
     while (tmp$_4.hasNext()) {
       var element_4 = tmp$_4.next();
       element_4.draw_f69bme$($receiver.ctx());
     }
     var tmp$_5;
-    tmp$_5 = $receiver.allPortals.iterator();
+    tmp$_5 = $receiver.allLinks().iterator();
     while (tmp$_5.hasNext()) {
       var element_5 = tmp$_5.next();
-      element_5.drawCenter_j4cg6b$($receiver.ctx());
+      element_5.draw_f69bme$($receiver.ctx());
+    }
+    var tmp$_6;
+    tmp$_6 = $receiver.allPortals.iterator();
+    while (tmp$_6.hasNext()) {
+      var element_6 = tmp$_6.next();
+      element_6.drawCenter_j4cg6b$($receiver.ctx());
     }
     Attacks_getInstance().draw();
-    if (Styles_getInstance().isDrawPortalNames) {
-      var tmp$_6;
-      tmp$_6 = $receiver.allPortals.iterator();
-      while (tmp$_6.hasNext()) {
-        var element_6 = tmp$_6.next();
-        element_6.drawName_f69bme$($receiver.ctx());
-      }
-    }
   };
   DrawUtil.prototype.clear = function () {
     this.redraw_0(World_getInstance().can, World_getInstance().ctx());

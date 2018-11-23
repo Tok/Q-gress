@@ -2,6 +2,7 @@ package config
 
 import agent.Faction
 import util.HtmlUtil
+import kotlin.math.max
 
 object Config {
     val startPortals = if (HtmlUtil.isLocal()) 8 else 8
@@ -10,7 +11,7 @@ object Config {
 
     val maxFrogs = 20
     val maxSmurfs = 20
-    val maxNonFaction = maxFrogs + maxSmurfs
+    val maxNonFaction = max(100, maxFrogs + maxSmurfs)
     fun maxFor(faction: Faction) = when (faction) {
         Faction.ENL -> maxFrogs
         Faction.RES -> maxSmurfs
