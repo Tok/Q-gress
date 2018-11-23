@@ -31,11 +31,11 @@ import util.data.Coords
 import util.data.Line
 import kotlin.math.*
 
-data class Portal constructor(val name: String, val location: Coords,
-                              val heatMap: Map<Coords, Int>, val vectorField: Map<Coords, Complex>,
-                              val resoSlots: MutableMap<Octant, ResonatorSlot>,
-                              val links: MutableSet<Link>, val fields: MutableSet<Field>,
-                              var owner: Agent?) {
+data class Portal(val name: String, val location: Coords,
+                  val heatMap: Map<Coords, Int>, val vectorField: Map<Coords, Complex>,
+                  val resoSlots: MutableMap<Octant, ResonatorSlot>,
+                  val links: MutableSet<Link>, val fields: MutableSet<Field>,
+                  var owner: Agent?) {
     private val lastHacks: MutableMap<String, MutableList<Int>> = mutableMapOf()
     val id: String = "P-" + location.x + ":" + location.y + "-" + name
     fun isDeprecated() = resoSlots.isEmpty()
@@ -311,7 +311,7 @@ data class Portal constructor(val name: String, val location: Coords,
             Com.addMessage("$agent captured $this.")
         }
 
-        val initialResoCount = resoSlots.filterValues { !it.isEmpty() }.size
+        val initialResoCount = resoSlots.filterValues { !it.isEmpty() }.filterNot { it.value.resonator == null }.size
         val firstResoCount = max(resos.size, (8 - initialResoCount))
         resos.asIterable().forEachIndexed { index, (octant, resonator) ->
             val oldReso = resoSlots[octant]
@@ -338,7 +338,9 @@ data class Portal constructor(val name: String, val location: Coords,
     }
 
     fun destroy(tick: Int, isRemovePortal: Boolean) {
-        resoSlots.clear()
+        if (isRemovePortal) {
+            resoSlots.clear()
+        }
         links.clear()
         fields.clear()
         owner = null
@@ -545,10 +547,10 @@ data class Portal constructor(val name: String, val location: Coords,
             })
         }
 
+        val emptySlot = ResonatorSlot(null, null, 0)
         const val MAX_HACKS = 4 //TODO implement multihacks
         private fun clipLevel(level: Int): Int = max(1, min(level, 8))
         fun create(location: Coords): Portal {
-            val emptySlot = ResonatorSlot(null, null, 0)
             val slots: MutableMap<Octant, ResonatorSlot> = Octant.values().map { it to emptySlot }.toMap().toMutableMap()
             val heatMap = PathUtil.generateHeatMap(location)
             val vectorField = PathUtil.calculateVectorField(heatMap)

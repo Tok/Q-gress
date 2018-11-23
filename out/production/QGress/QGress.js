@@ -1011,6 +1011,8 @@ var QGress = function (_, Kotlin) {
                 var distance = Math_0.max(a_0, b_0);
                 this$Agent_1.actionPortal.deploy_en6fu0$(this$Agent_1, deployMap, numberToInt(distance));
                 SoundUtil_getInstance().playDeploySound_s1df0o$(this$Agent_1.actionPortal.location, numberToInt(distance));
+                this$Agent_1.action.start_fyi6w8$(ActionItem$Companion_getInstance().DEPLOY);
+                return this$Agent_1;
               }
             }
           }
@@ -2728,11 +2730,11 @@ var QGress = function (_, Kotlin) {
   }
   function Config() {
     Config_instance = this;
-    this.startPortals = HtmlUtil_getInstance().isLocal() ? 13 : 8;
+    this.startPortals = HtmlUtil_getInstance().isLocal() ? 8 : 8;
     this.startFrogs = HtmlUtil_getInstance().isLocal() ? 4 : 4;
     this.startSmurfs = HtmlUtil_getInstance().isLocal() ? 4 : 4;
-    this.maxFrogs = 30;
-    this.maxSmurfs = 30;
+    this.maxFrogs = 20;
+    this.maxSmurfs = 20;
     this.maxNonFaction = this.maxFrogs + this.maxSmurfs | 0;
     this.apMultiplier = 10;
     this.isNpcSwarming = true;
@@ -6051,19 +6053,28 @@ var QGress = function (_, Kotlin) {
         result.put_xwzc9p$(entry.key, entry.value);
       }
     }
-    var initialResoCount = result.size;
+    var destination = LinkedHashMap_init();
+    var tmp$_0;
+    tmp$_0 = result.entries.iterator();
+    while (tmp$_0.hasNext()) {
+      var element = tmp$_0.next();
+      if (!(element.value.resonator == null)) {
+        destination.put_xwzc9p$(element.key, element.value);
+      }
+    }
+    var initialResoCount = destination.size;
     var a = resos.size;
     var b = 8 - initialResoCount | 0;
     var firstResoCount = Math_0.max(a, b);
-    var tmp$_0, tmp$_0_0;
+    var tmp$_1, tmp$_0_0;
     var index = 0;
-    tmp$_0 = resos.entries.iterator();
-    while (tmp$_0.hasNext()) {
-      var item = tmp$_0.next();
+    tmp$_1 = resos.entries.iterator();
+    while (tmp$_1.hasNext()) {
+      var item = tmp$_1.next();
       var index_0 = checkIndexOverflow((tmp$_0_0 = index, index = tmp$_0_0 + 1 | 0, tmp$_0_0));
       var octant = item.key;
       var resonator = item.value;
-      var tmp$_1;
+      var tmp$_2;
       var oldReso = this.resoSlots.get_11rb$(octant);
       if (isCapture && index_0 === 0) {
         agent.addAp_za3lpa$(500);
@@ -6079,25 +6090,27 @@ var QGress = function (_, Kotlin) {
       }
       agent.removeXm_za3lpa$(resonator.level.level * 20 | 0);
       var oldDistance = oldReso != null ? oldReso.distance : null;
-      var newDistance = (tmp$_1 = oldDistance === 0 ? distance : oldDistance) != null ? tmp$_1 : distance;
+      var newDistance = (tmp$_2 = oldDistance === 0 ? distance : oldDistance) != null ? tmp$_2 : distance;
       var slot = new ResonatorSlot(agent.key(), resonator, newDistance);
       this.resoSlots.put_xwzc9p$(octant, slot);
       var xx = this.location.x + octant.calcXOffset_za3lpa$(slot.distance) | 0;
       var yy = this.location.y + octant.calcYOffset_za3lpa$(slot.distance) | 0;
       resonator.deploy_njiqqf$(this, octant, new Coords(xx, yy));
     }
-    var tmp$_2 = agent.inventory;
-    var destination = ArrayList_init(resos.size);
-    var tmp$_3;
-    tmp$_3 = resos.entries.iterator();
-    while (tmp$_3.hasNext()) {
-      var item_0 = tmp$_3.next();
-      destination.add_11rb$(item_0.value);
+    var tmp$_3 = agent.inventory;
+    var destination_0 = ArrayList_init(resos.size);
+    var tmp$_4;
+    tmp$_4 = resos.entries.iterator();
+    while (tmp$_4.hasNext()) {
+      var item_0 = tmp$_4.next();
+      destination_0.add_11rb$(item_0.value);
     }
-    tmp$_2.consumeResos_tvxik5$(destination);
+    tmp$_3.consumeResos_tvxik5$(destination_0);
   };
   Portal.prototype.destroy_fzusl$ = function (tick, isRemovePortal) {
-    this.resoSlots.clear();
+    if (isRemovePortal) {
+      this.resoSlots.clear();
+    }
     this.links.clear();
     this.fields.clear();
     this.owner = null;
@@ -6406,6 +6419,7 @@ var QGress = function (_, Kotlin) {
       addAll(destination_1, list_0);
     }
     this.healthBarImages_0 = toMap(destination_1);
+    this.emptySlot = new ResonatorSlot(null, null, 0);
     this.MAX_HACKS = 4;
   }
   Portal$Companion.prototype.findChargeableForKeys_912u9o$ = function (agent) {
@@ -6467,13 +6481,12 @@ var QGress = function (_, Kotlin) {
   };
   var LinkedHashSet_init = Kotlin.kotlin.collections.LinkedHashSet_init_287e2$;
   Portal$Companion.prototype.create_lfj9be$ = function (location) {
-    var emptySlot = new ResonatorSlot(null, null, 0);
     var $receiver = Octant$values();
     var destination = ArrayList_init($receiver.length);
     var tmp$;
     for (tmp$ = 0; tmp$ !== $receiver.length; ++tmp$) {
       var item = $receiver[tmp$];
-      destination.add_11rb$(to(item, emptySlot));
+      destination.add_11rb$(to(item, this.emptySlot));
     }
     var slots = toMutableMap(toMap(destination));
     var heatMap = PathUtil_getInstance().generateHeatMap_lfj9be$(location);

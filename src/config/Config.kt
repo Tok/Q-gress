@@ -4,12 +4,12 @@ import agent.Faction
 import util.HtmlUtil
 
 object Config {
-    val startPortals = if (HtmlUtil.isLocal()) 13 else 8
+    val startPortals = if (HtmlUtil.isLocal()) 8 else 8
     val startFrogs = if (HtmlUtil.isLocal()) 4 else 4
     val startSmurfs = if (HtmlUtil.isLocal()) 4 else 4
 
-    val maxFrogs = 30
-    val maxSmurfs = 30
+    val maxFrogs = 20
+    val maxSmurfs = 20
     val maxNonFaction = maxFrogs + maxSmurfs
     fun maxFor(faction: Faction) = when (faction) {
         Faction.ENL -> maxFrogs
