@@ -11,19 +11,19 @@ var QGress = function (_, Kotlin) {
   var to = Kotlin.kotlin.to_ujzrz7$;
   var toMap = Kotlin.kotlin.collections.toMap_6hr0sd$;
   var throwCCE = Kotlin.throwCCE;
-  var listOf_0 = Kotlin.kotlin.collections.listOf_mh5how$;
   var plus = Kotlin.kotlin.collections.plus_mydzjv$;
+  var listOf_0 = Kotlin.kotlin.collections.listOf_mh5how$;
+  var Unit = Kotlin.kotlin.Unit;
   var numberToInt = Kotlin.numberToInt;
   var take = Kotlin.kotlin.collections.take_ba2ldo$;
-  var Unit = Kotlin.kotlin.Unit;
   var Kind_INTERFACE = Kotlin.Kind.INTERFACE;
   var toSet = Kotlin.kotlin.collections.toSet_7wnvza$;
   var sum = Kotlin.kotlin.collections.sum_plj8ka$;
   var toList = Kotlin.kotlin.collections.toList_abgq59$;
   var zip = Kotlin.kotlin.collections.zip_45mdf7$;
   var first = Kotlin.kotlin.collections.first_2p1efm$;
-  var IllegalStateException_init = Kotlin.kotlin.IllegalStateException_init_pdl1vj$;
   var distinct = Kotlin.kotlin.collections.distinct_7wnvza$;
+  var IllegalStateException_init = Kotlin.kotlin.IllegalStateException_init_pdl1vj$;
   var filterNotNull = Kotlin.kotlin.collections.filterNotNull_m3lr2h$;
   var toString = Kotlin.toString;
   var hashCode = Kotlin.hashCode;
@@ -128,7 +128,7 @@ var QGress = function (_, Kotlin) {
   }
   Action.prototype.start_fyi6w8$ = function (item) {
     this.item = item;
-    this.untilTick = World_getInstance().tick + item.durationSeconds | 0;
+    this.untilTick = World_getInstance().tick + Time_getInstance().secondsToTicks_za3lpa$(item.durationSeconds) | 0;
   };
   Action.prototype.end = function () {
     this.item = ActionItem$Companion_getInstance().WAIT;
@@ -137,11 +137,14 @@ var QGress = function (_, Kotlin) {
   Action.prototype.toString = function () {
     return this.item.text;
   };
+  Action.prototype.isBusy = function () {
+    return World_getInstance().tick <= this.untilTick;
+  };
   function Action$Companion() {
     Action$Companion_instance = this;
   }
   Action$Companion.prototype.create = function () {
-    return new Action(ActionItem$Companion_getInstance().MOVE, World_getInstance().tick);
+    return new Action(ActionItem$Companion_getInstance().WAIT, World_getInstance().tick);
   };
   Action$Companion.$metadata$ = {
     kind: Kind_OBJECT,
@@ -188,16 +191,18 @@ var QGress = function (_, Kotlin) {
   var ArrayList_init = Kotlin.kotlin.collections.ArrayList_init_ww73n8$;
   function ActionItem$Companion() {
     ActionItem$Companion_instance = this;
-    this.MOVE = new ActionItem('moving', 1, 'Move');
-    this.WAIT = new ActionItem('waiting', 1, 'Wait');
-    this.RECHARGE = new ActionItem('recharge', 1, 'Recharge');
-    this.RECRUIT = new ActionItem('recruit', 120, 'Recruit');
-    this.RECYCLE = new ActionItem('recycle', 1, 'Recycle');
-    this.HACK = new ActionItem('hacking', 5, 'Hack');
-    this.GLYPH = new ActionItem('glyphing', 40, 'Glyph');
-    this.ATTACK = new ActionItem('attacking', 5, 'Attack');
-    this.DEPLOY = new ActionItem('deploying', 10, 'Deploy');
-    this.LINK = new ActionItem('linking', 10, 'Link');
+    this.MOVE = new ActionItem('moving', 1800, 'Move');
+    this.WAIT = new ActionItem('waiting', 10, 'Wait');
+    this.RECHARGE = new ActionItem('recharging', 30, 'Recharge');
+    this.RECRUIT = new ActionItem('recruiting', 120, 'Recruit');
+    this.EXPLORE = new ActionItem('exploring', 300, 'Explore');
+    this.RECYCLE = new ActionItem('recycling', 30, 'Recycle');
+    this.HACK = new ActionItem('hacking', 10, 'Hack');
+    this.GLYPH = new ActionItem('glyphing', 60, 'Glyph');
+    this.ATTACK = new ActionItem('attacking', 15, 'Attack');
+    this.DEPLOY = new ActionItem('deploying', 15, 'Deploy');
+    this.CAPTURE = new ActionItem('capturing', 15, 'Capture');
+    this.LINK = new ActionItem('linking', 30, 'Link');
     var $receiver = this.values();
     var destination = ArrayList_init(collectionSizeOrDefault($receiver, 10));
     var tmp$;
@@ -227,7 +232,7 @@ var QGress = function (_, Kotlin) {
     this.nonImages_0 = toMap(destination_1);
   }
   ActionItem$Companion.prototype.values = function () {
-    return listOf([this.MOVE, this.WAIT, this.RECHARGE, this.RECRUIT, this.RECYCLE, this.HACK, this.GLYPH, this.ATTACK, this.DEPLOY, this.LINK]);
+    return listOf([this.MOVE, this.WAIT, this.RECHARGE, this.RECRUIT, this.EXPLORE, this.RECYCLE, this.HACK, this.GLYPH, this.ATTACK, this.DEPLOY, this.CAPTURE, this.LINK]);
   };
   ActionItem$Companion.prototype.getIcon_5bvev3$ = function (item, faction) {
     if (faction === void 0)
@@ -255,7 +260,7 @@ var QGress = function (_, Kotlin) {
       DrawUtil_getInstance().drawCircle_3kie0f$(ctx, circle, closure$strokeStyle, 1.0);
     };
   }
-  function ActionItem$Companion$drawTemplate$lambda(closure$rr, closure$r, closure$strokeStyle, closure$lw, closure$faction, closure$actionItem, closure$drawAgentCircle, this$ActionItem$, closure$w, closure$drawAgentLine, closure$h) {
+  function ActionItem$Companion$drawTemplate$lambda(closure$rr, closure$r, closure$strokeStyle, closure$lw, closure$faction, closure$actionItem, closure$drawAgentCircle, this$ActionItem$, closure$w, closure$h, closure$drawAgentLine) {
     return function (ctx) {
       var tmp$;
       var pos = new Coords(closure$rr, closure$rr);
@@ -264,29 +269,44 @@ var QGress = function (_, Kotlin) {
       tmp$ = closure$actionItem;
       if (equals(tmp$, this$ActionItem$.MOVE))
         closure$drawAgentCircle(ctx, new Circle(pos, closure$rr - 2.0));
-      else if (equals(tmp$, this$ActionItem$.HACK) || equals(tmp$, this$ActionItem$.GLYPH))
-        closure$drawAgentCircle(ctx, new Circle(pos, closure$rr - 4.0));
-      else if (equals(tmp$, this$ActionItem$.RECRUIT)) {
-        closure$drawAgentCircle(ctx, new Circle(pos, closure$rr - 2.0));
-        closure$drawAgentCircle(ctx, new Circle(pos, closure$rr - 4.0));
-      }
-       else if (equals(tmp$, this$ActionItem$.LINK))
-        closure$drawAgentLine(ctx, new Line(new Coords(0, closure$rr), new Coords(closure$w, closure$rr)));
-      else if (equals(tmp$, this$ActionItem$.ATTACK))
-        closure$drawAgentLine(ctx, new Line(new Coords(closure$rr, 0), new Coords(closure$rr, closure$h)));
-      else if (equals(tmp$, this$ActionItem$.RECYCLE)) {
+      else if (equals(tmp$, this$ActionItem$.EXPLORE)) {
         var off = 2;
         closure$drawAgentLine(ctx, new Line(new Coords(off, off), new Coords(closure$w - off | 0, closure$h - off | 0)));
-        closure$drawAgentCircle(ctx, new Circle(pos, closure$rr - 3.0));
-      }
-       else if (equals(tmp$, this$ActionItem$.RECHARGE)) {
-        var off_0 = 2;
-        closure$drawAgentLine(ctx, new Line(new Coords(off_0, closure$h - off_0 | 0), new Coords(closure$w - off_0 | 0, off_0)));
-        closure$drawAgentCircle(ctx, new Circle(pos, closure$rr - 3.0));
-      }
-       else if (equals(tmp$, this$ActionItem$.DEPLOY)) {
+        closure$drawAgentLine(ctx, new Line(new Coords(off, closure$h - off | 0), new Coords(closure$w - off | 0, off)));
         closure$drawAgentLine(ctx, new Line(new Coords(closure$rr, 0), new Coords(closure$rr, closure$h)));
         closure$drawAgentLine(ctx, new Line(new Coords(0, closure$rr), new Coords(closure$w, closure$rr)));
+        closure$drawAgentCircle(ctx, new Circle(pos, closure$rr - 2.0));
+      }
+       else if (equals(tmp$, this$ActionItem$.RECRUIT)) {
+        closure$drawAgentLine(ctx, new Line(new Coords(closure$rr, 0), new Coords(closure$rr, closure$h)));
+        closure$drawAgentLine(ctx, new Line(new Coords(0, closure$rr), new Coords(closure$w, closure$rr)));
+      }
+       else if (equals(tmp$, this$ActionItem$.ATTACK))
+        closure$drawAgentLine(ctx, new Line(new Coords(closure$rr, 0), new Coords(closure$rr, closure$h)));
+      else if (equals(tmp$, this$ActionItem$.LINK))
+        closure$drawAgentLine(ctx, new Line(new Coords(0, closure$rr), new Coords(closure$w, closure$rr)));
+      else if (equals(tmp$, this$ActionItem$.DEPLOY)) {
+        closure$drawAgentLine(ctx, new Line(new Coords(0, closure$rr - 1 | 0), new Coords(closure$w, closure$rr - 1 | 0)));
+        closure$drawAgentLine(ctx, new Line(new Coords(0, closure$rr + 1 | 0), new Coords(closure$w, closure$rr + 1 | 0)));
+      }
+       else if (equals(tmp$, this$ActionItem$.CAPTURE)) {
+        closure$drawAgentLine(ctx, new Line(new Coords(closure$rr, 0), new Coords(closure$rr, closure$h)));
+        closure$drawAgentLine(ctx, new Line(new Coords(0, closure$rr - 1 | 0), new Coords(closure$w, closure$rr - 1 | 0)));
+        closure$drawAgentLine(ctx, new Line(new Coords(0, closure$rr + 1 | 0), new Coords(closure$w, closure$rr + 1 | 0)));
+      }
+       else if (equals(tmp$, this$ActionItem$.HACK))
+        closure$drawAgentCircle(ctx, new Circle(pos, closure$rr - 4.0));
+      else if (equals(tmp$, this$ActionItem$.GLYPH))
+        closure$drawAgentCircle(ctx, new Circle(pos, closure$rr - 3.0));
+      else if (equals(tmp$, this$ActionItem$.RECHARGE)) {
+        var off_0 = 2;
+        closure$drawAgentLine(ctx, new Line(new Coords(off_0, closure$h - off_0 | 0), new Coords(closure$w - off_0 | 0, off_0)));
+        closure$drawAgentCircle(ctx, new Circle(pos, closure$rr - 2.0));
+      }
+       else if (equals(tmp$, this$ActionItem$.RECYCLE)) {
+        var off_1 = 2;
+        closure$drawAgentLine(ctx, new Line(new Coords(off_1, off_1), new Coords(closure$w - off_1 | 0, closure$h - off_1 | 0)));
+        closure$drawAgentCircle(ctx, new Circle(pos, closure$rr - 2.0));
       }
        else
         equals(tmp$, this$ActionItem$.WAIT);
@@ -301,7 +321,7 @@ var QGress = function (_, Kotlin) {
     var h = w;
     var drawAgentLine = ActionItem$Companion$drawTemplate$drawAgentLine(strokeStyle);
     var drawAgentCircle = ActionItem$Companion$drawTemplate$drawAgentCircle(strokeStyle);
-    return HtmlUtil_getInstance().preRender_yb5akz$(w, h, ActionItem$Companion$drawTemplate$lambda(rr, r, strokeStyle, lw, faction, actionItem, drawAgentCircle, this, w, drawAgentLine, h));
+    return HtmlUtil_getInstance().preRender_yb5akz$(w, h, ActionItem$Companion$drawTemplate$lambda(rr, r, strokeStyle, lw, faction, actionItem, drawAgentCircle, this, w, h, drawAgentLine));
   };
   ActionItem$Companion.$metadata$ = {
     kind: Kind_OBJECT,
@@ -348,7 +368,7 @@ var QGress = function (_, Kotlin) {
   function ActionSelector() {
     ActionSelector_instance = this;
   }
-  ActionSelector.prototype.doSomething_912u9o$ = function (agent) {
+  ActionSelector.prototype.doSomethingElse_912u9o$ = function (agent) {
     var tmp$, tmp$_0;
     var portalFaction = (tmp$ = agent.actionPortal.owner) != null ? tmp$.faction : null;
     if (!agent.isAtActionPortal())
@@ -397,35 +417,47 @@ var QGress = function (_, Kotlin) {
   }
   function ActionSelector$actionsForAnywhere$lambda_0(closure$agent) {
     return function () {
-      return closure$agent.recycleItems();
+      return Recycler_getInstance().performAction_912u9o$(closure$agent);
     };
   }
   function ActionSelector$actionsForAnywhere$lambda_1(closure$agent) {
     return function () {
-      return closure$agent.rechargePortal();
+      return Recharger_getInstance().performAction_912u9o$(closure$agent);
     };
   }
   function ActionSelector$actionsForAnywhere$lambda_2(closure$agent) {
     return function () {
-      return closure$agent.recruitNewAgents();
+      return Recruiter_getInstance().performAction_912u9o$(closure$agent);
+    };
+  }
+  function ActionSelector$actionsForAnywhere$lambda_3(closure$agent) {
+    return function () {
+      return Explorer_getInstance().performAction_912u9o$(closure$agent);
     };
   }
   ActionSelector.prototype.actionsForAnywhere_0 = function (agent) {
     var moveElsewhereQ = this.q_aafct0$(agent.faction, QActions_getInstance().MOVE_ELSEWHERE);
-    var recycleQ = agent.isRecyclePossible() ? this.q_aafct0$(agent.faction, QActions_getInstance().RECYCLE) : -1.0;
-    var rechargeQ = agent.isRechargePossible() ? this.q_aafct0$(agent.faction, QActions_getInstance().RECHARGE) : -1.0;
-    var recruitQ = agent.isRecruitmentPossible() ? this.q_aafct0$(agent.faction, QActions_getInstance().RECRUIT) : -1.0;
-    return listOf([to(moveElsewhereQ, ActionSelector$actionsForAnywhere$lambda(agent)), to(recycleQ, ActionSelector$actionsForAnywhere$lambda_0(agent)), to(rechargeQ, ActionSelector$actionsForAnywhere$lambda_1(agent)), to(recruitQ, ActionSelector$actionsForAnywhere$lambda_2(agent))]);
+    var recycleQ = Recycler_getInstance().isActionPossible_912u9o$(agent) ? this.q_aafct0$(agent.faction, QActions_getInstance().RECYCLE) : -1.0;
+    var rechargeQ = Recharger_getInstance().isActionPossible_912u9o$(agent) ? this.q_aafct0$(agent.faction, QActions_getInstance().RECHARGE) : -1.0;
+    var recruitQ = Recruiter_getInstance().isActionPossible_912u9o$(agent) ? this.q_aafct0$(agent.faction, QActions_getInstance().RECRUIT) : -1.0;
+    var exploreQ = Explorer_getInstance().isActionPossible_912u9o$(agent) ? this.q_aafct0$(agent.faction, QActions_getInstance().EXPLORE) : -1.0;
+    return listOf([to(moveElsewhereQ, ActionSelector$actionsForAnywhere$lambda(agent)), to(recycleQ, ActionSelector$actionsForAnywhere$lambda_0(agent)), to(rechargeQ, ActionSelector$actionsForAnywhere$lambda_1(agent)), to(recruitQ, ActionSelector$actionsForAnywhere$lambda_2(agent)), to(exploreQ, ActionSelector$actionsForAnywhere$lambda_3(agent))]);
   };
   function ActionSelector$actionsForPortals$lambda(closure$agent) {
     return function () {
-      return closure$agent.hackActionPortal();
+      return Hacker_getInstance().performAction_912u9o$(closure$agent);
+    };
+  }
+  function ActionSelector$actionsForPortals$lambda_0(closure$agent) {
+    return function () {
+      return Glypher_getInstance().performAction_912u9o$(closure$agent);
     };
   }
   ActionSelector.prototype.actionsForPortals_0 = function (agent) {
     var basicValues = this.actionsForAnywhere_0(agent);
-    var hackQ = agent.isHackPossible() ? this.q_aafct0$(agent.faction, QActions_getInstance().HACK) : -1.0;
-    return plus(basicValues, listOf_0(to(hackQ, ActionSelector$actionsForPortals$lambda(agent))));
+    var hackQ = Hacker_getInstance().isActionPossible_912u9o$(agent) ? this.q_aafct0$(agent.faction, QActions_getInstance().HACK) : -1.0;
+    var glyphQ = Glypher_getInstance().isActionPossible_912u9o$(agent) ? this.q_aafct0$(agent.faction, QActions_getInstance().GLYPH) : -1.0;
+    return plus(basicValues, listOf([to(hackQ, ActionSelector$actionsForPortals$lambda(agent)), to(glyphQ, ActionSelector$actionsForPortals$lambda_0(agent))]));
   };
   function ActionSelector$actionsForNeutralPortals$lambda(closure$agent) {
     return function () {
@@ -444,13 +476,13 @@ var QGress = function (_, Kotlin) {
   }
   function ActionSelector$actionsForFriendlyPortals$lambda_0(closure$agent) {
     return function () {
-      return closure$agent.createLink();
+      return Linker_getInstance().performAction_912u9o$(closure$agent);
     };
   }
   ActionSelector.prototype.actionsForFriendlyPortals_0 = function (agent) {
     var basicValues = this.actionsForPortals_0(agent);
     var deployQ = Deployer_getInstance().isActionPossible_912u9o$(agent) ? this.q_aafct0$(agent.faction, QActions_getInstance().DEPLOY) : -1.0;
-    var linkQ = agent.isLinkPossible() ? this.q_aafct0$(agent.faction, QActions_getInstance().LINK) : -1.0;
+    var linkQ = Linker_getInstance().isActionPossible_912u9o$(agent) ? this.q_aafct0$(agent.faction, QActions_getInstance().LINK) : -1.0;
     return plus(basicValues, listOf([to(deployQ, ActionSelector$actionsForFriendlyPortals$lambda(agent)), to(linkQ, ActionSelector$actionsForFriendlyPortals$lambda_0(agent))]));
   };
   function ActionSelector$actionsForEnemyPortals$lambda(closure$agent) {
@@ -477,33 +509,14 @@ var QGress = function (_, Kotlin) {
   }
   function Attacker() {
     Attacker_instance = this;
+    this.actionItem_332705$_0 = ActionItem$Companion_getInstance().ATTACK;
     this.attackXmps_0 = 50;
   }
-  function Attacker$xmpsForAttack$lambda(it) {
-    return it.level;
-  }
-  var sortedWith = Kotlin.kotlin.collections.sortedWith_eknfly$;
-  var wrapFunction = Kotlin.wrapFunction;
-  var compareBy$lambda = wrapFunction(function () {
-    var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
-    return function (closure$selector) {
-      return function (a, b) {
-        var selector = closure$selector;
-        return compareValues(selector(a), selector(b));
-      };
-    };
+  Object.defineProperty(Attacker.prototype, 'actionItem', {
+    get: function () {
+      return this.actionItem_332705$_0;
+    }
   });
-  var Comparator = Kotlin.kotlin.Comparator;
-  function Comparator$ObjectLiteral(closure$comparison) {
-    this.closure$comparison = closure$comparison;
-  }
-  Comparator$ObjectLiteral.prototype.compare = function (a, b) {
-    return this.closure$comparison(a, b);
-  };
-  Comparator$ObjectLiteral.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
-  Attacker.prototype.xmpsForAttack_0 = function (inv) {
-    return take(sortedWith(inv.findXmps(), new Comparator$ObjectLiteral(compareBy$lambda(Attacker$xmpsForAttack$lambda))), numberToInt(50 * Util_getInstance().random()));
-  };
   Attacker.prototype.isActionPossible_912u9o$ = function (agent) {
     return agent.inventory.findXmps().size >= 50;
   };
@@ -539,10 +552,37 @@ var QGress = function (_, Kotlin) {
           break;
       }
     }
+    if (xmps.isEmpty()) {
+      console.warn('Attack failed..');
+    }
     Queues_getInstance().registerAttack_wr4det$(agent, xmps);
     agent.inventory.consumeXmps_ss5kb$(xmps);
-    agent.action.end();
     return agent;
+  };
+  function Attacker$xmpsForAttack$lambda(it) {
+    return it.level;
+  }
+  var sortedWith = Kotlin.kotlin.collections.sortedWith_eknfly$;
+  var wrapFunction = Kotlin.wrapFunction;
+  var compareBy$lambda = wrapFunction(function () {
+    var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
+    return function (closure$selector) {
+      return function (a, b) {
+        var selector = closure$selector;
+        return compareValues(selector(a), selector(b));
+      };
+    };
+  });
+  var Comparator = Kotlin.kotlin.Comparator;
+  function Comparator$ObjectLiteral(closure$comparison) {
+    this.closure$comparison = closure$comparison;
+  }
+  Comparator$ObjectLiteral.prototype.compare = function (a, b) {
+    return this.closure$comparison(a, b);
+  };
+  Comparator$ObjectLiteral.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
+  Attacker.prototype.xmpsForAttack_0 = function (inv) {
+    return take(sortedWith(inv.findXmps(), new Comparator$ObjectLiteral(compareBy$lambda(Attacker$xmpsForAttack$lambda))), numberToInt(50 * Util_getInstance().random()));
   };
   Attacker.$metadata$ = {
     kind: Kind_OBJECT,
@@ -565,7 +605,13 @@ var QGress = function (_, Kotlin) {
   };
   function Deployer() {
     Deployer_instance = this;
+    this.actionItem_t5xkto$_0 = ActionItem$Companion_getInstance().DEPLOY;
   }
+  Object.defineProperty(Deployer.prototype, 'actionItem', {
+    get: function () {
+      return this.actionItem_t5xkto$_0;
+    }
+  });
   var Collection = Kotlin.kotlin.collections.Collection;
   Deployer.prototype.isActionPossible_912u9o$ = function (agent) {
     if (!this.isActionPortalFriendly_0(agent) || !this.areMoreResosAllowed_0(agent)) {
@@ -638,7 +684,6 @@ var QGress = function (_, Kotlin) {
     if (none$result) {
       console.warn('Deployment failed..');
     }
-    agent.action.end();
     return agent;
   };
   Deployer.prototype.isActionPortalFriendly_0 = function (agent) {
@@ -805,6 +850,394 @@ var QGress = function (_, Kotlin) {
     }
     return Deployer_instance;
   }
+  function Explorer() {
+    Explorer_instance = this;
+    this.actionItem_lesim7$_0 = ActionItem$Companion_getInstance().EXPLORE;
+    this.portalDiscoveryChance_0 = 0.1;
+  }
+  Object.defineProperty(Explorer.prototype, 'actionItem', {
+    get: function () {
+      return this.actionItem_lesim7$_0;
+    }
+  });
+  Explorer.prototype.isActionPossible_912u9o$ = function (agent) {
+    return World_getInstance().countPortals() < 89;
+  };
+  Explorer.prototype.performAction_912u9o$ = function (agent) {
+    agent.action.start_fyi6w8$(this.actionItem);
+    if (Util_getInstance().random() <= this.portalDiscoveryChance_0) {
+      var newPortal = Portal$Companion_getInstance().createRandom();
+      VectorFields_getInstance().draw_hv9zn6$(newPortal);
+      World_getInstance().allPortals.add_11rb$(newPortal);
+      agent.destination = newPortal.location;
+      Com_getInstance().addMessage_61zpoe$(agent.toString() + ' discovered a new portal ' + newPortal + '.');
+    }
+     else {
+      agent.destination = Coords$Companion_getInstance().createRandomForPortal();
+    }
+    return agent;
+  };
+  Explorer.$metadata$ = {
+    kind: Kind_OBJECT,
+    simpleName: 'Explorer',
+    interfaces: [ConditionalAction]
+  };
+  var Explorer_instance = null;
+  function Explorer_getInstance() {
+    if (Explorer_instance === null) {
+      new Explorer();
+    }
+    return Explorer_instance;
+  }
+  function Glypher() {
+    Glypher_instance = this;
+    this.actionItem_3ahtxd$_0 = ActionItem$Companion_getInstance().GLYPH;
+  }
+  Object.defineProperty(Glypher.prototype, 'actionItem', {
+    get: function () {
+      return this.actionItem_3ahtxd$_0;
+    }
+  });
+  Glypher.prototype.isActionPossible_912u9o$ = function (agent) {
+    return Hacker_getInstance().isActionPossible_912u9o$(agent);
+  };
+  Glypher.prototype.performAction_912u9o$ = function (agent) {
+    agent.action.start_fyi6w8$(this.actionItem);
+    var glyphResult = agent.actionPortal.tryGlyph_912u9o$(agent);
+    SoundUtil_getInstance().playGlyphingSound_lfj9be$(agent.actionPortal.location);
+    var isSuccess = glyphResult.items != null;
+    if (isSuccess) {
+      var newStuff = ensureNotNull(glyphResult.items);
+      agent.inventory.items.addAll_brywnq$(newStuff);
+    }
+    return agent;
+  };
+  Glypher.$metadata$ = {
+    kind: Kind_OBJECT,
+    simpleName: 'Glypher',
+    interfaces: [ConditionalAction]
+  };
+  var Glypher_instance = null;
+  function Glypher_getInstance() {
+    if (Glypher_instance === null) {
+      new Glypher();
+    }
+    return Glypher_instance;
+  }
+  function Hacker() {
+    Hacker_instance = this;
+    this.actionItem_st3xvy$_0 = ActionItem$Companion_getInstance().HACK;
+  }
+  Object.defineProperty(Hacker.prototype, 'actionItem', {
+    get: function () {
+      return this.actionItem_st3xvy$_0;
+    }
+  });
+  Hacker.prototype.isActionPossible_912u9o$ = function (agent) {
+    return agent.actionPortal.canHack_912u9o$(agent);
+  };
+  Hacker.prototype.performAction_912u9o$ = function (agent) {
+    agent.action.start_fyi6w8$(this.actionItem);
+    var hackResult = agent.actionPortal.tryHack_912u9o$(agent);
+    SoundUtil_getInstance().playHackingSound_lfj9be$(agent.actionPortal.location);
+    var isSuccess = hackResult.items != null;
+    if (isSuccess) {
+      var newStuff = ensureNotNull(hackResult.items);
+      agent.inventory.items.addAll_brywnq$(newStuff);
+    }
+    return agent;
+  };
+  Hacker.$metadata$ = {
+    kind: Kind_OBJECT,
+    simpleName: 'Hacker',
+    interfaces: [ConditionalAction]
+  };
+  var Hacker_instance = null;
+  function Hacker_getInstance() {
+    if (Hacker_instance === null) {
+      new Hacker();
+    }
+    return Hacker_instance;
+  }
+  function Linker() {
+    Linker_instance = this;
+    this.actionItem_m09py1$_0 = ActionItem$Companion_getInstance().LINK;
+  }
+  Object.defineProperty(Linker.prototype, 'actionItem', {
+    get: function () {
+      return this.actionItem_m09py1$_0;
+    }
+  });
+  Linker.prototype.isActionPossible_912u9o$ = function (agent) {
+    var canLinkOut = agent.actionPortal.canLinkOut_912u9o$(agent);
+    var hasKeys = this.hasFriendlyKeys_0(agent);
+    var hasTargets = !this.targetOptions_0(agent).isEmpty();
+    return canLinkOut && hasKeys && hasTargets;
+  };
+  Linker.prototype.performAction_912u9o$ = function (agent) {
+    agent.action.start_fyi6w8$(this.actionItem);
+    var linkOptions = this.targetOptions_0(agent);
+    var linkTarget = first(Util_getInstance().shuffle_bemo1h$(linkOptions));
+    agent.actionPortal.createLink_g4r5ni$(agent, linkTarget);
+    return agent;
+  };
+  Linker.prototype.hasFriendlyKeys_0 = function (agent) {
+    var $receiver = agent.keySet();
+    var any$result;
+    any$break: do {
+      var tmp$;
+      if (Kotlin.isType($receiver, Collection) && $receiver.isEmpty()) {
+        any$result = false;
+        break any$break;
+      }
+      tmp$ = $receiver.iterator();
+      while (tmp$.hasNext()) {
+        var element = tmp$.next();
+        if (element.isFriendly_912u9o$(agent)) {
+          any$result = true;
+          break any$break;
+        }
+      }
+      any$result = false;
+    }
+     while (false);
+    return any$result;
+  };
+  Linker.prototype.linkable_0 = function (agent) {
+    return distinct(agent.actionPortal.findLinkableForKeys_912u9o$(agent));
+  };
+  Linker.prototype.hasNoCrossLinks_0 = function (newline) {
+    var $receiver = World_getInstance().allLines();
+    var none$result;
+    none$break: do {
+      var tmp$;
+      if (Kotlin.isType($receiver, Collection) && $receiver.isEmpty()) {
+        none$result = true;
+        break none$break;
+      }
+      tmp$ = $receiver.iterator();
+      while (tmp$.hasNext()) {
+        var element = tmp$.next();
+        if (element.doesIntersect_589y3w$(newline)) {
+          none$result = false;
+          break none$break;
+        }
+      }
+      none$result = true;
+    }
+     while (false);
+    return none$result;
+  };
+  Linker.prototype.targetOptions_0 = function (agent) {
+    var $receiver = this.linkable_0(agent);
+    var destination = ArrayList_init_0();
+    var tmp$;
+    tmp$ = $receiver.iterator();
+    while (tmp$.hasNext()) {
+      var element = tmp$.next();
+      if (!(element != null ? element.equals(agent.actionPortal) : null) && element.owner != null && !element.isDeprecated())
+        destination.add_11rb$(element);
+    }
+    var destination_0 = ArrayList_init_0();
+    var tmp$_0;
+    tmp$_0 = destination.iterator();
+    while (tmp$_0.hasNext()) {
+      var element_0 = tmp$_0.next();
+      var tmp$_1;
+      var linkLine = (tmp$_1 = Link$Companion_getInstance().create_6ezwqo$(agent.actionPortal, element_0, agent)) != null ? tmp$_1.getLine() : null;
+      if (linkLine != null && this.hasNoCrossLinks_0(linkLine))
+        destination_0.add_11rb$(element_0);
+    }
+    return destination_0;
+  };
+  Linker.$metadata$ = {
+    kind: Kind_OBJECT,
+    simpleName: 'Linker',
+    interfaces: [ConditionalAction]
+  };
+  var Linker_instance = null;
+  function Linker_getInstance() {
+    if (Linker_instance === null) {
+      new Linker();
+    }
+    return Linker_instance;
+  }
+  function Recharger() {
+    Recharger_instance = this;
+    this.actionItem_619hv3$_0 = ActionItem$Companion_getInstance().RECYCLE;
+  }
+  Object.defineProperty(Recharger.prototype, 'actionItem', {
+    get: function () {
+      return this.actionItem_619hv3$_0;
+    }
+  });
+  Recharger.prototype.isActionPossible_912u9o$ = function (agent) {
+    var tmp$ = agent.isXmFilled();
+    if (tmp$) {
+      tmp$ = !this.chargeableKeys_0(agent).isEmpty();
+    }
+    var tmp$_0 = tmp$;
+    if (tmp$_0) {
+      tmp$_0 = !this.rechargeResos_0(agent).isEmpty();
+    }
+    return tmp$_0;
+  };
+  Recharger.prototype.performAction_912u9o$ = function (agent) {
+    agent.action.start_fyi6w8$(this.actionItem);
+    var resos = this.rechargeResos_0(agent);
+    var tmp$;
+    tmp$ = resos.iterator();
+    while (tmp$.hasNext()) {
+      var element = tmp$.next();
+      element.recharge_2b7tta$(agent, 1000 / resos.size | 0);
+    }
+    return agent;
+  };
+  Recharger.prototype.chargeableKeys_0 = function (agent) {
+    var tmp$ = Portal$Companion_getInstance();
+    var $receiver = agent.keySet();
+    var $receiver_0 = tmp$.findChargeableForKeys_p3u7jq$(agent, $receiver != null ? $receiver : emptyList());
+    return $receiver_0 != null ? $receiver_0 : emptyList();
+  };
+  function Recharger$lowestChargeablePortal$lambda(it) {
+    return it.calcHealth();
+  }
+  var compareBy$lambda_1 = wrapFunction(function () {
+    var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
+    return function (closure$selector) {
+      return function (a, b) {
+        var selector = closure$selector;
+        return compareValues(selector(a), selector(b));
+      };
+    };
+  });
+  function Comparator$ObjectLiteral_1(closure$comparison) {
+    this.closure$comparison = closure$comparison;
+  }
+  Comparator$ObjectLiteral_1.prototype.compare = function (a, b) {
+    return this.closure$comparison(a, b);
+  };
+  Comparator$ObjectLiteral_1.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
+  Recharger.prototype.lowestChargeablePortal_0 = function (agent) {
+    return first(sortedWith(this.chargeableKeys_0(agent), new Comparator$ObjectLiteral_1(compareBy$lambda_1(Recharger$lowestChargeablePortal$lambda))));
+  };
+  var mapNotNullTo$lambda = wrapFunction(function () {
+    return function (closure$transform, closure$destination) {
+      return function (element) {
+        var tmp$;
+        if ((tmp$ = closure$transform(element)) != null) {
+          closure$destination.add_11rb$(tmp$);
+        }
+        return Unit;
+      };
+    };
+  });
+  Recharger.prototype.rechargeResos_0 = function (agent) {
+    var $receiver = this.lowestChargeablePortal_0(agent).resoSlots;
+    var destination = ArrayList_init_0();
+    var tmp$;
+    tmp$ = $receiver.entries.iterator();
+    while (tmp$.hasNext()) {
+      var element = tmp$.next();
+      var tmp$_0;
+      if ((tmp$_0 = element.value.resonator) != null) {
+        destination.add_11rb$(tmp$_0);
+      }
+    }
+    return destination;
+  };
+  Recharger.$metadata$ = {
+    kind: Kind_OBJECT,
+    simpleName: 'Recharger',
+    interfaces: [ConditionalAction]
+  };
+  var Recharger_instance = null;
+  function Recharger_getInstance() {
+    if (Recharger_instance === null) {
+      new Recharger();
+    }
+    return Recharger_instance;
+  }
+  function Recruiter() {
+    Recruiter_instance = this;
+    this.actionItem_xib8j3$_0 = ActionItem$Companion_getInstance().RECRUIT;
+  }
+  Object.defineProperty(Recruiter.prototype, 'actionItem', {
+    get: function () {
+      return this.actionItem_xib8j3$_0;
+    }
+  });
+  Recruiter.prototype.isActionPossible_912u9o$ = function (agent) {
+    return World_getInstance().canRecruitMore_bip15f$(agent.faction);
+  };
+  Recruiter.prototype.performAction_912u9o$ = function (agent) {
+    var tmp$;
+    agent.action.start_fyi6w8$(this.actionItem);
+    var npc = NonFaction$Companion_getInstance().findNearestTo_lfj9be$(agent.pos);
+    if (Util_getInstance().random() < NonFaction$Companion_getInstance().changeToBeRecruited) {
+      World_getInstance().allNonFaction.remove_11rb$(npc);
+      switch (agent.faction.name) {
+        case 'ENL':
+          tmp$ = Agent$Companion_getInstance().createFrog_5edep5$(World_getInstance().grid);
+          break;
+        case 'RES':
+          tmp$ = Agent$Companion_getInstance().createSmurf_5edep5$(World_getInstance().grid);
+          break;
+        default:throw IllegalStateException_init(agent.toString() + ' is ' + agent.faction + ' NPC.');
+      }
+      var newAgent = tmp$;
+      Com_getInstance().addMessage_61zpoe$(newAgent.toString() + ' has completed the tutorial.');
+      World_getInstance().allAgents.add_11rb$(newAgent);
+    }
+    agent.destination = NonFaction$Companion_getInstance().findNearestTo_lfj9be$(agent.pos).pos;
+    return agent;
+  };
+  Recruiter.$metadata$ = {
+    kind: Kind_OBJECT,
+    simpleName: 'Recruiter',
+    interfaces: [ConditionalAction]
+  };
+  var Recruiter_instance = null;
+  function Recruiter_getInstance() {
+    if (Recruiter_instance === null) {
+      new Recruiter();
+    }
+    return Recruiter_instance;
+  }
+  function Recycler() {
+    Recycler_instance = this;
+    this.actionItem_gn3c5b$_0 = ActionItem$Companion_getInstance().RECYCLE;
+  }
+  Object.defineProperty(Recycler.prototype, 'actionItem', {
+    get: function () {
+      return this.actionItem_gn3c5b$_0;
+    }
+  });
+  Recycler.prototype.isActionPossible_912u9o$ = function (agent) {
+    return agent.xm < (agent.xmCapacity() / 10 | 0);
+  };
+  Recycler.prototype.performAction_912u9o$ = function (agent) {
+    agent.action.start_fyi6w8$(this.actionItem);
+    var cubes = agent.inventory.findPowerCubes();
+    if (!cubes.isEmpty()) {
+      var cube = first(cubes);
+      agent.addXm_za3lpa$(cube.level.calculateRecycleXm());
+      agent.inventory.consumeCubes_lz36jp$(listOf_0(cube));
+    }
+    return agent;
+  };
+  Recycler.$metadata$ = {
+    kind: Kind_OBJECT,
+    simpleName: 'Recycler',
+    interfaces: [ConditionalAction]
+  };
+  var Recycler_instance = null;
+  function Recycler_getInstance() {
+    if (Recycler_instance === null) {
+      new Recycler();
+    }
+    return Recycler_instance;
+  }
   function Agent(faction, name, pos, skills, inventory, action, actionPortal, destination, ap, xm, velocity) {
     Agent$Companion_getInstance();
     if (ap === void 0)
@@ -837,9 +1270,6 @@ var QGress = function (_, Kotlin) {
   Agent.prototype.isAtActionPortal = function () {
     return this.distanceToPortal_hv9zn6$(this.actionPortal) < Dim_getInstance().maxDeploymentRange;
   };
-  Agent.prototype.isBusy_0 = function () {
-    return World_getInstance().tick <= this.action.untilTick;
-  };
   Agent.prototype.lineToPortal_0 = function (portal) {
     return new Line(this.pos, portal.location);
   };
@@ -867,6 +1297,10 @@ var QGress = function (_, Kotlin) {
   Agent.prototype.isXmFilled = function () {
     return this.xmBarPercent_0() >= 80;
   };
+  Agent.prototype.keySet = function () {
+    var $receiver = this.inventory.findUniqueKeys();
+    return $receiver != null ? $receiver : emptyList();
+  };
   Agent.prototype.removeXm_za3lpa$ = function (v) {
     this.xm = Util_getInstance().clip_qt1dr2$(this.xm - v | 0, 0, this.xmCapacity());
   };
@@ -885,14 +1319,14 @@ var QGress = function (_, Kotlin) {
       var tmp$_1;
       if ((tmp$_1 = this.action.item) != null ? tmp$_1.equals(ActionItem$Companion_getInstance().DEPLOY) : null)
         tmp$ = this.deployPortal_6taknv$(false);
-      else if (this.isBusy_0())
-        tmp$ = this;
       else {
         var tmp$_2;
         if ((tmp$_2 = this.action.item) != null ? tmp$_2.equals(ActionItem$Companion_getInstance().MOVE) : null)
           tmp$ = this.moveCloserToDestinationPortal_0();
+        else if (this.action.isBusy())
+          tmp$ = this;
         else
-          tmp$ = ActionSelector_getInstance().doSomething_912u9o$(this);
+          tmp$ = ActionSelector_getInstance().doSomethingElse_912u9o$(this);
       }
     }
     var next = tmp$;
@@ -955,14 +1389,29 @@ var QGress = function (_, Kotlin) {
     newAgent.action.start_fyi6w8$(ActionItem$Companion_getInstance().MOVE);
     return newAgent;
   };
+  function Agent$moveCloserToDestinationPortal$jumpToRandomPortal(this$Agent) {
+    return function () {
+      var portal = World_getInstance().randomPortal();
+      this$Agent.actionPortal = portal;
+      this$Agent.destination = portal.location.randomNearPoint_za3lpa$(numberToInt(Dim_getInstance().maxDeploymentRange));
+      this$Agent.velocity = Complex$Companion_getInstance().ZERO;
+      this$Agent.action.end();
+      return this$Agent.copy_lmq102$(void 0, void 0, portal.location);
+    };
+  }
   Agent.prototype.moveCloserToDestinationPortal_0 = function () {
-    var tmp$;
     if (!World_getInstance().isReady) {
       console.warn('World is not ready.');
       return this.doNothing();
     }
     if (this.isAtActionPortal()) {
-      return ((tmp$ = this.action.item) != null ? tmp$.equals(ActionItem$Companion_getInstance().ATTACK) : null) ? this : this.doNothing();
+      this.action.end();
+      return this;
+    }
+    var jumpToRandomPortal = Agent$moveCloserToDestinationPortal$jumpToRandomPortal(this);
+    var isStuck = !this.action.isBusy();
+    if (isStuck) {
+      return jumpToRandomPortal();
     }
     var force = this.actionPortal.vectorField.get_11rb$(PathUtil_getInstance().posToShadowPos_lfj9be$(this.pos));
     this.velocity = MovementUtil_getInstance().move_75inmo$(this.velocity, force, this.skills.speed);
@@ -997,136 +1446,6 @@ var QGress = function (_, Kotlin) {
       }
     }
   };
-  Agent.prototype.chargeableKeys_0 = function () {
-    var tmp$ = Portal$Companion_getInstance();
-    var $receiver = this.keySet();
-    return tmp$.findChargeableForKeys_p3u7jq$(this, $receiver != null ? $receiver : emptyList());
-  };
-  function Agent$lowestChargeablePortal$lambda(it) {
-    return it.calcHealth();
-  }
-  var compareBy$lambda_1 = wrapFunction(function () {
-    var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
-    return function (closure$selector) {
-      return function (a, b) {
-        var selector = closure$selector;
-        return compareValues(selector(a), selector(b));
-      };
-    };
-  });
-  function Comparator$ObjectLiteral_1(closure$comparison) {
-    this.closure$comparison = closure$comparison;
-  }
-  Comparator$ObjectLiteral_1.prototype.compare = function (a, b) {
-    return this.closure$comparison(a, b);
-  };
-  Comparator$ObjectLiteral_1.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
-  Agent.prototype.lowestChargeablePortal_0 = function () {
-    var tmp$, tmp$_0;
-    return (tmp$_0 = (tmp$ = this.chargeableKeys_0()) != null ? sortedWith(tmp$, new Comparator$ObjectLiteral_1(compareBy$lambda_1(Agent$lowestChargeablePortal$lambda))) : null) != null ? first(tmp$_0) : null;
-  };
-  var mapNotNullTo$lambda = wrapFunction(function () {
-    return function (closure$transform, closure$destination) {
-      return function (element) {
-        var tmp$;
-        if ((tmp$ = closure$transform(element)) != null) {
-          closure$destination.add_11rb$(tmp$);
-        }
-        return Unit;
-      };
-    };
-  });
-  Agent.prototype.rechargeResos_0 = function () {
-    var tmp$, tmp$_0;
-    var tmp$_1;
-    if ((tmp$_0 = (tmp$ = this.lowestChargeablePortal_0()) != null ? tmp$.resoSlots : null) != null) {
-      var destination = ArrayList_init_0();
-      var tmp$_2;
-      tmp$_2 = tmp$_0.entries.iterator();
-      while (tmp$_2.hasNext()) {
-        var element = tmp$_2.next();
-        var tmp$_0_0;
-        if ((tmp$_0_0 = element.value.resonator) != null) {
-          destination.add_11rb$(tmp$_0_0);
-        }
-      }
-      tmp$_1 = destination;
-    }
-     else
-      tmp$_1 = null;
-    return tmp$_1;
-  };
-  Agent.prototype.isRechargePossible = function () {
-    var tmp$ = this.isXmFilled();
-    if (tmp$) {
-      var $receiver = this.chargeableKeys_0();
-      tmp$ = !($receiver == null || $receiver.isEmpty());
-    }
-    return tmp$;
-  };
-  Agent.prototype.rechargePortal = function () {
-    var tmp$;
-    var resos = this.rechargeResos_0();
-    if (resos == null || resos.isEmpty()) {
-      console.warn(this.toString() + ' Fail recharging resos.');
-    }
-    var count = (tmp$ = resos != null ? resos.size : null) != null ? tmp$ : 0;
-    if (resos != null) {
-      var tmp$_0;
-      tmp$_0 = resos.iterator();
-      while (tmp$_0.hasNext()) {
-        var element = tmp$_0.next();
-        element.recharge_2b7tta$(this, 1000 / count | 0);
-      }
-    }
-    return this;
-  };
-  Agent.prototype.isRecruitmentPossible = function () {
-    return World_getInstance().canRecruitMore_bip15f$(this.faction);
-  };
-  Agent.prototype.recruitNewAgents = function () {
-    var tmp$, tmp$_0;
-    if (!((tmp$ = this.action.item) != null ? tmp$.equals(ActionItem$Companion_getInstance().RECRUIT) : null)) {
-      this.action.start_fyi6w8$(ActionItem$Companion_getInstance().RECRUIT);
-      if (Util_getInstance().random() < NonFaction$Companion_getInstance().changeToBeRecruited) {
-        var npc = NonFaction$Companion_getInstance().findNearestTo_lfj9be$(this.pos);
-        World_getInstance().allNonFaction.remove_11rb$(npc);
-        switch (this.faction.name) {
-          case 'ENL':
-            tmp$_0 = Agent$Companion_getInstance().createFrog_5edep5$(World_getInstance().grid);
-            break;
-          case 'RES':
-            tmp$_0 = Agent$Companion_getInstance().createSmurf_5edep5$(World_getInstance().grid);
-            break;
-          default:throw IllegalStateException_init(this.toString() + ' is ' + this.faction + ' NPC.');
-        }
-        var newAgent = tmp$_0;
-        Com_getInstance().addMessage_61zpoe$(newAgent.toString() + ' has completed the tutorial.');
-        World_getInstance().allAgents.add_11rb$(newAgent);
-      }
-    }
-    return this;
-  };
-  Agent.prototype.isRecyclePossible = function () {
-    return this.xm < (this.xmCapacity() / 10 | 0);
-  };
-  Agent.prototype.recycleItems = function () {
-    var cubes = this.inventory.findPowerCubes();
-    if (!cubes.isEmpty()) {
-      var cube = first(cubes);
-      this.addXm_za3lpa$(cube.level.calculateRecycleXm());
-      this.inventory.consumeCubes_lz36jp$(listOf_0(cube));
-    }
-    return this;
-  };
-  function Agent$attackPortal$doAttack(this$Agent) {
-    return function () {
-      if (Attacker_getInstance().isActionPossible_912u9o$(this$Agent)) {
-        Attacker_getInstance().performAction_912u9o$(this$Agent);
-      }
-      return this$Agent;
-    };
-  }
   function Agent$attackPortal$findExactDestination(this$Agent) {
     return function () {
       var tmp$;
@@ -1146,31 +1465,26 @@ var QGress = function (_, Kotlin) {
   }
   Agent.prototype.attackPortal_6taknv$ = function (isFirst) {
     var tmp$;
-    var doAttack = Agent$attackPortal$doAttack(this);
     if (isFirst) {
+      this.action.start_fyi6w8$(ActionItem$Companion_getInstance().ATTACK);
       var findExactDestination = Agent$attackPortal$findExactDestination(this);
       var inRangePosition = findExactDestination();
       this.destination = inRangePosition;
-      this.action.start_fyi6w8$(ActionItem$Companion_getInstance().ATTACK);
-      return this.moveCloserInRange_0();
     }
-    if (!this.isArrived_0())
+    if (!this.isArrived_0() && this.action.isBusy())
       tmp$ = this.moveCloserInRange_0();
-    else
-      tmp$ = doAttack();
+    else {
+      if (Attacker_getInstance().isActionPossible_912u9o$(this)) {
+        tmp$ = Attacker_getInstance().performAction_912u9o$(this);
+      }
+       else {
+        tmp$ = this.doNothing();
+      }
+    }
     return tmp$;
   };
-  function Agent$deployPortal$doDeploy(this$Agent) {
-    return function () {
-      if (Deployer_getInstance().isActionPossible_912u9o$(this$Agent)) {
-        Deployer_getInstance().performAction_912u9o$(this$Agent);
-      }
-      return this$Agent;
-    };
-  }
   Agent.prototype.deployPortal_6taknv$ = function (isFirst) {
     var tmp$;
-    var doDeploy = Agent$deployPortal$doDeploy(this);
     if (isFirst) {
       this.action.start_fyi6w8$(ActionItem$Companion_getInstance().DEPLOY);
       var a = Dim_getInstance().minDeploymentRange;
@@ -1178,197 +1492,21 @@ var QGress = function (_, Kotlin) {
       var distance = numberToInt(Math_0.max(a, b));
       var dest = this.actionPortal.findRandomPointNearPortal_za3lpa$(distance);
       this.destination = dest;
-      return this.moveCloserInRange_0();
     }
-    if (!this.isArrived_0())
+    if (!this.isArrived_0() && this.action.isBusy())
       tmp$ = this.moveCloserInRange_0();
-    else
-      tmp$ = doDeploy();
+    else {
+      if (Deployer_getInstance().isActionPossible_912u9o$(this)) {
+        tmp$ = Deployer_getInstance().performAction_912u9o$(this);
+      }
+       else {
+        tmp$ = this.doNothing();
+      }
+    }
     return tmp$;
   };
   Agent.prototype.doNothing = function () {
     this.action.start_fyi6w8$(ActionItem$Companion_getInstance().WAIT);
-    return this;
-  };
-  Agent.prototype.keySet = function () {
-    return this.inventory.findUniqueKeys();
-  };
-  Agent.prototype.hasKeys = function () {
-    var tmp$, tmp$_0;
-    return (tmp$_0 = (tmp$ = this.keySet()) != null ? !tmp$.isEmpty() : null) != null ? tmp$_0 : false;
-  };
-  var mapNotNullTo$lambda_0 = wrapFunction(function () {
-    return function (closure$transform, closure$destination) {
-      return function (element) {
-        var tmp$;
-        if ((tmp$ = closure$transform(element)) != null) {
-          closure$destination.add_11rb$(tmp$);
-        }
-        return Unit;
-      };
-    };
-  });
-  Agent.prototype.isLinkPossible = function () {
-    var tmp$, tmp$_0;
-    if (!this.actionPortal.canLinkOut_912u9o$(this)) {
-      return false;
-    }
-    if (this.hasKeys()) {
-      var tmp$_1;
-      if ((tmp$ = this.actionPortal.findLinkableForKeys_912u9o$(this)) != null) {
-        var destination = ArrayList_init_0();
-        var tmp$_2;
-        tmp$_2 = tmp$.iterator();
-        while (tmp$_2.hasNext()) {
-          var element = tmp$_2.next();
-          if (!(element != null ? element.equals(this.actionPortal) : null) && element.owner != null && !element.isDeprecated())
-            destination.add_11rb$(element);
-        }
-        tmp$_1 = destination;
-      }
-       else
-        tmp$_1 = null;
-      var targetOptions = (tmp$_0 = tmp$_1) != null ? distinct(tmp$_0) : null;
-      if ((targetOptions != null ? !targetOptions.isEmpty() : null) === true) {
-        var destination_0 = ArrayList_init_0();
-        var tmp$_3;
-        tmp$_3 = targetOptions.iterator();
-        while (tmp$_3.hasNext()) {
-          var element_0 = tmp$_3.next();
-          var tmp$_0_0;
-          if ((tmp$_0_0 = Link$Companion_getInstance().create_6ezwqo$(this.actionPortal, element_0, this)) != null) {
-            destination_0.add_11rb$(tmp$_0_0);
-          }
-        }
-        var linkOptions = destination_0;
-        var any$result;
-        any$break: do {
-          var tmp$_4;
-          if (Kotlin.isType(linkOptions, Collection) && linkOptions.isEmpty()) {
-            any$result = false;
-            break any$break;
-          }
-          tmp$_4 = linkOptions.iterator();
-          loop_label: while (tmp$_4.hasNext()) {
-            var element_1 = tmp$_4.next();
-            var $receiver = World_getInstance().allLines();
-            var none$result;
-            none$break: do {
-              var tmp$_5;
-              if (Kotlin.isType($receiver, Collection) && $receiver.isEmpty()) {
-                none$result = true;
-                break none$break;
-              }
-              tmp$_5 = $receiver.iterator();
-              while (tmp$_5.hasNext()) {
-                var element_2 = tmp$_5.next();
-                if (element_2.doesIntersect_589y3w$(element_1.getLine())) {
-                  none$result = false;
-                  break none$break;
-                }
-              }
-              none$result = true;
-            }
-             while (false);
-            if (none$result) {
-              any$result = true;
-              break any$break;
-            }
-          }
-          any$result = false;
-        }
-         while (false);
-        return any$result;
-      }
-    }
-    return false;
-  };
-  Agent.prototype.createLink = function () {
-    var tmp$, tmp$_0;
-    if (!this.actionPortal.canLinkOut_912u9o$(this)) {
-      return this.doNothing();
-    }
-    if (this.hasKeys()) {
-      var tmp$_1;
-      if ((tmp$ = this.actionPortal.findLinkableForKeys_912u9o$(this)) != null) {
-        var destination = ArrayList_init_0();
-        var tmp$_2;
-        tmp$_2 = tmp$.iterator();
-        while (tmp$_2.hasNext()) {
-          var element = tmp$_2.next();
-          if (!(element != null ? element.equals(this.actionPortal) : null) && element.owner != null && !element.isDeprecated())
-            destination.add_11rb$(element);
-        }
-        tmp$_1 = destination;
-      }
-       else
-        tmp$_1 = null;
-      var linkOptions = (tmp$_0 = tmp$_1) != null ? distinct(tmp$_0) : null;
-      var tmp$_3 = linkOptions != null;
-      if (tmp$_3) {
-        tmp$_3 = !linkOptions.isEmpty();
-      }
-      if (tmp$_3) {
-        var destination_0 = ArrayList_init(collectionSizeOrDefault(linkOptions, 10));
-        var tmp$_4;
-        tmp$_4 = linkOptions.iterator();
-        while (tmp$_4.hasNext()) {
-          var item = tmp$_4.next();
-          destination_0.add_11rb$(Link$Companion_getInstance().create_6ezwqo$(this.actionPortal, item, this));
-        }
-        var linkLinks = filterNotNull(destination_0);
-        var destination_1 = ArrayList_init_0();
-        var tmp$_5;
-        tmp$_5 = linkLinks.iterator();
-        loop_label: while (tmp$_5.hasNext()) {
-          var element_0 = tmp$_5.next();
-          var $receiver = World_getInstance().allLines();
-          var none$result;
-          none$break: do {
-            var tmp$_6;
-            if (Kotlin.isType($receiver, Collection) && $receiver.isEmpty()) {
-              none$result = true;
-              break none$break;
-            }
-            tmp$_6 = $receiver.iterator();
-            while (tmp$_6.hasNext()) {
-              var element_1 = tmp$_6.next();
-              if (element_1.doesIntersect_589y3w$(element_0.getLine())) {
-                none$result = false;
-                break none$break;
-              }
-            }
-            none$result = true;
-          }
-           while (false);
-          if (none$result)
-            destination_1.add_11rb$(element_0);
-        }
-        var nonCrossing = destination_1;
-        var hasLinkOptions = !nonCrossing.isEmpty();
-        if (hasLinkOptions) {
-          var randomTarget = first(Util_getInstance().shuffle_bemo1h$(nonCrossing));
-          this.actionPortal.createLink_g4r5ni$(this, randomTarget.destination);
-        }
-      }
-    }
-    this.action.start_fyi6w8$(ActionItem$Companion_getInstance().LINK);
-    return this;
-  };
-  Agent.prototype.isHackPossible = function () {
-    return this.actionPortal.canHack_912u9o$(this);
-  };
-  Agent.prototype.hackActionPortal = function () {
-    if (this.isAtActionPortal() && this.actionPortal.canHack_912u9o$(this)) {
-      var hackResult = this.actionPortal.tryHack_912u9o$(this);
-      SoundUtil_getInstance().playHackingSound_lfj9be$(this.actionPortal.location);
-      var isSuccess = hackResult.items != null;
-      if (isSuccess) {
-        var newStuff = ensureNotNull(hackResult.items);
-        this.inventory.items.addAll_brywnq$(newStuff);
-      }
-    }
-    this.action.start_fyi6w8$(ActionItem$Companion_getInstance().HACK);
     return this;
   };
   function Agent$findPortalsInAttackRange$lambda(this$Agent) {
@@ -2331,8 +2469,7 @@ var QGress = function (_, Kotlin) {
     return this.goToDestinationPortal_0(agent, target);
   };
   MovementUtil.prototype.moveToRandomPortal_912u9o$ = function (agent) {
-    var random = World_getInstance().allPortals.get_za3lpa$(numberToInt(Util_getInstance().random() * (World_getInstance().allPortals.size - 1 | 0)));
-    return this.goToDestinationPortal_0(agent, random);
+    return this.goToDestinationPortal_0(agent, World_getInstance().randomPortal());
   };
   MovementUtil.prototype.goToDestinationPortal_0 = function (agent, destination) {
     var distance = agent.skills.deployPrecision * Dim_getInstance().maxDeploymentRange;
@@ -2712,17 +2849,19 @@ var QGress = function (_, Kotlin) {
   function QActions() {
     QActions_instance = this;
     this.MOVE_ELSEWHERE = new QValue('move', 0.01, 'move elsewhere', ActionItem$Companion_getInstance().getIcon_5bvev3$(ActionItem$Companion_getInstance().MOVE));
+    this.RECRUIT = new QValue('recruit', 5.0E-4, 'recruit agents', ActionItem$Companion_getInstance().getIcon_5bvev3$(ActionItem$Companion_getInstance().RECRUIT));
+    this.EXPLORE = new QValue('explore', 2.0E-4, 'explore portals', ActionItem$Companion_getInstance().getIcon_5bvev3$(ActionItem$Companion_getInstance().EXPLORE));
     this.RECYCLE = new QValue('recycle', 1.0, 'recycle items', ActionItem$Companion_getInstance().getIcon_5bvev3$(ActionItem$Companion_getInstance().RECYCLE));
-    this.RECHARGE = new QValue('recharge', 1.0, 'recharge portal', ActionItem$Companion_getInstance().getIcon_5bvev3$(ActionItem$Companion_getInstance().RECHARGE));
-    this.RECRUIT = new QValue('recruit', 0.005, 'recruit agents', ActionItem$Companion_getInstance().getIcon_5bvev3$(ActionItem$Companion_getInstance().RECRUIT));
-    this.HACK = new QValue('hack', 0.5, 'hack portal', ActionItem$Companion_getInstance().getIcon_5bvev3$(ActionItem$Companion_getInstance().HACK));
+    this.RECHARGE = new QValue('recharge', 1.0, 'recharge portals', ActionItem$Companion_getInstance().getIcon_5bvev3$(ActionItem$Companion_getInstance().RECHARGE));
+    this.HACK = new QValue('hack', 1.0, 'hack portal', ActionItem$Companion_getInstance().getIcon_5bvev3$(ActionItem$Companion_getInstance().HACK));
+    this.GLYPH = new QValue('glyph', 1.0, 'glyph portal', ActionItem$Companion_getInstance().getIcon_5bvev3$(ActionItem$Companion_getInstance().GLYPH));
     this.DEPLOY = new QValue('deploy', 1.0, 'deploy portal', ActionItem$Companion_getInstance().getIcon_5bvev3$(ActionItem$Companion_getInstance().DEPLOY));
-    this.CAPTURE = new QValue('capture', 50.0, 'capture portal', ActionItem$Companion_getInstance().getIcon_5bvev3$(ActionItem$Companion_getInstance().DEPLOY));
-    this.LINK = new QValue('link', 5.0, 'create link', ActionItem$Companion_getInstance().getIcon_5bvev3$(ActionItem$Companion_getInstance().LINK));
-    this.ATTACK = new QValue('attack', 1.0, 'attack portal', ActionItem$Companion_getInstance().getIcon_5bvev3$(ActionItem$Companion_getInstance().ATTACK));
+    this.CAPTURE = new QValue('capture', 1.0, 'capture portal', ActionItem$Companion_getInstance().getIcon_5bvev3$(ActionItem$Companion_getInstance().CAPTURE));
+    this.LINK = new QValue('link', 1.0, 'create link', ActionItem$Companion_getInstance().getIcon_5bvev3$(ActionItem$Companion_getInstance().LINK));
+    this.ATTACK = new QValue('attack', 1.0, 'attack portals', ActionItem$Companion_getInstance().getIcon_5bvev3$(ActionItem$Companion_getInstance().ATTACK));
   }
   QActions.prototype.values = function () {
-    return listOf([this.MOVE_ELSEWHERE, this.RECYCLE, this.RECHARGE, this.RECRUIT, this.HACK, this.DEPLOY, this.CAPTURE, this.LINK, this.ATTACK]);
+    return listOf([this.MOVE_ELSEWHERE, this.EXPLORE, this.RECRUIT, this.ATTACK, this.LINK, this.DEPLOY, this.CAPTURE, this.HACK, this.GLYPH, this.RECHARGE, this.RECYCLE]);
   };
   QActions.$metadata$ = {
     kind: Kind_OBJECT,
@@ -2802,7 +2941,7 @@ var QGress = function (_, Kotlin) {
     return 0.7 + Util_getInstance().random() * 0.3;
   };
   Skills$Companion.prototype.randomGlyphSkill_0 = function () {
-    return Util_getInstance().random();
+    return 0.5 + Util_getInstance().random() * 0.5;
   };
   Skills$Companion.prototype.randomReliability_0 = function () {
     return 0.5 + Util_getInstance().random() / 2;
@@ -2885,15 +3024,23 @@ var QGress = function (_, Kotlin) {
   }
   function Config() {
     Config_instance = this;
-    this.startPortals = HtmlUtil_getInstance().isLocal() ? 13 : 8;
-    this.startFrogs = HtmlUtil_getInstance().isLocal() ? 4 : 4;
-    this.startSmurfs = HtmlUtil_getInstance().isLocal() ? 4 : 4;
-    this.maxFrogs = 20;
-    this.maxSmurfs = 20;
-    var b = this.maxFrogs + this.maxSmurfs | 0;
-    this.maxNonFaction = Math_0.max(100, b);
+    this.minPortals = 3;
+    this.maxPortals = 89;
+    this.minFrogs = 2;
+    this.maxFrogs = 21;
+    this.minSmurfs = 2;
+    this.maxSmurfs = 21;
+    this.frogQuitRate = 0.05;
+    this.smurfQuitRate = 0.05;
+    this.factionChangeRate = 0.01;
+    this.portalRemovalRate = 0.05;
+    this.startPortals = HtmlUtil_getInstance().isLocal() ? 3 : 5;
+    this.startFrogs = HtmlUtil_getInstance().isLocal() ? 2 : 2;
+    this.startSmurfs = HtmlUtil_getInstance().isLocal() ? 2 : 2;
+    this.maxNonFaction = Math_0.max(100, 42);
     this.apMultiplier = 10;
     this.isNpcSwarming = true;
+    this.npcXmSpawnRatio = 0.05;
     this.isSoundOn = true;
     this.isPlayInitialSound = false;
     this.isSatOn = false;
@@ -2911,9 +3058,9 @@ var QGress = function (_, Kotlin) {
   Config.prototype.maxFor_bip15f$ = function (faction) {
     switch (faction.name) {
       case 'ENL':
-        return this.maxFrogs;
+        return 21;
       case 'RES':
-        return this.maxSmurfs;
+        return 21;
       default:return this.maxNonFaction;
     }
   };
@@ -6010,6 +6157,20 @@ var QGress = function (_, Kotlin) {
     }
     return new HackResult(null, cooldown);
   };
+  Portal.prototype.tryGlyph_912u9o$ = function (agent) {
+    var tmp$;
+    var normal = this.tryHack_912u9o$(agent);
+    if (normal.cooldown == null) {
+      var glyphItems = ArrayList_init_0();
+      glyphItems.addAll_brywnq$((tmp$ = normal.items) != null ? tmp$ : emptyList());
+      glyphItems.addAll_brywnq$(this.hack_0(agent));
+      if (Util_getInstance().random() < agent.skills.glyphSkill) {
+        glyphItems.addAll_brywnq$(this.hack_0(agent));
+      }
+      return new HackResult(toList_0(glyphItems), null);
+    }
+    return new HackResult(null, normal.cooldown);
+  };
   Portal.prototype.hack_0 = function (agent) {
     var tmp$;
     var a = this.calculateLevel_0();
@@ -6264,6 +6425,7 @@ var QGress = function (_, Kotlin) {
     tmp$_3.consumeResos_tvxik5$(destination_0);
   };
   Portal.prototype.destroy_fzusl$ = function (tick, isRemovePortal) {
+    SoundUtil_getInstance().playPortalRemovalSound_lfj9be$(this.location);
     if (isRemovePortal) {
       this.resoSlots.clear();
     }
@@ -6854,7 +7016,10 @@ var QGress = function (_, Kotlin) {
     this.isCollected_0 = true;
   };
   XmHeap.prototype.draw_lfj9be$ = function (position) {
-    World_getInstance().ctx().drawImage(this.IMAGE_0, position.xx(), position.yy());
+    var image = this.IMAGE_0;
+    var ww = image.width / 2 | 0;
+    var hh = image.height / 2 | 0;
+    World_getInstance().ctx().drawImage(image, position.xx() - ww, position.yy() - hh);
   };
   function XmHeap$Companion() {
     XmHeap$Companion_instance = this;
@@ -7103,7 +7268,7 @@ var QGress = function (_, Kotlin) {
   }
   Com.prototype.addMessage_61zpoe$ = function (message) {
     this.messages_0.add_11rb$(message);
-    if (this.messages_0.size > Config_getInstance().comMessageLimit) {
+    if (this.messages_0.size > 8) {
       this.messages_0.removeAt_za3lpa$(0);
     }
   };
@@ -7155,7 +7320,6 @@ var QGress = function (_, Kotlin) {
   function Cycle$Companion() {
     Cycle$Companion_instance = this;
     this.numberOfCheckpoints_0 = 35;
-    this.npcXmSpawnRatio_0 = 0.05;
     this.ww = 8;
   }
   Cycle$Companion.prototype.isNewCheckpoint_0 = function (tick) {
@@ -7196,6 +7360,10 @@ var QGress = function (_, Kotlin) {
       Cycle$INSTANCE_getInstance().image = this.createImage_0();
       if (cp.isCycleEnd) {
         this.spawnXm_0();
+        this.removePortals_0();
+        this.removeFrogs_0();
+        this.removeSmurfs_0();
+        this.factionChange_0();
         SoundUtil_getInstance().playCycleSound();
         var tmp$;
         tmp$ = World_getInstance().allPortals.iterator();
@@ -7207,6 +7375,79 @@ var QGress = function (_, Kotlin) {
        else {
         SoundUtil_getInstance().playCheckpointSound_2xtf47$(cp);
       }
+    }
+  };
+  Cycle$Companion.prototype.removePortals_0 = function () {
+    if (Util_getInstance().random() <= Config_getInstance().portalRemovalRate) {
+      var ratio = World_getInstance().countPortals() / 89 | 0;
+      if (Util_getInstance().random() <= ratio) {
+        var deprecated = World_getInstance().randomPortal();
+        deprecated.destroy_fzusl$(World_getInstance().tick, false);
+        Com_getInstance().addMessage_61zpoe$('Portal ' + deprecated + ' no longer exists.');
+      }
+    }
+  };
+  function Cycle$Companion$removeAgents$lambda(it) {
+    return it.getLevel();
+  }
+  var compareBy$lambda_15 = wrapFunction(function () {
+    var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
+    return function (closure$selector) {
+      return function (a, b) {
+        var selector = closure$selector;
+        return compareValues(selector(a), selector(b));
+      };
+    };
+  });
+  function Comparator$ObjectLiteral_16(closure$comparison) {
+    this.closure$comparison = closure$comparison;
+  }
+  Comparator$ObjectLiteral_16.prototype.compare = function (a, b) {
+    return this.closure$comparison(a, b);
+  };
+  Comparator$ObjectLiteral_16.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
+  Cycle$Companion.prototype.removeAgents_0 = function (agents, minCount, maxCount, fc) {
+    if (fc === void 0)
+      fc = false;
+    var count = agents.size;
+    if (count < minCount) {
+      var ratio = count / maxCount | 0;
+      if (Util_getInstance().random() <= ratio) {
+        var selection = takeLast(sortedWith(agents, new Comparator$ObjectLiteral_16(compareBy$lambda_15(Cycle$Companion$removeAgents$lambda))), count - maxCount | 0);
+        var removed = first(shuffled(selection));
+        if (fc) {
+          Com_getInstance().addMessage_61zpoe$('Portal ' + removed + ' quit the game.');
+        }
+         else {
+          Com_getInstance().addMessage_61zpoe$('Portal ' + removed + ' has left ' + removed.faction.abbr + '.');
+        }
+      }
+    }
+  };
+  Cycle$Companion.prototype.removeFrogs_0 = function () {
+    if (Util_getInstance().random() <= Config_getInstance().frogQuitRate) {
+      this.removeAgents_0(World_getInstance().frogs, 2, 21);
+    }
+  };
+  Cycle$Companion.prototype.removeSmurfs_0 = function () {
+    if (Util_getInstance().random() <= Config_getInstance().smurfQuitRate) {
+      this.removeAgents_0(World_getInstance().smurfs, 2, 21);
+    }
+  };
+  Cycle$Companion.prototype.factionChange_0 = function () {
+    var tmp$;
+    if (Util_getInstance().random() <= Config_getInstance().factionChangeRate) {
+      if (Util_getInstance().randomBool()) {
+        this.removeAgents_0(World_getInstance().frogs, 2, 21, true);
+        tmp$ = Agent$Companion_getInstance().createSmurf_5edep5$(World_getInstance().grid);
+      }
+       else {
+        this.removeAgents_0(World_getInstance().smurfs, 2, 21, true);
+        tmp$ = Agent$Companion_getInstance().createFrog_5edep5$(World_getInstance().grid);
+      }
+      var xfAgent = tmp$;
+      Com_getInstance().addMessage_61zpoe$(xfAgent.name + ' restarted as ' + xfAgent.faction.abbr + '.');
+      World_getInstance().allAgents.add_11rb$(xfAgent);
     }
   };
   Cycle$Companion.prototype.spawnXm_0 = function () {
@@ -7252,7 +7493,7 @@ var QGress = function (_, Kotlin) {
       if (!element_1.pos.isOffScreen())
         destination_2.add_11rb$(element_1);
     }
-    var $receiver_2 = take(shuffled(destination_2), numberToInt(World_getInstance().allNonFaction.size * this.npcXmSpawnRatio_0));
+    var $receiver_2 = take(shuffled(destination_2), numberToInt(World_getInstance().allNonFaction.size * Config_getInstance().npcXmSpawnRatio));
     var destination_3 = ArrayList_init(collectionSizeOrDefault($receiver_2, 10));
     var tmp$_4;
     tmp$_4 = $receiver_2.iterator();
@@ -7996,7 +8237,7 @@ var QGress = function (_, Kotlin) {
   function TopAgentsDisplay$draw$lambda(it) {
     return -it.ap | 0;
   }
-  var compareBy$lambda_15 = wrapFunction(function () {
+  var compareBy$lambda_16 = wrapFunction(function () {
     var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
     return function (closure$selector) {
       return function (a, b) {
@@ -8005,13 +8246,13 @@ var QGress = function (_, Kotlin) {
       };
     };
   });
-  function Comparator$ObjectLiteral_16(closure$comparison) {
+  function Comparator$ObjectLiteral_17(closure$comparison) {
     this.closure$comparison = closure$comparison;
   }
-  Comparator$ObjectLiteral_16.prototype.compare = function (a, b) {
+  Comparator$ObjectLiteral_17.prototype.compare = function (a, b) {
     return this.closure$comparison(a, b);
   };
-  Comparator$ObjectLiteral_16.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
+  Comparator$ObjectLiteral_17.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
   TopAgentsDisplay.prototype.draw = function () {
     var fontSize = Dim_getInstance().topAgentsInventoryFontSize;
     var lineWidth = 2.0;
@@ -8021,9 +8262,9 @@ var QGress = function (_, Kotlin) {
     ctx.globalAlpha = 1.0;
     var xPos = Dim_getInstance().topAgentsLeftOffset;
     var yOffset = (Dim_getInstance().topAgentsFontSize * 3 | 0) / 2 | 0;
-    var yFixOffset = Dim_getInstance().height - Dim_getInstance().topAgentsBottomOffset - Kotlin.imul(Config_getInstance().topAgentsMessageLimit, yOffset) | 0;
+    var yFixOffset = Dim_getInstance().height - Dim_getInstance().topAgentsBottomOffset - (8 * yOffset | 0) | 0;
     var headerPos = new Coords(xPos, yFixOffset - yOffset | 0);
-    var top = take(sortedWith(toList_0(World_getInstance().allAgents), new Comparator$ObjectLiteral_16(compareBy$lambda_15(TopAgentsDisplay$draw$lambda))), Config_getInstance().topAgentsMessageLimit);
+    var top = take(sortedWith(toList_0(World_getInstance().allAgents), new Comparator$ObjectLiteral_17(compareBy$lambda_16(TopAgentsDisplay$draw$lambda))), 8);
     var tmp$, tmp$_0;
     var index = 0;
     tmp$ = top.iterator();
@@ -9905,12 +10146,21 @@ var QGress = function (_, Kotlin) {
     var tmp$, tmp$_0;
     if (Kotlin.isType(event, MouseEvent)) {
       var pos = this.findMousePosition_0(World_getInstance().uiCan, event);
-      if (pos.hasClosePortalForClick()) {
-        SoundUtil_getInstance().playPortalRemovalSound_lfj9be$(pos);
-        (tmp$ = document.defaultView) != null ? tmp$.setTimeout(pos.findClosestPortal().destroy_fzusl$(World_getInstance().tick, true), 0) : null;
-      }
+      if (pos.hasClosePortalForClick())
+        if (World_getInstance().countPortals() > 3) {
+          SoundUtil_getInstance().playPortalRemovalSound_lfj9be$(pos);
+          (tmp$ = document.defaultView) != null ? tmp$.setTimeout(pos.findClosestPortal().destroy_fzusl$(World_getInstance().tick, true), 0) : null;
+        }
+         else {
+          SoundUtil_getInstance().playFailSound();
+        }
        else if (pos.isBuildable())
-        (tmp$_0 = document.defaultView) != null ? tmp$_0.setTimeout(World_getInstance().allPortals.add_11rb$(Portal$Companion_getInstance().create_lfj9be$(pos)), 0) : null;
+        if (World_getInstance().countPortals() < 89) {
+          (tmp$_0 = document.defaultView) != null ? tmp$_0.setTimeout(World_getInstance().allPortals.add_11rb$(Portal$Companion_getInstance().create_lfj9be$(pos)), 0) : null;
+        }
+         else {
+          SoundUtil_getInstance().playFailSound();
+        }
     }
      else {
       println('WARN: Unhandled event: ' + event + '.');
@@ -10502,7 +10752,7 @@ var QGress = function (_, Kotlin) {
     tempCan.width = w;
     tempCan.height = h;
     var tmp$_3;
-    tmp$_3 = (new IntRange(0, Config_getInstance().shadowBlurCount)).iterator();
+    tmp$_3 = (new IntRange(0, 3)).iterator();
     while (tmp$_3.hasNext()) {
       var element = tmp$_3.next();
       tempCan.blur();
@@ -10682,7 +10932,7 @@ var QGress = function (_, Kotlin) {
       tmp$_0.call(destination, to(item.key, raw));
     }
     var fields = toMap(destination);
-    return toMap_0(this.smooth_0(fields, Config_getInstance().vectorSmoothCount));
+    return toMap_0(this.smooth_0(fields, 8));
   };
   PathUtil.prototype.smooth_0 = function (map, count) {
     if (count > 0) {
@@ -10794,6 +11044,13 @@ var QGress = function (_, Kotlin) {
     var oscNode = this.createLinearRampOscillator_0(OscillatorType_getInstance().SINE, 440.0, 440.0, duration);
     this.playSound_0(oscNode, this.createStaticPan_0(pan), 0.5, duration);
   };
+  SoundUtil.prototype.playFailSound = function () {
+    if (this.isMuted_0())
+      return;
+    var freq = 220.0;
+    var osc = this.createStaticOscillator_0(OscillatorType_getInstance().SINE, freq);
+    this.playSound_0(osc, this.createNoisePan_0(), 0.1, 0.5);
+  };
   SoundUtil.prototype.playCycleSound = function () {
     if (this.isMuted_0())
       return;
@@ -10821,6 +11078,16 @@ var QGress = function (_, Kotlin) {
     var pan = pos.xx() / Dim_getInstance().width;
     var gain = 0.04;
     var duration = 0.02;
+    this.playSound_0(osc, this.createStaticPan_0(pan), gain, duration);
+  };
+  SoundUtil.prototype.playGlyphingSound_lfj9be$ = function (pos) {
+    if (this.isMuted_0())
+      return;
+    var freq = 400.0;
+    var osc = this.createStaticOscillator_0(OscillatorType_getInstance().SINE, freq);
+    var pan = pos.xx() / Dim_getInstance().width;
+    var gain = 0.04;
+    var duration = 0.06;
     this.playSound_0(osc, this.createStaticPan_0(pan), gain, duration);
   };
   SoundUtil.prototype.playXmpSound_zbn281$ = function (level, pos) {
@@ -10974,7 +11241,7 @@ var QGress = function (_, Kotlin) {
   function Util$findNearestPortals$lambda(it) {
     return it.first;
   }
-  var compareBy$lambda_16 = wrapFunction(function () {
+  var compareBy$lambda_17 = wrapFunction(function () {
     var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
     return function (closure$selector) {
       return function (a, b) {
@@ -10983,13 +11250,13 @@ var QGress = function (_, Kotlin) {
       };
     };
   });
-  function Comparator$ObjectLiteral_17(closure$comparison) {
+  function Comparator$ObjectLiteral_18(closure$comparison) {
     this.closure$comparison = closure$comparison;
   }
-  Comparator$ObjectLiteral_17.prototype.compare = function (a, b) {
+  Comparator$ObjectLiteral_18.prototype.compare = function (a, b) {
     return this.closure$comparison(a, b);
   };
-  Comparator$ObjectLiteral_17.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
+  Comparator$ObjectLiteral_18.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
   Util.prototype.findNearestPortals_0 = function (coords) {
     var $receiver = World_getInstance().allPortals;
     var destination = ArrayList_init(collectionSizeOrDefault($receiver, 10));
@@ -10999,7 +11266,7 @@ var QGress = function (_, Kotlin) {
       var item = tmp$.next();
       destination.add_11rb$(to(item.location.distanceTo_lfj9be$(coords), item));
     }
-    return toSet(sortedWith(destination, new Comparator$ObjectLiteral_17(compareBy$lambda_16(Util$findNearestPortals$lambda))));
+    return toSet(sortedWith(destination, new Comparator$ObjectLiteral_18(compareBy$lambda_17(Util$findNearestPortals$lambda))));
   };
   Util.prototype.findNearestPortal_lfj9be$ = function (coords) {
     var nearest = this.findNearestPortals_0(coords);
@@ -11050,7 +11317,7 @@ var QGress = function (_, Kotlin) {
   function Util$select$lambda(it) {
     return it.first;
   }
-  var compareBy$lambda_17 = wrapFunction(function () {
+  var compareBy$lambda_18 = wrapFunction(function () {
     var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
     return function (closure$selector) {
       return function (a, b) {
@@ -11059,13 +11326,13 @@ var QGress = function (_, Kotlin) {
       };
     };
   });
-  function Comparator$ObjectLiteral_18(closure$comparison) {
+  function Comparator$ObjectLiteral_19(closure$comparison) {
     this.closure$comparison = closure$comparison;
   }
-  Comparator$ObjectLiteral_18.prototype.compare = function (a, b) {
+  Comparator$ObjectLiteral_19.prototype.compare = function (a, b) {
     return this.closure$comparison(a, b);
   };
-  Comparator$ObjectLiteral_18.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
+  Comparator$ObjectLiteral_19.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
   Util.prototype.select_4u7aq8$ = function (probabilityList, default_0) {
     var destination = ArrayList_init_0();
     var tmp$;
@@ -11090,7 +11357,7 @@ var QGress = function (_, Kotlin) {
     var rand = this.randomDouble_0(total);
     var accu = {v: 0.0};
     var tmp$_1;
-    tmp$_1 = sortedWith(list, new Comparator$ObjectLiteral_18(compareBy$lambda_17(Util$select$lambda))).iterator();
+    tmp$_1 = sortedWith(list, new Comparator$ObjectLiteral_19(compareBy$lambda_18(Util$select$lambda))).iterator();
     while (tmp$_1.hasNext()) {
       var element_1 = tmp$_1.next();
       accu.v += element_1.first;
@@ -11381,10 +11648,13 @@ var QGress = function (_, Kotlin) {
     return count$result;
   };
   World.prototype.canRecruitMore_bip15f$ = function (fact) {
-    return this.countAgents_bip15f$(fact) < Config_getInstance().maxFrogs;
+    return this.countAgents_bip15f$(fact) < 21;
   };
   World.prototype.countNonFaction = function () {
     return this.allNonFaction.size;
+  };
+  World.prototype.randomPortal = function () {
+    return this.allPortals.get_za3lpa$(numberToInt(Util_getInstance().random() * (World_getInstance().allPortals.size - 1 | 0)));
   };
   World.prototype.enlPortals = function () {
     var $receiver = this.allPortals;
@@ -11612,6 +11882,27 @@ var QGress = function (_, Kotlin) {
   package$cond.ConditionalAction = ConditionalAction;
   Object.defineProperty(package$cond, 'Deployer', {
     get: Deployer_getInstance
+  });
+  Object.defineProperty(package$cond, 'Explorer', {
+    get: Explorer_getInstance
+  });
+  Object.defineProperty(package$cond, 'Glypher', {
+    get: Glypher_getInstance
+  });
+  Object.defineProperty(package$cond, 'Hacker', {
+    get: Hacker_getInstance
+  });
+  Object.defineProperty(package$cond, 'Linker', {
+    get: Linker_getInstance
+  });
+  Object.defineProperty(package$cond, 'Recharger', {
+    get: Recharger_getInstance
+  });
+  Object.defineProperty(package$cond, 'Recruiter', {
+    get: Recruiter_getInstance
+  });
+  Object.defineProperty(package$cond, 'Recycler', {
+    get: Recycler_getInstance
   });
   Object.defineProperty(Agent, 'Companion', {
     get: Agent$Companion_getInstance

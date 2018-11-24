@@ -64,6 +64,13 @@ object SoundUtil {
         playSound(oscNode, createStaticPan(pan), 0.5, duration)
     }
 
+    fun playFailSound() {
+        if (isMuted()) return
+        val freq = 220.0
+        val osc = createStaticOscillator(OscillatorType.SINE, freq)
+        playSound(osc, createNoisePan(), 0.1, 0.5)
+    }
+
     fun playCycleSound() {
         if (isMuted()) return
         val duration = 0.01

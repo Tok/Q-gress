@@ -31,8 +31,6 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
     private fun distanceToDestination(): Double = pos.distanceTo(destination)
     fun distanceToPortal(portal: Portal): Double = pos.distanceTo(portal.location)
     fun isAtActionPortal(): Boolean = distanceToPortal(actionPortal) < Dim.maxDeploymentRange
-
-    private fun isBusy(): Boolean = World.tick <= action.untilTick
     private fun lineToPortal(portal: Portal) = Line(pos, portal.location)
     private fun lineToDestination() = Line(pos, destination)
 
@@ -61,8 +59,8 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         val next = when {
             action.item == ActionItem.ATTACK -> attackPortal(false)
             action.item == ActionItem.DEPLOY -> deployPortal(false)
-            isBusy() -> this
             action.item == ActionItem.MOVE -> moveCloserToDestinationPortal()
+            action.isBusy() -> this
             else -> ActionSelector.doSomethingElse(this)
         }
         next.collectXm()
@@ -100,9 +98,24 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
             console.warn("World is not ready.")
             return doNothing()
         }
+
         if (isAtActionPortal()) {
             action.end()
             return this
+        }
+
+        fun jumpToRandomPortal(): Agent {
+            val portal = World.randomPortal()
+            this.actionPortal = portal
+            this.destination = portal.location.randomNearPoint(Dim.maxDeploymentRange.toInt())
+            this.velocity = Complex.ZERO
+            action.end()
+            return this.copy(pos = portal.location)
+        }
+
+        val isStuck = !action.isBusy()
+        if (isStuck) {
+            return jumpToRandomPortal()
         }
 
         val force = actionPortal.vectorField[PathUtil.posToShadowPos(pos)]
@@ -154,7 +167,7 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         }
 
         return when {
-            !isArrived() && isBusy() -> moveCloserInRange()
+            !isArrived() && action.isBusy() -> moveCloserInRange()
             else -> {
                 if (Attacker.isActionPossible(this)) {
                     Attacker.performAction(this)
@@ -174,7 +187,7 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         }
 
         return when {
-            !isArrived() && isBusy() -> moveCloserInRange()
+            !isArrived() && action.isBusy() -> moveCloserInRange()
             else -> {
                 if (Deployer.isActionPossible(this)) {
                     Deployer.performAction(this)

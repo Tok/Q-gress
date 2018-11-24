@@ -3,17 +3,18 @@ package system
 import Canvas
 import Ctx
 import World
+import agent.Agent
 import agent.Faction
 import config.Colors
 import config.Config
 import config.Dim
-import config.Time
 import org.w3c.dom.CanvasRenderingContext2D
 import portal.XmHeap
 import portal.XmMap
 import util.DrawUtil
 import util.HtmlUtil
 import util.SoundUtil
+import util.Util
 import util.data.Coords
 import util.data.Line
 
@@ -35,6 +36,10 @@ enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>, var image: Canvas
                 INSTANCE.image = createImage()
                 if (cp.isCycleEnd) {
                     spawnXm()
+                    removePortals()
+                    removeFrogs()
+                    removeSmurfs()
+                    factionChange()
                     SoundUtil.playCycleSound()
                     World.allPortals.forEach { it.decay() }
                 } else {
@@ -43,7 +48,59 @@ enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>, var image: Canvas
             }
         }
 
-        private const val npcXmSpawnRatio = 0.05
+        private fun removePortals() {
+            if (Util.random() <= Config.portalRemovalRate) {
+                val ratio = World.countPortals() / Config.maxPortals
+                if (Util.random() <= ratio) {
+                    val deprecated = World.randomPortal()
+                    deprecated.destroy(World.tick, false)
+                    Com.addMessage("Portal $deprecated no longer exists.")
+                }
+            }
+        }
+
+        private fun removeAgents(agents: Set<Agent>, minCount: Int, maxCount: Int, fc: Boolean = false) {
+            val count = agents.count()
+            if (count < minCount) {
+                val ratio = count / maxCount
+                if (Util.random() <= ratio) {
+                    val selection = agents.sortedBy { it.getLevel() }.takeLast(count - maxCount)
+                    val removed = selection.shuffled().first()
+                    if (fc) {
+                        Com.addMessage("Portal $removed quit the game.")
+                    } else {
+                        Com.addMessage("Portal $removed has left ${removed.faction.abbr}.")
+                    }
+                }
+            }
+        }
+
+        private fun removeFrogs() {
+            if (Util.random() <= Config.frogQuitRate) {
+                removeAgents(World.frogs, Config.minFrogs, Config.maxFrogs)
+            }
+        }
+
+        private fun removeSmurfs() {
+            if (Util.random() <= Config.smurfQuitRate) {
+                removeAgents(World.smurfs, Config.minFrogs, Config.maxFrogs)
+            }
+        }
+
+        private fun factionChange() {
+            if (Util.random() <= Config.factionChangeRate) {
+                val xfAgent = if (Util.randomBool()) {
+                    removeAgents(World.frogs, Config.minFrogs, Config.maxFrogs, true)
+                    Agent.createSmurf(World.grid)
+                } else {
+                    removeAgents(World.smurfs, Config.minFrogs, Config.maxFrogs, true)
+                    Agent.createFrog(World.grid)
+                }
+                Com.addMessage("${xfAgent.name} restarted as ${xfAgent.faction.abbr}.")
+                World.allAgents.add(xfAgent)
+            }
+        }
+
         private fun spawnXm() {
             World.allPortals.map { it.leakXm() }
                     .flatMap { (pos, xm) ->
@@ -55,7 +112,7 @@ enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>, var image: Canvas
 
             World.allNonFaction.filterNot { it.pos.isOffScreen() }
                     .shuffled()
-                    .take((World.allNonFaction.size * npcXmSpawnRatio).toInt())
+                    .take((World.allNonFaction.size * Config.npcXmSpawnRatio).toInt())
                     .map { XmMap.createStrayXm(it.pos.randomNearPoint(Dim.npcXmSpawnRadius)) }
         }
 
@@ -95,8 +152,8 @@ enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>, var image: Canvas
             }
 
             fun drawBackground(ctx: Ctx) {
-                    DrawUtil.drawRect(ctx, Coords(0, 0), -h.toDouble(), w.toDouble() - 8,
-                            "#00000077", "#00000077", 0.0)
+                DrawUtil.drawRect(ctx, Coords(0, 0), -h.toDouble(), w.toDouble() - 8,
+                        "#00000077", "#00000077", 0.0)
             }
 
             fun drawBaseLine(ctx: Ctx) {

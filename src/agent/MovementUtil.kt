@@ -63,8 +63,7 @@ object MovementUtil {
     }
 
     fun moveToRandomPortal(agent: Agent): Agent {
-        val random: Portal = World.allPortals[(Util.random() * (World.allPortals.size - 1)).toInt()]
-        return goToDestinationPortal(agent, random)
+        return goToDestinationPortal(agent, World.randomPortal())
     }
     /* End All Portals */
 

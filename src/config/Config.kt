@@ -5,12 +5,21 @@ import util.HtmlUtil
 import kotlin.math.max
 
 object Config {
-    val startPortals = if (HtmlUtil.isLocal()) 5 else 8
-    val startFrogs = if (HtmlUtil.isLocal()) 4 else 4
-    val startSmurfs = if (HtmlUtil.isLocal()) 4 else 4
+    const val minPortals = 3
+    const val maxPortals = 89
+    const val minFrogs = 2
+    const val maxFrogs = 21
+    const val minSmurfs = 2
+    const val maxSmurfs = 21
+    const val frogQuitRate = 0.05
+    const val smurfQuitRate = 0.05
+    const val factionChangeRate = 0.01
+    const val portalRemovalRate = 0.05
 
-    val maxFrogs = 20
-    val maxSmurfs = 20
+    val startPortals = if (HtmlUtil.isLocal()) 3 else 5
+    val startFrogs = if (HtmlUtil.isLocal()) 2 else minFrogs
+    val startSmurfs = if (HtmlUtil.isLocal()) 2 else minSmurfs
+
     val maxNonFaction = max(100, maxFrogs + maxSmurfs)
     fun maxFor(faction: Faction) = when (faction) {
         Faction.ENL -> maxFrogs
@@ -20,19 +29,20 @@ object Config {
 
     const val apMultiplier = 10
 
-    val isNpcSwarming = true
+    const val isNpcSwarming = true
+    const val npcXmSpawnRatio = 0.05
 
-    val isSoundOn = true
-    val isPlayInitialSound = false
-    val isSatOn = false
+    const val isSoundOn = true
+    const val isPlayInitialSound = false
+    const val isSatOn = false
 
-    val isAutostart = true
-    val isHighlighActionLimit = true
-    val vectorSmoothCount = 8
-    val shadowBlurCount = 3
+    const val isAutostart = true
+    const val isHighlighActionLimit = true
+    const val vectorSmoothCount = 8
+    const val shadowBlurCount = 3
 
-    val comMessageLimit = 8
-    val topAgentsMessageLimit = 8
+    const val comMessageLimit = 8
+    const val topAgentsMessageLimit = 8
 
     val ticksPerCheckpoint = Time.secondsToTicks(300)
     val ticksPerCycle = Time.secondsToTicks(1800)

@@ -14,17 +14,19 @@ import util.data.Line
 
 data class ActionItem(val text: String, val durationSeconds: Int, val qName: String) {
     companion object {
-        val MOVE = ActionItem("moving", 1, "Move")
+        val MOVE = ActionItem("moving", 1800, "Move")
         val WAIT = ActionItem("waiting", 10, "Wait")
         val RECHARGE = ActionItem("recharging", 30, "Recharge")
-        val RECRUIT = ActionItem("recruiting", 150, "Recruit")
+        val RECRUIT = ActionItem("recruiting", 120, "Recruit")
+        val EXPLORE = ActionItem("exploring", 300, "Explore")
         val RECYCLE = ActionItem("recycling", 30, "Recycle")
         val HACK = ActionItem("hacking", 10, "Hack")
         val GLYPH = ActionItem("glyphing", 60, "Glyph")
         val ATTACK = ActionItem("attacking", 15, "Attack")
         val DEPLOY = ActionItem("deploying", 15, "Deploy")
+        val CAPTURE = ActionItem("capturing", 15, "Capture")
         val LINK = ActionItem("linking", 30, "Link")
-        fun values() = listOf(MOVE, WAIT, RECHARGE, RECRUIT, RECYCLE, HACK, GLYPH, ATTACK, DEPLOY, LINK)
+        fun values() = listOf(MOVE, WAIT, RECHARGE, RECRUIT, EXPLORE, RECYCLE, HACK, GLYPH, ATTACK, DEPLOY, CAPTURE, LINK)
 
         private val enlImages = values().map { it to drawTemplate(it, Faction.ENL) }.toMap()
         private val resImages = values().map { it to drawTemplate(it, Faction.RES) }.toMap()
@@ -52,27 +54,40 @@ data class ActionItem(val text: String, val durationSeconds: Int, val qName: Str
                 DrawUtil.drawCircle(ctx, circle, strokeStyle, lw.toDouble(), faction.color)
                 when (actionItem) {
                     MOVE -> drawAgentCircle(ctx, Circle(pos, rr - 2.0))
-                    HACK -> drawAgentCircle(ctx, Circle(pos, rr - 4.0))
-                    GLYPH -> drawAgentCircle(ctx, Circle(pos, rr - 3.0))
-                    RECRUIT -> {
-                        drawAgentCircle(ctx, Circle(pos, rr - 2.0))
-                        drawAgentCircle(ctx, Circle(pos, rr - 4.0))
-                    }
-                    LINK -> drawAgentLine(ctx, Line(Coords(0, rr), Coords(w, rr)))
-                    ATTACK -> drawAgentLine(ctx, Line(Coords(rr, 0), Coords(rr, h)))
-                    RECYCLE -> {
+                    EXPLORE -> {
                         val off = 2
                         drawAgentLine(ctx, Line(Coords(off, off), Coords(w - off, h - off)))
-                        drawAgentCircle(ctx, Circle(pos, rr - 3.0))
+                        drawAgentLine(ctx, Line(Coords(off, h - off), Coords(w - off, off)))
+                        drawAgentLine(ctx, Line(Coords(rr, 0), Coords(rr, h)))
+                        drawAgentLine(ctx, Line(Coords(0, rr), Coords(w, rr)))
+                        drawAgentCircle(ctx, Circle(pos, rr - 2.0))
                     }
+                    RECRUIT -> {
+                        drawAgentLine(ctx, Line(Coords(rr, 0), Coords(rr, h)))
+                        drawAgentLine(ctx, Line(Coords(0, rr), Coords(w, rr)))
+                    }
+                    ATTACK -> drawAgentLine(ctx, Line(Coords(rr, 0), Coords(rr, h)))
+                    LINK -> drawAgentLine(ctx, Line(Coords(0, rr), Coords(w, rr)))
+                    DEPLOY -> {
+                        drawAgentLine(ctx, Line(Coords(0, rr - 1), Coords(w, rr - 1)))
+                        drawAgentLine(ctx, Line(Coords(0, rr + 1), Coords(w, rr + 1)))
+                    }
+                    CAPTURE -> {
+                        drawAgentLine(ctx, Line(Coords(rr, 0), Coords(rr, h)))
+                        drawAgentLine(ctx, Line(Coords(0, rr - 1), Coords(w, rr - 1)))
+                        drawAgentLine(ctx, Line(Coords(0, rr + 1), Coords(w, rr + 1)))
+                    }
+                    HACK -> drawAgentCircle(ctx, Circle(pos, rr - 4.0))
+                    GLYPH -> drawAgentCircle(ctx, Circle(pos, rr - 3.0))
                     RECHARGE -> {
                         val off = 2
                         drawAgentLine(ctx, Line(Coords(off, h - off), Coords(w - off, off)))
-                        drawAgentCircle(ctx, Circle(pos, rr - 3.0))
+                        drawAgentCircle(ctx, Circle(pos, rr - 2.0))
                     }
-                    DEPLOY -> {
-                        drawAgentLine(ctx, Line(Coords(rr, 0), Coords(rr, h)))
-                        drawAgentLine(ctx, Line(Coords(0, rr), Coords(w, rr)))
+                    RECYCLE -> {
+                        val off = 2
+                        drawAgentLine(ctx, Line(Coords(off, off), Coords(w - off, h - off)))
+                        drawAgentCircle(ctx, Circle(pos, rr - 2.0))
                     }
                     WAIT -> Unit
                 }

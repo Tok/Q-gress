@@ -6,7 +6,6 @@ import ImprovedNoise
 import World
 import agent.Agent
 import agent.Faction
-import agent.NonFaction
 import agent.qvalue.QActions
 import agent.qvalue.QDestinations
 import agent.qvalue.QValue
@@ -259,11 +258,19 @@ object HtmlUtil {
             val pos = findMousePosition(World.uiCan, event)
             when {
                 pos.hasClosePortalForClick() -> {
-                    SoundUtil.playPortalRemovalSound(pos)
-                    document.defaultView?.setTimeout(pos.findClosestPortal().destroy(World.tick, true), 0)
+                    if (World.countPortals() > Config.minPortals) {
+                        SoundUtil.playPortalRemovalSound(pos)
+                        document.defaultView?.setTimeout(pos.findClosestPortal().destroy(World.tick, true), 0)
+                    } else {
+                        SoundUtil.playFailSound()
+                    }
                 }
                 pos.isBuildable() -> {
-                    document.defaultView?.setTimeout(World.allPortals.add(Portal.create(pos)), 0)
+                    if (World.countPortals() < Config.maxPortals) {
+                        document.defaultView?.setTimeout(World.allPortals.add(Portal.create(pos)), 0)
+                    } else {
+                        SoundUtil.playFailSound()
+                    }
                 }
                 else -> {
                 }

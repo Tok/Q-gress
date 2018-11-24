@@ -14,6 +14,7 @@ import system.display.loading.LoadingText
 import system.display.ui.ActionLimitsDisplay
 import util.HtmlUtil
 import util.PathUtil
+import util.Util
 import util.data.Cell
 import util.data.Coords
 import kotlin.browser.document
@@ -79,6 +80,7 @@ object World {
     fun countNonFaction() = allNonFaction.count()
 
     val allPortals: MutableList<Portal> = mutableListOf()
+    fun randomPortal() = allPortals[(Util.random() * (World.allPortals.size - 1)).toInt()]
     fun enlPortals() = allPortals.filter { it.owner?.faction == Faction.ENL }
     fun resPortals() = allPortals.filter { it.owner?.faction == Faction.RES }
     fun unclaimedPortals() = allPortals.filter { it.owner == null }

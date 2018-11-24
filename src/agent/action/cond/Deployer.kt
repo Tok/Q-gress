@@ -33,7 +33,6 @@ object Deployer : ConditionalAction {
     }
 
     override fun performAction(agent: Agent): Agent {
-        println("Deploy $agent")
         val inventoryResos = inventoryResos(agent.inventory)
         val ownedInPortal = ownedInPortal(agent)
         val result = inventoryResos.toSet().map { reso ->

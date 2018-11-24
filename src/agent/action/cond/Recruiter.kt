@@ -7,6 +7,7 @@ import agent.NonFaction
 import agent.action.ActionItem
 import system.Com
 import util.Util
+import util.data.Coords
 
 object Recruiter : ConditionalAction {
     override val actionItem = ActionItem.RECRUIT
@@ -15,8 +16,8 @@ object Recruiter : ConditionalAction {
 
     override fun performAction(agent: Agent): Agent {
         agent.action.start(actionItem)
+        val npc = NonFaction.findNearestTo(agent.pos)
         if (Util.random() < NonFaction.changeToBeRecruited) {
-            val npc = NonFaction.findNearestTo(agent.pos)
             World.allNonFaction.remove(npc)
             val newAgent = when (agent.faction) {
                 Faction.ENL -> Agent.createFrog(World.grid)
@@ -26,6 +27,7 @@ object Recruiter : ConditionalAction {
             Com.addMessage("$newAgent has completed the tutorial.")
             World.allAgents.add(newAgent)
         }
+        agent.destination = NonFaction.findNearestTo(agent.pos).pos
         return agent
     }
 }

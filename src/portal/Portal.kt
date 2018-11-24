@@ -352,6 +352,7 @@ data class Portal(val name: String, val location: Coords,
     }
 
     fun destroy(tick: Int, isRemovePortal: Boolean) {
+        SoundUtil.playPortalRemovalSound(location)
         if (isRemovePortal) {
             resoSlots.clear()
         }

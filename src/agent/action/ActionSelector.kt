@@ -37,11 +37,13 @@ object ActionSelector {
         val recycleQ = if (Recycler.isActionPossible(agent)) q(agent.faction, QActions.RECYCLE) else -1.0
         val rechargeQ = if (Recharger.isActionPossible(agent)) q(agent.faction, QActions.RECHARGE) else -1.0
         val recruitQ = if (Recruiter.isActionPossible(agent)) q(agent.faction, QActions.RECRUIT) else -1.0
+        val exploreQ = if (Explorer.isActionPossible(agent)) q(agent.faction, QActions.EXPLORE) else -1.0
         return listOf(
                 moveElsewhereQ to { agent.moveElsewhere() },
                 recycleQ to { Recycler.performAction(agent) },
                 rechargeQ to { Recharger.performAction(agent) },
-                recruitQ to { Recruiter.performAction(agent) }
+                recruitQ to { Recruiter.performAction(agent) },
+                exploreQ to { Explorer.performAction(agent) }
         )
     }
 
