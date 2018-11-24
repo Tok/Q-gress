@@ -16,9 +16,11 @@ object Config {
     const val factionChangeRate = 0.01
     const val portalRemovalRate = 0.05
 
-    val startPortals = if (HtmlUtil.isLocal()) 3 else 5
-    val startFrogs = if (HtmlUtil.isLocal()) 2 else minFrogs
-    val startSmurfs = if (HtmlUtil.isLocal()) 2 else minSmurfs
+    val isQuickstart = HtmlUtil.isLocal()
+    val startPortals = if (isQuickstart) 5 else minPortals
+    val startFrogs = if (isQuickstart) 4 else minFrogs
+    val startSmurfs = if (isQuickstart) 4 else minSmurfs
+    val initialAp = if (isQuickstart) 1200000 else 0
 
     val maxNonFaction = max(100, maxFrogs + maxSmurfs)
     fun maxFor(faction: Faction) = when (faction) {

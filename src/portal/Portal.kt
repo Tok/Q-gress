@@ -185,8 +185,8 @@ data class Portal(val name: String, val location: Coords,
         val level = min(calculateLevel(), agent.getLevel())
 
         val newStuff = mutableListOf<QgressItem?>()
-        newStuff.addAll(obtainResos(level, agent))
-        newStuff.addAll(obtainXmps(level, agent))
+        newStuff.addAll(obtainResos(agent, level))
+        newStuff.addAll(obtainXmps(agent, level))
         newStuff.addAll(obtainShields(agent))
         newStuff.addAll(obtainVirus(agent))
         newStuff.addAll(obtainPowerCubes(level, agent))
@@ -203,23 +203,23 @@ data class Portal(val name: String, val location: Coords,
         return newStuff.filterNotNull().toMutableList()
     }
 
-    private fun obtainResos(level: Int, agent: Agent): List<QgressItem> {
+    private fun obtainResos(agent: Agent, level: Int): List<QgressItem> {
         val stuff = mutableListOf<QgressItem>()
         Quality.values().map { quality ->
             val selectedLevel = ResonatorLevel.find(level, quality).level
             while (Util.random() < quality.chance) {
-                stuff.add(Resonator.create(selectedLevel, agent) as QgressItem)
+                stuff.add(Resonator.create(agent, selectedLevel) as QgressItem)
             }
         }
         return stuff
     }
 
-    private fun obtainXmps(level: Int, agent: Agent): List<QgressItem> {
+    private fun obtainXmps(agent: Agent, level: Int): List<QgressItem> {
         val stuff = mutableListOf<QgressItem>()
         Quality.values().map { quality ->
             val selectedLevel = XmpLevel.find(level, quality).level
             while (Util.random() < quality.chance) {
-                stuff.add(XmpBurster.create(selectedLevel, agent) as QgressItem)
+                stuff.add(XmpBurster.create(agent, selectedLevel) as QgressItem)
             }
         }
         return stuff
@@ -240,7 +240,7 @@ data class Portal(val name: String, val location: Coords,
         Quality.values().map { quality ->
             val selectedLevel = PowerCubeLevel.find(level, quality).level
             while (Util.random() < quality.chance * 0.3) {
-                stuff.add(PowerCube.create(selectedLevel, agent) as QgressItem)
+                stuff.add(PowerCube.create(agent, selectedLevel) as QgressItem)
             }
         }
         return stuff

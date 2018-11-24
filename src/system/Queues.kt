@@ -12,11 +12,11 @@ import util.data.Damage
 object Queues {
     val attackQueue: MutableMap<Int, MutableMap<Coords, List<XmpBurster>>> = mutableMapOf()
     val damageQueue: MutableMap<Int, List<Damage>> = mutableMapOf()
-    val attackDelayTicks: Int = Time.secondsToTicks(10)
-    val damageDelayTicks: Int = Time.secondsToTicks(10)
+    val attackDelayTicks: Int = Time.secondsToTicks(20)
+    val damageDelayTicks: Int = Time.secondsToTicks(20)
 
-    fun registerAttack(agent: Agent, xmps: List<XmpBurster>) {
-        val attackFutureTick = World.tick + attackDelayTicks
+    fun registerAttack(agent: Agent, xmps: List<XmpBurster>, delay: Int = 1) {
+        val attackFutureTick = World.tick + (delay * attackDelayTicks)
         var attackMap = attackQueue[attackFutureTick]
         if (attackMap == null) {
             attackMap = mutableMapOf()
@@ -24,7 +24,7 @@ object Queues {
         attackMap[agent.pos] = xmps
         attackQueue[attackFutureTick] = attackMap
 
-        val damageFutureTick = World.tick + damageDelayTicks
+        val damageFutureTick = World.tick + (delay * damageDelayTicks)
         val damageList: List<Damage> = xmps.flatMap { xmp -> xmp.dealDamage(agent) }
 
         val soundLimit = 4

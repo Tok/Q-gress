@@ -7,10 +7,11 @@ import portal.Portal
 import util.data.Coords
 import kotlin.math.max
 
-data class Resonator(val level: ResonatorLevel, val owner: Agent, var energy: Int,
+data class Resonator(val owner: Agent, val level: ResonatorLevel, var energy: Int,
                      var portal: Portal? = null, var octant: Octant? = null, var coords: Coords? = null) : DeployableItem {
     //TODO move location and octant to ResonatorSlot
     fun calcHealthPercent() = energy * 100 / level.energy
+
     fun isAtCriticalLevel() = calcHealthPercent() < 20
     fun recharge(agent: Agent, xm: Int) {
         val capacity = level.energy - energy
@@ -24,6 +25,7 @@ data class Resonator(val level: ResonatorLevel, val owner: Agent, var energy: In
         }
         agent.addAp(10)
     }
+
     private fun decayEnergy() = (level.energy * DECAY_RATIO).toInt()
 
     fun decay() {
@@ -33,7 +35,7 @@ data class Resonator(val level: ResonatorLevel, val owner: Agent, var energy: In
         }
     }
 
-    fun takeDamage(agent: Agent, damage: Int) {
+    private fun takeDamage(agent: Agent, damage: Int) {
         this.energy = energy - damage
         if (energy <= 0) {
             agent.ap = agent.ap + 75
@@ -53,7 +55,7 @@ data class Resonator(val level: ResonatorLevel, val owner: Agent, var energy: In
 
     companion object {
         const val DECAY_RATIO = 0.15
-        fun create(level: ResonatorLevel, agent: Agent) = Resonator(level, agent, level.energy)
-        fun create(level: Int, agent: Agent) = create(ResonatorLevel.valueOf(level), agent)
+        fun create(owner: Agent, level: ResonatorLevel) = Resonator(owner, level, level.energy)
+        fun create(owner: Agent, level: Int) = create(owner, ResonatorLevel.valueOf(level))
     }
 }

@@ -11,7 +11,7 @@ import util.data.Damage
 import kotlin.math.max
 import kotlin.math.min
 
-data class XmpBurster(val level: XmpLevel, val owner: Agent) : DeployableItem {
+data class XmpBurster(val owner: Agent, val level: XmpLevel) : DeployableItem {
     private fun calcBaseDamage(isCritical: Boolean) = if (isCritical) level.damage * CRIT_DAMAGE_MULTIPLIER else level.damage
     fun dealDamage(agent: Agent): List<Damage> {
         val resosInRange: List<Resonator> = agent.findResosInAttackRange(level)
@@ -35,7 +35,7 @@ data class XmpBurster(val level: XmpLevel, val owner: Agent) : DeployableItem {
         const val GLOBAL_DAMAGE_MULTIPLIER = 0.20 //FIXME
         const val CRIT_DAMAGE_MULTIPLIER = 3
         const val CRIT_RATE = 0.2
-        fun create(level: XmpLevel, agent: Agent) = XmpBurster(level, agent)
-        fun create(level: Int, agent: Agent) = create(XmpLevel.valueOf(level), agent)
+        fun create(owner: Agent, level: XmpLevel) = XmpBurster(owner, level)
+        fun create(owner: Agent, level: Int) = create(owner, XmpLevel.valueOf(level))
     }
 }
