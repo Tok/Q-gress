@@ -18,43 +18,25 @@ Q-Gress was never tested on Mobile and is exclusively designed for desktop brows
     * Move to next agent
     * Move to group of agents
     * Move to random agent
-  * ~~Fix attacking~~
-  * ~~Improve deployment~~
 - Implement inventory limit
-- More Items
-  * ~~Power Cubes~~
-- Map
-  * ~~Implement location changing~~
-  * ~~Dropdown with predefined scenarios or maps~~
-- UI
-  * ~~Add Sliders to control the Q-values (defined in Agent.kt)~~
 
 ### Medium Priority
 - Improve agent characteristics
-  * ~~action preferences~~
+  * action preferences
   * tendency to randomly create long links
   * deployment skills
-    * ~~tendency to move in good range~~
     * tendency to deploy to the opposite octant of existing max reso
 - Display FPS
-- ~~Implement glyphing~~
-- Improved controls
-- UI
-  * ~~Calculate and display cycles~~
 
 ### Low Priority
-- ~~Agent level up~~
 - Ultrastriking
-- Items
+- More Items
   * XM-Tanks
   * Quantum-Capsules
 
 ### Further Ideas
 - Find a way to hook up a neural network for Q-learning
 - Create a mode to that uses emojis for agent visualization
-- Implement recruiting
-- Turn it into some kind of Tycoon game
-- Turn it into an RTS (unlikely)
 
 ### Third Party Copyrigths
 

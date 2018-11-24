@@ -19,7 +19,10 @@ data class XmHeap(private val cores: Triple<Int, Int, Int>, private var isCollec
 
     private val IMAGE = drawHeapTemplate()
     fun draw(position: Coords) {
-        World.ctx().drawImage(IMAGE, position.xx(), position.yy())
+        val image = IMAGE
+        val ww = image.width / 2
+        val hh = image.height / 2
+        World.ctx().drawImage(image, position.xx() - ww, position.yy() - hh)
     }
 
     companion object {
