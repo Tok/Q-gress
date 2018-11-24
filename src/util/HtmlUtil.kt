@@ -260,7 +260,7 @@ object HtmlUtil {
                 pos.hasClosePortalForClick() -> {
                     if (World.countPortals() > Config.minPortals) {
                         SoundUtil.playPortalRemovalSound(pos)
-                        document.defaultView?.setTimeout(pos.findClosestPortal().destroy(World.tick, true), 0)
+                        document.defaultView?.setTimeout(pos.findClosestPortal().remove(), 0)
                     } else {
                         SoundUtil.playFailSound()
                     }
@@ -276,7 +276,7 @@ object HtmlUtil {
                 }
             }
         } else {
-            println("WARN: Unhandled event: $event.")
+            console.warn("Unhandled event: $event.")
         }
     }
 
@@ -401,7 +401,7 @@ object HtmlUtil {
                 MapUtil.hideSatelliteMap()
                 World.grid = grid
                 if (World.grid.isEmpty()) {
-                    println("ERROR: Grid is empty!")
+                    console.error("Grid is empty!")
                 }
                 DrawUtil.drawGrid()
                 ActionLimitsDisplay.draw(false)

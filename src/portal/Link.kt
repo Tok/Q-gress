@@ -8,6 +8,7 @@ import util.data.Line
 
 data class Link(val origin: Portal, val destination: Portal, val owner: Agent) {
     fun getLine() = Line(origin.location, destination.location)
+    fun isConnectedTo(portal: Portal) = destination == portal || origin == portal
 
     fun draw(ctx: Ctx) {
         val byHealth = listOf(origin, destination).sortedBy { it.calcHealth() }
@@ -41,6 +42,7 @@ data class Link(val origin: Portal, val destination: Portal, val owner: Agent) {
     override fun hashCode() = origin.hashCode() + destination.hashCode()
 
     companion object {
+        const val destroyAp = 187
         fun isPossible(link: Link): Boolean = World.allLinks().none {
             (it.origin.location == link.origin.location && it.destination.location == link.destination.location)
                     || (it.origin.location == link.destination.location && it.destination.location == link.origin.location)

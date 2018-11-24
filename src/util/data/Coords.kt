@@ -108,7 +108,7 @@ data class Coords(val x: Int, val y: Int) {
                 if (retries > 0) {
                     createRandomPassable(grid, retries - 1)
                 } else {
-                    println("WARN: using blocked position: $random")
+                    console.warn("Blocked Position: $random")
                     random //FIXME workaround..
                 }
             }

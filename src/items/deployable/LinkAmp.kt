@@ -5,14 +5,16 @@ import items.types.LinkAmpType
 import portal.ModSlot
 import portal.Portal
 
-data class LinkAmp(val type: LinkAmpType, val slot: ModSlot?, val owner: Agent): DeployableItem {
+data class LinkAmp(val type: LinkAmpType, val slot: ModSlot?, val owner: Agent) : DeployableItem {
     fun isDeployed() = slot != null
     fun deploy(portal: Portal) {
-        println("Deploying $this to portal $portal")
+        console.info("Deploying $this to portal $portal")
     }
+
     override fun toString() = type.abbr
     override fun getOwnerId() = owner.key()
     override fun getLevel(): Int = -1 //TODO
+
     companion object {
         fun calculateImprovedRange(allModsInPortal: List<DeployableItem>, range: Double): Double {
             val linkamps = allModsInPortal.filter { it is LinkAmp }

@@ -53,7 +53,7 @@ enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>, var image: Canvas
                 val ratio = World.countPortals() / Config.maxPortals
                 if (Util.random() <= ratio) {
                     val deprecated = World.randomPortal()
-                    deprecated.destroy(World.tick, false)
+                    deprecated.remove()
                     Com.addMessage("Portal $deprecated no longer exists.")
                 }
             }

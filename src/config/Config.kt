@@ -20,7 +20,7 @@ object Config {
     val startPortals = if (isQuickstart) 5 else minPortals
     val startFrogs = if (isQuickstart) 4 else minFrogs
     val startSmurfs = if (isQuickstart) 4 else minSmurfs
-    val initialAp = if (isQuickstart) 1200000 else 0
+    val initialAp = if (isQuickstart) 2000000 else 0
 
     val maxNonFaction = max(100, maxFrogs + maxSmurfs)
     fun maxFor(faction: Faction) = when (faction) {

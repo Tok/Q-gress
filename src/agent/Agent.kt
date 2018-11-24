@@ -13,7 +13,6 @@ import config.Colors
 import config.Config
 import config.Dim
 import config.Styles
-import items.XmpBurster
 import items.deployable.Resonator
 import items.level.XmpLevel
 import portal.Portal
@@ -179,6 +178,7 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         }
     }
 
+    fun capturePortal(isFirst: Boolean) = deployPortal(isFirst)
     fun deployPortal(isFirst: Boolean): Agent {
         if (isFirst) {
             action.start(ActionItem.DEPLOY)
@@ -214,7 +214,7 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         val attackDistance = level.rangeM * 0.5
         val portals = findPortalsInAttackRange(level)
         val slots = portals.flatMap { it.resoSlots.map { s -> s.value } }
-        val resosInRange = slots.filter { it.resonator != null && it.resonator.coords?.distanceTo(this.pos)!! <= attackDistance }
+        val resosInRange = slots.filter { it.resonator?.coords?.distanceTo(this.pos) ?: attackDistance * 2 <= attackDistance }
         return resosInRange.map { it.resonator }.filterNotNull()
     }
 

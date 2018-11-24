@@ -6,6 +6,7 @@ import portal.Octant
 import portal.Portal
 import util.data.Coords
 import kotlin.math.max
+import kotlin.math.min
 
 data class Resonator(val owner: Agent, val level: ResonatorLevel, var energy: Int,
                      var portal: Portal? = null, var octant: Octant? = null, var coords: Coords? = null) : DeployableItem {
@@ -13,16 +14,12 @@ data class Resonator(val owner: Agent, val level: ResonatorLevel, var energy: In
     fun calcHealthPercent() = energy * 100 / level.energy
 
     fun isAtCriticalLevel() = calcHealthPercent() < 20
+    fun totalCapacity() = level.energy
+    fun openCapacity() = totalCapacity() - energy
     fun recharge(agent: Agent, xm: Int) {
-        val capacity = level.energy - energy
-        if (capacity >= xm) {
-            this.energy += xm
-            agent.removeXm(xm)
-        } else {
-            val diff = xm - capacity
-            this.energy += diff
-            agent.removeXm(diff)
-        }
+        val value = min(xm, openCapacity())
+        this.energy = min(energy + value, totalCapacity())
+        agent.removeXm(value)
         agent.addAp(10)
     }
 
@@ -35,10 +32,10 @@ data class Resonator(val owner: Agent, val level: ResonatorLevel, var energy: In
         }
     }
 
-    private fun takeDamage(agent: Agent, damage: Int) {
+    fun takeDamage(agent: Agent, damage: Int) {
         this.energy = energy - damage
         if (energy <= 0) {
-            agent.ap = agent.ap + 75
+            agent.addAp(75)
             portal?.removeReso(octant!!, agent)
         }
     }

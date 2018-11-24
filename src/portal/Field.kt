@@ -3,9 +3,7 @@ package portal
 import Ctx
 import World
 import agent.Agent
-import config.Constants
 import config.Styles
-import items.deployable.Resonator
 import util.data.Coords
 import util.data.Line
 import kotlin.math.max
@@ -13,14 +11,15 @@ import kotlin.math.sqrt
 
 data class Field private constructor(val origin: Portal, val primaryAnchor: Portal, val secondaryAnchor: Portal,
                                      val owner: Agent) {
-    val idSet: LinkedHashSet<Portal> = linkedSetOf(origin, primaryAnchor, secondaryAnchor)
+    private val idSet: LinkedHashSet<Portal> = linkedSetOf(origin, primaryAnchor, secondaryAnchor)
     fun weakestPortal() = idSet.toList().sortedBy { it.calcHealth() }.last()
     fun strongestAnchors() = idSet.toList().sortedBy { it.calcHealth() }.take(2)
-    fun findFurthestFrom(portal: Portal) = idSet.toList().sortedBy { Line(portal.location ,it.location).calcLength() }.first()
+    fun findFurthestFrom(portal: Portal) = idSet.toList().sortedBy { Line(portal.location, it.location).calcLength() }.first()
+    fun isConnectedTo(portal: Portal) = idSet.contains(portal)
 
     fun calculateMu(): Int = calculateArea() //FIXME use noise map
     fun isCoveringPortal(portal: Portal): Boolean {
-        val isPortalPart = idSet.contains(portal)
+        val isPortalPart = isConnectedTo(portal)
         if (isPortalPart) {
             return false
         }
@@ -97,9 +96,11 @@ data class Field private constructor(val origin: Portal, val primaryAnchor: Port
     override fun toString() = calculateArea().toString() + "MU"
     //equals and hashCode symmetrical
     override fun equals(other: Any?) = other is Field && idSet.containsAll(other.idSet)
+
     override fun hashCode() = idSet.map { it.hashCode() / 3 }.sum()
 
     companion object {
+        const val destroyAp = 750
         fun isPossible(origin: Portal,
                        primaryAnchor: Portal, secondaryAnchor: Portal): Boolean {
             return World.allPortals.flatMap { it.fields }.none {

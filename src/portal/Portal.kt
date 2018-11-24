@@ -33,7 +33,7 @@ import kotlin.math.*
 
 data class Portal(val name: String, val location: Coords,
                   val heatMap: Map<Coords, Int>, val vectorField: Map<Coords, Complex>,
-                  val resoSlots: MutableMap<Octant, ResonatorSlot>,
+                  val resoSlots: Map<Octant, ResonatorSlot>,
                   val links: MutableSet<Link>, val fields: MutableSet<Field>,
                   var owner: Agent?) {
     private val lastHacks: MutableMap<String, MutableList<Int>> = mutableMapOf()
@@ -47,7 +47,7 @@ data class Portal(val name: String, val location: Coords,
     private fun isCoveredByField() = World.allFields().any { it.isCoveringPortal(this) }
     private fun isLinkable(agent: Agent): Boolean = this.owner?.faction == agent.faction && isFullyDeployed()
     private fun isInside(): Boolean = findConnectedPortals().none { connected ->
-        connected.fields.filter { field -> field.idSet.contains(this) }.count() > 1
+        connected.fields.filter { it.isConnectedTo(this) }.count() > 1
     }
 
     fun canHack(agent: Agent): Boolean = handleCooldown(agent, true) == Cooldown.NONE
@@ -101,9 +101,6 @@ data class Portal(val name: String, val location: Coords,
         val x = averageResoLevel() //kotlin.math.pow?
         if (isFullyDeployed()) 160 * x * x * x * x else 0.0
     }
-
-    private fun findOutgoingTo(): List<Portal> = links.map { it.destination }
-    private fun findIncomingFrom(): List<Portal> = World.allLinks().filter { it.destination == this }.map { it.origin }
 
     fun findRandomPointNearPortal(distance: Int): Coords {
         val angle = Util.random() * PI
@@ -341,75 +338,88 @@ data class Portal(val name: String, val location: Coords,
             agent.removeXm(resonator.level.level * 20)
             val oldDistance = oldReso?.distance
             val newDistance = (if (oldDistance == 0) distance else oldDistance) ?: distance
-            //println("DEBUG: $agent deploys ${resonator} to $octant at $this. $distance $oldDistance")
-            val slot = ResonatorSlot(agent.key(), resonator, newDistance)
-            resoSlots[octant] = slot
-            val xx = location.x + octant.calcXOffset(slot.distance)
-            val yy = location.y + octant.calcYOffset(slot.distance)
+            //console.trace("$agent deploys ${resonator} to $octant at $this. $distance $oldDistance")
+            resoSlots[octant]?.deployReso(agent, resonator, newDistance)
+            val xx = location.x + octant.calcXOffset(newDistance)
+            val yy = location.y + octant.calcYOffset(newDistance)
             resonator.deploy(this, octant, Coords(xx, yy))
         }
         agent.inventory.consumeResos(resos.map { it.value })
     }
 
-    fun destroy(tick: Int, isRemovePortal: Boolean) {
-        SoundUtil.playPortalRemovalSound(location)
-        if (isRemovePortal) {
-            resoSlots.clear()
+    private fun findOutgoingTo(): List<Portal> = links.map { it.destination }
+    private fun findIncomingLinks(): List<Link> = World.allLinks().filter { it.destination == this }
+    private fun findIncomingFrom(): List<Portal> = findIncomingLinks().map { it.origin }
+    private fun allLinksTo(portal: Portal) = links.filter { it.isConnectedTo(portal) }
+    private fun allFieldsTo(portal: Portal) = fields.filter { it.isConnectedTo(portal) }
+    private fun destroyAllLinks(agent: Agent? = null) {
+        links.forEach {
+            agent?.addAp(Link.destroyAp)
         }
         links.clear()
+    }
+
+    private fun destroyAllFields(agent: Agent? = null) {
+        fields.forEach {
+            agent?.addAp(Field.destroyAp)
+        }
         fields.clear()
+    }
+
+    private fun destroyAllLinksTo(portal: Portal, agent: Agent? = null) {
+        allLinksTo(portal).forEach {
+            agent?.addAp(Link.destroyAp)
+            links.remove(it)
+        }
+    }
+
+    private fun destroyAllFieldsTo(portal: Portal, agent: Agent? = null) {
+        allFieldsTo(portal).forEach {
+            agent?.addAp(Field.destroyAp)
+            fields.remove(it)
+        }
+    }
+
+    fun destroy() {
         owner = null
-        findIncomingFrom().forEach { connectedPortal ->
-            connectedPortal.links.forEach { link ->
-                if (link.destination == this || link.origin == this) {
-                    connectedPortal.links.remove(link)
-                }
-            }
-            connectedPortal.fields.forEach { field ->
-                if (field.idSet.contains(this)) {
-                    connectedPortal.fields.remove(field)
-                }
+        resoSlots.forEach {
+            it.value.clear()
+        }
+        destroyAllLinks()
+        destroyAllFields()
+        findIncomingFrom().forEach { connected ->
+            connected.destroyAllLinksTo(this)
+            connected.destroyAllFieldsTo(this)
+        }
+        World.allAgents.forEach { agent ->
+            if (agent.actionPortal == this) {
+                agent.actionPortal = World.randomPortal()
+                agent.action.start(ActionItem.WAIT)
             }
         }
+    }
+
+    fun remove() {
+        destroy()
+        SoundUtil.playPortalRemovalSound(location)
         World.allAgents.forEach { agent ->
             val portalKeys: List<PortalKey>? = agent.inventory.findKeys().filter { key -> key.portal == this }.toList()
             if (portalKeys != null) {
                 agent.inventory.items.removeAll(portalKeys)
             }
-            if (agent.actionPortal == this) {
-                agent.actionPortal = World.allPortals.first()
-                agent.action.item = ActionItem.WAIT
-                agent.action.untilTick = tick + 1
-            }
         }
-        if (isRemovePortal) {
-            World.allPortals.remove(this)
-        }
+        World.allPortals.remove(this)
     }
 
     fun removeReso(octant: Octant, agent: Agent?) {
-        resoSlots[octant] = ResonatorSlot(null, null, 0)
+        resoSlots[octant]?.clear()
         val numberOfResosLeft = resoSlots.filter { it.value.resonator != null }.count()
-        if (numberOfResosLeft < 2) {
-            findConnectedPortals().forEach { connctedPortal ->
-                connctedPortal.links.forEach { link ->
-                    if (link.destination == this) {
-                        agent?.addAp(187)
-                        connctedPortal.links.remove(link)
-                    }
-                }
-                connctedPortal.fields.forEach { field ->
-                    if (field.primaryAnchor == this || field.secondaryAnchor == this) {
-                        agent?.addAp(750)
-                        connctedPortal.fields.remove(field)
-                    }
-                }
-            }
-            links.clear()
-            fields.clear()
+        if (numberOfResosLeft <= 2) {
+            destroyAllLinks(agent)
+            destroyAllFields(agent)
         }
         if (numberOfResosLeft <= 0) {
-            destroy(World.tick, false)
+            destroy()
         }
     }
 
@@ -438,7 +448,7 @@ data class Portal(val name: String, val location: Coords,
     fun decay() {
         getAllResos().forEach { it.decay() }
         if (getAllResos().isEmpty()) {
-            destroy(World.tick, false)
+            destroy()
         }
     }
 
@@ -559,11 +569,10 @@ data class Portal(val name: String, val location: Coords,
             })
         }
 
-        val emptySlot = ResonatorSlot(null, null, 0)
         const val MAX_HACKS = 4 //TODO implement multihacks
         private fun clipLevel(level: Int): Int = max(1, min(level, 8))
         fun create(location: Coords): Portal {
-            val slots: MutableMap<Octant, ResonatorSlot> = Octant.values().map { it to emptySlot }.toMap().toMutableMap()
+            val slots: MutableMap<Octant, ResonatorSlot> = Octant.values().map { it to ResonatorSlot.create() }.toMap().toMutableMap()
             val heatMap = PathUtil.generateHeatMap(location)
             val vectorField = PathUtil.calculateVectorField(heatMap)
             SoundUtil.playPortalCreationSound(location)
