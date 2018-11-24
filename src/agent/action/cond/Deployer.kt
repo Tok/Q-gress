@@ -15,6 +15,8 @@ import kotlin.math.max
 import kotlin.math.min
 
 object Deployer : ConditionalAction {
+    override val actionItem = ActionItem.DEPLOY
+
     override fun isActionPossible(agent: Agent): Boolean {
         if (!isActionPortalFriendly(agent) || !areMoreResosAllowed(agent)) {
             return false
@@ -31,6 +33,8 @@ object Deployer : ConditionalAction {
     }
 
     override fun performAction(agent: Agent): Agent {
+        agent.action.start(actionItem)
+
         val inventoryResos = inventoryResos(agent.inventory)
         val ownedInPortal = ownedInPortal(agent)
         val result = inventoryResos.toSet().map { reso ->
@@ -39,6 +43,7 @@ object Deployer : ConditionalAction {
         if (result.none { it }) {
             console.warn("Deployment failed..")
         }
+
         agent.action.end()
         return agent
     }

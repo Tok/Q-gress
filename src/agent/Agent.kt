@@ -13,17 +13,12 @@ import config.Colors
 import config.Config
 import config.Dim
 import config.Styles
-import items.PowerCube
-import items.QgressItem
 import items.deployable.Resonator
 import items.level.XmpLevel
-import portal.Link
 import portal.Portal
 import portal.XmMap
-import system.Com
 import util.DrawUtil
 import util.PathUtil
-import util.SoundUtil
 import util.Util
 import util.data.*
 import kotlin.math.max
@@ -48,6 +43,7 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
     private fun xmBarPercent() = calcAbsXmBar() * 100 / xmCapacity()
     private fun isXmBarEmpty() = xmBarPercent() == 0
     fun isXmFilled() = xmBarPercent() >= 80
+    fun keySet() = inventory.findUniqueKeys()
 
     fun removeXm(v: Int) {
         this.xm = Util.clip(xm - v, 0, xmCapacity())
@@ -136,52 +132,6 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         }
     }
 
-    private fun chargeableKeys() = Portal.findChargeableForKeys(this, keySet().orEmpty())
-    private fun lowestChargeablePortal() = chargeableKeys()?.sortedBy { it.calcHealth() }?.first()
-    private fun rechargeResos() = lowestChargeablePortal()?.resoSlots?.mapNotNull { it.value.resonator }
-
-    fun isRechargePossible() = isXmFilled() && !chargeableKeys().isNullOrEmpty()
-    fun rechargePortal(): Agent {
-        val resos = rechargeResos()
-        if (resos.isNullOrEmpty()) {
-            console.warn("$this Fail recharging resos.")
-        }
-        val count = resos?.count() ?: 0
-        resos?.forEach { it.recharge(this, 1000 / count) }
-        return this
-    }
-
-    fun isRecruitmentPossible() = World.canRecruitMore(faction)
-    fun recruitNewAgents(): Agent {
-        if (action.item != ActionItem.RECRUIT) {
-            this.action.start(ActionItem.RECRUIT)
-            if (Util.random() < NonFaction.changeToBeRecruited) {
-                val npc = NonFaction.findNearestTo(pos)
-                World.allNonFaction.remove(npc)
-                val newAgent = when (faction) {
-                    Faction.ENL -> Agent.createFrog(World.grid)
-                    Faction.RES -> Agent.createSmurf(World.grid)
-                    else -> throw IllegalStateException("$this is $faction NPC.")
-                }
-                Com.addMessage("$newAgent has completed the tutorial.")
-                World.allAgents.add(newAgent)
-            }
-        }
-        return this
-    }
-
-    fun isRecyclePossible() = xm < xmCapacity() / 10
-    fun recycleItems(): Agent {
-        //TODO improve
-        val cubes: List<PowerCube> = inventory.findPowerCubes()
-        if (cubes.isNotEmpty()) {
-            val cube: PowerCube = cubes.first()
-            addXm(cube.level.calculateRecycleXm())
-            inventory.consumeCubes(listOf(cube))
-        }
-        return this
-    }
-
     fun attackPortal(isFirst: Boolean): Agent {
         fun doAttack(): Agent {
             if (Attacker.isActionPossible(this)) {
@@ -239,70 +189,6 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
 
     fun doNothing(): Agent {
         action.start(ActionItem.WAIT)
-        return this
-    }
-
-    fun keySet() = inventory.findUniqueKeys()
-    fun hasKeys() = keySet()?.isNotEmpty() ?: false
-
-    fun isLinkPossible(): Boolean {
-        if (!actionPortal.canLinkOut(this)) {
-            return false
-        }
-        if (hasKeys()) {
-            val targetOptions: List<Portal>? = actionPortal.findLinkableForKeys(this)?.filter {
-                it != actionPortal && it.owner != null && !it.isDeprecated()
-            }?.distinct()
-            if (targetOptions?.isNotEmpty() == true) {
-                val linkOptions: List<Link> = targetOptions.mapNotNull {
-                    Link.create(actionPortal, it, this)
-                }
-                return linkOptions.any { link ->
-                    World.allLines().none { it.doesIntersect(link.getLine()) }
-                }
-            }
-        }
-        return false
-    }
-
-    fun createLink(): Agent {
-        if (!actionPortal.canLinkOut(this)) {
-            return doNothing()
-        }
-        if (hasKeys()) {
-            val linkOptions: List<Portal>? = actionPortal.findLinkableForKeys(this)?.filter {
-                it != actionPortal && it.owner != null && !it.isDeprecated()
-            }?.distinct()
-            if (linkOptions != null && linkOptions.isNotEmpty()) {
-                val linkLinks: List<Link> = linkOptions.map { Link.create(actionPortal, it, this) }.filterNotNull()
-                val nonCrossing = linkLinks.filter { link ->
-                    World.allLines().none {
-                        it.doesIntersect(link.getLine())
-                    }
-                }
-                val hasLinkOptions = nonCrossing.isNotEmpty()
-                if (hasLinkOptions) {
-                    val randomTarget: Link = Util.shuffle(nonCrossing).first()
-                    actionPortal.createLink(this, randomTarget.destination)
-                }
-            }
-        }
-        action.start(ActionItem.LINK)
-        return this
-    }
-
-    fun isHackPossible() = actionPortal.canHack(this)
-    fun hackActionPortal(): Agent {
-        if (isAtActionPortal() && actionPortal.canHack(this)) {
-            val hackResult = actionPortal.tryHack(this)
-            SoundUtil.playHackingSound(actionPortal.location)
-            val isSuccess = hackResult.items != null
-            if (isSuccess) {
-                val newStuff: List<QgressItem> = hackResult.items!!
-                inventory.items.addAll(newStuff)
-            }
-        }
-        action.start(ActionItem.HACK)
         return this
     }
 

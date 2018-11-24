@@ -2,14 +2,17 @@ package agent.action.cond
 
 import agent.Agent
 import agent.Inventory
+import agent.action.ActionItem
 import system.Queues
 import util.Util
 
 object Attacker : ConditionalAction {
+    override val actionItem = ActionItem.ATTACK
     private const val attackXmps = 50
     private fun xmpsForAttack(inv: Inventory) = inv.findXmps().sortedBy { it.level }.take((attackXmps * Util.random()).toInt())
     override fun isActionPossible(agent: Agent) = agent.inventory.findXmps().count() >= attackXmps
     override fun performAction(agent: Agent): Agent {
+        agent.action.start(actionItem)
         val xmps = xmpsForAttack(agent.inventory)
         xmps.forEach { xmpBurster ->
             when (xmpBurster.level.level) {

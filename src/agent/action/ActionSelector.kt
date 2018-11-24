@@ -2,8 +2,7 @@ package agent.action
 
 import agent.Agent
 import agent.Faction
-import agent.action.cond.Attacker
-import agent.action.cond.Deployer
+import agent.action.cond.*
 import agent.qvalue.QActions
 import agent.qvalue.QValue
 import org.w3c.dom.HTMLInputElement
@@ -35,21 +34,21 @@ object ActionSelector {
 
     private fun actionsForAnywhere(agent: Agent): List<Pair<Double, () -> Agent>> {
         val moveElsewhereQ = q(agent.faction, QActions.MOVE_ELSEWHERE)
-        val recycleQ = if (agent.isRecyclePossible()) q(agent.faction, QActions.RECYCLE) else -1.0
-        val rechargeQ = if (agent.isRechargePossible()) q(agent.faction, QActions.RECHARGE) else -1.0
-        val recruitQ = if (agent.isRecruitmentPossible()) q(agent.faction, QActions.RECRUIT) else -1.0
+        val recycleQ = if (Recycler.isActionPossible(agent)) q(agent.faction, QActions.RECYCLE) else -1.0
+        val rechargeQ = if (Recharger.isActionPossible(agent)) q(agent.faction, QActions.RECHARGE) else -1.0
+        val recruitQ = if (Recruiter.isActionPossible(agent)) q(agent.faction, QActions.RECRUIT) else -1.0
         return listOf(
                 moveElsewhereQ to { agent.moveElsewhere() },
-                recycleQ to { agent.recycleItems() },
-                rechargeQ to { agent.rechargePortal() },
-                recruitQ to { agent.recruitNewAgents() }
+                recycleQ to { Recycler.performAction(agent) },
+                rechargeQ to { Recharger.performAction(agent) },
+                recruitQ to { Recruiter.performAction(agent) }
         )
     }
 
     private fun actionsForPortals(agent: Agent): List<Pair<Double, () -> Agent>> {
         val basicValues = actionsForAnywhere(agent)
-        val hackQ = if (agent.isHackPossible()) q(agent.faction, QActions.HACK) else -1.0
-        return basicValues + listOf(hackQ to { agent.hackActionPortal() })
+        val hackQ = if (Hacker.isActionPossible(agent)) q(agent.faction, QActions.HACK) else -1.0
+        return basicValues + listOf(hackQ to { Hacker.performAction(agent) })
     }
 
     private fun actionsForNeutralPortals(agent: Agent): List<Pair<Double, () -> Agent>> {
@@ -61,10 +60,10 @@ object ActionSelector {
     private fun actionsForFriendlyPortals(agent: Agent): List<Pair<Double, () -> Agent>> {
         val basicValues = actionsForPortals(agent)
         val deployQ = if (Deployer.isActionPossible(agent)) q(agent.faction, QActions.DEPLOY) else -1.0
-        val linkQ = if (agent.isLinkPossible()) q(agent.faction, QActions.LINK) else -1.0
+        val linkQ = if (Linker.isActionPossible(agent)) q(agent.faction, QActions.LINK) else -1.0
         return basicValues + listOf(
                 deployQ to { agent.deployPortal(true) },
-                linkQ to { agent.createLink() }
+                linkQ to { Linker.performAction(agent) }
         )
     }
 
