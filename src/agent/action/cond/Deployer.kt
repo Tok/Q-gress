@@ -33,8 +33,7 @@ object Deployer : ConditionalAction {
     }
 
     override fun performAction(agent: Agent): Agent {
-        agent.action.start(actionItem)
-
+        println("Deploy $agent")
         val inventoryResos = inventoryResos(agent.inventory)
         val ownedInPortal = ownedInPortal(agent)
         val result = inventoryResos.toSet().map { reso ->
@@ -43,8 +42,6 @@ object Deployer : ConditionalAction {
         if (result.none { it }) {
             console.warn("Deployment failed..")
         }
-
-        agent.action.end()
         return agent
     }
 

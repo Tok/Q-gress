@@ -12,7 +12,6 @@ object Attacker : ConditionalAction {
     override fun isActionPossible(agent: Agent) = agent.inventory.findXmps().count() >= attackXmps
 
     override fun performAction(agent: Agent): Agent {
-        agent.action.start(actionItem)
         val xmps = xmpsForAttack(agent.inventory)
         xmps.forEach { xmpBurster ->
             when (xmpBurster.level.level) {
@@ -26,9 +25,11 @@ object Attacker : ConditionalAction {
                 else -> agent.removeXm(640)
             }
         }
+        if (xmps.isEmpty()) {
+            console.warn("Attack failed..")
+        }
         Queues.registerAttack(agent, xmps)
         agent.inventory.consumeXmps(xmps)
-        agent.action.end()
         return agent
     }
 

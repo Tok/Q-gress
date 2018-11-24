@@ -134,14 +134,8 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
     }
 
     fun attackPortal(isFirst: Boolean): Agent {
-        fun doAttack(): Agent {
-            if (Attacker.isActionPossible(this)) {
-                Attacker.performAction(this)
-            }
-            return this
-        }
-
         if (isFirst) {
+            action.start(ActionItem.ATTACK)
             fun findExactDestination(): Coords {
                 if (actionPortal.calcHealth() > 0.8) {
                     return actionPortal.location //center
@@ -157,34 +151,37 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
 
             val inRangePosition = findExactDestination()
             this.destination = inRangePosition
-            action.start(ActionItem.ATTACK)
-            return moveCloserInRange()
         }
+
         return when {
-            !isArrived() -> moveCloserInRange()
-            else -> doAttack()
+            !isArrived() && isBusy() -> moveCloserInRange()
+            else -> {
+                if (Attacker.isActionPossible(this)) {
+                    Attacker.performAction(this)
+                } else {
+                    doNothing()
+                }
+            }
         }
     }
 
     fun deployPortal(isFirst: Boolean): Agent {
-        fun doDeploy(): Agent {
-            if (Deployer.isActionPossible(this)) {
-                Deployer.performAction(this)
-            }
-            return this
-        }
-
         if (isFirst) {
             action.start(ActionItem.DEPLOY)
             val distance = max(Dim.minDeploymentRange, Dim.maxDeploymentRange * Util.random() * skills.deployPrecision).toInt()
             val dest = actionPortal.findRandomPointNearPortal(distance)
             this.destination = dest
-            return moveCloserInRange()
         }
 
         return when {
-            !isArrived() -> moveCloserInRange()
-            else -> doDeploy()
+            !isArrived() && isBusy() -> moveCloserInRange()
+            else -> {
+                if (Deployer.isActionPossible(this)) {
+                    Deployer.performAction(this)
+                } else {
+                    doNothing()
+                }
+            }
         }
     }
 
