@@ -12,9 +12,9 @@ object Recruiter : ConditionalAction {
     override val actionItem = ActionItem.RECRUIT
 
     override fun isActionPossible(agent: Agent) = World.canRecruitMore(agent.faction)
+
     override fun performAction(agent: Agent): Agent {
         agent.action.start(actionItem)
-
         if (Util.random() < NonFaction.changeToBeRecruited) {
             val npc = NonFaction.findNearestTo(agent.pos)
             World.allNonFaction.remove(npc)
@@ -26,8 +26,6 @@ object Recruiter : ConditionalAction {
             Com.addMessage("$newAgent has completed the tutorial.")
             World.allAgents.add(newAgent)
         }
-
-        agent.action.end()
         return agent
     }
 }

@@ -93,6 +93,16 @@ object SoundUtil {
         playSound(osc, createStaticPan(pan), gain, duration)
     }
 
+    fun playGlyphingSound(pos: Coords) {
+        if (isMuted()) return
+        val freq = 400.0
+        val osc = createStaticOscillator(OscillatorType.SINE, freq)
+        val pan = pos.xx() / Dim.width
+        val gain = 0.04
+        val duration = 0.06
+        playSound(osc, createStaticPan(pan), gain, duration)
+    }
+
     fun playXmpSound(level: XmpLevel, pos: Coords) {
         if (isMuted()) return
         val freq = 160.0 - (level.level * 5)

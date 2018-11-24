@@ -8,9 +8,9 @@ import util.Util
 
 object Attacker : ConditionalAction {
     override val actionItem = ActionItem.ATTACK
-    private const val attackXmps = 50
-    private fun xmpsForAttack(inv: Inventory) = inv.findXmps().sortedBy { it.level }.take((attackXmps * Util.random()).toInt())
+
     override fun isActionPossible(agent: Agent) = agent.inventory.findXmps().count() >= attackXmps
+
     override fun performAction(agent: Agent): Agent {
         agent.action.start(actionItem)
         val xmps = xmpsForAttack(agent.inventory)
@@ -32,4 +32,6 @@ object Attacker : ConditionalAction {
         return agent
     }
 
+    private const val attackXmps = 50
+    private fun xmpsForAttack(inv: Inventory) = inv.findXmps().sortedBy { it.level }.take((attackXmps * Util.random()).toInt())
 }

@@ -18,8 +18,8 @@ Q-Gress was never tested on Mobile and is exclusively designed for desktop brows
     * Move to next agent
     * Move to group of agents
     * Move to random agent
-  * Fix attacking
-  * Improve deployment
+  * ~~Fix attacking~~
+  * ~~Improve deployment~~
 - Implement inventory limit
 - More Items
   * ~~Power Cubes~~
@@ -34,10 +34,10 @@ Q-Gress was never tested on Mobile and is exclusively designed for desktop brows
   * ~~action preferences~~
   * tendency to randomly create long links
   * deployment skills
-    * tendency to move in good range
+    * ~~tendency to move in good range~~
     * tendency to deploy to the opposite octant of existing max reso
 - Display FPS
-- Implement glyphing
+- ~~Implement glyphing~~
 - Improved controls
 - UI
   * ~~Calculate and display cycles~~

@@ -13,16 +13,12 @@ object Recharger : ConditionalAction {
 
     override fun performAction(agent: Agent): Agent {
         agent.action.start(actionItem)
-
         val resos = rechargeResos(agent)
-        val count = resos?.count() ?: 0
-        resos?.forEach { it.recharge(agent, 1000 / count) }
-
-        agent.action.end()
+        resos.forEach { it.recharge(agent, 1000 / resos.count()) }
         return agent
     }
 
     private fun chargeableKeys(agent: Agent) = Portal.findChargeableForKeys(agent, agent.keySet().orEmpty()).orEmpty()
-    private fun lowestChargeablePortal(agent: Agent) = chargeableKeys(agent)?.sortedBy { it.calcHealth() }?.first()
-    private fun rechargeResos(agent: Agent) = lowestChargeablePortal(agent)?.resoSlots?.mapNotNull { it.value.resonator }.orEmpty()
+    private fun lowestChargeablePortal(agent: Agent) = chargeableKeys(agent).sortedBy { it.calcHealth() }.first()
+    private fun rechargeResos(agent: Agent) = lowestChargeablePortal(agent).resoSlots.mapNotNull { it.value.resonator }
 }

@@ -10,7 +10,7 @@ import util.Util
 import kotlin.browser.window
 
 object ActionSelector {
-    fun doSomething(agent: Agent): Agent {
+    fun doSomethingElse(agent: Agent): Agent {
         val portalFaction = agent.actionPortal.owner?.faction
         return when {
             !agent.isAtActionPortal() -> doAnywhereAction(agent)
@@ -48,7 +48,11 @@ object ActionSelector {
     private fun actionsForPortals(agent: Agent): List<Pair<Double, () -> Agent>> {
         val basicValues = actionsForAnywhere(agent)
         val hackQ = if (Hacker.isActionPossible(agent)) q(agent.faction, QActions.HACK) else -1.0
-        return basicValues + listOf(hackQ to { Hacker.performAction(agent) })
+        val glyphQ = if (Glypher.isActionPossible(agent)) q(agent.faction, QActions.GLYPH) else -1.0
+        return basicValues + listOf(
+                hackQ to { Hacker.performAction(agent) },
+                glyphQ to { Glypher.performAction(agent) }
+        )
     }
 
     private fun actionsForNeutralPortals(agent: Agent): List<Pair<Double, () -> Agent>> {

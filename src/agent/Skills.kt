@@ -11,7 +11,7 @@ data class Skills(val speed: Float, val deployPrecision: Double, val glyphSkill:
         fun createRandom() = Skills(randomSpeed(), deployPrecision(), randomGlyphSkill(), randomReliability())
         private fun randomSpeed() = (Util.random().toFloat() * (maxSpeed - minSpeed)) + minSpeed //distance per tick
         private fun deployPrecision() = 0.7 + (Util.random() * 0.3) //0.7 to 1.0
-        private fun randomGlyphSkill() = Util.random() //0.0 to 1.0
+        private fun randomGlyphSkill() = 0.5 + (Util.random() * 0.5) //0.5 to 1.0
         private fun randomReliability() = 0.5 + Util.random() / 2
     }
 }

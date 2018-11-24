@@ -15,15 +15,15 @@ import util.data.Line
 data class ActionItem(val text: String, val durationSeconds: Int, val qName: String) {
     companion object {
         val MOVE = ActionItem("moving", 1, "Move")
-        val WAIT = ActionItem("waiting", 1, "Wait")
-        val RECHARGE = ActionItem("recharge", 1, "Recharge")
-        val RECRUIT = ActionItem("recruit", 120, "Recruit")
-        val RECYCLE = ActionItem("recycle", 1, "Recycle")
-        val HACK = ActionItem("hacking", 5, "Hack")
-        val GLYPH = ActionItem("glyphing", 40, "Glyph")
-        val ATTACK = ActionItem("attacking", 5, "Attack")
-        val DEPLOY = ActionItem("deploying", 10, "Deploy")
-        val LINK = ActionItem("linking", 10, "Link")
+        val WAIT = ActionItem("waiting", 10, "Wait")
+        val RECHARGE = ActionItem("recharging", 30, "Recharge")
+        val RECRUIT = ActionItem("recruiting", 150, "Recruit")
+        val RECYCLE = ActionItem("recycling", 30, "Recycle")
+        val HACK = ActionItem("hacking", 10, "Hack")
+        val GLYPH = ActionItem("glyphing", 60, "Glyph")
+        val ATTACK = ActionItem("attacking", 15, "Attack")
+        val DEPLOY = ActionItem("deploying", 15, "Deploy")
+        val LINK = ActionItem("linking", 30, "Link")
         fun values() = listOf(MOVE, WAIT, RECHARGE, RECRUIT, RECYCLE, HACK, GLYPH, ATTACK, DEPLOY, LINK)
 
         private val enlImages = values().map { it to drawTemplate(it, Faction.ENL) }.toMap()
@@ -52,7 +52,8 @@ data class ActionItem(val text: String, val durationSeconds: Int, val qName: Str
                 DrawUtil.drawCircle(ctx, circle, strokeStyle, lw.toDouble(), faction.color)
                 when (actionItem) {
                     MOVE -> drawAgentCircle(ctx, Circle(pos, rr - 2.0))
-                    HACK, GLYPH -> drawAgentCircle(ctx, Circle(pos, rr - 4.0))
+                    HACK -> drawAgentCircle(ctx, Circle(pos, rr - 4.0))
+                    GLYPH -> drawAgentCircle(ctx, Circle(pos, rr - 3.0))
                     RECRUIT -> {
                         drawAgentCircle(ctx, Circle(pos, rr - 2.0))
                         drawAgentCircle(ctx, Circle(pos, rr - 4.0))

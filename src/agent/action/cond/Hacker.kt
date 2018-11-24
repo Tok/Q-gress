@@ -9,6 +9,7 @@ object Hacker : ConditionalAction {
     override val actionItem = ActionItem.HACK
 
     override fun isActionPossible(agent: Agent) = agent.actionPortal.canHack(agent)
+
     override fun performAction(agent: Agent): Agent {
         agent.action.start(actionItem)
         val hackResult = agent.actionPortal.tryHack(agent)
@@ -18,7 +19,6 @@ object Hacker : ConditionalAction {
             val newStuff: List<QgressItem> = hackResult.items!!
             agent.inventory.items.addAll(newStuff)
         }
-        agent.action.end()
         return agent
     }
 }

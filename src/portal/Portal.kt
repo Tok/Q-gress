@@ -119,7 +119,7 @@ data class Portal(val name: String, val location: Coords,
 
     private fun findConnectedPortals(): List<Portal> = findOutgoingTo() + findIncomingFrom()
 
-    fun findLinkableForKeys(agent: Agent): List<Portal>? {
+    fun findLinkableForKeys(agent: Agent): List<Portal> {
         val keyset = agent.inventory.findUniqueKeys()!!
         val allLinks = World.allPortals.flatMap { it.links }.filter { Link.isPossible(it) }.toSet()
         val nonIntersecting: List<Portal> = keyset.map { it.portal }.filter { destination ->
@@ -165,6 +165,20 @@ data class Portal(val name: String, val location: Coords,
             return HackResult(stuff, null)
         }
         return HackResult(null, cooldown)
+    }
+
+    fun tryGlyph(agent: Agent): HackResult {
+        val normal = tryHack(agent)
+        if (normal.cooldown == null) {
+            val glyphItems = mutableListOf<QgressItem>()
+            glyphItems.addAll(normal.items ?: emptyList())
+            glyphItems.addAll(hack(agent))
+            if (Util.random() < agent.skills.glyphSkill) {
+                glyphItems.addAll(hack(agent))
+            }
+            return HackResult(glyphItems.toList(), null)
+        }
+        return HackResult(null, normal.cooldown)
     }
 
     private fun hack(agent: Agent): MutableList<QgressItem> {

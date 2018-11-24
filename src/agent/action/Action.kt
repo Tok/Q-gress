@@ -11,6 +11,6 @@ data class Action(var item: ActionItem, var untilTick: Int) {
     }
     override fun toString() = item.text
     companion object {
-        fun create() = Action(ActionItem.MOVE, World.tick)
+        fun create() = Action(ActionItem.WAIT, World.tick)
     }
 }

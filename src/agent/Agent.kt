@@ -43,7 +43,7 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
     private fun xmBarPercent() = calcAbsXmBar() * 100 / xmCapacity()
     private fun isXmBarEmpty() = xmBarPercent() == 0
     fun isXmFilled() = xmBarPercent() >= 80
-    fun keySet() = inventory.findUniqueKeys()
+    fun keySet() = inventory.findUniqueKeys().orEmpty()
 
     fun removeXm(v: Int) {
         this.xm = Util.clip(xm - v, 0, xmCapacity())
@@ -63,7 +63,7 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
             action.item == ActionItem.DEPLOY -> deployPortal(false)
             isBusy() -> this
             action.item == ActionItem.MOVE -> moveCloserToDestinationPortal()
-            else -> ActionSelector.doSomething(this)
+            else -> ActionSelector.doSomethingElse(this)
         }
         next.collectXm()
         return next
@@ -101,7 +101,8 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
             return doNothing()
         }
         if (isAtActionPortal()) {
-            return if (action.item == ActionItem.ATTACK) this else doNothing()
+            action.end()
+            return this
         }
 
         val force = actionPortal.vectorField[PathUtil.posToShadowPos(pos)]
