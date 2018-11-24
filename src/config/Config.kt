@@ -5,7 +5,7 @@ import util.HtmlUtil
 import kotlin.math.max
 
 object Config {
-    val startPortals = if (HtmlUtil.isLocal()) 8 else 8
+    val startPortals = if (HtmlUtil.isLocal()) 13 else 8
     val startFrogs = if (HtmlUtil.isLocal()) 4 else 4
     val startSmurfs = if (HtmlUtil.isLocal()) 4 else 4
 

@@ -1,8 +1,9 @@
 package agent.action
 
-import World
 import agent.Agent
 import agent.Faction
+import agent.action.cond.Attacker
+import agent.action.cond.Deployer
 import agent.qvalue.QActions
 import agent.qvalue.QValue
 import org.w3c.dom.HTMLInputElement
@@ -34,9 +35,9 @@ object ActionSelector {
 
     private fun actionsForAnywhere(agent: Agent): List<Pair<Double, () -> Agent>> {
         val moveElsewhereQ = q(agent.faction, QActions.MOVE_ELSEWHERE)
-        val recycleQ = if (agent.xm < agent.xmCapacity() / 10) q(agent.faction, QActions.RECYCLE) else -1.0
-        val rechargeQ = if (agent.isXmFilled()) q(agent.faction, QActions.RECHARGE) else -1.0
-        val recruitQ = if (World.canRecruitMore(agent.faction)) q(agent.faction, QActions.RECRUIT) else -1.0
+        val recycleQ = if (agent.isRecyclePossible()) q(agent.faction, QActions.RECYCLE) else -1.0
+        val rechargeQ = if (agent.isRechargePossible()) q(agent.faction, QActions.RECHARGE) else -1.0
+        val recruitQ = if (agent.isRecruitmentPossible()) q(agent.faction, QActions.RECRUIT) else -1.0
         return listOf(
                 moveElsewhereQ to { agent.moveElsewhere() },
                 recycleQ to { agent.recycleItems() },
@@ -53,23 +54,23 @@ object ActionSelector {
 
     private fun actionsForNeutralPortals(agent: Agent): List<Pair<Double, () -> Agent>> {
         val basicValues = actionsForPortals(agent)
-        val captureQ = q(agent.faction, QActions.CAPTURE)
-        return basicValues + listOf(captureQ to { agent.deployPortal() })
+        val captureQ = if (Deployer.isActionPossible(agent)) q(agent.faction, QActions.CAPTURE) else -1.0
+        return basicValues + listOf(captureQ to { agent.deployPortal(true) })
     }
 
     private fun actionsForFriendlyPortals(agent: Agent): List<Pair<Double, () -> Agent>> {
         val basicValues = actionsForPortals(agent)
-        val deployQ = if (agent.isDeploymentPossible()) q(agent.faction, QActions.DEPLOY) else -1.0
+        val deployQ = if (Deployer.isActionPossible(agent)) q(agent.faction, QActions.DEPLOY) else -1.0
         val linkQ = if (agent.isLinkPossible()) q(agent.faction, QActions.LINK) else -1.0
         return basicValues + listOf(
-                deployQ to { agent.deployPortal() },
+                deployQ to { agent.deployPortal(true) },
                 linkQ to { agent.createLink() }
         )
     }
 
     private fun actionsForEnemyPortals(agent: Agent): List<Pair<Double, () -> Agent>> {
         val basicValues = actionsForPortals(agent)
-        val attackQ = q(agent.faction, QActions.ATTACK)
-        return basicValues + listOf(attackQ to { agent.attackPortal() })
+        val attackQ = if (Attacker.isActionPossible(agent)) q(agent.faction, QActions.ATTACK) else -1.0
+        return basicValues + listOf(attackQ to { agent.attackPortal(true) })
     }
 }

@@ -13,16 +13,16 @@ var QGress = function (_, Kotlin) {
   var throwCCE = Kotlin.throwCCE;
   var listOf_0 = Kotlin.kotlin.collections.listOf_mh5how$;
   var plus = Kotlin.kotlin.collections.plus_mydzjv$;
-  var sum = Kotlin.kotlin.collections.sum_plj8ka$;
-  var println = Kotlin.kotlin.io.println_s8jyv4$;
   var numberToInt = Kotlin.numberToInt;
+  var take = Kotlin.kotlin.collections.take_ba2ldo$;
   var Unit = Kotlin.kotlin.Unit;
+  var Kind_INTERFACE = Kotlin.Kind.INTERFACE;
+  var toSet = Kotlin.kotlin.collections.toSet_7wnvza$;
+  var sum = Kotlin.kotlin.collections.sum_plj8ka$;
+  var toList = Kotlin.kotlin.collections.toList_abgq59$;
+  var zip = Kotlin.kotlin.collections.zip_45mdf7$;
   var first = Kotlin.kotlin.collections.first_2p1efm$;
   var IllegalStateException_init = Kotlin.kotlin.IllegalStateException_init_pdl1vj$;
-  var take = Kotlin.kotlin.collections.take_ba2ldo$;
-  var toList = Kotlin.kotlin.collections.toList_abgq59$;
-  var toSet = Kotlin.kotlin.collections.toSet_7wnvza$;
-  var zip = Kotlin.kotlin.collections.zip_45mdf7$;
   var distinct = Kotlin.kotlin.collections.distinct_7wnvza$;
   var filterNotNull = Kotlin.kotlin.collections.filterNotNull_m3lr2h$;
   var toString = Kotlin.toString;
@@ -37,7 +37,7 @@ var QGress = function (_, Kotlin) {
   var mapOf = Kotlin.kotlin.collections.mapOf_qfcya0$;
   var math = Kotlin.kotlin.math;
   var asList = Kotlin.kotlin.collections.asList_us0mfu$;
-  var Kind_INTERFACE = Kotlin.Kind.INTERFACE;
+  var println = Kotlin.kotlin.io.println_s8jyv4$;
   var NotImplementedError = Kotlin.kotlin.NotImplementedError;
   var toList_0 = Kotlin.kotlin.collections.toList_7wnvza$;
   var last = Kotlin.kotlin.collections.last_2p1efm$;
@@ -412,9 +412,9 @@ var QGress = function (_, Kotlin) {
   }
   ActionSelector.prototype.actionsForAnywhere_0 = function (agent) {
     var moveElsewhereQ = this.q_aafct0$(agent.faction, QActions_getInstance().MOVE_ELSEWHERE);
-    var recycleQ = agent.xm < (agent.xmCapacity() / 10 | 0) ? this.q_aafct0$(agent.faction, QActions_getInstance().RECYCLE) : -1.0;
-    var rechargeQ = agent.isXmFilled() ? this.q_aafct0$(agent.faction, QActions_getInstance().RECHARGE) : -1.0;
-    var recruitQ = World_getInstance().canRecruitMore_bip15f$(agent.faction) ? this.q_aafct0$(agent.faction, QActions_getInstance().RECRUIT) : -1.0;
+    var recycleQ = agent.isRecyclePossible() ? this.q_aafct0$(agent.faction, QActions_getInstance().RECYCLE) : -1.0;
+    var rechargeQ = agent.isRechargePossible() ? this.q_aafct0$(agent.faction, QActions_getInstance().RECHARGE) : -1.0;
+    var recruitQ = agent.isRecruitmentPossible() ? this.q_aafct0$(agent.faction, QActions_getInstance().RECRUIT) : -1.0;
     return listOf([to(moveElsewhereQ, ActionSelector$actionsForAnywhere$lambda(agent)), to(recycleQ, ActionSelector$actionsForAnywhere$lambda_0(agent)), to(rechargeQ, ActionSelector$actionsForAnywhere$lambda_1(agent)), to(recruitQ, ActionSelector$actionsForAnywhere$lambda_2(agent))]);
   };
   function ActionSelector$actionsForPortals$lambda(closure$agent) {
@@ -429,17 +429,17 @@ var QGress = function (_, Kotlin) {
   };
   function ActionSelector$actionsForNeutralPortals$lambda(closure$agent) {
     return function () {
-      return closure$agent.deployPortal();
+      return closure$agent.deployPortal_6taknv$(true);
     };
   }
   ActionSelector.prototype.actionsForNeutralPortals_0 = function (agent) {
     var basicValues = this.actionsForPortals_0(agent);
-    var captureQ = this.q_aafct0$(agent.faction, QActions_getInstance().CAPTURE);
+    var captureQ = Deployer_getInstance().isActionPossible_912u9o$(agent) ? this.q_aafct0$(agent.faction, QActions_getInstance().CAPTURE) : -1.0;
     return plus(basicValues, listOf_0(to(captureQ, ActionSelector$actionsForNeutralPortals$lambda(agent))));
   };
   function ActionSelector$actionsForFriendlyPortals$lambda(closure$agent) {
     return function () {
-      return closure$agent.deployPortal();
+      return closure$agent.deployPortal_6taknv$(true);
     };
   }
   function ActionSelector$actionsForFriendlyPortals$lambda_0(closure$agent) {
@@ -449,18 +449,18 @@ var QGress = function (_, Kotlin) {
   }
   ActionSelector.prototype.actionsForFriendlyPortals_0 = function (agent) {
     var basicValues = this.actionsForPortals_0(agent);
-    var deployQ = agent.isDeploymentPossible() ? this.q_aafct0$(agent.faction, QActions_getInstance().DEPLOY) : -1.0;
+    var deployQ = Deployer_getInstance().isActionPossible_912u9o$(agent) ? this.q_aafct0$(agent.faction, QActions_getInstance().DEPLOY) : -1.0;
     var linkQ = agent.isLinkPossible() ? this.q_aafct0$(agent.faction, QActions_getInstance().LINK) : -1.0;
     return plus(basicValues, listOf([to(deployQ, ActionSelector$actionsForFriendlyPortals$lambda(agent)), to(linkQ, ActionSelector$actionsForFriendlyPortals$lambda_0(agent))]));
   };
   function ActionSelector$actionsForEnemyPortals$lambda(closure$agent) {
     return function () {
-      return closure$agent.attackPortal();
+      return closure$agent.attackPortal_6taknv$(true);
     };
   }
   ActionSelector.prototype.actionsForEnemyPortals_0 = function (agent) {
     var basicValues = this.actionsForPortals_0(agent);
-    var attackQ = this.q_aafct0$(agent.faction, QActions_getInstance().ATTACK);
+    var attackQ = Attacker_getInstance().isActionPossible_912u9o$(agent) ? this.q_aafct0$(agent.faction, QActions_getInstance().ATTACK) : -1.0;
     return plus(basicValues, listOf_0(to(attackQ, ActionSelector$actionsForEnemyPortals$lambda(agent))));
   };
   ActionSelector.$metadata$ = {
@@ -474,6 +474,336 @@ var QGress = function (_, Kotlin) {
       new ActionSelector();
     }
     return ActionSelector_instance;
+  }
+  function Attacker() {
+    Attacker_instance = this;
+    this.attackXmps_0 = 50;
+  }
+  function Attacker$xmpsForAttack$lambda(it) {
+    return it.level;
+  }
+  var sortedWith = Kotlin.kotlin.collections.sortedWith_eknfly$;
+  var wrapFunction = Kotlin.wrapFunction;
+  var compareBy$lambda = wrapFunction(function () {
+    var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
+    return function (closure$selector) {
+      return function (a, b) {
+        var selector = closure$selector;
+        return compareValues(selector(a), selector(b));
+      };
+    };
+  });
+  var Comparator = Kotlin.kotlin.Comparator;
+  function Comparator$ObjectLiteral(closure$comparison) {
+    this.closure$comparison = closure$comparison;
+  }
+  Comparator$ObjectLiteral.prototype.compare = function (a, b) {
+    return this.closure$comparison(a, b);
+  };
+  Comparator$ObjectLiteral.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
+  Attacker.prototype.xmpsForAttack_0 = function (inv) {
+    return take(sortedWith(inv.findXmps(), new Comparator$ObjectLiteral(compareBy$lambda(Attacker$xmpsForAttack$lambda))), numberToInt(50 * Util_getInstance().random()));
+  };
+  Attacker.prototype.isActionPossible_912u9o$ = function (agent) {
+    return agent.inventory.findXmps().size >= 50;
+  };
+  Attacker.prototype.performAction_912u9o$ = function (agent) {
+    var xmps = this.xmpsForAttack_0(agent.inventory);
+    var tmp$;
+    tmp$ = xmps.iterator();
+    while (tmp$.hasNext()) {
+      var element = tmp$.next();
+      switch (element.level.level) {
+        case 1:
+          agent.removeXm_za3lpa$(10);
+          break;
+        case 2:
+          agent.removeXm_za3lpa$(20);
+          break;
+        case 3:
+          agent.removeXm_za3lpa$(70);
+          break;
+        case 4:
+          agent.removeXm_za3lpa$(140);
+          break;
+        case 5:
+          agent.removeXm_za3lpa$(250);
+          break;
+        case 6:
+          agent.removeXm_za3lpa$(360);
+          break;
+        case 7:
+          agent.removeXm_za3lpa$(490);
+          break;
+        default:agent.removeXm_za3lpa$(640);
+          break;
+      }
+    }
+    Queues_getInstance().registerAttack_wr4det$(agent, xmps);
+    agent.inventory.consumeXmps_ss5kb$(xmps);
+    agent.action.end();
+    return agent;
+  };
+  Attacker.$metadata$ = {
+    kind: Kind_OBJECT,
+    simpleName: 'Attacker',
+    interfaces: [ConditionalAction]
+  };
+  var Attacker_instance = null;
+  function Attacker_getInstance() {
+    if (Attacker_instance === null) {
+      new Attacker();
+    }
+    return Attacker_instance;
+  }
+  function ConditionalAction() {
+  }
+  ConditionalAction.$metadata$ = {
+    kind: Kind_INTERFACE,
+    simpleName: 'ConditionalAction',
+    interfaces: []
+  };
+  function Deployer() {
+    Deployer_instance = this;
+  }
+  var Collection = Kotlin.kotlin.collections.Collection;
+  Deployer.prototype.isActionPossible_912u9o$ = function (agent) {
+    if (!this.isActionPortalFriendly_0(agent) || !this.areMoreResosAllowed_0(agent)) {
+      return false;
+    }
+    var inventoryResos = this.inventoryResos_0(agent.inventory);
+    if (inventoryResos.isEmpty()) {
+      return false;
+    }
+    var ownedInPortal = this.ownedInPortal_0(agent);
+    var $receiver = toSet(inventoryResos);
+    var destination = ArrayList_init(collectionSizeOrDefault($receiver, 10));
+    var tmp$;
+    tmp$ = $receiver.iterator();
+    while (tmp$.hasNext()) {
+      var item = tmp$.next();
+      destination.add_11rb$(this.maybeDeployReso_0(inventoryResos, ownedInPortal, item, true, agent));
+    }
+    var results = destination;
+    var any$result;
+    any$break: do {
+      var tmp$_0;
+      if (Kotlin.isType(results, Collection) && results.isEmpty()) {
+        any$result = false;
+        break any$break;
+      }
+      tmp$_0 = results.iterator();
+      while (tmp$_0.hasNext()) {
+        var element = tmp$_0.next();
+        if (element) {
+          any$result = true;
+          break any$break;
+        }
+      }
+      any$result = false;
+    }
+     while (false);
+    return any$result;
+  };
+  Deployer.prototype.performAction_912u9o$ = function (agent) {
+    var inventoryResos = this.inventoryResos_0(agent.inventory);
+    var ownedInPortal = this.ownedInPortal_0(agent);
+    var $receiver = toSet(inventoryResos);
+    var destination = ArrayList_init(collectionSizeOrDefault($receiver, 10));
+    var tmp$;
+    tmp$ = $receiver.iterator();
+    while (tmp$.hasNext()) {
+      var item = tmp$.next();
+      destination.add_11rb$(this.maybeDeployReso_0(inventoryResos, ownedInPortal, item, false, agent));
+    }
+    var result = destination;
+    var none$result;
+    none$break: do {
+      var tmp$_0;
+      if (Kotlin.isType(result, Collection) && result.isEmpty()) {
+        none$result = true;
+        break none$break;
+      }
+      tmp$_0 = result.iterator();
+      while (tmp$_0.hasNext()) {
+        var element = tmp$_0.next();
+        if (element) {
+          none$result = false;
+          break none$break;
+        }
+      }
+      none$result = true;
+    }
+     while (false);
+    if (none$result) {
+      console.warn('Deployment failed..');
+    }
+    agent.action.end();
+    return agent;
+  };
+  Deployer.prototype.isActionPortalFriendly_0 = function (agent) {
+    return !agent.actionPortal.isEnemyOf_912u9o$(agent);
+  };
+  Deployer.prototype.areMoreResosAllowed_0 = function (agent) {
+    var $receiver = this.allowedResoLevels_0(agent);
+    var destination = ArrayList_init($receiver.size);
+    var tmp$;
+    tmp$ = $receiver.entries.iterator();
+    while (tmp$.hasNext()) {
+      var item = tmp$.next();
+      destination.add_11rb$(item.value);
+    }
+    return sum(destination) > 0;
+  };
+  Deployer.prototype.allowedResoLevels_0 = function (agent) {
+    return agent.actionPortal.findAllowedResoLevels_912u9o$(agent);
+  };
+  var LinkedHashMap_init = Kotlin.kotlin.collections.LinkedHashMap_init_q3lmfv$;
+  Deployer.prototype.ownedInPortal_0 = function (agent) {
+    var $receiver = agent.actionPortal.resoSlots;
+    var destination = LinkedHashMap_init();
+    var tmp$;
+    tmp$ = $receiver.entries.iterator();
+    while (tmp$.hasNext()) {
+      var element = tmp$.next();
+      if (element.value.isOwnedBy_912u9o$(agent)) {
+        destination.put_xwzc9p$(element.key, element.value);
+      }
+    }
+    return toList(destination);
+  };
+  function Deployer$inventoryResos$lambda(it) {
+    return it.level;
+  }
+  var ArrayList_init_0 = Kotlin.kotlin.collections.ArrayList_init_287e2$;
+  var compareBy$lambda_0 = wrapFunction(function () {
+    var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
+    return function (closure$selector) {
+      return function (a, b) {
+        var selector = closure$selector;
+        return compareValues(selector(a), selector(b));
+      };
+    };
+  });
+  function Comparator$ObjectLiteral_0(closure$comparison) {
+    this.closure$comparison = closure$comparison;
+  }
+  Comparator$ObjectLiteral_0.prototype.compare = function (a, b) {
+    return this.closure$comparison(a, b);
+  };
+  Comparator$ObjectLiteral_0.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
+  Deployer.prototype.inventoryResos_0 = function (inv) {
+    var $receiver = inv.items;
+    var destination = ArrayList_init_0();
+    var tmp$;
+    tmp$ = $receiver.iterator();
+    while (tmp$.hasNext()) {
+      var element = tmp$.next();
+      if (Kotlin.isType(element, Resonator))
+        destination.add_11rb$(element);
+    }
+    var destination_0 = ArrayList_init(collectionSizeOrDefault(destination, 10));
+    var tmp$_0;
+    tmp$_0 = destination.iterator();
+    while (tmp$_0.hasNext()) {
+      var item = tmp$_0.next();
+      var tmp$_1;
+      destination_0.add_11rb$(Kotlin.isType(tmp$_1 = item, Resonator) ? tmp$_1 : throwCCE());
+    }
+    return sortedWith(destination_0, new Comparator$ObjectLiteral_0(compareBy$lambda_0(Deployer$inventoryResos$lambda)));
+  };
+  var Math_0 = Math;
+  Deployer.prototype.maxDeployable_0 = function (ownedInPortal, reso) {
+    var destination = ArrayList_init_0();
+    var tmp$;
+    tmp$ = ownedInPortal.iterator();
+    while (tmp$.hasNext()) {
+      var element = tmp$.next();
+      var tmp$_0, tmp$_1, tmp$_2;
+      if (((tmp$_2 = (tmp$_1 = (tmp$_0 = element.second.resonator) != null ? tmp$_0.level : null) != null ? tmp$_1.level : null) != null ? tmp$_2 : 0) >= reso.level.level)
+        destination.add_11rb$(element);
+    }
+    var owned = destination.size;
+    var a = reso.level.deployablePerPlayer - owned | 0;
+    return Math_0.max(a, 0);
+  };
+  Deployer.prototype.deployable_0 = function (portal, reso) {
+    var $receiver = portal.resoSlots;
+    var destination = LinkedHashMap_init();
+    var tmp$;
+    tmp$ = $receiver.entries.iterator();
+    while (tmp$.hasNext()) {
+      var element = tmp$.next();
+      var tmp$_0, tmp$_1, tmp$_2;
+      if (((tmp$_2 = (tmp$_1 = (tmp$_0 = element.value.resonator) != null ? tmp$_0.level : null) != null ? tmp$_1.level : null) != null ? tmp$_2 : 0) < reso.level.level) {
+        destination.put_xwzc9p$(element.key, element.value);
+      }
+    }
+    return toList(destination);
+  };
+  Deployer.prototype.levelResos_0 = function (inventoryResos, reso, agent) {
+    var destination = ArrayList_init_0();
+    var tmp$;
+    tmp$ = inventoryResos.iterator();
+    while (tmp$.hasNext()) {
+      var element = tmp$.next();
+      if (element.level.level === reso.level.level && element.level.level <= agent.getLevel())
+        destination.add_11rb$(element);
+    }
+    return destination;
+  };
+  Deployer.prototype.deployResos_0 = function (levelResos, maxDeployable) {
+    var b = levelResos.size - 1 | 0;
+    return take(levelResos, Math_0.min(maxDeployable, b));
+  };
+  Deployer.prototype.actuallyDeploy_0 = function (agent, deployable, resos) {
+    var portal = agent.actionPortal;
+    var $receiver = zip(Util_getInstance().shuffle_bemo1h$(deployable), resos);
+    var destination = ArrayList_init(collectionSizeOrDefault($receiver, 10));
+    var tmp$;
+    tmp$ = $receiver.iterator();
+    while (tmp$.hasNext()) {
+      var item = tmp$.next();
+      destination.add_11rb$(to(item.first.first, item.second));
+    }
+    var deployMap = toMap(destination);
+    var a = agent.distanceToPortal_hv9zn6$(portal);
+    var b = Dim_getInstance().minDeploymentRange;
+    var distance = Math_0.max(a, b);
+    portal.deploy_en6fu0$(agent, deployMap, numberToInt(distance));
+    SoundUtil_getInstance().playDeploySound_s1df0o$(portal.location, numberToInt(distance));
+    agent.action.start_fyi6w8$(ActionItem$Companion_getInstance().DEPLOY);
+  };
+  Deployer.prototype.maybeDeployReso_0 = function (inventoryResos, ownedInPortal, reso, isTryOnly, agent) {
+    var maxDeployable = this.maxDeployable_0(ownedInPortal, reso);
+    var levelResos = this.levelResos_0(inventoryResos, reso, agent);
+    if (levelResos == null || levelResos.isEmpty()) {
+      return false;
+    }
+    var resos = this.deployResos_0(levelResos, maxDeployable);
+    if (resos == null || resos.isEmpty()) {
+      return false;
+    }
+    var deployable = this.deployable_0(agent.actionPortal, reso);
+    if (deployable == null || deployable.isEmpty()) {
+      return false;
+    }
+    if (!isTryOnly) {
+      this.actuallyDeploy_0(agent, deployable, resos);
+    }
+    return true;
+  };
+  Deployer.$metadata$ = {
+    kind: Kind_OBJECT,
+    simpleName: 'Deployer',
+    interfaces: [ConditionalAction]
+  };
+  var Deployer_instance = null;
+  function Deployer_getInstance() {
+    if (Deployer_instance === null) {
+      new Deployer();
+    }
+    return Deployer_instance;
   }
   function Agent(faction, name, pos, skills, inventory, action, actionPortal, destination, ap, xm, velocity) {
     Agent$Companion_getInstance();
@@ -507,10 +837,6 @@ var QGress = function (_, Kotlin) {
   Agent.prototype.isAtActionPortal = function () {
     return this.distanceToPortal_hv9zn6$(this.actionPortal) < Dim_getInstance().maxDeploymentRange;
   };
-  Agent.prototype.isInAttackRange_0 = function (range) {
-    var strongest = this.actionPortal.findStrongestResoPos();
-    return strongest != null && this.pos.distanceTo_lfj9be$(strongest) < range;
-  };
   Agent.prototype.isBusy_0 = function () {
     return World_getInstance().tick <= this.action.untilTick;
   };
@@ -526,7 +852,6 @@ var QGress = function (_, Kotlin) {
   Agent.prototype.xmCapacity = function () {
     return Agent$Companion_getInstance().xmCapacity_0(this.getLevel());
   };
-  var Math_0 = Math;
   Agent.prototype.calcAbsXmBar_0 = function () {
     var tmp$ = this.xmCapacity();
     var b = this.xm;
@@ -551,45 +876,28 @@ var QGress = function (_, Kotlin) {
   Agent.prototype.addAp_za3lpa$ = function (v) {
     this.ap = this.ap + (v * 10 | 0) | 0;
   };
-  Agent.prototype.isFastAction_0 = function () {
-    var tmp$, tmp$_0;
-    return ((tmp$ = this.action.item) != null ? tmp$.equals(ActionItem$Companion_getInstance().MOVE) : null) || (((tmp$_0 = this.action.item) != null ? tmp$_0.equals(ActionItem$Companion_getInstance().ATTACK) : null) && !this.isAtActionPortal());
-  };
-  Agent.prototype.isMoveInRange_0 = function () {
-    var tmp$;
-    return ((tmp$ = this.action.item) != null ? tmp$.equals(ActionItem$Companion_getInstance().ATTACK) : null) && !this.isArrived_0();
-  };
   Agent.prototype.act = function () {
     var tmp$;
-    if (this.isBusy_0())
-      tmp$ = this;
-    else if (this.isFastAction_0())
-      tmp$ = this.moveCloserToDestinationPortal_0();
-    else if (this.isMoveInRange_0())
-      tmp$ = this.moveCloserInRange_0();
-    else
-      tmp$ = ActionSelector_getInstance().doSomething_912u9o$(this);
+    var tmp$_0;
+    if ((tmp$_0 = this.action.item) != null ? tmp$_0.equals(ActionItem$Companion_getInstance().ATTACK) : null)
+      tmp$ = this.attackPortal_6taknv$(false);
+    else {
+      var tmp$_1;
+      if ((tmp$_1 = this.action.item) != null ? tmp$_1.equals(ActionItem$Companion_getInstance().DEPLOY) : null)
+        tmp$ = this.deployPortal_6taknv$(false);
+      else if (this.isBusy_0())
+        tmp$ = this;
+      else {
+        var tmp$_2;
+        if ((tmp$_2 = this.action.item) != null ? tmp$_2.equals(ActionItem$Companion_getInstance().MOVE) : null)
+          tmp$ = this.moveCloserToDestinationPortal_0();
+        else
+          tmp$ = ActionSelector_getInstance().doSomething_912u9o$(this);
+      }
+    }
     var next = tmp$;
     next.collectXm_0();
     return next;
-  };
-  Agent.prototype.isHackPossible = function () {
-    return this.actionPortal.canHack_912u9o$(this);
-  };
-  Agent.prototype.isDeploymentPossible = function () {
-    var tmp$ = !this.actionPortal.isEnemyOf_912u9o$(this);
-    if (tmp$) {
-      var $receiver = this.actionPortal.findAllowedResoLevels_912u9o$(this);
-      var destination = ArrayList_init($receiver.size);
-      var tmp$_0;
-      tmp$_0 = $receiver.entries.iterator();
-      while (tmp$_0.hasNext()) {
-        var item = tmp$_0.next();
-        destination.add_11rb$(item.value);
-      }
-      tmp$ = sum(destination) > 0;
-    }
-    return tmp$;
   };
   function Agent$moveElsewhere$lambda$lambda(closure$agent) {
     return function () {
@@ -650,7 +958,7 @@ var QGress = function (_, Kotlin) {
   Agent.prototype.moveCloserToDestinationPortal_0 = function () {
     var tmp$;
     if (!World_getInstance().isReady) {
-      println('WARN: moveCloserToDestination: World is not ready.');
+      console.warn('World is not ready.');
       return this.doNothing();
     }
     if (this.isAtActionPortal()) {
@@ -689,12 +997,15 @@ var QGress = function (_, Kotlin) {
       }
     }
   };
-  function Agent$rechargePortal$lambda(it) {
+  Agent.prototype.chargeableKeys_0 = function () {
+    var tmp$ = Portal$Companion_getInstance();
+    var $receiver = this.keySet();
+    return tmp$.findChargeableForKeys_p3u7jq$(this, $receiver != null ? $receiver : emptyList());
+  };
+  function Agent$lowestChargeablePortal$lambda(it) {
     return it.calcHealth();
   }
-  var sortedWith = Kotlin.kotlin.collections.sortedWith_eknfly$;
-  var wrapFunction = Kotlin.wrapFunction;
-  var compareBy$lambda = wrapFunction(function () {
+  var compareBy$lambda_1 = wrapFunction(function () {
     var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
     return function (closure$selector) {
       return function (a, b) {
@@ -703,15 +1014,17 @@ var QGress = function (_, Kotlin) {
       };
     };
   });
-  var Comparator = Kotlin.kotlin.Comparator;
-  function Comparator$ObjectLiteral(closure$comparison) {
+  function Comparator$ObjectLiteral_1(closure$comparison) {
     this.closure$comparison = closure$comparison;
   }
-  Comparator$ObjectLiteral.prototype.compare = function (a, b) {
+  Comparator$ObjectLiteral_1.prototype.compare = function (a, b) {
     return this.closure$comparison(a, b);
   };
-  Comparator$ObjectLiteral.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
-  var ArrayList_init_0 = Kotlin.kotlin.collections.ArrayList_init_287e2$;
+  Comparator$ObjectLiteral_1.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
+  Agent.prototype.lowestChargeablePortal_0 = function () {
+    var tmp$, tmp$_0;
+    return (tmp$_0 = (tmp$ = this.chargeableKeys_0()) != null ? sortedWith(tmp$, new Comparator$ObjectLiteral_1(compareBy$lambda_1(Agent$lowestChargeablePortal$lambda))) : null) != null ? first(tmp$_0) : null;
+  };
   var mapNotNullTo$lambda = wrapFunction(function () {
     return function (closure$transform, closure$destination) {
       return function (element) {
@@ -723,36 +1036,53 @@ var QGress = function (_, Kotlin) {
       };
     };
   });
-  Agent.prototype.rechargePortal = function () {
-    if (!this.hasKeys()) {
-      return this;
-    }
-    var chargeable = Portal$Companion_getInstance().findChargeableForKeys_912u9o$(this);
-    if (ensureNotNull(chargeable).isEmpty()) {
-      return this;
-    }
-    var lowest = first(sortedWith(chargeable, new Comparator$ObjectLiteral(compareBy$lambda(Agent$rechargePortal$lambda))));
-    if (lowest != null) {
-      var $receiver = lowest.resoSlots;
+  Agent.prototype.rechargeResos_0 = function () {
+    var tmp$, tmp$_0;
+    var tmp$_1;
+    if ((tmp$_0 = (tmp$ = this.lowestChargeablePortal_0()) != null ? tmp$.resoSlots : null) != null) {
       var destination = ArrayList_init_0();
-      var tmp$;
-      tmp$ = $receiver.entries.iterator();
-      while (tmp$.hasNext()) {
-        var element = tmp$.next();
-        var tmp$_0;
-        if ((tmp$_0 = element.value.resonator) != null) {
-          destination.add_11rb$(tmp$_0);
+      var tmp$_2;
+      tmp$_2 = tmp$_0.entries.iterator();
+      while (tmp$_2.hasNext()) {
+        var element = tmp$_2.next();
+        var tmp$_0_0;
+        if ((tmp$_0_0 = element.value.resonator) != null) {
+          destination.add_11rb$(tmp$_0_0);
         }
       }
-      var resos = destination;
-      var tmp$_1;
-      tmp$_1 = resos.iterator();
-      while (tmp$_1.hasNext()) {
-        var element_0 = tmp$_1.next();
-        element_0.recharge_2b7tta$(this, 1000 / resos.size | 0);
+      tmp$_1 = destination;
+    }
+     else
+      tmp$_1 = null;
+    return tmp$_1;
+  };
+  Agent.prototype.isRechargePossible = function () {
+    var tmp$ = this.isXmFilled();
+    if (tmp$) {
+      var $receiver = this.chargeableKeys_0();
+      tmp$ = !($receiver == null || $receiver.isEmpty());
+    }
+    return tmp$;
+  };
+  Agent.prototype.rechargePortal = function () {
+    var tmp$;
+    var resos = this.rechargeResos_0();
+    if (resos == null || resos.isEmpty()) {
+      console.warn(this.toString() + ' Fail recharging resos.');
+    }
+    var count = (tmp$ = resos != null ? resos.size : null) != null ? tmp$ : 0;
+    if (resos != null) {
+      var tmp$_0;
+      tmp$_0 = resos.iterator();
+      while (tmp$_0.hasNext()) {
+        var element = tmp$_0.next();
+        element.recharge_2b7tta$(this, 1000 / count | 0);
       }
     }
     return this;
+  };
+  Agent.prototype.isRecruitmentPossible = function () {
+    return World_getInstance().canRecruitMore_bip15f$(this.faction);
   };
   Agent.prototype.recruitNewAgents = function () {
     var tmp$, tmp$_0;
@@ -777,6 +1107,9 @@ var QGress = function (_, Kotlin) {
     }
     return this;
   };
+  Agent.prototype.isRecyclePossible = function () {
+    return this.xm < (this.xmCapacity() / 10 | 0);
+  };
   Agent.prototype.recycleItems = function () {
     var cubes = this.inventory.findPowerCubes();
     if (!cubes.isEmpty()) {
@@ -786,10 +1119,18 @@ var QGress = function (_, Kotlin) {
     }
     return this;
   };
+  function Agent$attackPortal$doAttack(this$Agent) {
+    return function () {
+      if (Attacker_getInstance().isActionPossible_912u9o$(this$Agent)) {
+        Attacker_getInstance().performAction_912u9o$(this$Agent);
+      }
+      return this$Agent;
+    };
+  }
   function Agent$attackPortal$findExactDestination(this$Agent) {
     return function () {
       var tmp$;
-      if (this$Agent.actionPortal.calcHealth() > 0.5) {
+      if (this$Agent.actionPortal.calcHealth() > 0.8) {
         return this$Agent.actionPortal.location;
       }
       var maybeDestination = this$Agent.actionPortal.findStrongestResoPos();
@@ -803,232 +1144,47 @@ var QGress = function (_, Kotlin) {
       return tmp$;
     };
   }
-  function Agent$attackPortal$doAttack$lambda(it) {
-    return it.level;
-  }
-  var compareBy$lambda_0 = wrapFunction(function () {
-    var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
-    return function (closure$selector) {
-      return function (a, b) {
-        var selector = closure$selector;
-        return compareValues(selector(a), selector(b));
-      };
-    };
-  });
-  function Comparator$ObjectLiteral_0(closure$comparison) {
-    this.closure$comparison = closure$comparison;
-  }
-  Comparator$ObjectLiteral_0.prototype.compare = function (a, b) {
-    return this.closure$comparison(a, b);
-  };
-  Comparator$ObjectLiteral_0.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
-  function Agent$attackPortal$doAttack(this$Agent) {
-    return function () {
-      var maxXmps = 12;
-      var allXmps = this$Agent.inventory.findXmps();
-      var tmp$ = sortedWith(allXmps, new Comparator$ObjectLiteral_0(compareBy$lambda_0(Agent$attackPortal$doAttack$lambda)));
-      var b = allXmps.size;
-      var selectedXmps = take(tmp$, Math_0.min(maxXmps, b));
-      if (selectedXmps.isEmpty()) {
-        this$Agent.action.end();
-        return this$Agent;
-      }
-      var tmp$_0;
-      tmp$_0 = selectedXmps.iterator();
-      while (tmp$_0.hasNext()) {
-        var element = tmp$_0.next();
-        var this$Agent_0 = this$Agent;
-        switch (element.level.level) {
-          case 1:
-            this$Agent_0.removeXm_za3lpa$(10);
-            break;
-          case 2:
-            this$Agent_0.removeXm_za3lpa$(20);
-            break;
-          case 3:
-            this$Agent_0.removeXm_za3lpa$(70);
-            break;
-          case 4:
-            this$Agent_0.removeXm_za3lpa$(140);
-            break;
-          case 5:
-            this$Agent_0.removeXm_za3lpa$(250);
-            break;
-          case 6:
-            this$Agent_0.removeXm_za3lpa$(360);
-            break;
-          case 7:
-            this$Agent_0.removeXm_za3lpa$(490);
-            break;
-          default:this$Agent_0.removeXm_za3lpa$(640);
-            break;
-        }
-      }
-      Queues_getInstance().registerAttack_wr4det$(this$Agent, selectedXmps);
-      this$Agent.inventory.consumeXmps_ss5kb$(selectedXmps);
-      this$Agent.action.end();
-      return this$Agent;
-    };
-  }
-  Agent.prototype.attackPortal = function () {
+  Agent.prototype.attackPortal_6taknv$ = function (isFirst) {
     var tmp$;
-    var findExactDestination = Agent$attackPortal$findExactDestination(this);
     var doAttack = Agent$attackPortal$doAttack(this);
-    if (!this.isAtActionPortal())
-      tmp$ = this.moveCloserToDestinationPortal_0();
-    else if (!this.isArrived_0())
+    if (isFirst) {
+      var findExactDestination = Agent$attackPortal$findExactDestination(this);
+      var inRangePosition = findExactDestination();
+      this.destination = inRangePosition;
+      this.action.start_fyi6w8$(ActionItem$Companion_getInstance().ATTACK);
+      return this.moveCloserInRange_0();
+    }
+    if (!this.isArrived_0())
       tmp$ = this.moveCloserInRange_0();
     else
       tmp$ = doAttack();
     return tmp$;
   };
-  function Agent$deployPortal$findExactDestination(this$Agent) {
-    return function () {
-      var distance = this$Agent.skills.deployPrecision * Dim_getInstance().maxDeploymentRange;
-      return this$Agent.actionPortal.findRandomPointNearPortal_za3lpa$(numberToInt(distance));
-    };
-  }
-  function Agent$deployPortal$doDeploy$lambda(it) {
-    return it.level;
-  }
-  var LinkedHashMap_init = Kotlin.kotlin.collections.LinkedHashMap_init_q3lmfv$;
-  var compareBy$lambda_1 = wrapFunction(function () {
-    var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
-    return function (closure$selector) {
-      return function (a, b) {
-        var selector = closure$selector;
-        return compareValues(selector(a), selector(b));
-      };
-    };
-  });
-  function Comparator$ObjectLiteral_1(closure$comparison) {
-    this.closure$comparison = closure$comparison;
-  }
-  Comparator$ObjectLiteral_1.prototype.compare = function (a, b) {
-    return this.closure$comparison(a, b);
-  };
-  Comparator$ObjectLiteral_1.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
   function Agent$deployPortal$doDeploy(this$Agent) {
     return function () {
-      if (this$Agent.actionPortal.isEnemyOf_912u9o$(this$Agent)) {
-        return this$Agent.doNothing();
+      if (Deployer_getInstance().isActionPossible_912u9o$(this$Agent)) {
+        Deployer_getInstance().performAction_912u9o$(this$Agent);
       }
-      var allowedResoLevels = this$Agent.actionPortal.findAllowedResoLevels_912u9o$(this$Agent);
-      var destination = ArrayList_init(allowedResoLevels.size);
-      var tmp$;
-      tmp$ = allowedResoLevels.entries.iterator();
-      while (tmp$.hasNext()) {
-        var item = tmp$.next();
-        destination.add_11rb$(item.value);
-      }
-      var areMoreResosAllowed = sum(destination) > 0;
-      if (areMoreResosAllowed) {
-        var $receiver = this$Agent.actionPortal.resoSlots;
-        var destination_0 = LinkedHashMap_init();
-        var tmp$_0;
-        tmp$_0 = $receiver.entries.iterator();
-        while (tmp$_0.hasNext()) {
-          var element = tmp$_0.next();
-          var this$Agent_0 = this$Agent;
-          if (element.value.isOwnedBy_912u9o$(this$Agent_0)) {
-            destination_0.put_xwzc9p$(element.key, element.value);
-          }
-        }
-        var ownedInPortal = toList(destination_0);
-        var $receiver_0 = this$Agent.inventory.items;
-        var destination_1 = ArrayList_init_0();
-        var tmp$_1;
-        tmp$_1 = $receiver_0.iterator();
-        while (tmp$_1.hasNext()) {
-          var element_0 = tmp$_1.next();
-          if (Kotlin.isType(element_0, Resonator))
-            destination_1.add_11rb$(element_0);
-        }
-        var destination_2 = ArrayList_init(collectionSizeOrDefault(destination_1, 10));
-        var tmp$_2;
-        tmp$_2 = destination_1.iterator();
-        while (tmp$_2.hasNext()) {
-          var item_0 = tmp$_2.next();
-          var tmp$_3;
-          destination_2.add_11rb$(Kotlin.isType(tmp$_3 = item_0, Resonator) ? tmp$_3 : throwCCE());
-        }
-        var inventoryResos = sortedWith(destination_2, new Comparator$ObjectLiteral_1(compareBy$lambda_1(Agent$deployPortal$doDeploy$lambda)));
-        var deployLowFirstSet = toSet(inventoryResos);
-        var tmp$_4;
-        tmp$_4 = deployLowFirstSet.iterator();
-        while (tmp$_4.hasNext()) {
-          var element_1 = tmp$_4.next();
-          var this$Agent_1 = this$Agent;
-          var destination_3 = ArrayList_init_0();
-          var tmp$_5;
-          tmp$_5 = ownedInPortal.iterator();
-          while (tmp$_5.hasNext()) {
-            var element_2 = tmp$_5.next();
-            var tmp$_6, tmp$_7, tmp$_8;
-            if (((tmp$_8 = (tmp$_7 = (tmp$_6 = element_2.second.resonator) != null ? tmp$_6.level : null) != null ? tmp$_7.level : null) != null ? tmp$_8 : 0) >= element_1.level.level)
-              destination_3.add_11rb$(element_2);
-          }
-          var owned = destination_3.size;
-          var a = element_1.level.deployablePerPlayer - owned | 0;
-          var maxDeployable = Math_0.max(a, 0);
-          var destination_4 = ArrayList_init_0();
-          var tmp$_9;
-          tmp$_9 = inventoryResos.iterator();
-          while (tmp$_9.hasNext()) {
-            var element_3 = tmp$_9.next();
-            if (element_3.level.level === element_1.level.level && element_3.level.level <= this$Agent_1.getLevel())
-              destination_4.add_11rb$(element_3);
-          }
-          var levelResos = destination_4;
-          if (!levelResos.isEmpty()) {
-            var b = levelResos.size - 1 | 0;
-            var resos = take(levelResos, Math_0.min(maxDeployable, b));
-            if (!resos.isEmpty()) {
-              var $receiver_1 = this$Agent_1.actionPortal.resoSlots;
-              var destination_5 = LinkedHashMap_init();
-              var tmp$_10;
-              tmp$_10 = $receiver_1.entries.iterator();
-              while (tmp$_10.hasNext()) {
-                var element_4 = tmp$_10.next();
-                var tmp$_11, tmp$_12, tmp$_13;
-                if (((tmp$_13 = (tmp$_12 = (tmp$_11 = element_4.value.resonator) != null ? tmp$_11.level : null) != null ? tmp$_12.level : null) != null ? tmp$_13 : 0) < element_1.level.level) {
-                  destination_5.put_xwzc9p$(element_4.key, element_4.value);
-                }
-              }
-              var deployable = toList(destination_5);
-              if (!deployable.isEmpty()) {
-                var $receiver_2 = zip(Util_getInstance().shuffle_bemo1h$(deployable), resos);
-                var destination_6 = ArrayList_init(collectionSizeOrDefault($receiver_2, 10));
-                var tmp$_14;
-                tmp$_14 = $receiver_2.iterator();
-                while (tmp$_14.hasNext()) {
-                  var item_1 = tmp$_14.next();
-                  destination_6.add_11rb$(to(item_1.first.first, item_1.second));
-                }
-                var deployMap = toMap(destination_6);
-                var a_0 = this$Agent_1.distanceToPortal_hv9zn6$(this$Agent_1.actionPortal);
-                var b_0 = Dim_getInstance().minDeploymentRange;
-                var distance = Math_0.max(a_0, b_0);
-                this$Agent_1.actionPortal.deploy_en6fu0$(this$Agent_1, deployMap, numberToInt(distance));
-                SoundUtil_getInstance().playDeploySound_s1df0o$(this$Agent_1.actionPortal.location, numberToInt(distance));
-                this$Agent_1.action.start_fyi6w8$(ActionItem$Companion_getInstance().DEPLOY);
-                return this$Agent_1;
-              }
-            }
-          }
-        }
-      }
-      this$Agent.action.end();
       return this$Agent;
     };
   }
-  Agent.prototype.deployPortal = function () {
-    var findExactDestination = Agent$deployPortal$findExactDestination(this);
+  Agent.prototype.deployPortal_6taknv$ = function (isFirst) {
+    var tmp$;
     var doDeploy = Agent$deployPortal$doDeploy(this);
-    if (!this.isArrived_0()) {
+    if (isFirst) {
+      this.action.start_fyi6w8$(ActionItem$Companion_getInstance().DEPLOY);
+      var a = Dim_getInstance().minDeploymentRange;
+      var b = Dim_getInstance().maxDeploymentRange * Util_getInstance().random() * this.skills.deployPrecision;
+      var distance = numberToInt(Math_0.max(a, b));
+      var dest = this.actionPortal.findRandomPointNearPortal_za3lpa$(distance);
+      this.destination = dest;
       return this.moveCloserInRange_0();
     }
-    return doDeploy();
+    if (!this.isArrived_0())
+      tmp$ = this.moveCloserInRange_0();
+    else
+      tmp$ = doDeploy();
+    return tmp$;
   };
   Agent.prototype.doNothing = function () {
     this.action.start_fyi6w8$(ActionItem$Companion_getInstance().WAIT);
@@ -1038,13 +1194,9 @@ var QGress = function (_, Kotlin) {
     return this.inventory.findUniqueKeys();
   };
   Agent.prototype.hasKeys = function () {
-    var tmp$ = this.keySet() != null;
-    if (tmp$) {
-      tmp$ = !ensureNotNull(this.keySet()).isEmpty();
-    }
-    return tmp$;
+    var tmp$, tmp$_0;
+    return (tmp$_0 = (tmp$ = this.keySet()) != null ? !tmp$.isEmpty() : null) != null ? tmp$_0 : false;
   };
-  var Collection = Kotlin.kotlin.collections.Collection;
   var mapNotNullTo$lambda_0 = wrapFunction(function () {
     return function (closure$transform, closure$destination) {
       return function (element) {
@@ -1202,6 +1354,9 @@ var QGress = function (_, Kotlin) {
     }
     this.action.start_fyi6w8$(ActionItem$Companion_getInstance().LINK);
     return this;
+  };
+  Agent.prototype.isHackPossible = function () {
+    return this.actionPortal.canHack_912u9o$(this);
   };
   Agent.prototype.hackActionPortal = function () {
     if (this.isAtActionPortal() && this.actionPortal.canHack_912u9o$(this)) {
@@ -2644,7 +2799,7 @@ var QGress = function (_, Kotlin) {
     return Util_getInstance().random() * (this.maxSpeed - this.minSpeed) + this.minSpeed;
   };
   Skills$Companion.prototype.deployPrecision_0 = function () {
-    return 0.2 + Util_getInstance().random() * 0.8;
+    return 0.7 + Util_getInstance().random() * 0.3;
   };
   Skills$Companion.prototype.randomGlyphSkill_0 = function () {
     return Util_getInstance().random();
@@ -2730,7 +2885,7 @@ var QGress = function (_, Kotlin) {
   }
   function Config() {
     Config_instance = this;
-    this.startPortals = HtmlUtil_getInstance().isLocal() ? 8 : 8;
+    this.startPortals = HtmlUtil_getInstance().isLocal() ? 13 : 8;
     this.startFrogs = HtmlUtil_getInstance().isLocal() ? 4 : 4;
     this.startSmurfs = HtmlUtil_getInstance().isLocal() ? 4 : 4;
     this.maxFrogs = 20;
@@ -2812,7 +2967,7 @@ var QGress = function (_, Kotlin) {
     this.minDistancePortalToImpassable = this.portalRadius;
     this.resoRadius = 2.0;
     this.maxDeploymentRange = 34.0;
-    this.minDeploymentRange = 8.0;
+    this.minDeploymentRange = 13.0;
     this.agentRadius = 3;
     this.agentLineWidth = 2;
     this.agentDeployCircleLineWidth = 1.0;
@@ -6423,10 +6578,7 @@ var QGress = function (_, Kotlin) {
     this.emptySlot = new ResonatorSlot(null, null, 0);
     this.MAX_HACKS = 4;
   }
-  Portal$Companion.prototype.findChargeableForKeys_912u9o$ = function (agent) {
-    if (!agent.hasKeys()) {
-      return emptyList();
-    }
+  Portal$Companion.prototype.findChargeableForKeys_p3u7jq$ = function (agent, keys) {
     var $receiver = World_getInstance().factionPortals_bip15f$(agent.faction);
     var destination = ArrayList_init_0();
     var tmp$;
@@ -6442,10 +6594,9 @@ var QGress = function (_, Kotlin) {
     tmp$_0 = chargeable.iterator();
     while (tmp$_0.hasNext()) {
       var element_0 = tmp$_0.next();
-      var $receiver_0 = ensureNotNull(agent.keySet());
-      var destination_1 = ArrayList_init(collectionSizeOrDefault($receiver_0, 10));
+      var destination_1 = ArrayList_init(collectionSizeOrDefault(keys, 10));
       var tmp$_1;
-      tmp$_1 = $receiver_0.iterator();
+      tmp$_1 = keys.iterator();
       while (tmp$_1.hasNext()) {
         var item = tmp$_1.next();
         destination_1.add_11rb$(item.portal);
@@ -6556,6 +6707,9 @@ var QGress = function (_, Kotlin) {
   };
   PortalKey.prototype.getLevel = function () {
     throw new NotImplementedError('Portal Key has no level.');
+  };
+  PortalKey.prototype.isFriendly_912u9o$ = function (agent) {
+    return this.owner.faction === agent.faction;
   };
   function PortalKey$Companion() {
     PortalKey$Companion_instance = this;
@@ -11450,6 +11604,14 @@ var QGress = function (_, Kotlin) {
   package$action.ActionItem = ActionItem;
   Object.defineProperty(package$action, 'ActionSelector', {
     get: ActionSelector_getInstance
+  });
+  var package$cond = package$action.cond || (package$action.cond = {});
+  Object.defineProperty(package$cond, 'Attacker', {
+    get: Attacker_getInstance
+  });
+  package$cond.ConditionalAction = ConditionalAction;
+  Object.defineProperty(package$cond, 'Deployer', {
+    get: Deployer_getInstance
   });
   Object.defineProperty(Agent, 'Companion', {
     get: Agent$Companion_getInstance

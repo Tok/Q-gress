@@ -6,6 +6,8 @@ import World
 import agent.action.Action
 import agent.action.ActionItem
 import agent.action.ActionSelector
+import agent.action.cond.Attacker
+import agent.action.cond.Deployer
 import agent.qvalue.QDestinations
 import config.Colors
 import config.Config
@@ -14,13 +16,11 @@ import config.Styles
 import items.PowerCube
 import items.QgressItem
 import items.deployable.Resonator
-import items.level.ResonatorLevel
 import items.level.XmpLevel
 import portal.Link
 import portal.Portal
 import portal.XmMap
 import system.Com
-import system.Queues
 import util.DrawUtil
 import util.PathUtil
 import util.SoundUtil
@@ -36,10 +36,6 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
     private fun distanceToDestination(): Double = pos.distanceTo(destination)
     fun distanceToPortal(portal: Portal): Double = pos.distanceTo(portal.location)
     fun isAtActionPortal(): Boolean = distanceToPortal(actionPortal) < Dim.maxDeploymentRange
-    private fun isInAttackRange(range: Int): Boolean {
-        val strongest = actionPortal.findStrongestResoPos()
-        return strongest != null && pos.distanceTo(strongest) < range
-    }
 
     private fun isBusy(): Boolean = World.tick <= action.untilTick
     private fun lineToPortal(portal: Portal) = Line(pos, portal.location)
@@ -65,23 +61,17 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         this.ap += v * Config.apMultiplier
     }
 
-    private fun isFastAction(): Boolean = action.item == ActionItem.MOVE || (action.item == ActionItem.ATTACK && !isAtActionPortal())
-    private fun isMoveInRange(): Boolean = action.item == ActionItem.ATTACK && !isArrived()
-
     fun act(): Agent {
         val next = when {
+            action.item == ActionItem.ATTACK -> attackPortal(false)
+            action.item == ActionItem.DEPLOY -> deployPortal(false)
             isBusy() -> this
-            isFastAction() -> moveCloserToDestinationPortal()
-            isMoveInRange() -> moveCloserInRange()
+            action.item == ActionItem.MOVE -> moveCloserToDestinationPortal()
             else -> ActionSelector.doSomething(this)
         }
         next.collectXm()
         return next
     }
-
-    fun isHackPossible() = actionPortal.canHack(this)
-    fun isDeploymentPossible() = !actionPortal.isEnemyOf(this)
-            && actionPortal.findAllowedResoLevels(this).map { it.value }.sum() > 0
 
     fun moveElsewhere(): Agent {
         val agent = this
@@ -111,7 +101,7 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
 
     private fun moveCloserToDestinationPortal(): Agent {
         if (!World.isReady) {
-            println("WARN: moveCloserToDestination: World is not ready.")
+            console.warn("World is not ready.")
             return doNothing()
         }
         if (isAtActionPortal()) {
@@ -146,22 +136,22 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         }
     }
 
+    private fun chargeableKeys() = Portal.findChargeableForKeys(this, keySet().orEmpty())
+    private fun lowestChargeablePortal() = chargeableKeys()?.sortedBy { it.calcHealth() }?.first()
+    private fun rechargeResos() = lowestChargeablePortal()?.resoSlots?.mapNotNull { it.value.resonator }
+
+    fun isRechargePossible() = isXmFilled() && !chargeableKeys().isNullOrEmpty()
     fun rechargePortal(): Agent {
-        if (!hasKeys()) {
-            return this
+        val resos = rechargeResos()
+        if (resos.isNullOrEmpty()) {
+            console.warn("$this Fail recharging resos.")
         }
-        val chargeable = Portal.findChargeableForKeys(this)
-        if (chargeable!!.isEmpty()) {
-            return this
-        }
-        val lowest: Portal? = chargeable.sortedBy { it.calcHealth() }.first()
-        if (lowest != null) {
-            val resos = lowest.resoSlots.mapNotNull { it.value.resonator }
-            resos.forEach { it.recharge(this, 1000 / resos.count()) }
-        }
+        val count = resos?.count() ?: 0
+        resos?.forEach { it.recharge(this, 1000 / count) }
         return this
     }
 
+    fun isRecruitmentPossible() = World.canRecruitMore(faction)
     fun recruitNewAgents(): Agent {
         if (action.item != ActionItem.RECRUIT) {
             this.action.start(ActionItem.RECRUIT)
@@ -180,6 +170,7 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         return this
     }
 
+    fun isRecyclePossible() = xm < xmCapacity() / 10
     fun recycleItems(): Agent {
         //TODO improve
         val cubes: List<PowerCube> = inventory.findPowerCubes()
@@ -191,99 +182,59 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         return this
     }
 
-    fun attackPortal(): Agent {
-        fun findExactDestination(): Coords {
-            if (actionPortal.calcHealth() > 0.5) {
-                return actionPortal.location
-            }
-            val maybeDestination = actionPortal.findStrongestResoPos()
-            val isPassable = maybeDestination != null && maybeDestination.isPassable()
-            return if (isPassable) {
-                maybeDestination!!
-            } else {
-                actionPortal.location
-            }
-        }
-
+    fun attackPortal(isFirst: Boolean): Agent {
         fun doAttack(): Agent {
-            val maxXmps = 12
-            val allXmps = inventory.findXmps()
-            val selectedXmps = allXmps.sortedBy { it.level }.take(min(maxXmps, allXmps.size))
-            if (selectedXmps.isEmpty()) {
-                action.end()
-                return this
+            if (Attacker.isActionPossible(this)) {
+                Attacker.performAction(this)
             }
-            selectedXmps.forEach { xmpBurster ->
-                when (xmpBurster.level.level) {
-                    1 -> removeXm(10)
-                    2 -> removeXm(20)
-                    3 -> removeXm(70)
-                    4 -> removeXm(140)
-                    5 -> removeXm(250)
-                    6 -> removeXm(360)
-                    7 -> removeXm(490)
-                    else -> removeXm(640)
-                }
-            }
-            Queues.registerAttack(this, selectedXmps)
-            inventory.consumeXmps(selectedXmps)
-            action.end()
             return this
         }
 
+        if (isFirst) {
+            fun findExactDestination(): Coords {
+                if (actionPortal.calcHealth() > 0.8) {
+                    return actionPortal.location //center
+                }
+                val maybeDestination = actionPortal.findStrongestResoPos()
+                val isPassable = maybeDestination != null && maybeDestination.isPassable()
+                return if (isPassable) {
+                    maybeDestination!!
+                } else {
+                    actionPortal.location //center
+                }
+            }
+
+            val inRangePosition = findExactDestination()
+            this.destination = inRangePosition
+            action.start(ActionItem.ATTACK)
+            return moveCloserInRange()
+        }
         return when {
-            !isAtActionPortal() -> moveCloserToDestinationPortal()
             !isArrived() -> moveCloserInRange()
             else -> doAttack()
         }
     }
 
-    fun deployPortal(): Agent {
-        fun findExactDestination(): Coords {
-            val distance = skills.deployPrecision * Dim.maxDeploymentRange
-            return actionPortal.findRandomPointNearPortal(distance.toInt())
-        }
-
+    fun deployPortal(isFirst: Boolean): Agent {
         fun doDeploy(): Agent {
-            if (actionPortal.isEnemyOf(this)) {
-                return doNothing()
+            if (Deployer.isActionPossible(this)) {
+                Deployer.performAction(this)
             }
-            val allowedResoLevels: Map<ResonatorLevel, Int> = actionPortal.findAllowedResoLevels(this)
-            val areMoreResosAllowed = allowedResoLevels.map { it.value }.sum() > 0
-            if (areMoreResosAllowed) {
-                val ownedInPortal = actionPortal.resoSlots.filter { it.value.isOwnedBy(this) }.toList()
-                val inventoryResos = inventory.items.filter { it is Resonator }.map { it as Resonator }.sortedBy { it.level }
-                val deployLowFirstSet = inventoryResos.toSet()
-
-                //in one move, deployActionPortal as many resonators as possible of one selected level
-                deployLowFirstSet.forEach { reso ->
-                    val owned = ownedInPortal.filter { slot -> slot.second.resonator?.level?.level ?: 0 >= reso.level.level }.count()
-                    val maxDeployable: Int = max(reso.level.deployablePerPlayer - owned, 0)
-                    val levelResos = inventoryResos.filter { it.level.level == reso.level.level && it.level.level <= this.getLevel() }
-                    if (levelResos.isNotEmpty()) {
-                        val resos = levelResos.take(min(maxDeployable, levelResos.size - 1))
-                        if (resos.isNotEmpty()) {
-                            val deployable = actionPortal.resoSlots.filter { it.value.resonator?.level?.level ?: 0 < reso.level.level }.toList()
-                            if (!deployable.isEmpty()) {
-                                val deployMap = Util.shuffle(deployable).zip(resos).map { it.first.first to it.second }.toMap()
-                                val distance = max(distanceToPortal(actionPortal), Dim.minDeploymentRange)
-                                actionPortal.deploy(this, deployMap, distance.toInt())
-                                SoundUtil.playDeploySound(actionPortal.location, distance.toInt())
-                                action.start(ActionItem.DEPLOY)
-                                return this
-                            }
-                        }
-                    }
-                }
-            }
-            action.end()
             return this
         }
 
-        if (!isArrived()) {
+        if (isFirst) {
+            action.start(ActionItem.DEPLOY)
+            val distance = max(Dim.minDeploymentRange, Dim.maxDeploymentRange * Util.random() * skills.deployPrecision).toInt()
+            val dest = actionPortal.findRandomPointNearPortal(distance)
+            this.destination = dest
             return moveCloserInRange()
         }
-        return doDeploy()
+
+        return when {
+            !isArrived() -> moveCloserInRange()
+            else -> doDeploy()
+        }
     }
 
     fun doNothing(): Agent {
@@ -292,7 +243,7 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
     }
 
     fun keySet() = inventory.findUniqueKeys()
-    fun hasKeys() = keySet() != null && keySet()!!.isNotEmpty()
+    fun hasKeys() = keySet()?.isNotEmpty() ?: false
 
     fun isLinkPossible(): Boolean {
         if (!actionPortal.canLinkOut(this)) {
@@ -340,6 +291,7 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         return this
     }
 
+    fun isHackPossible() = actionPortal.canHack(this)
     fun hackActionPortal(): Agent {
         if (isAtActionPortal() && actionPortal.canHack(this)) {
             val hackResult = actionPortal.tryHack(this)

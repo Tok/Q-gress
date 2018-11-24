@@ -513,12 +513,9 @@ data class Portal(val name: String, val location: Coords,
     }
 
     companion object {
-        fun findChargeableForKeys(agent: Agent): List<Portal>? {
-            if (!agent.hasKeys()) {
-                return listOf()
-            }
+        fun findChargeableForKeys(agent: Agent, keys: List<PortalKey>): List<Portal>? {
             val chargeable = World.factionPortals(agent.faction).filter { it.calcHealth() <= 90 }.toSet()
-            return chargeable.filter { agent.keySet()!!.map { a -> a.portal }.contains(it) }
+            return chargeable.filter { keys.map { a -> a.portal }.contains(it) }
         }
 
         private val centerImages: Map<Pair<Faction, PortalLevel>, Canvas> = PortalLevel.values().flatMap { level ->
