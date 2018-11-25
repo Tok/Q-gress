@@ -17,8 +17,8 @@ object Config {
     const val portalRemovalRate = 0.05
 
     const val startPortals = 5
-    fun startFrogs() = if (HtmlUtil.isQuickstart()) 4 else minFrogs
-    fun startSmurfs() = if (HtmlUtil.isQuickstart()) 4 else minSmurfs
+    fun startFrogs() = if (HtmlUtil.isQuickstart()) 8 else minFrogs
+    fun startSmurfs() = if (HtmlUtil.isQuickstart()) 8 else minSmurfs
     fun initialAp() = if (HtmlUtil.isQuickstart()) 2000000 else 0
 
     val maxNonFaction = max(100, maxFrogs + maxSmurfs)
@@ -33,12 +33,12 @@ object Config {
     const val isNpcSwarming = true
     const val npcXmSpawnRatio = 0.05
 
-    const val isSoundOn = true
+    val isSoundOn = !HtmlUtil.isLocal()
     const val isPlayInitialSound = false
     const val isSatOn = false
 
     const val isHighlighActionLimit = true
-    const val vectorSmoothCount = 8
+    const val vectorSmoothCount = 3
     const val shadowBlurCount = 3
 
     const val comMessageLimit = 8

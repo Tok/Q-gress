@@ -14,7 +14,7 @@ import util.data.Line
 
 data class ActionItem(val text: String, val durationSeconds: Int, val qName: String) {
     companion object {
-        val MOVE = ActionItem("moving", 1800, "Move")
+        val MOVE = ActionItem("moving", 60, "Move")
         val WAIT = ActionItem("waiting", 10, "Wait")
         val RECHARGE = ActionItem("recharging", 30, "Recharge")
         val RECRUIT = ActionItem("recruiting", 120, "Recruit")

@@ -85,6 +85,8 @@ object DrawUtil {
         }
         if (Config.isHighlighActionLimit) {
             ActionLimitsDisplay.draw()
+        } else {
+            ActionLimitsDisplay.drawTop()
         }
     }
 
@@ -101,16 +103,16 @@ object DrawUtil {
         val tempCtx = tempCan.getContext("2d") as Ctx
         tempCan.width = 2 * circle.radius.toInt()
         tempCan.height = 2 * circle.radius.toInt()
-        val xOffset = -(circle.center.xx() - r)
-        val yOffset = -(circle.center.yy() - r)
+        val xOffset = -(circle.center.x - r)
+        val yOffset = -(circle.center.y - r)
         tempCtx.putImageData(World.shadowStreetMap!!, xOffset, yOffset)
 
         ctx.beginPath()
-        ctx.arc(circle.center.xx(), circle.center.yy(), circle.radius, 0.0, 2.0 * PI)
+        ctx.arc(circle.center.x, circle.center.y, circle.radius, 0.0, 2.0 * PI)
         ctx.clip()
 
         ctx.beginPath()
-        ctx.drawImage(tempCan, pos.xx() - r, pos.yy() - r, 2 * r, 2 * r)
+        ctx.drawImage(tempCan, pos.x - r, pos.y - r, 2 * r, 2 * r)
 
         ctx.globalAlpha = 0.5
 
@@ -120,7 +122,7 @@ object DrawUtil {
             else -> Colors.red
         }
         val image = Portal.renderPortalCenter(color, PortalLevel.ZERO)
-        ctx.drawImage(image, pos.xx() - (image.width / 2), pos.yy() - (image.height / 2))
+        ctx.drawImage(image, pos.x - (image.width / 2), pos.y - (image.height / 2))
         ctx.globalAlpha = 1.0
     }
 
@@ -150,7 +152,7 @@ object DrawUtil {
 
     fun drawRect(ctx: Ctx, pos: Coords, h: Double, w: Double,
                  fillStyle: String, strokeStyle: String, lineWidth: Double) {
-        drawExactRect(ctx, pos.xx(), pos.yy(), h, w, fillStyle, strokeStyle, lineWidth)
+        drawExactRect(ctx, pos.x, pos.y, h, w, fillStyle, strokeStyle, lineWidth)
     }
 
     fun drawExactRect(ctx: Ctx, x: Double, y: Double, h: Double, w: Double,
@@ -170,12 +172,12 @@ object DrawUtil {
         with(World) {
             if (isReady) {
                 grid.forEach {
-                    val pos = PathUtil.shadowPosToPos(it.key)
+                    val pos = it.key.fromShadow()
                     val cell = it.value
                     bgCtx().fillStyle = cell.getColor()
-                    val w = PathUtil.res.toDouble() - 1
+                    val w = Coords.res - 1.0
                     val h = w
-                    bgCtx().fillRect(pos.xx() + 1, pos.yy() + 1, w, h)
+                    bgCtx().fillRect(pos.x + 1, pos.y + 1, w, h)
                     bgCtx().fill()
                 }
             }
@@ -219,7 +221,7 @@ object DrawUtil {
         ctx.strokeStyle = strokeStyle
         ctx.lineWidth = lineWidth
         ctx.beginPath()
-        ctx.arc(circle.center.xx(), circle.center.yy(), circle.radius, 0.0, 2.0 * PI)
+        ctx.arc(circle.center.x, circle.center.y, circle.radius, 0.0, 2.0 * PI)
         ctx.closePath()
         ctx.stroke()
         if (fillStyle != null) {
@@ -249,8 +251,8 @@ object DrawUtil {
         ctx.strokeStyle = strokeStyle
         ctx.lineWidth = lineWidth
         ctx.beginPath()
-        ctx.moveTo(line.from.xx(), line.from.yy())
-        ctx.lineTo(line.to.xx(), line.to.yy())
+        ctx.moveTo(line.from.x, line.from.y)
+        ctx.lineTo(line.to.x, line.to.y)
         ctx.closePath()
         ctx.stroke()
         ctx.globalAlpha = 1.0

@@ -136,8 +136,8 @@ object MapUtil {
     const val OFFSCREEN_CELL_ROWS = 10
 
     private fun createGrid(imageData: ImageData, width: Int, height: Int): Map<Coords, Cell> {
-        val w = width / PathUtil.res
-        val h = height / PathUtil.res
+        val w = width / Coords.res
+        val h = height / Coords.res
         fun isOffScreen(pos: Coords) = pos.x < 0 || pos.y < 0 || pos.x >= w || pos.y >= h
         fun nextRow(tempCtx: Ctx, h: Int, x: Int): List<Pair<Coords, Cell>> {
             return (-OFFSCREEN_CELL_ROWS until (h + OFFSCREEN_CELL_ROWS)).map { y ->

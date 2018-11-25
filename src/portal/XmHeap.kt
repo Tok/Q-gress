@@ -22,7 +22,7 @@ data class XmHeap(private val cores: Triple<Int, Int, Int>, private var isCollec
         val image = IMAGE
         val ww = image.width / 2
         val hh = image.height / 2
-        World.ctx().drawImage(image, position.xx() - ww, position.yy() - hh)
+        World.ctx().drawImage(image, position.x - ww, position.y - hh)
     }
 
     companion object {
@@ -38,7 +38,7 @@ data class XmHeap(private val cores: Triple<Int, Int, Int>, private var isCollec
             return HtmlUtil.preRender(w, h, fun(ctx: Ctx) {
                 (1..coreCount).forEach {
                     val p = Coords(w / 2, h / 2).randomNearPoint(scatter)
-                    ctx.drawImage(CORE_IMAGE, p.xx(), p.yy())
+                    ctx.drawImage(CORE_IMAGE, p.x, p.y)
                 }
             })
         }

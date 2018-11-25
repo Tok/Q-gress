@@ -50,9 +50,9 @@ object World {
     var mousePos: Coords? = null
 
     fun w() = can.width
-    fun shadowW() = w() / PathUtil.res
+    fun shadowW() = w() / Coords.res
     fun h() = can.height
-    fun shadowH() = h() / PathUtil.res
+    fun shadowH() = h() / Coords.res
     fun diagonalLength() = sqrt((can.width * can.width).toDouble() + (can.height * can.height)).toInt()
     fun totalArea() = can.width * can.height
 
@@ -66,7 +66,7 @@ object World {
     private fun passableOnScreen(): Map<Coords, Cell> = wellPassableCells().filterNot { it.key.isOffGrid() }
 
     fun passableInActionArea(): Map<Coords, Cell> = passableOnScreen()
-            .filter { ActionLimitsDisplay.isNotBlocked(PathUtil.shadowPosToPos(it.key)) }
+            .filter { ActionLimitsDisplay.isNotBlocked(it.key.fromShadow()) }
 
     val allAgents: MutableSet<Agent> = mutableSetOf()
     val frogs = allAgents.filter { it.faction == Faction.ENL }.toSet()

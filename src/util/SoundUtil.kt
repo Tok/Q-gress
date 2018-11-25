@@ -82,7 +82,7 @@ object SoundUtil {
     fun playNpcCreationSound(npc: NonFaction) {
         if (isMuted()) return
         val duration = 0.02
-        val pan = npc.pos.xx() / Dim.width
+        val pan = npc.pos.x / Dim.width
         val offset = -(npc.size.offset * 120.0)
         val start = 660.0
         val end = 660.0 + offset
@@ -94,7 +94,7 @@ object SoundUtil {
         if (isMuted()) return
         val freq = 500.0
         val osc = createStaticOscillator(OscillatorType.SINE, freq)
-        val pan = pos.xx() / Dim.width
+        val pan = pos.x / Dim.width
         val gain = 0.04
         val duration = 0.02
         playSound(osc, createStaticPan(pan), gain, duration)
@@ -104,7 +104,7 @@ object SoundUtil {
         if (isMuted()) return
         val freq = 400.0
         val osc = createStaticOscillator(OscillatorType.SINE, freq)
-        val pan = pos.xx() / Dim.width
+        val pan = pos.x / Dim.width
         val gain = 0.04
         val duration = 0.06
         playSound(osc, createStaticPan(pan), gain, duration)
@@ -114,7 +114,7 @@ object SoundUtil {
         if (isMuted()) return
         val freq = 160.0 - (level.level * 5)
         val osc = createStaticOscillator(OscillatorType.SQUARE, freq)
-        val pan = pos.xx() / Dim.width
+        val pan = pos.x / Dim.width
         val gain = (0.04 + (level.level * 0.006))
         val duration = 0.005 + (0.001 * level.level)
         playSound(osc, createStaticPan(pan), gain, duration)
@@ -143,8 +143,8 @@ object SoundUtil {
         val baseFreq = 500.0
         val startFreq = minFreq + (baseFreq * ratio)
         val endFreq = minFreq + (baseFreq * ratio * 2)
-        val startPan = link.getLine().from.x.toDouble() / Dim.width
-        val endPan = link.getLine().to.x.toDouble() / Dim.width
+        val startPan = link.getLine().from.x / Dim.width
+        val endPan = link.getLine().to.x / Dim.width
         val oscNode = createLinearRampOscillator(OscillatorType.SINE, startFreq, endFreq, duration)
         val panNode = createLinearRampPan(startPan, endPan, duration)
         playSound(oscNode, panNode, gain, duration)

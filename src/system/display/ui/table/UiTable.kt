@@ -23,6 +23,6 @@ abstract class UiTable {
 
     fun addIcon(pos: Coords, item: ActionItem) {
         val image = ActionItem.getIcon(item)
-        World.uiCtx().drawImage(image, pos.xx(), pos.yy())
+        World.uiCtx().drawImage(image, pos.x, pos.y)
     }
 }

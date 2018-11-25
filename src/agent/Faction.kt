@@ -18,6 +18,6 @@ enum class Faction(val abbr: String, val nickName: String, val color: String, va
 
     companion object {
         fun all() = listOf(ENL, RES)
-        fun createRandom() = if (Util.random() < 0.5) ENL else RES
+        fun random() = if (Util.random() < 0.5) ENL else RES
     }
 }

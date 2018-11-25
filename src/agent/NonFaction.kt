@@ -16,7 +16,7 @@ import util.data.Circle
 import util.data.Complex
 import util.data.Coords
 
-data class NonFaction(var pos: Coords, val speed: Float, val size: AgentSize,
+data class NonFaction(var pos: Coords, val speed: Double, val size: AgentSize,
                       var destination: Coords, var vectorField: Map<Coords, Complex>,
                       var busyUntil: Int) {
     private val swarmTendency = 0.02
@@ -50,21 +50,21 @@ data class NonFaction(var pos: Coords, val speed: Float, val size: AgentSize,
         if (isAtDestination()) {
             wait()
         } else {
-            val force = if (Config.isNpcSwarming && Util.random() < swarmChance) {
+            val force: Complex = if (Config.isNpcSwarming && Util.random() < swarmChance) {
                 val nearPos = findNearest().pos
                 if (nearPos.distanceTo(pos) < Dim.agentRadius) {
-                    val re = -(this.pos.xx() - nearPos.xx()).toFloat()
-                    val im = -(this.pos.yy() - nearPos.yy()).toFloat()
-                    val acceleration = 1.2F
+                    val re = -(this.pos.x - nearPos.x)
+                    val im = -(this.pos.y - nearPos.y)
+                    val acceleration = 1.2
                     Complex(re * acceleration, im * acceleration)
                 } else {
                     Complex(pos.x, pos.y)
                 }
             } else {
-                vectorField[PathUtil.posToShadowPos(pos)]
+                vectorField[pos.toShadowPos()] ?: Complex.ZERO
             }
             velocity = MovementUtil.move(velocity, force, speed)
-            this.pos = Coords((pos.x + velocity.re).toInt(), (pos.y + velocity.im).toInt())
+            this.pos = Coords(pos.x + velocity.re, pos.y + velocity.im)
         }
     }
 
@@ -106,11 +106,11 @@ data class NonFaction(var pos: Coords, val speed: Float, val size: AgentSize,
         this.destination = randomTarget.location
     }
 
-    fun draw(ctx: Ctx) = ctx.drawImage(NonFaction.image(size), pos.xx(), pos.yy())
+    fun draw(ctx: Ctx) = ctx.drawImage(NonFaction.image(size), pos.x, pos.y)
 
     companion object {
         val changeToBeRecruited = 0.05
-        private val OFFSCREEN_DISTANCE = PathUtil.res * (MapUtil.OFFSCREEN_CELL_ROWS / 2)
+        private val OFFSCREEN_DISTANCE = Coords.res * (MapUtil.OFFSCREEN_CELL_ROWS / 2)
         private val DESTINATIONS = listOf(
                 //NORTH
                 Coords(World.w() / 3, -OFFSCREEN_DISTANCE),
@@ -144,7 +144,7 @@ data class NonFaction(var pos: Coords, val speed: Float, val size: AgentSize,
             return if (maybeField != null && maybeField.isNotEmpty()) {
                 maybeField
             } else {
-                val newField = PathUtil.calculateVectorField(PathUtil.generateHeatMap(destination))
+                val newField = PathUtil.calculateVectorField(PathUtil.generateHeatMap(destination), destination)
                 Loading.draw()
                 SoundUtil.playOffScreenLocationCreationSound()
                 VectorFields.draw(newField)
@@ -181,10 +181,7 @@ data class NonFaction(var pos: Coords, val speed: Float, val size: AgentSize,
         fun create(grid: Map<Coords, Cell>): NonFaction {
             val position = Coords.createRandomPassable(grid)
             val size = AgentSize.createRandom()
-            val min = Skills.minSpeed
-            val max = Skills.maxSpeed
-            val v = min + (Util.random().toFloat() * (max - min)) - size.offset
-            val speed = Util.clipFloat(v, min, max)
+            val speed = Skills.randomNpcSpeed()
             val newNonFaction = if (Util.random() < 0.1) { //move to offscreen destination
                 val destination = Util.shuffle(OFFSCREEN).first()
                 val vectorField = getOrCreateVectorField(destination)

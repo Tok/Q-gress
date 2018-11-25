@@ -13,7 +13,7 @@ object TickDisplay : Display {
         val half = Dim.tickFontSize / 2
         with(World.uiCtx()) {
             fillStyle = "#00000077"
-            fillRect(pos.xx() - 8, pos.yy() - half - 1, 164.0, Dim.tickFontSize + 2.0)
+            fillRect(pos.x - 8, pos.y - half - 1, 164.0, Dim.tickFontSize + 2.0)
             fill()
             globalAlpha = 1.0
         }

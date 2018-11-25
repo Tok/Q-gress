@@ -19,7 +19,6 @@ object Util {
 
     fun clip(value: Int, from: Int, to: Int): Int = max(from, min(to, value))
     fun clipDouble(value: Double, from: Double, to: Double): Double = max(from, min(to, value))
-    fun clipFloat(value: Float, from: Float, to: Float): Float = max(from, min(to, value))
 
     fun random(): Double = js("Math.random();") as Double //native JS replacement for deprecated kotlin.js.Math.random()
 

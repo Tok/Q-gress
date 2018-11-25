@@ -1,18 +1,18 @@
 package util.data
 
 import World
+import config.Config
 import config.Constants
 import config.Dim
-import util.PathUtil
 import util.Util
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
 
-data class Coords(val x: Int, val y: Int) {
-    fun xx() = x.toDouble()
-    fun yy() = y.toDouble()
+data class Coords(val x: Double, val y: Double) {
+    constructor(x: Int, y: Int) : this(x.toDouble(), y.toDouble())
+
     fun isOffGrid() = x < 0 || y < 0 || x >= World.shadowW() || y >= World.shadowH()
     fun isOffScreen() = x < 0 || y < 0 || x >= World.w() || y >= World.h()
     fun xDiff(other: Coords) = x - other.x
@@ -20,19 +20,24 @@ data class Coords(val x: Int, val y: Int) {
     fun distanceTo(other: Coords): Double {
         val xPow = xDiff(other) * xDiff(other)
         val yPow = yDiff(other) * yDiff(other)
-        return abs(sqrt(xPow.toDouble() + yPow.toDouble()))
+        return abs(sqrt(xPow + yPow))
     }
 
+    fun toShadowPos() = Coords((x / res).toInt(), (y / res).toInt())
+    fun fromShadow() = Coords((x * res).toInt(), (y * res).toInt())
+
     fun getSurrounding(w: Int, h: Int): List<Coords> = listOf(
-            Coords(x - 1, y - 1),
-            Coords(x, y - 1),
-            Coords(x + 1, y - 1),
-            Coords(x - 1, y),
-            Coords(x + 1, y),
-            Coords(x - 1, y + 1),
-            Coords(x, y + 1),
-            Coords(x + 1, y + 1)
-    ).filter { it.x in 0..(w - 1) && it.y in 0..(h - 1) }
+            Coords(x - 1.0, y - 1.0),
+            Coords(x, y - 1.0),
+            Coords(x + 1.0, y - 1.0),
+            Coords(x - 1.0, y),
+            Coords(x + 1.0, y),
+            Coords(x - 1.0, y + 1.0),
+            Coords(x, y + 1.0),
+            Coords(x + 1.0, y + 1.0)
+    ).filter {
+        it.x >= 0.0 && it.x <= (w - 1.0) && it.y >= 0.0 && it.y <= (h - 1.0)
+    }
 
     fun randomNearPoint(radius: Int): Coords {
         val r = radius * Util.random()
@@ -52,7 +57,6 @@ data class Coords(val x: Int, val y: Int) {
     private fun findClosePortals() = World.allPortals.filter { isClose(it.location) }
     fun hasClosePortalForClick() = findClosePortalsForClick().isNotEmpty()
     fun hasClosePortal() = findClosePortals().isNotEmpty()
-    private fun toShadowPos() = PathUtil.posToShadowPos(this)
     fun isPassable() = World.grid.isNotEmpty() && World.grid[toShadowPos()]!!.isPassable
     fun findClosestPortal() = findClosePortals().first()
     fun isBuildable(): Boolean {
@@ -78,6 +82,8 @@ data class Coords(val x: Int, val y: Int) {
         private val pixelPartLat = latDist / Dim.width
         private val pixelPartLng = lngDist / Dim.height
 
+        val res = Config.pathResolution
+
         private val xMax = Dim.maxDeploymentRange.toInt() * 2
         private fun createRandomNoOffset() = Coords(Util.randomInt(Dim.width), Util.randomInt(Dim.height))
         private fun createRandom(): Coords {
@@ -88,13 +94,13 @@ data class Coords(val x: Int, val y: Int) {
 
         fun createRandomForPortal(): Coords {
             val grid = World.passableInActionArea()
-                    .filterNot { PathUtil.shadowPosToPos(it.key).x < Dim.maxDeploymentRange }
-                    .filterNot { PathUtil.shadowPosToPos(it.key).x > World.w() - Dim.maxDeploymentRange }
-                    .filterNot { PathUtil.shadowPosToPos(it.key).hasClosePortal() }
+                    .filterNot { it.key.fromShadow().x < Dim.maxDeploymentRange }
+                    .filterNot { it.key.fromShadow().x > World.w() - Dim.maxDeploymentRange }
+                    .filterNot { it.key.fromShadow().hasClosePortal() }
             check(grid.isNotEmpty()) //map is blocked or there is no more space left.
             val randomCell = Util.shuffle(grid.toList()).first()
-            val pos = PathUtil.shadowPosToPos(randomCell.first)
-            val offset = PathUtil.res / 2
+            val pos = randomCell.first.fromShadow()
+            val offset = res / 2
             return Coords(pos.x + offset, pos.y + offset)
         }
 
@@ -102,7 +108,7 @@ data class Coords(val x: Int, val y: Int) {
         private fun createRandomPassable(grid: Map<Coords, Cell>, retries: Int): Coords {
             check(grid.isNotEmpty())
             val random = createRandomNoOffset()
-            return if (grid[PathUtil.posToShadowPos(random)]!!.isPassable) {
+            return if (grid[random.toShadowPos()]!!.isPassable) {
                 random
             } else {
                 if (retries > 0) {

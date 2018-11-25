@@ -98,7 +98,9 @@ object HtmlUtil {
 
         val popupId = "popup"
         rootDiv.append(createPopup(popupId))
-
+        if (isLocal()) {
+            chooseUserFaction(Faction.random())
+        }
         initWorld()
     }
 
@@ -264,6 +266,7 @@ object HtmlUtil {
         World.noiseMap = ImprovedNoise.generateEdgeMap(w, h)
         World.noiseImage = World.createNoiseImage(World.noiseMap, w, h, noiseAlpha)
         World.resetAllCanvas()
+        ActionLimitsDisplay.drawTop()
         val maybeCenter = getSelectedCenterFromUrl()
         val center = if (maybeCenter.toString() != "0,0") maybeCenter else Location.random().toJSON()
         MapUtil.loadMaps(center, onMapload())
@@ -371,11 +374,13 @@ object HtmlUtil {
         return Coords(x.toInt(), y.toInt())
     }
 
-    fun topActionOffset(): Int = document.getElementById("top-controls")?.clientHeight ?: 100
-    fun leftSliderHeight(): Int = document.getElementById("left-sliders")?.clientHeight ?: 0
-    fun leftSliderWidth(): Int = document.getElementById("left-sliders")?.clientWidth ?: 0
-    fun rightSliderHeight(): Int = document.getElementById("right-sliders")?.clientHeight ?: 0
-    fun rightSliderWidth(): Int = document.getElementById("right-sliders")?.clientWidth ?: 0
+    private fun maybeWidth(id: String) = document.getElementById(id)?.clientWidth
+    private fun maybeHeight(id: String) = document.getElementById(id)?.clientHeight
+    fun topActionOffset(): Int = maybeHeight("top-controls") ?: 100
+    fun leftSliderWidth() = maybeWidth("left-sliders") ?: 241
+    fun leftSliderHeight() = maybeHeight("left-sliders") ?: 217
+    fun rightSliderWidth() = maybeWidth("right-sliders") ?: 213
+    fun rightSliderHeight() = maybeHeight("right-sliders") ?: 145
 
     private fun createButton(id: String, className: String, text: String, callback: ((Event) -> Unit)?): HTMLButtonElement {
         val button = document.createElement("BUTTON") as HTMLButtonElement
@@ -478,7 +483,7 @@ object HtmlUtil {
                     LoadingText.draw("Ready.")
                     DrawUtil.clearBackground()
                     if (World.userFaction == null) {
-                        chooseUserFaction(Faction.createRandom())
+                        chooseUserFaction(Faction.random())
                     }
                     createQSliders(World.userFaction!!)
                     resetInterval()

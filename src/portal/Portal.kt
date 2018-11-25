@@ -62,8 +62,8 @@ data class Portal(val name: String, val location: Coords,
             if (World.isReady) PortalLevel.findByValue(calculateLevel())
             else PortalLevel.ZERO
 
-    fun x() = location.x.toDouble()
-    fun y() = location.y.toDouble()
+    fun x() = location.x
+    fun y() = location.y
 
     private fun getAllResos() = resoSlots.map { it.value.resonator }.filterNotNull()
     private fun isFullyDeployed() = getAllResos().count() == 8
@@ -107,7 +107,7 @@ data class Portal(val name: String, val location: Coords,
         val xOffset: Int = (distance * cos(angle)).toInt()
         val yOffset: Int = (distance * sin(angle)).toInt()
         val point = location.copy(x = location.x + xOffset, y = location.y + yOffset)
-        return if (World.grid[PathUtil.posToShadowPos(point)]?.isPassable == true) {
+        return if (World.grid[point.toShadowPos()]?.isPassable == true) {
             point
         } else {
             findRandomPointNearPortal(distance)
@@ -458,13 +458,13 @@ data class Portal(val name: String, val location: Coords,
             ctx.strokeStyle = Colors.black
             ctx.lineWidth = lineWidth + 1.5
             ctx.beginPath()
-            ctx.moveTo(line.from.xx(), line.from.yy())
-            ctx.lineTo(line.to.xx(), line.to.yy())
+            ctx.moveTo(line.from.x, line.from.y)
+            ctx.lineTo(line.to.x, line.to.y)
             ctx.closePath()
             ctx.stroke()
             ctx.lineWidth = lineWidth
             if (Styles.isDrawResoLineGradient) { //CPU intensive
-                val gradient = ctx.createLinearGradient(line.from.xx(), line.from.yy(), line.to.xx(), line.to.yy())
+                val gradient = ctx.createLinearGradient(line.from.x, line.from.y, line.to.x, line.to.y)
                 gradient.addColorStop(0.2, levelColor)
                 gradient.addColorStop(0.7, factionColor)
                 ctx.strokeStyle = gradient
@@ -472,8 +472,8 @@ data class Portal(val name: String, val location: Coords,
                 ctx.strokeStyle = levelColor
             }
             ctx.beginPath()
-            ctx.moveTo(line.from.xx(), line.from.yy())
-            ctx.lineTo(line.to.xx(), line.to.yy())
+            ctx.moveTo(line.from.x, line.from.y)
+            ctx.lineTo(line.to.x, line.to.y)
             ctx.closePath()
             ctx.stroke()
             ctx.globalAlpha = 1.0
@@ -504,8 +504,8 @@ data class Portal(val name: String, val location: Coords,
 
     fun drawCenter(ctx: Ctx, isDrawHealthBar: Boolean = true) {
         val image = getCenterImage(owner?.faction ?: Faction.NONE, getLevel())
-        val x = location.xx() - (image.width / 2)
-        val y = location.yy() - (image.height / 2)
+        val x = location.x - (image.width / 2)
+        val y = location.y - (image.height / 2)
         ctx.drawImage(image, x, y)
         if (isDrawHealthBar) {
             val healthBarImage = getHealthBarImage(owner?.faction ?: Faction.NONE, calcHealth())
@@ -516,7 +516,7 @@ data class Portal(val name: String, val location: Coords,
     fun drawName(ctx: Ctx) {
         val xOffset = 34
         val yOffset = 18
-        ctx.drawImage(nameImage, location.xx() - xOffset, location.yy() + yOffset)
+        ctx.drawImage(nameImage, location.x - xOffset, location.y + yOffset)
     }
 
     override fun toString() = name
@@ -574,7 +574,7 @@ data class Portal(val name: String, val location: Coords,
         fun create(location: Coords): Portal {
             val slots: MutableMap<Octant, ResonatorSlot> = Octant.values().map { it to ResonatorSlot.create() }.toMap().toMutableMap()
             val heatMap = PathUtil.generateHeatMap(location)
-            val vectorField = PathUtil.calculateVectorField(heatMap)
+            val vectorField = PathUtil.calculateVectorField(heatMap, location)
             SoundUtil.playPortalCreationSound(location)
             return Portal(Util.generatePortalName(), location, heatMap, vectorField,
                     slots, mutableSetOf(), mutableSetOf(), null)

@@ -3,7 +3,6 @@ package system.display.ui
 import World
 import config.Dim
 import system.display.Display
-import util.DrawUtil
 import util.HtmlUtil
 import util.data.Coords
 import util.data.Line
@@ -20,30 +19,29 @@ object ActionLimitsDisplay : Display {
     fun isBlocked(pos: Coords) = blockedAreas().any { it.isPointInArea(pos) }
     fun isNotBlocked(pos: Coords) = blockedAreas().none { it.isPointInArea(pos) }
 
-    override fun draw() = draw(true)
+    override fun draw() {
+        drawArea(topArea())
+        drawArea(bottomArea())
+        drawArea(leftSliderArea())
+        drawArea(rightSliderArea())
+    }
 
-    fun draw(isHighlightBottom: Boolean) {
-        val top = topArea()
-        val bot = bottomArea()
-        val left = leftSliderArea()
-        val right = rightSliderArea()
-        fun fillArea(line: Line) {
-            if (line.isValidArea()) {
-                with(line) {
-                    World.ctx().fillRect(fromX, fromY, toX, toY)
-                }
-            }
-        }
+    fun drawTop() = drawArea(topArea())
+
+    private fun drawArea(area: Line) {
         with(World.ctx()) {
             beginPath()
             fillStyle = "#00000077"
-            fillArea(top)
-            if (isHighlightBottom) {
-                fillArea(bot)
-            }
-            fillArea(left)
-            fillArea(right)
+            fillArea(area)
             closePath()
+        }
+    }
+
+    private fun fillArea(line: Line) {
+        if (line.isValidArea()) {
+            with(line) {
+                World.ctx().fillRect(fromX, fromY, toX, toY)
+            }
         }
     }
 }

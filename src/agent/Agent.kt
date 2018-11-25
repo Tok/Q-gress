@@ -19,15 +19,17 @@ import portal.Portal
 import portal.XmMap
 import util.DrawUtil
 import util.HtmlUtil
-import util.PathUtil
 import util.Util
 import util.data.*
 import kotlin.math.max
 import kotlin.math.min
 
 data class Agent(val faction: Faction, val name: String, val pos: Coords, val skills: Skills,
-                 val inventory: Inventory, val action: Action, var actionPortal: Portal, var destination: Coords,
-                 var ap: Int = 0, var xm: Int = 0, var velocity: Complex = Complex.ZERO) {
+                 val inventory: Inventory, val action: Action,
+                 var actionPortal: Portal, var destination: Coords,
+                 private var lastPosition: Coords,
+                 var ap: Int = 0, var xm: Int = 0,
+                 var velocity: Complex = Complex.ZERO) {
     fun key() = toString()
     private fun distanceToDestination(): Double = pos.distanceTo(destination)
     fun distanceToPortal(portal: Portal): Double = pos.distanceTo(portal.location)
@@ -94,32 +96,28 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         }
     }
 
+    fun updateLastPos() {
+        val distance = pos.distanceTo(lastPosition)
+        val isStuck = distance <= Dim.maxDeploymentRange
+        if (isStuck) {
+            val newDest = World.randomPortal()
+            val dist = skills.deployPrecision * Dim.maxDeploymentRange
+            this.actionPortal = newDest
+            this.destination = newDest.findRandomPointNearPortal(dist.toInt())
+        }
+        this.lastPosition = pos
+    }
+
     private fun moveCloserToDestinationPortal(): Agent {
         if (!World.isReady) {
             console.warn("World is not ready.")
             return doNothing()
         }
-
         if (isAtActionPortal()) {
             action.end()
             return this
         }
-
-        fun jumpToRandomPortal(): Agent {
-            val portal = World.randomPortal()
-            this.actionPortal = portal
-            this.destination = portal.location.randomNearPoint(Dim.maxDeploymentRange.toInt())
-            this.velocity = Complex.ZERO
-            action.end()
-            return this.copy(pos = portal.location)
-        }
-
-        val isStuck = !action.isBusy()
-        if (isStuck) {
-            return jumpToRandomPortal()
-        }
-
-        val force = actionPortal.vectorField[PathUtil.posToShadowPos(pos)]
+        val force = actionPortal.vectorField[pos.toShadowPos()] ?: Complex.ZERO
         velocity = MovementUtil.move(velocity, force, skills.speed)
         return this.copy(pos = Coords((pos.x + velocity.re).toInt(), (pos.y + velocity.im).toInt()))
     }
@@ -219,13 +217,11 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         return resosInRange.map { it.resonator }.filterNotNull()
     }
 
-    private fun shadowPos() = PathUtil.posToShadowPos(pos)
-
     fun draw(ctx: Ctx) {
         val image = ActionItem.getIcon(action.item, faction)
-        ctx.drawImage(image, pos.xx(), pos.yy())
+        ctx.drawImage(image, pos.x, pos.y)
         val xmBar = getXmBarImage(faction, xmBarPercent())
-        ctx.drawImage(xmBar, pos.xx(), pos.yy() - 3)
+        ctx.drawImage(xmBar, pos.x, pos.y - 3)
     }
 
     fun drawRadius(ctx: Ctx) {
@@ -318,7 +314,7 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
             val actionPortal = Util.findNearestPortal(coords) ?: World.allPortals[0] //FIXME
             val agent = Agent(faction, Util.generateAgentName(), coords, Skills.createRandom(),
                     Inventory.empty(), Action.create(), actionPortal, actionPortal.location,
-                    ap, initialXm)
+                    coords, ap, initialXm)
             if (HtmlUtil.isQuickstart()) {
                 agent.inventory.items.addAll(Inventory.quickStart(agent))
             }

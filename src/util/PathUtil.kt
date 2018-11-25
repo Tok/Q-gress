@@ -2,7 +2,6 @@ package util
 
 import World
 import config.Config
-import config.Dim
 import util.data.Cell
 import util.data.Complex
 import util.data.Coords
@@ -11,12 +10,6 @@ import kotlin.math.max
 object PathUtil {
     const val MIN_HEAT = 35
     const val MAX_HEAT = 100
-    const val res = Config.pathResolution
-
-    fun w() = Dim.width / res
-    fun h() = Dim.height / res
-    fun posToShadowPos(pos: Coords) = Coords(pos.x / res, pos.y / res)
-    fun shadowPosToPos(pos: Coords) = Coords(pos.x * res, pos.y * res)
 
     private fun calcPosCost(pos: Coords, heat: Int) =
             heat + (World.grid[pos]?.movementPenalty ?: MAX_HEAT)
@@ -55,7 +48,7 @@ object PathUtil {
         var heat = 0
         var maxHeat = 0
         val map = mutableMapOf<Coords, Int>()
-        map[posToShadowPos(goal)] = heat
+        map[goal.toShadowPos()] = heat
         while (true) {
             val (layer, hasMaybeMore) = createWaveFront(map, passable, heat++)
             map.putAll(layer)
@@ -70,20 +63,29 @@ object PathUtil {
         return map
     }
 
-    fun calculateVectorField(heatMap: Map<Coords, Int>): Map<Coords, Complex> {
+    private fun createVec(heatMap: Map<Coords, Int>, maxHeat: Int, destination: Coords, pos: Coords): Complex {
+        val left = heatMap[Coords(pos.x - 1, pos.y)] ?: maxHeat
+        val right = heatMap[Coords(pos.x + 1, pos.y)] ?: maxHeat
+        val up = heatMap[Coords(pos.x, pos.y - 1)] ?: maxHeat
+        val down = heatMap[Coords(pos.x, pos.y + 1)] ?: maxHeat
+        val lr = left - right
+        val ud = up - down
+        val isBlocked = lr == 0 && ud == 0
+        return if (!isBlocked) {
+            Complex(lr, ud)
+        } else {
+            val xDiff = destination.x - pos.x
+            val yDiff = destination.y - pos.y
+            Complex(xDiff, yDiff)
+        }
+    }
+
+    fun calculateVectorField(heatMap: Map<Coords, Int>, destination: Coords): Map<Coords, Complex> {
         val maxHeat = heatMap.values.max()!!
         val fields = World.grid.map {
-            val leftPos = Coords(it.key.x - 1, it.key.y)
-            val rightPos = Coords(it.key.x + 1, it.key.y)
-            val upPos = Coords(it.key.x, it.key.y - 1)
-            val downPos = Coords(it.key.x, it.key.y + 1)
-            val left = heatMap[leftPos] ?: maxHeat
-            val right = heatMap[rightPos] ?: maxHeat
-            val up = heatMap[upPos] ?: maxHeat
-            val down = heatMap[downPos] ?: maxHeat
-            val rawer = Complex(left - right, up - down)
-            val raw = Complex.fromMagnitudeAndPhase(1F, rawer.phase) //FIXME use terrain penalty
-            it.key to raw
+            val raw = createVec(heatMap, maxHeat, destination, it.key)
+            val vec = raw.copyWithNewMagnitude(1.0) //FIXME use terrain penalty
+            it.key to vec
         }.toMap()
         return smooth(fields, Config.vectorSmoothCount).toMap()
     }
@@ -96,14 +98,19 @@ object PathUtil {
             }
 
     private fun smoothVectorMap(map: Map<Coords, Complex>): Map<Coords, Complex> {
+        val n = 1
+        val xRange = -n..n
+        val yRange = -n..n
         return map.map {
             val pos = it.key
-            val up = map[Coords(pos.x, pos.y - 1)] ?: Complex.ZERO
-            val down = map[Coords(pos.x, pos.y + 1)] ?: Complex.ZERO
-            val left = map[Coords(pos.x - 1, pos.y)] ?: Complex.ZERO
-            val right = map[Coords(pos.x + 1, pos.y)] ?: Complex.ZERO
-            val sum = up + down + left + right
-            it.key to Complex.fromMagnitudeAndPhase(1F, sum.phase) //FIXME use terrain penalty
+            val sum: Complex = yRange.flatMap { dy ->
+                xRange.map { dx ->
+                    map[Coords(pos.x + dx, pos.y + dy)] ?: Complex.ZERO
+                }
+            }.fold(Complex.ZERO) { acc, complex -> acc.plus(complex) }
+            val magnitude = sum.magnitude / (xRange.count() * yRange.count())
+            val phase = sum.phase
+            it.key to Complex.fromMagnitudeAndPhase(magnitude, phase) //FIXME use terrain penalty
         }.toMap()
     }
 

@@ -7,7 +7,6 @@ import items.level.PortalLevel
 import portal.Portal
 import util.Util
 import util.data.Complex
-import kotlin.math.min
 
 object MovementUtil {
     fun findUncapturedPortals() = World.allPortals.filter { it.isUncaptured() }
@@ -74,20 +73,14 @@ object MovementUtil {
         return agent.copy(actionPortal = destination, destination = nextDest)
     }
 
-    fun move(velocity: Complex, force: Complex?, speed: Float): Complex {
-        if (Util.random() > 0.2) { //TODO tune
-            return velocity
-        }
-        return if (force != null && force != Complex.ZERO) {
-            val sum = velocity + force
-            val newMag = min(sum.mag, speed)
-            return sum.copyWithNewMagnitude(newMag)
+    fun move(velocity: Complex, force: Complex, limit: Double): Complex {
+        //if (isDrunk && Util.randomBool()) { return Complex.random() } //TODO
+        val actualForce = if (force != Complex.ZERO) force else Complex.random()
+        val newVelo = velocity + actualForce
+        return if (newVelo.mag <= limit) {
+            newVelo
         } else {
-            if (velocity != Complex.ZERO) {
-                velocity
-            } else {
-                Complex.random()
-            }
+            newVelo.copyWithNewMagnitude(limit)
         }
     }
 }

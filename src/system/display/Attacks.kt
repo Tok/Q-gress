@@ -28,7 +28,7 @@ object Attacks : Display {
                 bursters.forEach { xmp ->
                     val image = damageCircleImages[xmp.level to ticksInFuture]
                     if (image != null) { //FIXME
-                        World.ctx().drawImage(image, pos.xx() - (image.width / 2), pos.yy() - (image.height / 2))
+                        World.ctx().drawImage(image, pos.x - (image.width / 2), pos.y - (image.height / 2))
                     }
                 }
             }
@@ -46,7 +46,7 @@ object Attacks : Display {
                 val lineWidth = 3
                 val newPos = pos.copy(y = pos.y - ratio - lineWidth, x = pos.x - r + lineWidth)
                 val image = getImage(damage)
-                World.ctx().drawImage(image, newPos.xx(), newPos.yy())
+                World.ctx().drawImage(image, newPos.x, newPos.y)
             }
         }
         Queues.endTick(World.tick)

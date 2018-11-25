@@ -5,6 +5,7 @@ import Ctx
 import World
 import agent.Agent
 import agent.Faction
+import agent.action.ActionItem
 import config.Colors
 import config.Config
 import config.Dim
@@ -23,9 +24,14 @@ enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>, var image: Canvas
 
     companion object {
         private const val numberOfCheckpoints = 35
+        private fun isUpdateStuck(tick: Int) = tick % 60 == 0
         private fun isNewCheckpoint(tick: Int) = tick % Config.ticksPerCheckpoint == 0
         private fun isNewCycle(tick: Int) = tick % Config.ticksPerCycle == 0
         fun updateCheckpoints(tick: Int, enlMu: Int, resMu: Int) {
+            if (isUpdateStuck(tick)) {
+                World.allAgents.filter { it.action.item == ActionItem.MOVE }
+                        .forEach { it.updateLastPos() }
+            }
             if (isNewCheckpoint(tick)) {
                 val cp = Checkpoint(enlMu, resMu, isNewCycle(tick))
                 val limit = numberOfCheckpoints - 1

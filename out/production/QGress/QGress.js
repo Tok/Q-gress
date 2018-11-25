@@ -69,6 +69,7 @@ var QGress = function (_, Kotlin) {
   var replace = Kotlin.kotlin.text.replace_680rmw$;
   var trimMargin = Kotlin.kotlin.text.trimMargin_rjktp$;
   var toMap_0 = Kotlin.kotlin.collections.toMap_abgq59$;
+  var count = Kotlin.kotlin.collections.count_7wnvza$;
   var listOfNotNull = Kotlin.kotlin.collections.listOfNotNull_jurz7g$;
   var first_0 = Kotlin.kotlin.collections.first_7wnvza$;
   var joinToString = Kotlin.kotlin.collections.joinToString_fmv235$;
@@ -191,7 +192,7 @@ var QGress = function (_, Kotlin) {
   var ArrayList_init = Kotlin.kotlin.collections.ArrayList_init_ww73n8$;
   function ActionItem$Companion() {
     ActionItem$Companion_instance = this;
-    this.MOVE = new ActionItem('moving', 1800, 'Move');
+    this.MOVE = new ActionItem('moving', 60, 'Move');
     this.WAIT = new ActionItem('waiting', 10, 'Wait');
     this.RECHARGE = new ActionItem('recharging', 30, 'Recharge');
     this.RECRUIT = new ActionItem('recruiting', 120, 'Recruit');
@@ -263,7 +264,7 @@ var QGress = function (_, Kotlin) {
   function ActionItem$Companion$drawTemplate$lambda(closure$rr, closure$r, closure$strokeStyle, closure$lw, closure$faction, closure$actionItem, closure$drawAgentCircle, this$ActionItem$, closure$w, closure$h, closure$drawAgentLine) {
     return function (ctx) {
       var tmp$;
-      var pos = new Coords(closure$rr, closure$rr);
+      var pos = Coords_init(closure$rr, closure$rr);
       var circle = new Circle(pos, closure$r + 1);
       DrawUtil_getInstance().drawCircle_3kie0f$(ctx, circle, closure$strokeStyle, closure$lw, closure$faction.color);
       tmp$ = closure$actionItem;
@@ -271,28 +272,28 @@ var QGress = function (_, Kotlin) {
         closure$drawAgentCircle(ctx, new Circle(pos, closure$rr - 2.0));
       else if (equals(tmp$, this$ActionItem$.EXPLORE)) {
         var off = 2;
-        closure$drawAgentLine(ctx, new Line(new Coords(off, off), new Coords(closure$w - off | 0, closure$h - off | 0)));
-        closure$drawAgentLine(ctx, new Line(new Coords(off, closure$h - off | 0), new Coords(closure$w - off | 0, off)));
-        closure$drawAgentLine(ctx, new Line(new Coords(closure$rr, 0), new Coords(closure$rr, closure$h)));
-        closure$drawAgentLine(ctx, new Line(new Coords(0, closure$rr), new Coords(closure$w, closure$rr)));
+        closure$drawAgentLine(ctx, new Line(Coords_init(off, off), Coords_init(closure$w - off | 0, closure$h - off | 0)));
+        closure$drawAgentLine(ctx, new Line(Coords_init(off, closure$h - off | 0), Coords_init(closure$w - off | 0, off)));
+        closure$drawAgentLine(ctx, new Line(Coords_init(closure$rr, 0), Coords_init(closure$rr, closure$h)));
+        closure$drawAgentLine(ctx, new Line(Coords_init(0, closure$rr), Coords_init(closure$w, closure$rr)));
         closure$drawAgentCircle(ctx, new Circle(pos, closure$rr - 2.0));
       }
        else if (equals(tmp$, this$ActionItem$.RECRUIT)) {
-        closure$drawAgentLine(ctx, new Line(new Coords(closure$rr, 0), new Coords(closure$rr, closure$h)));
-        closure$drawAgentLine(ctx, new Line(new Coords(0, closure$rr), new Coords(closure$w, closure$rr)));
+        closure$drawAgentLine(ctx, new Line(Coords_init(closure$rr, 0), Coords_init(closure$rr, closure$h)));
+        closure$drawAgentLine(ctx, new Line(Coords_init(0, closure$rr), Coords_init(closure$w, closure$rr)));
       }
        else if (equals(tmp$, this$ActionItem$.ATTACK))
-        closure$drawAgentLine(ctx, new Line(new Coords(closure$rr, 0), new Coords(closure$rr, closure$h)));
+        closure$drawAgentLine(ctx, new Line(Coords_init(closure$rr, 0), Coords_init(closure$rr, closure$h)));
       else if (equals(tmp$, this$ActionItem$.LINK))
-        closure$drawAgentLine(ctx, new Line(new Coords(0, closure$rr), new Coords(closure$w, closure$rr)));
+        closure$drawAgentLine(ctx, new Line(Coords_init(0, closure$rr), Coords_init(closure$w, closure$rr)));
       else if (equals(tmp$, this$ActionItem$.DEPLOY)) {
-        closure$drawAgentLine(ctx, new Line(new Coords(0, closure$rr - 1 | 0), new Coords(closure$w, closure$rr - 1 | 0)));
-        closure$drawAgentLine(ctx, new Line(new Coords(0, closure$rr + 1 | 0), new Coords(closure$w, closure$rr + 1 | 0)));
+        closure$drawAgentLine(ctx, new Line(Coords_init(0, closure$rr - 1 | 0), Coords_init(closure$w, closure$rr - 1 | 0)));
+        closure$drawAgentLine(ctx, new Line(Coords_init(0, closure$rr + 1 | 0), Coords_init(closure$w, closure$rr + 1 | 0)));
       }
        else if (equals(tmp$, this$ActionItem$.CAPTURE)) {
-        closure$drawAgentLine(ctx, new Line(new Coords(closure$rr, 0), new Coords(closure$rr, closure$h)));
-        closure$drawAgentLine(ctx, new Line(new Coords(0, closure$rr - 1 | 0), new Coords(closure$w, closure$rr - 1 | 0)));
-        closure$drawAgentLine(ctx, new Line(new Coords(0, closure$rr + 1 | 0), new Coords(closure$w, closure$rr + 1 | 0)));
+        closure$drawAgentLine(ctx, new Line(Coords_init(closure$rr, 0), Coords_init(closure$rr, closure$h)));
+        closure$drawAgentLine(ctx, new Line(Coords_init(0, closure$rr - 1 | 0), Coords_init(closure$w, closure$rr - 1 | 0)));
+        closure$drawAgentLine(ctx, new Line(Coords_init(0, closure$rr + 1 | 0), Coords_init(closure$w, closure$rr + 1 | 0)));
       }
        else if (equals(tmp$, this$ActionItem$.HACK))
         closure$drawAgentCircle(ctx, new Circle(pos, closure$rr - 4.0));
@@ -300,12 +301,12 @@ var QGress = function (_, Kotlin) {
         closure$drawAgentCircle(ctx, new Circle(pos, closure$rr - 3.0));
       else if (equals(tmp$, this$ActionItem$.RECHARGE)) {
         var off_0 = 2;
-        closure$drawAgentLine(ctx, new Line(new Coords(off_0, closure$h - off_0 | 0), new Coords(closure$w - off_0 | 0, off_0)));
+        closure$drawAgentLine(ctx, new Line(Coords_init(off_0, closure$h - off_0 | 0), Coords_init(closure$w - off_0 | 0, off_0)));
         closure$drawAgentCircle(ctx, new Circle(pos, closure$rr - 2.0));
       }
        else if (equals(tmp$, this$ActionItem$.RECYCLE)) {
         var off_1 = 2;
-        closure$drawAgentLine(ctx, new Line(new Coords(off_1, off_1), new Coords(closure$w - off_1 | 0, closure$h - off_1 | 0)));
+        closure$drawAgentLine(ctx, new Line(Coords_init(off_1, off_1), Coords_init(closure$w - off_1 | 0, closure$h - off_1 | 0)));
         closure$drawAgentCircle(ctx, new Circle(pos, closure$rr - 2.0));
       }
        else
@@ -1249,7 +1250,7 @@ var QGress = function (_, Kotlin) {
     }
     return Recycler_instance;
   }
-  function Agent(faction, name, pos, skills, inventory, action, actionPortal, destination, ap, xm, velocity) {
+  function Agent(faction, name, pos, skills, inventory, action, actionPortal, destination, lastPosition, ap, xm, velocity) {
     Agent$Companion_getInstance();
     if (ap === void 0)
       ap = 0;
@@ -1265,6 +1266,7 @@ var QGress = function (_, Kotlin) {
     this.action = action;
     this.actionPortal = actionPortal;
     this.destination = destination;
+    this.lastPosition_0 = lastPosition;
     this.ap = ap;
     this.xm = xm;
     this.velocity = velocity;
@@ -1400,17 +1402,19 @@ var QGress = function (_, Kotlin) {
     newAgent.action.start_fyi6w8$(ActionItem$Companion_getInstance().MOVE);
     return newAgent;
   };
-  function Agent$moveCloserToDestinationPortal$jumpToRandomPortal(this$Agent) {
-    return function () {
-      var portal = World_getInstance().randomPortal();
-      this$Agent.actionPortal = portal;
-      this$Agent.destination = portal.location.randomNearPoint_za3lpa$(numberToInt(Dim_getInstance().maxDeploymentRange));
-      this$Agent.velocity = Complex$Companion_getInstance().ZERO;
-      this$Agent.action.end();
-      return this$Agent.copy_lmq102$(void 0, void 0, portal.location);
-    };
-  }
+  Agent.prototype.updateLastPos = function () {
+    var distance = this.pos.distanceTo_lfj9be$(this.lastPosition_0);
+    var isStuck = distance <= Dim_getInstance().maxDeploymentRange;
+    if (isStuck) {
+      var newDest = World_getInstance().randomPortal();
+      var dist = this.skills.deployPrecision * Dim_getInstance().maxDeploymentRange;
+      this.actionPortal = newDest;
+      this.destination = newDest.findRandomPointNearPortal_za3lpa$(numberToInt(dist));
+    }
+    this.lastPosition_0 = this.pos;
+  };
   Agent.prototype.moveCloserToDestinationPortal_0 = function () {
+    var tmp$;
     if (!World_getInstance().isReady) {
       console.warn('World is not ready.');
       return this.doNothing();
@@ -1419,14 +1423,9 @@ var QGress = function (_, Kotlin) {
       this.action.end();
       return this;
     }
-    var jumpToRandomPortal = Agent$moveCloserToDestinationPortal$jumpToRandomPortal(this);
-    var isStuck = !this.action.isBusy();
-    if (isStuck) {
-      return jumpToRandomPortal();
-    }
-    var force = this.actionPortal.vectorField.get_11rb$(PathUtil_getInstance().posToShadowPos_lfj9be$(this.pos));
-    this.velocity = MovementUtil_getInstance().move_75inmo$(this.velocity, force, this.skills.speed);
-    return this.copy_lmq102$(void 0, void 0, new Coords(numberToInt(this.pos.x + this.velocity.re), numberToInt(this.pos.y + this.velocity.im)));
+    var force = (tmp$ = this.actionPortal.vectorField.get_11rb$(this.pos.toShadowPos())) != null ? tmp$ : Complex$Companion_getInstance().ZERO;
+    this.velocity = MovementUtil_getInstance().move_ovcmsq$(this.velocity, force, this.skills.speed);
+    return this.copy_8zq494$(void 0, void 0, Coords_init(numberToInt(this.pos.x + this.velocity.re), numberToInt(this.pos.y + this.velocity.im)));
   };
   Agent.prototype.hasXmps_0 = function () {
     return !this.inventory.findXmps().isEmpty();
@@ -1441,9 +1440,9 @@ var QGress = function (_, Kotlin) {
     var part = this.skills.inRangeSpeed() / this.pos.distanceTo_lfj9be$(dest);
     var rawDiffX = numberToInt(this.pos.xDiff_lfj9be$(dest) * part);
     var rawDiffY = numberToInt(this.pos.yDiff_lfj9be$(dest) * part);
-    var rawNextX = this.pos.x - rawDiffX | 0;
-    var rawNextY = this.pos.y - rawDiffY | 0;
-    return this.copy_lmq102$(void 0, void 0, new Coords(rawNextX, rawNextY));
+    var rawNextX = this.pos.x - rawDiffX;
+    var rawNextY = this.pos.y - rawDiffY;
+    return this.copy_8zq494$(void 0, void 0, new Coords(rawNextX, rawNextY));
   };
   Agent.prototype.collectXm_0 = function () {
     var heaps = XmMap_getInstance().findXmInRange_lfj9be$(this.pos);
@@ -1607,14 +1606,11 @@ var QGress = function (_, Kotlin) {
     }
     return filterNotNull(destination_2);
   };
-  Agent.prototype.shadowPos_0 = function () {
-    return PathUtil_getInstance().posToShadowPos_lfj9be$(this.pos);
-  };
   Agent.prototype.draw_f69bme$ = function (ctx) {
     var image = ActionItem$Companion_getInstance().getIcon_5bvev3$(this.action.item, this.faction);
-    ctx.drawImage(image, this.pos.xx(), this.pos.yy());
+    ctx.drawImage(image, this.pos.x, this.pos.y);
     var xmBar = Agent$Companion_getInstance().getXmBarImage_0(this.faction, this.xmBarPercent_0());
-    ctx.drawImage(xmBar, this.pos.xx(), this.pos.yy() - 3);
+    ctx.drawImage(xmBar, this.pos.x, this.pos.y - 3);
   };
   Agent.prototype.drawRadius_f69bme$ = function (ctx) {
     if (Styles_getInstance().isDrawDestination) {
@@ -1771,7 +1767,7 @@ var QGress = function (_, Kotlin) {
     var initialXm = this.xmCapacity_0(this.getLevel_0(ap));
     var coords = Coords$Companion_getInstance().createRandomPassable_5edep5$(grid);
     var actionPortal = (tmp$ = Util_getInstance().findNearestPortal_lfj9be$(coords)) != null ? tmp$ : World_getInstance().allPortals.get_za3lpa$(0);
-    var agent = new Agent(faction, Util_getInstance().generateAgentName(), coords, Skills$Companion_getInstance().createRandom(), Inventory$Companion_getInstance().empty(), Action$Companion_getInstance().create(), actionPortal, actionPortal.location, ap, initialXm);
+    var agent = new Agent(faction, Util_getInstance().generateAgentName(), coords, Skills$Companion_getInstance().createRandom(), Inventory$Companion_getInstance().empty(), Action$Companion_getInstance().create(), actionPortal, actionPortal.location, coords, ap, initialXm);
     if (HtmlUtil_getInstance().isQuickstart()) {
       agent.inventory.items.addAll_brywnq$(Inventory$Companion_getInstance().quickStart_912u9o$(agent));
     }
@@ -1818,17 +1814,20 @@ var QGress = function (_, Kotlin) {
   Agent.prototype.component8 = function () {
     return this.destination;
   };
-  Agent.prototype.component9 = function () {
-    return this.ap;
+  Agent.prototype.component9_0 = function () {
+    return this.lastPosition_0;
   };
   Agent.prototype.component10 = function () {
-    return this.xm;
+    return this.ap;
   };
   Agent.prototype.component11 = function () {
+    return this.xm;
+  };
+  Agent.prototype.component12 = function () {
     return this.velocity;
   };
-  Agent.prototype.copy_lmq102$ = function (faction, name, pos, skills, inventory, action, actionPortal, destination, ap, xm, velocity) {
-    return new Agent(faction === void 0 ? this.faction : faction, name === void 0 ? this.name : name, pos === void 0 ? this.pos : pos, skills === void 0 ? this.skills : skills, inventory === void 0 ? this.inventory : inventory, action === void 0 ? this.action : action, actionPortal === void 0 ? this.actionPortal : actionPortal, destination === void 0 ? this.destination : destination, ap === void 0 ? this.ap : ap, xm === void 0 ? this.xm : xm, velocity === void 0 ? this.velocity : velocity);
+  Agent.prototype.copy_8zq494$ = function (faction, name, pos, skills, inventory, action, actionPortal, destination, lastPosition, ap, xm, velocity) {
+    return new Agent(faction === void 0 ? this.faction : faction, name === void 0 ? this.name : name, pos === void 0 ? this.pos : pos, skills === void 0 ? this.skills : skills, inventory === void 0 ? this.inventory : inventory, action === void 0 ? this.action : action, actionPortal === void 0 ? this.actionPortal : actionPortal, destination === void 0 ? this.destination : destination, lastPosition === void 0 ? this.lastPosition_0 : lastPosition, ap === void 0 ? this.ap : ap, xm === void 0 ? this.xm : xm, velocity === void 0 ? this.velocity : velocity);
   };
   function AgentSize(offset) {
     AgentSize$Companion_getInstance();
@@ -1928,7 +1927,7 @@ var QGress = function (_, Kotlin) {
   Faction$Companion.prototype.all = function () {
     return listOf([Faction$ENL_getInstance(), Faction$RES_getInstance()]);
   };
-  Faction$Companion.prototype.createRandom = function () {
+  Faction$Companion.prototype.random = function () {
     return Util_getInstance().random() < 0.5 ? Faction$ENL_getInstance() : Faction$RES_getInstance();
   };
   Faction$Companion.$metadata$ = {
@@ -2589,26 +2588,17 @@ var QGress = function (_, Kotlin) {
     var distance = agent.skills.deployPrecision * Dim_getInstance().maxDeploymentRange;
     var nextDest = destination.findRandomPointNearPortal_za3lpa$(numberToInt(distance));
     agent.action.start_fyi6w8$(ActionItem$Companion_getInstance().MOVE);
-    return agent.copy_lmq102$(void 0, void 0, void 0, void 0, void 0, void 0, destination, nextDest);
+    return agent.copy_8zq494$(void 0, void 0, void 0, void 0, void 0, void 0, destination, nextDest);
   };
-  MovementUtil.prototype.move_75inmo$ = function (velocity, force, speed) {
+  MovementUtil.prototype.move_ovcmsq$ = function (velocity, force, limit) {
     var tmp$;
-    if (Util_getInstance().random() > 0.2) {
-      return velocity;
-    }
-    if (force != null && !equals(force, Complex$Companion_getInstance().ZERO)) {
-      var sum = velocity.plus_p4p8i0$(force);
-      var a = sum.mag;
-      var newMag = Math_0.min(a, speed);
-      return sum.copyWithNewMagnitude_mx4ult$(newMag);
+    var actualForce = !(force != null ? force.equals(Complex$Companion_getInstance().ZERO) : null) ? force : Complex$Companion_getInstance().random();
+    var newVelo = velocity.plus_p4p8i0$(actualForce);
+    if (newVelo.mag <= limit) {
+      tmp$ = newVelo;
     }
      else {
-      if (!(velocity != null ? velocity.equals(Complex$Companion_getInstance().ZERO) : null)) {
-        tmp$ = velocity;
-      }
-       else {
-        tmp$ = Complex$Companion_getInstance().random();
-      }
+      tmp$ = newVelo.copyWithNewMagnitude_14dthe$(limit);
     }
     return tmp$;
   };
@@ -2653,7 +2643,7 @@ var QGress = function (_, Kotlin) {
     return tick <= this.busyUntil;
   };
   NonFaction.prototype.act = function () {
-    var tmp$;
+    var tmp$, tmp$_0;
     if (this.isBusy_0(World_getInstance().tick)) {
       if (Util_getInstance().random() < 0.001) {
         this.busyUntil = World_getInstance().tick;
@@ -2674,21 +2664,21 @@ var QGress = function (_, Kotlin) {
       if (Config_getInstance().isNpcSwarming && Util_getInstance().random() < this.swarmChance_0) {
         var nearPos = this.findNearest_0().pos;
         if (nearPos.distanceTo_lfj9be$(this.pos) < Dim_getInstance().agentRadius) {
-          var re = -(this.pos.xx() - nearPos.xx());
-          var im = -(this.pos.yy() - nearPos.yy());
+          var re = -(this.pos.x - nearPos.x);
+          var im = -(this.pos.y - nearPos.y);
           var acceleration = 1.2;
-          tmp$ = new Complex(re * acceleration, im * acceleration);
+          tmp$_0 = new Complex(re * acceleration, im * acceleration);
         }
          else {
-          tmp$ = Complex_init(this.pos.x, this.pos.y);
+          tmp$_0 = new Complex(this.pos.x, this.pos.y);
         }
       }
        else {
-        tmp$ = this.vectorField.get_11rb$(PathUtil_getInstance().posToShadowPos_lfj9be$(this.pos));
+        tmp$_0 = (tmp$ = this.vectorField.get_11rb$(this.pos.toShadowPos())) != null ? tmp$ : Complex$Companion_getInstance().ZERO;
       }
-      var force = tmp$;
-      this.velocity_0 = MovementUtil_getInstance().move_75inmo$(this.velocity_0, force, this.speed);
-      this.pos = new Coords(numberToInt(this.pos.x + this.velocity_0.re), numberToInt(this.pos.y + this.velocity_0.im));
+      var force = tmp$_0;
+      this.velocity_0 = MovementUtil_getInstance().move_ovcmsq$(this.velocity_0, force, this.speed);
+      this.pos = new Coords(this.pos.x + this.velocity_0.re, this.pos.y + this.velocity_0.im);
     }
   };
   NonFaction.prototype.findNearest_0 = function () {
@@ -2761,14 +2751,14 @@ var QGress = function (_, Kotlin) {
     this.destination = randomTarget.location;
   };
   NonFaction.prototype.draw_f69bme$ = function (ctx) {
-    ctx.drawImage(NonFaction$Companion_getInstance().image_0(this.size), this.pos.xx(), this.pos.yy());
+    ctx.drawImage(NonFaction$Companion_getInstance().image_0(this.size), this.pos.x, this.pos.y);
   };
   function NonFaction$Companion() {
     NonFaction$Companion_instance = this;
     this.changeToBeRecruited = 0.05;
-    this.OFFSCREEN_DISTANCE_0 = 50;
-    this.DESTINATIONS_0 = listOf([new Coords(World_getInstance().w() / 3 | 0, -this.OFFSCREEN_DISTANCE_0 | 0), new Coords((World_getInstance().w() * 2 | 0) / 3 | 0, -this.OFFSCREEN_DISTANCE_0 | 0), new Coords(-this.OFFSCREEN_DISTANCE_0 | 0, World_getInstance().h() / 3 | 0), new Coords(-this.OFFSCREEN_DISTANCE_0 | 0, (World_getInstance().h() * 2 | 0) / 3 | 0), new Coords(World_getInstance().w() + this.OFFSCREEN_DISTANCE_0 | 0, World_getInstance().h() / 3 | 0), new Coords(World_getInstance().w() + this.OFFSCREEN_DISTANCE_0 | 0, (World_getInstance().h() * 2 | 0) / 3 | 0), new Coords(World_getInstance().w() / 3 | 0, World_getInstance().h() + this.OFFSCREEN_DISTANCE_0 | 0), new Coords((World_getInstance().w() * 2 | 0) / 3 | 0, World_getInstance().h() + this.OFFSCREEN_DISTANCE_0 | 0)]);
-    this.OFFSCREEN_EDGES_0 = listOf([new Coords(-this.OFFSCREEN_DISTANCE_0 | 0, -this.OFFSCREEN_DISTANCE_0 | 0), new Coords(World_getInstance().w() + this.OFFSCREEN_DISTANCE_0 | 0, -this.OFFSCREEN_DISTANCE_0 | 0), new Coords(-this.OFFSCREEN_DISTANCE_0 | 0, World_getInstance().h() + this.OFFSCREEN_DISTANCE_0 | 0), new Coords(World_getInstance().w() + this.OFFSCREEN_DISTANCE_0 | 0, World_getInstance().h() + this.OFFSCREEN_DISTANCE_0 | 0)]);
+    this.OFFSCREEN_DISTANCE_0 = Coords$Companion_getInstance().res * 5 | 0;
+    this.DESTINATIONS_0 = listOf([Coords_init(World_getInstance().w() / 3 | 0, -this.OFFSCREEN_DISTANCE_0 | 0), Coords_init((World_getInstance().w() * 2 | 0) / 3 | 0, -this.OFFSCREEN_DISTANCE_0 | 0), Coords_init(-this.OFFSCREEN_DISTANCE_0 | 0, World_getInstance().h() / 3 | 0), Coords_init(-this.OFFSCREEN_DISTANCE_0 | 0, (World_getInstance().h() * 2 | 0) / 3 | 0), Coords_init(World_getInstance().w() + this.OFFSCREEN_DISTANCE_0 | 0, World_getInstance().h() / 3 | 0), Coords_init(World_getInstance().w() + this.OFFSCREEN_DISTANCE_0 | 0, (World_getInstance().h() * 2 | 0) / 3 | 0), Coords_init(World_getInstance().w() / 3 | 0, World_getInstance().h() + this.OFFSCREEN_DISTANCE_0 | 0), Coords_init((World_getInstance().w() * 2 | 0) / 3 | 0, World_getInstance().h() + this.OFFSCREEN_DISTANCE_0 | 0)]);
+    this.OFFSCREEN_EDGES_0 = listOf([Coords_init(-this.OFFSCREEN_DISTANCE_0 | 0, -this.OFFSCREEN_DISTANCE_0 | 0), Coords_init(World_getInstance().w() + this.OFFSCREEN_DISTANCE_0 | 0, -this.OFFSCREEN_DISTANCE_0 | 0), Coords_init(-this.OFFSCREEN_DISTANCE_0 | 0, World_getInstance().h() + this.OFFSCREEN_DISTANCE_0 | 0), Coords_init(World_getInstance().w() + this.OFFSCREEN_DISTANCE_0 | 0, World_getInstance().h() + this.OFFSCREEN_DISTANCE_0 | 0)]);
     this.OFFSCREEN = plus(this.DESTINATIONS_0, Config_getInstance().useOffscreenEdgeDestinations ? this.OFFSCREEN_EDGES_0 : emptyList());
     this.fields_0 = LinkedHashMap_init();
     this.images_0 = mapOf([to(-1, this.drawTemplate_0(-1)), to(0, this.drawTemplate_0(0)), to(1, this.drawTemplate_0(1))]);
@@ -2800,7 +2790,7 @@ var QGress = function (_, Kotlin) {
       tmp$ = maybeField;
     }
      else {
-      var newField = PathUtil_getInstance().calculateVectorField_8eqwnz$(PathUtil_getInstance().generateHeatMap_lfj9be$(destination));
+      var newField = PathUtil_getInstance().calculateVectorField_3e8r0f$(PathUtil_getInstance().generateHeatMap_lfj9be$(destination), destination);
       Loading$Companion_getInstance().draw();
       SoundUtil_getInstance().playOffScreenLocationCreationSound();
       VectorFields_getInstance().draw_v4iyov$(newField);
@@ -2844,7 +2834,7 @@ var QGress = function (_, Kotlin) {
     return function (ctx) {
       var fillStyle = Colors_getInstance().npcColor;
       var strokeStyle = Colors_getInstance().black;
-      var circle = new Circle(new Coords(closure$r + closure$lineWidth | 0, closure$r + closure$lineWidth | 0), closure$r);
+      var circle = new Circle(Coords_init(closure$r + closure$lineWidth | 0, closure$r + closure$lineWidth | 0), closure$r);
       DrawUtil_getInstance().drawCircle_3kie0f$(ctx, circle, strokeStyle, closure$lineWidth, fillStyle);
     };
   }
@@ -2888,10 +2878,7 @@ var QGress = function (_, Kotlin) {
     var tmp$;
     var position = Coords$Companion_getInstance().createRandomPassable_5edep5$(grid);
     var size = AgentSize$Companion_getInstance().createRandom();
-    var min = Skills$Companion_getInstance().minSpeed;
-    var max = Skills$Companion_getInstance().maxSpeed;
-    var v = min + Util_getInstance().random() * (max - min) - size.offset;
-    var speed = Util_getInstance().clipFloat_y2kzbl$(v, min, max);
+    var speed = Skills$Companion_getInstance().randomNpcSpeed();
     if (Util_getInstance().random() < 0.1) {
       var destination = first(Util_getInstance().shuffle_bemo1h$(this.OFFSCREEN));
       var vectorField = this.getOrCreateVectorField_lfj9be$(destination);
@@ -2941,7 +2928,7 @@ var QGress = function (_, Kotlin) {
   NonFaction.prototype.component6 = function () {
     return this.busyUntil;
   };
-  NonFaction.prototype.copy_ehy33n$ = function (pos, speed, size, destination, vectorField, busyUntil) {
+  NonFaction.prototype.copy_v4627k$ = function (pos, speed, size, destination, vectorField, busyUntil) {
     return new NonFaction(pos === void 0 ? this.pos : pos, speed === void 0 ? this.speed : speed, size === void 0 ? this.size : size, destination === void 0 ? this.destination : destination, vectorField === void 0 ? this.vectorField : vectorField, busyUntil === void 0 ? this.busyUntil : busyUntil);
   };
   NonFaction.prototype.toString = function () {
@@ -3042,14 +3029,14 @@ var QGress = function (_, Kotlin) {
   };
   function Skills$Companion() {
     Skills$Companion_instance = this;
-    this.minSpeed = 2.0;
-    this.maxSpeed = 3.0;
+    this.minSpeed_0 = 2.0;
+    this.maxSpeed_0 = 3.0;
   }
   Skills$Companion.prototype.createRandom = function () {
     return new Skills(this.randomSpeed_0(), this.deployPrecision_0(), this.randomGlyphSkill_0(), this.randomReliability_0());
   };
   Skills$Companion.prototype.randomSpeed_0 = function () {
-    return Util_getInstance().random() * (this.maxSpeed - this.minSpeed) + this.minSpeed;
+    return Util_getInstance().random() * (this.maxSpeed_0 - this.minSpeed_0) + this.minSpeed_0;
   };
   Skills$Companion.prototype.deployPrecision_0 = function () {
     return 0.7 + Util_getInstance().random() * 0.3;
@@ -3058,7 +3045,10 @@ var QGress = function (_, Kotlin) {
     return 0.5 + Util_getInstance().random() * 0.5;
   };
   Skills$Companion.prototype.randomReliability_0 = function () {
-    return 0.5 + Util_getInstance().random() / 2;
+    return 0.5 + Util_getInstance().random() / 2.0;
+  };
+  Skills$Companion.prototype.randomNpcSpeed = function () {
+    return this.randomSpeed_0() / Constants_getInstance().phi;
   };
   Skills$Companion.$metadata$ = {
     kind: Kind_OBJECT,
@@ -3089,7 +3079,7 @@ var QGress = function (_, Kotlin) {
   Skills.prototype.component4 = function () {
     return this.reliability;
   };
-  Skills.prototype.copy_olhf3v$ = function (speed, deployPrecision, glyphSkill, reliability) {
+  Skills.prototype.copy_6y0v78$ = function (speed, deployPrecision, glyphSkill, reliability) {
     return new Skills(speed === void 0 ? this.speed : speed, deployPrecision === void 0 ? this.deployPrecision : deployPrecision, glyphSkill === void 0 ? this.glyphSkill : glyphSkill, reliability === void 0 ? this.reliability : reliability);
   };
   Skills.prototype.toString = function () {
@@ -3153,11 +3143,11 @@ var QGress = function (_, Kotlin) {
     this.apMultiplier = 10;
     this.isNpcSwarming = true;
     this.npcXmSpawnRatio = 0.05;
-    this.isSoundOn = true;
+    this.isSoundOn = !HtmlUtil_getInstance().isLocal();
     this.isPlayInitialSound = false;
     this.isSatOn = false;
     this.isHighlighActionLimit = true;
-    this.vectorSmoothCount = 8;
+    this.vectorSmoothCount = 3;
     this.shadowBlurCount = 3;
     this.comMessageLimit = 8;
     this.topAgentsMessageLimit = 8;
@@ -3167,10 +3157,10 @@ var QGress = function (_, Kotlin) {
     this.useOffscreenEdgeDestinations = false;
   }
   Config.prototype.startFrogs = function () {
-    return HtmlUtil_getInstance().isQuickstart() ? 4 : 2;
+    return HtmlUtil_getInstance().isQuickstart() ? 8 : 2;
   };
   Config.prototype.startSmurfs = function () {
-    return HtmlUtil_getInstance().isQuickstart() ? 4 : 2;
+    return HtmlUtil_getInstance().isQuickstart() ? 8 : 2;
   };
   Config.prototype.initialAp = function () {
     return HtmlUtil_getInstance().isQuickstart() ? 2000000 : 0;
@@ -5444,9 +5434,9 @@ var QGress = function (_, Kotlin) {
       var receiver = closure$ctx;
       receiver.fillStyle = closure$fullStyle;
       receiver.beginPath();
-      receiver.moveTo(one.xx(), one.yy());
-      receiver.lineTo(two.xx(), two.yy());
-      receiver.lineTo(three.xx(), three.yy());
+      receiver.moveTo(one.x, one.y);
+      receiver.lineTo(two.x, two.y);
+      receiver.lineTo(three.x, three.y);
       receiver.fill();
       receiver.closePath();
     };
@@ -5463,14 +5453,14 @@ var QGress = function (_, Kotlin) {
       var receiver = closure$ctx;
       var closure$fullStyle_0 = closure$fullStyle;
       var point = (new Line(first, second)).findClosestPointTo_lfj9be$(portal.location);
-      var gradient = World_getInstance().ctx().createLinearGradient(portal.x(), portal.y(), point.xx(), point.yy());
+      var gradient = World_getInstance().ctx().createLinearGradient(portal.x(), portal.y(), point.x, point.y);
       gradient.addColorStop(0.1, originHp);
       gradient.addColorStop(1.0, closure$fullStyle_0);
       receiver.fillStyle = gradient;
       receiver.beginPath();
       receiver.moveTo(portal.x(), portal.y());
-      receiver.lineTo(first.xx(), first.yy());
-      receiver.lineTo(second.xx(), second.yy());
+      receiver.lineTo(first.x, first.y);
+      receiver.lineTo(second.x, second.y);
       receiver.fill();
       receiver.closePath();
     };
@@ -6150,8 +6140,8 @@ var QGress = function (_, Kotlin) {
     var angle = Util_getInstance().random() * math.PI;
     var xOffset = numberToInt(distance * Math_0.cos(angle));
     var yOffset = numberToInt(distance * Math_0.sin(angle));
-    var point = this.location.copy_vux9f0$(this.location.x + xOffset | 0, this.location.y + yOffset | 0);
-    if (((tmp$ = World_getInstance().grid.get_11rb$(PathUtil_getInstance().posToShadowPos_lfj9be$(point))) != null ? tmp$.isPassable : null) === true) {
+    var point = this.location.copy_lu1900$(this.location.x + xOffset, this.location.y + yOffset);
+    if (((tmp$ = World_getInstance().grid.get_11rb$(point.toShadowPos())) != null ? tmp$.isPassable : null) === true) {
       tmp$_0 = point;
     }
      else {
@@ -6513,8 +6503,8 @@ var QGress = function (_, Kotlin) {
       var oldDistance = oldReso != null ? oldReso.distance : null;
       var newDistance = (tmp$_2 = oldDistance === 0 ? distance : oldDistance) != null ? tmp$_2 : distance;
       (tmp$_3 = this.resoSlots.get_11rb$(octant)) != null ? (tmp$_3.deployReso_otfdig$(agent, resonator, newDistance), Unit) : null;
-      var xx = this.location.x + octant.calcXOffset_za3lpa$(newDistance) | 0;
-      var yy = this.location.y + octant.calcYOffset_za3lpa$(newDistance) | 0;
+      var xx = this.location.x + octant.calcXOffset_za3lpa$(newDistance);
+      var yy = this.location.y + octant.calcYOffset_za3lpa$(newDistance);
       resonator.deploy_njiqqf$(this, octant, new Coords(xx, yy));
     }
     var tmp$_4 = agent.inventory;
@@ -6767,13 +6757,13 @@ var QGress = function (_, Kotlin) {
       closure$ctx.strokeStyle = Colors_getInstance().black;
       closure$ctx.lineWidth = lineWidth + 1.5;
       closure$ctx.beginPath();
-      closure$ctx.moveTo(line.from.xx(), line.from.yy());
-      closure$ctx.lineTo(line.to.xx(), line.to.yy());
+      closure$ctx.moveTo(line.from.x, line.from.y);
+      closure$ctx.lineTo(line.to.x, line.to.y);
       closure$ctx.closePath();
       closure$ctx.stroke();
       closure$ctx.lineWidth = lineWidth;
       if (Styles_getInstance().isDrawResoLineGradient) {
-        var gradient = closure$ctx.createLinearGradient(line.from.xx(), line.from.yy(), line.to.xx(), line.to.yy());
+        var gradient = closure$ctx.createLinearGradient(line.from.x, line.from.y, line.to.x, line.to.y);
         gradient.addColorStop(0.2, levelColor);
         gradient.addColorStop(0.7, factionColor);
         closure$ctx.strokeStyle = gradient;
@@ -6782,8 +6772,8 @@ var QGress = function (_, Kotlin) {
         closure$ctx.strokeStyle = levelColor;
       }
       closure$ctx.beginPath();
-      closure$ctx.moveTo(line.from.xx(), line.from.yy());
-      closure$ctx.lineTo(line.to.xx(), line.to.yy());
+      closure$ctx.moveTo(line.from.x, line.from.y);
+      closure$ctx.lineTo(line.to.x, line.to.y);
       closure$ctx.closePath();
       closure$ctx.stroke();
       closure$ctx.globalAlpha = 1.0;
@@ -6813,8 +6803,8 @@ var QGress = function (_, Kotlin) {
       var slot = item.second;
       var reso = ensureNotNull(slot.resonator);
       var resoLevel = reso.level;
-      var x = this.location.x + octant.calcXOffset_za3lpa$(slot.distance) | 0;
-      var y = this.location.y + octant.calcYOffset_za3lpa$(slot.distance) | 0;
+      var x = this.location.x + octant.calcXOffset_za3lpa$(slot.distance);
+      var y = this.location.y + octant.calcYOffset_za3lpa$(slot.distance);
       var lineToPortal = new Line(new Coords(x, y), this.location);
       var alpha = reso.calcHealthPercent();
       drawResoLine(lineToPortal, resoLevel.getColor(), (tmp$_4 = (tmp$_3 = (tmp$_2 = this.owner) != null ? tmp$_2.faction : null) != null ? tmp$_3.color : null) != null ? tmp$_4 : Faction$NONE_getInstance().color, 1.0, alpha);
@@ -6833,8 +6823,8 @@ var QGress = function (_, Kotlin) {
     tmp$_1 = (tmp$_0 = (tmp$ = this.owner) != null ? tmp$.faction : null) != null ? tmp$_0 : Faction$NONE_getInstance();
     tmp$_2 = this.getLevel();
     var image = Portal$Companion_getInstance().getCenterImage_0(tmp$_1, tmp$_2);
-    var x = this.location.xx() - (image.width / 2 | 0);
-    var y = this.location.yy() - (image.height / 2 | 0);
+    var x = this.location.x - (image.width / 2 | 0);
+    var y = this.location.y - (image.height / 2 | 0);
     ctx.drawImage(image, x, y);
     if (isDrawHealthBar) {
       tmp$_5 = (tmp$_4 = (tmp$_3 = this.owner) != null ? tmp$_3.faction : null) != null ? tmp$_4 : Faction$NONE_getInstance();
@@ -6846,7 +6836,7 @@ var QGress = function (_, Kotlin) {
   Portal.prototype.drawName_f69bme$ = function (ctx) {
     var xOffset = 34;
     var yOffset = 18;
-    ctx.drawImage(this.nameImage_0, this.location.xx() - xOffset, this.location.yy() + yOffset);
+    ctx.drawImage(this.nameImage_0, this.location.x - xOffset, this.location.y + yOffset);
   };
   Portal.prototype.toString = function () {
     return this.name;
@@ -6859,7 +6849,7 @@ var QGress = function (_, Kotlin) {
   };
   function Portal$createNameImage$lambda(closure$x, closure$y, this$Portal, closure$lineWidth) {
     return function (ctx) {
-      var coords = new Coords(numberToInt(closure$x), numberToInt(closure$y));
+      var coords = Coords_init(numberToInt(closure$x), numberToInt(closure$y));
       DrawUtil_getInstance().strokeText_lowmm9$(ctx, coords, this$Portal.name, Colors_getInstance().white, Dim_getInstance().portalNameFontSize, DrawUtil_getInstance().CODA, closure$lineWidth, Colors_getInstance().black);
     };
   }
@@ -6948,9 +6938,9 @@ var QGress = function (_, Kotlin) {
   };
   function Portal$Companion$renderPortalCenter$lambda(closure$r, closure$lw, closure$color, closure$level) {
     return function (ctx) {
-      var portalCircle = new Circle(new Coords(closure$r + closure$lw | 0, closure$r + closure$lw | 0), closure$r);
+      var portalCircle = new Circle(Coords_init(closure$r + closure$lw | 0, closure$r + closure$lw | 0), closure$r);
       DrawUtil_getInstance().drawCircle_3kie0f$(ctx, portalCircle, Colors_getInstance().black, 2.0, closure$color);
-      var pos = new Coords(closure$r + closure$lw + (closure$level.value > 1 ? 0 : 1) | 0, closure$r + closure$lw | 0);
+      var pos = Coords_init(closure$r + closure$lw + (closure$level.value > 1 ? 0 : 1) | 0, closure$r + closure$lw | 0);
       DrawUtil_getInstance().drawText_omkwws$(ctx, pos, closure$level.display, Colors_getInstance().black, 13, DrawUtil_getInstance().CODA);
     };
   }
@@ -6976,7 +6966,7 @@ var QGress = function (_, Kotlin) {
     }
     var slots = toMutableMap(toMap(destination));
     var heatMap = PathUtil_getInstance().generateHeatMap_lfj9be$(location);
-    var vectorField = PathUtil_getInstance().calculateVectorField_8eqwnz$(heatMap);
+    var vectorField = PathUtil_getInstance().calculateVectorField_3e8r0f$(heatMap, location);
     SoundUtil_getInstance().playPortalCreationSound_xv7m3c$(location);
     return new Portal(Util_getInstance().generatePortalName(), location, heatMap, vectorField, slots, LinkedHashSet_init(), LinkedHashSet_init(), null);
   };
@@ -7220,7 +7210,7 @@ var QGress = function (_, Kotlin) {
     var image = this.IMAGE_0;
     var ww = image.width / 2 | 0;
     var hh = image.height / 2 | 0;
-    World_getInstance().ctx().drawImage(image, position.xx() - ww, position.yy() - hh);
+    World_getInstance().ctx().drawImage(image, position.x - ww, position.y - hh);
   };
   function XmHeap$Companion() {
     XmHeap$Companion_instance = this;
@@ -7242,8 +7232,8 @@ var QGress = function (_, Kotlin) {
         var closure$h_0 = closure$h;
         var closure$scatter_0 = closure$scatter;
         var this$XmHeap$_0 = this$XmHeap$;
-        var p = (new Coords(closure$w_0 / 2 | 0, closure$h_0 / 2 | 0)).randomNearPoint_za3lpa$(closure$scatter_0);
-        ctx.drawImage(this$XmHeap$_0.CORE_IMAGE_0, p.xx(), p.yy());
+        var p = Coords_init(closure$w_0 / 2 | 0, closure$h_0 / 2 | 0).randomNearPoint_za3lpa$(closure$scatter_0);
+        ctx.drawImage(this$XmHeap$_0.CORE_IMAGE_0, p.x, p.y);
       }
     };
   }
@@ -7256,7 +7246,7 @@ var QGress = function (_, Kotlin) {
   };
   function XmHeap$Companion$drawCoreTemplate$lambda(closure$r, closure$stroke, closure$lineWidth, closure$fill, closure$alpha) {
     return function (ctx) {
-      var circle = new Circle(new Coords(closure$r, closure$r), closure$r);
+      var circle = new Circle(Coords_init(closure$r, closure$r), closure$r);
       DrawUtil_getInstance().drawCircle_3kie0f$(ctx, circle, closure$stroke, closure$lineWidth, closure$fill, closure$alpha);
     };
   }
@@ -7484,7 +7474,7 @@ var QGress = function (_, Kotlin) {
     tmp$ = reversed_0.iterator();
     while (tmp$.hasNext()) {
       var item = tmp$.next();
-      var pos = new Coords(xPos, yFixOffset - Kotlin.imul(yOffset, checkIndexOverflow((tmp$_0 = index, index = tmp$_0 + 1 | 0, tmp$_0))) | 0);
+      var pos = Coords_init(xPos, yFixOffset - Kotlin.imul(yOffset, checkIndexOverflow((tmp$_0 = index, index = tmp$_0 + 1 | 0, tmp$_0))) | 0);
       DrawUtil_getInstance().strokeText_lowmm9$(ctx, pos, item, Colors_getInstance().white, Dim_getInstance().comFontSize, DrawUtil_getInstance().CODA, 1.5);
     }
   };
@@ -7523,6 +7513,9 @@ var QGress = function (_, Kotlin) {
     this.numberOfCheckpoints_0 = 35;
     this.ww = 8;
   }
+  Cycle$Companion.prototype.isUpdateStuck_0 = function (tick) {
+    return tick % 60 === 0;
+  };
   Cycle$Companion.prototype.isNewCheckpoint_0 = function (tick) {
     return tick % Config_getInstance().ticksPerCheckpoint === 0;
   };
@@ -7551,6 +7544,24 @@ var QGress = function (_, Kotlin) {
   };
   Comparator$ObjectLiteral_15.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
   Cycle$Companion.prototype.updateCheckpoints_qt1dr2$ = function (tick, enlMu, resMu) {
+    if (this.isUpdateStuck_0(tick)) {
+      var $receiver = World_getInstance().allAgents;
+      var destination = ArrayList_init_0();
+      var tmp$;
+      tmp$ = $receiver.iterator();
+      while (tmp$.hasNext()) {
+        var element = tmp$.next();
+        var tmp$_0;
+        if ((tmp$_0 = element.action.item) != null ? tmp$_0.equals(ActionItem$Companion_getInstance().MOVE) : null)
+          destination.add_11rb$(element);
+      }
+      var tmp$_1;
+      tmp$_1 = destination.iterator();
+      while (tmp$_1.hasNext()) {
+        var element_0 = tmp$_1.next();
+        element_0.updateLastPos();
+      }
+    }
     if (this.isNewCheckpoint_0(tick)) {
       var cp = new Checkpoint(enlMu, resMu, this.isNewCycle_0(tick));
       var limit = 34;
@@ -7566,11 +7577,11 @@ var QGress = function (_, Kotlin) {
         this.removeSmurfs_0();
         this.factionChange_0();
         SoundUtil_getInstance().playCycleSound();
-        var tmp$;
-        tmp$ = World_getInstance().allPortals.iterator();
-        while (tmp$.hasNext()) {
-          var element = tmp$.next();
-          element.decay();
+        var tmp$_2;
+        tmp$_2 = World_getInstance().allPortals.iterator();
+        while (tmp$_2.hasNext()) {
+          var element_1 = tmp$_2.next();
+          element_1.decay();
         }
       }
        else {
@@ -7731,11 +7742,11 @@ var QGress = function (_, Kotlin) {
         var closure$lineAlpha_0 = closure$lineAlpha;
         var closure$drawCheckpointDot_0 = closure$drawCheckpointDot;
         var y = calcY(withNext.first.mu_bip15f$(element), maxTotal);
-        var current = new Coords(x, y + numberToInt(closure$r_0) + 2 | 0);
+        var current = Coords_init(x, y + numberToInt(closure$r_0) + 2 | 0);
         var nextY = calcY(withNext.second.mu_bip15f$(element), maxTotal);
-        var next = new Coords(x + this$Cycle$_0.ww | 0, nextY + numberToInt(closure$r_0) + 2 | 0);
-        var top = new Coords(x + this$Cycle$_0.ww | 0, 0);
-        var bot = new Coords(x + this$Cycle$_0.ww | 0, closure$h_0 - 3 | 0);
+        var next = Coords_init(x + this$Cycle$_0.ww | 0, nextY + numberToInt(closure$r_0) + 2 | 0);
+        var top = Coords_init(x + this$Cycle$_0.ww | 0, 0);
+        var bot = Coords_init(x + this$Cycle$_0.ww | 0, closure$h_0 - 3 | 0);
         var lw = withNext.second.isCycleEnd ? 2.0 : 0.3;
         DrawUtil_getInstance().drawLine_ovbgws$(ctx, new Line(top, bot), Colors_getInstance().white, lw, 0.3);
         if (index > 0) {
@@ -7747,14 +7758,14 @@ var QGress = function (_, Kotlin) {
   }
   function Cycle$Companion$createImage$drawBackground(closure$h, closure$w) {
     return function (ctx) {
-      DrawUtil_getInstance().drawRect_dve0j6$(ctx, new Coords(0, 0), -closure$h, closure$w - 8, '#00000077', '#00000077', 0.0);
+      DrawUtil_getInstance().drawRect_dve0j6$(ctx, Coords_init(0, 0), -closure$h, closure$w - 8, '#00000077', '#00000077', 0.0);
     };
   }
   function Cycle$Companion$createImage$drawBaseLine(closure$h, closure$off, closure$w) {
     return function (ctx) {
       var y = closure$h - closure$off | 0;
-      var from = new Coords(closure$off, y);
-      var to = new Coords(closure$w - closure$off - 8 | 0, y);
+      var from = Coords_init(closure$off, y);
+      var to = Coords_init(closure$w - closure$off - 8 | 0, y);
       DrawUtil_getInstance().drawLine_ovbgws$(ctx, new Line(from, to), Colors_getInstance().white, 2.0, 0.3);
     };
   }
@@ -7902,7 +7913,7 @@ var QGress = function (_, Kotlin) {
           var element_1 = tmp$_1.next();
           var image = this.damageCircleImages.get_11rb$(to(element_1.level, ticksInFuture));
           if (image != null) {
-            World_getInstance().ctx().drawImage(image, pos.xx() - (image.width / 2 | 0), pos.yy() - (image.height / 2 | 0));
+            World_getInstance().ctx().drawImage(image, pos.x - (image.width / 2 | 0), pos.y - (image.height / 2 | 0));
           }
         }
       }
@@ -7923,9 +7934,9 @@ var QGress = function (_, Kotlin) {
         var element_3 = tmp$_3.next();
         var pos_0 = element_3.pos;
         var lineWidth = 3;
-        var newPos = pos_0.copy_vux9f0$(pos_0.x - r + lineWidth | 0, pos_0.y - ratio - lineWidth | 0);
+        var newPos = pos_0.copy_lu1900$(pos_0.x - r + lineWidth, pos_0.y - ratio - lineWidth);
         var image_0 = this.getImage_l68dqx$(element_3);
-        World_getInstance().ctx().drawImage(image_0, newPos.xx(), newPos.yy());
+        World_getInstance().ctx().drawImage(image_0, newPos.x, newPos.y);
       }
     }
     Queues_getInstance().endTick_za3lpa$(World_getInstance().tick);
@@ -7944,7 +7955,7 @@ var QGress = function (_, Kotlin) {
   };
   function Attacks$createDamageImage$lambda(closure$lineWidth, closure$fontSize, closure$damageValue, closure$isCritical) {
     return function (ctx) {
-      var coords = new Coords(numberToInt(closure$lineWidth) + ((closure$fontSize * 3 | 0) / 2 | 0) | 0, numberToInt(closure$lineWidth) + (closure$fontSize / 2 | 0) | 0);
+      var coords = Coords_init(numberToInt(closure$lineWidth) + ((closure$fontSize * 3 | 0) / 2 | 0) | 0, numberToInt(closure$lineWidth) + (closure$fontSize / 2 | 0) | 0);
       var a = closure$damageValue;
       var clipped = Math_0.max(a, 1).toString();
       var color = closure$isCritical ? Colors_getInstance().critDamage : Colors_getInstance().damage;
@@ -7961,7 +7972,7 @@ var QGress = function (_, Kotlin) {
   };
   function Attacks$createDamageCircleImage$lambda(closure$r, closure$lw, closure$strokeStyle, closure$fillStyle) {
     return function (ctx) {
-      var attackCircle = new Circle(new Coords(closure$r + closure$lw | 0, closure$r + closure$lw | 0), closure$r);
+      var attackCircle = new Circle(Coords_init(closure$r + closure$lw | 0, closure$r + closure$lw | 0), closure$r);
       DrawUtil_getInstance().drawCircle_3kie0f$(ctx, attackCircle, closure$strokeStyle, closure$lw, closure$fillStyle);
     };
   }
@@ -8048,7 +8059,7 @@ var QGress = function (_, Kotlin) {
     var h = 21;
     var hh = h / 2 | 0;
     Loading$Companion_getInstance().clearUiLine_lu1900$(y - hh - 1, h + 2);
-    DrawUtil_getInstance().strokeText_lowmm9$(World_getInstance().uiCtx(), new Coords(x, y), text, Colors_getInstance().white, h, DrawUtil_getInstance().AMARILLO, lineWidth, strokeStyle);
+    DrawUtil_getInstance().strokeText_lowmm9$(World_getInstance().uiCtx(), Coords_init(x, y), text, Colors_getInstance().white, h, DrawUtil_getInstance().AMARILLO, lineWidth, strokeStyle);
   };
   LoadingText.$metadata$ = {
     kind: Kind_OBJECT,
@@ -8192,29 +8203,25 @@ var QGress = function (_, Kotlin) {
     return none$result;
   };
   ActionLimitsDisplay.prototype.draw = function () {
-    this.draw_6taknv$(true);
+    this.drawArea_0(this.topArea_0());
+    this.drawArea_0(this.bottomArea_0());
+    this.drawArea_0(this.leftSliderArea_0());
+    this.drawArea_0(this.rightSliderArea_0());
   };
-  function ActionLimitsDisplay$draw$fillArea(line) {
-    if (line.isValidArea()) {
-      World_getInstance().ctx().fillRect(line.fromX, line.fromY, line.toX, line.toY);
-    }
-  }
-  ActionLimitsDisplay.prototype.draw_6taknv$ = function (isHighlightBottom) {
-    var top = this.topArea_0();
-    var bot = this.bottomArea_0();
-    var left = this.leftSliderArea_0();
-    var right = this.rightSliderArea_0();
-    var fillArea = ActionLimitsDisplay$draw$fillArea;
+  ActionLimitsDisplay.prototype.drawTop = function () {
+    this.drawArea_0(this.topArea_0());
+  };
+  ActionLimitsDisplay.prototype.drawArea_0 = function (area) {
     var $receiver = World_getInstance().ctx();
     $receiver.beginPath();
     $receiver.fillStyle = '#00000077';
-    fillArea(top);
-    if (isHighlightBottom) {
-      fillArea(bot);
-    }
-    fillArea(left);
-    fillArea(right);
+    this.fillArea_0(area);
     $receiver.closePath();
+  };
+  ActionLimitsDisplay.prototype.fillArea_0 = function (line) {
+    if (line.isValidArea()) {
+      World_getInstance().ctx().fillRect(line.fromX, line.fromY, line.toX, line.toY);
+    }
   };
   ActionLimitsDisplay.$metadata$ = {
     kind: Kind_OBJECT,
@@ -8270,12 +8277,12 @@ var QGress = function (_, Kotlin) {
   }
   function MindUnits$draw$drawMuRect(closure$fillMuRect) {
     return function (pos, part, faction, mu) {
-      var fromRect = new Coords(pos.x, pos.y - Dim_getInstance().muFontSize | 0);
+      var fromRect = new Coords(pos.x, pos.y - Dim_getInstance().muFontSize);
       var width = 1.5 * part;
       var height = Dim_getInstance().muFontSize * Constants_getInstance().phi;
       closure$fillMuRect(fromRect, width, height, faction.color, faction.color, 3.0);
       var text = faction.abbr + ' ' + toString(mu) + 'M';
-      var textPos = new Coords(pos.x + 21 | 0, pos.y - 3 | 0);
+      var textPos = new Coords(pos.x + 21, pos.y - 3);
       DrawUtil_getInstance().strokeText_lowmm9$(World_getInstance().uiCtx(), textPos, text, faction.color, Dim_getInstance().muFontSize, DrawUtil_getInstance().AMARILLO);
     };
   }
@@ -8287,8 +8294,8 @@ var QGress = function (_, Kotlin) {
     var secondPart = numberToInt(round(100.0 * secondMu / totalMu));
     var xPos = Dim_getInstance().muLeftOffset;
     var yPos = Dim_getInstance().height - Dim_getInstance().muBottomOffset | 0;
-    var firstPos = new Coords(xPos, yPos - (Dim_getInstance().muFontSize * 2 | 0) | 0);
-    var secondPos = new Coords(xPos, yPos);
+    var firstPos = Coords_init(xPos, yPos - (Dim_getInstance().muFontSize * 2 | 0) | 0);
+    var secondPos = Coords_init(xPos, yPos);
     drawMuRect(firstPos, firstPart, factions.first, firstMu);
     drawMuRect(secondPos, secondPart, factions.second, secondMu);
   };
@@ -8316,10 +8323,10 @@ var QGress = function (_, Kotlin) {
   }
   function StatsDisplay$draw$drawRow(closure$yOff, closure$drawCell, closure$yStep) {
     return function (pos, header, factions, first, second, total) {
-      closure$drawCell(new Coords(pos, closure$yOff), header, Colors_getInstance().white);
-      closure$drawCell(new Coords(pos, closure$yOff + closure$yStep | 0), first.toString(), factions.first.color);
-      closure$drawCell(new Coords(pos, closure$yOff + (closure$yStep * 2 | 0) | 0), second.toString(), factions.second.color);
-      closure$drawCell(new Coords(pos, closure$yOff + (closure$yStep * 3 | 0) | 0), total.toString(), Colors_getInstance().white);
+      closure$drawCell(Coords_init(pos, closure$yOff), header, Colors_getInstance().white);
+      closure$drawCell(Coords_init(pos, closure$yOff + closure$yStep | 0), first.toString(), factions.first.color);
+      closure$drawCell(Coords_init(pos, closure$yOff + (closure$yStep * 2 | 0) | 0), second.toString(), factions.second.color);
+      closure$drawCell(Coords_init(pos, closure$yOff + (closure$yStep * 3 | 0) | 0), total.toString(), Colors_getInstance().white);
     };
   }
   StatsDisplay.prototype.draw = function () {
@@ -8371,7 +8378,7 @@ var QGress = function (_, Kotlin) {
   function TopAgentsDisplay$draw$drawBars(closure$fontSize, closure$lineWidth) {
     return function (ctx, barWidth, level, color, pos, count, maxCount) {
       var xOffset = Kotlin.imul(barWidth, level) - barWidth | 0;
-      var statPos = new Coords(pos.x + xOffset | 0, pos.y + (closure$fontSize / 2 | 0) | 0);
+      var statPos = new Coords(pos.x + xOffset, pos.y + (closure$fontSize / 2 | 0));
       var h = closure$fontSize * count / maxCount;
       DrawUtil_getInstance().drawRect_dve0j6$(ctx, statPos, h, barWidth, color, Colors_getInstance().black, closure$lineWidth);
     };
@@ -8383,10 +8390,10 @@ var QGress = function (_, Kotlin) {
       if (isShields === void 0)
         isShields = false;
       var tmp$;
-      var pos = new Coords(col.x + offset | 0, col.y);
+      var pos = new Coords(col.x + offset, col.y);
       var barWidth = 6;
       var totalWidth = 48;
-      var statPos = new Coords(pos.x, pos.y + (closure$fontSize / 2 | 0) | 0);
+      var statPos = new Coords(pos.x, pos.y + (closure$fontSize / 2 | 0));
       DrawUtil_getInstance().drawRect_dve0j6$(ctx, statPos, 0.0, totalWidth, Colors_getInstance().black, Colors_getInstance().black, closure$lineWidth);
       if (items == null || items.isEmpty()) {
         DrawUtil_getInstance().strokeText_lowmm9$(ctx, pos, '0', Colors_getInstance().white, closure$fontSize, DrawUtil_getInstance().CODA, closure$lineWidth, Colors_getInstance().black, 'right');
@@ -8491,7 +8498,7 @@ var QGress = function (_, Kotlin) {
     var xPos = Dim_getInstance().topAgentsLeftOffset;
     var yOffset = (Dim_getInstance().topAgentsFontSize * 3 | 0) / 2 | 0;
     var yFixOffset = Dim_getInstance().height - Dim_getInstance().topAgentsBottomOffset - (8 * yOffset | 0) | 0;
-    var headerPos = new Coords(xPos, yFixOffset - yOffset | 0);
+    var headerPos = Coords_init(xPos, yFixOffset - yOffset | 0);
     var top = take(sortedWith(toList_0(World_getInstance().allAgents), new Comparator$ObjectLiteral_17(compareBy$lambda_14(TopAgentsDisplay$draw$lambda))), 8);
     var tmp$, tmp$_0;
     var index = 0;
@@ -8501,7 +8508,7 @@ var QGress = function (_, Kotlin) {
       var index_0 = checkIndexOverflow((tmp$_0 = index, index = tmp$_0 + 1 | 0, tmp$_0));
       var rank = (index_0 + 1 | 0).toString();
       var name = item.toString();
-      var pos = new Coords(xPos, yFixOffset + Kotlin.imul(yOffset, index_0) | 0);
+      var pos = Coords_init(xPos, yFixOffset + Kotlin.imul(yOffset, index_0) | 0);
       var offset = 0;
       this.strokeTableText_7rqwur$(pos, offset, rank, 'right');
       offset = offset + 10 | 0;
@@ -8532,7 +8539,7 @@ var QGress = function (_, Kotlin) {
       offset = offset + 30 | 0;
       this.strokeTableHeaderText_8gukhi$(headerPos, offset, 'Action');
       var iconRadius = Dim_getInstance().agentRadius;
-      var actionIconPos = new Coords(pos.x + offset - iconRadius | 0, pos.y - iconRadius - 2 | 0);
+      var actionIconPos = new Coords(pos.x + offset - iconRadius, pos.y - iconRadius - 2);
       this.addIcon_4tdfr2$(actionIconPos, item.action.item);
       this.strokeTableText_7rqwur$(pos, offset + (iconRadius * 2 | 0) + 7 | 0, item.action.toString());
       offset = offset + 70 | 0;
@@ -8555,7 +8562,7 @@ var QGress = function (_, Kotlin) {
   function UiTable() {
   }
   UiTable.prototype.strokeTableHeaderText_8gukhi$ = function (headerPos, offset, text) {
-    var pos = new Coords(headerPos.x + offset | 0, headerPos.y);
+    var pos = new Coords(headerPos.x + offset, headerPos.y);
     DrawUtil_getInstance().strokeText_lowmm9$(World_getInstance().uiCtx(), pos, text, Colors_getInstance().white, Dim_getInstance().topAgentsFontSize, DrawUtil_getInstance().CODA, 3.0);
   };
   UiTable.prototype.strokeTableText_7rqwur$ = function (headerPos, offset, text, textAlign, fillStyle) {
@@ -8564,12 +8571,12 @@ var QGress = function (_, Kotlin) {
     }
     if (fillStyle === void 0)
       fillStyle = Colors_getInstance().white;
-    var pos = new Coords(headerPos.x + offset | 0, headerPos.y);
+    var pos = new Coords(headerPos.x + offset, headerPos.y);
     DrawUtil_getInstance().strokeText_lowmm9$(World_getInstance().uiCtx(), pos, text, fillStyle, Dim_getInstance().topAgentsFontSize, DrawUtil_getInstance().CODA, 3.0, Colors_getInstance().black, textAlign);
   };
   UiTable.prototype.addIcon_4tdfr2$ = function (pos, item) {
     var image = ActionItem$Companion_getInstance().getIcon_5bvev3$(item);
-    World_getInstance().uiCtx().drawImage(image, pos.xx(), pos.yy());
+    World_getInstance().uiCtx().drawImage(image, pos.x, pos.y);
   };
   UiTable.$metadata$ = {
     kind: Kind_CLASS,
@@ -8580,17 +8587,17 @@ var QGress = function (_, Kotlin) {
     TickDisplay_instance = this;
   }
   TickDisplay.prototype.draw = function () {
-    var pos = new Coords(13, Dim_getInstance().height - Dim_getInstance().tickBottomOffset | 0);
+    var pos = Coords_init(13, Dim_getInstance().height - Dim_getInstance().tickBottomOffset | 0);
     var half = Dim_getInstance().tickFontSize / 2 | 0;
     var $receiver = World_getInstance().uiCtx();
     $receiver.fillStyle = '#00000077';
-    $receiver.fillRect(pos.xx() - 8, pos.yy() - half - 1, 164.0, Dim_getInstance().tickFontSize + 2.0);
+    $receiver.fillRect(pos.x - 8, pos.y - half - 1, 164.0, Dim_getInstance().tickFontSize + 2.0);
     $receiver.fill();
     $receiver.globalAlpha = 1.0;
     var stamp = Time_getInstance().ticksToTimestamp_za3lpa$(World_getInstance().tick);
     DrawUtil_getInstance().drawText_omkwws$(World_getInstance().uiCtx(), pos, stamp, Colors_getInstance().white, Dim_getInstance().tickFontSize, DrawUtil_getInstance().CODA);
     var tick = ' Tick: ' + toString(World_getInstance().tick);
-    DrawUtil_getInstance().drawText_omkwws$(World_getInstance().uiCtx(), pos.copy_vux9f0$(pos.x + 55 | 0), tick, Colors_getInstance().white, Dim_getInstance().tickFontSize, DrawUtil_getInstance().CODA);
+    DrawUtil_getInstance().drawText_omkwws$(World_getInstance().uiCtx(), pos.copy_lu1900$(pos.x + 55), tick, Colors_getInstance().white, Dim_getInstance().tickFontSize, DrawUtil_getInstance().CODA);
   };
   TickDisplay.$metadata$ = {
     kind: Kind_OBJECT,
@@ -8622,8 +8629,8 @@ var QGress = function (_, Kotlin) {
     if (World_getInstance().isReady)
       return;
     World_getInstance().bgCtx().clearRect(0.0, 0.0, Dim_getInstance().width, Dim_getInstance().height);
-    var w = 9;
-    var h = 9;
+    var w = Coords$Companion_getInstance().res - 1 | 0;
+    var h = Coords$Companion_getInstance().res - 1 | 0;
     var tmp$;
     tmp$ = vectorField.entries.iterator();
     while (tmp$.hasNext()) {
@@ -8631,9 +8638,9 @@ var QGress = function (_, Kotlin) {
       var isWalkable = VectorFields$draw$lambda$isWalkable(element);
       if (Styles_getInstance().isDrawObstructedVectors || isWalkable()) {
         var vectorImageData = this.getOrCreateVectorImageData_0(w, h, element.value);
-        var pos = PathUtil_getInstance().shadowPosToPos_lfj9be$(element.key);
+        var pos = element.key.fromShadow();
         if (!HtmlUtil_getInstance().isBlockedByMapbox_lfj9be$(pos)) {
-          World_getInstance().bgCtx().putImageData(vectorImageData, pos.xx(), pos.yy());
+          World_getInstance().bgCtx().putImageData(vectorImageData, pos.x, pos.y);
         }
       }
     }
@@ -8686,16 +8693,17 @@ var QGress = function (_, Kotlin) {
     var im = numberToInt(scaled.im);
     var negRe = numberToInt(re / Constants_getInstance().phi);
     var negIm = numberToInt(im / Constants_getInstance().phi);
-    var from = new Coords(center - negRe | 0, center - negIm | 0);
-    var to = new Coords(center + re | 0, center + im | 0);
+    var from = Coords_init(center - negRe | 0, center - negIm | 0);
+    var to = Coords_init(center + re | 0, center + im | 0);
     return new Line(from, to);
   };
   VectorFields.prototype.getOrCreateVectorImageData_0 = function (w, h, complex) {
     var tmp$, tmp$_0;
     var style = Styles_getInstance().vectorStyle();
     var isColor = Styles_getInstance().isColorVectors();
-    var center = 5;
-    var scaled = Complex$Companion_getInstance().fromMagnitudeAndPhase_5nl2e7$(complex.magnitude * center, complex.phase);
+    var center = Coords$Companion_getInstance().res / 2 | 0;
+    var vecMag = center;
+    var scaled = Complex$Companion_getInstance().fromMagnitudeAndPhase_lu1900$(vecMag, complex.phase);
     var line = this.createLine_0(center, scaled);
     var maybeImage = this.findVec_0(line, style, isColor);
     if (maybeImage != null) {
@@ -8899,49 +8907,49 @@ var QGress = function (_, Kotlin) {
   function Cell$isPassableInAllDirections$isLeftPassable(this$Cell) {
     return function () {
       var tmp$, tmp$_0;
-      return (tmp$_0 = (tmp$ = World_getInstance().grid.get_11rb$(new Coords(this$Cell.position.x - 1 | 0, this$Cell.position.y))) != null ? tmp$.isPassable : null) != null ? tmp$_0 : false;
+      return (tmp$_0 = (tmp$ = World_getInstance().grid.get_11rb$(new Coords(this$Cell.position.x - 1, this$Cell.position.y))) != null ? tmp$.isPassable : null) != null ? tmp$_0 : false;
     };
   }
   function Cell$isPassableInAllDirections$isRightPassable(this$Cell) {
     return function () {
       var tmp$, tmp$_0;
-      return (tmp$_0 = (tmp$ = World_getInstance().grid.get_11rb$(new Coords(this$Cell.position.x + 1 | 0, this$Cell.position.y))) != null ? tmp$.isPassable : null) != null ? tmp$_0 : false;
+      return (tmp$_0 = (tmp$ = World_getInstance().grid.get_11rb$(new Coords(this$Cell.position.x + 1, this$Cell.position.y))) != null ? tmp$.isPassable : null) != null ? tmp$_0 : false;
     };
   }
   function Cell$isPassableInAllDirections$isUpPassable(this$Cell) {
     return function () {
       var tmp$, tmp$_0;
-      return (tmp$_0 = (tmp$ = World_getInstance().grid.get_11rb$(new Coords(this$Cell.position.x, this$Cell.position.y - 1 | 0))) != null ? tmp$.isPassable : null) != null ? tmp$_0 : false;
+      return (tmp$_0 = (tmp$ = World_getInstance().grid.get_11rb$(new Coords(this$Cell.position.x, this$Cell.position.y - 1))) != null ? tmp$.isPassable : null) != null ? tmp$_0 : false;
     };
   }
   function Cell$isPassableInAllDirections$isDownPassable(this$Cell) {
     return function () {
       var tmp$, tmp$_0;
-      return (tmp$_0 = (tmp$ = World_getInstance().grid.get_11rb$(new Coords(this$Cell.position.x, this$Cell.position.y + 1 | 0))) != null ? tmp$.isPassable : null) != null ? tmp$_0 : false;
+      return (tmp$_0 = (tmp$ = World_getInstance().grid.get_11rb$(new Coords(this$Cell.position.x, this$Cell.position.y + 1))) != null ? tmp$.isPassable : null) != null ? tmp$_0 : false;
     };
   }
   function Cell$isPassableInAllDirections$isUpLeftPassable(this$Cell) {
     return function () {
       var tmp$, tmp$_0;
-      return (tmp$_0 = (tmp$ = World_getInstance().grid.get_11rb$(new Coords(this$Cell.position.x - 1 | 0, this$Cell.position.y - 1 | 0))) != null ? tmp$.isPassable : null) != null ? tmp$_0 : false;
+      return (tmp$_0 = (tmp$ = World_getInstance().grid.get_11rb$(new Coords(this$Cell.position.x - 1, this$Cell.position.y - 1))) != null ? tmp$.isPassable : null) != null ? tmp$_0 : false;
     };
   }
   function Cell$isPassableInAllDirections$isUpRightPassable(this$Cell) {
     return function () {
       var tmp$, tmp$_0;
-      return (tmp$_0 = (tmp$ = World_getInstance().grid.get_11rb$(new Coords(this$Cell.position.x + 1 | 0, this$Cell.position.y - 1 | 0))) != null ? tmp$.isPassable : null) != null ? tmp$_0 : false;
+      return (tmp$_0 = (tmp$ = World_getInstance().grid.get_11rb$(new Coords(this$Cell.position.x + 1, this$Cell.position.y - 1))) != null ? tmp$.isPassable : null) != null ? tmp$_0 : false;
     };
   }
   function Cell$isPassableInAllDirections$isDownLeftPassable(this$Cell) {
     return function () {
       var tmp$, tmp$_0;
-      return (tmp$_0 = (tmp$ = World_getInstance().grid.get_11rb$(new Coords(this$Cell.position.x - 1 | 0, this$Cell.position.y + 1 | 0))) != null ? tmp$.isPassable : null) != null ? tmp$_0 : false;
+      return (tmp$_0 = (tmp$ = World_getInstance().grid.get_11rb$(new Coords(this$Cell.position.x - 1, this$Cell.position.y + 1))) != null ? tmp$.isPassable : null) != null ? tmp$_0 : false;
     };
   }
   function Cell$isPassableInAllDirections$isDownRightPassable(this$Cell) {
     return function () {
       var tmp$, tmp$_0;
-      return (tmp$_0 = (tmp$ = World_getInstance().grid.get_11rb$(new Coords(this$Cell.position.x + 1 | 0, this$Cell.position.y + 1 | 0))) != null ? tmp$.isPassable : null) != null ? tmp$_0 : false;
+      return (tmp$_0 = (tmp$ = World_getInstance().grid.get_11rb$(new Coords(this$Cell.position.x + 1, this$Cell.position.y + 1))) != null ? tmp$.isPassable : null) != null ? tmp$_0 : false;
     };
   }
   Cell.prototype.isPassableInAllDirections = function () {
@@ -9030,8 +9038,8 @@ var QGress = function (_, Kotlin) {
     this.phase = Math_0.atan2(y, x_0);
     this.modulus = this.magnitude;
   }
-  Complex.prototype.copyWithNewMagnitude_mx4ult$ = function (mag) {
-    return Complex$Companion_getInstance().fromMagnitudeAndPhase_5nl2e7$(mag, this.phase);
+  Complex.prototype.copyWithNewMagnitude_14dthe$ = function (mag) {
+    return Complex$Companion_getInstance().fromMagnitudeAndPhase_lu1900$(mag, this.phase);
   };
   Complex.prototype.negate = function () {
     return new Complex(-this.re, -this.im);
@@ -9048,13 +9056,13 @@ var QGress = function (_, Kotlin) {
   Complex.prototype.plus_p4p8i0$ = function (c) {
     return new Complex(this.re + c.re, this.im + c.im);
   };
-  Complex.prototype.plus_mx4ult$ = function (d) {
+  Complex.prototype.plus_14dthe$ = function (d) {
     return new Complex(this.re + d, this.im);
   };
   Complex.prototype.minus_p4p8i0$ = function (c) {
     return new Complex(this.re - c.re, this.im - c.im);
   };
-  Complex.prototype.minus_mx4ult$ = function (d) {
+  Complex.prototype.minus_14dthe$ = function (d) {
     return new Complex(this.re - d, this.im);
   };
   Complex.prototype.times_p4p8i0$ = function (c) {
@@ -9094,22 +9102,22 @@ var QGress = function (_, Kotlin) {
   Complex$Companion.prototype.selectStronger_wqtvwk$ = function (first, second) {
     return first.mag < second.mag ? first : second;
   };
-  Complex$Companion.prototype.fromImaginary_mx4ult$ = function (imaginary) {
+  Complex$Companion.prototype.fromImaginary_14dthe$ = function (imaginary) {
     return new Complex(0.0, imaginary);
   };
   Complex$Companion.prototype.fromImaginaryInt_za3lpa$ = function (imaginary) {
     return new Complex(0.0, imaginary);
   };
-  Complex$Companion.prototype.valueOf_5nl2e7$ = function (magnitude, phase) {
-    return this.fromMagnitudeAndPhase_5nl2e7$(magnitude, phase);
+  Complex$Companion.prototype.valueOf_lu1900$ = function (magnitude, phase) {
+    return this.fromMagnitudeAndPhase_lu1900$(magnitude, phase);
   };
-  Complex$Companion.prototype.fromMagnitudeAndPhase_5nl2e7$ = function (magnitude, phase) {
+  Complex$Companion.prototype.fromMagnitudeAndPhase_lu1900$ = function (magnitude, phase) {
     return new Complex(magnitude * Math_0.cos(phase), magnitude * Math_0.sin(phase));
   };
   Complex$Companion.prototype.random = function () {
     var mag = Util_getInstance().random();
     var phase = Constants_getInstance().tau * Util_getInstance().random();
-    return Complex$Companion_getInstance().fromMagnitudeAndPhase_5nl2e7$(mag, phase);
+    return Complex$Companion_getInstance().fromMagnitudeAndPhase_lu1900$(mag, phase);
   };
   Complex$Companion.$metadata$ = {
     kind: Kind_OBJECT,
@@ -9141,7 +9149,7 @@ var QGress = function (_, Kotlin) {
   Complex.prototype.component2 = function () {
     return this.im;
   };
-  Complex.prototype.copy_dleff0$ = function (re, im) {
+  Complex.prototype.copy_lu1900$ = function (re, im) {
     return new Complex(re === void 0 ? this.re : re, im === void 0 ? this.im : im);
   };
   Complex.prototype.hashCode = function () {
@@ -9158,12 +9166,6 @@ var QGress = function (_, Kotlin) {
     this.x = x;
     this.y = y;
   }
-  Coords.prototype.xx = function () {
-    return this.x;
-  };
-  Coords.prototype.yy = function () {
-    return this.y;
-  };
   Coords.prototype.isOffGrid = function () {
     return this.x < 0 || this.y < 0 || this.x >= World_getInstance().shadowW() || this.y >= World_getInstance().shadowH();
   };
@@ -9171,34 +9173,32 @@ var QGress = function (_, Kotlin) {
     return this.x < 0 || this.y < 0 || this.x >= World_getInstance().w() || this.y >= World_getInstance().h();
   };
   Coords.prototype.xDiff_lfj9be$ = function (other) {
-    return this.x - other.x | 0;
+    return this.x - other.x;
   };
   Coords.prototype.yDiff_lfj9be$ = function (other) {
-    return this.y - other.y | 0;
+    return this.y - other.y;
   };
   Coords.prototype.distanceTo_lfj9be$ = function (other) {
-    var xPow = Kotlin.imul(this.xDiff_lfj9be$(other), this.xDiff_lfj9be$(other));
-    var yPow = Kotlin.imul(this.yDiff_lfj9be$(other), this.yDiff_lfj9be$(other));
+    var xPow = this.xDiff_lfj9be$(other) * this.xDiff_lfj9be$(other);
+    var yPow = this.yDiff_lfj9be$(other) * this.yDiff_lfj9be$(other);
     var x = xPow + yPow;
     var x_0 = Math_0.sqrt(x);
     return Math_0.abs(x_0);
   };
+  Coords.prototype.toShadowPos = function () {
+    return Coords_init(numberToInt(this.x / Coords$Companion_getInstance().res), numberToInt(this.y / Coords$Companion_getInstance().res));
+  };
+  Coords.prototype.fromShadow = function () {
+    return Coords_init(numberToInt(this.x * Coords$Companion_getInstance().res), numberToInt(this.y * Coords$Companion_getInstance().res));
+  };
   Coords.prototype.getSurrounding_vux9f0$ = function (w, h) {
-    var $receiver = listOf([new Coords(this.x - 1 | 0, this.y - 1 | 0), new Coords(this.x, this.y - 1 | 0), new Coords(this.x + 1 | 0, this.y - 1 | 0), new Coords(this.x - 1 | 0, this.y), new Coords(this.x + 1 | 0, this.y), new Coords(this.x - 1 | 0, this.y + 1 | 0), new Coords(this.x, this.y + 1 | 0), new Coords(this.x + 1 | 0, this.y + 1 | 0)]);
+    var $receiver = listOf([new Coords(this.x - 1.0, this.y - 1.0), new Coords(this.x, this.y - 1.0), new Coords(this.x + 1.0, this.y - 1.0), new Coords(this.x - 1.0, this.y), new Coords(this.x + 1.0, this.y), new Coords(this.x - 1.0, this.y + 1.0), new Coords(this.x, this.y + 1.0), new Coords(this.x + 1.0, this.y + 1.0)]);
     var destination = ArrayList_init_0();
     var tmp$;
     tmp$ = $receiver.iterator();
     while (tmp$.hasNext()) {
       var element = tmp$.next();
-      var tmp$_0, tmp$_1, tmp$_2;
-      tmp$_0 = element.x;
-      if (0 <= tmp$_0 && tmp$_0 <= (w - 1 | 0)) {
-        tmp$_1 = element.y;
-        tmp$_2 = (0 <= tmp$_1 && tmp$_1 <= (h - 1 | 0));
-      }
-       else
-        tmp$_2 = false;
-      if (tmp$_2)
+      if (element.x >= 0.0 && element.x <= w - 1.0 && element.y >= 0.0 && element.y <= h - 1.0)
         destination.add_11rb$(element);
     }
     return destination;
@@ -9206,7 +9206,7 @@ var QGress = function (_, Kotlin) {
   Coords.prototype.randomNearPoint_za3lpa$ = function (radius) {
     var r = radius * Util_getInstance().random();
     var t = Constants_getInstance().tau * Util_getInstance().random();
-    return new Coords(this.x + numberToInt(r * Math_0.cos(t)) | 0, this.y + numberToInt(r * Math_0.sin(t)) | 0);
+    return new Coords(this.x + numberToInt(r * Math_0.cos(t)), this.y + numberToInt(r * Math_0.sin(t)));
   };
   Coords.prototype.toGeo = function () {
     var latitude = Coords$Companion_getInstance().minLat_0 + this.x * Coords$Companion_getInstance().pixelPartLat_0;
@@ -9249,11 +9249,8 @@ var QGress = function (_, Kotlin) {
   Coords.prototype.hasClosePortal = function () {
     return !this.findClosePortals_0().isEmpty();
   };
-  Coords.prototype.toShadowPos_0 = function () {
-    return PathUtil_getInstance().posToShadowPos_lfj9be$(this);
-  };
   Coords.prototype.isPassable = function () {
-    return !World_getInstance().grid.isEmpty() && ensureNotNull(World_getInstance().grid.get_11rb$(this.toShadowPos_0())).isPassable;
+    return !World_getInstance().grid.isEmpty() && ensureNotNull(World_getInstance().grid.get_11rb$(this.toShadowPos())).isPassable;
   };
   Coords.prototype.findClosestPortal = function () {
     return first(this.findClosePortals_0());
@@ -9261,7 +9258,7 @@ var QGress = function (_, Kotlin) {
   Coords.prototype.isBuildable = function () {
     var tmp$, tmp$_0, tmp$_1, tmp$_2, tmp$_3, tmp$_4, tmp$_5, tmp$_6;
     var r = numberToInt(Dim_getInstance().minDistancePortalToImpassable);
-    return this.isPassable() && !this.hasClosePortal() && ((tmp$_0 = (tmp$ = World_getInstance().grid.get_11rb$((new Coords(this.x - r | 0, this.y)).toShadowPos_0())) != null ? tmp$.isPassable : null) != null ? tmp$_0 : false) && ((tmp$_2 = (tmp$_1 = World_getInstance().grid.get_11rb$((new Coords(this.x + r | 0, this.y)).toShadowPos_0())) != null ? tmp$_1.isPassable : null) != null ? tmp$_2 : false) && ((tmp$_4 = (tmp$_3 = World_getInstance().grid.get_11rb$((new Coords(this.x, this.y - r | 0)).toShadowPos_0())) != null ? tmp$_3.isPassable : null) != null ? tmp$_4 : false) && ((tmp$_6 = (tmp$_5 = World_getInstance().grid.get_11rb$((new Coords(this.x, this.y + r | 0)).toShadowPos_0())) != null ? tmp$_5.isPassable : null) != null ? tmp$_6 : false);
+    return this.isPassable() && !this.hasClosePortal() && ((tmp$_0 = (tmp$ = World_getInstance().grid.get_11rb$((new Coords(this.x - r, this.y)).toShadowPos())) != null ? tmp$.isPassable : null) != null ? tmp$_0 : false) && ((tmp$_2 = (tmp$_1 = World_getInstance().grid.get_11rb$((new Coords(this.x + r, this.y)).toShadowPos())) != null ? tmp$_1.isPassable : null) != null ? tmp$_2 : false) && ((tmp$_4 = (tmp$_3 = World_getInstance().grid.get_11rb$((new Coords(this.x, this.y - r)).toShadowPos())) != null ? tmp$_3.isPassable : null) != null ? tmp$_4 : false) && ((tmp$_6 = (tmp$_5 = World_getInstance().grid.get_11rb$((new Coords(this.x, this.y + r)).toShadowPos())) != null ? tmp$_5.isPassable : null) != null ? tmp$_6 : false);
   };
   Coords.prototype.toString = function () {
     return 'X' + this.x + ':Y' + this.y;
@@ -9282,15 +9279,16 @@ var QGress = function (_, Kotlin) {
     this.minLng_0 = this.defaultLng_0 + this.lngDist_0;
     this.pixelPartLat_0 = this.latDist_0 / Dim_getInstance().width;
     this.pixelPartLng_0 = this.lngDist_0 / Dim_getInstance().height;
+    this.res = 10;
     this.xMax_0 = numberToInt(Dim_getInstance().maxDeploymentRange) * 2 | 0;
   }
   Coords$Companion.prototype.createRandomNoOffset_0 = function () {
-    return new Coords(Util_getInstance().randomInt_za3lpa$(Dim_getInstance().width), Util_getInstance().randomInt_za3lpa$(Dim_getInstance().height));
+    return Coords_init(Util_getInstance().randomInt_za3lpa$(Dim_getInstance().width), Util_getInstance().randomInt_za3lpa$(Dim_getInstance().height));
   };
   Coords$Companion.prototype.createRandom_0 = function () {
     var x = Dim_getInstance().leftOffset + Util_getInstance().randomInt_za3lpa$(numberToInt(Dim_getInstance().width - Dim_getInstance().leftOffset - Dim_getInstance().rightOffset));
     var y = Dim_getInstance().topOffset + Util_getInstance().randomInt_za3lpa$(numberToInt(Dim_getInstance().height - Dim_getInstance().topOffset - Dim_getInstance().botOffset));
-    return new Coords(numberToInt(x), numberToInt(y));
+    return Coords_init(numberToInt(x), numberToInt(y));
   };
   Coords$Companion.prototype.createRandomForPortal = function () {
     var $receiver = World_getInstance().passableInActionArea();
@@ -9299,7 +9297,7 @@ var QGress = function (_, Kotlin) {
     tmp$ = $receiver.entries.iterator();
     while (tmp$.hasNext()) {
       var element = tmp$.next();
-      if (!(PathUtil_getInstance().shadowPosToPos_lfj9be$(element.key).x < Dim_getInstance().maxDeploymentRange)) {
+      if (!(element.key.fromShadow().x < Dim_getInstance().maxDeploymentRange)) {
         destination.put_xwzc9p$(element.key, element.value);
       }
     }
@@ -9308,7 +9306,7 @@ var QGress = function (_, Kotlin) {
     tmp$_0 = destination.entries.iterator();
     while (tmp$_0.hasNext()) {
       var element_0 = tmp$_0.next();
-      if (!(PathUtil_getInstance().shadowPosToPos_lfj9be$(element_0.key).x > World_getInstance().w() - Dim_getInstance().maxDeploymentRange)) {
+      if (!(element_0.key.fromShadow().x > World_getInstance().w() - Dim_getInstance().maxDeploymentRange)) {
         destination_0.put_xwzc9p$(element_0.key, element_0.value);
       }
     }
@@ -9317,7 +9315,7 @@ var QGress = function (_, Kotlin) {
     tmp$_1 = destination_0.entries.iterator();
     while (tmp$_1.hasNext()) {
       var element_1 = tmp$_1.next();
-      if (!PathUtil_getInstance().shadowPosToPos_lfj9be$(element_1.key).hasClosePortal()) {
+      if (!element_1.key.fromShadow().hasClosePortal()) {
         destination_1.put_xwzc9p$(element_1.key, element_1.value);
       }
     }
@@ -9327,9 +9325,9 @@ var QGress = function (_, Kotlin) {
       throw IllegalStateException_init(message.toString());
     }
     var randomCell = first(Util_getInstance().shuffle_bemo1h$(toList(grid)));
-    var pos = PathUtil_getInstance().shadowPosToPos_lfj9be$(randomCell.first);
-    var offset = 5;
-    return new Coords(pos.x + offset | 0, pos.y + offset | 0);
+    var pos = randomCell.first.fromShadow();
+    var offset = this.res / 2 | 0;
+    return new Coords(pos.x + offset, pos.y + offset);
   };
   Coords$Companion.prototype.createRandomPassable_5edep5$ = function (grid) {
     return this.createRandomPassable_0(grid, 10);
@@ -9341,7 +9339,7 @@ var QGress = function (_, Kotlin) {
       throw IllegalStateException_init(message.toString());
     }
     var random = this.createRandomNoOffset_0();
-    if (ensureNotNull(grid.get_11rb$(PathUtil_getInstance().posToShadowPos_lfj9be$(random))).isPassable) {
+    if (ensureNotNull(grid.get_11rb$(random.toShadowPos())).isPassable) {
       tmp$ = random;
     }
      else {
@@ -9372,13 +9370,18 @@ var QGress = function (_, Kotlin) {
     simpleName: 'Coords',
     interfaces: []
   };
+  function Coords_init(x, y, $this) {
+    $this = $this || Object.create(Coords.prototype);
+    Coords.call($this, x, y);
+    return $this;
+  }
   Coords.prototype.component1 = function () {
     return this.x;
   };
   Coords.prototype.component2 = function () {
     return this.y;
   };
-  Coords.prototype.copy_vux9f0$ = function (x, y) {
+  Coords.prototype.copy_lu1900$ = function (x, y) {
     return new Coords(x === void 0 ? this.x : x, y === void 0 ? this.y : y);
   };
   function Damage(value, pos, isCritical) {
@@ -9710,20 +9713,20 @@ var QGress = function (_, Kotlin) {
     return numberToInt(this.calcXdiff_0() + this.calcYdiff_0());
   };
   Line.prototype.center = function () {
-    return new Coords((this.from.x + this.to.x | 0) / 2 | 0, (this.from.y + this.to.y | 0) / 2 | 0);
+    return new Coords((this.from.x + this.to.x) / 2, (this.from.y + this.to.y) / 2);
   };
   Line.prototype.doesIntersect_589y3w$ = function (other) {
-    var yFromDist = this.from.y - other.from.y | 0;
-    var xFromDist = this.from.x - other.from.x | 0;
-    var xDist = this.to.x - this.from.x | 0;
-    var yDist = this.to.y - this.from.y | 0;
+    var yFromDist = this.from.y - other.from.y;
+    var xFromDist = this.from.x - other.from.x;
+    var xDist = this.to.x - this.from.x;
+    var yDist = this.to.y - this.from.y;
     var otherXDist = other.to.x - other.from.x;
     var otherYDist = other.to.y - other.from.y;
     var denominator = otherYDist * xDist - otherXDist * yDist;
     if (numberToInt(denominator) === 0) {
       return false;
     }
-    var thisResult = (Kotlin.imul(xDist, yFromDist) - Kotlin.imul(yDist, xFromDist) | 0) / denominator;
+    var thisResult = (xDist * yFromDist - yDist * xFromDist) / denominator;
     var otherResult = (otherXDist * yFromDist - otherYDist * xFromDist) / denominator;
     var isOnThis = otherResult > 0 && otherResult < 1;
     var isOnOther = thisResult > 0 && thisResult < 1;
@@ -9731,19 +9734,19 @@ var QGress = function (_, Kotlin) {
   };
   Line.prototype.findClosestPointTo_lfj9be$ = function (point) {
     var tmp$;
-    var xDiff = this.to.x - this.from.x | 0;
-    var yDiff = this.to.y - this.from.y | 0;
+    var xDiff = this.to.x - this.from.x;
+    var yDiff = this.to.y - this.from.y;
     if (!(xDiff !== 0.0 || yDiff !== 0.0)) {
       var message = 'Check failed.';
       throw IllegalStateException_init(message.toString());
     }
-    var u = ((point.x - this.from.x | 0) * xDiff + (point.y - this.from.y | 0) * yDiff) / (xDiff * xDiff + yDiff * yDiff);
+    var u = ((point.x - this.from.x) * xDiff + (point.y - this.from.y) * yDiff) / (xDiff * xDiff + yDiff * yDiff);
     if (u < 0)
       tmp$ = new Coords(this.from.x, this.from.y);
     else if (u > 1)
       tmp$ = new Coords(this.to.x, this.to.y);
     else
-      tmp$ = new Coords(numberToInt(round(this.from.x + u * xDiff)), numberToInt(round(this.from.y + u * yDiff)));
+      tmp$ = Coords_init(numberToInt(round(this.from.x + u * xDiff)), numberToInt(round(this.from.y + u * yDiff)));
     return tmp$;
   };
   Line.prototype.isValidArea = function () {
@@ -9759,7 +9762,7 @@ var QGress = function (_, Kotlin) {
     Line$Companion_instance = this;
   }
   Line$Companion.prototype.create_tjonv8$ = function (fromX, fromY, toX, toY) {
-    return new Line(new Coords(fromX, fromY), new Coords(toX, toY));
+    return new Line(Coords_init(fromX, fromY), Coords_init(toX, toY));
   };
   Line$Companion.$metadata$ = {
     kind: Kind_OBJECT,
@@ -9916,6 +9919,9 @@ var QGress = function (_, Kotlin) {
     if (Config_getInstance().isHighlighActionLimit) {
       ActionLimitsDisplay_getInstance().draw();
     }
+     else {
+      ActionLimitsDisplay_getInstance().drawTop();
+    }
   };
   DrawUtil.prototype.highlightMouse_0 = function (pos) {
     var tmp$, tmp$_0, tmp$_1;
@@ -9930,14 +9936,14 @@ var QGress = function (_, Kotlin) {
     var tempCtx = Kotlin.isType(tmp$_0 = tempCan.getContext('2d'), CanvasRenderingContext2D) ? tmp$_0 : throwCCE();
     tempCan.width = 2 * numberToInt(circle.radius) | 0;
     tempCan.height = 2 * numberToInt(circle.radius) | 0;
-    var xOffset = -(circle.center.xx() - r);
-    var yOffset = -(circle.center.yy() - r);
+    var xOffset = -(circle.center.x - r);
+    var yOffset = -(circle.center.y - r);
     tempCtx.putImageData(ensureNotNull(World_getInstance().shadowStreetMap), xOffset, yOffset);
     ctx.beginPath();
-    ctx.arc(circle.center.xx(), circle.center.yy(), circle.radius, 0.0, 2.0 * math.PI);
+    ctx.arc(circle.center.x, circle.center.y, circle.radius, 0.0, 2.0 * math.PI);
     ctx.clip();
     ctx.beginPath();
-    ctx.drawImage(tempCan, pos.xx() - r, pos.yy() - r, 2 * r, 2 * r);
+    ctx.drawImage(tempCan, pos.x - r, pos.y - r, 2 * r, 2 * r);
     ctx.globalAlpha = 0.5;
     if (pos.hasClosePortalForClick())
       tmp$_1 = Colors_getInstance().orange;
@@ -9947,7 +9953,7 @@ var QGress = function (_, Kotlin) {
       tmp$_1 = Colors_getInstance().red;
     var color = tmp$_1;
     var image = Portal$Companion_getInstance().renderPortalCenter_wc00gi$(color, PortalLevel$ZERO_getInstance());
-    ctx.drawImage(image, pos.xx() - (image.width / 2 | 0), pos.yy() - (image.height / 2 | 0));
+    ctx.drawImage(image, pos.x - (image.width / 2 | 0), pos.y - (image.height / 2 | 0));
     ctx.globalAlpha = 1.0;
   };
   function DrawUtil$renderBarImage$lambda(closure$color, closure$w, closure$h, closure$lineWidth, closure$pWidth) {
@@ -9977,7 +9983,7 @@ var QGress = function (_, Kotlin) {
     return HtmlUtil_getInstance().preRender_yb5akz$(w, h, DrawUtil$renderBarImage$lambda(color, w, h, lineWidth, pWidth));
   };
   DrawUtil.prototype.drawRect_dve0j6$ = function (ctx, pos, h, w, fillStyle, strokeStyle, lineWidth) {
-    this.drawExactRect_nmgd9k$(ctx, pos.xx(), pos.yy(), h, w, fillStyle, strokeStyle, lineWidth);
+    this.drawExactRect_nmgd9k$(ctx, pos.x, pos.y, h, w, fillStyle, strokeStyle, lineWidth);
   };
   DrawUtil.prototype.drawExactRect_nmgd9k$ = function (ctx, x, y, h, w, fillStyle, strokeStyle, lineWidth) {
     ctx.fillStyle = fillStyle;
@@ -9997,12 +10003,12 @@ var QGress = function (_, Kotlin) {
       tmp$ = $receiver.grid.entries.iterator();
       while (tmp$.hasNext()) {
         var element = tmp$.next();
-        var pos = PathUtil_getInstance().shadowPosToPos_lfj9be$(element.key);
+        var pos = element.key.fromShadow();
         var cell = element.value;
         $receiver.bgCtx().fillStyle = cell.getColor();
-        var w = 10 - 1;
+        var w = Coords$Companion_getInstance().res - 1.0;
         var h = w;
-        $receiver.bgCtx().fillRect(pos.xx() + 1, pos.yy() + 1, w, h);
+        $receiver.bgCtx().fillRect(pos.x + 1, pos.y + 1, w, h);
         $receiver.bgCtx().fill();
       }
     }
@@ -10053,7 +10059,7 @@ var QGress = function (_, Kotlin) {
     ctx.strokeStyle = strokeStyle;
     ctx.lineWidth = lineWidth;
     ctx.beginPath();
-    ctx.arc(circle.center.xx(), circle.center.yy(), circle.radius, 0.0, 2.0 * math.PI);
+    ctx.arc(circle.center.x, circle.center.y, circle.radius, 0.0, 2.0 * math.PI);
     ctx.closePath();
     ctx.stroke();
     if (fillStyle != null) {
@@ -10087,8 +10093,8 @@ var QGress = function (_, Kotlin) {
     ctx.strokeStyle = strokeStyle;
     ctx.lineWidth = lineWidth;
     ctx.beginPath();
-    ctx.moveTo(line.from.xx(), line.from.yy());
-    ctx.lineTo(line.to.xx(), line.to.yy());
+    ctx.moveTo(line.from.x, line.from.y);
+    ctx.lineTo(line.to.x, line.to.y);
     ctx.closePath();
     ctx.stroke();
     ctx.globalAlpha = 1.0;
@@ -10214,6 +10220,9 @@ var QGress = function (_, Kotlin) {
     rootDiv.addEventListener('mousemove', HtmlUtil$load$lambda_3(this), false);
     var popupId = 'popup';
     rootDiv.append(this.createPopup_0(popupId));
+    if (this.isLocal()) {
+      this.chooseUserFaction_0(Faction$Companion_getInstance().random());
+    }
     this.initWorld_0();
   };
   HtmlUtil.prototype.isQuickstart = function () {
@@ -10431,6 +10440,7 @@ var QGress = function (_, Kotlin) {
     World_getInstance().noiseMap = ImprovedNoise_getInstance().generateEdgeMap_224j3y$(w, h);
     World_getInstance().noiseImage = World_getInstance().createNoiseImage_bd1o91$(World_getInstance().noiseMap, w, h, noiseAlpha);
     World_getInstance().resetAllCanvas();
+    ActionLimitsDisplay_getInstance().drawTop();
     var maybeCenter = this.getSelectedCenterFromUrl_0();
     var center = !equals(maybeCenter.toString(), '0,0') ? maybeCenter : Location$Companion_getInstance().random().toJSON();
     MapUtil_getInstance().loadMaps_1io40y$(center, this.onMapload_0());
@@ -10493,12 +10503,12 @@ var QGress = function (_, Kotlin) {
     return this.isInMapboxArea_0(pos) || this.isInOsmArea_0(pos);
   };
   HtmlUtil.prototype.isInMapboxArea_0 = function (pos) {
-    var area = new Line(new Coords(-20, Dim_getInstance().height - 40 | 0), new Coords(90, Dim_getInstance().height));
+    var area = new Line(Coords_init(-20, Dim_getInstance().height - 40 | 0), Coords_init(90, Dim_getInstance().height));
     return pos.x > area.from.x && pos.x <= area.to.x && pos.y > area.from.y && pos.y <= area.to.y;
   };
   HtmlUtil.prototype.isInOsmArea_0 = function (pos) {
     var w = Dim_getInstance().width;
-    var area = new Line(new Coords(w - 280 | 0, Dim_getInstance().height - 30 | 0), new Coords(w, Dim_getInstance().height));
+    var area = new Line(Coords_init(w - 280 | 0, Dim_getInstance().height - 30 | 0), Coords_init(w, Dim_getInstance().height));
     return pos.x > area.from.x && pos.x <= area.to.x && pos.y > area.from.y && pos.y <= area.to.y;
   };
   HtmlUtil.prototype.handleMouseClick_0 = function (event) {
@@ -10543,27 +10553,35 @@ var QGress = function (_, Kotlin) {
     var scaleY = canvas.height / rect.height;
     var x = (mouseEvent.clientX - rect.left) * scaleX;
     var y = (mouseEvent.clientY - rect.top) * scaleY;
-    return new Coords(numberToInt(x), numberToInt(y));
+    return Coords_init(numberToInt(x), numberToInt(y));
+  };
+  HtmlUtil.prototype.maybeWidth_0 = function (id) {
+    var tmp$;
+    return (tmp$ = document.getElementById(id)) != null ? tmp$.clientWidth : null;
+  };
+  HtmlUtil.prototype.maybeHeight_0 = function (id) {
+    var tmp$;
+    return (tmp$ = document.getElementById(id)) != null ? tmp$.clientHeight : null;
   };
   HtmlUtil.prototype.topActionOffset = function () {
-    var tmp$, tmp$_0;
-    return (tmp$_0 = (tmp$ = document.getElementById('top-controls')) != null ? tmp$.clientHeight : null) != null ? tmp$_0 : 100;
-  };
-  HtmlUtil.prototype.leftSliderHeight = function () {
-    var tmp$, tmp$_0;
-    return (tmp$_0 = (tmp$ = document.getElementById('left-sliders')) != null ? tmp$.clientHeight : null) != null ? tmp$_0 : 0;
+    var tmp$;
+    return (tmp$ = this.maybeHeight_0('top-controls')) != null ? tmp$ : 100;
   };
   HtmlUtil.prototype.leftSliderWidth = function () {
-    var tmp$, tmp$_0;
-    return (tmp$_0 = (tmp$ = document.getElementById('left-sliders')) != null ? tmp$.clientWidth : null) != null ? tmp$_0 : 0;
+    var tmp$;
+    return (tmp$ = this.maybeWidth_0('left-sliders')) != null ? tmp$ : 241;
   };
-  HtmlUtil.prototype.rightSliderHeight = function () {
-    var tmp$, tmp$_0;
-    return (tmp$_0 = (tmp$ = document.getElementById('right-sliders')) != null ? tmp$.clientHeight : null) != null ? tmp$_0 : 0;
+  HtmlUtil.prototype.leftSliderHeight = function () {
+    var tmp$;
+    return (tmp$ = this.maybeHeight_0('left-sliders')) != null ? tmp$ : 217;
   };
   HtmlUtil.prototype.rightSliderWidth = function () {
-    var tmp$, tmp$_0;
-    return (tmp$_0 = (tmp$ = document.getElementById('right-sliders')) != null ? tmp$.clientWidth : null) != null ? tmp$_0 : 0;
+    var tmp$;
+    return (tmp$ = this.maybeWidth_0('right-sliders')) != null ? tmp$ : 213;
+  };
+  HtmlUtil.prototype.rightSliderHeight = function () {
+    var tmp$;
+    return (tmp$ = this.maybeHeight_0('right-sliders')) != null ? tmp$ : 145;
   };
   HtmlUtil.prototype.createButton_0 = function (id, className, text, callback) {
     var tmp$;
@@ -10690,7 +10708,7 @@ var QGress = function (_, Kotlin) {
       LoadingText_getInstance().draw_61zpoe$('Ready.');
       DrawUtil_getInstance().clearBackground();
       if (World_getInstance().userFaction == null) {
-        this$HtmlUtil.chooseUserFaction_0(Faction$Companion_getInstance().createRandom());
+        this$HtmlUtil.chooseUserFaction_0(Faction$Companion_getInstance().random());
       }
       this$HtmlUtil.createQSliders_0(ensureNotNull(World_getInstance().userFaction));
       this$HtmlUtil.resetInterval_0();
@@ -11080,7 +11098,7 @@ var QGress = function (_, Kotlin) {
         var tmp$_0 = destination.add_11rb$;
         var closure$isOffScreen_0 = closure$isOffScreen;
         var transform$result;
-        var pos = new Coords(x, item);
+        var pos = Coords_init(x, item);
         if (closure$isOffScreen_0(pos)) {
           var isPassable = true;
           var penalty = 80;
@@ -11100,8 +11118,8 @@ var QGress = function (_, Kotlin) {
   }
   MapUtil.prototype.createGrid_0 = function (imageData, width, height) {
     var tmp$, tmp$_0, tmp$_1, tmp$_2;
-    var w = width / 10 | 0;
-    var h = height / 10 | 0;
+    var w = width / Coords$Companion_getInstance().res | 0;
+    var h = height / Coords$Companion_getInstance().res | 0;
     var isOffScreen = MapUtil$createGrid$isOffScreen(w, h);
     var nextRow = MapUtil$createGrid$nextRow(isOffScreen);
     var unscaledCan = Kotlin.isType(tmp$ = document.createElement('canvas'), HTMLCanvasElement) ? tmp$ : throwCCE();
@@ -11157,20 +11175,7 @@ var QGress = function (_, Kotlin) {
     PathUtil_instance = this;
     this.MIN_HEAT = 35;
     this.MAX_HEAT = 100;
-    this.res = 10;
   }
-  PathUtil.prototype.w = function () {
-    return Dim_getInstance().width / 10 | 0;
-  };
-  PathUtil.prototype.h = function () {
-    return Dim_getInstance().height / 10 | 0;
-  };
-  PathUtil.prototype.posToShadowPos_lfj9be$ = function (pos) {
-    return new Coords(pos.x / 10 | 0, pos.y / 10 | 0);
-  };
-  PathUtil.prototype.shadowPosToPos_lfj9be$ = function (pos) {
-    return new Coords(pos.x * 10 | 0, pos.y * 10 | 0);
-  };
   PathUtil.prototype.calcPosCost_0 = function (pos, heat) {
     var tmp$, tmp$_0;
     return heat + ((tmp$_0 = (tmp$ = World_getInstance().grid.get_11rb$(pos)) != null ? tmp$.movementPenalty : null) != null ? tmp$_0 : 100) | 0;
@@ -11243,7 +11248,7 @@ var QGress = function (_, Kotlin) {
     var heat = 0;
     var maxHeat = 0;
     var map = LinkedHashMap_init();
-    var key = this.posToShadowPos_lfj9be$(goal);
+    var key = goal.toShadowPos();
     var value = heat;
     map.put_xwzc9p$(key, value);
     while (true) {
@@ -11269,30 +11274,40 @@ var QGress = function (_, Kotlin) {
     }
     return map;
   };
-  PathUtil.prototype.calculateVectorField_8eqwnz$ = function (heatMap) {
+  PathUtil.prototype.createVec_0 = function (heatMap, maxHeat, destination, pos) {
+    var tmp$, tmp$_0, tmp$_1, tmp$_2, tmp$_3;
+    var left = (tmp$ = heatMap.get_11rb$(new Coords(pos.x - 1, pos.y))) != null ? tmp$ : maxHeat;
+    var right = (tmp$_0 = heatMap.get_11rb$(new Coords(pos.x + 1, pos.y))) != null ? tmp$_0 : maxHeat;
+    var up = (tmp$_1 = heatMap.get_11rb$(new Coords(pos.x, pos.y - 1))) != null ? tmp$_1 : maxHeat;
+    var down = (tmp$_2 = heatMap.get_11rb$(new Coords(pos.x, pos.y + 1))) != null ? tmp$_2 : maxHeat;
+    var lr = left - right | 0;
+    var ud = up - down | 0;
+    var isBlocked = lr === 0 && ud === 0;
+    if (!isBlocked) {
+      tmp$_3 = Complex_init(lr, ud);
+    }
+     else {
+      var xDiff = destination.x - pos.x;
+      var yDiff = destination.y - pos.y;
+      tmp$_3 = new Complex(xDiff, yDiff);
+    }
+    return tmp$_3;
+  };
+  PathUtil.prototype.calculateVectorField_3e8r0f$ = function (heatMap, destination) {
     var maxHeat = ensureNotNull(max(heatMap.values));
     var $receiver = World_getInstance().grid;
-    var destination = ArrayList_init($receiver.size);
+    var destination_0 = ArrayList_init($receiver.size);
     var tmp$;
     tmp$ = $receiver.entries.iterator();
     while (tmp$.hasNext()) {
       var item = tmp$.next();
-      var tmp$_0 = destination.add_11rb$;
-      var tmp$_1, tmp$_2, tmp$_3, tmp$_4;
-      var leftPos = new Coords(item.key.x - 1 | 0, item.key.y);
-      var rightPos = new Coords(item.key.x + 1 | 0, item.key.y);
-      var upPos = new Coords(item.key.x, item.key.y - 1 | 0);
-      var downPos = new Coords(item.key.x, item.key.y + 1 | 0);
-      var left = (tmp$_1 = heatMap.get_11rb$(leftPos)) != null ? tmp$_1 : maxHeat;
-      var right = (tmp$_2 = heatMap.get_11rb$(rightPos)) != null ? tmp$_2 : maxHeat;
-      var up = (tmp$_3 = heatMap.get_11rb$(upPos)) != null ? tmp$_3 : maxHeat;
-      var down = (tmp$_4 = heatMap.get_11rb$(downPos)) != null ? tmp$_4 : maxHeat;
-      var rawer = Complex_init(left - right | 0, up - down | 0);
-      var raw = Complex$Companion_getInstance().fromMagnitudeAndPhase_5nl2e7$(1.0, rawer.phase);
-      tmp$_0.call(destination, to(item.key, raw));
+      var tmp$_0 = destination_0.add_11rb$;
+      var raw = this.createVec_0(heatMap, maxHeat, destination, item.key);
+      var vec = raw.copyWithNewMagnitude_14dthe$(1.0);
+      tmp$_0.call(destination_0, to(item.key, vec));
     }
-    var fields = toMap(destination);
-    return toMap_0(this.smooth_0(fields, 8));
+    var fields = toMap(destination_0);
+    return toMap_0(this.smooth_0(fields, 3));
   };
   PathUtil.prototype.smooth_0 = function (map, count) {
     if (count > 0) {
@@ -11303,20 +11318,43 @@ var QGress = function (_, Kotlin) {
     }
   };
   PathUtil.prototype.smoothVectorMap_0 = function (map) {
+    var n = 1;
+    var xRange = new IntRange(-n | 0, n);
+    var yRange = new IntRange(-n | 0, n);
     var destination = ArrayList_init(map.size);
     var tmp$;
     tmp$ = map.entries.iterator();
     while (tmp$.hasNext()) {
       var item = tmp$.next();
       var tmp$_0 = destination.add_11rb$;
-      var tmp$_1, tmp$_2, tmp$_3, tmp$_4;
       var pos = item.key;
-      var up = (tmp$_1 = map.get_11rb$(new Coords(pos.x, pos.y - 1 | 0))) != null ? tmp$_1 : Complex$Companion_getInstance().ZERO;
-      var down = (tmp$_2 = map.get_11rb$(new Coords(pos.x, pos.y + 1 | 0))) != null ? tmp$_2 : Complex$Companion_getInstance().ZERO;
-      var left = (tmp$_3 = map.get_11rb$(new Coords(pos.x - 1 | 0, pos.y))) != null ? tmp$_3 : Complex$Companion_getInstance().ZERO;
-      var right = (tmp$_4 = map.get_11rb$(new Coords(pos.x + 1 | 0, pos.y))) != null ? tmp$_4 : Complex$Companion_getInstance().ZERO;
-      var sum = up.plus_p4p8i0$(down).plus_p4p8i0$(left).plus_p4p8i0$(right);
-      tmp$_0.call(destination, to(item.key, Complex$Companion_getInstance().fromMagnitudeAndPhase_5nl2e7$(1.0, sum.phase)));
+      var destination_0 = ArrayList_init_0();
+      var tmp$_1;
+      tmp$_1 = yRange.iterator();
+      while (tmp$_1.hasNext()) {
+        var element = tmp$_1.next();
+        var destination_1 = ArrayList_init(collectionSizeOrDefault(xRange, 10));
+        var tmp$_2;
+        tmp$_2 = xRange.iterator();
+        while (tmp$_2.hasNext()) {
+          var item_0 = tmp$_2.next();
+          var tmp$_3;
+          destination_1.add_11rb$((tmp$_3 = map.get_11rb$(new Coords(pos.x + item_0, pos.y + element))) != null ? tmp$_3 : Complex$Companion_getInstance().ZERO);
+        }
+        var list = destination_1;
+        addAll(destination_0, list);
+      }
+      var tmp$_4;
+      var accumulator = Complex$Companion_getInstance().ZERO;
+      tmp$_4 = destination_0.iterator();
+      while (tmp$_4.hasNext()) {
+        var element_0 = tmp$_4.next();
+        accumulator = accumulator.plus_p4p8i0$(element_0);
+      }
+      var sum = accumulator;
+      var magnitude = sum.magnitude / Kotlin.imul(count(xRange), count(yRange));
+      var phase = sum.phase;
+      tmp$_0.call(destination, to(item.key, Complex$Companion_getInstance().fromMagnitudeAndPhase_lu1900$(magnitude, phase)));
     }
     return toMap(destination);
   };
@@ -11341,7 +11379,7 @@ var QGress = function (_, Kotlin) {
     return toSet(destination_0);
   };
   PathUtil.prototype.findAllSurrounding_0 = function (node) {
-    return listOfNotNull([new Coords(node.x - 1 | 0, node.y - 1 | 0), new Coords(node.x - 1 | 0, node.y), new Coords(node.x - 1 | 0, node.y + 1 | 0), new Coords(node.x, node.y - 1 | 0), new Coords(node.x, node.y + 1 | 0), new Coords(node.x + 1 | 0, node.y - 1 | 0), new Coords(node.x + 1 | 0, node.y), new Coords(node.x + 1 | 0, node.y + 1 | 0)]);
+    return listOfNotNull([new Coords(node.x - 1, node.y - 1), new Coords(node.x - 1, node.y), new Coords(node.x - 1, node.y + 1), new Coords(node.x, node.y - 1), new Coords(node.x, node.y + 1), new Coords(node.x + 1, node.y - 1), new Coords(node.x + 1, node.y), new Coords(node.x + 1, node.y + 1)]);
   };
   PathUtil.$metadata$ = {
     kind: Kind_OBJECT,
@@ -11375,7 +11413,7 @@ var QGress = function (_, Kotlin) {
     this.playSound_0(osc, this.createNoisePan_0(), 0.15, 13.0);
   };
   SoundUtil.prototype.playOffScreenLocationCreationSound = function () {
-    var center = new Coords(Dim_getInstance().width / 2 | 0, Dim_getInstance().height / 2 | 0);
+    var center = Coords_init(Dim_getInstance().width / 2 | 0, Dim_getInstance().height / 2 | 0);
     return this.playPortalCreationSound_xv7m3c$(center, 0.5);
   };
   SoundUtil.prototype.playPortalCreationSound_xv7m3c$ = function (pos, gain) {
@@ -11423,7 +11461,7 @@ var QGress = function (_, Kotlin) {
     if (this.isMuted_0())
       return;
     var duration = 0.02;
-    var pan = npc.pos.xx() / Dim_getInstance().width;
+    var pan = npc.pos.x / Dim_getInstance().width;
     var offset = -(npc.size.offset * 120.0);
     var start = 660.0;
     var end = 660.0 + offset;
@@ -11435,7 +11473,7 @@ var QGress = function (_, Kotlin) {
       return;
     var freq = 500.0;
     var osc = this.createStaticOscillator_0(OscillatorType_getInstance().SINE, freq);
-    var pan = pos.xx() / Dim_getInstance().width;
+    var pan = pos.x / Dim_getInstance().width;
     var gain = 0.04;
     var duration = 0.02;
     this.playSound_0(osc, this.createStaticPan_0(pan), gain, duration);
@@ -11445,7 +11483,7 @@ var QGress = function (_, Kotlin) {
       return;
     var freq = 400.0;
     var osc = this.createStaticOscillator_0(OscillatorType_getInstance().SINE, freq);
-    var pan = pos.xx() / Dim_getInstance().width;
+    var pan = pos.x / Dim_getInstance().width;
     var gain = 0.04;
     var duration = 0.06;
     this.playSound_0(osc, this.createStaticPan_0(pan), gain, duration);
@@ -11455,7 +11493,7 @@ var QGress = function (_, Kotlin) {
       return;
     var freq = 160.0 - (level.level * 5 | 0);
     var osc = this.createStaticOscillator_0(OscillatorType_getInstance().SQUARE, freq);
-    var pan = pos.xx() / Dim_getInstance().width;
+    var pan = pos.x / Dim_getInstance().width;
     var gain = 0.04 + level.level * 0.006;
     var duration = 0.005 + 0.001 * level.level;
     this.playSound_0(osc, this.createStaticPan_0(pan), gain, duration);
@@ -11637,10 +11675,6 @@ var QGress = function (_, Kotlin) {
     return Math_0.max(from, b);
   };
   Util.prototype.clipDouble_yvo9jy$ = function (value, from, to) {
-    var b = Math_0.min(to, value);
-    return Math_0.max(from, b);
-  };
-  Util.prototype.clipFloat_y2kzbl$ = function (value, from, to) {
     var b = Math_0.min(to, value);
     return Math_0.max(from, b);
   };
@@ -11886,13 +11920,13 @@ var QGress = function (_, Kotlin) {
     return this.can.width;
   };
   World.prototype.shadowW = function () {
-    return this.w() / 10 | 0;
+    return this.w() / Coords$Companion_getInstance().res | 0;
   };
   World.prototype.h = function () {
     return this.can.height;
   };
   World.prototype.shadowH = function () {
-    return this.h() / 10 | 0;
+    return this.h() / Coords$Companion_getInstance().res | 0;
   };
   World.prototype.diagonalLength = function () {
     var x = Kotlin.imul(this.can.width, this.can.width) + Kotlin.imul(this.can.height, this.can.height);
@@ -11977,7 +12011,7 @@ var QGress = function (_, Kotlin) {
     tmp$ = $receiver.entries.iterator();
     while (tmp$.hasNext()) {
       var element = tmp$.next();
-      if (ActionLimitsDisplay_getInstance().isNotBlocked_lfj9be$(PathUtil_getInstance().shadowPosToPos_lfj9be$(element.key))) {
+      if (ActionLimitsDisplay_getInstance().isNotBlocked_lfj9be$(element.key.fromShadow())) {
         destination.put_xwzc9p$(element.key, element.value);
       }
     }
@@ -12800,6 +12834,7 @@ var QGress = function (_, Kotlin) {
   Object.defineProperty(Coords, 'Companion', {
     get: Coords$Companion_getInstance
   });
+  package$data.Coords_init_vux9f0$ = Coords_init;
   package$data.Coords = Coords;
   package$data.Damage = Damage;
   package$data.Dim = Dim_0;

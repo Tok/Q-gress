@@ -57,9 +57,9 @@ data class Field private constructor(val origin: Portal, val primaryAnchor: Port
             with(ctx) {
                 fillStyle = fullStyle
                 beginPath()
-                moveTo(one.xx(), one.yy())
-                lineTo(two.xx(), two.yy())
-                lineTo(three.xx(), three.yy())
+                moveTo(one.x, one.y)
+                lineTo(two.x, two.y)
+                lineTo(three.x, three.y)
                 fill()
                 closePath()
             }
@@ -70,14 +70,14 @@ data class Field private constructor(val origin: Portal, val primaryAnchor: Port
             val originHp = calcStyle(portal.calcHealth())
             with(ctx) {
                 val point = Line(first, second).findClosestPointTo(portal.location)
-                val gradient = World.ctx().createLinearGradient(portal.x(), portal.y(), point.xx(), point.yy())
+                val gradient = World.ctx().createLinearGradient(portal.x(), portal.y(), point.x, point.y)
                 gradient.addColorStop(0.1, originHp)
                 gradient.addColorStop(1.0, fullStyle)
                 fillStyle = gradient
                 beginPath()
                 moveTo(portal.x(), portal.y())
-                lineTo(first.xx(), first.yy())
-                lineTo(second.xx(), second.yy())
+                lineTo(first.x, first.y)
+                lineTo(second.x, second.y)
                 fill()
                 closePath()
             }

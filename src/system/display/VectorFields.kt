@@ -10,7 +10,6 @@ import portal.Portal
 import util.ColorUtil
 import util.DrawUtil
 import util.HtmlUtil
-import util.PathUtil
 import util.data.Complex
 import util.data.Coords
 import util.data.Line
@@ -24,15 +23,15 @@ object VectorFields {
     fun draw(vectorField: Map<Coords, Complex>) {
         if (World.isReady) return
         World.bgCtx().clearRect(0.0, 0.0, Dim.width.toDouble(), Dim.height.toDouble())
-        val w = PathUtil.res - 1
-        val h = PathUtil.res - 1
+        val w = Coords.res - 1
+        val h = Coords.res - 1
         vectorField.forEach {
             fun isWalkable() = World.grid[it.key]?.isPassable ?: false
             if (Styles.isDrawObstructedVectors || isWalkable()) {
                 val vectorImageData = getOrCreateVectorImageData(w, h, it.value)
-                val pos = PathUtil.shadowPosToPos(it.key)
+                val pos = it.key.fromShadow()
                 if (!HtmlUtil.isBlockedByMapbox(pos)) {
-                    World.bgCtx().putImageData(vectorImageData, pos.xx(), pos.yy())
+                    World.bgCtx().putImageData(vectorImageData, pos.x, pos.y)
                 }
             }
         }
@@ -64,8 +63,9 @@ object VectorFields {
     private fun getOrCreateVectorImageData(w: Int, h: Int, complex: Complex): ImageData {
         val style = Styles.vectorStyle()
         val isColor = Styles.isColorVectors()
-        val center = PathUtil.res / 2
-        val scaled = Complex.fromMagnitudeAndPhase(complex.magnitude * center, complex.phase)
+        val center = Coords.res / 2
+        val vecMag = center.toDouble() //* complex.magnitude
+        val scaled = Complex.fromMagnitudeAndPhase(vecMag, complex.phase)
         val line = createLine(center, scaled)
         val maybeImage = findVec(line, style, isColor)
         return if (maybeImage != null) {
