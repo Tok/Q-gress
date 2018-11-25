@@ -2,7 +2,6 @@ package config
 
 import agent.Faction
 import util.HtmlUtil
-import kotlin.math.max
 
 object Config {
     const val minPortals = 3
@@ -21,7 +20,7 @@ object Config {
     fun startSmurfs() = if (HtmlUtil.isQuickstart()) 8 else minSmurfs
     fun initialAp() = if (HtmlUtil.isQuickstart()) 2000000 else 0
 
-    val maxNonFaction = max(100, maxFrogs + maxSmurfs)
+    private const val maxNonFaction = 300
     fun maxFor(faction: Faction) = when (faction) {
         Faction.ENL -> maxFrogs
         Faction.RES -> maxSmurfs

@@ -3139,7 +3139,7 @@ var QGress = function (_, Kotlin) {
     this.factionChangeRate = 0.01;
     this.portalRemovalRate = 0.05;
     this.startPortals = 5;
-    this.maxNonFaction = Math_0.max(100, 42);
+    this.maxNonFaction_0 = 300;
     this.apMultiplier = 10;
     this.isNpcSwarming = true;
     this.npcXmSpawnRatio = 0.05;
@@ -3171,7 +3171,7 @@ var QGress = function (_, Kotlin) {
         return 21;
       case 'RES':
         return 21;
-      default:return this.maxNonFaction;
+      default:return 300;
     }
   };
   Config.$metadata$ = {
@@ -6552,75 +6552,78 @@ var QGress = function (_, Kotlin) {
     }
     return destination;
   };
-  Portal.prototype.allLinksTo_0 = function (portal) {
-    var $receiver = this.links;
-    var destination = ArrayList_init_0();
-    var tmp$;
-    tmp$ = $receiver.iterator();
-    while (tmp$.hasNext()) {
-      var element = tmp$.next();
-      if (element.isConnectedTo_hv9zn6$(portal))
-        destination.add_11rb$(element);
-    }
-    return destination;
-  };
-  Portal.prototype.allFieldsTo_0 = function (portal) {
-    var $receiver = this.fields;
-    var destination = ArrayList_init_0();
-    var tmp$;
-    tmp$ = $receiver.iterator();
-    while (tmp$.hasNext()) {
-      var element = tmp$.next();
-      if (element.isConnectedTo_hv9zn6$(portal))
-        destination.add_11rb$(element);
-    }
-    return destination;
-  };
-  Portal.prototype.destroyAllLinks_0 = function (agent) {
+  Portal.prototype.destroyAllLinksAndFields_0 = function (agent) {
     if (agent === void 0)
       agent = null;
+    var $receiver = World_getInstance().allLinks();
+    var destination = ArrayList_init_0();
     var tmp$;
-    tmp$ = this.links.iterator();
+    tmp$ = $receiver.iterator();
     while (tmp$.hasNext()) {
       var element = tmp$.next();
+      var tmp$_0;
+      if ((tmp$_0 = element.destination) != null ? tmp$_0.equals(this) : null)
+        destination.add_11rb$(element);
+    }
+    var tmp$_1;
+    tmp$_1 = destination.iterator();
+    while (tmp$_1.hasNext()) {
+      var element_0 = tmp$_1.next();
+      agent != null ? (agent.addAp_za3lpa$(187), Unit) : null;
+      element_0.origin.links.remove_11rb$(element_0);
+    }
+    var tmp$_2;
+    tmp$_2 = this.links.iterator();
+    while (tmp$_2.hasNext()) {
+      var element_1 = tmp$_2.next();
       agent != null ? (agent.addAp_za3lpa$(187), Unit) : null;
     }
     this.links.clear();
-  };
-  Portal.prototype.destroyAllFields_0 = function (agent) {
-    if (agent === void 0)
-      agent = null;
-    var tmp$;
-    tmp$ = this.fields.iterator();
-    while (tmp$.hasNext()) {
-      var element = tmp$.next();
+    var $receiver_0 = World_getInstance().allFields();
+    var destination_0 = ArrayList_init_0();
+    var tmp$_3;
+    tmp$_3 = $receiver_0.iterator();
+    while (tmp$_3.hasNext()) {
+      var element_2 = tmp$_3.next();
+      var tmp$_4;
+      if ((tmp$_4 = element_2.primaryAnchor) != null ? tmp$_4.equals(this) : null)
+        destination_0.add_11rb$(element_2);
+    }
+    var tmp$_5;
+    tmp$_5 = destination_0.iterator();
+    while (tmp$_5.hasNext()) {
+      var element_3 = tmp$_5.next();
+      agent != null ? (agent.addAp_za3lpa$(750), Unit) : null;
+      element_3.origin.fields.remove_11rb$(element_3);
+    }
+    var $receiver_1 = World_getInstance().allFields();
+    var destination_1 = ArrayList_init_0();
+    var tmp$_6;
+    tmp$_6 = $receiver_1.iterator();
+    while (tmp$_6.hasNext()) {
+      var element_4 = tmp$_6.next();
+      var tmp$_7;
+      if ((tmp$_7 = element_4.secondaryAnchor) != null ? tmp$_7.equals(this) : null)
+        destination_1.add_11rb$(element_4);
+    }
+    var tmp$_8;
+    tmp$_8 = destination_1.iterator();
+    while (tmp$_8.hasNext()) {
+      var element_5 = tmp$_8.next();
+      agent != null ? (agent.addAp_za3lpa$(750), Unit) : null;
+      element_5.origin.fields.remove_11rb$(element_5);
+    }
+    var tmp$_9;
+    tmp$_9 = this.fields.iterator();
+    while (tmp$_9.hasNext()) {
+      var element_6 = tmp$_9.next();
       agent != null ? (agent.addAp_za3lpa$(750), Unit) : null;
     }
     this.fields.clear();
   };
-  Portal.prototype.destroyAllLinksTo_0 = function (portal, agent) {
+  Portal.prototype.destroy_4705j1$ = function (agent) {
     if (agent === void 0)
       agent = null;
-    var tmp$;
-    tmp$ = this.allLinksTo_0(portal).iterator();
-    while (tmp$.hasNext()) {
-      var element = tmp$.next();
-      agent != null ? (agent.addAp_za3lpa$(187), Unit) : null;
-      this.links.remove_11rb$(element);
-    }
-  };
-  Portal.prototype.destroyAllFieldsTo_0 = function (portal, agent) {
-    if (agent === void 0)
-      agent = null;
-    var tmp$;
-    tmp$ = this.allFieldsTo_0(portal).iterator();
-    while (tmp$.hasNext()) {
-      var element = tmp$.next();
-      agent != null ? (agent.addAp_za3lpa$(750), Unit) : null;
-      this.fields.remove_11rb$(element);
-    }
-  };
-  Portal.prototype.destroy = function () {
     this.owner = null;
     var tmp$;
     tmp$ = this.resoSlots.entries.iterator();
@@ -6628,28 +6631,20 @@ var QGress = function (_, Kotlin) {
       var element = tmp$.next();
       element.value.clear();
     }
-    this.destroyAllLinks_0();
-    this.destroyAllFields_0();
+    this.destroyAllLinksAndFields_0(agent);
     var tmp$_0;
-    tmp$_0 = this.findIncomingFrom_0().iterator();
+    tmp$_0 = World_getInstance().allAgents.iterator();
     while (tmp$_0.hasNext()) {
       var element_0 = tmp$_0.next();
-      element_0.destroyAllLinksTo_0(this);
-      element_0.destroyAllFieldsTo_0(this);
-    }
-    var tmp$_1;
-    tmp$_1 = World_getInstance().allAgents.iterator();
-    while (tmp$_1.hasNext()) {
-      var element_1 = tmp$_1.next();
-      var tmp$_2;
-      if ((tmp$_2 = element_1.actionPortal) != null ? tmp$_2.equals(this) : null) {
-        element_1.actionPortal = World_getInstance().randomPortal();
-        element_1.action.start_fyi6w8$(ActionItem$Companion_getInstance().WAIT);
+      var tmp$_1;
+      if ((tmp$_1 = element_0.actionPortal) != null ? tmp$_1.equals(this) : null) {
+        element_0.actionPortal = World_getInstance().randomPortal();
+        element_0.action.start_fyi6w8$(ActionItem$Companion_getInstance().WAIT);
       }
     }
   };
   Portal.prototype.remove = function () {
-    this.destroy();
+    this.destroy_4705j1$();
     SoundUtil_getInstance().playPortalRemovalSound_lfj9be$(this.location);
     var tmp$;
     tmp$ = World_getInstance().allAgents.iterator();
@@ -6686,12 +6681,11 @@ var QGress = function (_, Kotlin) {
       }
     }
     var numberOfResosLeft = destination.size;
-    if (numberOfResosLeft <= 2) {
-      this.destroyAllLinks_0(agent);
-      this.destroyAllFields_0(agent);
-    }
     if (numberOfResosLeft <= 0) {
-      this.destroy();
+      this.destroy_4705j1$(agent);
+    }
+     else if (numberOfResosLeft <= 2) {
+      this.destroyAllLinksAndFields_0(agent);
     }
   };
   var emptyMap = Kotlin.kotlin.collections.emptyMap_q3lmfv$;
@@ -6746,7 +6740,7 @@ var QGress = function (_, Kotlin) {
       element.decay();
     }
     if (this.getAllResos_0().isEmpty()) {
-      this.destroy();
+      this.destroy_4705j1$();
     }
   };
   function Portal$drawResonators$drawResoLine(closure$ctx) {
@@ -8028,7 +8022,7 @@ var QGress = function (_, Kotlin) {
     var npcH = 8.0;
     this.clearUiLine_lu1900$(vecY - vecH - 1, vecH + npcH + 2);
     VectorBar_getInstance().draw_61h0v2$(vecX, vecY, vecH, vecCount, vecTot);
-    NpcBar_getInstance().draw_61h0v2$(vecX, npcY, npcH, World_getInstance().countNonFaction(), Config_getInstance().maxNonFaction);
+    NpcBar_getInstance().draw_61h0v2$(vecX, npcY, npcH, World_getInstance().countNonFaction(), Config_getInstance().maxFor_bip15f$(Faction$NONE_getInstance()));
   };
   Loading$Companion.$metadata$ = {
     kind: Kind_OBJECT,
@@ -10689,7 +10683,7 @@ var QGress = function (_, Kotlin) {
     }
     LoadingText_getInstance().draw_61zpoe$('Creating Non-Faction..');
     World_getInstance().allNonFaction.clear();
-    World_getInstance().createNonFaction_fzludj$(callback, Config_getInstance().maxNonFaction);
+    World_getInstance().createNonFaction_fzludj$(callback, Config_getInstance().maxFor_bip15f$(Faction$NONE_getInstance()));
   };
   function HtmlUtil$createAgentsAndPortals$lambda(closure$callback, this$HtmlUtil) {
     return function () {

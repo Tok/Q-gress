@@ -350,47 +350,35 @@ data class Portal(val name: String, val location: Coords,
     private fun findOutgoingTo(): List<Portal> = links.map { it.destination }
     private fun findIncomingLinks(): List<Link> = World.allLinks().filter { it.destination == this }
     private fun findIncomingFrom(): List<Portal> = findIncomingLinks().map { it.origin }
-    private fun allLinksTo(portal: Portal) = links.filter { it.isConnectedTo(portal) }
-    private fun allFieldsTo(portal: Portal) = fields.filter { it.isConnectedTo(portal) }
-    private fun destroyAllLinks(agent: Agent? = null) {
+    private fun destroyAllLinksAndFields(agent: Agent? = null) {
+        World.allLinks().filter { it.destination == this }.forEach { link ->
+            agent?.addAp(Link.destroyAp)
+            link.origin.links.remove(link)
+        }
         links.forEach {
             agent?.addAp(Link.destroyAp)
         }
         links.clear()
-    }
-
-    private fun destroyAllFields(agent: Agent? = null) {
+        World.allFields().filter { it.primaryAnchor == this }.forEach { it ->
+            agent?.addAp(Field.destroyAp)
+            it.origin.fields.remove(it)
+        }
+        World.allFields().filter { it.secondaryAnchor == this }.forEach { it ->
+            agent?.addAp(Field.destroyAp)
+            it.origin.fields.remove(it)
+        }
         fields.forEach {
             agent?.addAp(Field.destroyAp)
         }
         fields.clear()
     }
 
-    private fun destroyAllLinksTo(portal: Portal, agent: Agent? = null) {
-        allLinksTo(portal).forEach {
-            agent?.addAp(Link.destroyAp)
-            links.remove(it)
-        }
-    }
-
-    private fun destroyAllFieldsTo(portal: Portal, agent: Agent? = null) {
-        allFieldsTo(portal).forEach {
-            agent?.addAp(Field.destroyAp)
-            fields.remove(it)
-        }
-    }
-
-    fun destroy() {
+    fun destroy(agent: Agent? = null) {
         owner = null
         resoSlots.forEach {
             it.value.clear()
         }
-        destroyAllLinks()
-        destroyAllFields()
-        findIncomingFrom().forEach { connected ->
-            connected.destroyAllLinksTo(this)
-            connected.destroyAllFieldsTo(this)
-        }
+        destroyAllLinksAndFields(agent)
         World.allAgents.forEach { agent ->
             if (agent.actionPortal == this) {
                 agent.actionPortal = World.randomPortal()
@@ -414,12 +402,10 @@ data class Portal(val name: String, val location: Coords,
     fun removeReso(octant: Octant, agent: Agent?) {
         resoSlots[octant]?.clear()
         val numberOfResosLeft = resoSlots.filter { it.value.resonator != null }.count()
-        if (numberOfResosLeft <= 2) {
-            destroyAllLinks(agent)
-            destroyAllFields(agent)
-        }
         if (numberOfResosLeft <= 0) {
-            destroy()
+            destroy(agent)
+        } else if (numberOfResosLeft <= 2) {
+            destroyAllLinksAndFields(agent)
         }
     }
 

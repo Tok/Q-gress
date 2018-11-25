@@ -465,7 +465,7 @@ object HtmlUtil {
 
         LoadingText.draw("Creating Non-Faction..")
         World.allNonFaction.clear()
-        World.createNonFaction(callback, Config.maxNonFaction)
+        World.createNonFaction(callback, Config.maxFor(Faction.NONE))
     }
 
     private fun createAgentsAndPortals(callback: () -> Unit) = createPortals(fun() { createAgents(callback) })
