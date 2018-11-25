@@ -18,6 +18,7 @@ import items.level.XmpLevel
 import portal.Portal
 import portal.XmMap
 import util.DrawUtil
+import util.HtmlUtil
 import util.PathUtil
 import util.Util
 import util.data.*
@@ -311,13 +312,14 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         fun createFrog(grid: Map<Coords, Cell>) = create(grid, Faction.ENL)
         fun createSmurf(grid: Map<Coords, Cell>) = create(grid, Faction.RES)
         private fun create(grid: Map<Coords, Cell>, faction: Faction): Agent {
-            val initialXm = xmCapacity(getLevel(Config.initialAp))
+            val ap = Config.initialAp()
+            val initialXm = xmCapacity(getLevel(ap))
             val coords = Coords.createRandomPassable(grid)
             val actionPortal = Util.findNearestPortal(coords) ?: World.allPortals[0] //FIXME
             val agent = Agent(faction, Util.generateAgentName(), coords, Skills.createRandom(),
                     Inventory.empty(), Action.create(), actionPortal, actionPortal.location,
-                    Config.initialAp, initialXm)
-            if (Config.isQuickstart) {
+                    ap, initialXm)
+            if (HtmlUtil.isQuickstart()) {
                 agent.inventory.items.addAll(Inventory.quickStart(agent))
             }
             return agent

@@ -1,10 +1,8 @@
 package config
 
-object Styles {
-    enum class VectorStyle {
-        CIRCLE, SQUARE
-    }
+import util.HtmlUtil
 
+object Styles {
     val fieldTransparency = 0.4
 
     val isDrawAgentRange = false
@@ -18,8 +16,8 @@ object Styles {
 
     val use3DBuildings = true
 
-    val vectorStyle = VectorStyle.CIRCLE
-    val useColorVectors = true
+    fun vectorStyle() = if (HtmlUtil.isShowSatelliteMap()) VectorStyle.SQUARE else VectorStyle.CIRCLE
+    fun isColorVectors() = !HtmlUtil.isShowSatelliteMap()
     val isDrawObstructedVectors = false
 
     //settings with impact on performance

@@ -52,10 +52,13 @@ object HtmlUtil {
         World.allNonFaction.forEach { it.act() }
         window.requestAnimationFrame {
             DrawUtil.redraw()
+            val factions = World.userFaction!! to World.userFaction?.enemy()!!
             val enlMu = World.calcTotalMu(Faction.ENL)
             val resMu = World.calcTotalMu(Faction.RES)
             Cycle.updateCheckpoints(World.tick, enlMu, resMu)
-            DrawUtil.redrawUserInterface(enlMu, resMu)
+            val firstMu = if (factions.first == Faction.ENL) enlMu else resMu
+            val secondMu = if (factions.first == Faction.RES) enlMu else resMu
+            DrawUtil.redrawUserInterface(firstMu, secondMu, factions)
             World.tick++
         }
     }
@@ -74,9 +77,10 @@ object HtmlUtil {
         val controlDiv = createControlDiv()
         val buttonDiv = document.createElement("div") as HTMLDivElement
         buttonDiv.addClass("buttonDiv")
-        val pauseButton = createButton(PAUSE_BUTTON_ID, "button", "Stop") {
+        val pauseButton = createButton(PAUSE_BUTTON_ID, "topButton", "Stop") {
             intervalID = pauseHandler(intervalID) { tick() }
         }
+        pauseButton.addClass("non", "amarillo")
         buttonDiv.append(pauseButton)
 
         val dropDown = createDropdown(LOCATION_DROPDOWN_ID) { mapChangeHandler() }
@@ -88,15 +92,60 @@ object HtmlUtil {
         buttonDiv.append(createSatSpan())
         controlDiv.append(buttonDiv)
 
-        val actionSliderDiv = createSliderDiv("left-sliders", QActions.values(), "floatLeft", "Actions")
-        controlDiv.append(actionSliderDiv)
-        val destinationSliderDiv = createSliderDiv("right-sliders", QDestinations.values(), "floatRight", "Destinations")
-        controlDiv.append(destinationSliderDiv)
-
         rootDiv.append(controlDiv)
         controlDiv.addEventListener("mousemove", { event -> handleMouseMove(event) }, false)
         rootDiv.addEventListener("mousemove", { event -> handleMouseMove(event) }, false)
+
+        val popupId = "popup"
+        rootDiv.append(createPopup(popupId))
+
         initWorld()
+    }
+
+    fun isQuickstart() = (document.getElementById("quickstart") as HTMLInputElement).checked
+    private fun createPopup(id: String): HTMLDivElement {
+        fun createButton(faction: Faction): HTMLButtonElement {
+            val button = document.createElement("button") as HTMLButtonElement
+            button.id = faction.abbr.toLowerCase() + "Button"
+            button.addClass(faction.abbr.toLowerCase(), "popupButton", "amarillo")
+            button.innerText = faction.abbr.toUpperCase()
+            button.onclick = {
+                chooseUserFaction(faction)
+            }
+            return button
+        }
+
+        val popupDiv = document.createElement("div") as HTMLDivElement
+        popupDiv.id = id
+        popupDiv.addClass("popup")
+
+        val popupButtonDiv = document.createElement("div") as HTMLDivElement
+
+        val enlButton = createButton(Faction.ENL)
+        val resButton = createButton(Faction.RES)
+
+        val quickstartDiv = document.createElement("div") as HTMLDivElement
+        quickstartDiv.addClass("quickstartDiv")
+        val quickstartCheck = document.createElement("input") as HTMLInputElement
+        quickstartCheck.id = "quickstart"
+        quickstartCheck.type = "checkbox"
+        quickstartCheck.checked = HtmlUtil.isLocal()
+        quickstartCheck.addClass("checkbox")
+        quickstartCheck.disabled = true //FIXME
+        val quickstartLabel = document.createElement("span") as HTMLSpanElement
+        quickstartLabel.addClass("coda", "loadLabel")
+        quickstartLabel.id = "quickstartLabel"
+        quickstartLabel.innerHTML = "Quick Start"
+        quickstartLabel.onclick = { quickstartCheck.click() }
+
+        popupButtonDiv.append(enlButton)
+        popupButtonDiv.append(resButton)
+        quickstartDiv.append(quickstartCheck)
+        quickstartDiv.append(quickstartLabel)
+
+        popupDiv.append(popupButtonDiv)
+        popupDiv.append(quickstartDiv)
+        return popupDiv
     }
 
     private fun createSoundSpan(): HTMLSpanElement {
@@ -108,9 +157,10 @@ object HtmlUtil {
         checkbox.addClass("checkbox")
         span.append(checkbox)
         val label = document.createElement("span") as HTMLSpanElement
-        label.addClass("label")
+        label.addClass("label", "topLabel")
         label.id = "soundLabel"
         label.innerHTML = "Sound"
+        label.onclick = { checkbox.click() }
         span.append(label)
         return span
     }
@@ -125,9 +175,10 @@ object HtmlUtil {
         checkbox.onchange = { if (checkbox.checked) MapUtil.showSatelliteMap() else MapUtil.hideSatelliteMap() }
         span.append(checkbox)
         val label = document.createElement("span") as HTMLSpanElement
-        label.addClass("label")
+        label.addClass("label", "topLabel")
         label.id = "satLabel"
         label.innerHTML = "Satellite"
+        label.onclick = { checkbox.click() }
         span.append(label)
         return span
     }
@@ -147,17 +198,20 @@ object HtmlUtil {
         return div
     }
 
-    private fun createSliderDiv(id: String, qValues: List<QValue>, className: String, labelText: String): HTMLDivElement {
+    private fun createSliderDiv(id: String, qValues: List<QValue>, className: String,
+                                labelText: String, userFaction: Faction): HTMLDivElement {
         val qDiv = document.createElement("div") as HTMLDivElement
         qDiv.id = id
-        qDiv.addClass("qValues", "halfWidth", className)
+        qDiv.addClass("qValues", className)
+        qDiv.addClass("q-" + labelText.toLowerCase())
         val destinationsLabel = document.createElement("div") as HTMLDivElement
         destinationsLabel.addClass("label", "qTitle")
         destinationsLabel.innerHTML = labelText
         qDiv.append(destinationsLabel)
         qValues.forEach { qValue ->
             val sliderDiv = document.createElement("div") as HTMLDivElement
-            Faction.all().forEach { faction ->
+            val facts = listOf(userFaction, userFaction.enemy())
+            facts.forEach { faction ->
                 val slider = document.createElement("input") as HTMLInputElement
                 slider.id = qValue.sliderId + faction.nickName
                 slider.type = "range"
@@ -168,7 +222,12 @@ object HtmlUtil {
                 slider.addClass("slider", "qSlider", faction.abbr.toLowerCase() + "Slider")
                 val sliderValue = document.createElement("span") as HTMLSpanElement
                 sliderValue.addClass("qSliderLabel", faction.abbr.toLowerCase() + "Label")
-                slider.oninput = { sliderValue.innerHTML = qDisplay(slider.value); null }
+                if (faction != userFaction) {
+                    slider.addClass("invisible")
+                    sliderValue.addClass("invisible")
+                } else {
+                    slider.oninput = { sliderValue.innerHTML = qDisplay(slider.value); null }
+                }
                 sliderValue.innerHTML = qDisplay(slider.value)
                 sliderDiv.append(slider)
                 sliderDiv.append(sliderValue)
@@ -204,17 +263,38 @@ object HtmlUtil {
         SoundUtil.playNoiseGenSound()
         World.noiseMap = ImprovedNoise.generateEdgeMap(w, h)
         World.noiseImage = World.createNoiseImage(World.noiseMap, w, h, noiseAlpha)
-        resetInterval()
         World.resetAllCanvas()
         val maybeCenter = getSelectedCenterFromUrl()
         val center = if (maybeCenter.toString() != "0,0") maybeCenter else Location.random().toJSON()
         MapUtil.loadMaps(center, onMapload())
     }
 
+    private fun closePopup() {
+        val popup = document.getElementById("popup") as HTMLDivElement
+        popup.addClass("invisible")
+    }
+
+    private fun createQSliders(fact: Faction) {
+        val actionSliderDiv = createSliderDiv("left-sliders", QActions.values(), "floatLeft", "Actions", fact)
+        val destinationSliderDiv = createSliderDiv("right-sliders", QDestinations.values(), "floatRight", "Destinations", fact)
+        val controlDiv = document.getElementById("top-controls") as HTMLDivElement
+        controlDiv.append(actionSliderDiv)
+        controlDiv.append(destinationSliderDiv)
+    }
+
+    private fun chooseUserFaction(fact: Faction) {
+        closePopup()
+        val pauseButton = document.getElementById(PAUSE_BUTTON_ID) as HTMLButtonElement
+        pauseButton.addClass(fact.abbr.toLowerCase())
+        if (World.userFaction != null) {
+            console.warn("Faction ${World.userFaction} was already chosen.")
+            return
+        }
+        World.userFaction = fact
+    }
+
     private fun resetInterval() {
-        intervalID = if (Config.isAutostart) {
-            document.defaultView?.setInterval({ tick() }, Time.minTickInterval) ?: 0
-        } else 0
+        intervalID = document.defaultView?.setInterval({ tick() }, Time.minTickInterval) ?: 0
     }
 
     private fun pauseHandler(intervalID: Int, tickFunction: () -> Unit): Int {
@@ -229,16 +309,7 @@ object HtmlUtil {
         }
     }
 
-    private fun isBlockedByMapbox(pos: Coords) = isInMapboxArea(pos) || isInOsmArea(pos)
-    fun isBlockedForVector(pos: Coords) = isBlockedByMapbox(pos)
-
-    private fun isInPositionArea(pos: Coords): Boolean {
-        val w = Dim.width
-        val size = 52
-        val area = Line(Coords(w - size, 0), Coords(w, size))
-        return pos.x > area.from.x && pos.x <= area.to.x &&
-                pos.y > area.from.y && pos.y <= area.to.y
-    }
+    fun isBlockedByMapbox(pos: Coords) = isInMapboxArea(pos) || isInOsmArea(pos)
 
     private fun isInMapboxArea(pos: Coords): Boolean {
         val area = Line(Coords(-20, Dim.height - 40), Coords(90, Dim.height))
@@ -282,8 +353,7 @@ object HtmlUtil {
 
     private fun handleMouseMove(event: Event) {
         val pos = findMousePosition(World.uiCan, event as MouseEvent)
-        val isNotHandledByCanvas = isBlockedByMapbox(pos)
-        if (isNotHandledByCanvas) {
+        if (ActionLimitsDisplay.isBlocked(pos)) {
             World.mousePos = null
             World.uiCan.addClass("unclickable")
         } else {
@@ -302,10 +372,10 @@ object HtmlUtil {
     }
 
     fun topActionOffset(): Int = document.getElementById("top-controls")?.clientHeight ?: 100
-    fun leftSliderHeight(): Int = document.getElementById("left-sliders")?.clientHeight ?: 144
-    fun leftSliderWidth(): Int = document.getElementById("left-sliders")?.clientWidth ?: 233
-    fun rightSliderHeight(): Int = document.getElementById("right-sliders")?.clientHeight ?: 144
-    fun rightSliderWidth(): Int = document.getElementById("right-sliders")?.clientWidth ?: 233
+    fun leftSliderHeight(): Int = document.getElementById("left-sliders")?.clientHeight ?: 0
+    fun leftSliderWidth(): Int = document.getElementById("left-sliders")?.clientWidth ?: 0
+    fun rightSliderHeight(): Int = document.getElementById("right-sliders")?.clientHeight ?: 0
+    fun rightSliderWidth(): Int = document.getElementById("right-sliders")?.clientWidth ?: 0
 
     private fun createButton(id: String, className: String, text: String, callback: ((Event) -> Unit)?): HTMLButtonElement {
         val button = document.createElement("BUTTON") as HTMLButtonElement
@@ -326,6 +396,7 @@ object HtmlUtil {
     private fun createDropdown(id: String, callback: ((Event) -> Unit)?): HTMLSelectElement {
         val select = document.createElement("select") as HTMLSelectElement
         select.id = id
+        select.addClass("topDrop", "amarillo")
         select.onchange = callback
         createLocationOptions().forEach { select.appendChild(it) }
         return select
@@ -378,12 +449,12 @@ object HtmlUtil {
     private fun createAgents(callback: () -> Unit) {
         World.allAgents.clear()
         LoadingText.draw("Creating Frogs..")
-        (1..Config.startFrogs).forEach {
+        (1..Config.startFrogs()).forEach {
             World.allAgents.add(Agent.createFrog(World.grid))
         }
 
         LoadingText.draw("Creating Smurfs..")
-        (1..Config.startSmurfs).forEach {
+        (1..Config.startSmurfs()).forEach {
             World.allAgents.add(Agent.createSmurf(World.grid))
         }
 
@@ -394,20 +465,23 @@ object HtmlUtil {
 
     private fun createAgentsAndPortals(callback: () -> Unit) = createPortals(fun() { createAgents(callback) })
 
-    private fun isShowSatelliteMap() = (document.getElementById("satCheckbox") as HTMLInputElement).checked
+    fun isShowSatelliteMap() = (document.getElementById("satCheckbox") as HTMLInputElement).checked
 
     private fun onMapload() =
             fun(grid: Map<Coords, Cell>) {
-                MapUtil.hideSatelliteMap()
                 World.grid = grid
                 if (World.grid.isEmpty()) {
                     console.error("Grid is empty!")
                 }
                 DrawUtil.drawGrid()
-                ActionLimitsDisplay.draw(false)
                 createAgentsAndPortals {
                     LoadingText.draw("Ready.")
                     DrawUtil.clearBackground()
+                    if (World.userFaction == null) {
+                        chooseUserFaction(Faction.createRandom())
+                    }
+                    createQSliders(World.userFaction!!)
+                    resetInterval()
                     World.isReady = true
                     if (isShowSatelliteMap()) {
                         MapUtil.showSatelliteMap()

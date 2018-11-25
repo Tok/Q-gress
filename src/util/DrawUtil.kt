@@ -3,6 +3,7 @@ package util
 import Canvas
 import Ctx
 import World
+import agent.Faction
 import agent.NonFaction
 import config.*
 import items.level.PortalLevel
@@ -10,7 +11,8 @@ import org.w3c.dom.*
 import portal.Portal
 import portal.XmMap
 import system.Com
-import system.display.*
+import system.display.Attacks
+import system.display.TickDisplay
 import system.display.ui.ActionLimitsDisplay
 import system.display.ui.CycleDisplay
 import system.display.ui.MindUnits
@@ -20,7 +22,6 @@ import util.data.Circle
 import util.data.Coords
 import util.data.Line
 import kotlin.browser.document
-import kotlin.dom.clear
 import kotlin.math.PI
 
 object DrawUtil {
@@ -51,7 +52,7 @@ object DrawUtil {
         redraw(World.bgCan, World.bgCtx(), maybeImage)
     }
 
-    private fun clearUserInterface() = redraw(World.uiCan, World.uiCtx())
+    fun clearUserInterface() = redraw(World.uiCan, World.uiCtx())
 
     private fun redraw(canvas: Canvas, ctx: Ctx, image: ImageData? = null) {
         canvas.width = Dim.width
@@ -67,9 +68,9 @@ object DrawUtil {
     fun drawAllNonFaction(ctx: Ctx) = World.allNonFaction.forEach { it.draw(ctx) }
     fun drawAllPortals(ctx: Ctx) = World.allPortals.forEach { it.drawCenter(ctx) }
 
-    fun redrawUserInterface(enlMu: Int, resMu: Int) {
+    fun redrawUserInterface(firstMu: Int, secondMu: Int, factions: Pair<Faction, Faction>) {
         clearUserInterface()
-        MindUnits.draw(enlMu, resMu)
+        MindUnits.draw(firstMu, secondMu, factions)
         CycleDisplay.draw()
         TickDisplay.draw()
         StatsDisplay.draw()

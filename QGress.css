@@ -34,9 +34,6 @@ body {
     height: 800px;
     overflow: hidden;
 }
-.halfWidth {
-    width: 600px;
-}
 .container {
     position: relative;
 }
@@ -72,9 +69,6 @@ body {
 .mapboxgl-map {
     font-family: "Coda";
 }
-#locationSelect {
-    font-family: "Coda";
-}
 .shadowMap {
     pointer-events: none;
     display: block;
@@ -104,7 +98,9 @@ body {
     height: 100px;
     width: 100%;
 }
-
+.non {
+    background: #ffffff;
+}
 .enl {
     background: #03dc03;
 }
@@ -152,16 +148,14 @@ body {
 }
 .slider {
     -webkit-appearance: none;
-    height: 13px;
     border-radius: 5px;
     background: #d3d3d3;
     outline: none;
     opacity: 0.7;
     -webkit-transition: .2s;
     transition: opacity .2s;
-    width: 377px !important;
-    padding-left: 0 !important;
-    padding-right: 0 !important;
+    padding-left: 0;
+    padding-right: 0;
     margin-top: 5px;
     margin-bottom: 5px;
     margin-right: 5px;
@@ -185,14 +179,18 @@ body {
 }
 .qTitle {
     font-family: "AmarilloUSAF";
-    margin-top: 3px;
-    margin-bottom: 3px;
+    margin-top: 2px;
+    margin-bottom: 2px;
     margin-left: 5px;
     margin-right: 5px;
 }
 .qSlider {
-    height: 8px !important;
-    width: 55px !important;
+    height: 8px;
+    width: 89px;
+}
+.q-actions {
+}
+.q-destinations {
 }
 .qSlider:hover {
     opacity: 1;
@@ -209,11 +207,9 @@ body {
 .qSliderLabel {
     font-size: 13px;
     height: 13px;
-    width: 25px !important;
+    width: 12px;
     text-align: right;
     display: inline-block;
-    margin-top: 2px;
-    margin-bottom: 2px;
     color: #ffffff;
     text-shadow: -1px 0px black, 0px 1px black, 1px 0px black, 0px -1px black;
 }
@@ -222,24 +218,19 @@ body {
     font-size: 13px;
     height: 13px;
     margin-left: 5px;
-    margin-top: 2px;
-    margin-bottom: 2px;
+    margin-right: 5px;
     color: #ffffff;
     text-shadow: -1px 0px black, 0px 1px black, 1px 0px black, 0px -1px black;
 }
 .qValues {
     font-size: 13px;
-    width: 300px;
+    padding-bottom: 2px;
 }
 .floatLeft {
     float: left;
 }
 .floatRight {
     float: right;
-}
-#pauseButton {
-    width: 55px;
-    height: 24px;
 }
 #locationSelect {
     width: 233px;
@@ -299,4 +290,60 @@ body {
     z-index: 2;
     pointer-events: none;
     animation: flicker 0.17s infinite;
+}
+
+.popup {
+    display: block;
+    width: 377px;
+    position: relative;
+    margin: 0 auto;
+    top: 190px;
+    border-radius: 5px;
+    border: 1px solid black;
+    z-index: 9999;
+    background-color: #ffffffaa;
+    padding: 5px;
+}
+
+.popupButton {
+    width: 50%;
+    font-size: 34px;
+    border-radius: 3px;
+    border: 1px solid black;
+    padding-left: 55px;
+    padding-right: 55px;
+}
+
+.topButton {
+    margin: 5px;
+    width: 89px;
+    font-size: 21px;
+    border-radius: 3px;
+    border: 1px solid black;
+    padding: 5px;
+}
+
+.topDrop {
+    margin: 5px;
+    width: 233px;
+    font-size: 13px;
+    border-radius: 3px;
+    border: 1px solid black;
+    padding: 5px;
+}
+
+.topLabel {
+    cursor: default;
+    margin-top: 8px;
+    margin-bottom: 8px;
+    color: #ffffff;
+    text-shadow: -1px 1px black, -1px 1px black, 1px -1px black, 1px -1px black;
+}
+
+.loadLabel {
+    cursor: default;
+}
+
+.quickstartDiv {
+    font-size: 13px;
 }

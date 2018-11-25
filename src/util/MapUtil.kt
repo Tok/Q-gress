@@ -175,10 +175,8 @@ object MapUtil {
     }
 
     fun showSatelliteMap() {
-        if (World.isReady) {
-            (document.getElementById(INITIAL_MAP))?.addClass(INVISIBLE)
-            (document.getElementById(MAP))?.removeClass(INVISIBLE)
-        }
+        (document.getElementById(INITIAL_MAP))?.addClass(INVISIBLE)
+        (document.getElementById(MAP))?.removeClass(INVISIBLE)
     }
 
     fun hideSatelliteMap() {

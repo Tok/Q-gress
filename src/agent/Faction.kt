@@ -10,6 +10,12 @@ enum class Faction(val abbr: String, val nickName: String, val color: String, va
     fun isEnemy(faction: Faction): Boolean = (faction == ENL && this == RES) ||
             (faction == RES && this == ENL)
 
+    fun enemy(): Faction = when (this) {
+        ENL -> RES
+        RES -> ENL
+        else -> NONE
+    }
+
     companion object {
         fun all() = listOf(ENL, RES)
         fun createRandom() = if (Util.random() < 0.5) ENL else RES

@@ -8,8 +8,8 @@ import util.data.Coords
 
 object LoadingText : Loading() {
     fun draw(text: String) {
-        val y = Dim.height / 2
-        val x = ((Dim.width / 2.0) - (Dim.loadingBarLength / 2.0)).toInt()
+        val y = (Dim.height / 2) - 3
+        val x = ((Dim.width / 2.0) - (Dim.loadingBarLength / 2.0)).toInt() + 13
         val lineWidth = 3.0
         val strokeStyle: String = Colors.black
         val h = Dim.loadingFontSize

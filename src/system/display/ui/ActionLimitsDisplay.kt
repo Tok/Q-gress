@@ -3,32 +3,46 @@ package system.display.ui
 import World
 import config.Dim
 import system.display.Display
+import util.DrawUtil
 import util.HtmlUtil
 import util.data.Coords
 import util.data.Line
 
 object ActionLimitsDisplay : Display {
-    private val topArea = Line.create(0, 0, Dim.width, HtmlUtil.topActionOffset())
-    private val bottomArea = Line.create(0, Dim.height - Dim.botActionOffset.toInt(), Dim.width, Dim.height)
-    private val leftSliderArea = Line.create(0, HtmlUtil.topActionOffset(), HtmlUtil.leftSliderWidth(), HtmlUtil.topActionOffset() + HtmlUtil.leftSliderHeight())
-    private val rightSliderArea = Line.create(Dim.width - HtmlUtil.rightSliderWidth(), HtmlUtil.topActionOffset(), Dim.width, HtmlUtil.topActionOffset() + HtmlUtil.rightSliderHeight())
-    private val blockedAreas = listOf(topArea, bottomArea, leftSliderArea, rightSliderArea)
+    private fun topArea() = Line.create(0, 0, Dim.width, HtmlUtil.topActionOffset())
+    private fun bottomArea() = Line.create(0, Dim.height - Dim.botActionOffset.toInt(), Dim.width, Dim.height)
+    private fun leftSliderMouseArea() = Line.create(0, HtmlUtil.topActionOffset(), HtmlUtil.leftSliderWidth(), HtmlUtil.topActionOffset() + HtmlUtil.leftSliderHeight())
+    private fun rightSliderMouseArea() = Line.create(Dim.width - HtmlUtil.rightSliderWidth(), HtmlUtil.topActionOffset(), Dim.width, HtmlUtil.topActionOffset() + HtmlUtil.rightSliderHeight())
+    private fun leftSliderArea() = Line.create(0, HtmlUtil.topActionOffset(), HtmlUtil.leftSliderWidth(), HtmlUtil.leftSliderHeight())
+    private fun rightSliderArea() = Line.create(Dim.width - HtmlUtil.rightSliderWidth(), HtmlUtil.topActionOffset(), Dim.width, HtmlUtil.rightSliderHeight())
+    private fun blockedAreas() = listOf(topArea(), bottomArea(), leftSliderMouseArea(), rightSliderMouseArea())
 
-    fun isBlocked(pos: Coords) = blockedAreas.any { it.isPointInArea(pos) }
-    fun isNotBlocked(pos: Coords) = blockedAreas.none { it.isPointInArea(pos) }
+    fun isBlocked(pos: Coords) = blockedAreas().any { it.isPointInArea(pos) }
+    fun isNotBlocked(pos: Coords) = blockedAreas().none { it.isPointInArea(pos) }
 
     override fun draw() = draw(true)
 
     fun draw(isHighlightBottom: Boolean) {
+        val top = topArea()
+        val bot = bottomArea()
+        val left = leftSliderArea()
+        val right = rightSliderArea()
+        fun fillArea(line: Line) {
+            if (line.isValidArea()) {
+                with(line) {
+                    World.ctx().fillRect(fromX, fromY, toX, toY)
+                }
+            }
+        }
         with(World.ctx()) {
             beginPath()
             fillStyle = "#00000077"
-            fillRect(topArea.fromX, topArea.fromY, topArea.toX, topArea.toY)
+            fillArea(top)
             if (isHighlightBottom) {
-                fillRect(bottomArea.fromX, bottomArea.fromY, bottomArea.toX, bottomArea.toY)
+                fillArea(bot)
             }
-            fillRect(leftSliderArea.fromX, leftSliderArea.fromY, leftSliderArea.toX, leftSliderArea.toY - HtmlUtil.topActionOffset())
-            fillRect(rightSliderArea.fromX, rightSliderArea.fromY, rightSliderArea.toX, rightSliderArea.toY - HtmlUtil.topActionOffset())
+            fillArea(left)
+            fillArea(right)
             closePath()
         }
     }

@@ -2,7 +2,6 @@ import agent.Agent
 import agent.Faction
 import agent.NonFaction
 import config.Config
-import config.Dim
 import org.khronos.webgl.Uint8Array
 import org.khronos.webgl.get
 import org.w3c.dom.CanvasRenderingContext2D
@@ -18,7 +17,6 @@ import util.Util
 import util.data.Cell
 import util.data.Coords
 import kotlin.browser.document
-import kotlin.browser.window
 import kotlin.dom.clear
 import kotlin.math.sqrt
 
@@ -28,6 +26,7 @@ typealias Canvas = HTMLCanvasElement
 object World {
     var tick: Int = 0
     var isReady = false
+    var userFaction: Faction? = null
 
     lateinit var can: Canvas
     fun ctx() = HtmlUtil.getContext2D(can)

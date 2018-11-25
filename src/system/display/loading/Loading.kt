@@ -20,7 +20,7 @@ abstract class Loading {
         fun draw() {
             val vecCount = World.countPortals() + NonFaction.offscreenCount()
             val vecY = 2.0 + 34.0 + (Dim.height / 2.0)
-            val vecX = ((Dim.width / 2.0) - (Dim.loadingBarLength / 2.0)) - 13.0
+            val vecX = ((Dim.width / 2.0) - (Dim.loadingBarLength / 2.0))
             val vecTot = Config.startPortals + NonFaction.offscreenTotal()
             val vecH = 21.0
             val npcY = vecY + vecH - 13.0

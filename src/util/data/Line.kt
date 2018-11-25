@@ -47,12 +47,13 @@ data class Line(val from: Coords, val to: Coords) {
         }
     }
 
-    fun isValidArea() = this.from.x < this.to.x && this.from.y < this.to.y //tests if 'from' is top left and 'to' is bottom right
+    fun isValidArea() = this.from.x <= this.to.x && this.from.y <= this.to.y //tests if 'from' is top left and 'to' is bottom right
 
-    fun isPointInArea(point: Coords): Boolean {
-        check(isValidArea()) { "Invalid area $this ($from is not of $to)." }
-        return point.x >= this.from.x && point.y >= this.from.y && point.x <= this.to.x && point.y <= this.to.y
-    }
+    fun isPointInArea(point: Coords) = isValidArea()
+            && point.x >= this.from.x
+            && point.y >= this.from.y
+            && point.x <= this.to.x
+            && point.y <= this.to.y
 
     override fun toString() = from.toString() + "-" + to.toString()
 

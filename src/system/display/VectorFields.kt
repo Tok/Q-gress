@@ -3,10 +3,7 @@ package system.display
 import Canvas
 import Ctx
 import World
-import config.Colors
-import config.Constants
-import config.Dim
-import config.Styles
+import config.*
 import org.w3c.dom.ImageData
 import org.w3c.dom.Path2D
 import portal.Portal
@@ -34,15 +31,25 @@ object VectorFields {
             if (Styles.isDrawObstructedVectors || isWalkable()) {
                 val vectorImageData = getOrCreateVectorImageData(w, h, it.value)
                 val pos = PathUtil.shadowPosToPos(it.key)
-                val isBlocked = HtmlUtil.isBlockedForVector(pos)
-                if (!isBlocked) {
+                if (!HtmlUtil.isBlockedByMapbox(pos)) {
                     World.bgCtx().putImageData(vectorImageData, pos.xx(), pos.yy())
                 }
             }
         }
     }
 
-    private val VECTORS = mutableMapOf<Line, ImageData>()
+    data class VecKey(val line: Line, val style: VectorStyle, val isColor: Boolean)
+
+    private val VECTORS = mutableMapOf<VecKey, ImageData>()
+    private fun findVec(line: Line, style: VectorStyle, isColor: Boolean): ImageData? {
+        val key = VecKey(line, style, isColor)
+        return VECTORS[key]
+    }
+
+    private fun putVec(line: Line, style: VectorStyle, isColor: Boolean, image: ImageData) {
+        val key = VecKey(line, style, isColor)
+        VECTORS[key] = image
+    }
 
     private fun createLine(center: Int, scaled: Complex): Line {
         val re = scaled.re.toInt()
@@ -55,17 +62,19 @@ object VectorFields {
     }
 
     private fun getOrCreateVectorImageData(w: Int, h: Int, complex: Complex): ImageData {
+        val style = Styles.vectorStyle()
+        val isColor = Styles.isColorVectors()
         val center = PathUtil.res / 2
         val scaled = Complex.fromMagnitudeAndPhase(complex.magnitude * center, complex.phase)
         val line = createLine(center, scaled)
-        val maybeImage = VECTORS[line]
+        val maybeImage = findVec(line, style, isColor)
         return if (maybeImage != null) {
             maybeImage
         } else {
-            val newImageCan = createVectorImage(w, h, complex, line)
+            val newImageCan = createVectorImage(w, h, complex, line, style, isColor)
             val newImageCtx = newImageCan.getContext("2d") as Ctx
             val imageData = newImageCtx.getImageData(0.toDouble(), 0.toDouble(), w.toDouble(), h.toDouble())
-            VECTORS[line] = imageData
+            putVec(line, style, isColor, imageData)
             imageData
         }
     }
@@ -82,18 +91,18 @@ object VectorFields {
         ctx.fill()
     }
 
-    private fun stroke(complex: Complex) =
-            if (Styles.useColorVectors) ColorUtil.getColor(complex) + "AA" else Colors.black + "AA"
 
-    private fun createVectorImage(w: Int, h: Int, complex: Complex, line: Line): Canvas {
+    private fun createVectorImage(w: Int, h: Int, complex: Complex, line: Line,
+                                  style: VectorStyle, isColor: Boolean): Canvas {
+        val stroke = if (isColor) ColorUtil.getColor(complex) + "AA" else Colors.black + "AA"
         return HtmlUtil.preRender(w, h, fun(ctx: Ctx) {
             ctx.fillStyle = "#ffffff44"
-            when (Styles.vectorStyle) {
-                Styles.VectorStyle.CIRCLE -> drawCircle(ctx, w / 2.0)
-                Styles.VectorStyle.SQUARE -> drawSquare(ctx, w, h)
+            when (style) {
+                VectorStyle.CIRCLE -> drawCircle(ctx, w / 2.0)
+                VectorStyle.SQUARE -> drawSquare(ctx, w, h)
             }
             val lineWidth = 1.5
-            DrawUtil.drawLine(ctx, line, stroke(complex), lineWidth)
+            DrawUtil.drawLine(ctx, line, stroke, lineWidth)
         })
     }
 }

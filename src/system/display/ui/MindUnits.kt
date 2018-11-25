@@ -10,7 +10,7 @@ import util.data.Coords
 import kotlin.math.round
 
 object MindUnits {
-    fun draw(enlMu: Int, resMu: Int) {
+    fun draw(firstMu: Int, secondMu: Int, factions: Pair<Faction, Faction>) {
         //TODO only redraw if updated.
         fun fillMuRect(from: Coords, width: Double, height: Double,
                        fill: String, stroke: String, line: Double) {
@@ -40,14 +40,14 @@ object MindUnits {
             DrawUtil.strokeText(World.uiCtx(), textPos, text, faction.color, Dim.muFontSize, DrawUtil.AMARILLO)
         }
 
-        val totalMu = enlMu + resMu
-        val enlPart: Int = round((100.0 * enlMu) / totalMu).toInt()
-        val resPart: Int = round((100.0 * resMu) / totalMu).toInt()
+        val totalMu = firstMu + secondMu
+        val firstPart: Int = round((100.0 * firstMu) / totalMu).toInt()
+        val secondPart: Int = round((100.0 * secondMu) / totalMu).toInt()
         val xPos = Dim.muLeftOffset
         val yPos = Dim.height - Dim.muBottomOffset
-        val enlPos = Coords(xPos, yPos - Dim.muFontSize * 2)
-        val resPos = Coords(xPos, yPos)
-        drawMuRect(enlPos, enlPart, Faction.ENL, enlMu)
-        drawMuRect(resPos, resPart, Faction.RES, resMu)
+        val firstPos = Coords(xPos, yPos - Dim.muFontSize * 2)
+        val secondPos = Coords(xPos, yPos)
+        drawMuRect(firstPos, firstPart, factions.first, firstMu)
+        drawMuRect(secondPos, secondPart, factions.second, secondMu)
     }
 }
