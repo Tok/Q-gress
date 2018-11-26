@@ -6,7 +6,7 @@ import config.Dim
 import util.Util
 import util.data.Line
 
-data class Link(val origin: Portal, val destination: Portal, val owner: Agent) {
+data class Link(val origin: Portal, val destination: Portal, val creator: Agent) {
     fun getLine() = Line(origin.location, destination.location)
     fun isConnectedTo(portal: Portal) = destination == portal || origin == portal
 
@@ -17,11 +17,11 @@ data class Link(val origin: Portal, val destination: Portal, val owner: Agent) {
         val highHpTransparency = Util.clipDouble(byHealth.first().calcHealth() * 0.01, minTransparency, 1.0)
         val gradient = ctx.createLinearGradient(origin.x(), origin.y(), destination.x(), destination.y())
         if (origin.calcHealth() < destination.calcHealth()) {
-            gradient.addColorStop(0.0, owner.faction.fieldStyle + highHpTransparency + ")")
-            gradient.addColorStop(1.0, owner.faction.fieldStyle + lowHpTransparency + ")")
+            gradient.addColorStop(0.0, creator.faction.fieldStyle + highHpTransparency + ")")
+            gradient.addColorStop(1.0, creator.faction.fieldStyle + lowHpTransparency + ")")
         } else {
-            gradient.addColorStop(0.0, owner.faction.fieldStyle + lowHpTransparency + ")")
-            gradient.addColorStop(1.0, owner.faction.fieldStyle + highHpTransparency + ")")
+            gradient.addColorStop(0.0, creator.faction.fieldStyle + lowHpTransparency + ")")
+            gradient.addColorStop(1.0, creator.faction.fieldStyle + highHpTransparency + ")")
         }
         with(ctx) {
             strokeStyle = gradient
@@ -48,8 +48,8 @@ data class Link(val origin: Portal, val destination: Portal, val owner: Agent) {
                     || (it.origin.location == link.destination.location && it.destination.location == link.origin.location)
         }
 
-        fun create(origin: Portal, destination: Portal, owner: Agent): Link? {
-            val newLink = Link(origin, destination, owner)
+        fun create(origin: Portal, destination: Portal, linker: Agent): Link? {
+            val newLink = Link(origin, destination, linker)
             if (isPossible(newLink)) {
                 return newLink
             }

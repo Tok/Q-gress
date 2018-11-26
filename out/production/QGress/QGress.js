@@ -67,6 +67,7 @@ var QGress = function (_, Kotlin) {
   var split = Kotlin.kotlin.text.split_ip8yn$;
   var contains = Kotlin.kotlin.text.contains_li3zpu$;
   var replace = Kotlin.kotlin.text.replace_680rmw$;
+  var toBoolean = Kotlin.kotlin.text.toBoolean_pdl1vz$;
   var trimMargin = Kotlin.kotlin.text.trimMargin_rjktp$;
   var toMap_0 = Kotlin.kotlin.collections.toMap_abgq59$;
   var count = Kotlin.kotlin.collections.count_7wnvza$;
@@ -865,7 +866,7 @@ var QGress = function (_, Kotlin) {
   function Explorer() {
     Explorer_instance = this;
     this.actionItem_lesim7$_0 = ActionItem$Companion_getInstance().EXPLORE;
-    this.portalDiscoveryChance_0 = 0.1;
+    this.portalDiscoveryChance_0 = 0.2;
   }
   Object.defineProperty(Explorer.prototype, 'actionItem', {
     get: function () {
@@ -1924,6 +1925,17 @@ var QGress = function (_, Kotlin) {
   function Faction$Companion() {
     Faction$Companion_instance = this;
   }
+  Faction$Companion.prototype.fromString_pdl1vj$ = function (s) {
+    switch (s != null ? s.toUpperCase() : null) {
+      case 'RES':
+        return Faction$RES_getInstance();
+      case 'ENL':
+        return Faction$ENL_getInstance();
+      case 'NONE':
+        return Faction$NONE_getInstance();
+      default:return null;
+    }
+  };
   Faction$Companion.prototype.all = function () {
     return listOf([Faction$ENL_getInstance(), Faction$RES_getInstance()]);
   };
@@ -3029,8 +3041,8 @@ var QGress = function (_, Kotlin) {
   };
   function Skills$Companion() {
     Skills$Companion_instance = this;
-    this.minSpeed_0 = 2.0;
-    this.maxSpeed_0 = 3.0;
+    this.minSpeed_0 = 1.5;
+    this.maxSpeed_0 = this.minSpeed_0 * Constants_getInstance().phi;
   }
   Skills$Companion.prototype.createRandom = function () {
     return new Skills(this.randomSpeed_0(), this.deployPrecision_0(), this.randomGlyphSkill_0(), this.randomReliability_0());
@@ -3134,15 +3146,15 @@ var QGress = function (_, Kotlin) {
     this.maxFrogs = 21;
     this.minSmurfs = 2;
     this.maxSmurfs = 21;
-    this.frogQuitRate = 0.05;
-    this.smurfQuitRate = 0.05;
+    this.frogQuitRate = 0.1;
+    this.smurfQuitRate = 0.1;
     this.factionChangeRate = 0.01;
-    this.portalRemovalRate = 0.05;
+    this.portalRemovalRate = 0.1;
     this.startPortals = 5;
     this.maxNonFaction_0 = 300;
     this.apMultiplier = 10;
     this.isNpcSwarming = true;
-    this.npcXmSpawnRatio = 0.05;
+    this.npcXmSpawnRatio = 0.2;
     this.isSoundOn = !HtmlUtil_getInstance().isLocal();
     this.isPlayInitialSound = false;
     this.isSatOn = false;
@@ -3798,16 +3810,19 @@ var QGress = function (_, Kotlin) {
   };
   Resonator.prototype.decay = function () {
     var tmp$;
-    var b = this.energy - this.decayEnergy_0() | 0;
-    this.energy = Math_0.max(0, b);
-    if (this.energy <= 0) {
+    var a = this.energy - this.decayEnergy_0() | 0;
+    var newEnergy = Math_0.max(a, 0);
+    this.energy = newEnergy;
+    if (newEnergy <= 0) {
       (tmp$ = this.portal) != null ? (tmp$.removeReso_j436sm$(ensureNotNull(this.octant), null), Unit) : null;
     }
   };
   Resonator.prototype.takeDamage_2b7tta$ = function (agent, damage) {
     var tmp$;
-    this.energy = this.energy - damage | 0;
-    if (this.energy <= 0) {
+    var a = this.energy - damage | 0;
+    var newEnergy = Math_0.max(a, 0);
+    this.energy = newEnergy;
+    if (newEnergy <= newEnergy) {
       agent.addAp_za3lpa$(75);
       (tmp$ = this.portal) != null ? (tmp$.removeReso_j436sm$(ensureNotNull(this.octant), agent), Unit) : null;
     }
@@ -5596,11 +5611,11 @@ var QGress = function (_, Kotlin) {
   HackResult.prototype.equals = function (other) {
     return this === other || (other !== null && (typeof other === 'object' && (Object.getPrototypeOf(this) === Object.getPrototypeOf(other) && (Kotlin.equals(this.items, other.items) && Kotlin.equals(this.cooldown, other.cooldown)))));
   };
-  function Link(origin, destination, owner) {
+  function Link(origin, destination, creator) {
     Link$Companion_getInstance();
     this.origin = origin;
     this.destination = destination;
-    this.owner = owner;
+    this.creator = creator;
   }
   Link.prototype.getLine = function () {
     return new Line(this.origin.location, this.destination.location);
@@ -5635,12 +5650,12 @@ var QGress = function (_, Kotlin) {
     var highHpTransparency = Util_getInstance().clipDouble_yvo9jy$(first(byHealth).calcHealth() * 0.01, minTransparency, 1.0);
     var gradient = ctx.createLinearGradient(this.origin.x(), this.origin.y(), this.destination.x(), this.destination.y());
     if (this.origin.calcHealth() < this.destination.calcHealth()) {
-      gradient.addColorStop(0.0, this.owner.faction.fieldStyle + toString(highHpTransparency) + ')');
-      gradient.addColorStop(1.0, this.owner.faction.fieldStyle + toString(lowHpTransparency) + ')');
+      gradient.addColorStop(0.0, this.creator.faction.fieldStyle + toString(highHpTransparency) + ')');
+      gradient.addColorStop(1.0, this.creator.faction.fieldStyle + toString(lowHpTransparency) + ')');
     }
      else {
-      gradient.addColorStop(0.0, this.owner.faction.fieldStyle + toString(lowHpTransparency) + ')');
-      gradient.addColorStop(1.0, this.owner.faction.fieldStyle + toString(highHpTransparency) + ')');
+      gradient.addColorStop(0.0, this.creator.faction.fieldStyle + toString(lowHpTransparency) + ')');
+      gradient.addColorStop(1.0, this.creator.faction.fieldStyle + toString(highHpTransparency) + ')');
     }
     ctx.strokeStyle = gradient;
     ctx.lineWidth = Dim_getInstance().linkLineWidth;
@@ -5687,8 +5702,8 @@ var QGress = function (_, Kotlin) {
      while (false);
     return none$result;
   };
-  Link$Companion.prototype.create_6ezwqo$ = function (origin, destination, owner) {
-    var newLink = new Link(origin, destination, owner);
+  Link$Companion.prototype.create_6ezwqo$ = function (origin, destination, linker) {
+    var newLink = new Link(origin, destination, linker);
     if (this.isPossible_4tp95w$(newLink)) {
       return newLink;
     }
@@ -5718,10 +5733,10 @@ var QGress = function (_, Kotlin) {
     return this.destination;
   };
   Link.prototype.component3 = function () {
-    return this.owner;
+    return this.creator;
   };
-  Link.prototype.copy_6ezwqo$ = function (origin, destination, owner) {
-    return new Link(origin === void 0 ? this.origin : origin, destination === void 0 ? this.destination : destination, owner === void 0 ? this.owner : owner);
+  Link.prototype.copy_6ezwqo$ = function (origin, destination, creator) {
+    return new Link(origin === void 0 ? this.origin : origin, destination === void 0 ? this.destination : destination, creator === void 0 ? this.creator : creator);
   };
   function LinkResult(link, maybeFields) {
     this.link = link;
@@ -5960,9 +5975,9 @@ var QGress = function (_, Kotlin) {
      while (false);
     return any$result;
   };
-  Portal.prototype.isLinkable_0 = function (agent) {
+  Portal.prototype.isLinkable_0 = function (linker) {
     var tmp$;
-    return equals((tmp$ = this.owner) != null ? tmp$.faction : null, agent.faction) && this.isFullyDeployed_0();
+    return equals((tmp$ = this.owner) != null ? tmp$.faction : null, linker.faction) && this.isFullyDeployed_0();
   };
   Portal.prototype.isInside_0 = function () {
     var $receiver = this.findConnectedPortals_0();
@@ -5995,11 +6010,11 @@ var QGress = function (_, Kotlin) {
      while (false);
     return none$result;
   };
-  Portal.prototype.canHack_912u9o$ = function (agent) {
-    return this.handleCooldown_0(agent, true) === Cooldown$NONE_getInstance();
+  Portal.prototype.canHack_912u9o$ = function (hacker) {
+    return this.handleCooldown_0(hacker, true) === Cooldown$NONE_getInstance();
   };
-  Portal.prototype.canLinkOut_912u9o$ = function (agent) {
-    var tmp$ = this.isLinkable_0(agent);
+  Portal.prototype.canLinkOut_912u9o$ = function (linker) {
+    var tmp$ = this.isLinkable_0(linker);
     if (tmp$) {
       var tmp$_0 = this.links.isEmpty();
       if (!tmp$_0) {
@@ -6152,8 +6167,8 @@ var QGress = function (_, Kotlin) {
   Portal.prototype.findConnectedPortals_0 = function () {
     return plus(this.findOutgoingTo_0(), this.findIncomingFrom_0());
   };
-  Portal.prototype.findLinkableForKeys_912u9o$ = function (agent) {
-    var keyset = ensureNotNull(agent.inventory.findUniqueKeys());
+  Portal.prototype.findLinkableForKeys_912u9o$ = function (linker) {
+    var keyset = ensureNotNull(linker.inventory.findUniqueKeys());
     var $receiver = World_getInstance().allPortals;
     var destination = ArrayList_init_0();
     var tmp$;
@@ -6202,20 +6217,20 @@ var QGress = function (_, Kotlin) {
     tmp$_4 = nonIntersecting.iterator();
     while (tmp$_4.hasNext()) {
       var element_3 = tmp$_4.next();
-      if (element_3.isLinkable_0(agent))
+      if (element_3.isLinkable_0(linker))
         destination_4.add_11rb$(element_3);
     }
     return destination_4;
   };
-  Portal.prototype.createLink_g4r5ni$ = function (agent, target) {
-    var newLink = Link$Companion_getInstance().create_6ezwqo$(this, target, agent);
+  Portal.prototype.createLink_g4r5ni$ = function (linker, target) {
+    var newLink = Link$Companion_getInstance().create_6ezwqo$(this, target, linker);
     if (newLink != null) {
       this.links.add_11rb$(newLink);
-      agent.inventory.consumeKeyToPortal_hv9zn6$(target);
-      Com_getInstance().addMessage_61zpoe$(agent.toString() + ' created a link from ' + this + ' to ' + target);
+      linker.inventory.consumeKeyToPortal_hv9zn6$(target);
+      Com_getInstance().addMessage_61zpoe$(linker.toString() + ' created a link from ' + this + ' to ' + target);
       SoundUtil_getInstance().playLinkingSound_4tp95w$(newLink);
-      agent.addAp_za3lpa$(187);
-      agent.removeXm_za3lpa$(250);
+      linker.addAp_za3lpa$(187);
+      linker.removeXm_za3lpa$(250);
       var connectedToTarget = target.findConnectedPortals_0();
       var connectedToHere = this.findConnectedPortals_0();
       var destination = ArrayList_init_0();
@@ -6232,62 +6247,62 @@ var QGress = function (_, Kotlin) {
       while (tmp$_0.hasNext()) {
         var element_0 = tmp$_0.next();
         if (Field$Companion_getInstance().isPossible_rsiz9u$(this, target, element_0)) {
-          var newField = Field$Companion_getInstance().create_veg84i$(this, target, element_0, agent);
+          var newField = Field$Companion_getInstance().create_veg84i$(this, target, element_0, linker);
           if (newField != null) {
-            Com_getInstance().addMessage_61zpoe$(agent.toString() + ' created a field at ' + this + '. +' + toString(newField));
+            Com_getInstance().addMessage_61zpoe$(linker.toString() + ' created a field at ' + this + '. +' + toString(newField));
             SoundUtil_getInstance().playFieldingSound_7ltq94$(newField);
             this.fields.add_11rb$(newField);
-            agent.addAp_za3lpa$(1250);
+            linker.addAp_za3lpa$(1250);
           }
         }
       }
     }
   };
-  Portal.prototype.tryHack_912u9o$ = function (agent) {
-    var cooldown = this.handleCooldown_0(agent, false);
+  Portal.prototype.tryHack_912u9o$ = function (hacker) {
+    var cooldown = this.handleCooldown_0(hacker, false);
     if (cooldown === Cooldown$NONE_getInstance()) {
-      var stuff = this.hack_0(agent);
+      var stuff = this.hack_0(hacker);
       return new HackResult(stuff, null);
     }
     return new HackResult(null, cooldown);
   };
-  Portal.prototype.tryGlyph_912u9o$ = function (agent) {
+  Portal.prototype.tryGlyph_912u9o$ = function (glypher) {
     var tmp$;
-    var normal = this.tryHack_912u9o$(agent);
+    var normal = this.tryHack_912u9o$(glypher);
     if (normal.cooldown == null) {
       var glyphItems = ArrayList_init_0();
       glyphItems.addAll_brywnq$((tmp$ = normal.items) != null ? tmp$ : emptyList());
-      glyphItems.addAll_brywnq$(this.hack_0(agent));
-      if (Util_getInstance().random() < agent.skills.glyphSkill) {
-        glyphItems.addAll_brywnq$(this.hack_0(agent));
+      glyphItems.addAll_brywnq$(this.hack_0(glypher));
+      if (Util_getInstance().random() < glypher.skills.glyphSkill) {
+        glyphItems.addAll_brywnq$(this.hack_0(glypher));
       }
       return new HackResult(toList_0(glyphItems), null);
     }
     return new HackResult(null, normal.cooldown);
   };
-  Portal.prototype.hack_0 = function (agent) {
+  Portal.prototype.hack_0 = function (hacker) {
     var tmp$;
     var a = this.calculateLevel_0();
-    var b = agent.getLevel();
+    var b = hacker.getLevel();
     var level = Math_0.min(a, b);
     var newStuff = ArrayList_init_0();
-    newStuff.addAll_brywnq$(this.obtainResos_0(agent, level));
-    newStuff.addAll_brywnq$(this.obtainXmps_0(agent, level));
-    newStuff.addAll_brywnq$(this.obtainShields_0(agent));
-    newStuff.addAll_brywnq$(this.obtainVirus_0(agent));
-    newStuff.addAll_brywnq$(this.obtainPowerCubes_0(level, agent));
-    newStuff.add_11rb$(PortalKey$Companion_getInstance().tryHack_gju65e$(this, agent));
-    var isEnemyPortal = this.owner != null && !equals(agent.faction, (tmp$ = this.owner) != null ? tmp$.faction : null);
+    newStuff.addAll_brywnq$(this.obtainResos_0(hacker, level));
+    newStuff.addAll_brywnq$(this.obtainXmps_0(hacker, level));
+    newStuff.addAll_brywnq$(this.obtainShields_0(hacker));
+    newStuff.addAll_brywnq$(this.obtainVirus_0(hacker));
+    newStuff.addAll_brywnq$(this.obtainPowerCubes_0(level, hacker));
+    newStuff.add_11rb$(PortalKey$Companion_getInstance().tryHack_gju65e$(this, hacker));
+    var isEnemyPortal = this.owner != null && !equals(hacker.faction, (tmp$ = this.owner) != null ? tmp$.faction : null);
     if (isEnemyPortal) {
-      agent.addAp_za3lpa$(100);
-      agent.removeXm_za3lpa$(300 * this.calculateLevel_0() | 0);
+      hacker.addAp_za3lpa$(100);
+      hacker.removeXm_za3lpa$(300 * this.calculateLevel_0() | 0);
     }
      else {
-      agent.removeXm_za3lpa$(50 * this.calculateLevel_0() | 0);
+      hacker.removeXm_za3lpa$(50 * this.calculateLevel_0() | 0);
     }
     return toMutableList(filterNotNull(newStuff));
   };
-  Portal.prototype.obtainResos_0 = function (agent, level) {
+  Portal.prototype.obtainResos_0 = function (hacker, level) {
     var stuff = ArrayList_init_0();
     var $receiver = Quality$values();
     var destination = ArrayList_init($receiver.length);
@@ -6298,13 +6313,13 @@ var QGress = function (_, Kotlin) {
       var tmp$_1;
       var selectedLevel = ResonatorLevel$Companion_getInstance().find_p76lt3$(level, item).level;
       while (Util_getInstance().random() < item.chance) {
-        stuff.add_11rb$(Kotlin.isType(tmp$_1 = Resonator$Companion_getInstance().create_2b7tta$(agent, selectedLevel), QgressItem) ? tmp$_1 : throwCCE());
+        stuff.add_11rb$(Kotlin.isType(tmp$_1 = Resonator$Companion_getInstance().create_2b7tta$(hacker, selectedLevel), QgressItem) ? tmp$_1 : throwCCE());
       }
       tmp$_0.call(destination, Unit);
     }
     return stuff;
   };
-  Portal.prototype.obtainXmps_0 = function (agent, level) {
+  Portal.prototype.obtainXmps_0 = function (hacker, level) {
     var stuff = ArrayList_init_0();
     var $receiver = Quality$values();
     var destination = ArrayList_init($receiver.length);
@@ -6315,25 +6330,25 @@ var QGress = function (_, Kotlin) {
       var tmp$_1;
       var selectedLevel = XmpLevel$Companion_getInstance().find_p76lt3$(level, item).level;
       while (Util_getInstance().random() < item.chance) {
-        stuff.add_11rb$(Kotlin.isType(tmp$_1 = XmpBurster$Companion_getInstance().create_2b7tta$(agent, selectedLevel), QgressItem) ? tmp$_1 : throwCCE());
+        stuff.add_11rb$(Kotlin.isType(tmp$_1 = XmpBurster$Companion_getInstance().create_2b7tta$(hacker, selectedLevel), QgressItem) ? tmp$_1 : throwCCE());
       }
       tmp$_0.call(destination, Unit);
     }
     return stuff;
   };
-  Portal.prototype.obtainShields_0 = function (agent) {
+  Portal.prototype.obtainShields_0 = function (hacker) {
     var stuff = ArrayList_init_0();
     var $receiver = ShieldType$values();
     var tmp$;
     for (tmp$ = 0; tmp$ !== $receiver.length; ++tmp$) {
       var element = $receiver[tmp$];
       if (Util_getInstance().random() < element.chance) {
-        stuff.add_11rb$(new Shield(element, agent));
+        stuff.add_11rb$(new Shield(element, hacker));
       }
     }
     return stuff;
   };
-  Portal.prototype.obtainPowerCubes_0 = function (level, agent) {
+  Portal.prototype.obtainPowerCubes_0 = function (level, hacker) {
     var stuff = ArrayList_init_0();
     var $receiver = Quality$values();
     var destination = ArrayList_init($receiver.length);
@@ -6344,20 +6359,20 @@ var QGress = function (_, Kotlin) {
       var tmp$_1;
       var selectedLevel = PowerCubeLevel$Companion_getInstance().find_p76lt3$(level, item).level;
       while (Util_getInstance().random() < item.chance * 0.3) {
-        stuff.add_11rb$(Kotlin.isType(tmp$_1 = PowerCube$Companion_getInstance().create_2b7tta$(agent, selectedLevel), QgressItem) ? tmp$_1 : throwCCE());
+        stuff.add_11rb$(Kotlin.isType(tmp$_1 = PowerCube$Companion_getInstance().create_2b7tta$(hacker, selectedLevel), QgressItem) ? tmp$_1 : throwCCE());
       }
       tmp$_0.call(destination, Unit);
     }
     return stuff;
   };
-  Portal.prototype.obtainVirus_0 = function (agent) {
+  Portal.prototype.obtainVirus_0 = function (hacker) {
     var stuff = ArrayList_init_0();
     var $receiver = VirusType$values();
     var tmp$;
     for (tmp$ = 0; tmp$ !== $receiver.length; ++tmp$) {
       var element = $receiver[tmp$];
       while (Util_getInstance().random() < (1 / element.roll | 0)) {
-        stuff.add_11rb$(new Virus(element, agent));
+        stuff.add_11rb$(new Virus(element, hacker));
       }
     }
     return stuff;
@@ -6408,9 +6423,9 @@ var QGress = function (_, Kotlin) {
       }
     };
   }
-  Portal.prototype.handleCooldown_0 = function (agent, readOnly) {
+  Portal.prototype.handleCooldown_0 = function (hacker, readOnly) {
     var tmp$;
-    var key = agent.key();
+    var key = hacker.key();
     var cool = Portal$handleCooldown$cool(readOnly, this, key);
     var burn = Portal$handleCooldown$burn(readOnly, this, key);
     var isFirstHack = !this.lastHacks_0.containsKey_11rb$(key);
@@ -6433,26 +6448,26 @@ var QGress = function (_, Kotlin) {
     }
     return tmp$;
   };
-  Portal.prototype.deployMods_45mt8d$ = function (agent, mods) {
+  Portal.prototype.deployMods_45mt8d$ = function (deployer, mods) {
     var isCommon = true;
     var isRare = false;
     var isVeryRare = false;
     if (isCommon) {
-      agent.removeXm_za3lpa$(400);
+      deployer.removeXm_za3lpa$(400);
     }
     if (isRare) {
-      agent.removeXm_za3lpa$(800);
+      deployer.removeXm_za3lpa$(800);
     }
     if (isVeryRare) {
-      agent.removeXm_za3lpa$(1000);
+      deployer.removeXm_za3lpa$(1000);
     }
   };
   var checkIndexOverflow = Kotlin.kotlin.collections.checkIndexOverflow_za3lpa$;
-  Portal.prototype.deploy_en6fu0$ = function (agent, resos, distance) {
+  Portal.prototype.deploy_en6fu0$ = function (deployer, resos, distance) {
     var isCapture = this.owner == null;
     if (isCapture) {
-      this.owner = agent;
-      Com_getInstance().addMessage_61zpoe$(agent.toString() + ' captured ' + this + '.');
+      this.owner = deployer;
+      Com_getInstance().addMessage_61zpoe$(deployer.toString() + ' captured ' + this + '.');
     }
     var $receiver = this.resoSlots;
     var tmp$;
@@ -6488,26 +6503,26 @@ var QGress = function (_, Kotlin) {
       var tmp$_2, tmp$_3;
       var oldReso = this.resoSlots.get_11rb$(octant);
       if (isCapture && index_0 === 0) {
-        agent.addAp_za3lpa$(500);
+        deployer.addAp_za3lpa$(500);
       }
        else if (index_0 < firstResoCount) {
-        agent.addAp_za3lpa$(125);
+        deployer.addAp_za3lpa$(125);
       }
        else if (index_0 === firstResoCount && (firstResoCount + initialResoCount | 0) === 8) {
-        agent.addAp_za3lpa$(250);
+        deployer.addAp_za3lpa$(250);
       }
-       else if ((oldReso != null ? oldReso.isOwnedBy_912u9o$(agent) : null) !== true) {
-        agent.addAp_za3lpa$(65);
+       else if ((oldReso != null ? oldReso.isOwnedBy_912u9o$(deployer) : null) !== true) {
+        deployer.addAp_za3lpa$(65);
       }
-      agent.removeXm_za3lpa$(resonator.level.level * 20 | 0);
+      deployer.removeXm_za3lpa$(resonator.level.level * 20 | 0);
       var oldDistance = oldReso != null ? oldReso.distance : null;
       var newDistance = (tmp$_2 = oldDistance === 0 ? distance : oldDistance) != null ? tmp$_2 : distance;
-      (tmp$_3 = this.resoSlots.get_11rb$(octant)) != null ? (tmp$_3.deployReso_otfdig$(agent, resonator, newDistance), Unit) : null;
+      (tmp$_3 = this.resoSlots.get_11rb$(octant)) != null ? (tmp$_3.deployReso_otfdig$(deployer, resonator, newDistance), Unit) : null;
       var xx = this.location.x + octant.calcXOffset_za3lpa$(newDistance);
       var yy = this.location.y + octant.calcYOffset_za3lpa$(newDistance);
       resonator.deploy_njiqqf$(this, octant, new Coords(xx, yy));
     }
-    var tmp$_4 = agent.inventory;
+    var tmp$_4 = deployer.inventory;
     var destination_0 = ArrayList_init(resos.size);
     var tmp$_5;
     tmp$_5 = resos.entries.iterator();
@@ -6552,9 +6567,9 @@ var QGress = function (_, Kotlin) {
     }
     return destination;
   };
-  Portal.prototype.destroyAllLinksAndFields_0 = function (agent) {
-    if (agent === void 0)
-      agent = null;
+  Portal.prototype.destroyAllLinksAndFields_0 = function (destroyer) {
+    if (destroyer === void 0)
+      destroyer = null;
     var $receiver = World_getInstance().allLinks();
     var destination = ArrayList_init_0();
     var tmp$;
@@ -6569,14 +6584,14 @@ var QGress = function (_, Kotlin) {
     tmp$_1 = destination.iterator();
     while (tmp$_1.hasNext()) {
       var element_0 = tmp$_1.next();
-      agent != null ? (agent.addAp_za3lpa$(187), Unit) : null;
+      destroyer != null ? (destroyer.addAp_za3lpa$(187), Unit) : null;
       element_0.origin.links.remove_11rb$(element_0);
     }
     var tmp$_2;
     tmp$_2 = this.links.iterator();
     while (tmp$_2.hasNext()) {
       var element_1 = tmp$_2.next();
-      agent != null ? (agent.addAp_za3lpa$(187), Unit) : null;
+      destroyer != null ? (destroyer.addAp_za3lpa$(187), Unit) : null;
     }
     this.links.clear();
     var $receiver_0 = World_getInstance().allFields();
@@ -6593,7 +6608,7 @@ var QGress = function (_, Kotlin) {
     tmp$_5 = destination_0.iterator();
     while (tmp$_5.hasNext()) {
       var element_3 = tmp$_5.next();
-      agent != null ? (agent.addAp_za3lpa$(750), Unit) : null;
+      destroyer != null ? (destroyer.addAp_za3lpa$(750), Unit) : null;
       element_3.origin.fields.remove_11rb$(element_3);
     }
     var $receiver_1 = World_getInstance().allFields();
@@ -6610,20 +6625,20 @@ var QGress = function (_, Kotlin) {
     tmp$_8 = destination_1.iterator();
     while (tmp$_8.hasNext()) {
       var element_5 = tmp$_8.next();
-      agent != null ? (agent.addAp_za3lpa$(750), Unit) : null;
+      destroyer != null ? (destroyer.addAp_za3lpa$(750), Unit) : null;
       element_5.origin.fields.remove_11rb$(element_5);
     }
     var tmp$_9;
     tmp$_9 = this.fields.iterator();
     while (tmp$_9.hasNext()) {
       var element_6 = tmp$_9.next();
-      agent != null ? (agent.addAp_za3lpa$(750), Unit) : null;
+      destroyer != null ? (destroyer.addAp_za3lpa$(750), Unit) : null;
     }
     this.fields.clear();
   };
-  Portal.prototype.destroy_4705j1$ = function (agent) {
-    if (agent === void 0)
-      agent = null;
+  Portal.prototype.destroy_4705j1$ = function (destroyer) {
+    if (destroyer === void 0)
+      destroyer = null;
     this.owner = null;
     var tmp$;
     tmp$ = this.resoSlots.entries.iterator();
@@ -6631,7 +6646,7 @@ var QGress = function (_, Kotlin) {
       var element = tmp$.next();
       element.value.clear();
     }
-    this.destroyAllLinksAndFields_0(agent);
+    this.destroyAllLinksAndFields_0(destroyer);
     var tmp$_0;
     tmp$_0 = World_getInstance().allAgents.iterator();
     while (tmp$_0.hasNext()) {
@@ -6667,7 +6682,7 @@ var QGress = function (_, Kotlin) {
     }
     World_getInstance().allPortals.remove_11rb$(this);
   };
-  Portal.prototype.removeReso_j436sm$ = function (octant, agent) {
+  Portal.prototype.removeReso_j436sm$ = function (octant, destroyer) {
     var tmp$;
     (tmp$ = this.resoSlots.get_11rb$(octant)) != null ? (tmp$.clear(), Unit) : null;
     var $receiver = this.resoSlots;
@@ -6682,16 +6697,16 @@ var QGress = function (_, Kotlin) {
     }
     var numberOfResosLeft = destination.size;
     if (numberOfResosLeft <= 0) {
-      this.destroy_4705j1$(agent);
+      this.destroy_4705j1$(destroyer);
     }
      else if (numberOfResosLeft <= 2) {
-      this.destroyAllLinksAndFields_0(agent);
+      this.destroyAllLinksAndFields_0(destroyer);
     }
   };
   var emptyMap = Kotlin.kotlin.collections.emptyMap_q3lmfv$;
-  Portal.prototype.findAllowedResoLevels_912u9o$ = function (agent) {
+  Portal.prototype.findAllowedResoLevels_912u9o$ = function (deployer) {
     var tmp$, tmp$_0;
-    if (this.owner == null || equals((tmp$ = this.owner) != null ? tmp$.faction : null, agent.faction)) {
+    if (this.owner == null || equals((tmp$ = this.owner) != null ? tmp$.faction : null, deployer.faction)) {
       var $receiver = ResonatorLevel$values();
       var destination = ArrayList_init($receiver.length);
       var tmp$_1;
@@ -6706,7 +6721,7 @@ var QGress = function (_, Kotlin) {
         while (tmp$_4.hasNext()) {
           var element = tmp$_4.next();
           var tmp$_5, tmp$_6;
-          if (element.value.isOwnedBy_912u9o$(agent) && ((tmp$_6 = (tmp$_5 = element.value.resonator) != null ? tmp$_5.level : null) != null ? tmp$_6.level : null) === item.level) {
+          if (element.value.isOwnedBy_912u9o$(deployer) && ((tmp$_6 = (tmp$_5 = element.value.resonator) != null ? tmp$_5.level : null) != null ? tmp$_6.level : null) === item.level) {
             destination_0.put_xwzc9p$(element.key, element.value);
           }
         }
@@ -6733,13 +6748,15 @@ var QGress = function (_, Kotlin) {
     return to(tmp$_0, tmp$);
   };
   Portal.prototype.decay = function () {
+    var allResos = this.getAllResos_0();
     var tmp$;
-    tmp$ = this.getAllResos_0().iterator();
+    tmp$ = allResos.iterator();
     while (tmp$.hasNext()) {
       var element = tmp$.next();
       element.decay();
     }
-    if (this.getAllResos_0().isEmpty()) {
+    var newResos = this.getAllResos_0();
+    if (newResos.isEmpty()) {
       this.destroy_4705j1$();
     }
   };
@@ -7127,8 +7144,8 @@ var QGress = function (_, Kotlin) {
   ResonatorSlot.prototype.isOwnedBy_912u9o$ = function (agent) {
     return equals(this.owner, agent);
   };
-  ResonatorSlot.prototype.deployReso_otfdig$ = function (owner, reso, dist) {
-    this.owner = owner;
+  ResonatorSlot.prototype.deployReso_otfdig$ = function (deployer, reso, dist) {
+    this.owner = deployer;
     this.resonator = reso;
     this.distance = dist;
   };
@@ -7209,12 +7226,14 @@ var QGress = function (_, Kotlin) {
   function XmHeap$Companion() {
     XmHeap$Companion_instance = this;
     this.coreCount_0 = 3;
-    this.strayXmMinDistance = 21;
     this.CORE_IMAGE_0 = this.drawCoreTemplate_0();
     this.minCapacity_0 = 35;
     this.maxCapacity_0 = 100;
     this.capacity = 65;
   }
+  XmHeap$Companion.prototype.strayXmMinDistance_6taknv$ = function (isPortalDrop) {
+    return isPortalDrop ? 13 : 21;
+  };
   function XmHeap$Companion$drawHeapTemplate$lambda(closure$w, closure$h, closure$scatter, this$XmHeap$) {
     return function (ctx) {
       var $receiver = new IntRange(1, 3);
@@ -7320,7 +7339,7 @@ var QGress = function (_, Kotlin) {
     this.strayXm_0.clear();
     this.strayXm_0.putAll_a2k3zr$(unCollectedXm);
   };
-  XmMap.prototype.createStrayXm_lfj9be$ = function (location) {
+  XmMap.prototype.createStrayXm_dusakv$ = function (location, isPortalDrop) {
     var $receiver = this.strayXm_0.keys;
     var none$result;
     none$break: do {
@@ -7332,7 +7351,7 @@ var QGress = function (_, Kotlin) {
       tmp$ = $receiver.iterator();
       while (tmp$.hasNext()) {
         var element = tmp$.next();
-        if (element.distanceTo_lfj9be$(location) < 21) {
+        if (element.distanceTo_lfj9be$(location) < XmHeap$Companion_getInstance().strayXmMinDistance_6taknv$(isPortalDrop)) {
           none$result = false;
           break none$break;
         }
@@ -7688,7 +7707,7 @@ var QGress = function (_, Kotlin) {
     tmp$_2 = destination_0.iterator();
     while (tmp$_2.hasNext()) {
       var element_0 = tmp$_2.next();
-      XmMap_getInstance().createStrayXm_lfj9be$(element_0);
+      XmMap_getInstance().createStrayXm_dusakv$(element_0, true);
     }
     var $receiver_1 = World_getInstance().allNonFaction;
     var destination_2 = ArrayList_init_0();
@@ -7706,7 +7725,7 @@ var QGress = function (_, Kotlin) {
     while (tmp$_4.hasNext()) {
       var item_1 = tmp$_4.next();
       var tmp$_5 = destination_3.add_11rb$;
-      XmMap_getInstance().createStrayXm_lfj9be$(item_1.pos.randomNearPoint_za3lpa$(Dim_getInstance().npcXmSpawnRadius));
+      XmMap_getInstance().createStrayXm_dusakv$(item_1.pos.randomNearPoint_za3lpa$(Dim_getInstance().npcXmSpawnRadius), false);
       tmp$_5.call(destination_3, Unit);
     }
   };
@@ -10214,14 +10233,16 @@ var QGress = function (_, Kotlin) {
     rootDiv.addEventListener('mousemove', HtmlUtil$load$lambda_3(this), false);
     var popupId = 'popup';
     rootDiv.append(this.createPopup_0(popupId));
-    if (this.isLocal()) {
-      this.chooseUserFaction_0(Faction$Companion_getInstance().random());
+    var maybeFaction = this.getFactionFromUrl_0();
+    if (maybeFaction != null) {
+      this.chooseUserFaction_0(maybeFaction);
+    }
+     else {
+      if (this.isLocal()) {
+        this.chooseUserFaction_0(Faction$Companion_getInstance().random());
+      }
     }
     this.initWorld_0();
-  };
-  HtmlUtil.prototype.isQuickstart = function () {
-    var tmp$;
-    return (Kotlin.isType(tmp$ = document.getElementById('quickstart'), HTMLInputElement) ? tmp$ : throwCCE()).checked;
   };
   function HtmlUtil$createPopup$createButton$lambda(closure$faction, this$HtmlUtil) {
     return function (it) {
@@ -10260,7 +10281,7 @@ var QGress = function (_, Kotlin) {
     var quickstartCheck = Kotlin.isType(tmp$_2 = document.createElement('input'), HTMLInputElement) ? tmp$_2 : throwCCE();
     quickstartCheck.id = 'quickstart';
     quickstartCheck.type = 'checkbox';
-    quickstartCheck.checked = HtmlUtil_getInstance().isLocal();
+    quickstartCheck.checked = this.isQuickstartFromUrl_0();
     addClass(quickstartCheck, ['checkbox']);
     quickstartCheck.disabled = true;
     var quickstartLabel = Kotlin.isType(tmp$_3 = document.createElement('span'), HTMLSpanElement) ? tmp$_3 : throwCCE();
@@ -10735,7 +10756,7 @@ var QGress = function (_, Kotlin) {
   HtmlUtil.prototype.createNewUrl_0 = function (center, name) {
     if (name === void 0)
       name = 'unknown';
-    var tmp$, tmp$_0;
+    var tmp$, tmp$_0, tmp$_1, tmp$_2;
     var split_0 = split(center.toString(), [',']);
     var lng = split_0.get_za3lpa$(0);
     var lat = split_0.get_za3lpa$(1);
@@ -10749,7 +10770,8 @@ var QGress = function (_, Kotlin) {
       tmp$_0 = target;
     }
     var newUrl = tmp$_0;
-    return this.addParameters_0(newUrl, lng, lat, name);
+    var fact = (tmp$_2 = (tmp$_1 = World_getInstance().userFaction) != null ? tmp$_1.abbr : null) != null ? tmp$_2 : '';
+    return this.addParameters_0(newUrl, fact, lng, lat, name, this.isQuickstart());
   };
   HtmlUtil.prototype.isLocal = function () {
     var tmp$, tmp$_0, tmp$_1;
@@ -10795,20 +10817,32 @@ var QGress = function (_, Kotlin) {
     var geo = this.getLngLatFromUrl_0();
     return (tmp$ = geo != null ? geo.toJson() : null) != null ? tmp$ : this.getCenterFromDropdown_0();
   };
-  HtmlUtil.prototype.getLocationNameFromUrl_0 = function () {
+  HtmlUtil.prototype.url_0 = function () {
     var tmp$, tmp$_0;
-    var url = new URL((tmp$_0 = (tmp$ = document.location) != null ? tmp$.href : null) != null ? tmp$_0 : '');
-    return url.searchParams.get('name');
+    return new URL((tmp$_0 = (tmp$ = document.location) != null ? tmp$.href : null) != null ? tmp$_0 : '');
+  };
+  HtmlUtil.prototype.getLocationNameFromUrl_0 = function () {
+    return this.url_0().searchParams.get('name');
   };
   HtmlUtil.prototype.getLngLatFromUrl_0 = function () {
-    var tmp$, tmp$_0;
-    var url = new URL((tmp$_0 = (tmp$ = document.location) != null ? tmp$.href : null) != null ? tmp$_0 : '');
+    var url = this.url_0();
     var lngString = url.searchParams.get('lng');
     var latString = url.searchParams.get('lat');
     return GeoCoords$Companion_getInstance().fromStrings_rkkr90$(lngString, latString);
   };
-  HtmlUtil.prototype.addParameters_0 = function (url, lng, lat, name) {
-    return url + '?lng=' + lng + '&lat=' + lat + '&name=' + name;
+  HtmlUtil.prototype.getFactionFromUrl_0 = function () {
+    return Faction$Companion_getInstance().fromString_pdl1vj$(this.url_0().searchParams.get('faction'));
+  };
+  HtmlUtil.prototype.isQuickstart = function () {
+    var tmp$;
+    return (Kotlin.isType(tmp$ = document.getElementById('quickstart'), HTMLInputElement) ? tmp$ : throwCCE()).checked;
+  };
+  HtmlUtil.prototype.isQuickstartFromUrl_0 = function () {
+    var tmp$, tmp$_0;
+    return (tmp$_0 = (tmp$ = this.url_0().searchParams.get('quickstart')) != null ? toBoolean(tmp$) : null) != null ? tmp$_0 : false;
+  };
+  HtmlUtil.prototype.addParameters_0 = function (url, faction, lng, lat, name, isQs) {
+    return url + '?faction=' + faction + '&lng=' + lng + '&lat=' + lat + '&name=' + name + '&quickstart=' + isQs;
   };
   HtmlUtil.$metadata$ = {
     kind: Kind_OBJECT,
@@ -12124,7 +12158,7 @@ var QGress = function (_, Kotlin) {
     tmp$ = $receiver.iterator();
     while (tmp$.hasNext()) {
       var element = tmp$.next();
-      if (element.owner.faction === fact)
+      if (element.creator.faction === fact)
         destination.add_11rb$(element);
     }
     return destination.size;

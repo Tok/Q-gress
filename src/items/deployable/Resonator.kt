@@ -26,15 +26,17 @@ data class Resonator(val owner: Agent, val level: ResonatorLevel, var energy: In
     private fun decayEnergy() = (level.energy * DECAY_RATIO).toInt()
 
     fun decay() {
-        this.energy = max(0, energy - decayEnergy())
-        if (energy <= 0) {
+        val newEnergy = max(energy - decayEnergy(), 0)
+        this.energy = newEnergy
+        if (newEnergy <= 0) {
             portal?.removeReso(octant!!, null)
         }
     }
 
     fun takeDamage(agent: Agent, damage: Int) {
-        this.energy = energy - damage
-        if (energy <= 0) {
+        val newEnergy = max(energy - damage, 0)
+        this.energy = newEnergy
+        if (newEnergy <= newEnergy) {
             agent.addAp(75)
             portal?.removeReso(octant!!, agent)
         }

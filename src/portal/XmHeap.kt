@@ -27,7 +27,7 @@ data class XmHeap(private val cores: Triple<Int, Int, Int>, private var isCollec
 
     companion object {
         private const val coreCount = 3
-        const val strayXmMinDistance = 21
+        fun strayXmMinDistance(isPortalDrop: Boolean) = if (isPortalDrop) 13 else 21
 
         private val CORE_IMAGE = drawCoreTemplate()
         private fun drawHeapTemplate(): Canvas {

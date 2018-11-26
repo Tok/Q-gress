@@ -98,13 +98,19 @@ object HtmlUtil {
 
         val popupId = "popup"
         rootDiv.append(createPopup(popupId))
-        if (isLocal()) {
-            chooseUserFaction(Faction.random())
+
+        val maybeFaction = getFactionFromUrl()
+        if (maybeFaction != null) {
+            chooseUserFaction(maybeFaction)
+        } else {
+            if (isLocal()) {
+                chooseUserFaction(Faction.random())
+            }
         }
+
         initWorld()
     }
 
-    fun isQuickstart() = (document.getElementById("quickstart") as HTMLInputElement).checked
     private fun createPopup(id: String): HTMLDivElement {
         fun createButton(faction: Faction): HTMLButtonElement {
             val button = document.createElement("button") as HTMLButtonElement
@@ -131,7 +137,7 @@ object HtmlUtil {
         val quickstartCheck = document.createElement("input") as HTMLInputElement
         quickstartCheck.id = "quickstart"
         quickstartCheck.type = "checkbox"
-        quickstartCheck.checked = HtmlUtil.isLocal()
+        quickstartCheck.checked = isQuickstartFromUrl()
         quickstartCheck.addClass("checkbox")
         quickstartCheck.disabled = true //FIXME
         val quickstartLabel = document.createElement("span") as HTMLSpanElement
@@ -512,7 +518,8 @@ object HtmlUtil {
         } else {
             target
         }
-        return addParameters(newUrl, lng, lat, name)
+        val fact = World.userFaction?.abbr ?: ""
+        return addParameters(newUrl, fact, lng, lat, name, isQuickstart())
     }
 
     fun isLocal() = document.location?.href?.contains("localhost") ?: false
@@ -553,19 +560,24 @@ object HtmlUtil {
         return geo?.toJson() ?: getCenterFromDropdown()
     }
 
-    private fun getLocationNameFromUrl(): String? {
-        val url = URL(document.location?.href ?: "")
-        return url.searchParams.get("name")
-    }
-
+    private fun url() = URL(document.location?.href ?: "")
+    private fun getLocationNameFromUrl() = url().searchParams.get("name")
     private fun getLngLatFromUrl(): GeoCoords? {
-        val url = URL(document.location?.href ?: "")
+        val url = url()
         val lngString = url.searchParams.get("lng")
         val latString = url.searchParams.get("lat")
         return GeoCoords.fromStrings(lngString, latString)
     }
 
-    private fun addParameters(url: String, lng: String, lat: String, name: String): String {
-        return "$url?lng=$lng&lat=$lat&name=$name"
+    private fun getFactionFromUrl() =
+            Faction.fromString(url().searchParams.get("faction"))
+
+    fun isQuickstart() = (document.getElementById("quickstart") as HTMLInputElement).checked
+    private fun isQuickstartFromUrl() =
+            url().searchParams.get("quickstart")?.toBoolean() ?: false
+
+    private fun addParameters(url: String, faction: String, lng: String, lat: String,
+                              name: String, isQs: Boolean): String {
+        return "$url?faction=$faction&lng=$lng&lat=$lat&name=$name&quickstart=$isQs"
     }
 }

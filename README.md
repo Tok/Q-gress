@@ -5,9 +5,8 @@ https://tok.github.io/Q-gress/
 
 ## Work in Progress
 
-At this stage Q-Gress is more or less a playground. 
 Depending on commit history, the version presented may be nightly snapshot not behaving correctly.
-Q-Gress was never tested on Mobile and is exclusively designed for desktop browsers.
+Q-Gress was never tested on Mobile and is exclusively designed for fast desktop browsers.
 
 ## TODO
 
@@ -15,9 +14,7 @@ Q-Gress was never tested on Mobile and is exclusively designed for desktop brows
 - Implement shielding
 - Improve agent behavior
   * More destinations
-    * Move to next agent
-    * Move to group of agents
-    * Move to random agent
+    * Swarming
 - Implement inventory limit
 
 ### Medium Priority
@@ -36,7 +33,6 @@ Q-Gress was never tested on Mobile and is exclusively designed for desktop brows
 
 ### Further Ideas
 - Find a way to hook up a neural network for Q-learning
-- Create a mode to that uses emojis for agent visualization
 
 ### Third Party Copyrigths
 

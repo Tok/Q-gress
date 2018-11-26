@@ -29,5 +29,5 @@ object Explorer : ConditionalAction {
         return agent
     }
 
-    private const val portalDiscoveryChance = 0.1
+    private const val portalDiscoveryChance = 0.2
 }

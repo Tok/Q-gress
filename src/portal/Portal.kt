@@ -45,13 +45,13 @@ data class Portal(val name: String, val location: Coords,
     fun isFriendlyTo(agent: Agent) = owner != null && owner?.faction == agent.faction
 
     private fun isCoveredByField() = World.allFields().any { it.isCoveringPortal(this) }
-    private fun isLinkable(agent: Agent): Boolean = this.owner?.faction == agent.faction && isFullyDeployed()
+    private fun isLinkable(linker: Agent): Boolean = this.owner?.faction == linker.faction && isFullyDeployed()
     private fun isInside(): Boolean = findConnectedPortals().none { connected ->
         connected.fields.filter { it.isConnectedTo(this) }.count() > 1
     }
 
-    fun canHack(agent: Agent): Boolean = handleCooldown(agent, true) == Cooldown.NONE
-    fun canLinkOut(agent: Agent) = isLinkable(agent) && (links.isEmpty() || links.count() < 8) &&
+    fun canHack(hacker: Agent): Boolean = handleCooldown(hacker, true) == Cooldown.NONE
+    fun canLinkOut(linker: Agent) = isLinkable(linker) && (links.isEmpty() || links.count() < 8) &&
             !isCoveredByField() && isInside()
 
     private fun calculateLevel() = if (owner == null) 1 else clipLevel(resoSlots.values.map {
@@ -116,26 +116,26 @@ data class Portal(val name: String, val location: Coords,
 
     private fun findConnectedPortals(): List<Portal> = findOutgoingTo() + findIncomingFrom()
 
-    fun findLinkableForKeys(agent: Agent): List<Portal> {
-        val keyset = agent.inventory.findUniqueKeys()!!
+    fun findLinkableForKeys(linker: Agent): List<Portal> {
+        val keyset = linker.inventory.findUniqueKeys()!!
         val allLinks = World.allPortals.flatMap { it.links }.filter { Link.isPossible(it) }.toSet()
         val nonIntersecting: List<Portal> = keyset.map { it.portal }.filter { destination ->
             val line = Line(location, destination.location)
             allLinks.filter { it.getLine().doesIntersect(line) }.isEmpty()
         }
-        return nonIntersecting.filter { it.isLinkable(agent) }
+        return nonIntersecting.filter { it.isLinkable(linker) }
     }
 
-    fun createLink(agent: Agent, target: Portal) {
-        val newLink: Link? = Link.create(this, target, agent)
+    fun createLink(linker: Agent, target: Portal) {
+        val newLink: Link? = Link.create(this, target, linker)
         if (newLink != null) {
             // create link
             links.add(newLink)
-            agent.inventory.consumeKeyToPortal(target)
-            Com.addMessage("$agent created a link from $this to $target")
+            linker.inventory.consumeKeyToPortal(target)
+            Com.addMessage("$linker created a link from $this to $target")
             SoundUtil.playLinkingSound(newLink)
-            agent.addAp(187)
-            agent.removeXm(250)
+            linker.addAp(187)
+            linker.removeXm(250)
 
             // create fields
             val connectedToTarget = target.findConnectedPortals()
@@ -143,119 +143,119 @@ data class Portal(val name: String, val location: Coords,
             val anchors = connectedToTarget.filter { connectedToHere.contains(it) }
             anchors.forEach { anchor ->
                 if (Field.isPossible(this, target, anchor)) {
-                    val newField = Field.create(this, target, anchor, agent)
+                    val newField = Field.create(this, target, anchor, linker)
                     if (newField != null) {
-                        Com.addMessage("$agent created a field at $this. +$newField")
+                        Com.addMessage("$linker created a field at $this. +$newField")
                         SoundUtil.playFieldingSound(newField)
                         fields.add(newField)
-                        agent.addAp(1250)
+                        linker.addAp(1250)
                     }
                 }
             }
         }
     }
 
-    fun tryHack(agent: Agent): HackResult {
-        val cooldown = handleCooldown(agent, false)
+    fun tryHack(hacker: Agent): HackResult {
+        val cooldown = handleCooldown(hacker, false)
         if (cooldown == Cooldown.NONE) {
-            val stuff = hack(agent)
+            val stuff = hack(hacker)
             return HackResult(stuff, null)
         }
         return HackResult(null, cooldown)
     }
 
-    fun tryGlyph(agent: Agent): HackResult {
-        val normal = tryHack(agent)
+    fun tryGlyph(glypher: Agent): HackResult {
+        val normal = tryHack(glypher)
         if (normal.cooldown == null) {
             val glyphItems = mutableListOf<QgressItem>()
             glyphItems.addAll(normal.items ?: emptyList())
-            glyphItems.addAll(hack(agent))
-            if (Util.random() < agent.skills.glyphSkill) {
-                glyphItems.addAll(hack(agent))
+            glyphItems.addAll(hack(glypher))
+            if (Util.random() < glypher.skills.glyphSkill) {
+                glyphItems.addAll(hack(glypher))
             }
             return HackResult(glyphItems.toList(), null)
         }
         return HackResult(null, normal.cooldown)
     }
 
-    private fun hack(agent: Agent): MutableList<QgressItem> {
-        val level = min(calculateLevel(), agent.getLevel())
+    private fun hack(hacker: Agent): MutableList<QgressItem> {
+        val level = min(calculateLevel(), hacker.getLevel())
 
         val newStuff = mutableListOf<QgressItem?>()
-        newStuff.addAll(obtainResos(agent, level))
-        newStuff.addAll(obtainXmps(agent, level))
-        newStuff.addAll(obtainShields(agent))
-        newStuff.addAll(obtainVirus(agent))
-        newStuff.addAll(obtainPowerCubes(level, agent))
-        newStuff.add(PortalKey.tryHack(this, agent))
+        newStuff.addAll(obtainResos(hacker, level))
+        newStuff.addAll(obtainXmps(hacker, level))
+        newStuff.addAll(obtainShields(hacker))
+        newStuff.addAll(obtainVirus(hacker))
+        newStuff.addAll(obtainPowerCubes(level, hacker))
+        newStuff.add(PortalKey.tryHack(this, hacker))
 
-        val isEnemyPortal = owner != null && agent.faction != owner?.faction
+        val isEnemyPortal = owner != null && hacker.faction != owner?.faction
         if (isEnemyPortal) {
-            agent.addAp(100)
-            agent.removeXm(300 * this.calculateLevel())
+            hacker.addAp(100)
+            hacker.removeXm(300 * this.calculateLevel())
         } else {
-            agent.removeXm(50 * this.calculateLevel())
+            hacker.removeXm(50 * this.calculateLevel())
         }
 
         return newStuff.filterNotNull().toMutableList()
     }
 
-    private fun obtainResos(agent: Agent, level: Int): List<QgressItem> {
+    private fun obtainResos(hacker: Agent, level: Int): List<QgressItem> {
         val stuff = mutableListOf<QgressItem>()
         Quality.values().map { quality ->
             val selectedLevel = ResonatorLevel.find(level, quality).level
             while (Util.random() < quality.chance) {
-                stuff.add(Resonator.create(agent, selectedLevel) as QgressItem)
+                stuff.add(Resonator.create(hacker, selectedLevel) as QgressItem)
             }
         }
         return stuff
     }
 
-    private fun obtainXmps(agent: Agent, level: Int): List<QgressItem> {
+    private fun obtainXmps(hacker: Agent, level: Int): List<QgressItem> {
         val stuff = mutableListOf<QgressItem>()
         Quality.values().map { quality ->
             val selectedLevel = XmpLevel.find(level, quality).level
             while (Util.random() < quality.chance) {
-                stuff.add(XmpBurster.create(agent, selectedLevel) as QgressItem)
+                stuff.add(XmpBurster.create(hacker, selectedLevel) as QgressItem)
             }
         }
         return stuff
     }
 
-    private fun obtainShields(agent: Agent): List<QgressItem> {
+    private fun obtainShields(hacker: Agent): List<QgressItem> {
         val stuff = mutableListOf<QgressItem>()
         ShieldType.values().forEach {
             if (Util.random() < it.chance) {
-                stuff.add(Shield(it, agent))
+                stuff.add(Shield(it, hacker))
             }
         }
         return stuff
     }
 
-    private fun obtainPowerCubes(level: Int, agent: Agent): List<QgressItem> {
+    private fun obtainPowerCubes(level: Int, hacker: Agent): List<QgressItem> {
         val stuff = mutableListOf<QgressItem>()
         Quality.values().map { quality ->
             val selectedLevel = PowerCubeLevel.find(level, quality).level
             while (Util.random() < quality.chance * 0.3) {
-                stuff.add(PowerCube.create(agent, selectedLevel) as QgressItem)
+                stuff.add(PowerCube.create(hacker, selectedLevel) as QgressItem)
             }
         }
         return stuff
     }
 
-    private fun obtainVirus(agent: Agent): List<QgressItem> {
+    private fun obtainVirus(hacker: Agent): List<QgressItem> {
         val stuff = mutableListOf<QgressItem>()
         VirusType.values().forEach {
             while (Util.random() < (1 / it.roll)) {
-                stuff.add(Virus(it, agent))
+                stuff.add(Virus(it, hacker))
             }
         }
         return stuff
     }
 
-    private fun handleCooldown(agent: Agent, readOnly: Boolean): Cooldown {
+    private fun handleCooldown(hacker: Agent, readOnly: Boolean): Cooldown {
         //a result of NONE should add a the ticknumber to the list of the last hacks
-        val key = agent.key()
+        val key = hacker.key()
         fun cool(agentsLastHacks: MutableList<Int>, tickNr: Int): Cooldown {
             agentsLastHacks.sort()
             val lastHack = agentsLastHacks.last()
@@ -300,26 +300,26 @@ data class Portal(val name: String, val location: Coords,
         }
     }
 
-    fun deployMods(agent: Agent, @Suppress("UNUSED_PARAMETER") mods: Map<Octant, DeployableItem>) {
+    fun deployMods(deployer: Agent, @Suppress("UNUSED_PARAMETER") mods: Map<Octant, DeployableItem>) {
         val isCommon = true //TODO implement
         val isRare = false
         val isVeryRare = false
         if (isCommon) {
-            agent.removeXm(400)
+            deployer.removeXm(400)
         }
         if (isRare) {
-            agent.removeXm(800)
+            deployer.removeXm(800)
         }
         if (isVeryRare) {
-            agent.removeXm(1000)
+            deployer.removeXm(1000)
         }
     }
 
-    fun deploy(agent: Agent, resos: Map<Octant, Resonator>, distance: Int) {
+    fun deploy(deployer: Agent, resos: Map<Octant, Resonator>, distance: Int) {
         val isCapture = owner == null
         if (isCapture) {
-            owner = agent
-            Com.addMessage("$agent captured $this.")
+            owner = deployer
+            Com.addMessage("$deployer captured $this.")
         }
 
         val initialResoCount = resoSlots.filterValues { !it.isEmpty() }.filterNot { it.value.resonator == null }.size
@@ -327,58 +327,58 @@ data class Portal(val name: String, val location: Coords,
         resos.asIterable().forEachIndexed { index, (octant, resonator) ->
             val oldReso = resoSlots[octant]
             if (isCapture && index == 0) {
-                agent.addAp(500)
+                deployer.addAp(500)
             } else if (index < firstResoCount) {
-                agent.addAp(125)
+                deployer.addAp(125)
             } else if (index == firstResoCount && firstResoCount + initialResoCount == 8) {
-                agent.addAp(250)
-            } else if (oldReso?.isOwnedBy(agent) != true) {
-                agent.addAp(65)
+                deployer.addAp(250)
+            } else if (oldReso?.isOwnedBy(deployer) != true) {
+                deployer.addAp(65)
             }
-            agent.removeXm(resonator.level.level * 20)
+            deployer.removeXm(resonator.level.level * 20)
             val oldDistance = oldReso?.distance
             val newDistance = (if (oldDistance == 0) distance else oldDistance) ?: distance
             //console.trace("$agent deploys ${resonator} to $octant at $this. $distance $oldDistance")
-            resoSlots[octant]?.deployReso(agent, resonator, newDistance)
+            resoSlots[octant]?.deployReso(deployer, resonator, newDistance)
             val xx = location.x + octant.calcXOffset(newDistance)
             val yy = location.y + octant.calcYOffset(newDistance)
             resonator.deploy(this, octant, Coords(xx, yy))
         }
-        agent.inventory.consumeResos(resos.map { it.value })
+        deployer.inventory.consumeResos(resos.map { it.value })
     }
 
     private fun findOutgoingTo(): List<Portal> = links.map { it.destination }
     private fun findIncomingLinks(): List<Link> = World.allLinks().filter { it.destination == this }
     private fun findIncomingFrom(): List<Portal> = findIncomingLinks().map { it.origin }
-    private fun destroyAllLinksAndFields(agent: Agent? = null) {
+    private fun destroyAllLinksAndFields(destroyer: Agent? = null) {
         World.allLinks().filter { it.destination == this }.forEach { link ->
-            agent?.addAp(Link.destroyAp)
+            destroyer?.addAp(Link.destroyAp)
             link.origin.links.remove(link)
         }
         links.forEach {
-            agent?.addAp(Link.destroyAp)
+            destroyer?.addAp(Link.destroyAp)
         }
         links.clear()
         World.allFields().filter { it.primaryAnchor == this }.forEach { it ->
-            agent?.addAp(Field.destroyAp)
+            destroyer?.addAp(Field.destroyAp)
             it.origin.fields.remove(it)
         }
         World.allFields().filter { it.secondaryAnchor == this }.forEach { it ->
-            agent?.addAp(Field.destroyAp)
+            destroyer?.addAp(Field.destroyAp)
             it.origin.fields.remove(it)
         }
         fields.forEach {
-            agent?.addAp(Field.destroyAp)
+            destroyer?.addAp(Field.destroyAp)
         }
         fields.clear()
     }
 
-    fun destroy(agent: Agent? = null) {
+    fun destroy(destroyer: Agent? = null) {
         owner = null
         resoSlots.forEach {
             it.value.clear()
         }
-        destroyAllLinksAndFields(agent)
+        destroyAllLinksAndFields(destroyer)
         World.allAgents.forEach { agent ->
             if (agent.actionPortal == this) {
                 agent.actionPortal = World.randomPortal()
@@ -399,21 +399,21 @@ data class Portal(val name: String, val location: Coords,
         World.allPortals.remove(this)
     }
 
-    fun removeReso(octant: Octant, agent: Agent?) {
-        resoSlots[octant]?.clear()
+    fun removeReso(octant: Octant, destroyer: Agent?) {
+        this.resoSlots[octant]?.clear()
         val numberOfResosLeft = resoSlots.filter { it.value.resonator != null }.count()
         if (numberOfResosLeft <= 0) {
-            destroy(agent)
+            destroy(destroyer)
         } else if (numberOfResosLeft <= 2) {
-            destroyAllLinksAndFields(agent)
+            destroyAllLinksAndFields(destroyer)
         }
     }
 
-    fun findAllowedResoLevels(agent: Agent): Map<ResonatorLevel, Int> {
-        return if (owner == null || owner?.faction == agent.faction) {
+    fun findAllowedResoLevels(deployer: Agent): Map<ResonatorLevel, Int> {
+        return if (owner == null || owner?.faction == deployer.faction) {
             ResonatorLevel.values().map { level ->
                 level to level.deployablePerPlayer - resoSlots.filter { slot ->
-                    slot.value.isOwnedBy(agent) && slot.value.resonator?.level?.level == level.level
+                    slot.value.isOwnedBy(deployer) && slot.value.resonator?.level?.level == level.level
                 }.count()
             }.toMap()
         } else {
@@ -432,8 +432,10 @@ data class Portal(val name: String, val location: Coords,
     }
 
     fun decay() {
-        getAllResos().forEach { it.decay() }
-        if (getAllResos().isEmpty()) {
+        val allResos = getAllResos()
+        allResos.forEach { it.decay() }
+        val newResos = getAllResos()
+        if (newResos.isEmpty()) {
             destroy()
         }
     }

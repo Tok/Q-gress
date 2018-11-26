@@ -89,7 +89,7 @@ object World {
 
     fun allLinks() = allPortals.flatMap { it.links }
     fun countLinks() = allLinks().count()
-    fun countLinks(fact: Faction) = allLinks().filter { it.owner.faction == fact }.count()
+    fun countLinks(fact: Faction) = allLinks().filter { it.creator.faction == fact }.count()
 
     fun allFields() = allPortals.flatMap { it.fields }
     fun countFields() = allFields().count()

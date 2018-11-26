@@ -12,8 +12,8 @@ object XmMap {
         strayXm.putAll(unCollectedXm)
     }
 
-    fun createStrayXm(location: Coords) {
-        if (strayXm.keys.none { it.distanceTo(location) < XmHeap.strayXmMinDistance }) {
+    fun createStrayXm(location: Coords, isPortalDrop: Boolean) {
+        if (strayXm.keys.none { it.distanceTo(location) < XmHeap.strayXmMinDistance(isPortalDrop) }) {
             strayXm[location] = XmHeap.create()
         }
     }

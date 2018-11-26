@@ -10,10 +10,10 @@ object Config {
     const val maxFrogs = 21
     const val minSmurfs = 2
     const val maxSmurfs = 21
-    const val frogQuitRate = 0.05
-    const val smurfQuitRate = 0.05
+    const val frogQuitRate = 0.1
+    const val smurfQuitRate = 0.1
     const val factionChangeRate = 0.01
-    const val portalRemovalRate = 0.05
+    const val portalRemovalRate = 0.1
 
     const val startPortals = 5
     fun startFrogs() = if (HtmlUtil.isQuickstart()) 8 else minFrogs
@@ -30,7 +30,7 @@ object Config {
     const val apMultiplier = 10
 
     const val isNpcSwarming = true
-    const val npcXmSpawnRatio = 0.05
+    const val npcXmSpawnRatio = 0.2
 
     val isSoundOn = !HtmlUtil.isLocal()
     const val isPlayInitialSound = false

@@ -17,6 +17,13 @@ enum class Faction(val abbr: String, val nickName: String, val color: String, va
     }
 
     companion object {
+        fun fromString(s: String?): Faction? = when (s?.toUpperCase()) {
+            "RES" -> RES
+            "ENL" -> ENL
+            "NONE" -> NONE
+            else -> null
+        }
+
         fun all() = listOf(ENL, RES)
         fun random() = if (Util.random() < 0.5) ENL else RES
     }

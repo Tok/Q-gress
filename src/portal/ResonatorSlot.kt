@@ -6,8 +6,8 @@ import items.deployable.Resonator
 data class ResonatorSlot(var owner: Agent?, var resonator: Resonator?, var distance: Int) {
     fun isEmpty() = resonator == null
     fun isOwnedBy(agent: Agent) = owner == agent
-    fun deployReso(owner: Agent, reso: Resonator, dist: Int) {
-        this.owner = owner
+    fun deployReso(deployer: Agent, reso: Resonator, dist: Int) {
+        this.owner = deployer
         this.resonator = reso
         this.distance = dist
     }

@@ -7,8 +7,8 @@ data class Skills(val speed: Double, val deployPrecision: Double, val glyphSkill
     fun inRangeSpeed() = speed / Constants.phi
 
     companion object {
-        private const val minSpeed = 2.0
-        private const val maxSpeed = 3.0
+        private const val minSpeed = 1.5
+        private const val maxSpeed = minSpeed * Constants.phi
         fun createRandom() = Skills(randomSpeed(), deployPrecision(), randomGlyphSkill(), randomReliability())
         private fun randomSpeed() = (Util.random() * (maxSpeed - minSpeed)) + minSpeed //distance per tick
         private fun deployPrecision() = 0.7 + (Util.random() * 0.3) //0.7 to 1.0

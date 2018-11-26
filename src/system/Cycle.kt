@@ -114,12 +114,12 @@ enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>, var image: Canvas
                         (0..heapCount).map {
                             pos.randomNearPoint(Dim.portalXmSpawnRadius)
                         }
-                    }.forEach { XmMap.createStrayXm(it) }
+                    }.forEach { XmMap.createStrayXm(it, true) }
 
             World.allNonFaction.filterNot { it.pos.isOffScreen() }
                     .shuffled()
                     .take((World.allNonFaction.size * Config.npcXmSpawnRatio).toInt())
-                    .map { XmMap.createStrayXm(it.pos.randomNearPoint(Dim.npcXmSpawnRadius)) }
+                    .map { XmMap.createStrayXm(it.pos.randomNearPoint(Dim.npcXmSpawnRadius), false) }
         }
 
         val ww = 8
