@@ -1,7 +1,15 @@
-if (typeof kotlin === 'undefined') {
-  throw new Error("Error loading module 'QGress'. Its dependency 'kotlin' was not found. Please, check whether 'kotlin' is loaded prior to 'QGress'.");
-}
-var QGress = function (_, Kotlin) {
+(function (root, factory) {
+  if (typeof define === 'function' && define.amd)
+    define(['exports', 'kotlin'], factory);
+  else if (typeof exports === 'object')
+    factory(module.exports, require('kotlin'));
+  else {
+    if (typeof kotlin === 'undefined') {
+      throw new Error("Error loading module 'Q-Gress'. Its dependency 'kotlin' was not found. Please, check whether 'kotlin' is loaded prior to 'Q-Gress'.");
+    }
+    root['Q-Gress'] = factory(typeof this['Q-Gress'] === 'undefined' ? {} : this['Q-Gress'], kotlin);
+  }
+}(this, function (_, Kotlin) {
   'use strict';
   var Kind_OBJECT = Kotlin.Kind.OBJECT;
   var Kind_CLASS = Kotlin.Kind.CLASS;
@@ -5203,8 +5211,16 @@ var QGress = function (_, Kotlin) {
   XmpBurster.prototype.equals = function (other) {
     return this === other || (other !== null && (typeof other === 'object' && (Object.getPrototypeOf(this) === Object.getPrototypeOf(other) && (Kotlin.equals(this.owner, other.owner) && Kotlin.equals(this.level, other.level)))));
   };
-  function main(args) {
+  function win() {
+    return equals(typeof window, 'undefined') ? null : window;
+  }
+  function main$lambda(it) {
     HtmlUtil_getInstance().load();
+    return Unit;
+  }
+  function main(args) {
+    var tmp$;
+    (tmp$ = win()) != null ? (tmp$.onload = main$lambda) : null;
   }
   function Cooldown(name, ordinal, seconds) {
     Enum.call(this);
@@ -12906,6 +12922,6 @@ var QGress = function (_, Kotlin) {
     get: World_getInstance
   });
   main([]);
-  Kotlin.defineModule('QGress', _);
+  Kotlin.defineModule('Q-Gress', _);
   return _;
-}(typeof QGress === 'undefined' ? {} : QGress, kotlin);
+}));

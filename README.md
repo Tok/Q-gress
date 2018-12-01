@@ -5,12 +5,18 @@ https://tok.github.io/Q-gress/
 
 ## Work in Progress
 
-Depending on commit history, the version presented may be nightly snapshot not behaving correctly.
-Q-Gress was never tested on Mobile and is exclusively designed for fast desktop browsers.
+Q-Gress is exclusively designed for desktop browsers that support V8 Engine. 
+Other browsers are not tested with Q-Gress and mobile may not work at all. 
+Chrome or Brave is recommended. 
+
+## Test Report
+
+https://tok.github.io/Q-gress/testReport.html
 
 ## TODO
 
 ### High Priority
+- Create unit test for fielding and deploying
 - Implement shielding
 - Improve agent behavior
   * More destinations
@@ -26,7 +32,7 @@ Q-Gress was never tested on Mobile and is exclusively designed for fast desktop 
 - Display FPS
 
 ### Low Priority
-- Ultrastriking
+- Ultra-Striking
 - More Items
   * XM-Tanks
   * Quantum-Capsules
@@ -34,7 +40,7 @@ Q-Gress was never tested on Mobile and is exclusively designed for fast desktop 
 ### Further Ideas
 - Find a way to hook up a neural network for Q-learning
 
-### Third Party Copyrigths
+### Third Party Copyrights
 
 - Ingress and the concept of Ingress are Copyright of Niantic, Inc. https://www.nianticlabs.com/
 - Q-gress doesn't scrape any Data from Ingress and there is no intention to use real portal data.

@@ -1,0 +1,14 @@
+{
+  "name": "q-gress",
+  "version": "1.0.0",
+  "private": true,
+  "license": "UNLICENSED",
+  "dependencies": {
+    "core-js": "^2.5.7",
+    "kotlin": "^1.3.10"
+  },
+  "devDependencies": {
+    "mocha": "^5.2.0",
+    "mocha-simple-html-reporter": "^1.1.0"
+  }
+}

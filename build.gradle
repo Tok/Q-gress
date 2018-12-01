@@ -1,0 +1,71 @@
+import java.awt.*
+
+plugins {
+    id "kotlin2js" version "1.3.10"
+    id "com.moowork.node" version "1.2.0"
+}
+
+group "zir.teq"
+version "1.0-SNAPSHOT"
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile "org.jetbrains.kotlin:kotlin-stdlib-js:$kotlin_version"
+    testCompile "org.jetbrains.kotlin:kotlin-test-js:$kotlin_version"
+}
+
+compileKotlin2Js.kotlinOptions.moduleKind = "umd"
+
+[compileTestKotlin2Js]*.configure {
+    kotlinOptions {
+        moduleKind = "umd"
+        sourceMap = true
+        sourceMapEmbedSources = "always"
+    }
+}
+
+node {
+    version = node_version
+    download = true
+}
+
+task populateNodeModules(type: Copy, dependsOn: compileKotlin2Js) {
+    from compileKotlin2Js.destinationDir
+    configurations.testCompile.each {
+        from zipTree(it.absolutePath).matching { include "*.js" }
+    }
+    into "$buildDir/node_modules"
+}
+
+task runMocha(type: NodeTask, dependsOn: [populateNodeModules]) {
+    script = file("node_modules/mocha/bin/mocha")
+    args = [compileTestKotlin2Js.outputFile,
+            "--reporter", "mocha-simple-html-reporter",
+            "--reporter-options", "output=testReport.html"]
+}
+
+task fullCleanup(type: Delete) {
+    delete "published/Q-Gress.js", "published/kotlin.js",
+            "testReport.html", "package-lock.json",
+            "node_modules", "build"
+}
+
+task installKotlin(type: NpmTask) { args = ["install", "kotlin", "--save"] }
+task installMocha(type: NpmTask) { args = ["install", "mocha", "--save-dev"] }
+task installMochaRep(type: NpmTask) { args = ["install", "mocha-simple-html-reporter", "--save-dev"] }
+task installNodeModules(dependsOn: [installKotlin, installMocha, installMochaRep])
+
+task publish(type: Copy, dependsOn: [build, runMocha]) {
+    from file("$buildDir/node_modules/kotlin.js")
+    from file("$buildDir/classes/kotlin/main/Q-Gress.js")
+    into file("published/")
+}
+
+task openInBrowser { doLast { Desktop.desktop.browse "index.html".toURI() } }
+task openTestReport { doLast { Desktop.desktop.browse "testReport.html".toURI() } }
+
+test.dependsOn runMocha
+//clean.dependsOn fullCleanup

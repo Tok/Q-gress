@@ -2,7 +2,7 @@
     font-family: 'AmarilloUSAF';
     font-style: normal;
     font-weight: normal;
-    src: local('AmarilloUSAF'), url('fonts/amarurgt.woff') format('woff');
+    src: local('AmarilloUSAF'), url('published/fonts/amarurgt.woff') format('woff');
 }
 
 .amarillo {
@@ -13,7 +13,7 @@
     font-family: 'Coda';
     font-style: normal;
     font-weight: normal;
-    src: local('Coda'), url('fonts/Coda.ttf.woff') format('woff');
+    src: local('Coda'), url('published/fonts/Coda.ttf.woff') format('woff');
 }
 
 .coda {

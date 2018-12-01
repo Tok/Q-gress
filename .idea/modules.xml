@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/QGress.iml" filepath="$PROJECT_DIR$/QGress.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/Qgress.iml" filepath="$PROJECT_DIR$/.idea/Qgress.iml" />
     </modules>
   </component>
 </project>
