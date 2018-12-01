@@ -44,16 +44,13 @@ data class Link(val origin: Portal, val destination: Portal, val creator: Agent)
 
     companion object {
         const val destroyAp = 187
-        fun isPossible(link: Link): Boolean = World.allLinks().none {
-            (it.origin.location == link.origin.location && it.destination.location == link.destination.location)
-                    || (it.origin.location == link.destination.location && it.destination.location == link.origin.location)
-        }
+        fun isNotExisting(link: Link): Boolean = World.allLinks().none { it == link }
 
         fun create(origin: Portal, destination: Portal, linker: Agent): Link? {
             check(origin != destination)
             check(linker.faction != Faction.NONE)
             val newLink = Link(origin, destination, linker)
-            if (isPossible(newLink)) {
+            if (isNotExisting(newLink)) {
                 return newLink
             }
             return null

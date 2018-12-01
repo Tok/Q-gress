@@ -10,17 +10,16 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 class FieldTest {
-    fun testCoords() = Coords(0, 0)
-    fun testCell() = Cell(testCoords(), true, 0)
-    fun testGrid() = mapOf(testCoords() to testCell())
-    fun testFrog() = Agent.createFrog(testGrid())
-    fun testSmurf() = Agent.createSmurf(testGrid())
+    private fun testCoords() = Coords(0, 0)
+    private fun testCell() = Cell(testCoords(), true, 0)
+    private fun testGrid() = mapOf(testCoords() to testCell())
+    private fun testFrog() = Agent.createFrog(testGrid())
+    private fun testSmurf() = Agent.createSmurf(testGrid())
+    private fun testPortals() = Triple(Portal.createRandom(), Portal.createRandom(), Portal.createRandom())
 
     @Test
     fun agentSwitchEquality() {
-        val origin = Portal.createRandom()
-        val primary = Portal.createRandom()
-        val secondary = Portal.createRandom()
+        val (origin, primary, secondary) = testPortals()
         val field = Field.create(origin, primary, secondary, testFrog())
         val switched = Field.create(origin, primary, secondary, testFrog())
         assertEquals(field, switched)
@@ -28,9 +27,7 @@ class FieldTest {
 
     @Test
     fun factionSwitchEquality() {
-        val origin = Portal.createRandom()
-        val primary = Portal.createRandom()
-        val secondary = Portal.createRandom()
+        val (origin, primary, secondary) = testPortals()
         val field = Field.create(origin, primary, secondary, testFrog())
         val switched = Field.create(origin, primary, secondary, testSmurf())
         assertEquals(field, switched)
@@ -38,9 +35,7 @@ class FieldTest {
 
     @Test
     fun anchorSwitchEquality() {
-        val origin = Portal.createRandom()
-        val primary = Portal.createRandom()
-        val secondary = Portal.createRandom()
+        val (origin, primary, secondary) = testPortals()
         val field = Field.create(origin, primary, secondary, testFrog())
         val switched = Field.create(origin, secondary, primary, testFrog())
         assertEquals(field, switched)
@@ -48,9 +43,7 @@ class FieldTest {
 
     @Test
     fun originSwitchEquality() {
-        val origin = Portal.createRandom()
-        val primary = Portal.createRandom()
-        val secondary = Portal.createRandom()
+        val (origin, primary, secondary) = testPortals()
         val field = Field.create(origin, primary, secondary, testFrog())
         val switched = Field.create(primary, origin, secondary, testFrog())
         assertEquals(field, switched)
@@ -58,9 +51,7 @@ class FieldTest {
 
     @Test
     fun anchorRotationEquality() {
-        val origin = Portal.createRandom()
-        val primary = Portal.createRandom()
-        val secondary = Portal.createRandom()
+        val (origin, primary, secondary) = testPortals()
         val field = Field.create(origin, primary, secondary, testFrog())
         val rotated = Field.create(secondary, origin, primary, testFrog())
         assertEquals(field, rotated)
@@ -68,9 +59,7 @@ class FieldTest {
 
     @Test
     fun noDuplicatedPortalsInField() {
-        val origin = Portal.createRandom()
-        val primary = Portal.createRandom()
-        val secondary = Portal.createRandom()
+        val (origin, primary, secondary) = testPortals()
         val linker = testFrog()
         assertFailsWith(IllegalStateException::class) {
             Field.create(origin, origin, origin, linker)
@@ -85,9 +74,7 @@ class FieldTest {
 
     @Test
     fun fieldMustHaveFaction() {
-        val origin = Portal.createRandom()
-        val primary = Portal.createRandom()
-        val secondary = Portal.createRandom()
+        val (origin, primary, secondary) = testPortals()
         val linker = testFrog().copy(faction = Faction.NONE)
         assertFailsWith(IllegalStateException::class) {
             Field.create(origin, primary, secondary, linker)

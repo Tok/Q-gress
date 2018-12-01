@@ -118,7 +118,7 @@ data class Portal(val name: String, val location: Coords,
 
     fun findLinkableForKeys(linker: Agent): List<Portal> {
         val keyset = linker.inventory.findUniqueKeys()!!
-        val allLinks = World.allPortals.flatMap { it.links }.filter { Link.isPossible(it) }.toSet()
+        val allLinks = World.allPortals.flatMap { it.links }.filter { Link.isNotExisting(it) }.toSet()
         val nonIntersecting: List<Portal> = keyset.map { it.portal }.filter { destination ->
             val line = Line(location, destination.location)
             allLinks.filter { it.getLine().doesIntersect(line) }.isEmpty()
