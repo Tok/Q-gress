@@ -2,6 +2,7 @@ package portal
 
 import Ctx
 import agent.Agent
+import agent.Faction
 import config.Dim
 import util.Util
 import util.data.Line
@@ -49,6 +50,8 @@ data class Link(val origin: Portal, val destination: Portal, val creator: Agent)
         }
 
         fun create(origin: Portal, destination: Portal, linker: Agent): Link? {
+            check(origin != destination)
+            check(linker.faction != Faction.NONE)
             val newLink = Link(origin, destination, linker)
             if (isPossible(newLink)) {
                 return newLink

@@ -5595,6 +5595,14 @@
     return none$result;
   };
   Field$Companion.prototype.create_veg84i$ = function (origin, primaryAnchor, secondaryAnchor, owner) {
+    if (!(!(origin != null ? origin.equals(primaryAnchor) : null) && !(origin != null ? origin.equals(secondaryAnchor) : null) && !(primaryAnchor != null ? primaryAnchor.equals(secondaryAnchor) : null))) {
+      var message = 'Check failed.';
+      throw IllegalStateException_init(message.toString());
+    }
+    if (!(owner.faction !== Faction$NONE_getInstance())) {
+      var message_0 = 'Check failed.';
+      throw IllegalStateException_init(message_0.toString());
+    }
     if (this.isPossible_rsiz9u$(origin, primaryAnchor, secondaryAnchor)) {
       return new Field(origin, primaryAnchor, secondaryAnchor, owner);
     }
@@ -5754,6 +5762,14 @@
     return none$result;
   };
   Link$Companion.prototype.create_6ezwqo$ = function (origin, destination, linker) {
+    if (!!(origin != null ? origin.equals(destination) : null)) {
+      var message = 'Check failed.';
+      throw IllegalStateException_init(message.toString());
+    }
+    if (!(linker.faction !== Faction$NONE_getInstance())) {
+      var message_0 = 'Check failed.';
+      throw IllegalStateException_init(message_0.toString());
+    }
     var newLink = new Link(origin, destination, linker);
     if (this.isPossible_4tp95w$(newLink)) {
       return newLink;
