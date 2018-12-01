@@ -1,59 +1,66 @@
 package portal
 
-import agent.Agent
 import agent.Faction
-import util.data.Cell
-import util.data.Coords
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertTrue
+import Factory
 
 class LinkTest {
-    private fun testCoords() = Coords(0, 0)
-    private fun testCell() = Cell(testCoords(), true, 0)
-    private fun testGrid() = mapOf(testCoords() to testCell())
-    private fun testFrog() = Agent.createFrog(testGrid())
-    private fun testSmurf() = Agent.createSmurf(testGrid())
-    private fun testPortals() = Portal.createRandom() to Portal.createRandom()
 
     @Test
-    fun agentSwitchEquality() {
-        val (origin, destination) = testPortals()
-        val link = Link.create(origin, destination, testFrog())
-        val switched = Link.create(origin, destination, testFrog())
+    fun agentSwitchEquality() = with(Factory) {
+        val (origin, destination) = portalPair()
+        val link = Link.create(origin, destination, linker())
+        val switched = Link.create(origin, destination, linker())
         assertEquals(link, switched)
     }
 
     @Test
-    fun factionSwitchEquality() {
-        val (origin, destination) = testPortals()
-        val link = Link.create(origin, destination, testFrog())
-        val switched = Link.create(origin, destination, testSmurf())
+    fun factionSwitchEquality() = with(Factory) {
+        val (origin, destination) = portalPair()
+        val link = Link.create(origin, destination, frog())
+        val switched = Link.create(origin, destination, smurf())
         assertEquals(link, switched)
     }
 
     @Test
-    fun originSwitchEquality() {
-        val (origin, destination) = testPortals()
-        val link = Link.create(origin, destination, testFrog())
-        val switched = Link.create(destination, origin, testFrog())
+    fun originSwitchEquality() = with(Factory) {
+        val (origin, destination) = portalPair()
+        val link = Link.create(origin, destination, linker())
+        val switched = Link.create(destination, origin, linker())
         assertEquals(link, switched)
     }
 
     @Test
-    fun noLinkingToOrigin() {
+    fun noLinkingToOrigin() = with(Factory) {
         val origin = Portal.createRandom()
         assertFailsWith(IllegalStateException::class) {
-            Link.create(origin, origin, testFrog())
+            Link.create(origin, origin, linker())
         }
     }
 
     @Test
-    fun linkMustHaveFaction() {
-        val (origin, destination) = testPortals()
-        val linker = testFrog().copy(faction = Faction.NONE)
+    fun linkMustHaveFaction() = with(Factory) {
+        val (origin, destination) = portalPair()
+        val linker = linker().copy(faction = Faction.NONE)
         assertFailsWith(IllegalStateException::class) {
             Link.create(origin, destination, linker)
         }
+    }
+
+    @Test
+    fun linkConnectionToOrigin() = with(Factory) {
+        val (origin, destination) = portalPair()
+        val link = Link.create(origin, destination, linker())
+        assertTrue(link?.isConnectedTo(origin) ?: false)
+    }
+
+    @Test
+    fun linkConnectionToDestination() = with(Factory) {
+        val (origin, destination) = portalPair()
+        val link = Link.create(origin, destination, linker())
+        assertTrue(link?.isConnectedTo(destination) ?: false)
     }
 }

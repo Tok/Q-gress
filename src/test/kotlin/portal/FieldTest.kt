@@ -1,66 +1,57 @@
 package portal
 
-import agent.Agent
+import Factory
 import agent.Faction
-import util.data.Cell
-import util.data.Coords
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
-import kotlin.test.assertTrue
 
 class FieldTest {
-    private fun testCoords() = Coords(0, 0)
-    private fun testCell() = Cell(testCoords(), true, 0)
-    private fun testGrid() = mapOf(testCoords() to testCell())
-    private fun testFrog() = Agent.createFrog(testGrid())
-    private fun testSmurf() = Agent.createSmurf(testGrid())
-    private fun testPortals() = Triple(Portal.createRandom(), Portal.createRandom(), Portal.createRandom())
 
     @Test
-    fun agentSwitchEquality() {
-        val (origin, primary, secondary) = testPortals()
-        val field = Field.create(origin, primary, secondary, testFrog())
-        val switched = Field.create(origin, primary, secondary, testFrog())
+    fun agentSwitchEquality() = with(Factory) {
+        val (origin, primary, secondary) = portalTriple()
+        val field = Field.create(origin, primary, secondary, agent())
+        val switched = Field.create(origin, primary, secondary, agent())
         assertEquals(field, switched)
     }
 
     @Test
-    fun factionSwitchEquality() {
-        val (origin, primary, secondary) = testPortals()
-        val field = Field.create(origin, primary, secondary, testFrog())
-        val switched = Field.create(origin, primary, secondary, testSmurf())
+    fun factionSwitchEquality() = with(Factory) {
+        val (origin, primary, secondary) = portalTriple()
+        val field = Field.create(origin, primary, secondary, frog())
+        val switched = Field.create(origin, primary, secondary, smurf())
         assertEquals(field, switched)
     }
 
     @Test
-    fun anchorSwitchEquality() {
-        val (origin, primary, secondary) = testPortals()
-        val field = Field.create(origin, primary, secondary, testFrog())
-        val switched = Field.create(origin, secondary, primary, testFrog())
+    fun anchorSwitchEquality() = with(Factory) {
+        val (origin, primary, secondary) = portalTriple()
+        val field = Field.create(origin, primary, secondary, agent())
+        val switched = Field.create(origin, secondary, primary, agent())
         assertEquals(field, switched)
     }
 
     @Test
-    fun originSwitchEquality() {
-        val (origin, primary, secondary) = testPortals()
-        val field = Field.create(origin, primary, secondary, testFrog())
-        val switched = Field.create(primary, origin, secondary, testFrog())
+    fun originSwitchEquality() = with(Factory) {
+        val (origin, primary, secondary) = portalTriple()
+        val field = Field.create(origin, primary, secondary, agent())
+        val switched = Field.create(primary, origin, secondary, agent())
         assertEquals(field, switched)
     }
 
     @Test
-    fun anchorRotationEquality() {
-        val (origin, primary, secondary) = testPortals()
-        val field = Field.create(origin, primary, secondary, testFrog())
-        val rotated = Field.create(secondary, origin, primary, testFrog())
+    fun anchorRotationEquality() = with(Factory) {
+        val (origin, primary, secondary) = portalTriple()
+        val field = Field.create(origin, primary, secondary, agent())
+        val rotated = Field.create(secondary, origin, primary, agent())
         assertEquals(field, rotated)
     }
 
     @Test
-    fun noDuplicatedPortalsInField() {
-        val (origin, primary, secondary) = testPortals()
-        val linker = testFrog()
+    fun noDuplicatedPortalsInField() = with(Factory) {
+        val (origin, primary, secondary) = portalTriple()
+        val linker = agent()
         assertFailsWith(IllegalStateException::class) {
             Field.create(origin, origin, origin, linker)
         }
@@ -73,9 +64,9 @@ class FieldTest {
     }
 
     @Test
-    fun fieldMustHaveFaction() {
-        val (origin, primary, secondary) = testPortals()
-        val linker = testFrog().copy(faction = Faction.NONE)
+    fun fieldMustHaveFaction() = with(Factory) {
+        val (origin, primary, secondary) = portalTriple()
+        val linker = agent().copy(faction = Faction.NONE)
         assertFailsWith(IllegalStateException::class) {
             Field.create(origin, primary, secondary, linker)
         }
