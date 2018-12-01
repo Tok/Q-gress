@@ -11,7 +11,7 @@ Chrome or Brave is recommended.
 
 ## Test Report
 
-https://tok.github.io/Q-gress/testReport.html
+https://tok.github.io/Q-gress/mochawesome.html
 
 ## TODO
 
