@@ -215,7 +215,7 @@
     this.CAPTURE = new ActionItem('capturing', 15, 'Capture');
     this.LINK = new ActionItem('linking', 30, 'Link');
     var tmp$;
-    if (HtmlUtil_getInstance().isNotRunningInBrowser()) {
+    if (HtmlUtil_getInstance().isRunningInBrowser()) {
       var $receiver = this.values();
       var destination = ArrayList_init(collectionSizeOrDefault($receiver, 10));
       var tmp$_0;
@@ -230,7 +230,7 @@
       tmp$ = emptyMap();
     this.enlImages_0 = tmp$;
     var tmp$_1;
-    if (HtmlUtil_getInstance().isNotRunningInBrowser()) {
+    if (HtmlUtil_getInstance().isRunningInBrowser()) {
       var $receiver_0 = this.values();
       var destination_0 = ArrayList_init(collectionSizeOrDefault($receiver_0, 10));
       var tmp$_2;
@@ -245,7 +245,7 @@
       tmp$_1 = emptyMap();
     this.resImages_0 = tmp$_1;
     var tmp$_3;
-    if (HtmlUtil_getInstance().isNotRunningInBrowser()) {
+    if (HtmlUtil_getInstance().isRunningInBrowser()) {
       var $receiver_1 = this.values();
       var destination_1 = ArrayList_init(collectionSizeOrDefault($receiver_1, 10));
       var tmp$_4;
@@ -5738,7 +5738,7 @@
     Link$Companion_instance = this;
     this.destroyAp = 187;
   }
-  Link$Companion.prototype.isPossible_4tp95w$ = function (link) {
+  Link$Companion.prototype.isNotExisting_4tp95w$ = function (link) {
     var $receiver = World_getInstance().allLinks();
     var none$result;
     none$break: do {
@@ -5750,8 +5750,7 @@
       tmp$ = $receiver.iterator();
       while (tmp$.hasNext()) {
         var element = tmp$.next();
-        var tmp$_0, tmp$_1, tmp$_2, tmp$_3;
-        if (((tmp$_0 = element.origin.location) != null ? tmp$_0.equals(link.origin.location) : null) && ((tmp$_1 = element.destination.location) != null ? tmp$_1.equals(link.destination.location) : null) || (((tmp$_2 = element.origin.location) != null ? tmp$_2.equals(link.destination.location) : null) && ((tmp$_3 = element.destination.location) != null ? tmp$_3.equals(link.origin.location) : null))) {
+        if (element != null ? element.equals(link) : null) {
           none$result = false;
           break none$break;
         }
@@ -5771,7 +5770,7 @@
       throw IllegalStateException_init(message_0.toString());
     }
     var newLink = new Link(origin, destination, linker);
-    if (this.isPossible_4tp95w$(newLink)) {
+    if (this.isNotExisting_4tp95w$(newLink)) {
       return newLink;
     }
     return null;
@@ -6250,7 +6249,7 @@
     tmp$_0 = destination.iterator();
     while (tmp$_0.hasNext()) {
       var element_0 = tmp$_0.next();
-      if (Link$Companion_getInstance().isPossible_4tp95w$(element_0))
+      if (Link$Companion_getInstance().isNotExisting_4tp95w$(element_0))
         destination_0.add_11rb$(element_0);
     }
     var allLinks = toSet(destination_0);

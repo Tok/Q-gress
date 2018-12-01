@@ -29,11 +29,11 @@ data class ActionItem(val text: String, val durationSeconds: Int, val qName: Str
         fun values() =
             listOf(MOVE, WAIT, RECHARGE, RECRUIT, EXPLORE, RECYCLE, HACK, GLYPH, ATTACK, DEPLOY, CAPTURE, LINK)
 
-        private val enlImages = if (HtmlUtil.isNotRunningInBrowser())
+        private val enlImages = if (HtmlUtil.isRunningInBrowser())
             values().map { it to drawTemplate(it, Faction.ENL) }.toMap() else emptyMap()
-        private val resImages = if (HtmlUtil.isNotRunningInBrowser())
+        private val resImages = if (HtmlUtil.isRunningInBrowser())
             values().map { it to drawTemplate(it, Faction.RES) }.toMap() else emptyMap()
-        private val nonImages = if (HtmlUtil.isNotRunningInBrowser())
+        private val nonImages = if (HtmlUtil.isRunningInBrowser())
             values().map { it to drawTemplate(it, Faction.NONE) }.toMap() else emptyMap()
 
         fun getIcon(item: ActionItem, faction: Faction = Faction.NONE): Canvas {
