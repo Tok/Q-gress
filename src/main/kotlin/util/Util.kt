@@ -31,6 +31,7 @@ object Util {
         return list[(random() * list.size).toInt()]
     }
 
+    fun <T> shuffle(items: Set<T>): Set<T> = shuffle(items.toList()).toSet()
     fun <T> shuffle(items: List<T>): List<T> {
         val result = mutableListOf<T>()
         result.addAll(items)

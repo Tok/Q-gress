@@ -4,6 +4,7 @@ import World
 import config.Config
 import config.Constants
 import config.Dim
+import util.HtmlUtil
 import util.Util
 import kotlin.math.abs
 import kotlin.math.cos
@@ -27,14 +28,14 @@ data class Coords(val x: Double, val y: Double) {
     fun fromShadow() = Coords((x * res).toInt(), (y * res).toInt())
 
     fun getSurrounding(w: Int, h: Int): List<Coords> = listOf(
-            Coords(x - 1.0, y - 1.0),
-            Coords(x, y - 1.0),
-            Coords(x + 1.0, y - 1.0),
-            Coords(x - 1.0, y),
-            Coords(x + 1.0, y),
-            Coords(x - 1.0, y + 1.0),
-            Coords(x, y + 1.0),
-            Coords(x + 1.0, y + 1.0)
+        Coords(x - 1.0, y - 1.0),
+        Coords(x, y - 1.0),
+        Coords(x + 1.0, y - 1.0),
+        Coords(x - 1.0, y),
+        Coords(x + 1.0, y),
+        Coords(x - 1.0, y + 1.0),
+        Coords(x, y + 1.0),
+        Coords(x + 1.0, y + 1.0)
     ).filter {
         it.x >= 0.0 && it.x <= (w - 1.0) && it.y >= 0.0 && it.y <= (h - 1.0)
     }
@@ -93,19 +94,27 @@ data class Coords(val x: Double, val y: Double) {
         }
 
         fun createRandomForPortal(): Coords {
-            val grid = World.passableInActionArea()
+            if (HtmlUtil.isNotRunningInBrowser()) {
+                return Coords(Util.randomInt(Dim.width), Util.randomInt(Dim.height))
+            } else {
+                val grid = World.passableInActionArea()
                     .filterNot { it.key.fromShadow().x < Dim.maxDeploymentRange }
                     .filterNot { it.key.fromShadow().x > World.w() - Dim.maxDeploymentRange }
                     .filterNot { it.key.fromShadow().hasClosePortal() }
-            check(grid.isNotEmpty()) //map is blocked or there is no more space left.
-            val randomCell = Util.shuffle(grid.toList()).first()
-            val pos = randomCell.first.fromShadow()
-            val offset = res / 2
-            return Coords(pos.x + offset, pos.y + offset)
+                check(grid.isNotEmpty()) //map is blocked or there is no more space left.
+                val randomCell = Util.shuffle(grid.toList()).first()
+                val pos = randomCell.first.fromShadow()
+                val offset = res / 2
+                return Coords(pos.x + offset, pos.y + offset)
+            }
         }
 
         fun createRandomPassable(grid: Map<Coords, Cell>) = createRandomPassable(grid, 10)
         private fun createRandomPassable(grid: Map<Coords, Cell>, retries: Int): Coords {
+            if (HtmlUtil.isNotRunningInBrowser()) {
+                return if (grid.isEmpty()) Coords(0, 0)
+                    else Util.shuffle(grid.keys).first()
+            }
             check(grid.isNotEmpty())
             val random = createRandomNoOffset()
             return if (grid[random.toShadowPos()]!!.isPassable) {

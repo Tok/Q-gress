@@ -38,6 +38,11 @@ object HtmlUtil {
     private const val LOCATION_DROPDOWN_ID = "locationSelect"
     const val SOUND_CHECKBOX_ID = "soundCheckbox"
 
+    fun isRunningInBrowser() = jsTypeOf(document) != "undefined"
+    fun isNotRunningInBrowser() = !isRunningInBrowser()
+    fun isLocal() = isRunningInBrowser() && document.location?.href?.contains("localhost") ?: false
+    fun isQuickstart() = isRunningInBrowser() && (document.getElementById("quickstart") as HTMLInputElement).checked
+
     private fun tick() {
         if (!World.isReady) {
             return
@@ -64,6 +69,7 @@ object HtmlUtil {
     }
 
     fun load() {
+        if (isNotRunningInBrowser()) return
         val rootDiv = document.getElementById("root") as HTMLDivElement
         rootDiv.addClass("container")
 
@@ -522,8 +528,6 @@ object HtmlUtil {
         return addParameters(newUrl, fact, lng, lat, name, isQuickstart())
     }
 
-    fun isLocal() = document.location?.href?.contains("localhost") ?: false
-
     private fun getCenterFromDropdown(): Json {
         val dropdown = document.getElementById(LOCATION_DROPDOWN_ID) as HTMLSelectElement
         val selection = dropdown[dropdown.selectedIndex] as HTMLOptionElement
@@ -571,8 +575,6 @@ object HtmlUtil {
 
     private fun getFactionFromUrl() =
             Faction.fromString(url().searchParams.get("faction"))
-
-    fun isQuickstart() = (document.getElementById("quickstart") as HTMLInputElement).checked
     private fun isQuickstartFromUrl() =
             url().searchParams.get("quickstart")?.toBoolean() ?: false
 

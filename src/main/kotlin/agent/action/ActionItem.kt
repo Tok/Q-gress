@@ -26,11 +26,16 @@ data class ActionItem(val text: String, val durationSeconds: Int, val qName: Str
         val DEPLOY = ActionItem("deploying", 15, "Deploy")
         val CAPTURE = ActionItem("capturing", 15, "Capture")
         val LINK = ActionItem("linking", 30, "Link")
-        fun values() = listOf(MOVE, WAIT, RECHARGE, RECRUIT, EXPLORE, RECYCLE, HACK, GLYPH, ATTACK, DEPLOY, CAPTURE, LINK)
+        fun values() =
+            listOf(MOVE, WAIT, RECHARGE, RECRUIT, EXPLORE, RECYCLE, HACK, GLYPH, ATTACK, DEPLOY, CAPTURE, LINK)
 
-        private val enlImages = values().map { it to drawTemplate(it, Faction.ENL) }.toMap()
-        private val resImages = values().map { it to drawTemplate(it, Faction.RES) }.toMap()
-        private val nonImages = values().map { it to drawTemplate(it, Faction.NONE) }.toMap()
+        private val enlImages = if (HtmlUtil.isNotRunningInBrowser())
+            values().map { it to drawTemplate(it, Faction.ENL) }.toMap() else emptyMap()
+        private val resImages = if (HtmlUtil.isNotRunningInBrowser())
+            values().map { it to drawTemplate(it, Faction.RES) }.toMap() else emptyMap()
+        private val nonImages = if (HtmlUtil.isNotRunningInBrowser())
+            values().map { it to drawTemplate(it, Faction.NONE) }.toMap() else emptyMap()
+
         fun getIcon(item: ActionItem, faction: Faction = Faction.NONE): Canvas {
             return when (faction) {
                 Faction.ENL -> enlImages[item] ?: enlImages[WAIT]!!
@@ -39,7 +44,8 @@ data class ActionItem(val text: String, val durationSeconds: Int, val qName: Str
             }
         }
 
-        private fun drawTemplate(actionItem: ActionItem, faction: Faction): Canvas {
+        private fun drawTemplate(actionItem: ActionItem, faction: Faction): Canvas? {
+            if (HtmlUtil.isNotRunningInBrowser()) return null
             val strokeStyle = Colors.black
             val lw = Dim.agentLineWidth
             val r = Dim.agentRadius

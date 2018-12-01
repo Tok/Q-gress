@@ -18,6 +18,7 @@
   var equals = Kotlin.equals;
   var to = Kotlin.kotlin.to_ujzrz7$;
   var toMap = Kotlin.kotlin.collections.toMap_6hr0sd$;
+  var emptyMap = Kotlin.kotlin.collections.emptyMap_q3lmfv$;
   var throwCCE = Kotlin.throwCCE;
   var plus = Kotlin.kotlin.collections.plus_mydzjv$;
   var listOf_0 = Kotlin.kotlin.collections.listOf_mh5how$;
@@ -68,19 +69,19 @@
   var toByte = Kotlin.toByte;
   var kotlin_js_internal_ByteCompanionObject = Kotlin.kotlin.js.internal.ByteCompanionObject;
   var IllegalArgumentException_init = Kotlin.kotlin.IllegalArgumentException_init_pdl1vj$;
+  var first_0 = Kotlin.kotlin.collections.first_7wnvza$;
   var toDoubleOrNull = Kotlin.kotlin.text.toDoubleOrNull_pdl1vz$;
   var addClass = Kotlin.kotlin.dom.addClass_hhb33f$;
+  var contains = Kotlin.kotlin.text.contains_li3zpu$;
   var padEnd = Kotlin.kotlin.text.padEnd_vrc1nu$;
   var removeClass = Kotlin.kotlin.dom.removeClass_hhb33f$;
   var split = Kotlin.kotlin.text.split_ip8yn$;
-  var contains = Kotlin.kotlin.text.contains_li3zpu$;
   var replace = Kotlin.kotlin.text.replace_680rmw$;
   var toBoolean = Kotlin.kotlin.text.toBoolean_pdl1vz$;
   var trimMargin = Kotlin.kotlin.text.trimMargin_rjktp$;
   var toMap_0 = Kotlin.kotlin.collections.toMap_abgq59$;
   var count = Kotlin.kotlin.collections.count_7wnvza$;
   var listOfNotNull = Kotlin.kotlin.collections.listOfNotNull_jurz7g$;
-  var first_0 = Kotlin.kotlin.collections.first_7wnvza$;
   var joinToString = Kotlin.kotlin.collections.joinToString_fmv235$;
   var endsWith = Kotlin.kotlin.text.endsWith_sgbm27$;
   var dropLast = Kotlin.kotlin.text.dropLast_6ic1pp$;
@@ -213,33 +214,51 @@
     this.DEPLOY = new ActionItem('deploying', 15, 'Deploy');
     this.CAPTURE = new ActionItem('capturing', 15, 'Capture');
     this.LINK = new ActionItem('linking', 30, 'Link');
-    var $receiver = this.values();
-    var destination = ArrayList_init(collectionSizeOrDefault($receiver, 10));
     var tmp$;
-    tmp$ = $receiver.iterator();
-    while (tmp$.hasNext()) {
-      var item = tmp$.next();
-      destination.add_11rb$(to(item, this.drawTemplate_0(item, Faction$ENL_getInstance())));
+    if (HtmlUtil_getInstance().isNotRunningInBrowser()) {
+      var $receiver = this.values();
+      var destination = ArrayList_init(collectionSizeOrDefault($receiver, 10));
+      var tmp$_0;
+      tmp$_0 = $receiver.iterator();
+      while (tmp$_0.hasNext()) {
+        var item = tmp$_0.next();
+        destination.add_11rb$(to(item, this.drawTemplate_0(item, Faction$ENL_getInstance())));
+      }
+      tmp$ = toMap(destination);
     }
-    this.enlImages_0 = toMap(destination);
-    var $receiver_0 = this.values();
-    var destination_0 = ArrayList_init(collectionSizeOrDefault($receiver_0, 10));
-    var tmp$_0;
-    tmp$_0 = $receiver_0.iterator();
-    while (tmp$_0.hasNext()) {
-      var item_0 = tmp$_0.next();
-      destination_0.add_11rb$(to(item_0, this.drawTemplate_0(item_0, Faction$RES_getInstance())));
-    }
-    this.resImages_0 = toMap(destination_0);
-    var $receiver_1 = this.values();
-    var destination_1 = ArrayList_init(collectionSizeOrDefault($receiver_1, 10));
+     else
+      tmp$ = emptyMap();
+    this.enlImages_0 = tmp$;
     var tmp$_1;
-    tmp$_1 = $receiver_1.iterator();
-    while (tmp$_1.hasNext()) {
-      var item_1 = tmp$_1.next();
-      destination_1.add_11rb$(to(item_1, this.drawTemplate_0(item_1, Faction$NONE_getInstance())));
+    if (HtmlUtil_getInstance().isNotRunningInBrowser()) {
+      var $receiver_0 = this.values();
+      var destination_0 = ArrayList_init(collectionSizeOrDefault($receiver_0, 10));
+      var tmp$_2;
+      tmp$_2 = $receiver_0.iterator();
+      while (tmp$_2.hasNext()) {
+        var item_0 = tmp$_2.next();
+        destination_0.add_11rb$(to(item_0, this.drawTemplate_0(item_0, Faction$RES_getInstance())));
+      }
+      tmp$_1 = toMap(destination_0);
     }
-    this.nonImages_0 = toMap(destination_1);
+     else
+      tmp$_1 = emptyMap();
+    this.resImages_0 = tmp$_1;
+    var tmp$_3;
+    if (HtmlUtil_getInstance().isNotRunningInBrowser()) {
+      var $receiver_1 = this.values();
+      var destination_1 = ArrayList_init(collectionSizeOrDefault($receiver_1, 10));
+      var tmp$_4;
+      tmp$_4 = $receiver_1.iterator();
+      while (tmp$_4.hasNext()) {
+        var item_1 = tmp$_4.next();
+        destination_1.add_11rb$(to(item_1, this.drawTemplate_0(item_1, Faction$NONE_getInstance())));
+      }
+      tmp$_3 = toMap(destination_1);
+    }
+     else
+      tmp$_3 = emptyMap();
+    this.nonImages_0 = tmp$_3;
   }
   ActionItem$Companion.prototype.values = function () {
     return listOf([this.MOVE, this.WAIT, this.RECHARGE, this.RECRUIT, this.EXPLORE, this.RECYCLE, this.HACK, this.GLYPH, this.ATTACK, this.DEPLOY, this.CAPTURE, this.LINK]);
@@ -323,6 +342,8 @@
     };
   }
   ActionItem$Companion.prototype.drawTemplate_0 = function (actionItem, faction) {
+    if (HtmlUtil_getInstance().isNotRunningInBrowser())
+      return null;
     var strokeStyle = Colors_getInstance().black;
     var lw = Dim_getInstance().agentLineWidth;
     var r = Dim_getInstance().agentRadius;
@@ -1616,12 +1637,16 @@
     return filterNotNull(destination_2);
   };
   Agent.prototype.draw_f69bme$ = function (ctx) {
+    if (HtmlUtil_getInstance().isNotRunningInBrowser())
+      return;
     var image = ActionItem$Companion_getInstance().getIcon_5bvev3$(this.action.item, this.faction);
     ctx.drawImage(image, this.pos.x, this.pos.y);
     var xmBar = Agent$Companion_getInstance().getXmBarImage_0(this.faction, this.xmBarPercent_0());
     ctx.drawImage(xmBar, this.pos.x, this.pos.y - 3);
   };
   Agent.prototype.drawRadius_f69bme$ = function (ctx) {
+    if (HtmlUtil_getInstance().isNotRunningInBrowser())
+      return;
     if (Styles_getInstance().isDrawDestination) {
       DrawUtil_getInstance().drawLine_ovbgws$(ctx, this.lineToPortal_0(this.actionPortal), Colors_getInstance().nextPortal, 1.0);
       DrawUtil_getInstance().drawLine_ovbgws$(ctx, this.lineToDestination_0(), Colors_getInstance().destination, 1.0);
@@ -1642,27 +1667,34 @@
   };
   function Agent$Companion() {
     Agent$Companion_instance = this;
-    var $receiver = Faction$values();
-    var destination = ArrayList_init_0();
     var tmp$;
-    for (tmp$ = 0; tmp$ !== $receiver.length; ++tmp$) {
-      var element = $receiver[tmp$];
-      var $receiver_0 = new IntRange(0, 100);
-      var destination_0 = ArrayList_init(collectionSizeOrDefault($receiver_0, 10));
+    if (HtmlUtil_getInstance().isRunningInBrowser()) {
+      var $receiver = Faction$values();
+      var destination = ArrayList_init_0();
       var tmp$_0;
-      tmp$_0 = $receiver_0.iterator();
-      while (tmp$_0.hasNext()) {
-        var item = tmp$_0.next();
-        var tmp$_1 = destination_0.add_11rb$;
-        var lw = Dim_getInstance().agentLineWidth;
-        var r = Dim_getInstance().agentRadius;
-        var w = (r + lw | 0) * 2 | 0;
-        tmp$_1.call(destination_0, to(this.xmKey_0(element, item), DrawUtil_getInstance().renderBarImage_ewpgoy$(element.color, item, 3, w, lw)));
+      for (tmp$_0 = 0; tmp$_0 !== $receiver.length; ++tmp$_0) {
+        var element = $receiver[tmp$_0];
+        var $receiver_0 = new IntRange(0, 100);
+        var destination_0 = ArrayList_init(collectionSizeOrDefault($receiver_0, 10));
+        var tmp$_1;
+        tmp$_1 = $receiver_0.iterator();
+        while (tmp$_1.hasNext()) {
+          var item = tmp$_1.next();
+          var tmp$_2 = destination_0.add_11rb$;
+          var lw = Dim_getInstance().agentLineWidth;
+          var r = Dim_getInstance().agentRadius;
+          var w = (r + lw | 0) * 2 | 0;
+          tmp$_2.call(destination_0, to(this.xmKey_0(element, item), DrawUtil_getInstance().renderBarImage_ewpgoy$(element.color, item, 3, w, lw)));
+        }
+        var list = destination_0;
+        addAll(destination, list);
       }
-      var list = destination_0;
-      addAll(destination, list);
+      tmp$ = toMap(destination);
     }
-    this.xmBarImages_0 = toMap(destination);
+     else {
+      tmp$ = emptyMap();
+    }
+    this.xmBarImages_0 = tmp$;
   }
   Agent$Companion.prototype.xmCapacity_0 = function (level) {
     switch (level) {
@@ -1764,6 +1796,10 @@
     }
     return getValue(this.xmBarImages_0, this.xmKey_0(faction, percent));
   };
+  Agent$Companion.prototype.initialActionPortal_0 = function (coords) {
+    var tmp$;
+    return HtmlUtil_getInstance().isRunningInBrowser() ? (tmp$ = Util_getInstance().findNearestPortal_lfj9be$(coords)) != null ? tmp$ : World_getInstance().allPortals.get_za3lpa$(0) : Portal$Companion_getInstance().create_lfj9be$(coords);
+  };
   Agent$Companion.prototype.createFrog_5edep5$ = function (grid) {
     return this.create_0(grid, Faction$ENL_getInstance());
   };
@@ -1771,11 +1807,10 @@
     return this.create_0(grid, Faction$RES_getInstance());
   };
   Agent$Companion.prototype.create_0 = function (grid, faction) {
-    var tmp$;
     var ap = Config_getInstance().initialAp();
     var initialXm = this.xmCapacity_0(this.getLevel_0(ap));
     var coords = Coords$Companion_getInstance().createRandomPassable_5edep5$(grid);
-    var actionPortal = (tmp$ = Util_getInstance().findNearestPortal_lfj9be$(coords)) != null ? tmp$ : World_getInstance().allPortals.get_za3lpa$(0);
+    var actionPortal = this.initialActionPortal_0(coords);
     var agent = new Agent(faction, Util_getInstance().generateAgentName(), coords, Skills$Companion_getInstance().createRandom(), Inventory$Companion_getInstance().empty(), Action$Companion_getInstance().create(), actionPortal, actionPortal.location, coords, ap, initialXm);
     if (HtmlUtil_getInstance().isQuickstart()) {
       agent.inventory.items.addAll_brywnq$(Inventory$Companion_getInstance().quickStart_912u9o$(agent));
@@ -5953,7 +5988,7 @@
     this.owner = owner;
     this.lastHacks_0 = LinkedHashMap_init();
     this.id = 'P-' + toString(this.location.x) + ':' + toString(this.location.y) + '-' + this.name;
-    this.nameImage_0 = this.createNameImage_0();
+    this.nameImage_0 = HtmlUtil_getInstance().isRunningInBrowser() ? this.createNameImage_0() : null;
   }
   Portal.prototype.isDeprecated = function () {
     return this.resoSlots.isEmpty();
@@ -6719,7 +6754,6 @@
       this.destroyAllLinksAndFields_0(destroyer);
     }
   };
-  var emptyMap = Kotlin.kotlin.collections.emptyMap_q3lmfv$;
   Portal.prototype.findAllowedResoLevels_912u9o$ = function (deployer) {
     var tmp$, tmp$_0;
     if (this.owner == null || equals((tmp$ = this.owner) != null ? tmp$.faction : null, deployer.faction)) {
@@ -6807,6 +6841,8 @@
     };
   }
   Portal.prototype.drawResonators_f69bme$ = function (ctx) {
+    if (HtmlUtil_getInstance().isNotRunningInBrowser())
+      return;
     var drawResoLine = Portal$drawResonators$drawResoLine(ctx);
     var $receiver = this.resoSlots;
     var destination = LinkedHashMap_init();
@@ -6847,6 +6883,8 @@
     if (isDrawHealthBar === void 0)
       isDrawHealthBar = true;
     var tmp$, tmp$_0, tmp$_1, tmp$_2, tmp$_3, tmp$_4, tmp$_5, tmp$_6;
+    if (HtmlUtil_getInstance().isNotRunningInBrowser())
+      return;
     tmp$_1 = (tmp$_0 = (tmp$ = this.owner) != null ? tmp$.faction : null) != null ? tmp$_0 : Faction$NONE_getInstance();
     tmp$_2 = this.getLevel();
     var image = Portal$Companion_getInstance().getCenterImage_0(tmp$_1, tmp$_2);
@@ -6861,6 +6899,8 @@
     }
   };
   Portal.prototype.drawName_f69bme$ = function (ctx) {
+    if (HtmlUtil_getInstance().isNotRunningInBrowser())
+      return;
     var xOffset = 34;
     var yOffset = 18;
     ctx.drawImage(this.nameImage_0, this.location.x - xOffset, this.location.y + yOffset);
@@ -6891,42 +6931,55 @@
   };
   function Portal$Companion() {
     Portal$Companion_instance = this;
-    var $receiver = PortalLevel$values();
-    var destination = ArrayList_init_0();
-    var tmp$;
-    for (tmp$ = 0; tmp$ !== $receiver.length; ++tmp$) {
-      var element = $receiver[tmp$];
-      var $receiver_0 = Faction$values();
-      var destination_0 = ArrayList_init($receiver_0.length);
-      var tmp$_0;
-      for (tmp$_0 = 0; tmp$_0 !== $receiver_0.length; ++tmp$_0) {
-        var item = $receiver_0[tmp$_0];
-        destination_0.add_11rb$(to(to(item, element), this.renderPortalCenter_wc00gi$(item.color, element)));
+    var tmp$, tmp$_0;
+    if (HtmlUtil_getInstance().isRunningInBrowser()) {
+      var $receiver = PortalLevel$values();
+      var destination = ArrayList_init_0();
+      var tmp$_1;
+      for (tmp$_1 = 0; tmp$_1 !== $receiver.length; ++tmp$_1) {
+        var element = $receiver[tmp$_1];
+        var $receiver_0 = Faction$values();
+        var destination_0 = ArrayList_init($receiver_0.length);
+        var tmp$_2;
+        for (tmp$_2 = 0; tmp$_2 !== $receiver_0.length; ++tmp$_2) {
+          var item = $receiver_0[tmp$_2];
+          destination_0.add_11rb$(to(to(item, element), this.renderPortalCenter_wc00gi$(item.color, element)));
+        }
+        var list = destination_0;
+        addAll(destination, list);
       }
-      var list = destination_0;
-      addAll(destination, list);
+      tmp$ = toMap(destination);
     }
-    this.centerImages_0 = toMap(destination);
-    var $receiver_1 = new IntRange(0, 100);
-    var destination_1 = ArrayList_init_0();
-    var tmp$_1;
-    tmp$_1 = $receiver_1.iterator();
-    while (tmp$_1.hasNext()) {
-      var element_0 = tmp$_1.next();
-      var lw = Dim_getInstance().portalLineWidth;
-      var r = numberToInt(Dim_getInstance().portalRadius);
-      var w = (r * 2 | 0) + (2 * lw | 0) | 0;
-      var $receiver_2 = Faction$values();
-      var destination_2 = ArrayList_init($receiver_2.length);
-      var tmp$_2;
-      for (tmp$_2 = 0; tmp$_2 !== $receiver_2.length; ++tmp$_2) {
-        var item_0 = $receiver_2[tmp$_2];
-        destination_2.add_11rb$(to(to(item_0, element_0), DrawUtil_getInstance().renderBarImage_ewpgoy$(item_0.color, element_0, 5, w, lw)));
+     else {
+      tmp$ = emptyMap();
+    }
+    this.centerImages_0 = tmp$;
+    if (HtmlUtil_getInstance().isRunningInBrowser()) {
+      var $receiver_1 = new IntRange(0, 100);
+      var destination_1 = ArrayList_init_0();
+      var tmp$_3;
+      tmp$_3 = $receiver_1.iterator();
+      while (tmp$_3.hasNext()) {
+        var element_0 = tmp$_3.next();
+        var lw = Dim_getInstance().portalLineWidth;
+        var r = numberToInt(Dim_getInstance().portalRadius);
+        var w = (r * 2 | 0) + (2 * lw | 0) | 0;
+        var $receiver_2 = Faction$values();
+        var destination_2 = ArrayList_init($receiver_2.length);
+        var tmp$_4;
+        for (tmp$_4 = 0; tmp$_4 !== $receiver_2.length; ++tmp$_4) {
+          var item_0 = $receiver_2[tmp$_4];
+          destination_2.add_11rb$(to(to(item_0, element_0), DrawUtil_getInstance().renderBarImage_ewpgoy$(item_0.color, element_0, 5, w, lw)));
+        }
+        var list_0 = destination_2;
+        addAll(destination_1, list_0);
       }
-      var list_0 = destination_2;
-      addAll(destination_1, list_0);
+      tmp$_0 = toMap(destination_1);
     }
-    this.healthBarImages_0 = toMap(destination_1);
+     else {
+      tmp$_0 = emptyMap();
+    }
+    this.healthBarImages_0 = tmp$_0;
     this.MAX_HACKS = 4;
   }
   Portal$Companion.prototype.findChargeableForKeys_p3u7jq$ = function (agent, keys) {
@@ -6984,18 +7037,27 @@
   };
   var LinkedHashSet_init = Kotlin.kotlin.collections.LinkedHashSet_init_287e2$;
   Portal$Companion.prototype.create_lfj9be$ = function (location) {
+    var tmp$;
     var $receiver = Octant$values();
     var destination = ArrayList_init($receiver.length);
-    var tmp$;
-    for (tmp$ = 0; tmp$ !== $receiver.length; ++tmp$) {
-      var item = $receiver[tmp$];
+    var tmp$_0;
+    for (tmp$_0 = 0; tmp$_0 !== $receiver.length; ++tmp$_0) {
+      var item = $receiver[tmp$_0];
       destination.add_11rb$(to(item, ResonatorSlot$Companion_getInstance().create()));
     }
     var slots = toMutableMap(toMap(destination));
-    var heatMap = PathUtil_getInstance().generateHeatMap_lfj9be$(location);
-    var vectorField = PathUtil_getInstance().calculateVectorField_3e8r0f$(heatMap, location);
-    SoundUtil_getInstance().playPortalCreationSound_xv7m3c$(location);
-    return new Portal(Util_getInstance().generatePortalName(), location, heatMap, vectorField, slots, LinkedHashSet_init(), LinkedHashSet_init(), null);
+    if (HtmlUtil_getInstance().isRunningInBrowser()) {
+      var heatMap = PathUtil_getInstance().generateHeatMap_lfj9be$(location);
+      SoundUtil_getInstance().playPortalCreationSound_xv7m3c$(location);
+      tmp$ = to(heatMap, PathUtil_getInstance().calculateVectorField_3e8r0f$(heatMap, location));
+    }
+     else {
+      tmp$ = to(LinkedHashMap_init(), LinkedHashMap_init());
+    }
+    var tmp$_1 = tmp$;
+    var heatMap_0 = tmp$_1.component1()
+    , vectorField = tmp$_1.component2();
+    return new Portal(Util_getInstance().generatePortalName(), location, heatMap_0, vectorField, slots, LinkedHashSet_init(), LinkedHashSet_init(), null);
   };
   Portal$Companion.prototype.createRandom = function () {
     var location = Coords$Companion_getInstance().createRandomForPortal();
@@ -9320,49 +9382,57 @@
     return Coords_init(numberToInt(x), numberToInt(y));
   };
   Coords$Companion.prototype.createRandomForPortal = function () {
-    var $receiver = World_getInstance().passableInActionArea();
-    var destination = LinkedHashMap_init();
-    var tmp$;
-    tmp$ = $receiver.entries.iterator();
-    while (tmp$.hasNext()) {
-      var element = tmp$.next();
-      if (!(element.key.fromShadow().x < Dim_getInstance().maxDeploymentRange)) {
-        destination.put_xwzc9p$(element.key, element.value);
+    if (HtmlUtil_getInstance().isNotRunningInBrowser()) {
+      return Coords_init(Util_getInstance().randomInt_za3lpa$(Dim_getInstance().width), Util_getInstance().randomInt_za3lpa$(Dim_getInstance().height));
+    }
+     else {
+      var $receiver = World_getInstance().passableInActionArea();
+      var destination = LinkedHashMap_init();
+      var tmp$;
+      tmp$ = $receiver.entries.iterator();
+      while (tmp$.hasNext()) {
+        var element = tmp$.next();
+        if (!(element.key.fromShadow().x < Dim_getInstance().maxDeploymentRange)) {
+          destination.put_xwzc9p$(element.key, element.value);
+        }
       }
-    }
-    var destination_0 = LinkedHashMap_init();
-    var tmp$_0;
-    tmp$_0 = destination.entries.iterator();
-    while (tmp$_0.hasNext()) {
-      var element_0 = tmp$_0.next();
-      if (!(element_0.key.fromShadow().x > World_getInstance().w() - Dim_getInstance().maxDeploymentRange)) {
-        destination_0.put_xwzc9p$(element_0.key, element_0.value);
+      var destination_0 = LinkedHashMap_init();
+      var tmp$_0;
+      tmp$_0 = destination.entries.iterator();
+      while (tmp$_0.hasNext()) {
+        var element_0 = tmp$_0.next();
+        if (!(element_0.key.fromShadow().x > World_getInstance().w() - Dim_getInstance().maxDeploymentRange)) {
+          destination_0.put_xwzc9p$(element_0.key, element_0.value);
+        }
       }
-    }
-    var destination_1 = LinkedHashMap_init();
-    var tmp$_1;
-    tmp$_1 = destination_0.entries.iterator();
-    while (tmp$_1.hasNext()) {
-      var element_1 = tmp$_1.next();
-      if (!element_1.key.fromShadow().hasClosePortal()) {
-        destination_1.put_xwzc9p$(element_1.key, element_1.value);
+      var destination_1 = LinkedHashMap_init();
+      var tmp$_1;
+      tmp$_1 = destination_0.entries.iterator();
+      while (tmp$_1.hasNext()) {
+        var element_1 = tmp$_1.next();
+        if (!element_1.key.fromShadow().hasClosePortal()) {
+          destination_1.put_xwzc9p$(element_1.key, element_1.value);
+        }
       }
+      var grid = destination_1;
+      if (!!grid.isEmpty()) {
+        var message = 'Check failed.';
+        throw IllegalStateException_init(message.toString());
+      }
+      var randomCell = first(Util_getInstance().shuffle_bemo1h$(toList(grid)));
+      var pos = randomCell.first.fromShadow();
+      var offset = this.res / 2 | 0;
+      return new Coords(pos.x + offset, pos.y + offset);
     }
-    var grid = destination_1;
-    if (!!grid.isEmpty()) {
-      var message = 'Check failed.';
-      throw IllegalStateException_init(message.toString());
-    }
-    var randomCell = first(Util_getInstance().shuffle_bemo1h$(toList(grid)));
-    var pos = randomCell.first.fromShadow();
-    var offset = this.res / 2 | 0;
-    return new Coords(pos.x + offset, pos.y + offset);
   };
   Coords$Companion.prototype.createRandomPassable_5edep5$ = function (grid) {
     return this.createRandomPassable_0(grid, 10);
   };
   Coords$Companion.prototype.createRandomPassable_0 = function (grid, retries) {
     var tmp$;
+    if (HtmlUtil_getInstance().isNotRunningInBrowser()) {
+      return grid.isEmpty() ? Coords_init(0, 0) : first_0(Util_getInstance().shuffle_78lngz$(grid.keys));
+    }
     if (!!grid.isEmpty()) {
       var message = 'Check failed.';
       throw IllegalStateException_init(message.toString());
@@ -10147,6 +10217,20 @@
     this.LOCATION_DROPDOWN_ID_0 = 'locationSelect';
     this.SOUND_CHECKBOX_ID = 'soundCheckbox';
   }
+  HtmlUtil.prototype.isRunningInBrowser = function () {
+    return !equals(typeof document, 'undefined');
+  };
+  HtmlUtil.prototype.isNotRunningInBrowser = function () {
+    return !this.isRunningInBrowser();
+  };
+  HtmlUtil.prototype.isLocal = function () {
+    var tmp$, tmp$_0, tmp$_1;
+    return this.isRunningInBrowser() && ((tmp$_1 = (tmp$_0 = (tmp$ = document.location) != null ? tmp$.href : null) != null ? contains(tmp$_0, 'localhost') : null) != null ? tmp$_1 : false);
+  };
+  HtmlUtil.prototype.isQuickstart = function () {
+    var tmp$;
+    return this.isRunningInBrowser() && (Kotlin.isType(tmp$ = document.getElementById('quickstart'), HTMLInputElement) ? tmp$ : throwCCE()).checked;
+  };
   function HtmlUtil$tick$lambda(it) {
     var tmp$;
     DrawUtil_getInstance().redraw();
@@ -10224,6 +10308,8 @@
   }
   HtmlUtil.prototype.load = function () {
     var tmp$, tmp$_0, tmp$_1;
+    if (this.isNotRunningInBrowser())
+      return;
     var rootDiv = Kotlin.isType(tmp$ = document.getElementById('root'), HTMLDivElement) ? tmp$ : throwCCE();
     addClass(rootDiv, ['container']);
     World_getInstance().can = this.createCanvas_0('mainCanvas');
@@ -10789,10 +10875,6 @@
     var fact = (tmp$_2 = (tmp$_1 = World_getInstance().userFaction) != null ? tmp$_1.abbr : null) != null ? tmp$_2 : '';
     return this.addParameters_0(newUrl, fact, lng, lat, name, this.isQuickstart());
   };
-  HtmlUtil.prototype.isLocal = function () {
-    var tmp$, tmp$_0, tmp$_1;
-    return (tmp$_1 = (tmp$_0 = (tmp$ = document.location) != null ? tmp$.href : null) != null ? contains(tmp$_0, 'localhost') : null) != null ? tmp$_1 : false;
-  };
   HtmlUtil.prototype.getCenterFromDropdown_0 = function () {
     var tmp$, tmp$_0;
     var dropdown = Kotlin.isType(tmp$ = document.getElementById(this.LOCATION_DROPDOWN_ID_0), HTMLSelectElement) ? tmp$ : throwCCE();
@@ -10848,10 +10930,6 @@
   };
   HtmlUtil.prototype.getFactionFromUrl_0 = function () {
     return Faction$Companion_getInstance().fromString_pdl1vj$(this.url_0().searchParams.get('faction'));
-  };
-  HtmlUtil.prototype.isQuickstart = function () {
-    var tmp$;
-    return (Kotlin.isType(tmp$ = document.getElementById('quickstart'), HTMLInputElement) ? tmp$ : throwCCE()).checked;
   };
   HtmlUtil.prototype.isQuickstartFromUrl_0 = function () {
     var tmp$, tmp$_0;
@@ -11738,6 +11816,9 @@
   Util.prototype.randomInt_vux9f0$ = function (min, max) {
     var list = toList_0(new IntRange(min, max));
     return list.get_za3lpa$(numberToInt(this.random() * list.size));
+  };
+  Util.prototype.shuffle_78lngz$ = function (items) {
+    return toSet(this.shuffle_bemo1h$(toList_0(items)));
   };
   Util.prototype.shuffle_bemo1h$ = function (items) {
     var tmp$;

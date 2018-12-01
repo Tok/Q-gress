@@ -441,6 +441,7 @@ data class Portal(val name: String, val location: Coords,
     }
 
     fun drawResonators(ctx: Ctx) {
+        if (HtmlUtil.isNotRunningInBrowser()) return
         fun drawResoLine(line: Line, levelColor: String, factionColor: String, lineWidth: Double, alpha: Double = 1.0) {
             ctx.globalAlpha = alpha
             ctx.strokeStyle = Colors.black
@@ -491,6 +492,7 @@ data class Portal(val name: String, val location: Coords,
     }
 
     fun drawCenter(ctx: Ctx, isDrawHealthBar: Boolean = true) {
+        if (HtmlUtil.isNotRunningInBrowser()) return
         val image = getCenterImage(owner?.faction ?: Faction.NONE, getLevel())
         val x = location.x - (image.width / 2)
         val y = location.y - (image.height / 2)
@@ -502,6 +504,7 @@ data class Portal(val name: String, val location: Coords,
     }
 
     fun drawName(ctx: Ctx) {
+        if (HtmlUtil.isNotRunningInBrowser()) return
         val xOffset = 34
         val yOffset = 18
         ctx.drawImage(nameImage, location.x - xOffset, location.y + yOffset)
@@ -511,8 +514,8 @@ data class Portal(val name: String, val location: Coords,
     override fun equals(other: Any?) = other is Portal && id == other.id
     override fun hashCode() = id.hashCode() * 31
 
-    private val nameImage = createNameImage()
-    private fun createNameImage(): Canvas {
+    private val nameImage = if (HtmlUtil.isRunningInBrowser()) createNameImage() else null
+    private fun createNameImage(): Canvas? {
         val fontSize = Dim.portalNameFontSize
         val lineWidth = 2.0
         val w = 100
@@ -531,15 +534,19 @@ data class Portal(val name: String, val location: Coords,
             return chargeable.filter { keys.map { a -> a.portal }.contains(it) }
         }
 
-        private val centerImages: Map<Pair<Faction, PortalLevel>, Canvas> = PortalLevel.values().flatMap { level ->
-            Faction.values().map { (it to level) to renderPortalCenter(it.color, level) }
-        }.toMap()
-        private val healthBarImages: Map<Pair<Faction, Int>, Canvas> = (0..100).flatMap { health ->
-            val lw = Dim.portalLineWidth
-            val r = Dim.portalRadius.toInt()
-            val w = (r * 2) + (2 * lw)
-            Faction.values().map { (it to health) to DrawUtil.renderBarImage(it.color, health, 5, w, lw) }
-        }.toMap()
+        private val centerImages: Map<Pair<Faction, PortalLevel>, Canvas> = if (HtmlUtil.isRunningInBrowser()) {
+            PortalLevel.values().flatMap { level ->
+                Faction.values().map { (it to level) to renderPortalCenter(it.color, level) }
+            }.toMap()
+        } else { emptyMap() }
+        private val healthBarImages: Map<Pair<Faction, Int>, Canvas> = if (HtmlUtil.isRunningInBrowser()) {
+            (0..100).flatMap { health ->
+                val lw = Dim.portalLineWidth
+                val r = Dim.portalRadius.toInt()
+                val w = (r * 2) + (2 * lw)
+                Faction.values().map { (it to health) to DrawUtil.renderBarImage(it.color, health, 5, w, lw) }
+            }.toMap()
+        } else { emptyMap() }
 
         private fun getCenterImage(faction: Faction, level: PortalLevel) = centerImages[faction to level]!!
         private fun getHealthBarImage(faction: Faction, health: Int) = healthBarImages[faction to health]!!
@@ -561,11 +568,15 @@ data class Portal(val name: String, val location: Coords,
         private fun clipLevel(level: Int): Int = max(1, min(level, 8))
         fun create(location: Coords): Portal {
             val slots: MutableMap<Octant, ResonatorSlot> = Octant.values().map { it to ResonatorSlot.create() }.toMap().toMutableMap()
-            val heatMap = PathUtil.generateHeatMap(location)
-            val vectorField = PathUtil.calculateVectorField(heatMap, location)
-            SoundUtil.playPortalCreationSound(location)
+            val (heatMap, vectorField) = if (HtmlUtil.isRunningInBrowser()) {
+                val heatMap = PathUtil.generateHeatMap(location)
+                SoundUtil.playPortalCreationSound(location)
+                heatMap to PathUtil.calculateVectorField(heatMap, location)
+            } else {
+                mutableMapOf<Coords, Int>() to mutableMapOf()
+            }
             return Portal(Util.generatePortalName(), location, heatMap, vectorField,
-                    slots, mutableSetOf(), mutableSetOf(), null)
+                slots, mutableSetOf(), mutableSetOf(), null)
         }
 
         fun createRandom(): Portal {

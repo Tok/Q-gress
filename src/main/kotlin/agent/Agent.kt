@@ -24,12 +24,14 @@ import util.data.*
 import kotlin.math.max
 import kotlin.math.min
 
-data class Agent(val faction: Faction, val name: String, val pos: Coords, val skills: Skills,
-                 val inventory: Inventory, val action: Action,
-                 var actionPortal: Portal, var destination: Coords,
-                 private var lastPosition: Coords,
-                 var ap: Int = 0, var xm: Int = 0,
-                 var velocity: Complex = Complex.ZERO) {
+data class Agent(
+    val faction: Faction, val name: String, val pos: Coords, val skills: Skills,
+    val inventory: Inventory, val action: Action,
+    var actionPortal: Portal, var destination: Coords,
+    private var lastPosition: Coords,
+    var ap: Int = 0, var xm: Int = 0,
+    var velocity: Complex = Complex.ZERO
+) {
     fun key() = toString()
     private fun distanceToDestination(): Double = pos.distanceTo(destination)
     fun distanceToPortal(portal: Portal): Double = pos.distanceTo(portal.location)
@@ -76,19 +78,22 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         with(QDestinations) {
             val randomQ = ActionSelector.q(faction, MOVE_TO_RANDOM)
             val nearQ = ActionSelector.q(faction, MOVE_TO_NEAR)
-            val uncapturedQ = if (MovementUtil.hasUncapturedPortals()) ActionSelector.q(faction, MOVE_TO_UNCAPTURED) else -1.0
-            val friendlyQ = if (MovementUtil.hasFriendlyPortals(agent)) ActionSelector.q(faction, MOVE_TO_MOST_FRIENDLY) else -1.0
+            val uncapturedQ =
+                if (MovementUtil.hasUncapturedPortals()) ActionSelector.q(faction, MOVE_TO_UNCAPTURED) else -1.0
+            val friendlyQ =
+                if (MovementUtil.hasFriendlyPortals(agent)) ActionSelector.q(faction, MOVE_TO_MOST_FRIENDLY) else -1.0
             val nearEnemyQ = if (hasXmps() && hasEnemyPortals) ActionSelector.q(faction, MOVE_TO_NEAR_ENEMY) else -1.0
             val weakEnemyQ = if (hasXmps() && hasEnemyPortals) ActionSelector.q(faction, MOVE_TO_WEAK_ENEMY) else -1.0
-            val strongEnemyQ = if (hasXmps() && hasEnemyPortals) ActionSelector.q(faction, MOVE_TO_STRONG_ENEMY) else -1.0
+            val strongEnemyQ =
+                if (hasXmps() && hasEnemyPortals) ActionSelector.q(faction, MOVE_TO_STRONG_ENEMY) else -1.0
             val qValues = listOf(
-                    randomQ to { MovementUtil.moveToRandomPortal(agent) },
-                    nearQ to { MovementUtil.moveToNearestPortal(agent) },
-                    uncapturedQ to { MovementUtil.moveToUncapturedPortal(agent) },
-                    friendlyQ to { MovementUtil.moveToFriendlyHighLevelPortal(agent) },
-                    nearEnemyQ to { MovementUtil.attackClosePortal(agent) },
-                    weakEnemyQ to { MovementUtil.attackMostVulnerablePortal(agent) },
-                    strongEnemyQ to { MovementUtil.attackMostLinkedPortal(agent) }
+                randomQ to { MovementUtil.moveToRandomPortal(agent) },
+                nearQ to { MovementUtil.moveToNearestPortal(agent) },
+                uncapturedQ to { MovementUtil.moveToUncapturedPortal(agent) },
+                friendlyQ to { MovementUtil.moveToFriendlyHighLevelPortal(agent) },
+                nearEnemyQ to { MovementUtil.attackClosePortal(agent) },
+                weakEnemyQ to { MovementUtil.attackMostVulnerablePortal(agent) },
+                strongEnemyQ to { MovementUtil.attackMostLinkedPortal(agent) }
             )
             val newAgent = Util.select(qValues, { MovementUtil.moveToNearestPortal(agent) }).invoke()
             newAgent.action.start(ActionItem.MOVE)
@@ -181,7 +186,8 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
     fun deployPortal(isFirst: Boolean): Agent {
         if (isFirst) {
             action.start(ActionItem.DEPLOY)
-            val distance = max(Dim.minDeploymentRange, Dim.maxDeploymentRange * Util.random() * skills.deployPrecision).toInt()
+            val distance =
+                max(Dim.minDeploymentRange, Dim.maxDeploymentRange * Util.random() * skills.deployPrecision).toInt()
             val dest = actionPortal.findRandomPointNearPortal(distance)
             this.destination = dest
         }
@@ -206,18 +212,21 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
     private fun findPortalsInAttackRange(level: XmpLevel): List<Portal> {
         val attackDistance = (level.rangeM * 0.5) + Dim.portalRadius
         val enemyPortals = World.allPortals.filter { it.owner?.faction != this.faction }
-        return enemyPortals.filter { it.location.distanceTo(this.pos) <= attackDistance }.sortedBy { it.location.distanceTo(this.pos) }
+        return enemyPortals.filter { it.location.distanceTo(this.pos) <= attackDistance }
+            .sortedBy { it.location.distanceTo(this.pos) }
     }
 
     fun findResosInAttackRange(level: XmpLevel): List<Resonator> {
         val attackDistance = level.rangeM * 0.5
         val portals = findPortalsInAttackRange(level)
         val slots = portals.flatMap { it.resoSlots.map { s -> s.value } }
-        val resosInRange = slots.filter { it.resonator?.coords?.distanceTo(this.pos) ?: attackDistance * 2 <= attackDistance }
+        val resosInRange =
+            slots.filter { it.resonator?.coords?.distanceTo(this.pos) ?: attackDistance * 2 <= attackDistance }
         return resosInRange.map { it.resonator }.filterNotNull()
     }
 
     fun draw(ctx: Ctx) {
+        if (HtmlUtil.isNotRunningInBrowser()) return
         val image = ActionItem.getIcon(action.item, faction)
         ctx.drawImage(image, pos.x, pos.y)
         val xmBar = getXmBarImage(faction, xmBarPercent())
@@ -225,6 +234,7 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
     }
 
     fun drawRadius(ctx: Ctx) {
+        if (HtmlUtil.isNotRunningInBrowser()) return
         if (Styles.isDrawDestination) {
             DrawUtil.drawLine(ctx, lineToPortal(actionPortal), Colors.nextPortal, 1.0)
             DrawUtil.drawLine(ctx, lineToDestination(), Colors.destination, 1.0)
@@ -291,19 +301,25 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
         }
 
         private fun xmKey(faction: Faction, percent: Int) = faction.abbr + ":" + percent
-        private val xmBarImages = Faction.values().flatMap { fac ->
-            (0..100).map {
-                val lw = Dim.agentLineWidth
-                val r = Dim.agentRadius
-                val w = (r + lw) * 2
-                xmKey(fac, it) to DrawUtil.renderBarImage(fac.color, it, 3, w, lw)
-            }
-        }.toMap()
+        private val xmBarImages = if (HtmlUtil.isRunningInBrowser()) {
+            Faction.values().flatMap { fac ->
+                (0..100).map {
+                    val lw = Dim.agentLineWidth
+                    val r = Dim.agentRadius
+                    val w = (r + lw) * 2
+                    xmKey(fac, it) to DrawUtil.renderBarImage(fac.color, it, 3, w, lw)
+                }
+            }.toMap()
+        } else { emptyMap() }
 
         private fun getXmBarImage(faction: Faction, percent: Int): Canvas {
             check(percent in 0..100)
             return xmBarImages.getValue(xmKey(faction, percent))
         }
+
+        private fun initialActionPortal(coords: Coords) =
+            if (HtmlUtil.isRunningInBrowser()) Util.findNearestPortal(coords) ?: World.allPortals[0]
+            else Portal.create(coords)
 
         fun createFrog(grid: Map<Coords, Cell>) = create(grid, Faction.ENL)
         fun createSmurf(grid: Map<Coords, Cell>) = create(grid, Faction.RES)
@@ -311,10 +327,12 @@ data class Agent(val faction: Faction, val name: String, val pos: Coords, val sk
             val ap = Config.initialAp()
             val initialXm = xmCapacity(getLevel(ap))
             val coords = Coords.createRandomPassable(grid)
-            val actionPortal = Util.findNearestPortal(coords) ?: World.allPortals[0] //FIXME
-            val agent = Agent(faction, Util.generateAgentName(), coords, Skills.createRandom(),
-                    Inventory.empty(), Action.create(), actionPortal, actionPortal.location,
-                    coords, ap, initialXm)
+            val actionPortal = initialActionPortal(coords)
+            val agent = Agent(
+                faction, Util.generateAgentName(), coords, Skills.createRandom(),
+                Inventory.empty(), Action.create(), actionPortal, actionPortal.location,
+                coords, ap, initialXm
+            )
             if (HtmlUtil.isQuickstart()) {
                 agent.inventory.items.addAll(Inventory.quickStart(agent))
             }
