@@ -47,12 +47,12 @@
   var mapOf = Kotlin.kotlin.collections.mapOf_qfcya0$;
   var math = Kotlin.kotlin.math;
   var asList = Kotlin.kotlin.collections.asList_us0mfu$;
+  var toBoxedChar = Kotlin.toBoxedChar;
   var NotImplementedError = Kotlin.kotlin.NotImplementedError;
   var toList_0 = Kotlin.kotlin.collections.toList_7wnvza$;
   var last = Kotlin.kotlin.collections.last_2p1efm$;
   var linkedSetOf = Kotlin.kotlin.collections.linkedSetOf_i5x0yv$;
   var unboxChar = Kotlin.unboxChar;
-  var toBoxedChar = Kotlin.toBoxedChar;
   var round = Kotlin.kotlin.math.round_14dthe$;
   var toMutableList = Kotlin.kotlin.collections.toMutableList_4c7yge$;
   var sort = Kotlin.kotlin.collections.sort_4wi501$;
@@ -66,8 +66,6 @@
   var zipWithNext = Kotlin.kotlin.collections.zipWithNext_7wnvza$;
   var until = Kotlin.kotlin.ranges.until_dqglrj$;
   var max = Kotlin.kotlin.collections.max_exjks8$;
-  var toByte = Kotlin.toByte;
-  var kotlin_js_internal_ByteCompanionObject = Kotlin.kotlin.js.internal.ByteCompanionObject;
   var IllegalArgumentException_init = Kotlin.kotlin.IllegalArgumentException_init_pdl1vj$;
   var first_0 = Kotlin.kotlin.collections.first_7wnvza$;
   var toDoubleOrNull = Kotlin.kotlin.text.toDoubleOrNull_pdl1vz$;
@@ -88,6 +86,8 @@
   var padStart = Kotlin.kotlin.text.padStart_vrc1nu$;
   var throwUPAE = Kotlin.throwUPAE;
   var clear = Kotlin.kotlin.dom.clear_asww5s$;
+  var toByte = Kotlin.toByte;
+  var kotlin_js_internal_ByteCompanionObject = Kotlin.kotlin.js.internal.ByteCompanionObject;
   Faction.prototype = Object.create(Enum.prototype);
   Faction.prototype.constructor = Faction;
   Location.prototype = Object.create(Enum.prototype);
@@ -3170,6 +3170,7 @@
     this.black = '#000000';
     this.white = '#ffffff';
     this.red = '#ff0000';
+    this.chartreuse = '#7fff00';
     this.orange = '#ff7315';
     this.damage = '#ff7315';
     this.critDamage = '#e40000';
@@ -3251,7 +3252,7 @@
     Constants_instance = this;
     this.phi = 1.618033988749895;
     this.tau = 2.0 * math.PI;
-    this.hexChars = '0123456789ABCDEF';
+    this.sqrt2 = 1.4142135623730951;
     this.localLocation_0 = 'http://localhost:63342/';
     this.localToken_0 = 'Qgress/';
     this.location_0 = 'https://tok.github.io/';
@@ -3613,6 +3614,18 @@
     }
   }
   VectorStyle.valueOf_61zpoe$ = VectorStyle$valueOf;
+  function toHexString($receiver) {
+    if (!($receiver >= 0)) {
+      var message = 'Check failed.';
+      throw IllegalStateException_init(message.toString());
+    }
+    if (!($receiver <= 255)) {
+      var message_0 = 'Check failed.';
+      throw IllegalStateException_init(message_0.toString());
+    }
+    var hexChars = '0123456789ABCDEF';
+    return String.fromCharCode(hexChars.charCodeAt($receiver >>> 4)) + String.fromCharCode(hexChars.charCodeAt($receiver & 15));
+  }
   function DeployableItem() {
   }
   DeployableItem.$metadata$ = {
@@ -7582,6 +7595,9 @@
     Com_instance = this;
     this.messages_0 = ArrayList_init_0();
   }
+  Com.prototype.messageCount = function () {
+    return this.messages_0.size;
+  };
   Com.prototype.addMessage_61zpoe$ = function (message) {
     this.messages_0.add_11rb$(message);
     if (this.messages_0.size > 8) {
@@ -8869,7 +8885,15 @@
     };
   }
   VectorFields.prototype.createVectorImage_0 = function (w, h, complex, line, style, isColor) {
-    var stroke = isColor ? ColorUtil_getInstance().getColor_p4p8i0$(complex) + 'AA' : Colors_getInstance().black + 'AA';
+    var tmp$;
+    var brightness = 1.0 - Constants_getInstance().phi;
+    if (isColor) {
+      tmp$ = ColorUtil_getInstance().getColor_p4p8i0$(complex.copyWithNewMagnitude_14dthe$(brightness));
+    }
+     else {
+      tmp$ = Colors_getInstance().black;
+    }
+    var stroke = tmp$ + 'AA';
     return HtmlUtil_getInstance().preRender_yb5akz$(w, h, VectorFields$createVectorImage$lambda(style, w, this, h, line, stroke));
   };
   VectorFields.$metadata$ = {
@@ -8981,18 +9005,14 @@
     var b = Math_0.max(0.0, p);
     var range = numberToInt(Math_0.min(5.0, b));
     var fraction = p - range;
-    var rgbValues = this.getFullSpectrum_0(range, fraction);
+    var rgbValues = this.spectrum_5wr77w$(range, fraction);
     var maxMag = mag * 255;
     var red = numberToInt(rgbValues.first * maxMag);
     var green = numberToInt(rgbValues.second * maxMag);
     var blue = numberToInt(rgbValues.third * maxMag);
-    return '#' + this.toHexString_0(red) + this.toHexString_0(green) + this.toHexString_0(blue);
+    return '#' + toHexString(red) + toHexString(green) + toHexString(blue);
   };
-  ColorUtil.prototype.toHexString_0 = function (int) {
-    var v = toByte(toByte(int) & kotlin_js_internal_ByteCompanionObject.MAX_VALUE);
-    return String.fromCharCode(Constants_getInstance().hexChars.charCodeAt(v >>> 4)) + String.fromCharCode(toBoxedChar(Constants_getInstance().hexChars.charCodeAt(v & 15)));
-  };
-  ColorUtil.prototype.getFullSpectrum_0 = function (range, fraction) {
+  ColorUtil.prototype.spectrum_5wr77w$ = function (range, fraction) {
     switch (range) {
       case 0:
         return new Triple(1.0, fraction, 0.0);
@@ -9208,9 +9228,9 @@
     var tmp$;
     if (equals(this, Complex$Companion_getInstance().I))
       tmp$ = 'i';
-    else if (equals(this, new Complex(this.re)))
+    else if (equals(this, new Complex(this.re, 0.0)))
       tmp$ = this.re.toString();
-    else if (equals(this, new Complex(this.im)))
+    else if (equals(this, new Complex(0.0, this.im)))
       tmp$ = this.im.toString() + '*i';
     else {
       var imString = this.im < 0.0 ? '-' + toString(-this.im) : '+' + this.im;
@@ -9316,7 +9336,7 @@
   Coords.prototype.fromShadow = function () {
     return Coords_init(numberToInt(this.x * Coords$Companion_getInstance().res), numberToInt(this.y * Coords$Companion_getInstance().res));
   };
-  Coords.prototype.getSurrounding_vux9f0$ = function (w, h) {
+  Coords.prototype.surrounding_vux9f0$ = function (w, h) {
     var $receiver = listOf([new Coords(this.x - 1.0, this.y - 1.0), new Coords(this.x, this.y - 1.0), new Coords(this.x + 1.0, this.y - 1.0), new Coords(this.x - 1.0, this.y), new Coords(this.x + 1.0, this.y), new Coords(this.x - 1.0, this.y + 1.0), new Coords(this.x, this.y + 1.0), new Coords(this.x + 1.0, this.y + 1.0)]);
     var destination = ArrayList_init_0();
     var tmp$;
@@ -12571,6 +12591,8 @@
     get: VectorStyle$SQUARE_getInstance
   });
   package$config.VectorStyle = VectorStyle;
+  var package$extension = _.extension || (_.extension = {});
+  package$extension.toHexString_s8ev3n$ = toHexString;
   var package$items = _.items || (_.items = {});
   var package$deployable = package$items.deployable || (package$items.deployable = {});
   package$deployable.DeployableItem = DeployableItem;
