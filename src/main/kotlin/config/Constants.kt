@@ -5,6 +5,7 @@ import util.HtmlUtil
 object Constants {
     const val phi = 1.61803398874989484820
     const val tau = 2.0 * kotlin.math.PI
+    const val sqrt2 = 1.4142135623730951
 
     private const val localLocation = "http://localhost:63342/"
     private const val localToken = "Qgress/"

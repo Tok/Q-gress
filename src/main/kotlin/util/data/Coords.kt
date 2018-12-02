@@ -27,7 +27,7 @@ data class Coords(val x: Double, val y: Double) {
     fun toShadowPos() = Coords((x / res).toInt(), (y / res).toInt())
     fun fromShadow() = Coords((x * res).toInt(), (y * res).toInt())
 
-    fun getSurrounding(w: Int, h: Int): List<Coords> = listOf(
+    fun surrounding(w: Int, h: Int): List<Coords> = listOf(
         Coords(x - 1.0, y - 1.0),
         Coords(x, y - 1.0),
         Coords(x + 1.0, y - 1.0),
