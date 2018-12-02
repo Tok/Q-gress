@@ -15,6 +15,7 @@ object Colors {
     const val black = "#000000"
     const val white = "#ffffff"
     const val red = "#ff0000"
+    const val chartreuse = "#7fff00"
     const val orange = "#ff7315"
 
     const val damage = "#ff7315"

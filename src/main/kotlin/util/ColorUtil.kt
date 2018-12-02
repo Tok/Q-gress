@@ -2,8 +2,8 @@ package util
 
 import config.Colors
 import config.Constants
+import extension.toHexString
 import util.data.Complex
-import kotlin.experimental.and
 import kotlin.math.max
 import kotlin.math.min
 
@@ -12,7 +12,7 @@ import kotlin.math.min
  */
 object ColorUtil {
     private const val MAX_RGB = 0xFF
-    fun getColor(c: Complex): String = getColorFromMagnitudeAndPhase(c.magnitude.toDouble(), c.phase)
+    fun getColor(c: Complex): String = getColorFromMagnitudeAndPhase(c.magnitude, c.phase)
     private fun getColorFromMagnitudeAndPhase(magnitude: Double, phase: Double): String {
         if (magnitude <= 1.0 / MAX_RGB) {
             return Colors.black
@@ -22,20 +22,15 @@ object ColorUtil {
         val p = clippedPhase * 6.0 / Constants.tau
         val range = min(5.0, max(0.0, p)).toInt()
         val fraction = p - range
-        val rgbValues = getFullSpectrum(range, fraction)
+        val rgbValues = spectrum(range, fraction)
         val maxMag = mag * MAX_RGB
         val red = (rgbValues.first * maxMag).toInt()
         val green = (rgbValues.second * maxMag).toInt()
         val blue = (rgbValues.third * maxMag).toInt()
-        return "#" + toHexString(red) + toHexString(green) + toHexString(blue)
+        return "#" + red.toHexString() + green.toHexString() + blue.toHexString()
     }
 
-    private fun toHexString(int: Int): String {
-        val v = (int.toByte() and Byte.MAX_VALUE).toInt()
-        return Constants.hexChars[v ushr 4].toString() + Constants.hexChars[v and 0x0F]
-    }
-
-    private fun getFullSpectrum(range: Int, fraction: Double) = when (range) {
+    fun spectrum(range: Int, fraction: Double) = when (range) {
         0 -> Triple(1.0, fraction, 0.0) //Red -> Yellow
         1 -> Triple(1.0 - fraction, 1.0, 0.0) //Yellow -> Green
         2 -> Triple(0.0, 1.0, fraction) //Green -> Cyan

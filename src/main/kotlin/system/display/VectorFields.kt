@@ -91,10 +91,17 @@ object VectorFields {
         ctx.fill()
     }
 
-
-    private fun createVectorImage(w: Int, h: Int, complex: Complex, line: Line,
-                                  style: VectorStyle, isColor: Boolean): Canvas {
-        val stroke = if (isColor) ColorUtil.getColor(complex) + "AA" else Colors.black + "AA"
+    private fun createVectorImage(
+        w: Int, h: Int, complex: Complex, line: Line,
+        style: VectorStyle, isColor: Boolean
+    ): Canvas {
+        val brightness = 1.0 - Constants.phi
+        val stroke =
+            if (isColor) {
+                ColorUtil.getColor(complex.copyWithNewMagnitude(brightness))
+            } else {
+                Colors.black
+            } + "AA"
         return HtmlUtil.preRender(w, h, fun(ctx: Ctx) {
             ctx.fillStyle = "#ffffff44"
             when (style) {
