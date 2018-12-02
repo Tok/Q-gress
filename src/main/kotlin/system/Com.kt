@@ -9,7 +9,7 @@ import util.data.Coords
 
 object Com {
     private val messages: MutableList<String> = mutableListOf()
-
+    fun messageCount() = messages.count()
     fun addMessage(message: String) {
         messages.add(message)
         if (messages.size > Config.comMessageLimit) {
