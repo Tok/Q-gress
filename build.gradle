@@ -17,11 +17,10 @@ dependencies {
     testCompile "org.jetbrains.kotlin:kotlin-test-js:$kotlin_version"
 }
 
-compileKotlin2Js.kotlinOptions.moduleKind = "umd"
-
-[compileTestKotlin2Js]*.configure {
+[compileTestKotlin2Js, compileKotlin2Js]*.configure {
     kotlinOptions {
         moduleKind = "umd"
+        metaInfo = true
         sourceMap = true
         sourceMapEmbedSources = "always"
     }
@@ -32,7 +31,7 @@ node {
     download = true
 }
 
-task populateNodeModules(type: Copy, dependsOn: compileKotlin2Js) {
+task populateNodeModules(type: Copy, dependsOn: [compileKotlin2Js]) {
     from compileKotlin2Js.destinationDir
     configurations.testCompile.each {
         from zipTree(it.absolutePath).matching { include "*.js" }
@@ -43,23 +42,28 @@ task populateNodeModules(type: Copy, dependsOn: compileKotlin2Js) {
 task runMocha(type: NodeTask, dependsOn: [populateNodeModules]) {
     script = file("node_modules/mocha/bin/mocha")
     args = [compileTestKotlin2Js.outputFile,
+            "--require=source-map-support/register",
+            "--useColors=false",
             "--reporter", "mochawesome",
             "--reporter-options",
-            "reportDir=$rootDir,json=false,inline=true"]
+            "reportDir=$rootDir,reportTitle=Q-Gress Tests,json=false,inline=true,quiet=true"]
 }
 
-task fullCleanup(type: Delete) {
+task cleanup(type: Delete) {
     delete "published/Q-Gress.js", "published/kotlin.js",
-            "mochawesome.html", "package-lock.json",
-            "node_modules", "build"
+            "mochawesome.html", "build"
 }
 
-task installKotlin(type: NpmTask) { args = ["install", "kotlin", "--save"] }
-task installMocha(type: NpmTask) { args = ["install", "mocha", "--save-dev"] }
-task installMochawesome(type: NpmTask) { args = ["install", "mochawesome", "--save-dev"] }
-task installNodeModules(dependsOn: [installKotlin, installMocha, installMochawesome])
+task fullCleanup(type: Delete, dependsOn: [cleanup]) {
+    delete "node_modules"
+}
 
-task publish(type: Copy, dependsOn: [build, runMocha]) {
+task installKotlin(type: NpmTask) { args = ["install", "--save", "kotlin"] }
+task installNodeModules(type: NpmTask, dependsOn: [installKotlin]) {
+    args = ["install", "--save-dev", "mocha", "mochawesome", "source-map-support"]
+}
+
+task publish(type: Copy, dependsOn: [runMocha]) {
     from file("$buildDir/node_modules/kotlin.js")
     from file("$buildDir/classes/kotlin/main/Q-Gress.js")
     into file("published/")
@@ -69,4 +73,5 @@ task openInBrowser { doLast { Desktop.desktop.browse "index.html".toURI() } }
 task openTestReport { doLast { Desktop.desktop.browse "mochawesome.html".toURI() } }
 
 test.dependsOn runMocha
-//clean.dependsOn fullCleanup
+build.dependsOn publish
+clean.dependsOn cleanup
