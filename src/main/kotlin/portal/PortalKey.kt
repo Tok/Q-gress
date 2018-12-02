@@ -10,7 +10,7 @@ class PortalKey(val portal: Portal, val owner: Agent) : DeployableItem {
     override fun toString() = "Key-$portal"
     override fun getOwnerId(): String = owner.key()
     override fun getLevel(): Int = throw NotImplementedError("Portal Key has no level.")
-    fun isFriendly(agent: Agent) = owner.faction == agent.faction
+    fun isFriendlyToOwner() = portal.owner?.faction == owner.faction
 
     companion object {
         //TODO Probabilities

@@ -18,6 +18,9 @@ data class Inventory(val items: MutableList<QgressItem> = mutableListOf()) {
 
     fun findUniqueKeys(): List<PortalKey>? = findKeys().distinct()
 
+    fun addItem(item: QgressItem) = items.add(item)
+    fun addItems(newItems: List<QgressItem>) = items.addAll(newItems)
+
     fun consumeKeyToPortal(portal: Portal) {
         val key = findUniqueKeys()!!.find { it.portal == portal } ?: throw IllegalStateException("Key should exist.")
         items.remove(key)

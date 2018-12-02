@@ -26,7 +26,7 @@ object Linker : ConditionalAction {
         return agent
     }
 
-    private fun hasFriendlyKeys(agent: Agent) = agent.keySet().any { it.isFriendly(agent) }
+    private fun hasFriendlyKeys(agent: Agent) = agent.keySet().any { it.isFriendlyToOwner() }
     private fun linkable(agent: Agent) = agent.actionPortal.findLinkableForKeys(agent).distinct()
     private fun hasNoCrossLinks(newline: Line) = World.allLines().none { it.doesIntersect(newline) }
     private fun targetOptions(agent: Agent) = linkable(agent).filter {

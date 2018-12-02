@@ -1035,7 +1035,7 @@
       tmp$ = $receiver.iterator();
       while (tmp$.hasNext()) {
         var element = tmp$.next();
-        if (element.isFriendly_912u9o$(agent)) {
+        if (element.isFriendlyToOwner()) {
           any$result = true;
           break any$break;
         }
@@ -2128,6 +2128,12 @@
   };
   Inventory.prototype.findUniqueKeys = function () {
     return distinct(this.findKeys());
+  };
+  Inventory.prototype.addItem_1dq9g6$ = function (item) {
+    return this.items.add_11rb$(item);
+  };
+  Inventory.prototype.addItems_bbrmyp$ = function (newItems) {
+    return this.items.addAll_brywnq$(newItems);
   };
   Inventory.prototype.consumeKeyToPortal_hv9zn6$ = function (portal) {
     var tmp$;
@@ -7136,8 +7142,9 @@
   PortalKey.prototype.getLevel = function () {
     throw new NotImplementedError('Portal Key has no level.');
   };
-  PortalKey.prototype.isFriendly_912u9o$ = function (agent) {
-    return this.owner.faction === agent.faction;
+  PortalKey.prototype.isFriendlyToOwner = function () {
+    var tmp$;
+    return equals((tmp$ = this.portal.owner) != null ? tmp$.faction : null, this.owner.faction);
   };
   function PortalKey$Companion() {
     PortalKey$Companion_instance = this;
@@ -7238,6 +7245,18 @@
     return equals(this.owner, agent);
   };
   ResonatorSlot.prototype.deployReso_otfdig$ = function (deployer, reso, dist) {
+    if (!(dist >= Dim_getInstance().minDeploymentRange)) {
+      var message = 'Check failed.';
+      throw IllegalStateException_init(message.toString());
+    }
+    if (!(dist <= Dim_getInstance().maxDeploymentRange)) {
+      var message_0 = 'Check failed.';
+      throw IllegalStateException_init(message_0.toString());
+    }
+    if (!(deployer.faction !== Faction$NONE_getInstance())) {
+      var message_1 = 'Check failed.';
+      throw IllegalStateException_init(message_1.toString());
+    }
     this.owner = deployer;
     this.resonator = reso;
     this.distance = dist;
