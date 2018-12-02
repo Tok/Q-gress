@@ -43,8 +43,8 @@ data class Complex(val re: Double, val im: Double = 0.0) {
     override fun toString(): String {
         return when (this) {
             I -> "i"
-            Complex(re) -> re.toString()
-            Complex(im) -> im.toString() + "*i"
+            Complex(re, 0.0) -> re.toString()
+            Complex(0.0, im) -> im.toString() + "*i"
             else -> {
                 val imString = if (im < 0F) "-" + -im else "+$im"
                 return re.toString() + imString + "*i"
