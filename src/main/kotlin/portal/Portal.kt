@@ -1,7 +1,5 @@
 package portal
 
-import Canvas
-import Ctx
 import World
 import agent.Agent
 import agent.Faction
@@ -10,6 +8,8 @@ import config.Colors
 import config.Dim
 import config.Styles
 import config.Time
+import extension.Canvas
+import extension.Ctx
 import items.PowerCube
 import items.QgressItem
 import items.XmpBurster
@@ -27,15 +27,17 @@ import system.Com
 import util.*
 import util.data.Circle
 import util.data.Complex
-import util.data.Coords
+import util.data.Pos
 import util.data.Line
 import kotlin.math.*
 
-data class Portal(val name: String, val location: Coords,
-                  val heatMap: Map<Coords, Int>, val vectorField: Map<Coords, Complex>,
-                  val resoSlots: Map<Octant, ResonatorSlot>,
-                  val links: MutableSet<Link>, val fields: MutableSet<Field>,
-                  var owner: Agent?) {
+data class Portal(
+    val name: String, val location: Pos,
+    val heatMap: Map<Pos, Int>, val vectorField: Map<Pos, Complex>,
+    val resoSlots: Map<Octant, ResonatorSlot>,
+    val links: MutableSet<Link>, val fields: MutableSet<Field>,
+    var owner: Agent?
+) {
     private val lastHacks: MutableMap<String, MutableList<Int>> = mutableMapOf()
     val id: String = "P-" + location.x + ":" + location.y + "-" + name
     fun isDeprecated() = resoSlots.isEmpty()
@@ -59,8 +61,8 @@ data class Portal(val name: String, val location: Coords,
     }.sum() / 8)
 
     fun getLevel() =
-            if (World.isReady) PortalLevel.findByValue(calculateLevel())
-            else PortalLevel.ZERO
+        if (World.isReady) PortalLevel.findByValue(calculateLevel())
+        else PortalLevel.ZERO
 
     fun x() = location.x
     fun y() = location.y
@@ -89,7 +91,7 @@ data class Portal(val name: String, val location: Coords,
         }
     }
 
-    fun findStrongestResoPos(): Coords? = findStrongestReso()?.coords
+    fun findStrongestResoPos(): Pos? = findStrongestReso()?.position
     fun calcHealth(): Int {
         val resos = getAllResos()
         val health = resos.map { it.calcHealthPercent() }.sum() / resos.count()
@@ -102,12 +104,12 @@ data class Portal(val name: String, val location: Coords,
         if (isFullyDeployed()) 160 * x * x * x * x else 0.0
     }
 
-    fun findRandomPointNearPortal(distance: Int): Coords {
+    fun findRandomPointNearPortal(distance: Int): Pos {
         val angle = Util.random() * PI
         val xOffset: Int = (distance * cos(angle)).toInt()
         val yOffset: Int = (distance * sin(angle)).toInt()
         val point = location.copy(x = location.x + xOffset, y = location.y + yOffset)
-        return if (World.grid[point.toShadowPos()]?.isPassable == true) {
+        return if (World.grid[point.toShadow()]?.isPassable == true) {
             point
         } else {
             findRandomPointNearPortal(distance)
@@ -342,7 +344,7 @@ data class Portal(val name: String, val location: Coords,
             resoSlots[octant]?.deployReso(deployer, resonator, newDistance)
             val xx = location.x + octant.calcXOffset(newDistance)
             val yy = location.y + octant.calcYOffset(newDistance)
-            resonator.deploy(this, octant, Coords(xx, yy))
+            resonator.deploy(this, octant, Pos(xx, yy))
         }
         deployer.inventory.consumeResos(resos.map { it.value })
     }
@@ -421,7 +423,7 @@ data class Portal(val name: String, val location: Coords,
         }
     }
 
-    fun leakXm(): Pair<Coords, Int> {
+    fun leakXm(): Pair<Pos, Int> {
         val fluct = Util.randomInt(300)
         val offset = if (Util.randomBool()) fluct else -fluct
         return location to if (getLevel().toInt() <= 4.5) {
@@ -479,14 +481,14 @@ data class Portal(val name: String, val location: Coords,
             val x = location.x + octant.calcXOffset(slot.distance)
             val y = location.y + octant.calcYOffset(slot.distance)
 
-            val lineToPortal = Line(Coords(x, y), location)
+            val lineToPortal = Line(Pos(x, y), location)
             val alpha = reso.calcHealthPercent().toDouble()
             drawResoLine(lineToPortal, resoLevel.getColor(), owner?.faction?.color ?: Faction.NONE.color, 1.0, alpha)
 
-            val resoCircle = Circle(Coords(x, y), Dim.resoRadius)
+            val resoCircle = Circle(Pos(x, y), Dim.resoRadius)
             DrawUtil.drawCircle(ctx, resoCircle, Colors.black, 2.0, resoLevel.getColor(), alpha)
             if (Styles.isDrawResoLevels) {
-                DrawUtil.drawText(ctx, Coords(x, y), reso.level.level.toString(), Colors.black, 8, DrawUtil.CODA)
+                DrawUtil.drawText(ctx, Pos(x, y), reso.level.level.toString(), Colors.black, 8, DrawUtil.CODA)
             }
         }
     }
@@ -523,8 +525,17 @@ data class Portal(val name: String, val location: Coords,
         val x = lineWidth + (fontSize / 2)
         val y = lineWidth + (fontSize * 2 / 3)
         return HtmlUtil.preRender(w, h.toInt(), fun(ctx: Ctx) {
-            val coords = Coords(x.toInt(), y.toInt())
-            DrawUtil.strokeText(ctx, coords, name, Colors.white, Dim.portalNameFontSize, DrawUtil.CODA, lineWidth, Colors.black)
+            val coords = Pos(x.toInt(), y.toInt())
+            DrawUtil.strokeText(
+                ctx,
+                coords,
+                name,
+                Colors.white,
+                Dim.portalNameFontSize,
+                DrawUtil.CODA,
+                lineWidth,
+                Colors.black
+            )
         })
     }
 
@@ -538,7 +549,9 @@ data class Portal(val name: String, val location: Coords,
             PortalLevel.values().flatMap { level ->
                 Faction.values().map { (it to level) to renderPortalCenter(it.color, level) }
             }.toMap()
-        } else { emptyMap() }
+        } else {
+            emptyMap()
+        }
         private val healthBarImages: Map<Pair<Faction, Int>, Canvas> = if (HtmlUtil.isRunningInBrowser()) {
             (0..100).flatMap { health ->
                 val lw = Dim.portalLineWidth
@@ -546,7 +559,9 @@ data class Portal(val name: String, val location: Coords,
                 val w = (r * 2) + (2 * lw)
                 Faction.values().map { (it to health) to DrawUtil.renderBarImage(it.color, health, 5, w, lw) }
             }.toMap()
-        } else { emptyMap() }
+        } else {
+            emptyMap()
+        }
 
         private fun getCenterImage(faction: Faction, level: PortalLevel) = centerImages[faction to level]!!
         private fun getHealthBarImage(faction: Faction, health: Int) = healthBarImages[faction to health]!!
@@ -557,30 +572,33 @@ data class Portal(val name: String, val location: Coords,
             val w = (r * 2) + (2 * lw)
             val h = w
             return HtmlUtil.preRender(w, h, fun(ctx: Ctx) {
-                val portalCircle = Circle(Coords(r + lw, r + lw), r.toDouble())
+                val portalCircle = Circle(Pos(r + lw, r + lw), r.toDouble())
                 DrawUtil.drawCircle(ctx, portalCircle, Colors.black, 2.0, color)
-                val pos = Coords(r + lw + if (level.value > 1) 0 else 1, r + lw)
+                val pos = Pos(r + lw + if (level.value > 1) 0 else 1, r + lw)
                 DrawUtil.drawText(ctx, pos, level.display, Colors.black, 13, DrawUtil.CODA)
             })
         }
 
         const val MAX_HACKS = 4 //TODO implement multihacks
         private fun clipLevel(level: Int): Int = max(1, min(level, 8))
-        fun create(location: Coords): Portal {
-            val slots: MutableMap<Octant, ResonatorSlot> = Octant.values().map { it to ResonatorSlot.create() }.toMap().toMutableMap()
+        fun create(location: Pos): Portal {
+            val slots: MutableMap<Octant, ResonatorSlot> =
+                Octant.values().map { it to ResonatorSlot.create() }.toMap().toMutableMap()
             val (heatMap, vectorField) = if (HtmlUtil.isRunningInBrowser()) {
                 val heatMap = PathUtil.generateHeatMap(location)
                 SoundUtil.playPortalCreationSound(location)
                 heatMap to PathUtil.calculateVectorField(heatMap, location)
             } else {
-                mutableMapOf<Coords, Int>() to mutableMapOf()
+                mutableMapOf<Pos, Int>() to mutableMapOf()
             }
-            return Portal(Util.generatePortalName(), location, heatMap, vectorField,
-                slots, mutableSetOf(), mutableSetOf(), null)
+            return Portal(
+                Util.generatePortalName(), location, heatMap, vectorField,
+                slots, mutableSetOf(), mutableSetOf(), null
+            )
         }
 
         fun createRandom(): Portal {
-            val location = Coords.createRandomForPortal()
+            val location = Pos.createRandomForPortal()
             return create(location)
         }
     }

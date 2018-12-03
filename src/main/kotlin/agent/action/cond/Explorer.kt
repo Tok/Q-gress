@@ -8,7 +8,7 @@ import portal.Portal
 import system.Com
 import system.display.VectorFields
 import util.Util
-import util.data.Coords
+import util.data.Pos
 
 object Explorer : ConditionalAction {
     override val actionItem = ActionItem.EXPLORE
@@ -24,7 +24,7 @@ object Explorer : ConditionalAction {
             agent.destination = newPortal.location
             Com.addMessage("$agent discovered a new portal $newPortal.")
         } else {
-            agent.destination = Coords.createRandomForPortal()
+            agent.destination = Pos.createRandomForPortal()
         }
         return agent
     }

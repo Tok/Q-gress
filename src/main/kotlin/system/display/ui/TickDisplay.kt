@@ -5,11 +5,11 @@ import config.Colors
 import config.Dim
 import config.Time
 import util.DrawUtil
-import util.data.Coords
+import util.data.Pos
 
 object TickDisplay : Display {
     override fun draw() {
-        val pos = Coords(13, Dim.height - Dim.tickBottomOffset)
+        val pos = Pos(13, Dim.height - Dim.tickBottomOffset)
         val half = Dim.tickFontSize / 2
         with(World.uiCtx()) {
             fillStyle = "#00000077"

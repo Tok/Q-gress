@@ -7,13 +7,13 @@ import config.Dim
 import org.w3c.dom.END
 import system.display.Display
 import util.DrawUtil
-import util.data.Coords
+import util.data.Pos
 
 object StatsDisplay : Display {
     private const val fontSize = 13
     private const val lineWidth = 3.0
     override fun draw() {
-        fun drawCell(pos: Coords, text: String, color: String) {
+        fun drawCell(pos: Pos, text: String, color: String) {
             DrawUtil.strokeText(World.uiCtx(), pos, text, color, fontSize, DrawUtil.CODA, lineWidth, Colors.black, org.w3c.dom.CanvasTextAlign.END)
         }
 
@@ -22,10 +22,10 @@ object StatsDisplay : Display {
         val xStep = 55
         fun drawRow(pos: Int, header: String, factions: Pair<Faction, Faction>,
                     first: Int, second: Int, total: Int) {
-            drawCell(Coords(pos, yOff), header, Colors.white)
-            drawCell(Coords(pos, yOff + yStep), first.toString(), factions.first.color)
-            drawCell(Coords(pos, yOff + yStep * 2), second.toString(), factions.second.color)
-            drawCell(Coords(pos, yOff + yStep * 3), total.toString(), Colors.white)
+            drawCell(Pos(pos, yOff), header, Colors.white)
+            drawCell(Pos(pos, yOff + yStep), first.toString(), factions.first.color)
+            drawCell(Pos(pos, yOff + yStep * 2), second.toString(), factions.second.color)
+            drawCell(Pos(pos, yOff + yStep * 3), total.toString(), Colors.white)
         }
 
         val xPos = Dim.width - Dim.statsRightOffset

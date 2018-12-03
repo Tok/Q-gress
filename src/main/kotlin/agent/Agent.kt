@@ -1,7 +1,5 @@
 package agent
 
-import Canvas
-import Ctx
 import World
 import agent.action.Action
 import agent.action.ActionItem
@@ -13,6 +11,8 @@ import config.Colors
 import config.Config
 import config.Dim
 import config.Styles
+import extension.Canvas
+import extension.Ctx
 import items.deployable.Resonator
 import items.level.XmpLevel
 import portal.Portal
@@ -25,10 +25,10 @@ import kotlin.math.max
 import kotlin.math.min
 
 data class Agent(
-    val faction: Faction, val name: String, val pos: Coords, val skills: Skills,
+    val faction: Faction, val name: String, val pos: Pos, val skills: Skills,
     val inventory: Inventory, val action: Action,
-    var actionPortal: Portal, var destination: Coords,
-    private var lastPosition: Coords,
+    var actionPortal: Portal, var destination: Pos,
+    private var lastPosition: Pos,
     var ap: Int = 0, var xm: Int = 0,
     var velocity: Complex = Complex.ZERO
 ) {
@@ -122,22 +122,22 @@ data class Agent(
             action.end()
             return this
         }
-        val force = actionPortal.vectorField[pos.toShadowPos()] ?: Complex.ZERO
+        val force = actionPortal.vectorField[pos.toShadow()] ?: Complex.ZERO
         velocity = MovementUtil.move(velocity, force, skills.speed)
-        return this.copy(pos = Coords((pos.x + velocity.re).toInt(), (pos.y + velocity.im).toInt()))
+        return this.copy(pos = Pos((pos.x + velocity.re).toInt(), (pos.y + velocity.im).toInt()))
     }
 
     private fun hasXmps() = inventory.findXmps().isNotEmpty()
 
     private fun isArrived() = distanceToDestination() <= skills.inRangeSpeed()
     private fun moveCloserInRange(): Agent = moveCloserTo(destination)
-    private fun moveCloserTo(dest: Coords): Agent {
+    private fun moveCloserTo(dest: Pos): Agent {
         val part = skills.inRangeSpeed() / pos.distanceTo(dest)
         val rawDiffX = (pos.xDiff(dest) * part).toInt()
         val rawDiffY = (pos.yDiff(dest) * part).toInt()
         val rawNextX = pos.x - rawDiffX
         val rawNextY = pos.y - rawDiffY
-        return this.copy(pos = Coords(rawNextX, rawNextY))
+        return this.copy(pos = Pos(rawNextX, rawNextY))
     }
 
     private fun collectXm() {
@@ -153,7 +153,7 @@ data class Agent(
     fun attackPortal(isFirst: Boolean): Agent {
         if (isFirst) {
             action.start(ActionItem.ATTACK)
-            fun findExactDestination(): Coords {
+            fun findExactDestination(): Pos {
                 if (actionPortal.calcHealth() > 0.8) {
                     return actionPortal.location //center
                 }
@@ -221,7 +221,7 @@ data class Agent(
         val portals = findPortalsInAttackRange(level)
         val slots = portals.flatMap { it.resoSlots.map { s -> s.value } }
         val resosInRange =
-            slots.filter { it.resonator?.coords?.distanceTo(this.pos) ?: attackDistance * 2 <= attackDistance }
+            slots.filter { it.resonator?.position?.distanceTo(this.pos) ?: attackDistance * 2 <= attackDistance }
         return resosInRange.map { it.resonator }.filterNotNull()
     }
 
@@ -317,16 +317,16 @@ data class Agent(
             return xmBarImages.getValue(xmKey(faction, percent))
         }
 
-        private fun initialActionPortal(coords: Coords) =
-            if (HtmlUtil.isRunningInBrowser()) Util.findNearestPortal(coords) ?: World.allPortals[0]
-            else Portal.create(coords)
+        private fun initialActionPortal(pos: Pos) =
+            if (HtmlUtil.isRunningInBrowser()) Util.findNearestPortal(pos) ?: World.allPortals[0]
+            else Portal.create(pos)
 
-        fun createFrog(grid: Map<Coords, Cell>) = create(grid, Faction.ENL)
-        fun createSmurf(grid: Map<Coords, Cell>) = create(grid, Faction.RES)
-        private fun create(grid: Map<Coords, Cell>, faction: Faction): Agent {
+        fun createFrog(grid: Map<Pos, Cell>) = create(grid, Faction.ENL)
+        fun createSmurf(grid: Map<Pos, Cell>) = create(grid, Faction.RES)
+        private fun create(grid: Map<Pos, Cell>, faction: Faction): Agent {
             val ap = Config.initialAp()
             val initialXm = xmCapacity(getLevel(ap))
-            val coords = Coords.createRandomPassable(grid)
+            val coords = Pos.createRandomPassable(grid)
             val actionPortal = initialActionPortal(coords)
             val agent = Agent(
                 faction, Util.generateAgentName(), coords, Skills.createRandom(),

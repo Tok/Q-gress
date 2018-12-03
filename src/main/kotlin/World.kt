@@ -2,26 +2,23 @@ import agent.Agent
 import agent.Faction
 import agent.NonFaction
 import config.Config
+import extension.Canvas
+import extension.clear
 import org.khronos.webgl.Uint8Array
 import org.khronos.webgl.get
-import org.w3c.dom.CanvasRenderingContext2D
-import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.ImageData
 import portal.Portal
 import system.display.loading.Loading
 import system.display.loading.LoadingText
 import system.display.ui.ActionLimitsDisplay
 import util.HtmlUtil
-import util.PathUtil
 import util.Util
 import util.data.Cell
-import util.data.Coords
+import util.data.Pos
 import kotlin.browser.document
 import kotlin.dom.clear
 import kotlin.math.sqrt
 
-typealias Ctx = CanvasRenderingContext2D
-typealias Canvas = HTMLCanvasElement
 
 object World {
     var tick: Int = 0
@@ -39,34 +36,34 @@ object World {
 
     fun resetAllCanvas() {
         can.clear()
-        ctx().clearRect(0.0, 0.0, can.width.toDouble(), can.height.toDouble())
+        ctx().clear(can)
         bgCan.clear()
-        bgCtx().clearRect(0.0, 0.0, bgCan.width.toDouble(), bgCan.height.toDouble())
+        bgCtx().clear(bgCan)
         uiCan.clear()
-        uiCtx().clearRect(0.0, 0.0, uiCan.width.toDouble(), uiCan.height.toDouble())
+        uiCtx().clear(uiCan)
     }
 
     //var center: JSON = MapUtil.INITIAL_MAP_CENTER
-    var mousePos: Coords? = null
+    var mousePos: Pos? = null
 
     fun w() = can.width
-    fun shadowW() = w() / Coords.res
+    fun shadowW() = w() / Pos.res
     fun h() = can.height
-    fun shadowH() = h() / Coords.res
+    fun shadowH() = h() / Pos.res
     fun diagonalLength() = sqrt((can.width * can.width).toDouble() + (can.height * can.height)).toInt()
     fun totalArea() = can.width * can.height
 
     lateinit var noiseMap: Array<DoubleArray>
     lateinit var noiseImage: ImageData
     var shadowStreetMap: ImageData? = null
-    lateinit var grid: Map<Coords, Cell>
+    lateinit var grid: Map<Pos, Cell>
 
-    fun passableCells(): Map<Coords, Cell> = grid.filter { it.value.isPassable }
-    private fun wellPassableCells(): Map<Coords, Cell> = grid.filter { it.value.isPassableInAllDirections() }
-    private fun passableOnScreen(): Map<Coords, Cell> = wellPassableCells().filterNot { it.key.isOffGrid() }
+    fun passableCells(): Map<Pos, Cell> = grid.filter { it.value.isPassable }
+    private fun wellPassableCells(): Map<Pos, Cell> = grid.filter { it.value.isPassableInAllDirections() }
+    private fun passableOnScreen(): Map<Pos, Cell> = wellPassableCells().filterNot { it.key.isOffGrid() }
 
-    fun passableInActionArea(): Map<Coords, Cell> = passableOnScreen()
-            .filter { ActionLimitsDisplay.isNotBlocked(it.key.fromShadow()) }
+    fun passableInActionArea(): Map<Pos, Cell> = passableOnScreen()
+        .filter { ActionLimitsDisplay.isNotBlocked(it.key.fromShadow()) }
 
     val allAgents: MutableSet<Agent> = mutableSetOf()
     val frogs = allAgents.filter { it.faction == Faction.ENL }.toSet()

@@ -7,7 +7,6 @@ import agent.NonFaction
 import agent.action.ActionItem
 import system.Com
 import util.Util
-import util.data.Coords
 
 object Recruiter : ConditionalAction {
     override val actionItem = ActionItem.RECRUIT

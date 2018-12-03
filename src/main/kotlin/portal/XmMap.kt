@@ -1,10 +1,10 @@
 package portal
 
 import config.Dim
-import util.data.Coords
+import util.data.Pos
 
 object XmMap {
-    private val strayXm = mutableMapOf<Coords, XmHeap>()
+    private val strayXm = mutableMapOf<Pos, XmHeap>()
 
     fun updateStrayXm() {
         val unCollectedXm = strayXm.filterNot { it.value.isCollected() }
@@ -12,13 +12,13 @@ object XmMap {
         strayXm.putAll(unCollectedXm)
     }
 
-    fun createStrayXm(location: Coords, isPortalDrop: Boolean) {
+    fun createStrayXm(location: Pos, isPortalDrop: Boolean) {
         if (strayXm.keys.none { it.distanceTo(location) < XmHeap.strayXmMinDistance(isPortalDrop) }) {
             strayXm[location] = XmHeap.create()
         }
     }
 
-    fun findXmInRange(pos: Coords) =
+    fun findXmInRange(pos: Pos) =
             strayXm.filter { it.key.distanceTo(pos) <= Dim.agentXmCollectionRadius }
 
     fun draw() {

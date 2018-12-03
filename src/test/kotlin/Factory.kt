@@ -10,10 +10,10 @@ import portal.Portal
 import portal.PortalKey
 import portal.ResonatorSlot
 import util.data.Cell
-import util.data.Coords
+import util.data.Pos
 
 object Factory {
-    fun coords() = Coords(0, 0)
+    fun coords() = Pos(0, 0)
     fun cell() = Cell(coords(), true, 0)
     fun grid() = mapOf(coords() to cell())
     fun frog() = Agent.createFrog(grid())

@@ -4,17 +4,25 @@ import kotlin.math.abs
 import kotlin.math.round
 import kotlin.math.sqrt
 
-data class Line(val from: Coords, val to: Coords) {
+data class Line(val from: Pos, val to: Pos) {
+    constructor(fromX: Double, fromY: Double, toX: Double, toY: Double) :
+            this(Pos(fromX, fromY), Pos(toX, toY))
+
+    constructor(fromX: Int, fromY: Int, toX: Int, toY: Int) :
+            this(Pos(fromX, fromY), Pos(toX, toY))
+
     val fromX = from.x
     val fromY = from.y
     val toX = to.x
     val toY = to.y
+    val w = abs(fromX - toX)
+    val h = abs(fromY - toY)
     fun key(): String = from.toString() + "<--->" + to.toString()
     private fun calcXdiff(): Double = abs(from.x - to.x)
     private fun calcYdiff(): Double = abs(from.y - to.y)
     fun calcLength(): Double = sqrt((calcXdiff() * calcXdiff()) + (calcYdiff() * calcYdiff()))
     fun calcTaxiLength(): Int = (calcXdiff() + calcYdiff()).toInt()
-    fun center(): Coords = Coords((from.x + to.x) / 2, (from.y + to.y) / 2)
+    fun center(): Pos = Pos((from.x + to.x) / 2, (from.y + to.y) / 2)
 
     fun doesIntersect(other: Line): Boolean {
         // http://mathworld.wolfram.com/Line-LineIntersection.html
@@ -35,21 +43,22 @@ data class Line(val from: Coords, val to: Coords) {
         return isOnThis && isOnOther
     }
 
-    fun findClosestPointTo(point: Coords): Coords {
+    fun findClosestPointTo(point: Pos): Pos {
         val xDiff = (to.x - from.x)
         val yDiff = (to.y - from.y)
-        check (xDiff != 0.0 || yDiff != 0.0)
+        check(xDiff != 0.0 || yDiff != 0.0)
         val u = ((point.x - from.x) * xDiff + (point.y - from.y) * yDiff) / (xDiff * xDiff + yDiff * yDiff)
         return when {
-            u < 0 -> Coords(from.x, from.y)
-            u > 1 -> Coords(to.x, to.y)
-            else -> Coords(round(from.x + u * xDiff).toInt(), round(from.y + u * yDiff).toInt())
+            u < 0 -> Pos(from.x, from.y)
+            u > 1 -> Pos(to.x, to.y)
+            else -> Pos(round(from.x + u * xDiff).toInt(), round(from.y + u * yDiff).toInt())
         }
     }
 
-    fun isValidArea() = this.from.x <= this.to.x && this.from.y <= this.to.y //tests if 'from' is top left and 'to' is bottom right
+    fun isValidArea() =
+        this.from.x <= this.to.x && this.from.y <= this.to.y //tests if 'from' is top left and 'to' is bottom right
 
-    fun isPointInArea(point: Coords) = isValidArea()
+    fun isPointInArea(point: Pos) = isValidArea()
             && point.x >= this.from.x
             && point.y >= this.from.y
             && point.x <= this.to.x
@@ -58,6 +67,6 @@ data class Line(val from: Coords, val to: Coords) {
     override fun toString() = from.toString() + "-" + to.toString()
 
     companion object {
-        fun create(fromX: Int, fromY: Int, toX: Int, toY: Int) = Line(Coords(fromX, fromY), Coords(toX, toY))
+        fun create(fromX: Int, fromY: Int, toX: Int, toY: Int) = Line(Pos(fromX, fromY), Pos(toX, toY))
     }
 }

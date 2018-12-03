@@ -1,11 +1,11 @@
 package system
 
-import Ctx
 import config.Colors
 import config.Config
 import config.Dim
+import extension.Ctx
 import util.DrawUtil
-import util.data.Coords
+import util.data.Pos
 
 object Com {
     private val messages: MutableList<String> = mutableListOf()
@@ -24,7 +24,7 @@ object Com {
         val yOffset = (Dim.comFontSize * 3 / 2)
         val reversed = messages.reversed()
         reversed.forEachIndexed { index, text ->
-            val pos = Coords(xPos, yFixOffset - (yOffset * index))
+            val pos = Pos(xPos, yFixOffset - (yOffset * index))
             DrawUtil.strokeText(ctx, pos, text, Colors.white, Dim.comFontSize, DrawUtil.CODA, 1.5)
         }
     }

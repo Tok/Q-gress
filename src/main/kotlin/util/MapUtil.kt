@@ -1,10 +1,11 @@
 package util
 
-import Canvas
-import Ctx
 import World
 import config.Config
 import config.Styles
+import extension.Canvas
+import extension.Ctx
+import extension.drawImage
 import external.MapBox
 import org.khronos.webgl.Uint8Array
 import org.khronos.webgl.get
@@ -12,17 +13,24 @@ import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.ImageData
 import org.w3c.dom.get
 import util.data.Cell
-import util.data.Coords
+import util.data.Pos
 import kotlin.browser.document
 import kotlin.dom.addClass
 import kotlin.dom.removeClass
 import kotlin.js.Json
 
 object MapUtil {
-    private fun initInitialMapbox(): MapBox = js("new mapboxgl.Map({'container':'initialMap','style':'mapbox://styles/zirteq/cjazhkywuppf42rnx453i73z5'});")
-    private fun initMapbox(): MapBox = js("new mapboxgl.Map({'container':'map','style':'mapbox://styles/zirteq/cjb19u1dy02a82slyklj33o6g'});")
-    private fun initShadowMap(): MapBox = js("new mapboxgl.Map({'container':'shadowMap','style':'mapbox://styles/zirteq/cjaq7lw9e2y7u2rn7u6xskobn'});")
-    private val GEO_CTRL_LITERAL = "new mapboxgl.GeolocateControl({'positionOptions':{'enableHighAccuracy':true,'zoom':18},'trackUserLocation':false})"
+    private fun initInitialMapbox(): MapBox =
+        js("new mapboxgl.Map({'container':'initialMap','style':'mapbox://styles/zirteq/cjazhkywuppf42rnx453i73z5'});")
+
+    private fun initMapbox(): MapBox =
+        js("new mapboxgl.Map({'container':'map','style':'mapbox://styles/zirteq/cjb19u1dy02a82slyklj33o6g'});")
+
+    private fun initShadowMap(): MapBox =
+        js("new mapboxgl.Map({'container':'shadowMap','style':'mapbox://styles/zirteq/cjaq7lw9e2y7u2rn7u6xskobn'});")
+
+    private val GEO_CTRL_LITERAL =
+        "new mapboxgl.GeolocateControl({'positionOptions':{'enableHighAccuracy':true,'zoom':18},'trackUserLocation':false})"
 
     private const val INITIAL_MAP = "initialMap"
     private const val MAP = "map"
@@ -37,7 +45,7 @@ object MapUtil {
     private var initMap: MapBox? = null
     private var shadowMap: MapBox? = null
 
-    fun loadMaps(center: Json, callback: (Map<Coords, Cell>) -> Unit) {
+    fun loadMaps(center: Json, callback: (Map<Pos, Cell>) -> Unit) {
         document.getElementById(MAP)?.addClass(INVISIBLE)
         document.getElementById(SHADOW_MAP)?.addClass(INVISIBLE)
         loadInitialMap(center, fun(initMap: MapBox) {
@@ -67,7 +75,7 @@ object MapUtil {
     }
 
     //https://www.mapbox.com/mapbox-gl-js/api/
-    private fun loadMap(initMap: MapBox, callback: (Map<Coords, Cell>) -> Unit) {
+    private fun loadMap(initMap: MapBox, callback: (Map<Pos, Cell>) -> Unit) {
         val center = initMap.getCenter()
         document.getElementById(MAP)?.removeClass(INVISIBLE)
         if (map == null) {
@@ -87,7 +95,7 @@ object MapUtil {
         }
     }
 
-    private fun loadShadowMap(center: Json, callback: (Map<Coords, Cell>) -> Unit) {
+    private fun loadShadowMap(center: Json, callback: (Map<Pos, Cell>) -> Unit) {
         document.getElementById(SHADOW_MAP)?.remove()
         val div = document.createElement("div") as HTMLDivElement
         div.id = SHADOW_MAP
@@ -101,7 +109,7 @@ object MapUtil {
         shadowMap!!.setCenter(center)
     }
 
-    private fun addGrid(callback: (Map<Coords, Cell>) -> Unit) {
+    private fun addGrid(callback: (Map<Pos, Cell>) -> Unit) {
         val maps = document.getElementsByClassName("mapboxgl-canvas")
         val shadowMapCan: dynamic = maps[2] //!
         val gl: dynamic = shadowMapCan.getContext("webgl")
@@ -117,7 +125,8 @@ object MapUtil {
     }
 
     private fun buildingLayerConfig(): Json {
-        return JSON.parse("""{
+        return JSON.parse(
+            """{
             "id": "3d-buildings",
             "source": "composite",
             "source-layer": "building",
@@ -130,18 +139,19 @@ object MapUtil {
                 "fill-extrusion-base": ["interpolate", ["linear"], ["zoom"], 15, 0, 15.05, ["get", "min_height"]],
                 "fill-extrusion-opacity": 0.9
             }
-        }""")
+        }"""
+        )
     }
 
     const val OFFSCREEN_CELL_ROWS = 10
 
-    private fun createGrid(imageData: ImageData, width: Int, height: Int): Map<Coords, Cell> {
-        val w = width / Coords.res
-        val h = height / Coords.res
-        fun isOffScreen(pos: Coords) = pos.x < 0 || pos.y < 0 || pos.x >= w || pos.y >= h
-        fun nextRow(tempCtx: Ctx, h: Int, x: Int): List<Pair<Coords, Cell>> {
+    private fun createGrid(imageData: ImageData, width: Int, height: Int): Map<Pos, Cell> {
+        val w = width / Pos.res
+        val h = height / Pos.res
+        fun isOffScreen(pos: Pos) = pos.x < 0 || pos.y < 0 || pos.x >= w || pos.y >= h
+        fun nextRow(tempCtx: Ctx, h: Int, x: Int): List<Pair<Pos, Cell>> {
             return (-OFFSCREEN_CELL_ROWS until (h + OFFSCREEN_CELL_ROWS)).map { y ->
-                val pos = Coords(x, y)
+                val pos = Pos(x, y)
                 if (isOffScreen(pos)) {
                     val isPassable = true
                     val penalty = 80
@@ -150,7 +160,8 @@ object MapUtil {
                     val scaledPixel = tempCtx.getImageData(x.toDouble(), y.toDouble(), 1.0, 1.0).data[0]
                     val passabilityOffset = 32
                     val isPassable = scaledPixel > passabilityOffset
-                    val penalty = PathUtil.MIN_HEAT + ((255 - scaledPixel) * (PathUtil.MAX_HEAT - PathUtil.MIN_HEAT) / 255)
+                    val penalty =
+                        PathUtil.MIN_HEAT + ((255 - scaledPixel) * (PathUtil.MAX_HEAT - PathUtil.MIN_HEAT) / 255)
                     pos to Cell(pos, isPassable, penalty)
                 }
             }
@@ -168,7 +179,7 @@ object MapUtil {
         tempCan.height = h
 
         (0..Config.shadowBlurCount).forEach { _ -> tempCan.blur() }
-        tempCtx.drawImage(unscaledCan, 0.0, 0.0, w.toDouble(), h.toDouble())
+        tempCtx.drawImage(unscaledCan, 0, 0, w, h)
         return (-OFFSCREEN_CELL_ROWS until (w + OFFSCREEN_CELL_ROWS)).flatMap { x ->
             nextRow(tempCtx, h, x)
         }.toMap()

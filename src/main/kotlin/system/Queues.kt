@@ -5,12 +5,12 @@ import agent.Agent
 import config.Time
 import items.XmpBurster
 import util.SoundUtil
-import util.data.Coords
+import util.data.Pos
 import util.data.Damage
 
 
 object Queues {
-    val attackQueue: MutableMap<Int, MutableMap<Coords, List<XmpBurster>>> = mutableMapOf()
+    val attackQueue: MutableMap<Int, MutableMap<Pos, List<XmpBurster>>> = mutableMapOf()
     val damageQueue: MutableMap<Int, List<Damage>> = mutableMapOf()
     val attackDelayTicks: Int = Time.secondsToTicks(20)
     val damageDelayTicks: Int = Time.secondsToTicks(20)

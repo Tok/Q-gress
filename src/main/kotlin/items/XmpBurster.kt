@@ -16,14 +16,14 @@ data class XmpBurster(val owner: Agent, val level: XmpLevel) : DeployableItem {
     fun dealDamage(agent: Agent): List<Damage> {
         val resosInRange: List<Resonator> = agent.findResosInAttackRange(level)
         return resosInRange.map { reso ->
-            val distanceToAgent: Double = reso.coords?.distanceTo(agent.pos)!!
+            val distanceToAgent: Double = reso.position?.distanceTo(agent.pos)!!
             val fixedDist = distanceToAgent * Dim.pixelToMFactor
             val distanceRatio = max(0.0, min(1.0, 1.0 - (fixedDist / level.rangeM)))
             val isCloseEnough = distanceRatio < (Constants.phi - 1)
             val isCritical = isCloseEnough && Util.random() <= CRIT_RATE
             val damageValue: Int = (calcBaseDamage(isCritical) * distanceRatio * GLOBAL_DAMAGE_MULTIPLIER).toInt()
             reso.takeDamage(agent, damageValue)
-            Damage(damageValue, reso.coords!!, isCritical)
+            Damage(damageValue, reso.position!!, isCritical)
         }
     }
 

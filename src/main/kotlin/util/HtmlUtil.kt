@@ -1,7 +1,5 @@
 package util
 
-import Canvas
-import Ctx
 import ImprovedNoise
 import World
 import agent.Agent
@@ -11,6 +9,8 @@ import agent.qvalue.QDestinations
 import agent.qvalue.QValue
 import config.*
 import config.Location
+import extension.Canvas
+import extension.Ctx
 import org.w3c.dom.*
 import org.w3c.dom.events.Event
 import org.w3c.dom.events.MouseEvent
@@ -23,7 +23,7 @@ import system.display.loading.Loading
 import system.display.loading.LoadingText
 import system.display.ui.ActionLimitsDisplay
 import util.data.Cell
-import util.data.Coords
+import util.data.Pos
 import util.data.GeoCoords
 import util.data.Line
 import kotlin.browser.document
@@ -324,17 +324,17 @@ object HtmlUtil {
         }
     }
 
-    fun isBlockedByMapbox(pos: Coords) = isInMapboxArea(pos) || isInOsmArea(pos)
+    fun isBlockedByMapbox(pos: Pos) = isInMapboxArea(pos) || isInOsmArea(pos)
 
-    private fun isInMapboxArea(pos: Coords): Boolean {
-        val area = Line(Coords(-20, Dim.height - 40), Coords(90, Dim.height))
+    private fun isInMapboxArea(pos: Pos): Boolean {
+        val area = Line(Pos(-20, Dim.height - 40), Pos(90, Dim.height))
         return pos.x > area.from.x && pos.x <= area.to.x &&
                 pos.y > area.from.y && pos.y <= area.to.y
     }
 
-    private fun isInOsmArea(pos: Coords): Boolean {
+    private fun isInOsmArea(pos: Pos): Boolean {
         val w = Dim.width
-        val area = Line(Coords(w - 280, Dim.height - 30), Coords(w, Dim.height))
+        val area = Line(Pos(w - 280, Dim.height - 30), Pos(w, Dim.height))
         return pos.x > area.from.x && pos.x <= area.to.x &&
                 pos.y > area.from.y && pos.y <= area.to.y
     }
@@ -377,13 +377,13 @@ object HtmlUtil {
         }
     }
 
-    private fun findMousePosition(canvas: HTMLCanvasElement, mouseEvent: MouseEvent): Coords {
+    private fun findMousePosition(canvas: HTMLCanvasElement, mouseEvent: MouseEvent): Pos {
         val rect = canvas.getBoundingClientRect()
         val scaleX = canvas.width / rect.width
         val scaleY = canvas.height / rect.height
         val x = (mouseEvent.clientX - rect.left) * scaleX
         val y = (mouseEvent.clientY - rect.top) * scaleY
-        return Coords(x.toInt(), y.toInt())
+        return Pos(x.toInt(), y.toInt())
     }
 
     private fun maybeWidth(id: String) = document.getElementById(id)?.clientWidth
@@ -485,7 +485,7 @@ object HtmlUtil {
     fun isShowSatelliteMap() = (document.getElementById("satCheckbox") as HTMLInputElement).checked
 
     private fun onMapload() =
-            fun(grid: Map<Coords, Cell>) {
+            fun(grid: Map<Pos, Cell>) {
                 World.grid = grid
                 if (World.grid.isEmpty()) {
                     console.error("Grid is empty!")

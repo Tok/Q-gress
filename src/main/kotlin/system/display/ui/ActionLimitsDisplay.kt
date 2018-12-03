@@ -4,7 +4,7 @@ import World
 import config.Dim
 import system.display.Display
 import util.HtmlUtil
-import util.data.Coords
+import util.data.Pos
 import util.data.Line
 
 object ActionLimitsDisplay : Display {
@@ -16,8 +16,8 @@ object ActionLimitsDisplay : Display {
     private fun rightSliderArea() = Line.create(Dim.width - HtmlUtil.rightSliderWidth(), HtmlUtil.topActionOffset(), Dim.width, HtmlUtil.rightSliderHeight())
     private fun blockedAreas() = listOf(topArea(), bottomArea(), leftSliderMouseArea(), rightSliderMouseArea())
 
-    fun isBlocked(pos: Coords) = blockedAreas().any { it.isPointInArea(pos) }
-    fun isNotBlocked(pos: Coords) = blockedAreas().none { it.isPointInArea(pos) }
+    fun isBlocked(pos: Pos) = blockedAreas().any { it.isPointInArea(pos) }
+    fun isNotBlocked(pos: Pos) = blockedAreas().none { it.isPointInArea(pos) }
 
     override fun draw() {
         drawArea(topArea())

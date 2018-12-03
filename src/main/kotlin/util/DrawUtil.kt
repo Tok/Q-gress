@@ -1,11 +1,12 @@
 package util
 
-import Canvas
-import Ctx
 import World
 import agent.Faction
 import agent.NonFaction
 import config.*
+import extension.Canvas
+import extension.Ctx
+import extension.clear
 import items.level.PortalLevel
 import org.w3c.dom.*
 import portal.Portal
@@ -19,8 +20,8 @@ import system.display.ui.MindUnits
 import system.display.ui.StatsDisplay
 import system.display.ui.table.TopAgentsDisplay
 import util.data.Circle
-import util.data.Coords
 import util.data.Line
+import util.data.Pos
 import kotlin.browser.document
 import kotlin.math.PI
 
@@ -60,7 +61,7 @@ object DrawUtil {
         if (image != null) {
             ctx.putImageData(image, 0.0, 0.0)
         } else {
-            ctx.clearRect(0.0, 0.0, canvas.width.toDouble(), canvas.height.toDouble())
+            ctx.clear(canvas)
         }
     }
 
@@ -90,7 +91,7 @@ object DrawUtil {
         }
     }
 
-    private fun highlightMouse(pos: Coords) {
+    private fun highlightMouse(pos: Pos) {
         when {
             World.shadowStreetMap == null -> return
             ActionLimitsDisplay.isBlocked(pos) -> return
@@ -150,20 +151,14 @@ object DrawUtil {
         })
     }
 
-    fun drawRect(ctx: Ctx, pos: Coords, h: Double, w: Double,
-                 fillStyle: String, strokeStyle: String, lineWidth: Double) {
-        drawExactRect(ctx, pos.x, pos.y, h, w, fillStyle, strokeStyle, lineWidth)
-    }
-
-    fun drawExactRect(ctx: Ctx, x: Double, y: Double, h: Double, w: Double,
-                      fillStyle: String, strokeStyle: String, lineWidth: Double) {
-        ctx.fillStyle = fillStyle
-        ctx.fillRect(x, y, w, -h)
+    fun drawRect(ctx: Ctx, rect: Line, fill: String, stroke: String, lineWidth: Double) {
+        ctx.fillStyle = fill
+        ctx.fillRect(rect.fromX, rect.fromY, rect.w, rect.h)
         ctx.fill()
-        ctx.strokeStyle = strokeStyle
+        ctx.strokeStyle = stroke
         ctx.lineWidth = lineWidth
         ctx.beginPath()
-        ctx.strokeRect(x, y, w, -h)
+        ctx.strokeRect(rect.fromX, rect.fromY, rect.w, rect.h)
         ctx.closePath()
         ctx.stroke()
     }
@@ -175,7 +170,7 @@ object DrawUtil {
                     val pos = it.key.fromShadow()
                     val cell = it.value
                     bgCtx().fillStyle = cell.getColor()
-                    val w = Coords.res - 1.0
+                    val w = Pos.res - 1.0
                     val h = w
                     bgCtx().fillRect(pos.x + 1, pos.y + 1, w, h)
                     bgCtx().fill()
@@ -184,29 +179,31 @@ object DrawUtil {
         }
     }
 
-    fun drawText(ctx: Ctx, coords: Coords, text: String, fillStyle: String, fontSize: Int, fontName: String) {
+    fun drawText(ctx: Ctx, pos: Pos, text: String, fill: String, fontSize: Int, fontName: String) {
         ctx.textAlign = CanvasTextAlign.START
         ctx.font = fontSize.toString() + "px '$fontName'"
-        ctx.fillStyle = fillStyle
+        ctx.fillStyle = fill
         val xOff = (fontSize / 2) - 2
         val yOff = fontSize / 3
-        ctx.fillText(text, coords.x - xOff, coords.y + yOff)
+        ctx.fillText(text, pos.x - xOff, pos.y + yOff)
     }
 
-    fun strokeText(ctx: Ctx, pos: Coords, text: String, fillStyle: String, fontSize: Int, fontName: String = CODA,
-                   lineWidth: Double = 0.0, strokeStyle: String = Colors.black,
-                   textAlign: CanvasTextAlign = CanvasTextAlign.START) {
+    fun strokeText(
+        ctx: Ctx, pos: Pos, text: String, fill: String, fontSize: Int,
+        fontName: String = CODA, lineWidth: Double = 0.0,
+        stroke: String = Colors.black, textAlign: CanvasTextAlign = CanvasTextAlign.START
+    ) {
         val xOff: Double = (fontSize / 2.0) - 2
         val yOff: Double = fontSize / 3.0
         ctx.beginPath()
         ctx.font = fontSize.toString() + "px '$fontName'"
-        ctx.fillStyle = fillStyle
+        ctx.fillStyle = fill
         ctx.lineCap = CanvasLineCap.ROUND
         ctx.lineJoin = CanvasLineJoin.ROUND
         ctx.textAlign = textAlign
         if (lineWidth > 0.0) {
             ctx.lineWidth = lineWidth
-            ctx.strokeStyle = strokeStyle
+            ctx.strokeStyle = stroke
             ctx.strokeText(text, pos.x - xOff, pos.y + yOff)
         }
         ctx.fillText(text, pos.x - xOff, pos.y + yOff)
@@ -216,28 +213,34 @@ object DrawUtil {
         }
     }
 
-    fun drawCircle(ctx: Ctx, circle: Circle, strokeStyle: String, lineWidth: Double, fillStyle: String? = null, alpha: Double = 1.0) {
+    fun drawCircle(
+        ctx: Ctx, circle: Circle, stroke: String, lineWidth: Double,
+        fill: String? = null, alpha: Double = 1.0
+    ) {
         ctx.globalAlpha = alpha
-        ctx.strokeStyle = strokeStyle
+        ctx.strokeStyle = stroke
         ctx.lineWidth = lineWidth
         ctx.beginPath()
         ctx.arc(circle.center.x, circle.center.y, circle.radius, 0.0, 2.0 * PI)
         ctx.closePath()
         ctx.stroke()
-        if (fillStyle != null) {
-            ctx.fillStyle = fillStyle
+        if (fill != null) {
+            ctx.fillStyle = fill
             ctx.fill()
         }
         ctx.globalAlpha = 1.0
     }
 
-    private fun drawPath(ctx: Ctx, path: Path2D, strokeStyle: String, lineWidth: Double, fillStyle: String? = null, alpha: Double = 1.0) {
+    private fun drawPath(
+        ctx: Ctx, path: Path2D, stroke: String, lineWidth: Double,
+        fill: String? = null, alpha: Double = 1.0
+    ) {
         ctx.globalAlpha = alpha
-        if (fillStyle != null) {
-            ctx.fillStyle = fillStyle
+        if (fill != null) {
+            ctx.fillStyle = fill
             ctx.fill(path)
         }
-        ctx.strokeStyle = strokeStyle
+        ctx.strokeStyle = stroke
         ctx.lineWidth = lineWidth
         ctx.beginPath()
         ctx.stroke(path)
@@ -246,9 +249,9 @@ object DrawUtil {
         ctx.globalAlpha = 1.0
     }
 
-    fun drawLine(ctx: Ctx, line: Line, strokeStyle: String, lineWidth: Double, alpha: Double = 1.0) {
+    fun drawLine(ctx: Ctx, line: Line, stroke: String, lineWidth: Double, alpha: Double = 1.0) {
         ctx.globalAlpha = alpha
-        ctx.strokeStyle = strokeStyle
+        ctx.strokeStyle = stroke
         ctx.lineWidth = lineWidth
         ctx.beginPath()
         ctx.moveTo(line.from.x, line.from.y)

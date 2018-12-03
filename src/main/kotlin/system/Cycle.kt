@@ -1,7 +1,5 @@
 package system
 
-import Canvas
-import Ctx
 import World
 import agent.Agent
 import agent.Faction
@@ -9,6 +7,8 @@ import agent.action.ActionItem
 import config.Colors
 import config.Config
 import config.Dim
+import extension.Canvas
+import extension.Ctx
 import org.w3c.dom.CanvasRenderingContext2D
 import portal.XmHeap
 import portal.XmMap
@@ -16,7 +16,7 @@ import util.DrawUtil
 import util.HtmlUtil
 import util.SoundUtil
 import util.Util
-import util.data.Coords
+import util.data.Pos
 import util.data.Line
 
 enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>, var image: Canvas?) {
@@ -30,7 +30,7 @@ enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>, var image: Canvas
         fun updateCheckpoints(tick: Int, enlMu: Int, resMu: Int) {
             if (isUpdateStuck(tick)) {
                 World.allAgents.filter { it.action.item == ActionItem.MOVE }
-                        .forEach { it.updateLastPos() }
+                    .forEach { it.updateLastPos() }
             }
             if (isNewCheckpoint(tick)) {
                 val cp = Checkpoint(enlMu, resMu, isNewCycle(tick))
@@ -109,17 +109,17 @@ enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>, var image: Canvas
 
         private fun spawnXm() {
             World.allPortals.map { it.leakXm() }
-                    .flatMap { (pos, xm) ->
-                        val heapCount = xm / XmHeap.capacity
-                        (0..heapCount).map {
-                            pos.randomNearPoint(Dim.portalXmSpawnRadius)
-                        }
-                    }.forEach { XmMap.createStrayXm(it, true) }
+                .flatMap { (pos, xm) ->
+                    val heapCount = xm / XmHeap.capacity
+                    (0..heapCount).map {
+                        pos.randomNearPoint(Dim.portalXmSpawnRadius)
+                    }
+                }.forEach { XmMap.createStrayXm(it, true) }
 
             World.allNonFaction.filterNot { it.pos.isOffScreen() }
-                    .shuffled()
-                    .take((World.allNonFaction.size * Config.npcXmSpawnRatio).toInt())
-                    .map { XmMap.createStrayXm(it.pos.randomNearPoint(Dim.npcXmSpawnRadius), false) }
+                .shuffled()
+                .take((World.allNonFaction.size * Config.npcXmSpawnRatio).toInt())
+                .map { XmMap.createStrayXm(it.pos.randomNearPoint(Dim.npcXmSpawnRadius), false) }
         }
 
         val ww = 8
@@ -132,22 +132,27 @@ enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>, var image: Canvas
             val lineWidth = 1.0
             val r = 2.0
 
-            fun drawCheckpointDot(ctx: Ctx, pos: Coords, style: String, isCycleEnded: Boolean) {
+            fun drawCheckpointDot(ctx: Ctx, pos: Pos, style: String, isCycleEnded: Boolean) {
                 val radius = if (isCycleEnded) r + 1 else r
                 val circle = util.data.Circle(pos, radius)
                 util.DrawUtil.drawCircle(ctx, circle, config.Colors.black, lineWidth, style, dotAlpha)
             }
 
-            fun drawCheckpoint(ctx: CanvasRenderingContext2D, index: Int, withNext: Pair<Checkpoint, Checkpoint>, maxTotal: Int) {
+            fun drawCheckpoint(
+                ctx: CanvasRenderingContext2D,
+                index: Int,
+                withNext: Pair<Checkpoint, Checkpoint>,
+                maxTotal: Int
+            ) {
                 fun calcY(mu: Int, maxTotal: Int) = Dim.cycleH - (mu * Dim.cycleH / maxTotal)
                 val x = (index * ww)
                 Faction.all().forEach { faction ->
                     val y = calcY(withNext.first.mu(faction), maxTotal)
-                    val current = Coords(x, y + r.toInt() + 2)
+                    val current = Pos(x, y + r.toInt() + 2)
                     val nextY = calcY(withNext.second.mu(faction), maxTotal)
-                    val next = Coords(x + ww, nextY + r.toInt() + 2)
-                    val top = Coords(x + ww, 0)
-                    val bot = Coords(x + ww, h - 3)
+                    val next = Pos(x + ww, nextY + r.toInt() + 2)
+                    val top = Pos(x + ww, 0)
+                    val bot = Pos(x + ww, h - 3)
                     val lw = if (withNext.second.isCycleEnd) 2.0 else 0.3
                     DrawUtil.drawLine(ctx, Line(top, bot), Colors.white, lw, 0.3)
                     if (index > 0) {
@@ -158,14 +163,14 @@ enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>, var image: Canvas
             }
 
             fun drawBackground(ctx: Ctx) {
-                DrawUtil.drawRect(ctx, Coords(0, 0), -h.toDouble(), w.toDouble() - 8,
-                        "#00000077", "#00000077", 0.0)
+                val rect = Line(0, 0, -h, w - 8)
+                DrawUtil.drawRect(ctx, rect, "#00000077", "#00000077", 0.0)
             }
 
             fun drawBaseLine(ctx: Ctx) {
                 val y = h - off
-                val from = Coords(off, y)
-                val to = Coords(w - off - 8, y)
+                val from = Pos(off, y)
+                val to = Pos(w - off - 8, y)
                 DrawUtil.drawLine(ctx, Line(from, to), Colors.white, 2.0, 0.3)
             }
 

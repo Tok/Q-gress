@@ -15,7 +15,7 @@ import org.w3c.dom.HTMLInputElement
 import portal.Field
 import portal.Link
 import system.Checkpoint
-import util.data.Coords
+import util.data.Pos
 import kotlin.browser.document
 
 object SoundUtil {
@@ -36,11 +36,11 @@ object SoundUtil {
     }
 
     fun playOffScreenLocationCreationSound() {
-        val center = Coords(Dim.width / 2, Dim.height / 2)
+        val center = Pos(Dim.width / 2, Dim.height / 2)
         return playPortalCreationSound(center, 0.5)
     }
 
-    fun playPortalCreationSound(pos: Coords, gain: Double = 1.0) {
+    fun playPortalCreationSound(pos: Pos, gain: Double = 1.0) {
         if (isMuted()) return
         val duration = 0.5
         val pan = pos.x / Dim.width
@@ -48,7 +48,7 @@ object SoundUtil {
         playSound(oscNode, createStaticPan(pan), gain, duration)
     }
 
-    fun playPortalRemovalSound(pos: Coords) {
+    fun playPortalRemovalSound(pos: Pos) {
         if (isMuted()) return
         val duration = 0.5
         val pan = pos.x / Dim.width
@@ -90,7 +90,7 @@ object SoundUtil {
         playSound(oscNode, createStaticPan(pan), 0.2, duration)
     }
 
-    fun playHackingSound(pos: Coords) {
+    fun playHackingSound(pos: Pos) {
         if (isMuted()) return
         val freq = 500.0
         val osc = createStaticOscillator(OscillatorType.SINE, freq)
@@ -100,7 +100,7 @@ object SoundUtil {
         playSound(osc, createStaticPan(pan), gain, duration)
     }
 
-    fun playGlyphingSound(pos: Coords) {
+    fun playGlyphingSound(pos: Pos) {
         if (isMuted()) return
         val freq = 400.0
         val osc = createStaticOscillator(OscillatorType.SINE, freq)
@@ -110,7 +110,7 @@ object SoundUtil {
         playSound(osc, createStaticPan(pan), gain, duration)
     }
 
-    fun playXmpSound(level: XmpLevel, pos: Coords) {
+    fun playXmpSound(level: XmpLevel, pos: Pos) {
         if (isMuted()) return
         val freq = 160.0 - (level.level * 5)
         val osc = createStaticOscillator(OscillatorType.SQUARE, freq)
@@ -120,7 +120,7 @@ object SoundUtil {
         playSound(osc, createStaticPan(pan), gain, duration)
     }
 
-    fun playDeploySound(pos: Coords, distanceToPortal: Int) {
+    fun playDeploySound(pos: Pos, distanceToPortal: Int) {
         if (isMuted()) return
         val ratio = distanceToPortal / Dim.maxDeploymentRange
         val gain = 0.10
@@ -129,7 +129,7 @@ object SoundUtil {
         val baseFreq = -250.0
         val startFreq = minFreq + (baseFreq * ratio)
         val endFreq = minFreq + (baseFreq * ratio * 2)
-        val pan = pos.x.toDouble() / Dim.width
+        val pan = pos.x / Dim.width
         val oscNode = createLinearRampOscillator(OscillatorType.SINE, startFreq, endFreq, duration)
         playSound(oscNode, createStaticPan(pan), gain, duration)
     }
@@ -195,7 +195,7 @@ object SoundUtil {
         val timeConstant = 0.01
         val max = 1000
         (0..max).forEach {
-            val freq = Util.randomInt(maxFreq - (maxFreq * it / max)).toDouble()
+            val freq = Util.random() * (maxFreq - (maxFreq * it / max))
             val tc = timeConstant * it
             node.frequency.setTargetAtTime(freq, n + tc, timeConstant)
         }

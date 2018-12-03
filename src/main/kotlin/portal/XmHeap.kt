@@ -1,14 +1,14 @@
 package portal
 
-import Canvas
-import Ctx
 import World
 import config.Colors
+import extension.Canvas
+import extension.Ctx
 import util.DrawUtil
 import util.HtmlUtil
 import util.Util
 import util.data.Circle
-import util.data.Coords
+import util.data.Pos
 
 data class XmHeap(private val cores: Triple<Int, Int, Int>, private var isCollected: Boolean = false) {
     val xm = cores.first + cores.second + cores.third
@@ -18,7 +18,7 @@ data class XmHeap(private val cores: Triple<Int, Int, Int>, private var isCollec
     }
 
     private val IMAGE = drawHeapTemplate()
-    fun draw(position: Coords) {
+    fun draw(position: Pos) {
         val image = IMAGE
         val ww = image.width / 2
         val hh = image.height / 2
@@ -37,7 +37,7 @@ data class XmHeap(private val cores: Triple<Int, Int, Int>, private var isCollec
             val h = w
             return HtmlUtil.preRender(w, h, fun(ctx: Ctx) {
                 (1..coreCount).forEach {
-                    val p = Coords(w / 2, h / 2).randomNearPoint(scatter)
+                    val p = Pos(w / 2, h / 2).randomNearPoint(scatter)
                     ctx.drawImage(CORE_IMAGE, p.x, p.y)
                 }
             })
@@ -52,7 +52,7 @@ data class XmHeap(private val cores: Triple<Int, Int, Int>, private var isCollec
             val fill = Colors.white
             val alpha = 0.4
             return HtmlUtil.preRender(w, h, fun(ctx: Ctx) {
-                val circle = Circle(Coords(r, r), r.toDouble())
+                val circle = Circle(Pos(r, r), r.toDouble())
                 DrawUtil.drawCircle(ctx, circle, stroke, lineWidth, fill, alpha)
             })
         }

@@ -1,3 +1,3 @@
 package util.data
 
-data class Circle(val center: Coords, val radius: Double)
+data class Circle(val center: Pos, val radius: Double)

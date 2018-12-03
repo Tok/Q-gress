@@ -1,28 +1,28 @@
 package system.display
 
-import Canvas
-import Ctx
 import World
 import config.Colors
 import config.Dim
+import extension.Canvas
+import extension.Ctx
 import items.XmpBurster
 import items.level.XmpLevel
 import system.Queues
 import util.DrawUtil
 import util.HtmlUtil
 import util.data.Circle
-import util.data.Coords
+import util.data.Pos
 import util.data.Damage
 import kotlin.math.max
 
 object Attacks : Display {
     override fun draw() {
-        val attackQueue: MutableMap<Int, MutableMap<Coords, List<XmpBurster>>> = Queues.attackQueue
-        attackQueue.forEach { tickEntry: Map.Entry<Int, MutableMap<Coords, List<XmpBurster>>> ->
+        val attackQueue: MutableMap<Int, MutableMap<Pos, List<XmpBurster>>> = Queues.attackQueue
+        attackQueue.forEach { tickEntry: Map.Entry<Int, MutableMap<Pos, List<XmpBurster>>> ->
             val futureTick = tickEntry.key
             val ticksInFuture = futureTick - World.tick
-            val attackMap: MutableMap<Coords, List<XmpBurster>> = tickEntry.value
-            attackMap.forEach { attackEntry: Map.Entry<Coords, List<XmpBurster>> ->
+            val attackMap: MutableMap<Pos, List<XmpBurster>> = tickEntry.value
+            attackMap.forEach { attackEntry: Map.Entry<Pos, List<XmpBurster>> ->
                 val pos = attackEntry.key
                 val bursters = attackEntry.value
                 bursters.forEach { xmp ->
@@ -74,7 +74,7 @@ object Attacks : Display {
         val w = (fontSize * 5) + (2 * lineWidth)
         val h = fontSize + (2 * lineWidth)
         return HtmlUtil.preRender(w.toInt(), h.toInt(), fun(ctx: Ctx) {
-            val coords = Coords(lineWidth.toInt() + (fontSize * 3 / 2), lineWidth.toInt() + (fontSize / 2))
+            val coords = Pos(lineWidth.toInt() + (fontSize * 3 / 2), lineWidth.toInt() + (fontSize / 2))
             val clipped = max(damageValue, 1).toString()
             val color = if (isCritical) Colors.critDamage else Colors.damage
             val text = "-$clipped%"
@@ -83,16 +83,16 @@ object Attacks : Display {
     }
 
     private fun createDamageCircleImage(xmpLevel: XmpLevel, ticksInFuture: Int): Canvas {
-        val strokeStyle = "#ff731533"
-        val fillStyle = "#fece5a11"
+        val stroke = "#ff731533"
+        val fill = "#fece5a11"
         val lw = 8
         val ratio = (Queues.damageDelayTicks - ticksInFuture) / Queues.damageDelayTicks
         val r = (xmpLevel.rangeM * Dim.pixelToMFactor * ratio).toInt()
         val w = (r * 2) + (2 * lw)
         val h = w
         return HtmlUtil.preRender(w, h, fun(ctx: Ctx) {
-            val attackCircle = Circle(Coords(r + lw, r + lw), r.toDouble())
-            DrawUtil.drawCircle(ctx, attackCircle, strokeStyle, lw.toDouble(), fillStyle)
+            val attackCircle = Circle(Pos(r + lw, r + lw), r.toDouble())
+            DrawUtil.drawCircle(ctx, attackCircle, stroke, lw.toDouble(), fill)
         })
     }
 }

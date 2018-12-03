@@ -1,9 +1,10 @@
 package portal
 
-import Ctx
+import World
 import agent.Agent
 import agent.Faction
 import config.Dim
+import extension.Ctx
 import util.Util
 import util.data.Line
 
@@ -40,6 +41,7 @@ data class Link(val origin: Portal, val destination: Portal, val creator: Agent)
     override fun equals(other: Any?) = other is Link &&
             (origin == other.origin && destination == other.destination ||
                     origin == other.destination && destination == other.origin)
+
     override fun hashCode() = origin.hashCode() + destination.hashCode()
 
     companion object {

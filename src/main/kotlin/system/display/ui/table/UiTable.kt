@@ -7,21 +7,21 @@ import config.Dim
 import org.w3c.dom.CanvasTextAlign
 import org.w3c.dom.START
 import util.DrawUtil
-import util.data.Coords
+import util.data.Pos
 
 abstract class UiTable {
-    fun strokeTableHeaderText(headerPos: Coords, offset: Int, text: String) {
-        val pos = Coords(headerPos.x + offset, headerPos.y)
+    fun strokeTableHeaderText(headerPos: Pos, offset: Int, text: String) {
+        val pos = Pos(headerPos.x + offset, headerPos.y)
         DrawUtil.strokeText(World.uiCtx(), pos, text, Colors.white, Dim.topAgentsFontSize, DrawUtil.CODA, 3.0)
     }
 
-    fun strokeTableText(headerPos: Coords, offset: Int, text: String,
-                        textAlign: CanvasTextAlign = CanvasTextAlign.START, fillStyle: String = Colors.white) {
-        val pos = Coords(headerPos.x + offset, headerPos.y)
-        DrawUtil.strokeText(World.uiCtx(), pos, text, fillStyle, Dim.topAgentsFontSize, DrawUtil.CODA, 3.0, Colors.black, textAlign)
+    fun strokeTableText(headerPos: Pos, offset: Int, text: String,
+                        textAlign: CanvasTextAlign = CanvasTextAlign.START, fill: String = Colors.white) {
+        val pos = Pos(headerPos.x + offset, headerPos.y)
+        DrawUtil.strokeText(World.uiCtx(), pos, text, fill, Dim.topAgentsFontSize, DrawUtil.CODA, 3.0, Colors.black, textAlign)
     }
 
-    fun addIcon(pos: Coords, item: ActionItem) {
+    fun addIcon(pos: Pos, item: ActionItem) {
         val image = ActionItem.getIcon(item)
         World.uiCtx().drawImage(image, pos.x, pos.y)
     }

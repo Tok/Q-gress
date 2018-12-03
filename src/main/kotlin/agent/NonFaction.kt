@@ -1,12 +1,12 @@
 package agent
 
-import Canvas
-import Ctx
 import World
 import config.Colors
 import config.Config
 import config.Dim
 import config.Time
+import extension.Canvas
+import extension.Ctx
 import portal.Portal
 import system.display.VectorFields
 import system.display.loading.Loading
@@ -14,10 +14,10 @@ import util.*
 import util.data.Cell
 import util.data.Circle
 import util.data.Complex
-import util.data.Coords
+import util.data.Pos
 
-data class NonFaction(var pos: Coords, val speed: Double, val size: AgentSize,
-                      var destination: Coords, var vectorField: Map<Coords, Complex>,
+data class NonFaction(var pos: Pos, val speed: Double, val size: AgentSize,
+                      var destination: Pos, var vectorField: Map<Pos, Complex>,
                       var busyUntil: Int) {
     private val swarmTendency = 0.02
     private val swarmChance = swarmTendency - (swarmTendency * 0.5 * size.offset)
@@ -61,10 +61,10 @@ data class NonFaction(var pos: Coords, val speed: Double, val size: AgentSize,
                     Complex(pos.x, pos.y)
                 }
             } else {
-                vectorField[pos.toShadowPos()] ?: Complex.ZERO
+                vectorField[pos.toShadow()] ?: Complex.ZERO
             }
             velocity = MovementUtil.move(velocity, force, speed)
-            this.pos = Coords(pos.x + velocity.re, pos.y + velocity.im)
+            this.pos = Pos(pos.x + velocity.re, pos.y + velocity.im)
         }
     }
 
@@ -110,36 +110,36 @@ data class NonFaction(var pos: Coords, val speed: Double, val size: AgentSize,
 
     companion object {
         val changeToBeRecruited = 0.05
-        private val OFFSCREEN_DISTANCE = Coords.res * (MapUtil.OFFSCREEN_CELL_ROWS / 2)
+        private val OFFSCREEN_DISTANCE = Pos.res * (MapUtil.OFFSCREEN_CELL_ROWS / 2)
         private val DESTINATIONS = listOf(
                 //NORTH
-                Coords(World.w() / 3, -OFFSCREEN_DISTANCE),
-                Coords(World.w() * 2 / 3, -OFFSCREEN_DISTANCE),
+                Pos(World.w() / 3, -OFFSCREEN_DISTANCE),
+                Pos(World.w() * 2 / 3, -OFFSCREEN_DISTANCE),
                 //WEST
-                Coords(-OFFSCREEN_DISTANCE, World.h() / 3),
-                Coords(-OFFSCREEN_DISTANCE, World.h() * 2 / 3),
+                Pos(-OFFSCREEN_DISTANCE, World.h() / 3),
+                Pos(-OFFSCREEN_DISTANCE, World.h() * 2 / 3),
                 //EAST
-                Coords(World.w() + OFFSCREEN_DISTANCE, World.h() / 3),
-                Coords(World.w() + OFFSCREEN_DISTANCE, World.h() * 2 / 3),
+                Pos(World.w() + OFFSCREEN_DISTANCE, World.h() / 3),
+                Pos(World.w() + OFFSCREEN_DISTANCE, World.h() * 2 / 3),
                 //SOUTH
-                Coords(World.w() / 3, World.h() + OFFSCREEN_DISTANCE),
-                Coords(World.w() * 2 / 3, World.h() + OFFSCREEN_DISTANCE)
+                Pos(World.w() / 3, World.h() + OFFSCREEN_DISTANCE),
+                Pos(World.w() * 2 / 3, World.h() + OFFSCREEN_DISTANCE)
         )
         private val OFFSCREEN_EDGES = listOf(
-                Coords(-OFFSCREEN_DISTANCE, -OFFSCREEN_DISTANCE),
-                Coords(World.w() + OFFSCREEN_DISTANCE, -OFFSCREEN_DISTANCE),
-                Coords(-OFFSCREEN_DISTANCE, World.h() + OFFSCREEN_DISTANCE),
-                Coords(World.w() + OFFSCREEN_DISTANCE, World.h() + OFFSCREEN_DISTANCE)
+                Pos(-OFFSCREEN_DISTANCE, -OFFSCREEN_DISTANCE),
+                Pos(World.w() + OFFSCREEN_DISTANCE, -OFFSCREEN_DISTANCE),
+                Pos(-OFFSCREEN_DISTANCE, World.h() + OFFSCREEN_DISTANCE),
+                Pos(World.w() + OFFSCREEN_DISTANCE, World.h() + OFFSCREEN_DISTANCE)
         )
         val OFFSCREEN = DESTINATIONS + (if (Config.useOffscreenEdgeDestinations) OFFSCREEN_EDGES else emptyList())
         fun prepareOffscreenLocations() = OFFSCREEN.forEach {
             NonFaction.getOrCreateVectorField(it)
         }
 
-        private val fields = mutableMapOf<Coords, Map<Coords, Complex>>()
+        private val fields = mutableMapOf<Pos, Map<Pos, Complex>>()
         fun offscreenCount(): Int = fields.count()
         fun offscreenTotal(): Int = OFFSCREEN.count()
-        fun getOrCreateVectorField(destination: Coords): Map<Coords, Complex> {
+        fun getOrCreateVectorField(destination: Pos): Map<Pos, Complex> {
             val maybeField = fields[destination]
             return if (maybeField != null && maybeField.isNotEmpty()) {
                 maybeField
@@ -153,7 +153,7 @@ data class NonFaction(var pos: Coords, val speed: Double, val size: AgentSize,
             }
         }
 
-        private fun findFarPortal(pos: Coords) = World.allPortals.sortedByDescending { pos.distanceTo(it.location) }.first()
+        private fun findFarPortal(pos: Pos) = World.allPortals.sortedByDescending { pos.distanceTo(it.location) }.first()
 
         private val images = mapOf(-1 to drawTemplate(-1), 0 to drawTemplate(0), 1 to drawTemplate(1))
         private val MIN_WAIT = Time.secondsToTicks(5)
@@ -166,20 +166,20 @@ data class NonFaction(var pos: Coords, val speed: Double, val size: AgentSize,
             val w = r * 2 + (2 * lineWidth)
             val h = w
             return HtmlUtil.preRender(w, h, fun(ctx: Ctx) {
-                val fillStyle = Colors.npcColor
-                val strokeStyle = Colors.black
-                val circle = Circle(Coords(r + lineWidth, r + lineWidth), r.toDouble())
-                DrawUtil.drawCircle(ctx, circle, strokeStyle, lineWidth.toDouble(), fillStyle)
+                val fill = Colors.npcColor
+                val stroke = Colors.black
+                val circle = Circle(Pos(r + lineWidth, r + lineWidth), r.toDouble())
+                DrawUtil.drawCircle(ctx, circle, stroke, lineWidth.toDouble(), fill)
             })
         }
 
-        fun findNearestTo(pos: Coords) =
+        fun findNearestTo(pos: Pos) =
                 World.allNonFaction.minBy {
                     it.pos.distanceTo(pos)
                 } ?: throw IllegalStateException("Unable to find nearest to $pos")
 
-        fun create(grid: Map<Coords, Cell>): NonFaction {
-            val position = Coords.createRandomPassable(grid)
+        fun create(grid: Map<Pos, Cell>): NonFaction {
+            val position = Pos.createRandomPassable(grid)
             val size = AgentSize.createRandom()
             val speed = Skills.randomNpcSpeed()
             val newNonFaction = if (Util.random() < 0.1) { //move to offscreen destination

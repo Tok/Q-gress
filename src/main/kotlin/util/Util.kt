@@ -1,19 +1,20 @@
 package util
 
 import World
-import config.Constants
 import portal.Portal
-import util.data.Complex
-import util.data.Coords
-import kotlin.math.*
+import util.data.Pos
+import kotlin.math.PI
+import kotlin.math.floor
+import kotlin.math.max
+import kotlin.math.min
 
 object Util {
-    private fun findNearestPortals(coords: Coords): Set<Pair<Double, Portal>> {
-        return World.allPortals.map { it.location.distanceTo(coords) to it }.sortedBy { it.first }.toSet()
+    private fun findNearestPortals(pos: Pos): Set<Pair<Double, Portal>> {
+        return World.allPortals.map { it.location.distanceTo(pos) to it }.sortedBy { it.first }.toSet()
     }
 
-    fun findNearestPortal(coords: Coords): Portal? {
-        val nearest = findNearestPortals(coords)
+    fun findNearestPortal(pos: Pos): Portal? {
+        val nearest = findNearestPortals(pos)
         return if (nearest.isNotEmpty()) nearest.first().second else null
     }
 

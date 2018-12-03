@@ -4,12 +4,12 @@ import agent.Agent
 import items.level.ResonatorLevel
 import portal.Octant
 import portal.Portal
-import util.data.Coords
+import util.data.Pos
 import kotlin.math.max
 import kotlin.math.min
 
 data class Resonator(val owner: Agent, val level: ResonatorLevel, var energy: Int,
-                     var portal: Portal? = null, var octant: Octant? = null, var coords: Coords? = null) : DeployableItem {
+                     var portal: Portal? = null, var octant: Octant? = null, var position: Pos? = null) : DeployableItem {
     //TODO move location and octant to ResonatorSlot
     fun calcHealthPercent() = energy * 100 / level.energy
 
@@ -42,10 +42,10 @@ data class Resonator(val owner: Agent, val level: ResonatorLevel, var energy: In
         }
     }
 
-    fun deploy(portal: Portal, octant: Octant, coords: Coords) {
+    fun deploy(portal: Portal, octant: Octant, pos: Pos) {
         this.portal = portal
         this.octant = octant
-        this.coords = coords
+        this.position = pos
     }
 
     override fun toString() = "R" + level.level

@@ -1,11 +1,11 @@
 package portal
 
-import Ctx
 import World
 import agent.Agent
 import agent.Faction
 import config.Styles
-import util.data.Coords
+import extension.Ctx
+import util.data.Pos
 import util.data.Line
 import kotlin.math.max
 import kotlin.math.sqrt
@@ -58,7 +58,7 @@ data class Field private constructor(
         //- One non transparent center field connecting the center-points of each three links
         //- from each of the three anchors to the center field, with radial gradient transparency for portal health
         val fullStyle = owner.faction.fieldStyle + Styles.fieldTransparency + ")"
-        fun drawCenter(one: Coords, two: Coords, three: Coords) {
+        fun drawCenter(one: Pos, two: Pos, three: Pos) {
             with(ctx) {
                 fillStyle = fullStyle
                 beginPath()
@@ -70,7 +70,7 @@ data class Field private constructor(
             }
         }
 
-        fun drawLinear(portal: Portal, first: Coords, second: Coords) {
+        fun drawLinear(portal: Portal, first: Pos, second: Pos) {
             fun calcStyle(health: Int) = owner.faction.fieldStyle + (Styles.fieldTransparency * health / 100) + ")"
             val originHp = calcStyle(portal.calcHealth())
             with(ctx) {
