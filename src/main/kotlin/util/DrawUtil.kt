@@ -190,7 +190,7 @@ object DrawUtil {
         ctx.fillStyle = fillStyle
         val xOff = (fontSize / 2) - 2
         val yOff = fontSize / 3
-        ctx.fillText(text, coords.x.toDouble() - xOff, coords.y.toDouble() + yOff)
+        ctx.fillText(text, coords.x - xOff, coords.y + yOff)
     }
 
     fun strokeText(ctx: Ctx, pos: Coords, text: String, fillStyle: String, fontSize: Int, fontName: String = CODA,

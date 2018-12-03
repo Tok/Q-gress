@@ -28,8 +28,8 @@ data class Link(val origin: Portal, val destination: Portal, val creator: Agent)
             strokeStyle = gradient
             lineWidth = Dim.linkLineWidth
             beginPath()
-            moveTo(getLine().from.x.toDouble(), getLine().from.y.toDouble())
-            lineTo(getLine().to.x.toDouble(), getLine().to.y.toDouble())
+            moveTo(getLine().from.x, getLine().from.y)
+            lineTo(getLine().to.x, getLine().to.y)
             closePath()
             stroke()
         }

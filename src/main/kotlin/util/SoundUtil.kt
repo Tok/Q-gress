@@ -43,7 +43,7 @@ object SoundUtil {
     fun playPortalCreationSound(pos: Coords, gain: Double = 1.0) {
         if (isMuted()) return
         val duration = 0.5
-        val pan = pos.x.toDouble() / Dim.width
+        val pan = pos.x / Dim.width
         val oscNode = createLinearRampOscillator(OscillatorType.SINE, 120.0, 0.0, duration)
         playSound(oscNode, createStaticPan(pan), gain, duration)
     }
@@ -51,7 +51,7 @@ object SoundUtil {
     fun playPortalRemovalSound(pos: Coords) {
         if (isMuted()) return
         val duration = 0.5
-        val pan = pos.x.toDouble() / Dim.width
+        val pan = pos.x / Dim.width
         val oscNode = createLinearRampOscillator(OscillatorType.SINE, 60.0, 120.0, duration)
         playSound(oscNode, createStaticPan(pan), 1.0, duration)
     }

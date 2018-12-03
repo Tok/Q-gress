@@ -5,13 +5,13 @@ import kotlin.math.round
 import kotlin.math.sqrt
 
 data class Line(val from: Coords, val to: Coords) {
-    val fromX = from.x.toDouble()
-    val fromY = from.y.toDouble()
-    val toX = to.x.toDouble()
-    val toY = to.y.toDouble()
+    val fromX = from.x
+    val fromY = from.y
+    val toX = to.x
+    val toY = to.y
     fun key(): String = from.toString() + "<--->" + to.toString()
-    private fun calcXdiff(): Double = abs(from.x.toDouble() - to.x)
-    private fun calcYdiff(): Double = abs(from.y.toDouble() - to.y)
+    private fun calcXdiff(): Double = abs(from.x - to.x)
+    private fun calcYdiff(): Double = abs(from.y - to.y)
     fun calcLength(): Double = sqrt((calcXdiff() * calcXdiff()) + (calcYdiff() * calcYdiff()))
     fun calcTaxiLength(): Int = (calcXdiff() + calcYdiff()).toInt()
     fun center(): Coords = Coords((from.x + to.x) / 2, (from.y + to.y) / 2)
@@ -22,8 +22,8 @@ data class Line(val from: Coords, val to: Coords) {
         val xFromDist = from.x - other.from.x
         val xDist = to.x - from.x
         val yDist = to.y - from.y
-        val otherXDist = other.to.x.toDouble() - other.from.x
-        val otherYDist = other.to.y.toDouble() - other.from.y
+        val otherXDist = other.to.x - other.from.x
+        val otherYDist = other.to.y - other.from.y
         val denominator = (otherYDist * xDist) - (otherXDist * yDist)
         if (denominator.toInt() == 0) {
             return false
@@ -36,8 +36,8 @@ data class Line(val from: Coords, val to: Coords) {
     }
 
     fun findClosestPointTo(point: Coords): Coords {
-        val xDiff = (to.x - from.x).toDouble()
-        val yDiff = (to.y - from.y).toDouble()
+        val xDiff = (to.x - from.x)
+        val yDiff = (to.y - from.y)
         check (xDiff != 0.0 || yDiff != 0.0)
         val u = ((point.x - from.x) * xDiff + (point.y - from.y) * yDiff) / (xDiff * xDiff + yDiff * yDiff)
         return when {

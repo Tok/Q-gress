@@ -18,13 +18,13 @@ object MindUnits {
                 if (Styles.isFillMuDisplay) {
                     globalAlpha = 0.3
                     fillStyle = fill
-                    fillRect(from.x.toDouble(), from.y.toDouble(), width, height)
+                    fillRect(from.x, from.y, width, height)
                 }
                 strokeStyle = stroke
                 globalAlpha = 1.0
                 lineWidth = line
                 beginPath()
-                strokeRect(from.x.toDouble(), from.y.toDouble(), width, height)
+                strokeRect(from.x, from.y, width, height)
                 closePath()
                 stroke()
             }
