@@ -3,9 +3,7 @@ package util
 import World
 import config.Config
 import config.Styles
-import extension.Canvas
-import extension.Ctx
-import extension.drawImage
+import extension.*
 import external.MapBox
 import org.khronos.webgl.Uint8Array
 import org.khronos.webgl.get
@@ -45,7 +43,7 @@ object MapUtil {
     private var initMap: MapBox? = null
     private var shadowMap: MapBox? = null
 
-    fun loadMaps(center: Json, callback: (Map<Pos, Cell>) -> Unit) {
+    fun loadMaps(center: Json, callback: (Grid) -> Unit) {
         document.getElementById(MAP)?.addClass(INVISIBLE)
         document.getElementById(SHADOW_MAP)?.addClass(INVISIBLE)
         loadInitialMap(center, fun(initMap: MapBox) {
@@ -75,7 +73,7 @@ object MapUtil {
     }
 
     //https://www.mapbox.com/mapbox-gl-js/api/
-    private fun loadMap(initMap: MapBox, callback: (Map<Pos, Cell>) -> Unit) {
+    private fun loadMap(initMap: MapBox, callback: (Grid) -> Unit) {
         val center = initMap.getCenter()
         document.getElementById(MAP)?.removeClass(INVISIBLE)
         if (map == null) {
@@ -95,7 +93,7 @@ object MapUtil {
         }
     }
 
-    private fun loadShadowMap(center: Json, callback: (Map<Pos, Cell>) -> Unit) {
+    private fun loadShadowMap(center: Json, callback: (Grid) -> Unit) {
         document.getElementById(SHADOW_MAP)?.remove()
         val div = document.createElement("div") as HTMLDivElement
         div.id = SHADOW_MAP
@@ -109,7 +107,7 @@ object MapUtil {
         shadowMap!!.setCenter(center)
     }
 
-    private fun addGrid(callback: (Map<Pos, Cell>) -> Unit) {
+    private fun addGrid(callback: (Grid) -> Unit) {
         val maps = document.getElementsByClassName("mapboxgl-canvas")
         val shadowMapCan: dynamic = maps[2] //!
         val gl: dynamic = shadowMapCan.getContext("webgl")
@@ -145,7 +143,7 @@ object MapUtil {
 
     const val OFFSCREEN_CELL_ROWS = 10
 
-    private fun createGrid(imageData: ImageData, width: Int, height: Int): Map<Pos, Cell> {
+    private fun createGrid(imageData: ImageData, width: Int, height: Int): Grid {
         val w = width / Pos.res
         val h = height / Pos.res
         fun isOffScreen(pos: Pos) = pos.x < 0 || pos.y < 0 || pos.x >= w || pos.y >= h
@@ -157,7 +155,7 @@ object MapUtil {
                     val penalty = 80
                     pos to Cell(pos, isPassable, penalty)
                 } else {
-                    val scaledPixel = tempCtx.getImageData(x.toDouble(), y.toDouble(), 1.0, 1.0).data[0]
+                    val scaledPixel = tempCtx.getImageData(x, y, 1, 1).data[0]
                     val passabilityOffset = 32
                     val isPassable = scaledPixel > passabilityOffset
                     val penalty =

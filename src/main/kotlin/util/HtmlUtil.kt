@@ -11,6 +11,7 @@ import config.*
 import config.Location
 import extension.Canvas
 import extension.Ctx
+import extension.Grid
 import org.w3c.dom.*
 import org.w3c.dom.events.Event
 import org.w3c.dom.events.MouseEvent
@@ -485,7 +486,7 @@ object HtmlUtil {
     fun isShowSatelliteMap() = (document.getElementById("satCheckbox") as HTMLInputElement).checked
 
     private fun onMapload() =
-            fun(grid: Map<Pos, Cell>) {
+            fun(grid: Grid) {
                 World.grid = grid
                 if (World.grid.isEmpty()) {
                     console.error("Grid is empty!")

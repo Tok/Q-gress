@@ -4,6 +4,7 @@ import World
 import config.*
 import extension.Canvas
 import extension.Ctx
+import extension.VectorField
 import extension.clear
 import org.w3c.dom.ImageData
 import org.w3c.dom.Path2D
@@ -17,11 +18,11 @@ import util.data.Line
 
 object VectorFields {
     fun draw(portal: Portal) {
-        draw(portal.vectorField)
+        draw(portal.vectors)
         portal.drawCenter(World.bgCtx(), false)
     }
 
-    fun draw(vectorField: Map<Pos, Complex>) {
+    fun draw(vectorField: VectorField) {
         if (World.isReady) return
         World.bgCtx().clear(World.bgCan)
         val w = Pos.res - 1

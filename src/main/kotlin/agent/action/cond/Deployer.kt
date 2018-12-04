@@ -51,7 +51,7 @@ object Deployer : ConditionalAction {
 
     private fun allowedResoLevels(agent: Agent): Map<ResonatorLevel, Int> = agent.actionPortal.findAllowedResoLevels(agent)
 
-    private fun ownedInPortal(agent: Agent) = agent.actionPortal.resoSlots.filter { it.value.isOwnedBy(agent) }.toList()
+    private fun ownedInPortal(agent: Agent) = agent.actionPortal.slots.filter { it.value.isOwnedBy(agent) }.toList()
     private fun inventoryResos(inv: Inventory) = inv.items.filter { it is Resonator }.map { it as Resonator }.sortedByDescending { it.level }
     private fun maxDeployable(ownedInPortal: List<Pair<Octant, ResonatorSlot>>, reso: Resonator): Int {
         val owned = ownedInPortal.filter { slot -> slot.second.resonator?.level?.level ?: 0 >= reso.level.level }.count()
@@ -59,7 +59,7 @@ object Deployer : ConditionalAction {
     }
 
     private fun deployableSlots(portal: Portal, reso: Resonator): List<Pair<Octant, ResonatorSlot>> {
-        return portal.resoSlots
+        return portal.slots
                 .filter {
                     it.value.isEmpty() ||
                             it.value.resonator?.level?.level ?: 0 < reso.level.level

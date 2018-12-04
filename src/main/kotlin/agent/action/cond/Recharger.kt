@@ -20,5 +20,5 @@ object Recharger : ConditionalAction {
 
     private fun chargeableKeys(agent: Agent) = Portal.findChargeableForKeys(agent, agent.keySet().orEmpty()).orEmpty()
     private fun lowestChargeablePortal(agent: Agent) = chargeableKeys(agent).sortedBy { it.calcHealth() }.first()
-    private fun rechargeResos(agent: Agent) = lowestChargeablePortal(agent).resoSlots.mapNotNull { it.value.resonator }
+    private fun rechargeResos(agent: Agent) = lowestChargeablePortal(agent).slots.mapNotNull { it.value.resonator }
 }

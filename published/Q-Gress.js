@@ -745,7 +745,7 @@
   };
   var LinkedHashMap_init = Kotlin.kotlin.collections.LinkedHashMap_init_q3lmfv$;
   Deployer.prototype.ownedInPortal_0 = function (agent) {
-    var $receiver = agent.actionPortal.resoSlots;
+    var $receiver = agent.actionPortal.slots;
     var destination = LinkedHashMap_init();
     var tmp$;
     tmp$ = $receiver.entries.iterator();
@@ -813,7 +813,7 @@
     return Math_0.max(a, 0);
   };
   Deployer.prototype.deployableSlots_0 = function (portal, reso) {
-    var $receiver = portal.resoSlots;
+    var $receiver = portal.slots;
     var destination = LinkedHashMap_init();
     var tmp$;
     tmp$ = $receiver.entries.iterator();
@@ -1175,7 +1175,7 @@
     };
   });
   Recharger.prototype.rechargeResos_0 = function (agent) {
-    var $receiver = this.lowestChargeablePortal_0(agent).resoSlots;
+    var $receiver = this.lowestChargeablePortal_0(agent).slots;
     var destination = ArrayList_init_0();
     var tmp$;
     tmp$ = $receiver.entries.iterator();
@@ -1453,7 +1453,7 @@
       this.action.end();
       return this;
     }
-    var force = (tmp$ = this.actionPortal.vectorField.get_11rb$(this.pos.toShadow())) != null ? tmp$ : Complex$Companion_getInstance().ZERO;
+    var force = (tmp$ = this.actionPortal.vectors.get_11rb$(this.pos.toShadow())) != null ? tmp$ : Complex$Companion_getInstance().ZERO;
     this.velocity = MovementUtil_getInstance().move_ovcmsq$(this.velocity, force, this.skills.speed);
     return this.copy_lxvi5s$(void 0, void 0, Pos_init(numberToInt(this.pos.x + this.velocity.re), numberToInt(this.pos.y + this.velocity.im)));
   };
@@ -1605,7 +1605,7 @@
     tmp$ = portals.iterator();
     while (tmp$.hasNext()) {
       var element = tmp$.next();
-      var $receiver = element.resoSlots;
+      var $receiver = element.slots;
       var destination_0 = ArrayList_init($receiver.size);
       var tmp$_0;
       tmp$_0 = $receiver.entries.iterator();
@@ -1683,8 +1683,8 @@
           var tmp$_2 = destination_0.add_11rb$;
           var lw = Dim_getInstance().agentLineWidth;
           var r = Dim_getInstance().agentRadius;
-          var w = (r + lw | 0) * 2 | 0;
-          tmp$_2.call(destination_0, to(this.xmKey_0(element, item), DrawUtil_getInstance().renderBarImage_ewpgoy$(element.color, item, 3, w, lw)));
+          var w = (r + lw | 0) * 2.0;
+          tmp$_2.call(destination_0, to(this.xmKey_0(element, item), DrawUtil_getInstance().renderBarImage_1u05i2$(element.color, item, 3.0, w, lw)));
         }
         var list = destination_0;
         addAll(destination, list);
@@ -2675,13 +2675,13 @@
     }
     return MovementUtil_instance;
   }
-  function NonFaction(pos, speed, size, destination, vectorField, busyUntil) {
+  function NonFaction(pos, speed, size, destination, vectors, busyUntil) {
     NonFaction$Companion_getInstance();
     this.pos = pos;
     this.speed = speed;
     this.size = size;
     this.destination = destination;
-    this.vectorField = vectorField;
+    this.vectors = vectors;
     this.busyUntil = busyUntil;
     this.swarmTendency_0 = 0.02;
     this.swarmChance_0 = this.swarmTendency_0 - this.swarmTendency_0 * 0.5 * this.size.offset;
@@ -2735,7 +2735,7 @@
         }
       }
        else {
-        tmp$_0 = (tmp$ = this.vectorField.get_11rb$(this.pos.toShadow())) != null ? tmp$ : Complex$Companion_getInstance().ZERO;
+        tmp$_0 = (tmp$ = this.vectors.get_11rb$(this.pos.toShadow())) != null ? tmp$ : Complex$Companion_getInstance().ZERO;
       }
       var force = tmp$_0;
       this.velocity_0 = MovementUtil_getInstance().move_ovcmsq$(this.velocity_0, force, this.speed);
@@ -2798,17 +2798,17 @@
   };
   NonFaction.prototype.moveToRandomOffscreenDestination_0 = function () {
     var destination = first(Util_getInstance().shuffle_bemo1h$(NonFaction$Companion_getInstance().DESTINATIONS_0));
-    this.vectorField = NonFaction$Companion_getInstance().getOrCreateVectorField_mqsrs4$(destination);
+    this.vectors = NonFaction$Companion_getInstance().getOrCreateVectorField_mqsrs4$(destination);
     this.destination = destination;
   };
   NonFaction.prototype.moveToFarPortal_0 = function () {
     var portal = NonFaction$Companion_getInstance().findFarPortal_0(this.pos);
-    this.vectorField = portal.vectorField;
+    this.vectors = portal.vectors;
     this.destination = portal.location;
   };
   NonFaction.prototype.moveToRandomPortal_0 = function () {
     var randomTarget = World_getInstance().allPortals.get_za3lpa$(numberToInt(Util_getInstance().random() * (World_getInstance().allPortals.size - 1 | 0)));
-    this.vectorField = randomTarget.vectorField;
+    this.vectors = randomTarget.vectors;
     this.destination = randomTarget.location;
   };
   NonFaction.prototype.draw_f69bme$ = function (ctx) {
@@ -2947,7 +2947,7 @@
     }
      else {
       var portal = World_getInstance().allPortals.get_za3lpa$(numberToInt(Util_getInstance().random() * (World_getInstance().allPortals.size - 1 | 0)));
-      tmp$ = new NonFaction(position, speed, size, portal.location, portal.vectorField, World_getInstance().tick);
+      tmp$ = new NonFaction(position, speed, size, portal.location, portal.vectors, World_getInstance().tick);
     }
     var newNonFaction = tmp$;
     SoundUtil_getInstance().playNpcCreationSound_3mzr9k$(newNonFaction);
@@ -2984,16 +2984,16 @@
     return this.destination;
   };
   NonFaction.prototype.component5 = function () {
-    return this.vectorField;
+    return this.vectors;
   };
   NonFaction.prototype.component6 = function () {
     return this.busyUntil;
   };
-  NonFaction.prototype.copy_lcunbe$ = function (pos, speed, size, destination, vectorField, busyUntil) {
-    return new NonFaction(pos === void 0 ? this.pos : pos, speed === void 0 ? this.speed : speed, size === void 0 ? this.size : size, destination === void 0 ? this.destination : destination, vectorField === void 0 ? this.vectorField : vectorField, busyUntil === void 0 ? this.busyUntil : busyUntil);
+  NonFaction.prototype.copy_lcunbe$ = function (pos, speed, size, destination, vectors, busyUntil) {
+    return new NonFaction(pos === void 0 ? this.pos : pos, speed === void 0 ? this.speed : speed, size === void 0 ? this.size : size, destination === void 0 ? this.destination : destination, vectors === void 0 ? this.vectors : vectors, busyUntil === void 0 ? this.busyUntil : busyUntil);
   };
   NonFaction.prototype.toString = function () {
-    return 'NonFaction(pos=' + Kotlin.toString(this.pos) + (', speed=' + Kotlin.toString(this.speed)) + (', size=' + Kotlin.toString(this.size)) + (', destination=' + Kotlin.toString(this.destination)) + (', vectorField=' + Kotlin.toString(this.vectorField)) + (', busyUntil=' + Kotlin.toString(this.busyUntil)) + ')';
+    return 'NonFaction(pos=' + Kotlin.toString(this.pos) + (', speed=' + Kotlin.toString(this.speed)) + (', size=' + Kotlin.toString(this.size)) + (', destination=' + Kotlin.toString(this.destination)) + (', vectors=' + Kotlin.toString(this.vectors)) + (', busyUntil=' + Kotlin.toString(this.busyUntil)) + ')';
   };
   NonFaction.prototype.hashCode = function () {
     var result = 0;
@@ -3001,12 +3001,12 @@
     result = result * 31 + Kotlin.hashCode(this.speed) | 0;
     result = result * 31 + Kotlin.hashCode(this.size) | 0;
     result = result * 31 + Kotlin.hashCode(this.destination) | 0;
-    result = result * 31 + Kotlin.hashCode(this.vectorField) | 0;
+    result = result * 31 + Kotlin.hashCode(this.vectors) | 0;
     result = result * 31 + Kotlin.hashCode(this.busyUntil) | 0;
     return result;
   };
   NonFaction.prototype.equals = function (other) {
-    return this === other || (other !== null && (typeof other === 'object' && (Object.getPrototypeOf(this) === Object.getPrototypeOf(other) && (Kotlin.equals(this.pos, other.pos) && Kotlin.equals(this.speed, other.speed) && Kotlin.equals(this.size, other.size) && Kotlin.equals(this.destination, other.destination) && Kotlin.equals(this.vectorField, other.vectorField) && Kotlin.equals(this.busyUntil, other.busyUntil)))));
+    return this === other || (other !== null && (typeof other === 'object' && (Object.getPrototypeOf(this) === Object.getPrototypeOf(other) && (Kotlin.equals(this.pos, other.pos) && Kotlin.equals(this.speed, other.speed) && Kotlin.equals(this.size, other.size) && Kotlin.equals(this.destination, other.destination) && Kotlin.equals(this.vectors, other.vectors) && Kotlin.equals(this.busyUntil, other.busyUntil)))));
   };
   function QActions() {
     QActions_instance = this;
@@ -3634,6 +3634,9 @@
   }
   function drawImage_1($receiver, image, x, y, w, h) {
     $receiver.drawImage(image, x, y, w, h);
+  }
+  function getImageData($receiver, x, y, w, h) {
+    return $receiver.getImageData(x, y, w, h);
   }
   function toHexString($receiver) {
     if (!($receiver >= 0)) {
@@ -5481,7 +5484,7 @@
   };
   function Field$findFurthestFrom$lambda(closure$portal) {
     return function (it) {
-      return (new Line(closure$portal.location, it.location)).calcLength();
+      return (new Line(closure$portal.location, it.location)).length();
     };
   }
   var compareBy$lambda_9 = wrapFunction(function () {
@@ -5526,9 +5529,9 @@
     return s > 0 && t > 0 && s + t < d;
   };
   Field.prototype.calculateArea = function () {
-    var a = (new Line(this.origin.location, this.primaryAnchor.location)).calcLength();
-    var b = (new Line(this.origin.location, this.secondaryAnchor.location)).calcLength();
-    var c = (new Line(this.primaryAnchor.location, this.secondaryAnchor.location)).calcLength();
+    var a = (new Line(this.origin.location, this.primaryAnchor.location)).length();
+    var b = (new Line(this.origin.location, this.secondaryAnchor.location)).length();
+    var c = (new Line(this.primaryAnchor.location, this.secondaryAnchor.location)).length();
     var s = (a + b + c) / 2;
     var x = s * (s - a) * (s - b) * (s - c);
     var area = numberToInt(Math_0.sqrt(x));
@@ -6031,13 +6034,13 @@
     }
   }
   Octant.valueOf_61zpoe$ = Octant$valueOf;
-  function Portal(name, location, heatMap, vectorField, resoSlots, links, fields, owner) {
+  function Portal(name, location, heatMap, vectors, slots, links, fields, owner) {
     Portal$Companion_getInstance();
     this.name = name;
     this.location = location;
     this.heatMap = heatMap;
-    this.vectorField = vectorField;
-    this.resoSlots = resoSlots;
+    this.vectors = vectors;
+    this.slots = slots;
     this.links = links;
     this.fields = fields;
     this.owner = owner;
@@ -6046,7 +6049,7 @@
     this.nameImage_0 = HtmlUtil_getInstance().isRunningInBrowser() ? this.createNameImage_0() : null;
   }
   Portal.prototype.isDeprecated = function () {
-    return this.resoSlots.isEmpty();
+    return this.slots.isEmpty();
   };
   Portal.prototype.isUncaptured = function () {
     return this.owner == null;
@@ -6136,7 +6139,7 @@
       tmp$ = 1;
     else {
       var tmp$_0 = Portal$Companion_getInstance();
-      var $receiver = this.resoSlots.values;
+      var $receiver = this.slots.values;
       var destination = ArrayList_init(collectionSizeOrDefault($receiver, 10));
       var tmp$_1;
       tmp$_1 = $receiver.iterator();
@@ -6159,7 +6162,7 @@
     return this.location.y;
   };
   Portal.prototype.getAllResos_0 = function () {
-    var $receiver = this.resoSlots;
+    var $receiver = this.slots;
     var destination = ArrayList_init($receiver.size);
     var tmp$;
     tmp$ = $receiver.entries.iterator();
@@ -6575,7 +6578,7 @@
       this.owner = deployer;
       Com_getInstance().addMessage_61zpoe$(deployer.toString() + ' captured ' + this + '.');
     }
-    var $receiver = this.resoSlots;
+    var $receiver = this.slots;
     var tmp$;
     var result = LinkedHashMap_init();
     tmp$ = $receiver.entries.iterator();
@@ -6607,7 +6610,7 @@
       var octant = item.key;
       var resonator = item.value;
       var tmp$_2, tmp$_3;
-      var oldReso = this.resoSlots.get_11rb$(octant);
+      var oldReso = this.slots.get_11rb$(octant);
       if (isCapture && index_0 === 0) {
         deployer.addAp_za3lpa$(500);
       }
@@ -6623,7 +6626,7 @@
       deployer.removeXm_za3lpa$(resonator.level.level * 20 | 0);
       var oldDistance = oldReso != null ? oldReso.distance : null;
       var newDistance = (tmp$_2 = oldDistance === 0 ? distance : oldDistance) != null ? tmp$_2 : distance;
-      (tmp$_3 = this.resoSlots.get_11rb$(octant)) != null ? (tmp$_3.deployReso_otfdig$(deployer, resonator, newDistance), Unit) : null;
+      (tmp$_3 = this.slots.get_11rb$(octant)) != null ? (tmp$_3.deployReso_otfdig$(deployer, resonator, newDistance), Unit) : null;
       var xx = this.location.x + octant.calcXOffset_za3lpa$(newDistance);
       var yy = this.location.y + octant.calcYOffset_za3lpa$(newDistance);
       resonator.deploy_t73m4l$(this, octant, new Pos(xx, yy));
@@ -6747,7 +6750,7 @@
       destroyer = null;
     this.owner = null;
     var tmp$;
-    tmp$ = this.resoSlots.entries.iterator();
+    tmp$ = this.slots.entries.iterator();
     while (tmp$.hasNext()) {
       var element = tmp$.next();
       element.value.clear();
@@ -6790,8 +6793,8 @@
   };
   Portal.prototype.removeReso_j436sm$ = function (octant, destroyer) {
     var tmp$;
-    (tmp$ = this.resoSlots.get_11rb$(octant)) != null ? (tmp$.clear(), Unit) : null;
-    var $receiver = this.resoSlots;
+    (tmp$ = this.slots.get_11rb$(octant)) != null ? (tmp$.clear(), Unit) : null;
+    var $receiver = this.slots;
     var destination = LinkedHashMap_init();
     var tmp$_0;
     tmp$_0 = $receiver.entries.iterator();
@@ -6819,7 +6822,7 @@
         var item = $receiver[tmp$_1];
         var tmp$_2 = destination.add_11rb$;
         var tmp$_3 = item.deployablePerPlayer;
-        var $receiver_0 = this.resoSlots;
+        var $receiver_0 = this.slots;
         var destination_0 = LinkedHashMap_init();
         var tmp$_4;
         tmp$_4 = $receiver_0.entries.iterator();
@@ -6899,7 +6902,7 @@
     if (HtmlUtil_getInstance().isNotRunningInBrowser())
       return;
     var drawResoLine = Portal$drawResonators$drawResoLine(ctx);
-    var $receiver = this.resoSlots;
+    var $receiver = this.slots;
     var destination = LinkedHashMap_init();
     var tmp$;
     tmp$ = $receiver.entries.iterator();
@@ -7018,13 +7021,13 @@
         var element_0 = tmp$_3.next();
         var lw = Dim_getInstance().portalLineWidth;
         var r = numberToInt(Dim_getInstance().portalRadius);
-        var w = (r * 2 | 0) + (2 * lw | 0) | 0;
+        var w = r * 2.0 + 2.0 * lw;
         var $receiver_2 = Faction$values();
         var destination_2 = ArrayList_init($receiver_2.length);
         var tmp$_4;
         for (tmp$_4 = 0; tmp$_4 !== $receiver_2.length; ++tmp$_4) {
           var item_0 = $receiver_2[tmp$_4];
-          destination_2.add_11rb$(to(to(item_0, element_0), DrawUtil_getInstance().renderBarImage_ewpgoy$(item_0.color, element_0, 5, w, lw)));
+          destination_2.add_11rb$(to(to(item_0, element_0), DrawUtil_getInstance().renderBarImage_1u05i2$(item_0.color, element_0, 5.0, w, lw)));
         }
         var list_0 = destination_2;
         addAll(destination_1, list_0);
@@ -7145,10 +7148,10 @@
     return this.heatMap;
   };
   Portal.prototype.component4 = function () {
-    return this.vectorField;
+    return this.vectors;
   };
   Portal.prototype.component5 = function () {
-    return this.resoSlots;
+    return this.slots;
   };
   Portal.prototype.component6 = function () {
     return this.links;
@@ -7159,8 +7162,8 @@
   Portal.prototype.component8 = function () {
     return this.owner;
   };
-  Portal.prototype.copy_uyw6n8$ = function (name, location, heatMap, vectorField, resoSlots, links, fields, owner) {
-    return new Portal(name === void 0 ? this.name : name, location === void 0 ? this.location : location, heatMap === void 0 ? this.heatMap : heatMap, vectorField === void 0 ? this.vectorField : vectorField, resoSlots === void 0 ? this.resoSlots : resoSlots, links === void 0 ? this.links : links, fields === void 0 ? this.fields : fields, owner === void 0 ? this.owner : owner);
+  Portal.prototype.copy_uyw6n8$ = function (name, location, heatMap, vectors, slots, links, fields, owner) {
+    return new Portal(name === void 0 ? this.name : name, location === void 0 ? this.location : location, heatMap === void 0 ? this.heatMap : heatMap, vectors === void 0 ? this.vectors : vectors, slots === void 0 ? this.slots : slots, links === void 0 ? this.links : links, fields === void 0 ? this.fields : fields, owner === void 0 ? this.owner : owner);
   };
   function PortalKey(portal, owner) {
     PortalKey$Companion_getInstance();
@@ -8787,7 +8790,7 @@
     this.VECTORS_0 = LinkedHashMap_init();
   }
   VectorFields.prototype.draw_hv9zn6$ = function (portal) {
-    this.draw_rwwrvp$(portal.vectorField);
+    this.draw_rwwrvp$(portal.vectors);
     portal.drawCenter_j4cg6b$(World_getInstance().bgCtx(), false);
   };
   function VectorFields$draw$lambda$isWalkable(closure$it) {
@@ -9645,28 +9648,18 @@
     this.fromY = this.from.y;
     this.toX = this.to.x;
     this.toY = this.to.y;
-    var x = this.fromX - this.toX;
+    this.key = this.from.toString() + '<--->' + this.to.toString();
+    var x = this.from.x - this.to.x;
     this.w = Math_0.abs(x);
-    var x_0 = this.fromY - this.toY;
+    var x_0 = this.from.y - this.to.y;
     this.h = Math_0.abs(x_0);
   }
-  Line.prototype.key = function () {
-    return this.from.toString() + '<--->' + this.to.toString();
-  };
-  Line.prototype.calcXdiff_0 = function () {
-    var x = this.from.x - this.to.x;
-    return Math_0.abs(x);
-  };
-  Line.prototype.calcYdiff_0 = function () {
-    var x = this.from.y - this.to.y;
-    return Math_0.abs(x);
-  };
-  Line.prototype.calcLength = function () {
-    var x = this.calcXdiff_0() * this.calcXdiff_0() + this.calcYdiff_0() * this.calcYdiff_0();
+  Line.prototype.length = function () {
+    var x = this.w * this.w + this.h * this.h;
     return Math_0.sqrt(x);
   };
   Line.prototype.calcTaxiLength = function () {
-    return numberToInt(this.calcXdiff_0() + this.calcYdiff_0());
+    return numberToInt(this.w + this.h);
   };
   Line.prototype.center = function () {
     return new Pos((this.from.x + this.to.x) / 2, (this.from.y + this.to.y) / 2);
@@ -9818,10 +9811,10 @@
     return new GeoCoords(longitude, latitude);
   };
   Pos.prototype.isCloseForClick_0 = function (location) {
-    return (new Line(location, this)).calcLength() < Dim_getInstance().portalRadius * 2;
+    return (new Line(location, this)).length() < Dim_getInstance().portalRadius * 2;
   };
   Pos.prototype.isClose_0 = function (location) {
-    return (new Line(location, this)).calcLength() < Dim_getInstance().minDistanceBetweenPortals;
+    return (new Line(location, this)).length() < Dim_getInstance().minDistanceBetweenPortals;
   };
   Pos.prototype.findClosePortalsForClick_0 = function () {
     var $receiver = World_getInstance().allPortals;
@@ -10175,18 +10168,18 @@
       }
     };
   }
-  DrawUtil.prototype.renderBarImage_ewpgoy$ = function (color, health, h, w, lineWidth) {
-    var pWidth = Kotlin.imul(health, w) / 100 | 0;
-    return HtmlUtil_getInstance().preRender_yb5akz$(w, h, DrawUtil$renderBarImage$lambda(color, w, h, lineWidth, pWidth));
+  DrawUtil.prototype.renderBarImage_1u05i2$ = function (color, health, h, w, lineWidth) {
+    var pWidth = health * w / 100;
+    return HtmlUtil_getInstance().preRender_yb5akz$(numberToInt(w), numberToInt(h), DrawUtil$renderBarImage$lambda(color, w, h, lineWidth, pWidth));
   };
   DrawUtil.prototype.drawRect_s171ng$ = function (ctx, rect, fill, stroke, lineWidth) {
     ctx.fillStyle = fill;
-    ctx.fillRect(rect.fromX, rect.fromY, rect.w, rect.h);
+    ctx.fillRect(rect.fromX, rect.fromY, rect.toY, -rect.toX);
     ctx.fill();
     ctx.strokeStyle = stroke;
     ctx.lineWidth = lineWidth;
     ctx.beginPath();
-    ctx.strokeRect(rect.fromX, rect.fromY, rect.w, rect.h);
+    ctx.strokeRect(rect.fromX, rect.fromY, rect.toY, -rect.toX);
     ctx.closePath();
     ctx.stroke();
   };
@@ -11322,7 +11315,7 @@
           transform$result = to(pos, new Cell(pos, isPassable, penalty));
         }
          else {
-          var scaledPixel = tempCtx.getImageData(x, item, 1.0, 1.0).data[0];
+          var scaledPixel = getImageData(tempCtx, x, item, 1, 1).data[0];
           var passabilityOffset = 32;
           var isPassable_0 = scaledPixel > passabilityOffset;
           var penalty_0 = 35 + (((255 - scaledPixel) * 65 | 0) / 255 | 0) | 0;
@@ -11526,21 +11519,21 @@
     var fields = toMap(destination_0);
     return toMap_0(this.smooth_0(fields, 3));
   };
-  PathUtil.prototype.smooth_0 = function (map, count) {
+  PathUtil.prototype.smooth_0 = function (vectors, count) {
     if (count > 0) {
-      return this.smooth_0(this.smoothVectorMap_0(map), count - 1 | 0);
+      return this.smooth_0(this.smoothVectorMap_0(vectors), count - 1 | 0);
     }
      else {
-      return map;
+      return vectors;
     }
   };
-  PathUtil.prototype.smoothVectorMap_0 = function (map) {
+  PathUtil.prototype.smoothVectorMap_0 = function (vectors) {
     var n = 1;
     var xRange = new IntRange(-n | 0, n);
     var yRange = new IntRange(-n | 0, n);
-    var destination = ArrayList_init(map.size);
+    var destination = ArrayList_init(vectors.size);
     var tmp$;
-    tmp$ = map.entries.iterator();
+    tmp$ = vectors.entries.iterator();
     while (tmp$.hasNext()) {
       var item = tmp$.next();
       var tmp$_0 = destination.add_11rb$;
@@ -11556,7 +11549,7 @@
         while (tmp$_2.hasNext()) {
           var item_0 = tmp$_2.next();
           var tmp$_3;
-          destination_1.add_11rb$((tmp$_3 = map.get_11rb$(new Pos(pos.x + item_0, pos.y + element))) != null ? tmp$_3 : Complex$Companion_getInstance().ZERO);
+          destination_1.add_11rb$((tmp$_3 = vectors.get_11rb$(new Pos(pos.x + item_0, pos.y + element))) != null ? tmp$_3 : Complex$Companion_getInstance().ZERO);
         }
         var list = destination_1;
         addAll(destination_0, list);
@@ -11732,7 +11725,7 @@
   SoundUtil.prototype.playLinkingSound_4tp95w$ = function (link) {
     if (this.isMuted_0())
       return;
-    var ratio = link.getLine().calcLength() / World_getInstance().diagonalLength();
+    var ratio = link.getLine().length() / World_getInstance().diagonalLength();
     var gain = 0.3;
     var duration = 0.04 + 0.16 * ratio;
     var minFreq = 500.0 * ratio;
@@ -11822,7 +11815,7 @@
     tmp$ = (new IntRange(0, max)).iterator();
     while (tmp$.hasNext()) {
       var element = tmp$.next();
-      var pan = Util_getInstance().randomInt_za3lpa$(Dim_getInstance().width) / Dim_getInstance().width;
+      var pan = Util_getInstance().random();
       var tc = timeConstant * element;
       node.pan.setTargetAtTime(pan, n + tc, timeConstant);
     }
@@ -12640,6 +12633,7 @@
   package$extension.drawImage_w4tc47$ = drawImage;
   package$extension.drawImage_eddljz$ = drawImage_0;
   package$extension.drawImage_x24yf$ = drawImage_1;
+  package$extension.getImageData_q3r7r$ = getImageData;
   package$extension.toHexString_s8ev3n$ = toHexString;
   var package$items = _.items || (_.items = {});
   var package$deployable = package$items.deployable || (package$items.deployable = {});

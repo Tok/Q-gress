@@ -4,6 +4,7 @@ import World
 import config.Config
 import config.Constants
 import config.Dim
+import extension.Grid
 import util.HtmlUtil
 import util.Util
 import kotlin.math.abs
@@ -52,8 +53,8 @@ data class Pos(val x: Double, val y: Double) {
         return GeoCoords(longitude, latitude) //longitude = -Y, latitude = X
     }
 
-    private fun isCloseForClick(location: Pos) = Line(location, this).calcLength() < Dim.portalRadius * 2
-    private fun isClose(location: Pos) = Line(location, this).calcLength() < Dim.minDistanceBetweenPortals
+    private fun isCloseForClick(location: Pos) = Line(location, this).length() < Dim.portalRadius * 2
+    private fun isClose(location: Pos) = Line(location, this).length() < Dim.minDistanceBetweenPortals
     private fun findClosePortalsForClick() = World.allPortals.filter { isCloseForClick(it.location) }
     private fun findClosePortals() = World.allPortals.filter { isClose(it.location) }
     fun hasClosePortalForClick() = findClosePortalsForClick().isNotEmpty()
@@ -108,8 +109,8 @@ data class Pos(val x: Double, val y: Double) {
             }
         }
 
-        fun createRandomPassable(grid: Map<Pos, Cell>) = createRandomPassable(grid, 10)
-        private fun createRandomPassable(grid: Map<Pos, Cell>, retries: Int): Pos {
+        fun createRandomPassable(grid: Grid) = createRandomPassable(grid, 10)
+        private fun createRandomPassable(grid: Grid, retries: Int): Pos {
             if (HtmlUtil.isNotRunningInBrowser()) {
                 return if (grid.isEmpty()) Pos(0, 0)
                 else Util.shuffle(grid.keys).first()

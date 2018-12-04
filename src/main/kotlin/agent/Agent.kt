@@ -13,6 +13,7 @@ import config.Dim
 import config.Styles
 import extension.Canvas
 import extension.Ctx
+import extension.Grid
 import items.deployable.Resonator
 import items.level.XmpLevel
 import portal.Portal
@@ -122,7 +123,7 @@ data class Agent(
             action.end()
             return this
         }
-        val force = actionPortal.vectorField[pos.toShadow()] ?: Complex.ZERO
+        val force = actionPortal.vectors[pos.toShadow()] ?: Complex.ZERO
         velocity = MovementUtil.move(velocity, force, skills.speed)
         return this.copy(pos = Pos((pos.x + velocity.re).toInt(), (pos.y + velocity.im).toInt()))
     }
@@ -219,7 +220,7 @@ data class Agent(
     fun findResosInAttackRange(level: XmpLevel): List<Resonator> {
         val attackDistance = level.rangeM * 0.5
         val portals = findPortalsInAttackRange(level)
-        val slots = portals.flatMap { it.resoSlots.map { s -> s.value } }
+        val slots = portals.flatMap { it.slots.map { s -> s.value } }
         val resosInRange =
             slots.filter { it.resonator?.position?.distanceTo(this.pos) ?: attackDistance * 2 <= attackDistance }
         return resosInRange.map { it.resonator }.filterNotNull()
@@ -306,8 +307,8 @@ data class Agent(
                 (0..100).map {
                     val lw = Dim.agentLineWidth
                     val r = Dim.agentRadius
-                    val w = (r + lw) * 2
-                    xmKey(fac, it) to DrawUtil.renderBarImage(fac.color, it, 3, w, lw)
+                    val w = (r + lw) * 2.0
+                    xmKey(fac, it) to DrawUtil.renderBarImage(fac.color, it, 3.0, w, lw)
                 }
             }.toMap()
         } else { emptyMap() }
@@ -321,9 +322,9 @@ data class Agent(
             if (HtmlUtil.isRunningInBrowser()) Util.findNearestPortal(pos) ?: World.allPortals[0]
             else Portal.create(pos)
 
-        fun createFrog(grid: Map<Pos, Cell>) = create(grid, Faction.ENL)
-        fun createSmurf(grid: Map<Pos, Cell>) = create(grid, Faction.RES)
-        private fun create(grid: Map<Pos, Cell>, faction: Faction): Agent {
+        fun createFrog(grid: Grid) = create(grid, Faction.ENL)
+        fun createSmurf(grid: Grid) = create(grid, Faction.RES)
+        private fun create(grid: Grid, faction: Faction): Agent {
             val ap = Config.initialAp()
             val initialXm = xmCapacity(getLevel(ap))
             val coords = Pos.createRandomPassable(grid)

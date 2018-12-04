@@ -136,7 +136,7 @@ object SoundUtil {
 
     fun playLinkingSound(link: Link) {
         if (isMuted()) return
-        val ratio = link.getLine().calcLength() / World.diagonalLength()
+        val ratio = link.getLine().length() / World.diagonalLength()
         val gain = 0.30
         val duration = 0.04 + (0.16 * ratio)
         val minFreq = 500.0 * ratio
@@ -226,7 +226,7 @@ object SoundUtil {
         val max = 1000
         val n = now()
         (0..max).forEach {
-            val pan = Util.randomInt(Dim.width).toDouble() / Dim.width
+            val pan = Util.random()
             val tc = timeConstant * it
             node.pan.setTargetAtTime(pan, n + tc, timeConstant)
         }

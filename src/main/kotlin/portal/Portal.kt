@@ -8,8 +8,7 @@ import config.Colors
 import config.Dim
 import config.Styles
 import config.Time
-import extension.Canvas
-import extension.Ctx
+import extension.*
 import items.PowerCube
 import items.QgressItem
 import items.XmpBurster
@@ -26,21 +25,17 @@ import items.types.VirusType
 import system.Com
 import util.*
 import util.data.Circle
-import util.data.Complex
-import util.data.Pos
 import util.data.Line
+import util.data.Pos
 import kotlin.math.*
 
 data class Portal(
-    val name: String, val location: Pos,
-    val heatMap: Map<Pos, Int>, val vectorField: Map<Pos, Complex>,
-    val resoSlots: Map<Octant, ResonatorSlot>,
-    val links: MutableSet<Link>, val fields: MutableSet<Field>,
-    var owner: Agent?
+    val name: String, val location: Pos, val heatMap: GridMap, val vectors: VectorField,
+    val slots: Slots, val links: MutableSet<Link>, val fields: MutableSet<Field>, var owner: Agent?
 ) {
     private val lastHacks: MutableMap<String, MutableList<Int>> = mutableMapOf()
     val id: String = "P-" + location.x + ":" + location.y + "-" + name
-    fun isDeprecated() = resoSlots.isEmpty()
+    fun isDeprecated() = slots.isEmpty()
 
     fun isUncaptured() = owner == null
     fun isEnemyOf(agent: Agent) = owner != null && owner?.faction != agent.faction
@@ -56,7 +51,7 @@ data class Portal(
     fun canLinkOut(linker: Agent) = isLinkable(linker) && (links.isEmpty() || links.count() < 8) &&
             !isCoveredByField() && isInside()
 
-    private fun calculateLevel() = if (owner == null) 1 else clipLevel(resoSlots.values.map {
+    private fun calculateLevel() = if (owner == null) 1 else clipLevel(slots.values.map {
         (it.resonator?.level?.level ?: 0)
     }.sum() / 8)
 
@@ -67,7 +62,7 @@ data class Portal(
     fun x() = location.x
     fun y() = location.y
 
-    private fun getAllResos() = resoSlots.map { it.value.resonator }.filterNotNull()
+    private fun getAllResos() = slots.map { it.value.resonator }.filterNotNull()
     private fun isFullyDeployed() = getAllResos().count() == 8
     private fun averageResoLevel(): Double {
         val resos = getAllResos()
@@ -324,10 +319,10 @@ data class Portal(
             Com.addMessage("$deployer captured $this.")
         }
 
-        val initialResoCount = resoSlots.filterValues { !it.isEmpty() }.filterNot { it.value.resonator == null }.size
+        val initialResoCount = slots.filterValues { !it.isEmpty() }.filterNot { it.value.resonator == null }.size
         val firstResoCount = max(resos.size, (8 - initialResoCount))
         resos.asIterable().forEachIndexed { index, (octant, resonator) ->
-            val oldReso = resoSlots[octant]
+            val oldReso = slots[octant]
             if (isCapture && index == 0) {
                 deployer.addAp(500)
             } else if (index < firstResoCount) {
@@ -341,7 +336,7 @@ data class Portal(
             val oldDistance = oldReso?.distance
             val newDistance = (if (oldDistance == 0) distance else oldDistance) ?: distance
             //console.trace("$agent deploys ${resonator} to $octant at $this. $distance $oldDistance")
-            resoSlots[octant]?.deployReso(deployer, resonator, newDistance)
+            slots[octant]?.deployReso(deployer, resonator, newDistance)
             val xx = location.x + octant.calcXOffset(newDistance)
             val yy = location.y + octant.calcYOffset(newDistance)
             resonator.deploy(this, octant, Pos(xx, yy))
@@ -377,7 +372,7 @@ data class Portal(
 
     fun destroy(destroyer: Agent? = null) {
         owner = null
-        resoSlots.forEach {
+        slots.forEach {
             it.value.clear()
         }
         destroyAllLinksAndFields(destroyer)
@@ -402,8 +397,8 @@ data class Portal(
     }
 
     fun removeReso(octant: Octant, destroyer: Agent?) {
-        this.resoSlots[octant]?.clear()
-        val numberOfResosLeft = resoSlots.filter { it.value.resonator != null }.count()
+        this.slots[octant]?.clear()
+        val numberOfResosLeft = slots.filter { it.value.resonator != null }.count()
         if (numberOfResosLeft <= 0) {
             destroy(destroyer)
         } else if (numberOfResosLeft <= 2) {
@@ -414,7 +409,7 @@ data class Portal(
     fun findAllowedResoLevels(deployer: Agent): Map<ResonatorLevel, Int> {
         return if (owner == null || owner?.faction == deployer.faction) {
             ResonatorLevel.values().map { level ->
-                level to level.deployablePerPlayer - resoSlots.filter { slot ->
+                level to level.deployablePerPlayer - slots.filter { slot ->
                     slot.value.isOwnedBy(deployer) && slot.value.resonator?.level?.level == level.level
                 }.count()
             }.toMap()
@@ -470,7 +465,7 @@ data class Portal(
             ctx.globalAlpha = 1.0
         }
 
-        val octantSlots: List<Pair<Octant, ResonatorSlot>> = resoSlots.filter {
+        val octantSlots: List<Pair<Octant, ResonatorSlot>> = slots.filter {
             it.value.owner != null && it.value.resonator != null
         }.toList()
         octantSlots.map { octantSlot ->
@@ -556,8 +551,8 @@ data class Portal(
             (0..100).flatMap { health ->
                 val lw = Dim.portalLineWidth
                 val r = Dim.portalRadius.toInt()
-                val w = (r * 2) + (2 * lw)
-                Faction.values().map { (it to health) to DrawUtil.renderBarImage(it.color, health, 5, w, lw) }
+                val w = (r * 2.0) + (2.0 * lw)
+                Faction.values().map { (it to health) to DrawUtil.renderBarImage(it.color, health, 5.0, w, lw) }
             }.toMap()
         } else {
             emptyMap()
@@ -582,8 +577,7 @@ data class Portal(
         const val MAX_HACKS = 4 //TODO implement multihacks
         private fun clipLevel(level: Int): Int = max(1, min(level, 8))
         fun create(location: Pos): Portal {
-            val slots: MutableMap<Octant, ResonatorSlot> =
-                Octant.values().map { it to ResonatorSlot.create() }.toMap().toMutableMap()
+            val slots: Slots = Octant.values().map { it to ResonatorSlot.create() }.toMap().toMutableMap()
             val (heatMap, vectorField) = if (HtmlUtil.isRunningInBrowser()) {
                 val heatMap = PathUtil.generateHeatMap(location)
                 SoundUtil.playPortalCreationSound(location)

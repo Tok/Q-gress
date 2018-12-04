@@ -15,13 +15,11 @@ data class Line(val from: Pos, val to: Pos) {
     val fromY = from.y
     val toX = to.x
     val toY = to.y
-    val w = abs(fromX - toX)
-    val h = abs(fromY - toY)
-    fun key(): String = from.toString() + "<--->" + to.toString()
-    private fun calcXdiff(): Double = abs(from.x - to.x)
-    private fun calcYdiff(): Double = abs(from.y - to.y)
-    fun calcLength(): Double = sqrt((calcXdiff() * calcXdiff()) + (calcYdiff() * calcYdiff()))
-    fun calcTaxiLength(): Int = (calcXdiff() + calcYdiff()).toInt()
+    val key: String = from.toString() + "<--->" + to.toString()
+    val w = abs(from.x - to.x)
+    val h = abs(from.y - to.y)
+    fun length() = sqrt((w * w) + (h * h))
+    fun calcTaxiLength(): Int = (w + h).toInt()
     fun center(): Pos = Pos((from.x + to.x) / 2, (from.y + to.y) / 2)
 
     fun doesIntersect(other: Line): Boolean {

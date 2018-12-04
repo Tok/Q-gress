@@ -3,6 +3,7 @@ import agent.Faction
 import agent.NonFaction
 import config.Config
 import extension.Canvas
+import extension.Grid
 import extension.clear
 import org.khronos.webgl.Uint8Array
 import org.khronos.webgl.get
@@ -56,13 +57,14 @@ object World {
     lateinit var noiseMap: Array<DoubleArray>
     lateinit var noiseImage: ImageData
     var shadowStreetMap: ImageData? = null
-    lateinit var grid: Map<Pos, Cell>
 
-    fun passableCells(): Map<Pos, Cell> = grid.filter { it.value.isPassable }
-    private fun wellPassableCells(): Map<Pos, Cell> = grid.filter { it.value.isPassableInAllDirections() }
-    private fun passableOnScreen(): Map<Pos, Cell> = wellPassableCells().filterNot { it.key.isOffGrid() }
+    lateinit var grid: Grid
 
-    fun passableInActionArea(): Map<Pos, Cell> = passableOnScreen()
+    fun passableCells(): Grid = grid.filter { it.value.isPassable }
+    private fun wellPassableCells(): Grid = grid.filter { it.value.isPassableInAllDirections() }
+    private fun passableOnScreen(): Grid = wellPassableCells().filterNot { it.key.isOffGrid() }
+
+    fun passableInActionArea(): Grid = passableOnScreen()
         .filter { ActionLimitsDisplay.isNotBlocked(it.key.fromShadow()) }
 
     val allAgents: MutableSet<Agent> = mutableSetOf()

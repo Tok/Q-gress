@@ -18,7 +18,7 @@ data class Field private constructor(
     fun weakestPortal() = idSet.toList().sortedBy { it.calcHealth() }.last()
     fun strongestAnchors() = idSet.toList().sortedBy { it.calcHealth() }.take(2)
     fun findFurthestFrom(portal: Portal) =
-        idSet.toList().sortedBy { Line(portal.location, it.location).calcLength() }.first()
+        idSet.toList().sortedBy { Line(portal.location, it.location).length() }.first()
 
     fun isConnectedTo(portal: Portal) = idSet.contains(portal)
 
@@ -45,9 +45,9 @@ data class Field private constructor(
 
     fun calculateArea(): Int {
         //https://en.wikipedia.org/wiki/Heron%27s_formula
-        val a = Line(origin.location, primaryAnchor.location).calcLength()
-        val b = Line(origin.location, secondaryAnchor.location).calcLength()
-        val c = Line(primaryAnchor.location, secondaryAnchor.location).calcLength()
+        val a = Line(origin.location, primaryAnchor.location).length()
+        val b = Line(origin.location, secondaryAnchor.location).length()
+        val c = Line(primaryAnchor.location, secondaryAnchor.location).length()
         val s = (a + b + c) / 2 //semiperimeter
         val area = sqrt(s * (s - a) * (s - b) * (s - c)).toInt()
         return max(1, area / 100) //FIXME

@@ -7,17 +7,18 @@ import config.Dim
 import config.Time
 import extension.Canvas
 import extension.Ctx
+import extension.Grid
+import extension.VectorField
 import portal.Portal
 import system.display.VectorFields
 import system.display.loading.Loading
 import util.*
-import util.data.Cell
 import util.data.Circle
 import util.data.Complex
 import util.data.Pos
 
 data class NonFaction(var pos: Pos, val speed: Double, val size: AgentSize,
-                      var destination: Pos, var vectorField: Map<Pos, Complex>,
+                      var destination: Pos, var vectors: VectorField,
                       var busyUntil: Int) {
     private val swarmTendency = 0.02
     private val swarmChance = swarmTendency - (swarmTendency * 0.5 * size.offset)
@@ -61,7 +62,7 @@ data class NonFaction(var pos: Pos, val speed: Double, val size: AgentSize,
                     Complex(pos.x, pos.y)
                 }
             } else {
-                vectorField[pos.toShadow()] ?: Complex.ZERO
+                vectors[pos.toShadow()] ?: Complex.ZERO
             }
             velocity = MovementUtil.move(velocity, force, speed)
             this.pos = Pos(pos.x + velocity.re, pos.y + velocity.im)
@@ -90,19 +91,19 @@ data class NonFaction(var pos: Pos, val speed: Double, val size: AgentSize,
 
     private fun moveToRandomOffscreenDestination() {
         val destination = Util.shuffle(DESTINATIONS).first()
-        this.vectorField = getOrCreateVectorField(destination)
+        this.vectors = getOrCreateVectorField(destination)
         this.destination = destination
     }
 
     private fun moveToFarPortal() {
         val portal = findFarPortal(pos)
-        this.vectorField = portal.vectorField
+        this.vectors = portal.vectors
         this.destination = portal.location
     }
 
     private fun moveToRandomPortal() {
         val randomTarget: Portal = World.allPortals[(Util.random() * (World.allPortals.size - 1)).toInt()]
-        this.vectorField = randomTarget.vectorField
+        this.vectors = randomTarget.vectors
         this.destination = randomTarget.location
     }
 
@@ -136,10 +137,10 @@ data class NonFaction(var pos: Pos, val speed: Double, val size: AgentSize,
             NonFaction.getOrCreateVectorField(it)
         }
 
-        private val fields = mutableMapOf<Pos, Map<Pos, Complex>>()
+        private val fields = mutableMapOf<Pos, VectorField>()
         fun offscreenCount(): Int = fields.count()
         fun offscreenTotal(): Int = OFFSCREEN.count()
-        fun getOrCreateVectorField(destination: Pos): Map<Pos, Complex> {
+        fun getOrCreateVectorField(destination: Pos): VectorField {
             val maybeField = fields[destination]
             return if (maybeField != null && maybeField.isNotEmpty()) {
                 maybeField
@@ -178,7 +179,7 @@ data class NonFaction(var pos: Pos, val speed: Double, val size: AgentSize,
                     it.pos.distanceTo(pos)
                 } ?: throw IllegalStateException("Unable to find nearest to $pos")
 
-        fun create(grid: Map<Pos, Cell>): NonFaction {
+        fun create(grid: Grid): NonFaction {
             val position = Pos.createRandomPassable(grid)
             val size = AgentSize.createRandom()
             val speed = Skills.randomNpcSpeed()
@@ -188,7 +189,7 @@ data class NonFaction(var pos: Pos, val speed: Double, val size: AgentSize,
                 NonFaction(position, speed, size, destination, vectorField, World.tick)
             } else { //move to random portal
                 val portal = World.allPortals[(Util.random() * (World.allPortals.size - 1)).toInt()]
-                NonFaction(position, speed, size, portal.location, portal.vectorField, World.tick)
+                NonFaction(position, speed, size, portal.location, portal.vectors, World.tick)
             }
             SoundUtil.playNpcCreationSound(newNonFaction)
             DrawUtil.drawNonFaction(newNonFaction)

@@ -127,23 +127,23 @@ object DrawUtil {
         ctx.globalAlpha = 1.0
     }
 
-    fun renderBarImage(color: String, health: Int, h: Int, w: Int, lineWidth: Int): Canvas {
+    fun renderBarImage(color: String, health: Int, h: Double, w: Double, lineWidth: Int): Canvas {
         val pWidth = health * w / 100
-        return HtmlUtil.preRender(w, h, fun(ctx: Ctx) {
+        return HtmlUtil.preRender(w.toInt(), h.toInt(), fun(ctx: Ctx) {
             if (color != Colors.white) {
                 val path = Path2D()
                 path.moveTo(0.0, 0.0)
-                path.lineTo(w.toDouble(), 0.0)
-                path.lineTo(w.toDouble(), h.toDouble())
-                path.lineTo(0.0, h.toDouble())
+                path.lineTo(w, 0.0)
+                path.lineTo(w, h)
+                path.lineTo(0.0, h)
                 path.lineTo(0.0, 0.0)
                 path.closePath()
                 DrawUtil.drawPath(ctx, path, Colors.black, lineWidth.toDouble())
                 val fillPath = Path2D()
                 fillPath.moveTo(0.0, 0.0)
-                fillPath.lineTo(pWidth.toDouble(), 0.0)
-                fillPath.lineTo(pWidth.toDouble(), h.toDouble())
-                fillPath.lineTo(0.0, h.toDouble())
+                fillPath.lineTo(pWidth, 0.0)
+                fillPath.lineTo(pWidth, h)
+                fillPath.lineTo(0.0, h)
                 fillPath.lineTo(0.0, 0.0)
                 fillPath.closePath()
                 DrawUtil.drawPath(ctx, fillPath, Colors.black, lineWidth.toDouble(), color)
@@ -153,12 +153,16 @@ object DrawUtil {
 
     fun drawRect(ctx: Ctx, rect: Line, fill: String, stroke: String, lineWidth: Double) {
         ctx.fillStyle = fill
-        ctx.fillRect(rect.fromX, rect.fromY, rect.w, rect.h)
+        with(rect) {
+            ctx.fillRect(fromX, fromY, toY, -toX) //argument switch
+        }
         ctx.fill()
         ctx.strokeStyle = stroke
         ctx.lineWidth = lineWidth
         ctx.beginPath()
-        ctx.strokeRect(rect.fromX, rect.fromY, rect.w, rect.h)
+        with(rect) {
+            ctx.strokeRect(fromX, fromY, toY, -toX) //argument switch
+        }
         ctx.closePath()
         ctx.stroke()
     }
