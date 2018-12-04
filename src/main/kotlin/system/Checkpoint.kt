@@ -7,7 +7,6 @@ data class Checkpoint(val enlMu: Int, val resMu: Int, val isCycleEnd: Boolean) {
     fun mu(faction: Faction) = when (faction) {
         Faction.ENL -> enlMu
         Faction.RES -> resMu
-        Faction.NONE -> 0
     }
 
     companion object {

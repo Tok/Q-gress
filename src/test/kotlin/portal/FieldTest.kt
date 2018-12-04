@@ -62,13 +62,4 @@ class FieldTest {
             Field.create(origin, secondary, secondary, linker)
         }
     }
-
-    @Test
-    fun fieldMustHaveFaction() = with(Factory) {
-        val (origin, primary, secondary) = portalTriple()
-        val linker = agent().copy(faction = Faction.NONE)
-        assertFailsWith(IllegalStateException::class) {
-            Field.create(origin, primary, secondary, linker)
-        }
-    }
 }

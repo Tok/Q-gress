@@ -42,15 +42,6 @@ class LinkTest {
     }
 
     @Test
-    fun linkMustHaveFaction() = with(Factory) {
-        val (origin, destination) = portalPair()
-        val linker = linker().copy(faction = Faction.NONE)
-        assertFailsWith(IllegalStateException::class) {
-            Link.create(origin, destination, linker)
-        }
-    }
-
-    @Test
     fun linkConnectionToOrigin() = with(Factory) {
         val (origin, destination) = portalPair()
         val link = Link.create(origin, destination, linker())

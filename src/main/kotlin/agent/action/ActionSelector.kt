@@ -11,12 +11,12 @@ import kotlin.browser.window
 
 object ActionSelector {
     fun doSomethingElse(agent: Agent): Agent {
-        val portalFaction = agent.actionPortal.owner?.faction ?: Faction.NONE
+        val portalFaction = agent.actionPortal.owner?.faction
         return when {
             !agent.isAtActionPortal() -> doAnywhereAction(agent)
-            portalFaction == Faction.NONE -> doNeutralPortalAction(agent)
             portalFaction == agent.faction -> doFriendlyPortalAction(agent)
-            else -> doEnemyPortalAction(agent)
+            portalFaction == agent.faction.enemy() -> doEnemyPortalAction(agent)
+            else -> doNeutralPortalAction(agent)
         }
     }
 

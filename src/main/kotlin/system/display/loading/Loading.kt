@@ -1,7 +1,6 @@
 package system.display.loading
 
 import World
-import agent.Faction
 import agent.NonFaction
 import config.Colors
 import config.Config
@@ -31,7 +30,7 @@ abstract class Loading {
             val npcH = 8
             clearUiLine(vecY - vecH - 1, vecH + npcH + 2)
             VectorBar.draw(vecX, vecY, vecH, vecCount, vecTot)
-            NpcBar.draw(vecX, npcY, npcH, World.countNonFaction(), Config.maxFor(Faction.NONE))
+            NpcBar.draw(vecX, npcY, npcH, World.countNonFaction(), Config.maxFor())
         }
     }
 }

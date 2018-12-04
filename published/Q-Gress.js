@@ -32,7 +32,6 @@
   var numberToInt = Kotlin.numberToInt;
   var first = Kotlin.kotlin.collections.first_2p1efm$;
   var distinct = Kotlin.kotlin.collections.distinct_7wnvza$;
-  var IllegalStateException_init = Kotlin.kotlin.IllegalStateException_init_pdl1vj$;
   var filterNotNull = Kotlin.kotlin.collections.filterNotNull_m3lr2h$;
   var toString = Kotlin.toString;
   var hashCode = Kotlin.hashCode;
@@ -40,6 +39,7 @@
   var getValue = Kotlin.kotlin.collections.getValue_t9ocha$;
   var Enum = Kotlin.kotlin.Enum;
   var throwISE = Kotlin.throwISE;
+  var IllegalStateException_init = Kotlin.kotlin.IllegalStateException_init_pdl1vj$;
   var eachCount = Kotlin.kotlin.collections.eachCount_kji7v9$;
   var flatten = Kotlin.kotlin.collections.flatten_u0ad8z$;
   var firstOrNull = Kotlin.kotlin.collections.firstOrNull_2p1efm$;
@@ -252,7 +252,7 @@
       tmp$_4 = $receiver_1.iterator();
       while (tmp$_4.hasNext()) {
         var item_1 = tmp$_4.next();
-        destination_1.add_11rb$(to(item_1, this.drawTemplate_0(item_1, Faction$NONE_getInstance())));
+        destination_1.add_11rb$(to(item_1, this.drawTemplate_0(item_1)));
       }
       tmp$_3 = toMap(destination_1);
     }
@@ -263,20 +263,16 @@
   ActionItem$Companion.prototype.values = function () {
     return listOf([this.MOVE, this.WAIT, this.RECHARGE, this.RECRUIT, this.EXPLORE, this.RECYCLE, this.HACK, this.GLYPH, this.ATTACK, this.DEPLOY, this.CAPTURE, this.LINK]);
   };
-  ActionItem$Companion.prototype.getIcon_5bvev3$ = function (item, faction) {
+  ActionItem$Companion.prototype.getIcon_n5tov4$ = function (item, faction) {
     if (faction === void 0)
-      faction = Faction$NONE_getInstance();
+      faction = null;
     var tmp$, tmp$_0, tmp$_1, tmp$_2;
-    switch (faction.name) {
-      case 'ENL':
-        tmp$_2 = (tmp$ = this.enlImages_0.get_11rb$(item)) != null ? tmp$ : ensureNotNull(this.enlImages_0.get_11rb$(this.WAIT));
-        break;
-      case 'RES':
-        tmp$_2 = (tmp$_0 = this.resImages_0.get_11rb$(item)) != null ? tmp$_0 : ensureNotNull(this.resImages_0.get_11rb$(this.WAIT));
-        break;
-      default:tmp$_2 = (tmp$_1 = this.nonImages_0.get_11rb$(item)) != null ? tmp$_1 : ensureNotNull(this.nonImages_0.get_11rb$(this.WAIT));
-        break;
-    }
+    if (equals(faction, Faction$ENL_getInstance()))
+      tmp$_2 = (tmp$ = this.enlImages_0.get_11rb$(item)) != null ? tmp$ : ensureNotNull(this.enlImages_0.get_11rb$(this.WAIT));
+    else if (equals(faction, Faction$RES_getInstance()))
+      tmp$_2 = (tmp$_0 = this.resImages_0.get_11rb$(item)) != null ? tmp$_0 : ensureNotNull(this.resImages_0.get_11rb$(this.WAIT));
+    else
+      tmp$_2 = (tmp$_1 = this.nonImages_0.get_11rb$(item)) != null ? tmp$_1 : ensureNotNull(this.nonImages_0.get_11rb$(this.WAIT));
     return tmp$_2;
   };
   function ActionItem$Companion$drawTemplate$drawAgentLine(closure$stroke) {
@@ -289,16 +285,16 @@
       DrawUtil_getInstance().drawCircle_3kie0f$(ctx, circle, closure$stroke, 1.0);
     };
   }
-  function ActionItem$Companion$drawTemplate$lambda(closure$rr, closure$r, closure$stroke, closure$lw, closure$faction, closure$actionItem, closure$drawAgentCircle, this$ActionItem$, closure$w, closure$h, closure$drawAgentLine) {
+  function ActionItem$Companion$drawTemplate$lambda(closure$rr, closure$r, closure$stroke, closure$lw, closure$faction, closure$item, closure$drawAgentCircle, this$ActionItem$, closure$w, closure$h, closure$drawAgentLine) {
     return function (ctx) {
-      var tmp$;
+      var tmp$, tmp$_0;
       var pos = Pos_init(closure$rr, closure$rr);
       var circle = new Circle(pos, closure$r + 1);
-      DrawUtil_getInstance().drawCircle_3kie0f$(ctx, circle, closure$stroke, closure$lw, closure$faction.color);
-      tmp$ = closure$actionItem;
-      if (equals(tmp$, this$ActionItem$.MOVE))
+      DrawUtil_getInstance().drawCircle_3kie0f$(ctx, circle, closure$stroke, closure$lw, (tmp$ = closure$faction != null ? closure$faction.color : null) != null ? tmp$ : Colors_getInstance().white);
+      tmp$_0 = closure$item;
+      if (equals(tmp$_0, this$ActionItem$.MOVE))
         closure$drawAgentCircle(ctx, new Circle(pos, closure$rr - 2.0));
-      else if (equals(tmp$, this$ActionItem$.EXPLORE)) {
+      else if (equals(tmp$_0, this$ActionItem$.EXPLORE)) {
         var off = 2;
         closure$drawAgentLine(ctx, new Line(Pos_init(off, off), Pos_init(closure$w - off | 0, closure$h - off | 0)));
         closure$drawAgentLine(ctx, new Line(Pos_init(off, closure$h - off | 0), Pos_init(closure$w - off | 0, off)));
@@ -306,42 +302,44 @@
         closure$drawAgentLine(ctx, new Line(Pos_init(0, closure$rr), Pos_init(closure$w, closure$rr)));
         closure$drawAgentCircle(ctx, new Circle(pos, closure$rr - 2.0));
       }
-       else if (equals(tmp$, this$ActionItem$.RECRUIT)) {
+       else if (equals(tmp$_0, this$ActionItem$.RECRUIT)) {
         closure$drawAgentLine(ctx, new Line(Pos_init(closure$rr, 0), Pos_init(closure$rr, closure$h)));
         closure$drawAgentLine(ctx, new Line(Pos_init(0, closure$rr), Pos_init(closure$w, closure$rr)));
       }
-       else if (equals(tmp$, this$ActionItem$.ATTACK))
+       else if (equals(tmp$_0, this$ActionItem$.ATTACK))
         closure$drawAgentLine(ctx, new Line(Pos_init(closure$rr, 0), Pos_init(closure$rr, closure$h)));
-      else if (equals(tmp$, this$ActionItem$.LINK))
+      else if (equals(tmp$_0, this$ActionItem$.LINK))
         closure$drawAgentLine(ctx, new Line(Pos_init(0, closure$rr), Pos_init(closure$w, closure$rr)));
-      else if (equals(tmp$, this$ActionItem$.DEPLOY)) {
+      else if (equals(tmp$_0, this$ActionItem$.DEPLOY)) {
         closure$drawAgentLine(ctx, new Line(Pos_init(0, closure$rr - 1 | 0), Pos_init(closure$w, closure$rr - 1 | 0)));
         closure$drawAgentLine(ctx, new Line(Pos_init(0, closure$rr + 1 | 0), Pos_init(closure$w, closure$rr + 1 | 0)));
       }
-       else if (equals(tmp$, this$ActionItem$.CAPTURE)) {
+       else if (equals(tmp$_0, this$ActionItem$.CAPTURE)) {
         closure$drawAgentLine(ctx, new Line(Pos_init(closure$rr, 0), Pos_init(closure$rr, closure$h)));
         closure$drawAgentLine(ctx, new Line(Pos_init(0, closure$rr - 1 | 0), Pos_init(closure$w, closure$rr - 1 | 0)));
         closure$drawAgentLine(ctx, new Line(Pos_init(0, closure$rr + 1 | 0), Pos_init(closure$w, closure$rr + 1 | 0)));
       }
-       else if (equals(tmp$, this$ActionItem$.HACK))
+       else if (equals(tmp$_0, this$ActionItem$.HACK))
         closure$drawAgentCircle(ctx, new Circle(pos, closure$rr - 4.0));
-      else if (equals(tmp$, this$ActionItem$.GLYPH))
+      else if (equals(tmp$_0, this$ActionItem$.GLYPH))
         closure$drawAgentCircle(ctx, new Circle(pos, closure$rr - 3.0));
-      else if (equals(tmp$, this$ActionItem$.RECHARGE)) {
+      else if (equals(tmp$_0, this$ActionItem$.RECHARGE)) {
         var off_0 = 2;
         closure$drawAgentLine(ctx, new Line(Pos_init(off_0, closure$h - off_0 | 0), Pos_init(closure$w - off_0 | 0, off_0)));
         closure$drawAgentCircle(ctx, new Circle(pos, closure$rr - 2.0));
       }
-       else if (equals(tmp$, this$ActionItem$.RECYCLE)) {
+       else if (equals(tmp$_0, this$ActionItem$.RECYCLE)) {
         var off_1 = 2;
         closure$drawAgentLine(ctx, new Line(Pos_init(off_1, off_1), Pos_init(closure$w - off_1 | 0, closure$h - off_1 | 0)));
         closure$drawAgentCircle(ctx, new Circle(pos, closure$rr - 2.0));
       }
        else
-        equals(tmp$, this$ActionItem$.WAIT);
+        equals(tmp$_0, this$ActionItem$.WAIT);
     };
   }
-  ActionItem$Companion.prototype.drawTemplate_0 = function (actionItem, faction) {
+  ActionItem$Companion.prototype.drawTemplate_0 = function (item, faction) {
+    if (faction === void 0)
+      faction = null;
     if (HtmlUtil_getInstance().isNotRunningInBrowser())
       return null;
     var stroke = Colors_getInstance().black;
@@ -352,7 +350,7 @@
     var h = w;
     var drawAgentLine = ActionItem$Companion$drawTemplate$drawAgentLine(stroke);
     var drawAgentCircle = ActionItem$Companion$drawTemplate$drawAgentCircle(stroke);
-    return HtmlUtil_getInstance().preRender_yb5akz$(w, h, ActionItem$Companion$drawTemplate$lambda(rr, r, stroke, lw, faction, actionItem, drawAgentCircle, this, w, h, drawAgentLine));
+    return HtmlUtil_getInstance().preRender_yb5akz$(w, h, ActionItem$Companion$drawTemplate$lambda(rr, r, stroke, lw, faction, item, drawAgentCircle, this, w, h, drawAgentLine));
   };
   ActionItem$Companion.$metadata$ = {
     kind: Kind_OBJECT,
@@ -400,17 +398,17 @@
     ActionSelector_instance = this;
   }
   ActionSelector.prototype.doSomethingElse_912u9o$ = function (agent) {
-    var tmp$, tmp$_0, tmp$_1;
-    var portalFaction = (tmp$_0 = (tmp$ = agent.actionPortal.owner) != null ? tmp$.faction : null) != null ? tmp$_0 : Faction$NONE_getInstance();
+    var tmp$, tmp$_0;
+    var portalFaction = (tmp$ = agent.actionPortal.owner) != null ? tmp$.faction : null;
     if (!agent.isAtActionPortal())
-      tmp$_1 = this.doAnywhereAction_0(agent);
-    else if (portalFaction === Faction$NONE_getInstance())
-      tmp$_1 = this.doNeutralPortalAction_0(agent);
-    else if (portalFaction === agent.faction)
-      tmp$_1 = this.doFriendlyPortalAction_0(agent);
+      tmp$_0 = this.doAnywhereAction_0(agent);
+    else if (equals(portalFaction, agent.faction))
+      tmp$_0 = this.doFriendlyPortalAction_0(agent);
+    else if (equals(portalFaction, agent.faction.enemy()))
+      tmp$_0 = this.doEnemyPortalAction_0(agent);
     else
-      tmp$_1 = this.doEnemyPortalAction_0(agent);
-    return tmp$_1;
+      tmp$_0 = this.doNeutralPortalAction_0(agent);
+    return tmp$_0;
   };
   ActionSelector.prototype.q_aafct0$ = function (faction, value) {
     var tmp$;
@@ -1225,7 +1223,8 @@
         case 'RES':
           tmp$ = Agent$Companion_getInstance().createSmurf_gsu86n$(World_getInstance().grid);
           break;
-        default:throw IllegalStateException_init(agent.toString() + ' is ' + agent.faction + ' NPC.');
+        default:tmp$ = Kotlin.noWhenBranchMatched();
+          break;
       }
       var newAgent = tmp$;
       Com_getInstance().addMessage_61zpoe$(newAgent.toString() + ' has completed the training.');
@@ -1639,7 +1638,7 @@
   Agent.prototype.draw_f69bme$ = function (ctx) {
     if (HtmlUtil_getInstance().isNotRunningInBrowser())
       return;
-    var image = ActionItem$Companion_getInstance().getIcon_5bvev3$(this.action.item, this.faction);
+    var image = ActionItem$Companion_getInstance().getIcon_n5tov4$(this.action.item, this.faction);
     ctx.drawImage(image, this.pos.x, this.pos.y);
     var xmBar = Agent$Companion_getInstance().getXmBarImage_0(this.faction, this.xmBarPercent_0());
     ctx.drawImage(xmBar, this.pos.x, this.pos.y - 3);
@@ -1933,15 +1932,9 @@
   function Faction_initFields() {
     Faction_initFields = function () {
     };
-    Faction$NONE_instance = new Faction('NONE', 0, 'NONE', 'None', '#FFFFFF', 'rgba(255, 255, 255, ');
-    Faction$ENL_instance = new Faction('ENL', 1, 'ENL', 'Frog', '#03DC03', 'rgba(3, 220, 3, ');
-    Faction$RES_instance = new Faction('RES', 2, 'RES', 'Smurf', '#0088FF', 'rgba(0, 136, 255, ');
+    Faction$ENL_instance = new Faction('ENL', 0, 'ENL', 'Frog', '#03DC03', 'rgba(3, 220, 3, ');
+    Faction$RES_instance = new Faction('RES', 1, 'RES', 'Smurf', '#0088FF', 'rgba(0, 136, 255, ');
     Faction$Companion_getInstance();
-  }
-  var Faction$NONE_instance;
-  function Faction$NONE_getInstance() {
-    Faction_initFields();
-    return Faction$NONE_instance;
   }
   var Faction$ENL_instance;
   function Faction$ENL_getInstance() {
@@ -1962,7 +1955,7 @@
         return Faction$RES_getInstance();
       case 'RES':
         return Faction$ENL_getInstance();
-      default:return Faction$NONE_getInstance();
+      default:return Kotlin.noWhenBranchMatched();
     }
   };
   function Faction$Companion() {
@@ -1974,8 +1967,6 @@
         return Faction$RES_getInstance();
       case 'ENL':
         return Faction$ENL_getInstance();
-      case 'NONE':
-        return Faction$NONE_getInstance();
       default:return null;
     }
   };
@@ -2004,13 +1995,11 @@
     interfaces: [Enum]
   };
   function Faction$values() {
-    return [Faction$NONE_getInstance(), Faction$ENL_getInstance(), Faction$RES_getInstance()];
+    return [Faction$ENL_getInstance(), Faction$RES_getInstance()];
   }
   Faction.values = Faction$values;
   function Faction$valueOf(name) {
     switch (name) {
-      case 'NONE':
-        return Faction$NONE_getInstance();
       case 'ENL':
         return Faction$ENL_getInstance();
       case 'RES':
@@ -3010,17 +2999,17 @@
   };
   function QActions() {
     QActions_instance = this;
-    this.MOVE_ELSEWHERE = new QValue('move', 0.01, 'move elsewhere', ActionItem$Companion_getInstance().getIcon_5bvev3$(ActionItem$Companion_getInstance().MOVE));
-    this.RECRUIT = new QValue('recruit', 5.0E-4, 'recruit agents', ActionItem$Companion_getInstance().getIcon_5bvev3$(ActionItem$Companion_getInstance().RECRUIT));
-    this.EXPLORE = new QValue('explore', 2.0E-4, 'explore portals', ActionItem$Companion_getInstance().getIcon_5bvev3$(ActionItem$Companion_getInstance().EXPLORE));
-    this.RECYCLE = new QValue('recycle', 1.0, 'recycle items', ActionItem$Companion_getInstance().getIcon_5bvev3$(ActionItem$Companion_getInstance().RECYCLE));
-    this.RECHARGE = new QValue('recharge', 1.0, 'recharge portals', ActionItem$Companion_getInstance().getIcon_5bvev3$(ActionItem$Companion_getInstance().RECHARGE));
-    this.HACK = new QValue('hack', 1.0, 'hack portal', ActionItem$Companion_getInstance().getIcon_5bvev3$(ActionItem$Companion_getInstance().HACK));
-    this.GLYPH = new QValue('glyph', 1.0, 'glyph portal', ActionItem$Companion_getInstance().getIcon_5bvev3$(ActionItem$Companion_getInstance().GLYPH));
-    this.DEPLOY = new QValue('deploy', 1.0, 'deploy portal', ActionItem$Companion_getInstance().getIcon_5bvev3$(ActionItem$Companion_getInstance().DEPLOY));
-    this.CAPTURE = new QValue('capture', 1.0, 'capture portal', ActionItem$Companion_getInstance().getIcon_5bvev3$(ActionItem$Companion_getInstance().CAPTURE));
-    this.LINK = new QValue('link', 1.0, 'create link', ActionItem$Companion_getInstance().getIcon_5bvev3$(ActionItem$Companion_getInstance().LINK));
-    this.ATTACK = new QValue('attack', 1.0, 'attack portals', ActionItem$Companion_getInstance().getIcon_5bvev3$(ActionItem$Companion_getInstance().ATTACK));
+    this.MOVE_ELSEWHERE = new QValue('move', 0.01, 'move elsewhere', ActionItem$Companion_getInstance().getIcon_n5tov4$(ActionItem$Companion_getInstance().MOVE));
+    this.RECRUIT = new QValue('recruit', 5.0E-4, 'recruit agents', ActionItem$Companion_getInstance().getIcon_n5tov4$(ActionItem$Companion_getInstance().RECRUIT));
+    this.EXPLORE = new QValue('explore', 2.0E-4, 'explore portals', ActionItem$Companion_getInstance().getIcon_n5tov4$(ActionItem$Companion_getInstance().EXPLORE));
+    this.RECYCLE = new QValue('recycle', 1.0, 'recycle items', ActionItem$Companion_getInstance().getIcon_n5tov4$(ActionItem$Companion_getInstance().RECYCLE));
+    this.RECHARGE = new QValue('recharge', 1.0, 'recharge portals', ActionItem$Companion_getInstance().getIcon_n5tov4$(ActionItem$Companion_getInstance().RECHARGE));
+    this.HACK = new QValue('hack', 1.0, 'hack portal', ActionItem$Companion_getInstance().getIcon_n5tov4$(ActionItem$Companion_getInstance().HACK));
+    this.GLYPH = new QValue('glyph', 1.0, 'glyph portal', ActionItem$Companion_getInstance().getIcon_n5tov4$(ActionItem$Companion_getInstance().GLYPH));
+    this.DEPLOY = new QValue('deploy', 1.0, 'deploy portal', ActionItem$Companion_getInstance().getIcon_n5tov4$(ActionItem$Companion_getInstance().DEPLOY));
+    this.CAPTURE = new QValue('capture', 1.0, 'capture portal', ActionItem$Companion_getInstance().getIcon_n5tov4$(ActionItem$Companion_getInstance().CAPTURE));
+    this.LINK = new QValue('link', 1.0, 'create link', ActionItem$Companion_getInstance().getIcon_n5tov4$(ActionItem$Companion_getInstance().LINK));
+    this.ATTACK = new QValue('attack', 1.0, 'attack portals', ActionItem$Companion_getInstance().getIcon_n5tov4$(ActionItem$Companion_getInstance().ATTACK));
   }
   QActions.prototype.values = function () {
     return listOf([this.MOVE_ELSEWHERE, this.EXPLORE, this.RECRUIT, this.ATTACK, this.LINK, this.DEPLOY, this.CAPTURE, this.HACK, this.GLYPH, this.RECHARGE, this.RECYCLE]);
@@ -3227,14 +3216,15 @@
   Config.prototype.initialAp = function () {
     return HtmlUtil_getInstance().isQuickstart() ? 2000000 : 0;
   };
-  Config.prototype.maxFor_bip15f$ = function (faction) {
-    switch (faction.name) {
-      case 'ENL':
-        return 21;
-      case 'RES':
-        return 21;
-      default:return 300;
-    }
+  Config.prototype.maxFor_1xzpu4$ = function (faction) {
+    if (faction === void 0)
+      faction = null;
+    if (equals(faction, Faction$ENL_getInstance()))
+      return 21;
+    else if (equals(faction, Faction$RES_getInstance()))
+      return 21;
+    else
+      return 300;
   };
   Config.$metadata$ = {
     kind: Kind_OBJECT,
@@ -5642,10 +5632,6 @@
       var message = 'Check failed.';
       throw IllegalStateException_init(message.toString());
     }
-    if (!(owner.faction !== Faction$NONE_getInstance())) {
-      var message_0 = 'Check failed.';
-      throw IllegalStateException_init(message_0.toString());
-    }
     if (this.isPossible_rsiz9u$(origin, primaryAnchor, secondaryAnchor)) {
       return new Field(origin, primaryAnchor, secondaryAnchor, owner);
     }
@@ -5807,10 +5793,6 @@
     if (!!(origin != null ? origin.equals(destination) : null)) {
       var message = 'Check failed.';
       throw IllegalStateException_init(message.toString());
-    }
-    if (!(linker.faction !== Faction$NONE_getInstance())) {
-      var message_0 = 'Check failed.';
-      throw IllegalStateException_init(message_0.toString());
     }
     var newLink = new Link(origin, destination, linker);
     if (this.isNotExisting_4tp95w$(newLink)) {
@@ -6592,8 +6574,16 @@
       deployer.removeXm_za3lpa$(1000);
     }
   };
+  Portal.prototype.isOwnedByEnemy_912u9o$ = function (agent) {
+    var tmp$, tmp$_0;
+    return ((tmp$ = this.owner) != null ? tmp$.faction : null) != null && !equals((tmp$_0 = this.owner) != null ? tmp$_0.faction : null, agent.faction);
+  };
   var checkIndexOverflow = Kotlin.kotlin.collections.checkIndexOverflow_za3lpa$;
   Portal.prototype.deploy_en6fu0$ = function (deployer, resos, distance) {
+    if (!!this.isOwnedByEnemy_912u9o$(deployer)) {
+      var message = 'Check failed.';
+      throw IllegalStateException_init(message.toString());
+    }
     var isCapture = this.owner == null;
     if (isCapture) {
       this.owner = deployer;
@@ -6945,7 +6935,8 @@
       var y = this.location.y + octant.calcYOffset_za3lpa$(slot.distance);
       var lineToPortal = new Line(new Pos(x, y), this.location);
       var alpha = reso.calcHealthPercent();
-      drawResoLine(lineToPortal, resoLevel.getColor(), (tmp$_4 = (tmp$_3 = (tmp$_2 = this.owner) != null ? tmp$_2.faction : null) != null ? tmp$_3.color : null) != null ? tmp$_4 : Faction$NONE_getInstance().color, 1.0, alpha);
+      var color = (tmp$_4 = (tmp$_3 = (tmp$_2 = this.owner) != null ? tmp$_2.faction : null) != null ? tmp$_3.color : null) != null ? tmp$_4 : Colors_getInstance().white;
+      drawResoLine(lineToPortal, resoLevel.getColor(), color, 1.0, alpha);
       var resoCircle = new Circle(new Pos(x, y), Dim_getInstance().resoRadius);
       DrawUtil_getInstance().drawCircle_3kie0f$(ctx, resoCircle, Colors_getInstance().black, 2.0, resoLevel.getColor(), alpha);
       if (Styles_getInstance().isDrawResoLevels) {
@@ -6957,19 +6948,19 @@
   Portal.prototype.drawCenter_j4cg6b$ = function (ctx, isDrawHealthBar) {
     if (isDrawHealthBar === void 0)
       isDrawHealthBar = true;
-    var tmp$, tmp$_0, tmp$_1, tmp$_2, tmp$_3, tmp$_4, tmp$_5, tmp$_6;
+    var tmp$, tmp$_0, tmp$_1, tmp$_2, tmp$_3, tmp$_4;
     if (HtmlUtil_getInstance().isNotRunningInBrowser())
       return;
-    tmp$_1 = (tmp$_0 = (tmp$ = this.owner) != null ? tmp$.faction : null) != null ? tmp$_0 : Faction$NONE_getInstance();
-    tmp$_2 = this.getLevel();
-    var image = Portal$Companion_getInstance().getCenterImage_0(tmp$_1, tmp$_2);
+    tmp$_0 = (tmp$ = this.owner) != null ? tmp$.faction : null;
+    tmp$_1 = this.getLevel();
+    var image = Portal$Companion_getInstance().getCenterImage_0(tmp$_0, tmp$_1);
     var x = this.location.x - (image.width / 2 | 0);
     var y = this.location.y - (image.height / 2 | 0);
     ctx.drawImage(image, x, y);
     if (isDrawHealthBar) {
-      tmp$_5 = (tmp$_4 = (tmp$_3 = this.owner) != null ? tmp$_3.faction : null) != null ? tmp$_4 : Faction$NONE_getInstance();
-      tmp$_6 = this.calcHealth();
-      var healthBarImage = Portal$Companion_getInstance().getHealthBarImage_0(tmp$_5, tmp$_6);
+      tmp$_3 = (tmp$_2 = this.owner) != null ? tmp$_2.faction : null;
+      tmp$_4 = this.calcHealth();
+      var healthBarImage = Portal$Companion_getInstance().getHealthBarImage_0(tmp$_3, tmp$_4);
       ctx.drawImage(healthBarImage, x, y + image.height + 1);
     }
   };
@@ -7085,11 +7076,18 @@
     }
     return destination_0;
   };
+  var Map = Kotlin.kotlin.collections.Map;
   Portal$Companion.prototype.getCenterImage_0 = function (faction, level) {
-    return ensureNotNull(this.centerImages_0.get_11rb$(to(faction, level)));
+    var $receiver = this.centerImages_0;
+    var key = to(faction, level);
+    var tmp$;
+    return ensureNotNull((Kotlin.isType(tmp$ = $receiver, Map) ? tmp$ : throwCCE()).get_11rb$(key));
   };
   Portal$Companion.prototype.getHealthBarImage_0 = function (faction, health) {
-    return ensureNotNull(this.healthBarImages_0.get_11rb$(to(faction, health)));
+    var $receiver = this.healthBarImages_0;
+    var key = to(faction, health);
+    var tmp$;
+    return ensureNotNull((Kotlin.isType(tmp$ = $receiver, Map) ? tmp$ : throwCCE()).get_11rb$(key));
   };
   function Portal$Companion$renderPortalCenter$lambda(closure$r, closure$lw, closure$color, closure$level) {
     return function (ctx) {
@@ -7298,7 +7296,12 @@
   ResonatorSlot.prototype.isOwnedBy_912u9o$ = function (agent) {
     return equals(this.owner, agent);
   };
+  ResonatorSlot.prototype.isOwnedByEnemy_912u9o$ = function (agent) {
+    var tmp$, tmp$_0;
+    return ((tmp$ = this.owner) != null ? tmp$.faction : null) != null && !equals((tmp$_0 = this.owner) != null ? tmp$_0.faction : null, agent.faction);
+  };
   ResonatorSlot.prototype.deployReso_otfdig$ = function (deployer, reso, dist) {
+    var tmp$, tmp$_0, tmp$_1;
     if (!(dist >= Dim_getInstance().minDeploymentRange)) {
       var message = 'Check failed.';
       throw IllegalStateException_init(message.toString());
@@ -7307,9 +7310,13 @@
       var message_0 = 'Check failed.';
       throw IllegalStateException_init(message_0.toString());
     }
-    if (!(deployer.faction !== Faction$NONE_getInstance())) {
+    if (!!this.isOwnedByEnemy_912u9o$(deployer)) {
       var message_1 = 'Check failed.';
       throw IllegalStateException_init(message_1.toString());
+    }
+    if (!(((tmp$_1 = (tmp$_0 = (tmp$ = this.resonator) != null ? tmp$.level : null) != null ? tmp$_0.level : null) != null ? tmp$_1 : 0) < reso.level.level)) {
+      var message_2 = 'Check failed.';
+      throw IllegalStateException_init(message_2.toString());
     }
     this.owner = deployer;
     this.resonator = reso;
@@ -7581,8 +7588,6 @@
         return this.enlMu;
       case 'RES':
         return this.resMu;
-      case 'NONE':
-        return 0;
       default:return Kotlin.noWhenBranchMatched();
     }
   };
@@ -7638,6 +7643,9 @@
   }
   Com.prototype.messageCount = function () {
     return this.messages_0.size;
+  };
+  Com.prototype.clear = function () {
+    this.messages_0.clear();
   };
   Com.prototype.addMessage_61zpoe$ = function (message) {
     this.messages_0.add_11rb$(message);
@@ -8212,7 +8220,7 @@
     var npcH = 8;
     this.clearUiLine_vux9f0$(vecY - vecH - 1 | 0, vecH + npcH + 2 | 0);
     VectorBar_getInstance().draw_4qozqa$(vecX, vecY, vecH, vecCount, vecTot);
-    NpcBar_getInstance().draw_4qozqa$(vecX, npcY, npcH, World_getInstance().countNonFaction(), Config_getInstance().maxFor_bip15f$(Faction$NONE_getInstance()));
+    NpcBar_getInstance().draw_4qozqa$(vecX, npcY, npcH, World_getInstance().countNonFaction(), Config_getInstance().maxFor_1xzpu4$());
   };
   Loading$Companion.$metadata$ = {
     kind: Kind_OBJECT,
@@ -8766,7 +8774,7 @@
     DrawUtil_getInstance().strokeText_c31c8t$(World_getInstance().uiCtx(), pos, text, fill, Dim_getInstance().topAgentsFontSize, DrawUtil_getInstance().CODA, 3.0, Colors_getInstance().black, textAlign);
   };
   UiTable.prototype.addIcon_fxtw3c$ = function (pos, item) {
-    var image = ActionItem$Companion_getInstance().getIcon_5bvev3$(item);
+    var image = ActionItem$Companion_getInstance().getIcon_n5tov4$(item);
     World_getInstance().uiCtx().drawImage(image, pos.x, pos.y);
   };
   UiTable.$metadata$ = {
@@ -10911,7 +10919,7 @@
     }
     LoadingText_getInstance().draw_61zpoe$('Creating Non-Faction..');
     World_getInstance().allNonFaction.clear();
-    World_getInstance().createNonFaction_fzludj$(callback, Config_getInstance().maxFor_bip15f$(Faction$NONE_getInstance()));
+    World_getInstance().createNonFaction_fzludj$(callback, Config_getInstance().maxFor_1xzpu4$());
   };
   function HtmlUtil$createAgentsAndPortals$lambda(closure$callback, this$HtmlUtil) {
     return function () {
@@ -12537,9 +12545,6 @@
     get: AgentSize$Companion_getInstance
   });
   package$agent.AgentSize = AgentSize;
-  Object.defineProperty(Faction, 'NONE', {
-    get: Faction$NONE_getInstance
-  });
   Object.defineProperty(Faction, 'ENL', {
     get: Faction$ENL_getInstance
   });

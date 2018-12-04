@@ -1,11 +1,14 @@
 package system
 
 import config.Config
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class ComTest {
+
+    @BeforeTest fun clear() = Com.clear()
 
     @Test
     fun messageCount() {

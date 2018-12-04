@@ -23,10 +23,9 @@ import system.display.VectorFields
 import system.display.loading.Loading
 import system.display.loading.LoadingText
 import system.display.ui.ActionLimitsDisplay
-import util.data.Cell
-import util.data.Pos
 import util.data.GeoCoords
 import util.data.Line
+import util.data.Pos
 import kotlin.browser.document
 import kotlin.browser.window
 import kotlin.dom.addClass
@@ -213,8 +212,10 @@ object HtmlUtil {
         return div
     }
 
-    private fun createSliderDiv(id: String, qValues: List<QValue>, className: String,
-                                labelText: String, userFaction: Faction): HTMLDivElement {
+    private fun createSliderDiv(
+        id: String, qValues: List<QValue>, className: String,
+        labelText: String, userFaction: Faction
+    ): HTMLDivElement {
         val qDiv = document.createElement("div") as HTMLDivElement
         qDiv.id = id
         qDiv.addClass("qValues", className)
@@ -292,7 +293,8 @@ object HtmlUtil {
 
     private fun createQSliders(fact: Faction) {
         val actionSliderDiv = createSliderDiv("left-sliders", QActions.values(), "floatLeft", "Actions", fact)
-        val destinationSliderDiv = createSliderDiv("right-sliders", QDestinations.values(), "floatRight", "Destinations", fact)
+        val destinationSliderDiv =
+            createSliderDiv("right-sliders", QDestinations.values(), "floatRight", "Destinations", fact)
         val controlDiv = document.getElementById("top-controls") as HTMLDivElement
         controlDiv.append(actionSliderDiv)
         controlDiv.append(destinationSliderDiv)
@@ -395,7 +397,12 @@ object HtmlUtil {
     fun rightSliderWidth() = maybeWidth("right-sliders") ?: 213
     fun rightSliderHeight() = maybeHeight("right-sliders") ?: 145
 
-    private fun createButton(id: String, className: String, text: String, callback: ((Event) -> Unit)?): HTMLButtonElement {
+    private fun createButton(
+        id: String,
+        className: String,
+        text: String,
+        callback: ((Event) -> Unit)?
+    ): HTMLButtonElement {
         val button = document.createElement("BUTTON") as HTMLButtonElement
         button.id = id
         button.addClass(className)
@@ -478,7 +485,7 @@ object HtmlUtil {
 
         LoadingText.draw("Creating Non-Faction..")
         World.allNonFaction.clear()
-        World.createNonFaction(callback, Config.maxFor(Faction.NONE))
+        World.createNonFaction(callback, Config.maxFor())
     }
 
     private fun createAgentsAndPortals(callback: () -> Unit) = createPortals(fun() { createAgents(callback) })
@@ -486,26 +493,26 @@ object HtmlUtil {
     fun isShowSatelliteMap() = (document.getElementById("satCheckbox") as HTMLInputElement).checked
 
     private fun onMapload() =
-            fun(grid: Grid) {
-                World.grid = grid
-                if (World.grid.isEmpty()) {
-                    console.error("Grid is empty!")
+        fun(grid: Grid) {
+            World.grid = grid
+            if (World.grid.isEmpty()) {
+                console.error("Grid is empty!")
+            }
+            DrawUtil.drawGrid()
+            createAgentsAndPortals {
+                LoadingText.draw("Ready.")
+                DrawUtil.clearBackground()
+                if (World.userFaction == null) {
+                    chooseUserFaction(Faction.random())
                 }
-                DrawUtil.drawGrid()
-                createAgentsAndPortals {
-                    LoadingText.draw("Ready.")
-                    DrawUtil.clearBackground()
-                    if (World.userFaction == null) {
-                        chooseUserFaction(Faction.random())
-                    }
-                    createQSliders(World.userFaction!!)
-                    resetInterval()
-                    World.isReady = true
-                    if (isShowSatelliteMap()) {
-                        MapUtil.showSatelliteMap()
-                    }
+                createQSliders(World.userFaction!!)
+                resetInterval()
+                World.isReady = true
+                if (isShowSatelliteMap()) {
+                    MapUtil.showSatelliteMap()
                 }
             }
+        }
 
     private fun mapChangeHandler() {
         val center: Json = getCenterFromDropdown()
@@ -575,12 +582,15 @@ object HtmlUtil {
     }
 
     private fun getFactionFromUrl() =
-            Faction.fromString(url().searchParams.get("faction"))
-    private fun isQuickstartFromUrl() =
-            url().searchParams.get("quickstart")?.toBoolean() ?: false
+        Faction.fromString(url().searchParams.get("faction"))
 
-    private fun addParameters(url: String, faction: String, lng: String, lat: String,
-                              name: String, isQs: Boolean): String {
+    private fun isQuickstartFromUrl() =
+        url().searchParams.get("quickstart")?.toBoolean() ?: false
+
+    private fun addParameters(
+        url: String, faction: String, lng: String, lat: String,
+        name: String, isQs: Boolean
+    ): String {
         return "$url?faction=$faction&lng=$lng&lat=$lat&name=$name&quickstart=$isQs"
     }
 }

@@ -21,11 +21,6 @@ class FactionTest {
     }
 
     @Test
-    fun findNoEnemyForNpcFaction() {
-        assertEquals(NONE, NONE.enemy())
-    }
-
-    @Test
     fun friendlyFrogs() {
         assertFalse(ENL.isEnemy(ENL))
     }
@@ -33,13 +28,5 @@ class FactionTest {
     @Test
     fun friendlySmurfs() {
         assertFalse(RES.isEnemy(RES))
-    }
-
-    @Test
-    fun friendlyNpcs() {
-        assertFalse(ENL.isEnemy(NONE))
-        assertFalse(RES.isEnemy(NONE))
-        assertFalse(NONE.isEnemy(ENL))
-        assertFalse(NONE.isEnemy(RES))
     }
 }

@@ -10,6 +10,9 @@ import util.data.Pos
 object Com {
     private val messages: MutableList<String> = mutableListOf()
     fun messageCount() = messages.count()
+
+    fun clear() = messages.clear()
+
     fun addMessage(message: String) {
         messages.add(message)
         if (messages.size > Config.comMessageLimit) {

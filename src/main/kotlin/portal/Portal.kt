@@ -313,7 +313,10 @@ data class Portal(
         }
     }
 
+    fun isOwnedByEnemy(agent: Agent) = owner?.faction != null &&  owner?.faction != agent.faction
     fun deploy(deployer: Agent, resos: Map<Octant, Resonator>, distance: Int) {
+        check(!isOwnedByEnemy(deployer))
+
         val isCapture = owner == null
         if (isCapture) {
             owner = deployer
@@ -478,7 +481,8 @@ data class Portal(
 
             val lineToPortal = Line(Pos(x, y), location)
             val alpha = reso.calcHealthPercent().toDouble()
-            drawResoLine(lineToPortal, resoLevel.getColor(), owner?.faction?.color ?: Faction.NONE.color, 1.0, alpha)
+            val color = owner?.faction?.color ?: Colors.white
+            drawResoLine(lineToPortal, resoLevel.getColor(), color, 1.0, alpha)
 
             val resoCircle = Circle(Pos(x, y), Dim.resoRadius)
             DrawUtil.drawCircle(ctx, resoCircle, Colors.black, 2.0, resoLevel.getColor(), alpha)
@@ -490,12 +494,12 @@ data class Portal(
 
     fun drawCenter(ctx: Ctx, isDrawHealthBar: Boolean = true) {
         if (HtmlUtil.isNotRunningInBrowser()) return
-        val image = getCenterImage(owner?.faction ?: Faction.NONE, getLevel())
+        val image = getCenterImage(owner?.faction, getLevel())
         val x = location.x - (image.width / 2)
         val y = location.y - (image.height / 2)
         ctx.drawImage(image, x, y)
         if (isDrawHealthBar) {
-            val healthBarImage = getHealthBarImage(owner?.faction ?: Faction.NONE, calcHealth())
+            val healthBarImage = getHealthBarImage(owner?.faction, calcHealth())
             ctx.drawImage(healthBarImage, x, y + image.height + 1)
         }
     }
@@ -558,8 +562,8 @@ data class Portal(
             emptyMap()
         }
 
-        private fun getCenterImage(faction: Faction, level: PortalLevel) = centerImages[faction to level]!!
-        private fun getHealthBarImage(faction: Faction, health: Int) = healthBarImages[faction to health]!!
+        private fun getCenterImage(faction: Faction?, level: PortalLevel) = centerImages[faction to level]!!
+        private fun getHealthBarImage(faction: Faction?, health: Int) = healthBarImages[faction to health]!!
 
         fun renderPortalCenter(color: String, level: PortalLevel): Canvas {
             val lw = Dim.portalLineWidth

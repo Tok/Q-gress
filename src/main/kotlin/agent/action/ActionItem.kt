@@ -8,8 +8,8 @@ import extension.Ctx
 import util.DrawUtil
 import util.HtmlUtil
 import util.data.Circle
-import util.data.Pos
 import util.data.Line
+import util.data.Pos
 
 
 data class ActionItem(val text: String, val durationSeconds: Int, val qName: String) {
@@ -34,9 +34,9 @@ data class ActionItem(val text: String, val durationSeconds: Int, val qName: Str
         private val resImages = if (HtmlUtil.isRunningInBrowser())
             values().map { it to drawTemplate(it, Faction.RES) }.toMap() else emptyMap()
         private val nonImages = if (HtmlUtil.isRunningInBrowser())
-            values().map { it to drawTemplate(it, Faction.NONE) }.toMap() else emptyMap()
+            values().map { it to drawTemplate(it) }.toMap() else emptyMap()
 
-        fun getIcon(item: ActionItem, faction: Faction = Faction.NONE): Canvas {
+        fun getIcon(item: ActionItem, faction: Faction? = null): Canvas {
             return when (faction) {
                 Faction.ENL -> enlImages[item] ?: enlImages[WAIT]!!
                 Faction.RES -> resImages[item] ?: resImages[WAIT]!!
@@ -44,7 +44,7 @@ data class ActionItem(val text: String, val durationSeconds: Int, val qName: Str
             }
         }
 
-        private fun drawTemplate(actionItem: ActionItem, faction: Faction): Canvas? {
+        private fun drawTemplate(item: ActionItem, faction: Faction? = null): Canvas? {
             if (HtmlUtil.isNotRunningInBrowser()) return null
             val stroke = Colors.black
             val lw = Dim.agentLineWidth
@@ -57,8 +57,8 @@ data class ActionItem(val text: String, val durationSeconds: Int, val qName: Str
             return HtmlUtil.preRender(w, h, fun(ctx: Ctx) {
                 val pos = Pos(rr, rr)
                 val circle = Circle(pos, r.toDouble() + 1)
-                DrawUtil.drawCircle(ctx, circle, stroke, lw.toDouble(), faction.color)
-                when (actionItem) {
+                DrawUtil.drawCircle(ctx, circle, stroke, lw.toDouble(), faction?.color ?: Colors.white)
+                when (item) {
                     MOVE -> drawAgentCircle(ctx, Circle(pos, rr - 2.0))
                     EXPLORE -> {
                         val off = 2

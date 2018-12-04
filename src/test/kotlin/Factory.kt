@@ -11,6 +11,7 @@ import portal.PortalKey
 import portal.ResonatorSlot
 import util.data.Cell
 import util.data.Pos
+import portal.Octant
 
 object Factory {
     fun coords() = Pos(0, 0)
@@ -18,20 +19,29 @@ object Factory {
     fun grid() = mapOf(coords() to cell())
     fun frog() = Agent.createFrog(grid())
     fun smurf() = Agent.createSmurf(grid())
-    fun nonFactionAgent() = frog().copy(faction = Faction.NONE)
     fun agent() = frog()
+    fun agent(faction: Faction) = if (faction == Faction.ENL) frog() else smurf()
     fun linker() = agent()
     fun owner() = agent()
     fun deployer() = agent()
     fun portal() = Portal.createRandom()
+    fun portal(faction: Faction): Portal {
+        val portal = portal()
+        val agent = agent(faction)
+        portal.owner = agent
+        val reso = Resonator.create(agent, 1)
+        portal.slots[Octant.N]!!.deployReso(agent, reso, Dim.maxDeploymentRange.toInt())
+        return portal
+    }
     fun portalPair() = portal() to portal()
     fun portalTriple() = Triple(portal(), portal(), portal())
     fun link() = Link.create(portal(), portal(), linker())
     fun inventory() = Inventory.empty()
     fun portalKey() = PortalKey(portal(), owner())
-    fun xmpBurster() = XmpBurster.create(owner(), 8)
-    fun resonator() = Resonator.create(owner(), 8)
-    fun powerCube() = PowerCube.create(owner(), 8)
+    fun xmpBurster() = XmpBurster.create(owner(), 1)
+    fun resonator(owner: Agent) = Resonator.create(owner, 1)
+    fun resonator() = resonator(owner())
+    fun powerCube() = PowerCube.create(owner(), 1)
     fun slot() = ResonatorSlot.create()
     fun deployedSlot() = slot().deployReso(deployer(), resonator(), Dim.minDeploymentRange.toInt())
 }

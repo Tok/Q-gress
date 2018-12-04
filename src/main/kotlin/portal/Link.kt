@@ -2,7 +2,6 @@ package portal
 
 import World
 import agent.Agent
-import agent.Faction
 import config.Dim
 import extension.Ctx
 import util.Util
@@ -50,7 +49,6 @@ data class Link(val origin: Portal, val destination: Portal, val creator: Agent)
 
         fun create(origin: Portal, destination: Portal, linker: Agent): Link? {
             check(origin != destination)
-            check(linker.faction != Faction.NONE)
             val newLink = Link(origin, destination, linker)
             if (isNotExisting(newLink)) {
                 return newLink

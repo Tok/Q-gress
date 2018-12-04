@@ -21,7 +21,6 @@ object Recruiter : ConditionalAction {
             val newAgent = when (agent.faction) {
                 Faction.ENL -> Agent.createFrog(World.grid)
                 Faction.RES -> Agent.createSmurf(World.grid)
-                else -> throw IllegalStateException("$agent is ${agent.faction} NPC.")
             }
             Com.addMessage("$newAgent has completed the training.")
             World.allAgents.add(newAgent)

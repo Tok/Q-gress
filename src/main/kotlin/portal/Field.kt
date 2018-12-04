@@ -2,11 +2,10 @@ package portal
 
 import World
 import agent.Agent
-import agent.Faction
 import config.Styles
 import extension.Ctx
-import util.data.Pos
 import util.data.Line
+import util.data.Pos
 import kotlin.math.max
 import kotlin.math.sqrt
 
@@ -117,7 +116,6 @@ data class Field private constructor(
 
         fun create(origin: Portal, primaryAnchor: Portal, secondaryAnchor: Portal, owner: Agent): Field? {
             check(origin != primaryAnchor && origin != secondaryAnchor && primaryAnchor != secondaryAnchor)
-            check(owner.faction != Faction.NONE)
             if (isPossible(origin, primaryAnchor, secondaryAnchor)) {
                 return Field(origin, primaryAnchor, secondaryAnchor, owner)
             }

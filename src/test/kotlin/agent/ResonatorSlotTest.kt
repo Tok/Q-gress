@@ -24,13 +24,6 @@ class ResonatorSlotTest {
     }
 
     @Test
-    fun blockNonFactionDeployment() = with(Factory) {
-        assertFailsWith(IllegalStateException::class) {
-            slot().deployReso(nonFactionAgent(), resonator(), Dim.minDeploymentRange.toInt())
-        }
-    }
-
-    @Test
     fun checkResoClear() = with(Factory) {
         val deployer = deployer()
         val slot = slot()

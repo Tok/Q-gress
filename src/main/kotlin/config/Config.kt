@@ -21,7 +21,7 @@ object Config {
     fun initialAp() = if (HtmlUtil.isQuickstart()) 2000000 else 0
 
     private const val maxNonFaction = 300
-    fun maxFor(faction: Faction) = when (faction) {
+    fun maxFor(faction: Faction? = null) = when (faction) {
         Faction.ENL -> maxFrogs
         Faction.RES -> maxSmurfs
         else -> maxNonFaction
