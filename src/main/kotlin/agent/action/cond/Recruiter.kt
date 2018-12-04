@@ -23,7 +23,7 @@ object Recruiter : ConditionalAction {
                 Faction.RES -> Agent.createSmurf(World.grid)
                 else -> throw IllegalStateException("$agent is ${agent.faction} NPC.")
             }
-            Com.addMessage("$newAgent has completed the tutorial.")
+            Com.addMessage("$newAgent has completed the training.")
             World.allAgents.add(newAgent)
         }
         agent.destination = NonFaction.findNearestTo(agent.pos).pos

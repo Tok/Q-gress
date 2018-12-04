@@ -1228,7 +1228,7 @@
         default:throw IllegalStateException_init(agent.toString() + ' is ' + agent.faction + ' NPC.');
       }
       var newAgent = tmp$;
-      Com_getInstance().addMessage_61zpoe$(newAgent.toString() + ' has completed the tutorial.');
+      Com_getInstance().addMessage_61zpoe$(newAgent.toString() + ' has completed the training.');
       World_getInstance().allAgents.add_11rb$(newAgent);
     }
     agent.destination = NonFaction$Companion_getInstance().findNearestTo_mqsrs4$(agent.pos).pos;
@@ -6172,8 +6172,29 @@
     }
     return filterNotNull(destination);
   };
+  Portal.prototype.numberOfResosLeft_0 = function () {
+    var $receiver = this.slots;
+    var count$result;
+    count$break: do {
+      var tmp$;
+      if ($receiver.isEmpty()) {
+        count$result = 0;
+        break count$break;
+      }
+      var count = 0;
+      tmp$ = $receiver.entries.iterator();
+      while (tmp$.hasNext()) {
+        var element = tmp$.next();
+        if (element.value.resonator != null)
+          count = count + 1 | 0;
+      }
+      count$result = count;
+    }
+     while (false);
+    return count$result;
+  };
   Portal.prototype.isFullyDeployed_0 = function () {
-    return this.getAllResos_0().size === 8;
+    return this.numberOfResosLeft_0() === 8;
   };
   Portal.prototype.averageResoLevel_0 = function () {
     var resos = this.getAllResos_0();
@@ -6794,23 +6815,11 @@
   Portal.prototype.removeReso_j436sm$ = function (octant, destroyer) {
     var tmp$;
     (tmp$ = this.slots.get_11rb$(octant)) != null ? (tmp$.clear(), Unit) : null;
-    var $receiver = this.slots;
-    var destination = LinkedHashMap_init();
-    var tmp$_0;
-    tmp$_0 = $receiver.entries.iterator();
-    while (tmp$_0.hasNext()) {
-      var element = tmp$_0.next();
-      if (element.value.resonator != null) {
-        destination.put_xwzc9p$(element.key, element.value);
-      }
-    }
-    var numberOfResosLeft = destination.size;
-    if (numberOfResosLeft <= 0) {
+    var leftResos = this.numberOfResosLeft_0();
+    if (leftResos <= 0)
       this.destroy_4705j1$(destroyer);
-    }
-     else if (numberOfResosLeft <= 2) {
+    else if (leftResos <= 2)
       this.destroyAllLinksAndFields_0(destroyer);
-    }
   };
   Portal.prototype.findAllowedResoLevels_912u9o$ = function (deployer) {
     var tmp$, tmp$_0;
@@ -6818,22 +6827,30 @@
       var $receiver = ResonatorLevel$values();
       var destination = ArrayList_init($receiver.length);
       var tmp$_1;
-      for (tmp$_1 = 0; tmp$_1 !== $receiver.length; ++tmp$_1) {
+      loop_label: for (tmp$_1 = 0; tmp$_1 !== $receiver.length; ++tmp$_1) {
         var item = $receiver[tmp$_1];
         var tmp$_2 = destination.add_11rb$;
         var tmp$_3 = item.deployablePerPlayer;
         var $receiver_0 = this.slots;
-        var destination_0 = LinkedHashMap_init();
-        var tmp$_4;
-        tmp$_4 = $receiver_0.entries.iterator();
-        while (tmp$_4.hasNext()) {
-          var element = tmp$_4.next();
-          var tmp$_5, tmp$_6;
-          if (element.value.isOwnedBy_912u9o$(deployer) && ((tmp$_6 = (tmp$_5 = element.value.resonator) != null ? tmp$_5.level : null) != null ? tmp$_6.level : null) === item.level) {
-            destination_0.put_xwzc9p$(element.key, element.value);
+        var count$result;
+        count$break: do {
+          var tmp$_4;
+          if ($receiver_0.isEmpty()) {
+            count$result = 0;
+            break count$break;
           }
+          var count = 0;
+          tmp$_4 = $receiver_0.entries.iterator();
+          while (tmp$_4.hasNext()) {
+            var element = tmp$_4.next();
+            var tmp$_5, tmp$_6;
+            if (element.value.isOwnedBy_912u9o$(deployer) && ((tmp$_6 = (tmp$_5 = element.value.resonator) != null ? tmp$_5.level : null) != null ? tmp$_6.level : null) === item.level)
+              count = count + 1 | 0;
+          }
+          count$result = count;
         }
-        tmp$_2.call(destination, to(item, tmp$_3 - destination_0.size | 0));
+         while (false);
+        tmp$_2.call(destination, to(item, tmp$_3 - count$result | 0));
       }
       tmp$_0 = toMap(destination);
     }

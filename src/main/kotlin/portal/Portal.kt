@@ -62,8 +62,9 @@ data class Portal(
     fun x() = location.x
     fun y() = location.y
 
-    private fun getAllResos() = slots.map { it.value.resonator }.filterNotNull()
-    private fun isFullyDeployed() = getAllResos().count() == 8
+    private fun getAllResos() = this.slots.map { it.value.resonator }.filterNotNull()
+    private fun numberOfResosLeft() = this.slots.count { it.value.resonator != null }
+    private fun isFullyDeployed() = numberOfResosLeft() == 8
     private fun averageResoLevel(): Double {
         val resos = getAllResos()
         return resos.map { it.level.level }.sum() / resos.count().toDouble()
@@ -398,20 +399,19 @@ data class Portal(
 
     fun removeReso(octant: Octant, destroyer: Agent?) {
         this.slots[octant]?.clear()
-        val numberOfResosLeft = slots.filter { it.value.resonator != null }.count()
-        if (numberOfResosLeft <= 0) {
-            destroy(destroyer)
-        } else if (numberOfResosLeft <= 2) {
-            destroyAllLinksAndFields(destroyer)
+        val leftResos = numberOfResosLeft()
+        when {
+            leftResos <= 0 -> destroy(destroyer)
+            leftResos <= 2 -> destroyAllLinksAndFields(destroyer)
         }
     }
 
     fun findAllowedResoLevels(deployer: Agent): Map<ResonatorLevel, Int> {
         return if (owner == null || owner?.faction == deployer.faction) {
             ResonatorLevel.values().map { level ->
-                level to level.deployablePerPlayer - slots.filter { slot ->
+                level to level.deployablePerPlayer - this.slots.count { slot ->
                     slot.value.isOwnedBy(deployer) && slot.value.resonator?.level?.level == level.level
-                }.count()
+                }
             }.toMap()
         } else {
             mapOf()
