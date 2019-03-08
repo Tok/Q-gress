@@ -25,12 +25,12 @@
   var Unit = Kotlin.kotlin.Unit;
   var take = Kotlin.kotlin.collections.take_ba2ldo$;
   var Kind_INTERFACE = Kotlin.Kind.INTERFACE;
+  var first = Kotlin.kotlin.collections.first_2p1efm$;
   var toSet = Kotlin.kotlin.collections.toSet_7wnvza$;
   var sum = Kotlin.kotlin.collections.sum_plj8ka$;
   var toList = Kotlin.kotlin.collections.toList_abgq59$;
   var zip = Kotlin.kotlin.collections.zip_45mdf7$;
   var numberToInt = Kotlin.numberToInt;
-  var first = Kotlin.kotlin.collections.first_2p1efm$;
   var distinct = Kotlin.kotlin.collections.distinct_7wnvza$;
   var filterNotNull = Kotlin.kotlin.collections.filterNotNull_m3lr2h$;
   var toString = Kotlin.toString;
@@ -647,6 +647,25 @@
       return this.actionItem_t5xkto$_0;
     }
   });
+  function Deployer$isActionPossible$lambda(it) {
+    return it.level.level;
+  }
+  var compareBy$lambda = wrapFunction(function () {
+    var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
+    return function (closure$selector) {
+      return function (a, b) {
+        var selector = closure$selector;
+        return compareValues(selector(a), selector(b));
+      };
+    };
+  });
+  function Comparator$ObjectLiteral_0(closure$comparison) {
+    this.closure$comparison = closure$comparison;
+  }
+  Comparator$ObjectLiteral_0.prototype.compare = function (a, b) {
+    return this.closure$comparison(a, b);
+  };
+  Comparator$ObjectLiteral_0.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
   var Collection = Kotlin.kotlin.collections.Collection;
   Deployer.prototype.isActionPossible_912u9o$ = function (agent) {
     if (!this.isActionPortalFriendly_0(agent)) {
@@ -659,27 +678,66 @@
     if (inventoryResos.isEmpty()) {
       return false;
     }
-    var ownedInPortal = this.ownedInPortal_0(agent);
-    var $receiver = toSet(inventoryResos);
+    var highestInventoryReso = first(sortedWith(inventoryResos, new Comparator$ObjectLiteral_0(compareBy$lambda(Deployer$isActionPossible$lambda)))).level.level;
+    var slots = agent.actionPortal.slots;
+    var $receiver = slots.entries;
     var destination = ArrayList_init(collectionSizeOrDefault($receiver, 10));
     var tmp$;
     tmp$ = $receiver.iterator();
-    while (tmp$.hasNext()) {
+    loop_label: while (tmp$.hasNext()) {
       var item = tmp$.next();
-      destination.add_11rb$(this.maybeDeployReso_0(inventoryResos, ownedInPortal, item, true, agent));
+      var tmp$_0 = destination.add_11rb$;
+      var slot = item.value;
+      var tmp$_1, tmp$_2, tmp$_3, tmp$_4, tmp$_5, tmp$_6;
+      var slotResoLevel = (tmp$_3 = (tmp$_2 = (tmp$_1 = slot.resonator) != null ? tmp$_1.level : null) != null ? tmp$_2.level : null) != null ? tmp$_3 : 0;
+      var isNewHigher = highestInventoryReso > slotResoLevel;
+      var count$result;
+      count$break: do {
+        var tmp$_7;
+        if (slots.isEmpty()) {
+          count$result = 0;
+          break count$break;
+        }
+        var count = 0;
+        tmp$_7 = slots.entries.iterator();
+        while (tmp$_7.hasNext()) {
+          var element = tmp$_7.next();
+          var tmp$_8, tmp$_9;
+          if (((tmp$_9 = (tmp$_8 = element.value.resonator) != null ? tmp$_8.level : null) != null ? tmp$_9.level : null) === slotResoLevel)
+            count = count + 1 | 0;
+        }
+        count$result = count;
+      }
+       while (false);
+      var sameLevelCount = count$result;
+      var canDeployMoreOfSameLevel = sameLevelCount < ((tmp$_6 = (tmp$_5 = (tmp$_4 = slot.resonator) != null ? tmp$_4.level : null) != null ? tmp$_5.deployablePerPlayer : null) != null ? tmp$_6 : 9);
+      tmp$_0.call(destination, isNewHigher && canDeployMoreOfSameLevel);
     }
-    var results = destination;
+    var canDeployMore = destination.contains_11rb$(true);
+    if (!canDeployMore) {
+      return false;
+    }
+    var ownedInPortal = this.ownedInPortal_0(agent);
+    var $receiver_0 = toSet(inventoryResos);
+    var destination_0 = ArrayList_init(collectionSizeOrDefault($receiver_0, 10));
+    var tmp$_10;
+    tmp$_10 = $receiver_0.iterator();
+    while (tmp$_10.hasNext()) {
+      var item_0 = tmp$_10.next();
+      destination_0.add_11rb$(this.maybeDeployReso_0(inventoryResos, ownedInPortal, item_0, true, agent));
+    }
+    var results = destination_0;
     var any$result;
     any$break: do {
-      var tmp$_0;
+      var tmp$_11;
       if (Kotlin.isType(results, Collection) && results.isEmpty()) {
         any$result = false;
         break any$break;
       }
-      tmp$_0 = results.iterator();
-      while (tmp$_0.hasNext()) {
-        var element = tmp$_0.next();
-        if (element) {
+      tmp$_11 = results.iterator();
+      while (tmp$_11.hasNext()) {
+        var element_0 = tmp$_11.next();
+        if (element_0) {
           any$result = true;
           break any$break;
         }
@@ -768,13 +826,13 @@
       };
     };
   });
-  function Comparator$ObjectLiteral_0(closure$comparison) {
+  function Comparator$ObjectLiteral_1(closure$comparison) {
     this.closure$comparison = closure$comparison;
   }
-  Comparator$ObjectLiteral_0.prototype.compare = function (a, b) {
+  Comparator$ObjectLiteral_1.prototype.compare = function (a, b) {
     return this.closure$comparison(a, b);
   };
-  Comparator$ObjectLiteral_0.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
+  Comparator$ObjectLiteral_1.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
   Deployer.prototype.inventoryResos_0 = function (inv) {
     var $receiver = inv.items;
     var destination = ArrayList_init_0();
@@ -793,7 +851,7 @@
       var tmp$_1;
       destination_0.add_11rb$(Kotlin.isType(tmp$_1 = item, Resonator) ? tmp$_1 : throwCCE());
     }
-    return sortedWith(destination_0, new Comparator$ObjectLiteral_0(compareByDescending$lambda_0(Deployer$inventoryResos$lambda)));
+    return sortedWith(destination_0, new Comparator$ObjectLiteral_1(compareByDescending$lambda_0(Deployer$inventoryResos$lambda)));
   };
   var Math_0 = Math;
   Deployer.prototype.maxDeployable_0 = function (ownedInPortal, reso) {
@@ -1142,7 +1200,7 @@
   function Recharger$lowestChargeablePortal$lambda(it) {
     return it.calcHealth();
   }
-  var compareBy$lambda = wrapFunction(function () {
+  var compareBy$lambda_0 = wrapFunction(function () {
     var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
     return function (closure$selector) {
       return function (a, b) {
@@ -1151,15 +1209,15 @@
       };
     };
   });
-  function Comparator$ObjectLiteral_1(closure$comparison) {
+  function Comparator$ObjectLiteral_2(closure$comparison) {
     this.closure$comparison = closure$comparison;
   }
-  Comparator$ObjectLiteral_1.prototype.compare = function (a, b) {
+  Comparator$ObjectLiteral_2.prototype.compare = function (a, b) {
     return this.closure$comparison(a, b);
   };
-  Comparator$ObjectLiteral_1.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
+  Comparator$ObjectLiteral_2.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
   Recharger.prototype.lowestChargeablePortal_0 = function (agent) {
-    return first(sortedWith(this.chargeableKeys_0(agent), new Comparator$ObjectLiteral_1(compareBy$lambda(Recharger$lowestChargeablePortal$lambda))));
+    return first(sortedWith(this.chargeableKeys_0(agent), new Comparator$ObjectLiteral_2(compareBy$lambda_0(Recharger$lowestChargeablePortal$lambda))));
   };
   var mapNotNullTo$lambda = wrapFunction(function () {
     return function (closure$transform, closure$destination) {
@@ -1556,7 +1614,7 @@
       return it.location.distanceTo_mqsrs4$(this$Agent.pos);
     };
   }
-  var compareBy$lambda_0 = wrapFunction(function () {
+  var compareBy$lambda_1 = wrapFunction(function () {
     var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
     return function (closure$selector) {
       return function (a, b) {
@@ -1565,13 +1623,13 @@
       };
     };
   });
-  function Comparator$ObjectLiteral_2(closure$comparison) {
+  function Comparator$ObjectLiteral_3(closure$comparison) {
     this.closure$comparison = closure$comparison;
   }
-  Comparator$ObjectLiteral_2.prototype.compare = function (a, b) {
+  Comparator$ObjectLiteral_3.prototype.compare = function (a, b) {
     return this.closure$comparison(a, b);
   };
-  Comparator$ObjectLiteral_2.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
+  Comparator$ObjectLiteral_3.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
   Agent.prototype.findPortalsInAttackRange_0 = function (level) {
     var attackDistance = level.rangeM * 0.5 + Dim_getInstance().portalRadius;
     var $receiver = World_getInstance().allPortals;
@@ -1593,7 +1651,7 @@
       if (element_0.location.distanceTo_mqsrs4$(this.pos) <= attackDistance)
         destination_0.add_11rb$(element_0);
     }
-    return sortedWith(destination_0, new Comparator$ObjectLiteral_2(compareBy$lambda_0(Agent$findPortalsInAttackRange$lambda(this))));
+    return sortedWith(destination_0, new Comparator$ObjectLiteral_3(compareBy$lambda_1(Agent$findPortalsInAttackRange$lambda(this))));
   };
   var addAll = Kotlin.kotlin.collections.addAll_ipc267$;
   Agent.prototype.findResosInAttackRange_3vxbq7$ = function (level) {
@@ -2437,7 +2495,7 @@
       return closure$agent.distanceToPortal_hv9zn6$(it);
     };
   }
-  var compareBy$lambda_1 = wrapFunction(function () {
+  var compareBy$lambda_2 = wrapFunction(function () {
     var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
     return function (closure$selector) {
       return function (a, b) {
@@ -2446,13 +2504,13 @@
       };
     };
   });
-  function Comparator$ObjectLiteral_3(closure$comparison) {
+  function Comparator$ObjectLiteral_4(closure$comparison) {
     this.closure$comparison = closure$comparison;
   }
-  Comparator$ObjectLiteral_3.prototype.compare = function (a, b) {
+  Comparator$ObjectLiteral_4.prototype.compare = function (a, b) {
     return this.closure$comparison(a, b);
   };
-  Comparator$ObjectLiteral_3.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
+  Comparator$ObjectLiteral_4.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
   MovementUtil.prototype.moveToUncapturedPortal_912u9o$ = function (agent) {
     if (!this.hasUncapturedPortals()) {
       var message = 'Check failed.';
@@ -2467,7 +2525,7 @@
       if (element.isUncaptured())
         destination.add_11rb$(element);
     }
-    var uncaptured = sortedWith(destination, new Comparator$ObjectLiteral_3(compareBy$lambda_1(MovementUtil$moveToUncapturedPortal$lambda(agent))));
+    var uncaptured = sortedWith(destination, new Comparator$ObjectLiteral_4(compareBy$lambda_2(MovementUtil$moveToUncapturedPortal$lambda(agent))));
     var tmp$_0;
     tmp$_0 = uncaptured.iterator();
     while (tmp$_0.hasNext()) {
@@ -2532,28 +2590,6 @@
       return closure$a.distanceToPortal_hv9zn6$(it);
     };
   }
-  var compareBy$lambda_2 = wrapFunction(function () {
-    var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
-    return function (closure$selector) {
-      return function (a, b) {
-        var selector = closure$selector;
-        return compareValues(selector(a), selector(b));
-      };
-    };
-  });
-  function Comparator$ObjectLiteral_4(closure$comparison) {
-    this.closure$comparison = closure$comparison;
-  }
-  Comparator$ObjectLiteral_4.prototype.compare = function (a, b) {
-    return this.closure$comparison(a, b);
-  };
-  Comparator$ObjectLiteral_4.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
-  MovementUtil.prototype.attackClosePortal_912u9o$ = function (a) {
-    return this.goAttack_0(a, firstOrNull(sortedWith(this.findEnemyPortals_912u9o$(a), new Comparator$ObjectLiteral_4(compareBy$lambda_2(MovementUtil$attackClosePortal$lambda(a))))));
-  };
-  function MovementUtil$attackMostLinkedPortal$lambda(it) {
-    return it.links.size;
-  }
   var compareBy$lambda_3 = wrapFunction(function () {
     var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
     return function (closure$selector) {
@@ -2570,11 +2606,11 @@
     return this.closure$comparison(a, b);
   };
   Comparator$ObjectLiteral_5.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
-  MovementUtil.prototype.attackMostLinkedPortal_912u9o$ = function (a) {
-    return this.goAttack_0(a, firstOrNull(sortedWith(this.findEnemyPortals_912u9o$(a), new Comparator$ObjectLiteral_5(compareBy$lambda_3(MovementUtil$attackMostLinkedPortal$lambda)))));
+  MovementUtil.prototype.attackClosePortal_912u9o$ = function (a) {
+    return this.goAttack_0(a, firstOrNull(sortedWith(this.findEnemyPortals_912u9o$(a), new Comparator$ObjectLiteral_5(compareBy$lambda_3(MovementUtil$attackClosePortal$lambda(a))))));
   };
-  function MovementUtil$attackMostVulnerablePortal$lambda(it) {
-    return -it.calcHealth() | 0;
+  function MovementUtil$attackMostLinkedPortal$lambda(it) {
+    return it.links.size;
   }
   var compareBy$lambda_4 = wrapFunction(function () {
     var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
@@ -2592,24 +2628,11 @@
     return this.closure$comparison(a, b);
   };
   Comparator$ObjectLiteral_6.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
-  MovementUtil.prototype.attackMostVulnerablePortal_912u9o$ = function (a) {
-    return this.goAttack_0(a, firstOrNull(sortedWith(this.findEnemyPortals_912u9o$(a), new Comparator$ObjectLiteral_6(compareBy$lambda_4(MovementUtil$attackMostVulnerablePortal$lambda)))));
+  MovementUtil.prototype.attackMostLinkedPortal_912u9o$ = function (a) {
+    return this.goAttack_0(a, firstOrNull(sortedWith(this.findEnemyPortals_912u9o$(a), new Comparator$ObjectLiteral_6(compareBy$lambda_4(MovementUtil$attackMostLinkedPortal$lambda)))));
   };
-  MovementUtil.prototype.goAttack_0 = function (agent, target) {
-    var tmp$;
-    if (target != null) {
-      tmp$ = this.goToDestinationPortal_0(agent, target);
-    }
-     else {
-      agent.action.end();
-      tmp$ = agent;
-    }
-    return tmp$;
-  };
-  function MovementUtil$moveToNearestPortal$lambda(closure$agent) {
-    return function (it) {
-      return closure$agent.distanceToPortal_hv9zn6$(it);
-    };
+  function MovementUtil$attackMostVulnerablePortal$lambda(it) {
+    return -it.calcHealth() | 0;
   }
   var compareBy$lambda_5 = wrapFunction(function () {
     var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
@@ -2627,8 +2650,43 @@
     return this.closure$comparison(a, b);
   };
   Comparator$ObjectLiteral_7.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
+  MovementUtil.prototype.attackMostVulnerablePortal_912u9o$ = function (a) {
+    return this.goAttack_0(a, firstOrNull(sortedWith(this.findEnemyPortals_912u9o$(a), new Comparator$ObjectLiteral_7(compareBy$lambda_5(MovementUtil$attackMostVulnerablePortal$lambda)))));
+  };
+  MovementUtil.prototype.goAttack_0 = function (agent, target) {
+    var tmp$;
+    if (target != null) {
+      tmp$ = this.goToDestinationPortal_0(agent, target);
+    }
+     else {
+      agent.action.end();
+      tmp$ = agent;
+    }
+    return tmp$;
+  };
+  function MovementUtil$moveToNearestPortal$lambda(closure$agent) {
+    return function (it) {
+      return closure$agent.distanceToPortal_hv9zn6$(it);
+    };
+  }
+  var compareBy$lambda_6 = wrapFunction(function () {
+    var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
+    return function (closure$selector) {
+      return function (a, b) {
+        var selector = closure$selector;
+        return compareValues(selector(a), selector(b));
+      };
+    };
+  });
+  function Comparator$ObjectLiteral_8(closure$comparison) {
+    this.closure$comparison = closure$comparison;
+  }
+  Comparator$ObjectLiteral_8.prototype.compare = function (a, b) {
+    return this.closure$comparison(a, b);
+  };
+  Comparator$ObjectLiteral_8.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
   MovementUtil.prototype.moveToNearestPortal_912u9o$ = function (agent) {
-    var target = first(sortedWith(World_getInstance().allPortals, new Comparator$ObjectLiteral_7(compareBy$lambda_5(MovementUtil$moveToNearestPortal$lambda(agent)))));
+    var target = first(sortedWith(World_getInstance().allPortals, new Comparator$ObjectLiteral_8(compareBy$lambda_6(MovementUtil$moveToNearestPortal$lambda(agent)))));
     return this.goToDestinationPortal_0(agent, target);
   };
   MovementUtil.prototype.moveToRandomPortal_912u9o$ = function (agent) {
@@ -2863,15 +2921,15 @@
       };
     };
   });
-  function Comparator$ObjectLiteral_8(closure$comparison) {
+  function Comparator$ObjectLiteral_9(closure$comparison) {
     this.closure$comparison = closure$comparison;
   }
-  Comparator$ObjectLiteral_8.prototype.compare = function (a, b) {
+  Comparator$ObjectLiteral_9.prototype.compare = function (a, b) {
     return this.closure$comparison(a, b);
   };
-  Comparator$ObjectLiteral_8.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
+  Comparator$ObjectLiteral_9.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
   NonFaction$Companion.prototype.findFarPortal_0 = function (pos) {
-    return first(sortedWith(World_getInstance().allPortals, new Comparator$ObjectLiteral_8(compareByDescending$lambda_1(NonFaction$Companion$findFarPortal$lambda(pos)))));
+    return first(sortedWith(World_getInstance().allPortals, new Comparator$ObjectLiteral_9(compareByDescending$lambda_1(NonFaction$Companion$findFarPortal$lambda(pos)))));
   };
   NonFaction$Companion.prototype.createWaitTime_0 = function () {
     return Util_getInstance().randomInt_vux9f0$(this.MIN_WAIT_0, this.MAX_WAIT_0);
@@ -3766,7 +3824,7 @@
   function Multihack$Companion$calculateImprovedBurnout$lambda(it) {
     return it.type.order;
   }
-  var compareBy$lambda_6 = wrapFunction(function () {
+  var compareBy$lambda_7 = wrapFunction(function () {
     var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
     return function (closure$selector) {
       return function (a, b) {
@@ -3775,13 +3833,13 @@
       };
     };
   });
-  function Comparator$ObjectLiteral_9(closure$comparison) {
+  function Comparator$ObjectLiteral_10(closure$comparison) {
     this.closure$comparison = closure$comparison;
   }
-  Comparator$ObjectLiteral_9.prototype.compare = function (a, b) {
+  Comparator$ObjectLiteral_10.prototype.compare = function (a, b) {
     return this.closure$comparison(a, b);
   };
-  Comparator$ObjectLiteral_9.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
+  Comparator$ObjectLiteral_10.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
   Multihack$Companion.prototype.calculateImprovedBurnout_6l8466$ = function (allModsInPortal) {
     var destination = ArrayList_init_0();
     var tmp$;
@@ -3799,7 +3857,7 @@
       var tmp$_1;
       destination_0.add_11rb$(Kotlin.isType(tmp$_1 = item, Multihack) ? tmp$_1 : throwCCE());
     }
-    var multihacks = sortedWith(destination_0, new Comparator$ObjectLiteral_9(compareBy$lambda_6(Multihack$Companion$calculateImprovedBurnout$lambda)));
+    var multihacks = sortedWith(destination_0, new Comparator$ObjectLiteral_10(compareBy$lambda_7(Multihack$Companion$calculateImprovedBurnout$lambda)));
     var first_0 = first(multihacks).type.additionalHacks;
     var second = multihacks.get_za3lpa$(1).type.additionalHacks * 0.5;
     var third = multihacks.get_za3lpa$(2).type.additionalHacks * 0.5;
@@ -5431,28 +5489,6 @@
   function Field$weakestPortal$lambda(it) {
     return it.calcHealth();
   }
-  var compareBy$lambda_7 = wrapFunction(function () {
-    var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
-    return function (closure$selector) {
-      return function (a, b) {
-        var selector = closure$selector;
-        return compareValues(selector(a), selector(b));
-      };
-    };
-  });
-  function Comparator$ObjectLiteral_10(closure$comparison) {
-    this.closure$comparison = closure$comparison;
-  }
-  Comparator$ObjectLiteral_10.prototype.compare = function (a, b) {
-    return this.closure$comparison(a, b);
-  };
-  Comparator$ObjectLiteral_10.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
-  Field.prototype.weakestPortal = function () {
-    return last(sortedWith(toList_0(this.idSet_0), new Comparator$ObjectLiteral_10(compareBy$lambda_7(Field$weakestPortal$lambda))));
-  };
-  function Field$strongestAnchors$lambda(it) {
-    return it.calcHealth();
-  }
   var compareBy$lambda_8 = wrapFunction(function () {
     var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
     return function (closure$selector) {
@@ -5469,13 +5505,11 @@
     return this.closure$comparison(a, b);
   };
   Comparator$ObjectLiteral_11.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
-  Field.prototype.strongestAnchors = function () {
-    return take(sortedWith(toList_0(this.idSet_0), new Comparator$ObjectLiteral_11(compareBy$lambda_8(Field$strongestAnchors$lambda))), 2);
+  Field.prototype.weakestPortal = function () {
+    return last(sortedWith(toList_0(this.idSet_0), new Comparator$ObjectLiteral_11(compareBy$lambda_8(Field$weakestPortal$lambda))));
   };
-  function Field$findFurthestFrom$lambda(closure$portal) {
-    return function (it) {
-      return (new Line(closure$portal.location, it.location)).length();
-    };
+  function Field$strongestAnchors$lambda(it) {
+    return it.calcHealth();
   }
   var compareBy$lambda_9 = wrapFunction(function () {
     var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
@@ -5493,8 +5527,32 @@
     return this.closure$comparison(a, b);
   };
   Comparator$ObjectLiteral_12.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
+  Field.prototype.strongestAnchors = function () {
+    return take(sortedWith(toList_0(this.idSet_0), new Comparator$ObjectLiteral_12(compareBy$lambda_9(Field$strongestAnchors$lambda))), 2);
+  };
+  function Field$findFurthestFrom$lambda(closure$portal) {
+    return function (it) {
+      return (new Line(closure$portal.location, it.location)).length();
+    };
+  }
+  var compareBy$lambda_10 = wrapFunction(function () {
+    var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
+    return function (closure$selector) {
+      return function (a, b) {
+        var selector = closure$selector;
+        return compareValues(selector(a), selector(b));
+      };
+    };
+  });
+  function Comparator$ObjectLiteral_13(closure$comparison) {
+    this.closure$comparison = closure$comparison;
+  }
+  Comparator$ObjectLiteral_13.prototype.compare = function (a, b) {
+    return this.closure$comparison(a, b);
+  };
+  Comparator$ObjectLiteral_13.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
   Field.prototype.findFurthestFrom_hv9zn6$ = function (portal) {
-    return first(sortedWith(toList_0(this.idSet_0), new Comparator$ObjectLiteral_12(compareBy$lambda_9(Field$findFurthestFrom$lambda(portal)))));
+    return first(sortedWith(toList_0(this.idSet_0), new Comparator$ObjectLiteral_13(compareBy$lambda_10(Field$findFurthestFrom$lambda(portal)))));
   };
   Field.prototype.isConnectedTo_hv9zn6$ = function (portal) {
     return this.idSet_0.contains_11rb$(portal);
@@ -5715,7 +5773,7 @@
   function Link$draw$lambda(it) {
     return it.calcHealth();
   }
-  var compareBy$lambda_10 = wrapFunction(function () {
+  var compareBy$lambda_11 = wrapFunction(function () {
     var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
     return function (closure$selector) {
       return function (a, b) {
@@ -5724,15 +5782,15 @@
       };
     };
   });
-  function Comparator$ObjectLiteral_13(closure$comparison) {
+  function Comparator$ObjectLiteral_14(closure$comparison) {
     this.closure$comparison = closure$comparison;
   }
-  Comparator$ObjectLiteral_13.prototype.compare = function (a, b) {
+  Comparator$ObjectLiteral_14.prototype.compare = function (a, b) {
     return this.closure$comparison(a, b);
   };
-  Comparator$ObjectLiteral_13.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
+  Comparator$ObjectLiteral_14.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
   Link.prototype.draw_f69bme$ = function (ctx) {
-    var byHealth = sortedWith(listOf([this.origin, this.destination]), new Comparator$ObjectLiteral_13(compareBy$lambda_10(Link$draw$lambda)));
+    var byHealth = sortedWith(listOf([this.origin, this.destination]), new Comparator$ObjectLiteral_14(compareBy$lambda_11(Link$draw$lambda)));
     var minTransparency = 0.2;
     var lowHpTransparency = Util_getInstance().clipDouble_yvo9jy$(last(byHealth).calcHealth() * 0.01, minTransparency, 1.0);
     var highHpTransparency = Util_getInstance().clipDouble_yvo9jy$(first(byHealth).calcHealth() * 0.01, minTransparency, 1.0);
@@ -6189,6 +6247,45 @@
     }
     return sum(destination) / resos.size;
   };
+  Portal.prototype.filledSlots = function () {
+    var $receiver = this.slots;
+    var destination = ArrayList_init($receiver.size);
+    var tmp$;
+    tmp$ = $receiver.entries.iterator();
+    while (tmp$.hasNext()) {
+      var item = tmp$.next();
+      destination.add_11rb$(item.value);
+    }
+    var destination_0 = ArrayList_init_0();
+    var tmp$_0;
+    tmp$_0 = destination.iterator();
+    while (tmp$_0.hasNext()) {
+      var element = tmp$_0.next();
+      if (!(element.resonator == null))
+        destination_0.add_11rb$(element);
+    }
+    return destination_0;
+  };
+  Portal.prototype.resoMap = function () {
+    var $receiver = this.slots;
+    var destination = LinkedHashMap_init();
+    var tmp$;
+    tmp$ = $receiver.entries.iterator();
+    while (tmp$.hasNext()) {
+      var element = tmp$.next();
+      if (!(element.value.resonator == null)) {
+        destination.put_xwzc9p$(element.key, element.value);
+      }
+    }
+    var destination_0 = ArrayList_init(destination.size);
+    var tmp$_0;
+    tmp$_0 = destination.entries.iterator();
+    while (tmp$_0.hasNext()) {
+      var item = tmp$_0.next();
+      destination_0.add_11rb$(to(item.key, ensureNotNull(item.value.resonator)));
+    }
+    return toMap(destination_0);
+  };
   Portal.prototype.calculateLinkMitigation_0 = function () {
     var maxMitigation = 95;
     var incoming = this.findIncomingFrom_0();
@@ -6201,7 +6298,7 @@
   function Portal$findStrongestReso$lambda(it) {
     return Kotlin.imul(it.energy, it.level.level);
   }
-  var compareBy$lambda_11 = wrapFunction(function () {
+  var compareBy$lambda_12 = wrapFunction(function () {
     var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
     return function (closure$selector) {
       return function (a, b) {
@@ -6210,20 +6307,20 @@
       };
     };
   });
-  function Comparator$ObjectLiteral_14(closure$comparison) {
+  function Comparator$ObjectLiteral_15(closure$comparison) {
     this.closure$comparison = closure$comparison;
   }
-  Comparator$ObjectLiteral_14.prototype.compare = function (a, b) {
+  Comparator$ObjectLiteral_15.prototype.compare = function (a, b) {
     return this.closure$comparison(a, b);
   };
-  Comparator$ObjectLiteral_14.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
+  Comparator$ObjectLiteral_15.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
   Portal.prototype.findStrongestReso_0 = function () {
     var resos = this.getAllResos_0();
     if (resos.isEmpty()) {
       return null;
     }
      else {
-      return first(sortedWith(resos, new Comparator$ObjectLiteral_14(compareBy$lambda_11(Portal$findStrongestReso$lambda))));
+      return first(sortedWith(resos, new Comparator$ObjectLiteral_15(compareBy$lambda_12(Portal$findStrongestReso$lambda))));
     }
   };
   Portal.prototype.findStrongestResoPos = function () {
@@ -6590,67 +6687,95 @@
       Com_getInstance().addMessage_61zpoe$(deployer.toString() + ' captured ' + this + '.');
     }
     var $receiver = this.slots;
-    var tmp$;
-    var result = LinkedHashMap_init();
-    tmp$ = $receiver.entries.iterator();
-    while (tmp$.hasNext()) {
-      var entry = tmp$.next();
-      if (!entry.value.isEmpty()) {
-        result.put_xwzc9p$(entry.key, entry.value);
+    var count$result;
+    count$break: do {
+      var tmp$;
+      if ($receiver.isEmpty()) {
+        count$result = 0;
+        break count$break;
       }
-    }
-    var destination = LinkedHashMap_init();
-    var tmp$_0;
-    tmp$_0 = result.entries.iterator();
-    while (tmp$_0.hasNext()) {
-      var element = tmp$_0.next();
-      if (!(element.value.resonator == null)) {
-        destination.put_xwzc9p$(element.key, element.value);
+      var count = 0;
+      tmp$ = $receiver.entries.iterator();
+      while (tmp$.hasNext()) {
+        var element = tmp$.next();
+        if (element.value.resonator != null)
+          count = count + 1 | 0;
       }
+      count$result = count;
     }
-    var initialResoCount = destination.size;
+     while (false);
+    var initialResoCount = count$result;
     var a = resos.size;
     var b = 8 - initialResoCount | 0;
     var firstResoCount = Math_0.max(a, b);
-    var tmp$_1, tmp$_0_0;
+    var tmp$_0, tmp$_0_0;
     var index = 0;
-    tmp$_1 = resos.entries.iterator();
-    while (tmp$_1.hasNext()) {
-      var item = tmp$_1.next();
+    tmp$_0 = resos.entries.iterator();
+    loop_label: while (tmp$_0.hasNext()) {
+      var item = tmp$_0.next();
       var index_0 = checkIndexOverflow((tmp$_0_0 = index, index = tmp$_0_0 + 1 | 0, tmp$_0_0));
       var octant = item.key;
       var resonator = item.value;
-      var tmp$_2, tmp$_3;
+      var tmp$_1, tmp$_2, tmp$_3, tmp$_4, tmp$_5;
+      var level = resonator.level;
       var oldReso = this.slots.get_11rb$(octant);
-      if (isCapture && index_0 === 0) {
-        deployer.addAp_za3lpa$(500);
+      var oldLevel = (tmp$_2 = (tmp$_1 = oldReso != null ? oldReso.resonator : null) != null ? tmp$_1.level : null) != null ? tmp$_2.level : null;
+      if (!((oldLevel != null ? oldLevel : 0) < level.level)) {
+        var message_0 = 'Check failed.';
+        throw IllegalStateException_init(message_0.toString());
       }
-       else if (index_0 < firstResoCount) {
-        deployer.addAp_za3lpa$(125);
+      var $receiver_0 = this.slots;
+      var count$result_0;
+      count$break: do {
+        var tmp$_6;
+        if ($receiver_0.isEmpty()) {
+          count$result_0 = 0;
+          break count$break;
+        }
+        var count_0 = 0;
+        tmp$_6 = $receiver_0.entries.iterator();
+        while (tmp$_6.hasNext()) {
+          var element_0 = tmp$_6.next();
+          var tmp$_7;
+          if (equals((tmp$_7 = element_0.value.resonator) != null ? tmp$_7.level : null, level))
+            count_0 = count_0 + 1 | 0;
+        }
+        count$result_0 = count_0;
       }
-       else if (index_0 === firstResoCount && (firstResoCount + initialResoCount | 0) === 8) {
-        deployer.addAp_za3lpa$(250);
+       while (false);
+      var sameLevelCount = count$result_0;
+      var isUnableToDeployMoreOfTheSame = sameLevelCount >= level.deployablePerPlayer;
+      if (isUnableToDeployMoreOfTheSame) {
+        return;
       }
-       else if ((oldReso != null ? oldReso.isOwnedBy_912u9o$(deployer) : null) !== true) {
-        deployer.addAp_za3lpa$(65);
-      }
-      deployer.removeXm_za3lpa$(resonator.level.level * 20 | 0);
+      if (isCapture && index_0 === 0)
+        tmp$_3 = 500;
+      else if (index_0 < firstResoCount)
+        tmp$_3 = 125;
+      else if (index_0 === firstResoCount && (firstResoCount + initialResoCount | 0) === 8)
+        tmp$_3 = 250;
+      else if ((oldReso != null ? oldReso.isOwnedBy_912u9o$(deployer) : null) === true)
+        tmp$_3 = 65;
+      else
+        tmp$_3 = 0;
+      deployer.addAp_za3lpa$(tmp$_3);
+      deployer.removeXm_za3lpa$(level.level * 20 | 0);
       var oldDistance = oldReso != null ? oldReso.distance : null;
-      var newDistance = (tmp$_2 = oldDistance === 0 ? distance : oldDistance) != null ? tmp$_2 : distance;
-      (tmp$_3 = this.slots.get_11rb$(octant)) != null ? (tmp$_3.deployReso_otfdig$(deployer, resonator, newDistance), Unit) : null;
+      var newDistance = (tmp$_4 = oldDistance === 0 ? distance : oldDistance) != null ? tmp$_4 : distance;
+      (tmp$_5 = this.slots.get_11rb$(octant)) != null ? (tmp$_5.deployReso_otfdig$(deployer, resonator, newDistance), Unit) : null;
       var xx = this.location.x + octant.calcXOffset_za3lpa$(newDistance);
       var yy = this.location.y + octant.calcYOffset_za3lpa$(newDistance);
       resonator.deploy_t73m4l$(this, octant, new Pos(xx, yy));
     }
-    var tmp$_4 = deployer.inventory;
-    var destination_0 = ArrayList_init(resos.size);
-    var tmp$_5;
-    tmp$_5 = resos.entries.iterator();
-    while (tmp$_5.hasNext()) {
-      var item_0 = tmp$_5.next();
-      destination_0.add_11rb$(item_0.value);
+    var tmp$_8 = deployer.inventory;
+    var destination = ArrayList_init(resos.size);
+    var tmp$_9;
+    tmp$_9 = resos.entries.iterator();
+    while (tmp$_9.hasNext()) {
+      var item_0 = tmp$_9.next();
+      destination.add_11rb$(item_0.value);
     }
-    tmp$_4.consumeResos_tvxik5$(destination_0);
+    tmp$_8.consumeResos_tvxik5$(destination);
   };
   Portal.prototype.findOutgoingTo_0 = function () {
     var $receiver = this.links;
@@ -6948,7 +7073,7 @@
   Portal.prototype.drawCenter_j4cg6b$ = function (ctx, isDrawHealthBar) {
     if (isDrawHealthBar === void 0)
       isDrawHealthBar = true;
-    var tmp$, tmp$_0, tmp$_1, tmp$_2, tmp$_3, tmp$_4;
+    var tmp$, tmp$_0, tmp$_1, tmp$_2;
     if (HtmlUtil_getInstance().isNotRunningInBrowser())
       return;
     tmp$_0 = (tmp$ = this.owner) != null ? tmp$.faction : null;
@@ -6957,10 +7082,9 @@
     var x = this.location.x - (image.width / 2 | 0);
     var y = this.location.y - (image.height / 2 | 0);
     ctx.drawImage(image, x, y);
-    if (isDrawHealthBar) {
-      tmp$_3 = (tmp$_2 = this.owner) != null ? tmp$_2.faction : null;
-      tmp$_4 = this.calcHealth();
-      var healthBarImage = Portal$Companion_getInstance().getHealthBarImage_0(tmp$_3, tmp$_4);
+    var fact = (tmp$_2 = this.owner) != null ? tmp$_2.faction : null;
+    if (isDrawHealthBar && fact != null) {
+      var healthBarImage = Portal$Companion_getInstance().getHealthBarImage_0(fact, this.calcHealth());
       ctx.drawImage(healthBarImage, x, y + image.height + 1);
     }
   };
@@ -6997,55 +7121,62 @@
   };
   function Portal$Companion() {
     Portal$Companion_instance = this;
-    var tmp$, tmp$_0;
+    var tmp$, tmp$_0, tmp$_1;
+    if (HtmlUtil_getInstance().isRunningInBrowser()) {
+      tmp$ = this.renderPortalCenter_7wfmlp$(Colors_getInstance().white, null);
+    }
+     else {
+      tmp$ = null;
+    }
+    this.whiteCenter_0 = tmp$;
     if (HtmlUtil_getInstance().isRunningInBrowser()) {
       var $receiver = PortalLevel$values();
       var destination = ArrayList_init_0();
-      var tmp$_1;
-      for (tmp$_1 = 0; tmp$_1 !== $receiver.length; ++tmp$_1) {
-        var element = $receiver[tmp$_1];
+      var tmp$_2;
+      for (tmp$_2 = 0; tmp$_2 !== $receiver.length; ++tmp$_2) {
+        var element = $receiver[tmp$_2];
         var $receiver_0 = Faction$values();
         var destination_0 = ArrayList_init($receiver_0.length);
-        var tmp$_2;
-        for (tmp$_2 = 0; tmp$_2 !== $receiver_0.length; ++tmp$_2) {
-          var item = $receiver_0[tmp$_2];
-          destination_0.add_11rb$(to(to(item, element), this.renderPortalCenter_wc00gi$(item.color, element)));
+        var tmp$_3;
+        for (tmp$_3 = 0; tmp$_3 !== $receiver_0.length; ++tmp$_3) {
+          var item = $receiver_0[tmp$_3];
+          destination_0.add_11rb$(to(to(item, element), this.renderPortalCenter_7wfmlp$(item.color, element)));
         }
         var list = destination_0;
         addAll(destination, list);
       }
-      tmp$ = toMap(destination);
+      tmp$_0 = toMap(destination);
     }
      else {
-      tmp$ = emptyMap();
+      tmp$_0 = emptyMap();
     }
-    this.centerImages_0 = tmp$;
+    this.centerImages_0 = tmp$_0;
     if (HtmlUtil_getInstance().isRunningInBrowser()) {
       var $receiver_1 = new IntRange(0, 100);
       var destination_1 = ArrayList_init_0();
-      var tmp$_3;
-      tmp$_3 = $receiver_1.iterator();
-      while (tmp$_3.hasNext()) {
-        var element_0 = tmp$_3.next();
+      var tmp$_4;
+      tmp$_4 = $receiver_1.iterator();
+      while (tmp$_4.hasNext()) {
+        var element_0 = tmp$_4.next();
         var lw = Dim_getInstance().portalLineWidth;
         var r = numberToInt(Dim_getInstance().portalRadius);
         var w = r * 2.0 + 2.0 * lw;
         var $receiver_2 = Faction$values();
         var destination_2 = ArrayList_init($receiver_2.length);
-        var tmp$_4;
-        for (tmp$_4 = 0; tmp$_4 !== $receiver_2.length; ++tmp$_4) {
-          var item_0 = $receiver_2[tmp$_4];
+        var tmp$_5;
+        for (tmp$_5 = 0; tmp$_5 !== $receiver_2.length; ++tmp$_5) {
+          var item_0 = $receiver_2[tmp$_5];
           destination_2.add_11rb$(to(to(item_0, element_0), DrawUtil_getInstance().renderBarImage_1u05i2$(item_0.color, element_0, 5.0, w, lw)));
         }
         var list_0 = destination_2;
         addAll(destination_1, list_0);
       }
-      tmp$_0 = toMap(destination_1);
+      tmp$_1 = toMap(destination_1);
     }
      else {
-      tmp$_0 = emptyMap();
+      tmp$_1 = emptyMap();
     }
-    this.healthBarImages_0 = tmp$_0;
+    this.healthBarImages_0 = tmp$_1;
     this.MAX_HACKS = 4;
   }
   Portal$Companion.prototype.findChargeableForKeys_p3u7jq$ = function (agent, keys) {
@@ -7076,28 +7207,23 @@
     }
     return destination_0;
   };
-  var Map = Kotlin.kotlin.collections.Map;
   Portal$Companion.prototype.getCenterImage_0 = function (faction, level) {
-    var $receiver = this.centerImages_0;
-    var key = to(faction, level);
-    var tmp$;
-    return ensureNotNull((Kotlin.isType(tmp$ = $receiver, Map) ? tmp$ : throwCCE()).get_11rb$(key));
+    return faction == null ? ensureNotNull(this.whiteCenter_0) : ensureNotNull(this.centerImages_0.get_11rb$(to(faction, level)));
   };
   Portal$Companion.prototype.getHealthBarImage_0 = function (faction, health) {
-    var $receiver = this.healthBarImages_0;
-    var key = to(faction, health);
-    var tmp$;
-    return ensureNotNull((Kotlin.isType(tmp$ = $receiver, Map) ? tmp$ : throwCCE()).get_11rb$(key));
+    return ensureNotNull(this.healthBarImages_0.get_11rb$(to(faction, health)));
   };
   function Portal$Companion$renderPortalCenter$lambda(closure$r, closure$lw, closure$color, closure$level) {
     return function (ctx) {
       var portalCircle = new Circle(Pos_init(closure$r + closure$lw | 0, closure$r + closure$lw | 0), closure$r);
       DrawUtil_getInstance().drawCircle_3kie0f$(ctx, portalCircle, Colors_getInstance().black, 2.0, closure$color);
-      var pos = Pos_init(closure$r + closure$lw + (closure$level.value > 1 ? 0 : 1) | 0, closure$r + closure$lw | 0);
-      DrawUtil_getInstance().drawText_9ahg4e$(ctx, pos, closure$level.display, Colors_getInstance().black, 13, DrawUtil_getInstance().CODA);
+      if (closure$level != null) {
+        var pos = Pos_init(closure$r + closure$lw + (closure$level.value > 1 ? 0 : 1) | 0, closure$r + closure$lw | 0);
+        DrawUtil_getInstance().drawText_9ahg4e$(ctx, pos, closure$level.display, Colors_getInstance().black, 13, DrawUtil_getInstance().CODA);
+      }
     };
   }
-  Portal$Companion.prototype.renderPortalCenter_wc00gi$ = function (color, level) {
+  Portal$Companion.prototype.renderPortalCenter_7wfmlp$ = function (color, level) {
     var lw = Dim_getInstance().portalLineWidth;
     var r = numberToInt(Dim_getInstance().portalRadius);
     var w = (r * 2 | 0) + (2 * lw | 0) | 0;
@@ -7717,7 +7843,7 @@
       return closure$tick;
     };
   }
-  var compareBy$lambda_12 = wrapFunction(function () {
+  var compareBy$lambda_13 = wrapFunction(function () {
     var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
     return function (closure$selector) {
       return function (a, b) {
@@ -7726,13 +7852,13 @@
       };
     };
   });
-  function Comparator$ObjectLiteral_15(closure$comparison) {
+  function Comparator$ObjectLiteral_16(closure$comparison) {
     this.closure$comparison = closure$comparison;
   }
-  Comparator$ObjectLiteral_15.prototype.compare = function (a, b) {
+  Comparator$ObjectLiteral_16.prototype.compare = function (a, b) {
     return this.closure$comparison(a, b);
   };
-  Comparator$ObjectLiteral_15.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
+  Comparator$ObjectLiteral_16.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
   Cycle$Companion.prototype.updateCheckpoints_qt1dr2$ = function (tick, enlMu, resMu) {
     if (this.isUpdateStuck_0(tick)) {
       var $receiver = World_getInstance().allAgents;
@@ -7755,7 +7881,7 @@
     if (this.isNewCheckpoint_0(tick)) {
       var cp = new Checkpoint(enlMu, resMu, this.isNewCycle_0(tick));
       var limit = 34;
-      var old = takeLast(sortedWith(toList(Cycle$INSTANCE_getInstance().checkpoints), new Comparator$ObjectLiteral_15(compareBy$lambda_12(Cycle$Companion$updateCheckpoints$lambda(tick)))), limit);
+      var old = takeLast(sortedWith(toList(Cycle$INSTANCE_getInstance().checkpoints), new Comparator$ObjectLiteral_16(compareBy$lambda_13(Cycle$Companion$updateCheckpoints$lambda(tick)))), limit);
       Cycle$INSTANCE_getInstance().checkpoints.clear();
       putAll(Cycle$INSTANCE_getInstance().checkpoints, old);
       Cycle$INSTANCE_getInstance().checkpoints.put_xwzc9p$(tick, cp);
@@ -7792,7 +7918,7 @@
   function Cycle$Companion$removeAgents$lambda(it) {
     return it.getLevel();
   }
-  var compareBy$lambda_13 = wrapFunction(function () {
+  var compareBy$lambda_14 = wrapFunction(function () {
     var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
     return function (closure$selector) {
       return function (a, b) {
@@ -7801,13 +7927,13 @@
       };
     };
   });
-  function Comparator$ObjectLiteral_16(closure$comparison) {
+  function Comparator$ObjectLiteral_17(closure$comparison) {
     this.closure$comparison = closure$comparison;
   }
-  Comparator$ObjectLiteral_16.prototype.compare = function (a, b) {
+  Comparator$ObjectLiteral_17.prototype.compare = function (a, b) {
     return this.closure$comparison(a, b);
   };
-  Comparator$ObjectLiteral_16.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
+  Comparator$ObjectLiteral_17.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
   Cycle$Companion.prototype.removeAgents_0 = function (agents, minCount, maxCount, fc) {
     if (fc === void 0)
       fc = false;
@@ -7815,7 +7941,7 @@
     if (count < minCount) {
       var ratio = count / maxCount | 0;
       if (Util_getInstance().random() <= ratio) {
-        var selection = takeLast(sortedWith(agents, new Comparator$ObjectLiteral_16(compareBy$lambda_13(Cycle$Companion$removeAgents$lambda))), count - maxCount | 0);
+        var selection = takeLast(sortedWith(agents, new Comparator$ObjectLiteral_17(compareBy$lambda_14(Cycle$Companion$removeAgents$lambda))), count - maxCount | 0);
         var removed = first(shuffled(selection));
         if (fc) {
           Com_getInstance().addMessage_61zpoe$('Portal ' + removed + ' quit the game.');
@@ -8671,7 +8797,7 @@
   function TopAgentsDisplay$draw$lambda(it) {
     return -it.ap | 0;
   }
-  var compareBy$lambda_14 = wrapFunction(function () {
+  var compareBy$lambda_15 = wrapFunction(function () {
     var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
     return function (closure$selector) {
       return function (a, b) {
@@ -8680,13 +8806,13 @@
       };
     };
   });
-  function Comparator$ObjectLiteral_17(closure$comparison) {
+  function Comparator$ObjectLiteral_18(closure$comparison) {
     this.closure$comparison = closure$comparison;
   }
-  Comparator$ObjectLiteral_17.prototype.compare = function (a, b) {
+  Comparator$ObjectLiteral_18.prototype.compare = function (a, b) {
     return this.closure$comparison(a, b);
   };
-  Comparator$ObjectLiteral_17.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
+  Comparator$ObjectLiteral_18.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
   TopAgentsDisplay.prototype.draw = function () {
     var fontSize = Dim_getInstance().topAgentsInventoryFontSize;
     var lineWidth = 2.0;
@@ -8698,7 +8824,7 @@
     var yOffset = (Dim_getInstance().topAgentsFontSize * 3 | 0) / 2 | 0;
     var yFixOffset = Dim_getInstance().height - Dim_getInstance().topAgentsBottomOffset - (8 * yOffset | 0) | 0;
     var headerPos = Pos_init(xPos, yFixOffset - yOffset | 0);
-    var top = take(sortedWith(toList_0(World_getInstance().allAgents), new Comparator$ObjectLiteral_17(compareBy$lambda_14(TopAgentsDisplay$draw$lambda))), 8);
+    var top = take(sortedWith(toList_0(World_getInstance().allAgents), new Comparator$ObjectLiteral_18(compareBy$lambda_15(TopAgentsDisplay$draw$lambda))), 8);
     var tmp$, tmp$_0;
     var index = 0;
     tmp$ = top.iterator();
@@ -10167,7 +10293,7 @@
     else
       tmp$_1 = Colors_getInstance().red;
     var color = tmp$_1;
-    var image = Portal$Companion_getInstance().renderPortalCenter_wc00gi$(color, PortalLevel$ZERO_getInstance());
+    var image = Portal$Companion_getInstance().renderPortalCenter_7wfmlp$(color, PortalLevel$ZERO_getInstance());
     ctx.drawImage(image, pos.x - (image.width / 2 | 0), pos.y - (image.height / 2 | 0));
     ctx.globalAlpha = 1.0;
   };
@@ -11874,7 +12000,7 @@
   function Util$findNearestPortals$lambda(it) {
     return it.first;
   }
-  var compareBy$lambda_15 = wrapFunction(function () {
+  var compareBy$lambda_16 = wrapFunction(function () {
     var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
     return function (closure$selector) {
       return function (a, b) {
@@ -11883,13 +12009,13 @@
       };
     };
   });
-  function Comparator$ObjectLiteral_18(closure$comparison) {
+  function Comparator$ObjectLiteral_19(closure$comparison) {
     this.closure$comparison = closure$comparison;
   }
-  Comparator$ObjectLiteral_18.prototype.compare = function (a, b) {
+  Comparator$ObjectLiteral_19.prototype.compare = function (a, b) {
     return this.closure$comparison(a, b);
   };
-  Comparator$ObjectLiteral_18.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
+  Comparator$ObjectLiteral_19.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
   Util.prototype.findNearestPortals_0 = function (pos) {
     var $receiver = World_getInstance().allPortals;
     var destination = ArrayList_init(collectionSizeOrDefault($receiver, 10));
@@ -11899,7 +12025,7 @@
       var item = tmp$.next();
       destination.add_11rb$(to(item.location.distanceTo_mqsrs4$(pos), item));
     }
-    return toSet(sortedWith(destination, new Comparator$ObjectLiteral_18(compareBy$lambda_15(Util$findNearestPortals$lambda))));
+    return toSet(sortedWith(destination, new Comparator$ObjectLiteral_19(compareBy$lambda_16(Util$findNearestPortals$lambda))));
   };
   Util.prototype.findNearestPortal_mqsrs4$ = function (pos) {
     var nearest = this.findNearestPortals_0(pos);
@@ -11949,7 +12075,7 @@
   function Util$select$lambda(it) {
     return it.first;
   }
-  var compareBy$lambda_16 = wrapFunction(function () {
+  var compareBy$lambda_17 = wrapFunction(function () {
     var compareValues = Kotlin.kotlin.comparisons.compareValues_s00gnj$;
     return function (closure$selector) {
       return function (a, b) {
@@ -11958,13 +12084,13 @@
       };
     };
   });
-  function Comparator$ObjectLiteral_19(closure$comparison) {
+  function Comparator$ObjectLiteral_20(closure$comparison) {
     this.closure$comparison = closure$comparison;
   }
-  Comparator$ObjectLiteral_19.prototype.compare = function (a, b) {
+  Comparator$ObjectLiteral_20.prototype.compare = function (a, b) {
     return this.closure$comparison(a, b);
   };
-  Comparator$ObjectLiteral_19.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
+  Comparator$ObjectLiteral_20.$metadata$ = {kind: Kind_CLASS, interfaces: [Comparator]};
   Util.prototype.select_4u7aq8$ = function (probabilityList, default_0) {
     var destination = ArrayList_init_0();
     var tmp$;
@@ -11989,7 +12115,7 @@
     var rand = this.randomDouble_0(total);
     var accu = {v: 0.0};
     var tmp$_1;
-    tmp$_1 = sortedWith(list, new Comparator$ObjectLiteral_19(compareBy$lambda_16(Util$select$lambda))).iterator();
+    tmp$_1 = sortedWith(list, new Comparator$ObjectLiteral_20(compareBy$lambda_17(Util$select$lambda))).iterator();
     while (tmp$_1.hasNext()) {
       var element_1 = tmp$_1.next();
       accu.v += element_1.first;

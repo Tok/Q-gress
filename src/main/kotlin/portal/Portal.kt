@@ -70,6 +70,10 @@ data class Portal(
         return resos.map { it.level.level }.sum() / resos.count().toDouble()
     }
 
+    fun filledSlots() = slots.map { it.value }.filterNot { it.resonator == null }
+    fun resoMap() = slots.filterNot { it.value.resonator == null }
+        .map { it.key to it.value.resonator!! }.toMap()
+
     private fun calculateLinkMitigation(): Int {
         val maxMitigation = 95
         //TODO shields...
@@ -313,7 +317,7 @@ data class Portal(
         }
     }
 
-    fun isOwnedByEnemy(agent: Agent) = owner?.faction != null &&  owner?.faction != agent.faction
+    fun isOwnedByEnemy(agent: Agent) = owner?.faction != null && owner?.faction != agent.faction
     fun deploy(deployer: Agent, resos: Map<Octant, Resonator>, distance: Int) {
         check(!isOwnedByEnemy(deployer))
 
@@ -323,20 +327,30 @@ data class Portal(
             Com.addMessage("$deployer captured $this.")
         }
 
-        val initialResoCount = slots.filterValues { !it.isEmpty() }.filterNot { it.value.resonator == null }.size
+        val initialResoCount = slots.count { it.value.resonator != null }
         val firstResoCount = max(resos.size, (8 - initialResoCount))
         resos.asIterable().forEachIndexed { index, (octant, resonator) ->
+            val level = resonator.level
             val oldReso = slots[octant]
-            if (isCapture && index == 0) {
-                deployer.addAp(500)
-            } else if (index < firstResoCount) {
-                deployer.addAp(125)
-            } else if (index == firstResoCount && firstResoCount + initialResoCount == 8) {
-                deployer.addAp(250)
-            } else if (oldReso?.isOwnedBy(deployer) != true) {
-                deployer.addAp(65)
+            val oldLevel = oldReso?.resonator?.level?.level
+            check(oldLevel ?: 0 < level.level)
+            val sameLevelCount = slots.count { it.value.resonator?.level == level }
+
+            val isUnableToDeployMoreOfTheSame = sameLevelCount >= level.deployablePerPlayer
+            if (isUnableToDeployMoreOfTheSame) { //should only happen rarely
+                return
             }
-            deployer.removeXm(resonator.level.level * 20)
+
+            deployer.addAp(
+                when {
+                    isCapture && index == 0 -> 500
+                    index < firstResoCount -> 125
+                    index == firstResoCount && firstResoCount + initialResoCount == 8 -> 250
+                    oldReso?.isOwnedBy(deployer) == true -> 65
+                    else -> 0
+                }
+            )
+            deployer.removeXm(level.level * 20)
             val oldDistance = oldReso?.distance
             val newDistance = (if (oldDistance == 0) distance else oldDistance) ?: distance
             //console.trace("$agent deploys ${resonator} to $octant at $this. $distance $oldDistance")
@@ -498,8 +512,9 @@ data class Portal(
         val x = location.x - (image.width / 2)
         val y = location.y - (image.height / 2)
         ctx.drawImage(image, x, y)
-        if (isDrawHealthBar) {
-            val healthBarImage = getHealthBarImage(owner?.faction, calcHealth())
+        val fact = owner?.faction
+        if (isDrawHealthBar && fact != null) {
+            val healthBarImage: Canvas = getHealthBarImage(fact, calcHealth())
             ctx.drawImage(healthBarImage, x, y + image.height + 1)
         }
     }
@@ -544,6 +559,11 @@ data class Portal(
             return chargeable.filter { keys.map { a -> a.portal }.contains(it) }
         }
 
+        private val whiteCenter: Canvas? = if (HtmlUtil.isRunningInBrowser()) {
+            renderPortalCenter(Colors.white, null)
+        } else {
+            null
+        }
         private val centerImages: Map<Pair<Faction, PortalLevel>, Canvas> = if (HtmlUtil.isRunningInBrowser()) {
             PortalLevel.values().flatMap { level ->
                 Faction.values().map { (it to level) to renderPortalCenter(it.color, level) }
@@ -562,10 +582,13 @@ data class Portal(
             emptyMap()
         }
 
-        private fun getCenterImage(faction: Faction?, level: PortalLevel) = centerImages[faction to level]!!
-        private fun getHealthBarImage(faction: Faction?, health: Int) = healthBarImages[faction to health]!!
+        private fun getCenterImage(faction: Faction?, level: PortalLevel): Canvas =
+            if (faction == null) whiteCenter!! else centerImages[faction to level]!!
 
-        fun renderPortalCenter(color: String, level: PortalLevel): Canvas {
+        private fun getHealthBarImage(faction: Faction, health: Int): Canvas =
+            healthBarImages[faction to health]!!
+
+        fun renderPortalCenter(color: String, level: PortalLevel?): Canvas {
             val lw = Dim.portalLineWidth
             val r = Dim.portalRadius.toInt()
             val w = (r * 2) + (2 * lw)
@@ -573,8 +596,10 @@ data class Portal(
             return HtmlUtil.preRender(w, h, fun(ctx: Ctx) {
                 val portalCircle = Circle(Pos(r + lw, r + lw), r.toDouble())
                 DrawUtil.drawCircle(ctx, portalCircle, Colors.black, 2.0, color)
-                val pos = Pos(r + lw + if (level.value > 1) 0 else 1, r + lw)
-                DrawUtil.drawText(ctx, pos, level.display, Colors.black, 13, DrawUtil.CODA)
+                if (level != null) {
+                    val pos = Pos(r + lw + if (level.value > 1) 0 else 1, r + lw)
+                    DrawUtil.drawText(ctx, pos, level.display, Colors.black, 13, DrawUtil.CODA)
+                }
             })
         }
 

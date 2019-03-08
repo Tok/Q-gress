@@ -27,6 +27,21 @@ object Deployer : ConditionalAction {
         if (inventoryResos.isEmpty()) {
             return false
         }
+
+        val highestInventoryReso: Int =
+            inventoryResos.sortedBy { it.level.level }.first().level.level
+        val slots = agent.actionPortal.slots
+        val canDeployMore = slots.asIterable().map { (_, slot) ->
+            val slotResoLevel = slot.resonator?.level?.level ?: 0
+            val isNewHigher = highestInventoryReso > slotResoLevel
+            val sameLevelCount = slots.count { it.value.resonator?.level?.level == slotResoLevel }
+            val canDeployMoreOfSameLevel = sameLevelCount < slot.resonator?.level?.deployablePerPlayer ?: 9
+            isNewHigher && canDeployMoreOfSameLevel
+        }.contains(true)
+        if (!canDeployMore) {
+            return false
+        }
+
         val ownedInPortal = ownedInPortal(agent)
         val results = inventoryResos.toSet().map { reso ->
             maybeDeployReso(inventoryResos, ownedInPortal, reso, true, agent)
@@ -49,25 +64,31 @@ object Deployer : ConditionalAction {
     private fun isActionPortalFriendly(agent: Agent) = !agent.actionPortal.isEnemyOf(agent)
     private fun areMoreResosAllowed(agent: Agent) = allowedResoLevels(agent).map { it.value }.sum() > 0
 
-    private fun allowedResoLevels(agent: Agent): Map<ResonatorLevel, Int> = agent.actionPortal.findAllowedResoLevels(agent)
+    private fun allowedResoLevels(agent: Agent): Map<ResonatorLevel, Int> =
+        agent.actionPortal.findAllowedResoLevels(agent)
 
     private fun ownedInPortal(agent: Agent) = agent.actionPortal.slots.filter { it.value.isOwnedBy(agent) }.toList()
-    private fun inventoryResos(inv: Inventory) = inv.items.filter { it is Resonator }.map { it as Resonator }.sortedByDescending { it.level }
+    private fun inventoryResos(inv: Inventory) =
+        inv.items.filter { it is Resonator }.map { it as Resonator }.sortedByDescending { it.level }
+
     private fun maxDeployable(ownedInPortal: List<Pair<Octant, ResonatorSlot>>, reso: Resonator): Int {
-        val owned = ownedInPortal.filter { slot -> slot.second.resonator?.level?.level ?: 0 >= reso.level.level }.count()
+        val owned =
+            ownedInPortal.filter { slot -> slot.second.resonator?.level?.level ?: 0 >= reso.level.level }.count()
         return max(reso.level.deployablePerPlayer - owned, 0)
     }
 
     private fun deployableSlots(portal: Portal, reso: Resonator): List<Pair<Octant, ResonatorSlot>> {
         return portal.slots
-                .filter {
-                    it.value.isEmpty() ||
-                            it.value.resonator?.level?.level ?: 0 < reso.level.level
-                }
-                .toList()
+            .filter {
+                it.value.isEmpty() ||
+                        it.value.resonator?.level?.level ?: 0 < reso.level.level
+            }
+            .toList()
     }
 
-    private fun levelResos(inventoryResos: List<Resonator>, reso: Resonator, agent: Agent) = inventoryResos.filter { it.level == reso.level && it.level.level <= agent.getLevel() }
+    private fun levelResos(inventoryResos: List<Resonator>, reso: Resonator, agent: Agent) =
+        inventoryResos.filter { it.level == reso.level && it.level.level <= agent.getLevel() }
+
     private fun deployResos(levelResos: List<Resonator>, maxDeployable: Int) = levelResos.take(maxDeployable)
 
     private fun actuallyDeploy(agent: Agent, slots: List<Pair<Octant, ResonatorSlot>>, resos: List<Resonator>) {
@@ -79,8 +100,10 @@ object Deployer : ConditionalAction {
         agent.action.start(ActionItem.DEPLOY)
     }
 
-    private fun maybeDeployReso(inventoryResos: List<Resonator>, ownedInPortal: List<Pair<Octant, ResonatorSlot>>,
-                                reso: Resonator, isTryOnly: Boolean, agent: Agent): Boolean {
+    private fun maybeDeployReso(
+        inventoryResos: List<Resonator>, ownedInPortal: List<Pair<Octant, ResonatorSlot>>,
+        reso: Resonator, isTryOnly: Boolean, agent: Agent
+    ): Boolean {
         val maxDeployable = maxDeployable(ownedInPortal, reso)
         if (maxDeployable <= 0) {
             return false
