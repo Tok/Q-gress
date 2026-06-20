@@ -31,6 +31,7 @@ import system.display.ui.ActionLimitsDisplay
 import util.data.GeoCoords
 import util.data.Line
 import util.data.Pos
+import util.ui.Controls
 import util.ui.Inspector
 import kotlin.js.Json
 
@@ -78,6 +79,10 @@ object HtmlUtil {
 
     fun load() {
         if (isNotRunningInBrowser()) return
+        if (Controls.isUnsupported()) {
+            Controls.showUnsupportedNotice()
+            return
+        }
         val rootDiv = document.getElementById("root") as HTMLDivElement
         rootDiv.addClass("container")
 
@@ -112,6 +117,8 @@ object HtmlUtil {
         rootDiv.append(controlDiv)
         controlDiv.addEventListener("mousemove", { event -> handleMouseMove(event) }, false)
         rootDiv.addEventListener("mousemove", { event -> handleMouseMove(event) }, false)
+
+        Controls.addLegend()
 
         val popupId = "popup"
         rootDiv.append(createPopup(popupId))

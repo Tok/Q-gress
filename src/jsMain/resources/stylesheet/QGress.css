@@ -305,6 +305,45 @@ html, body {
     padding: 5px;
 }
 
+/* On-screen controls legend (bottom-left). */
+.controlsLegend {
+    position: fixed;
+    left: 10px;
+    bottom: 10px;
+    background: #000000aa;
+    color: #ffffff;
+    border: 1px solid #666666;
+    border-radius: 5px;
+    padding: 6px 9px;
+    font-size: 12px;
+    line-height: 1.5;
+    z-index: 150;
+    pointer-events: none;
+}
+
+/* Desktop-only / unsupported-device notice (full-screen). */
+.notice {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #000000;
+    color: #ffffff;
+    z-index: 10000;
+}
+.noticeBox {
+    max-width: 420px;
+    text-align: center;
+    font-size: 18px;
+    line-height: 1.5;
+    padding: 20px;
+}
+.noticeTitle {
+    font-size: 34px;
+    margin-bottom: 12px;
+}
+
 /* Selected-entity inspector panel (screen-fixed DOM overlay). */
 .inspector {
     position: fixed;

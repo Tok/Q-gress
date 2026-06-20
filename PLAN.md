@@ -195,6 +195,17 @@ while the **simulation stays 2D**. Staged.
       field viz.
 - [ ] **Stage 4 — later**: humanoid glTF models (+ the colony-management attributes above).
 
+### UI rework (a better UI) — see `.claude/plans/` for the full master plan
+- [x] **UI Stage 1** (verified): **portal/agent selection** (click → `map.unproject` → sim Pos
+      → nearest portal; pitch-safe) + a DOM **inspector panel** (`util/ui/Inspector.kt`); an
+      on-screen **controls legend** + **desktop-only gate** (`util/ui/Controls.kt`).
+- [ ] **UI Stage 2** — map views & info layers: Satellite (default) + **Schematic** base
+      (reuse `SHADOW_STYLE`), and independent toggleable overlays (movement-penalty heatmap,
+      vector field, …).
+- [ ] **UI Stage 3** — migrate the canvas HUD to themeable DOM panels.
+- [ ] **UI Stage 4** — tuning-slider panel redesign (both factions, presets) for the AI phase.
+- [ ] **UI Stage 5** — visual theme + responsiveness.
+
 ### Phase 6 — AI-vs-AI (approach TBD — needs its own plan)
 **Polish the game/sim first** (Phases 4–5) before adding AI. The AI substrate is the
 per-faction slider vector (0..1 each) as the output; the input is the game state. The
