@@ -1,13 +1,14 @@
-// External JS bindings for the global THREE namespace (three.js UMD, loaded in
-// index.html). Lean by design: constructors + the methods we call are typed;
-// mutable instance properties (position/rotation/scale/material/...) are reached
-// via asDynamic() at the call sites in Scene3D. Parameters describe the JS
-// contract and have no Kotlin body, so detekt's "unused" rules don't apply.
+// External bindings for the three.js npm module (bundled by webpack). Lean by
+// design: constructors + the methods we call are typed; mutable instance
+// properties (position/rotation/scale/material/...) are reached via asDynamic()
+// at the call sites in Scene3D. Parameters describe the JS contract and have no
+// Kotlin body, so detekt's "unused" rules don't apply.
 @file:Suppress("UnusedParameter", "UnusedPrivateProperty")
 
 package external
 
-@JsName("THREE")
+@JsModule("three")
+@JsNonModule
 external object Three {
     class Scene {
         fun add(obj: dynamic)
