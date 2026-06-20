@@ -2,6 +2,7 @@ package util
 
 import World
 import config.Config
+import config.Dim
 import config.Styles
 import extension.*
 import external.MapLibre
@@ -219,8 +220,12 @@ object MapUtil {
     const val OFFSCREEN_CELL_ROWS = 10
 
     private fun createGrid(imageData: ImageData, width: Int, height: Int): Grid {
-        val w = width / Pos.res
-        val h = height / Pos.res
+        // Grid resolution follows the game canvas (CSS pixels), not the raw
+        // WebGL readback (which is window × devicePixelRatio). The full readback
+        // is downscaled into this grid below, so the grid stays aligned with the
+        // visible map regardless of the display's pixel ratio.
+        val w = Dim.width / Pos.res
+        val h = Dim.height / Pos.res
         fun isOffScreen(pos: Pos) = pos.x < 0 || pos.y < 0 || pos.x >= w || pos.y >= h
         fun nextRow(tempCtx: Ctx, h: Int, x: Int): List<Pair<Pos, Cell>> = (-OFFSCREEN_CELL_ROWS until (h + OFFSCREEN_CELL_ROWS)).map { y ->
             val pos = Pos(x, y)

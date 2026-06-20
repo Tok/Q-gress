@@ -91,7 +91,9 @@ object HtmlUtil {
         buttonDiv.append(pauseButton)
 
         val dropDown = createDropdown(LOCATION_DROPDOWN_ID) { mapChangeHandler() }
-        val selectionName = getLocationNameFromUrl() ?: "unknown"
+        // No location in the URL → show the default location (which initWorld also
+        // centers on), so the dropdown matches what's actually rendered.
+        val selectionName = getLocationNameFromUrl() ?: Location.DEFAULT.displayName
         setLocationDropdownSelection(dropDown, selectionName)
         buttonDiv.append(dropDown)
 

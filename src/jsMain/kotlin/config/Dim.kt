@@ -1,8 +1,13 @@
 package config
 
+import kotlinx.browser.window
+import util.HtmlUtil
+
 object Dim {
-    val width = 1200 // Compare to dimensions defined in CSS
-    val height = 800
+    // Full-screen: the play area matches the browser window. Falls back to a
+    // fixed size outside the browser (e.g. the Node test runtime).
+    val width = if (HtmlUtil.isRunningInBrowser()) window.innerWidth else 1200
+    val height = if (HtmlUtil.isRunningInBrowser()) window.innerHeight else 800
 
     val portalRadius = 8.0
     val portalLineWidth = 2
