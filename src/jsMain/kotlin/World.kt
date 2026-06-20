@@ -2,6 +2,7 @@ import agent.Agent
 import agent.Faction
 import agent.NonFaction
 import config.Config
+import config.Sim
 import extension.Canvas
 import extension.Grid
 import extension.clear
@@ -13,7 +14,6 @@ import org.w3c.dom.ImageData
 import portal.Portal
 import system.display.loading.Loading
 import system.display.loading.LoadingText
-import system.display.ui.ActionLimitsDisplay
 import util.HtmlUtil
 import util.Util
 import util.data.Pos
@@ -47,10 +47,15 @@ object World {
     // var center: JSON = MapUtil.INITIAL_MAP_CENTER
     var mousePos: Pos? = null
 
+    // Screen (canvas) extent — HUD/drawing.
     fun w() = can.width
-    fun shadowW() = w() / Pos.res
     fun h() = can.height
-    fun shadowH() = h() / Pos.res
+
+    // Simulation/grid extent (Sim, larger than the screen) — world bounds & grid cells.
+    fun simW() = Sim.width
+    fun simH() = Sim.height
+    fun shadowW() = Sim.width / Pos.res
+    fun shadowH() = Sim.height / Pos.res
     fun diagonalLength() = sqrt((can.width * can.width).toDouble() + (can.height * can.height)).toInt()
     fun totalArea() = can.width * can.height
 
@@ -64,8 +69,9 @@ object World {
     private fun wellPassableCells(): Grid = grid.filter { it.value.isPassableInAllDirections() }
     private fun passableOnScreen(): Grid = wellPassableCells().filterNot { it.key.isOffGrid() }
 
+    // Portals may spawn anywhere passable in the (larger) play area; the old screen-region
+    // block was a 2D-era restriction.
     fun passableInActionArea(): Grid = passableOnScreen()
-        .filter { ActionLimitsDisplay.isNotBlocked(it.key.fromShadow()) }
 
     val allAgents: MutableSet<Agent> = mutableSetOf()
 

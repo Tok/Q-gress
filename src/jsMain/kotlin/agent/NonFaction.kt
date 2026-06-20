@@ -114,23 +114,23 @@ data class NonFaction(
         private val OFFSCREEN_DISTANCE = Pos.res * (MapUtil.OFFSCREEN_CELL_ROWS / 2)
         private val DESTINATIONS = listOf(
             // NORTH
-            Pos(World.w() / 3, -OFFSCREEN_DISTANCE),
-            Pos(World.w() * 2 / 3, -OFFSCREEN_DISTANCE),
+            Pos(World.simW() / 3, -OFFSCREEN_DISTANCE),
+            Pos(World.simW() * 2 / 3, -OFFSCREEN_DISTANCE),
             // WEST
-            Pos(-OFFSCREEN_DISTANCE, World.h() / 3),
-            Pos(-OFFSCREEN_DISTANCE, World.h() * 2 / 3),
+            Pos(-OFFSCREEN_DISTANCE, World.simH() / 3),
+            Pos(-OFFSCREEN_DISTANCE, World.simH() * 2 / 3),
             // EAST
-            Pos(World.w() + OFFSCREEN_DISTANCE, World.h() / 3),
-            Pos(World.w() + OFFSCREEN_DISTANCE, World.h() * 2 / 3),
+            Pos(World.simW() + OFFSCREEN_DISTANCE, World.simH() / 3),
+            Pos(World.simW() + OFFSCREEN_DISTANCE, World.simH() * 2 / 3),
             // SOUTH
-            Pos(World.w() / 3, World.h() + OFFSCREEN_DISTANCE),
-            Pos(World.w() * 2 / 3, World.h() + OFFSCREEN_DISTANCE),
+            Pos(World.simW() / 3, World.simH() + OFFSCREEN_DISTANCE),
+            Pos(World.simW() * 2 / 3, World.simH() + OFFSCREEN_DISTANCE),
         )
         private val OFFSCREEN_EDGES = listOf(
             Pos(-OFFSCREEN_DISTANCE, -OFFSCREEN_DISTANCE),
-            Pos(World.w() + OFFSCREEN_DISTANCE, -OFFSCREEN_DISTANCE),
-            Pos(-OFFSCREEN_DISTANCE, World.h() + OFFSCREEN_DISTANCE),
-            Pos(World.w() + OFFSCREEN_DISTANCE, World.h() + OFFSCREEN_DISTANCE),
+            Pos(World.simW() + OFFSCREEN_DISTANCE, -OFFSCREEN_DISTANCE),
+            Pos(-OFFSCREEN_DISTANCE, World.simH() + OFFSCREEN_DISTANCE),
+            Pos(World.simW() + OFFSCREEN_DISTANCE, World.simH() + OFFSCREEN_DISTANCE),
         )
         val OFFSCREEN = DESTINATIONS + (if (Config.useOffscreenEdgeDestinations) OFFSCREEN_EDGES else emptyList())
         fun prepareOffscreenLocations() = OFFSCREEN.forEach {

@@ -2,7 +2,7 @@ package util
 
 import World
 import config.Config
-import config.Dim
+import config.Sim
 import config.Styles
 import extension.*
 import external.MapLibre
@@ -17,6 +17,8 @@ import system.display.Scene3D
 import util.data.Cell
 import util.data.Pos
 import kotlin.js.Json
+import kotlin.math.log2
+import kotlin.math.roundToInt
 
 object MapUtil {
     // --- Open, keyless tile sources (no access token / billing) -------------
@@ -125,6 +127,10 @@ object MapUtil {
     private const val ZOOM = 18
     private const val MIN_ZOOM = 3
     private const val MAX_ZOOM = 21
+
+    // The grid is read from the shadow map at ZOOM over a Sim-sized canvas (SCALE× the screen).
+    // The visible maps start zoomed out to frame that whole play area; the anchor stays at ZOOM.
+    private val DISPLAY_ZOOM = (ZOOM - log2(Sim.SCALE)).roundToInt()
     private const val DEFAULT_PITCH = 50.0 // tilt the visible maps so the 3D scene reads as 3D
     private const val MAX_PITCH = 80.0
 
@@ -143,7 +149,7 @@ object MapUtil {
     private fun captureAnchor() {
         val m = referenceMap() ?: return
         anchorCenter = m.getCenter()
-        anchorZoom = m.getZoom()
+        anchorZoom = ZOOM.toDouble() // grid is read at ZOOM regardless of the (framed) display zoom
     }
 
     fun rotateBy(degrees: Double) {
@@ -208,7 +214,7 @@ object MapUtil {
             }
             newMap.setMinZoom(MIN_ZOOM)
             newMap.setMaxZoom(MAX_ZOOM)
-            newMap.setZoom(ZOOM)
+            newMap.setZoom(DISPLAY_ZOOM)
             newMap.setCenter(center)
             newMap.setPitch(DEFAULT_PITCH)
         } else {
@@ -216,7 +222,7 @@ object MapUtil {
                 addLayers(existing)
                 callback(existing)
             }
-            val options: Json = JSON.parse("""{"center": [$center], "zoom": $ZOOM}""")
+            val options: Json = JSON.parse("""{"center": [$center], "zoom": $DISPLAY_ZOOM}""")
             existing.jumpTo(options)
         }
     }
@@ -238,7 +244,7 @@ object MapUtil {
             newMap.addControl(MapLibre.GeolocateControl(geoCtrl))
             newMap.setMinZoom(MIN_ZOOM)
             newMap.setMaxZoom(MAX_ZOOM)
-            newMap.setZoom(ZOOM)
+            newMap.setZoom(DISPLAY_ZOOM)
             newMap.setCenter(center)
             newMap.setPitch(DEFAULT_PITCH)
         } else {
@@ -247,7 +253,7 @@ object MapUtil {
             })
             val lng = center["lng"]
             val lat = center["lat"]
-            val options: Json = JSON.parse("""{"center": [$lng,$lat],"zoom": $ZOOM}""")
+            val options: Json = JSON.parse("""{"center": [$lng,$lat],"zoom": $DISPLAY_ZOOM}""")
             existing.jumpTo(options)
         }
     }
@@ -257,6 +263,10 @@ object MapUtil {
         val div = document.createElement("div") as HTMLDivElement
         div.id = SHADOW_MAP
         div.addClass(SHADOW_MAP, "top")
+        // Render the shadow map over the whole Sim area (SCALE× the screen) at full ZOOM detail,
+        // so the readback grid covers the larger play area.
+        div.style.width = "${Sim.width}px"
+        div.style.height = "${Sim.height}px"
         document.body?.append(div)
         val newMap = initShadowMap()
         shadowMap = newMap
@@ -315,8 +325,8 @@ object MapUtil {
         // WebGL readback (which is window × devicePixelRatio). The full readback
         // is downscaled into this grid below, so the grid stays aligned with the
         // visible map regardless of the display's pixel ratio.
-        val w = Dim.width / Pos.res
-        val h = Dim.height / Pos.res
+        val w = Sim.width / Pos.res
+        val h = Sim.height / Pos.res
         fun isOffScreen(pos: Pos) = pos.x < 0 || pos.y < 0 || pos.x >= w || pos.y >= h
         fun nextRow(tempCtx: Ctx, h: Int, x: Int): List<Pair<Pos, Cell>> = (-OFFSCREEN_CELL_ROWS until (h + OFFSCREEN_CELL_ROWS)).map { y ->
             val pos = Pos(x, y)

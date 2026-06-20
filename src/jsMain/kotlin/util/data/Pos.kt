@@ -4,6 +4,7 @@ import World
 import config.Config
 import config.Constants
 import config.Dim
+import config.Sim
 import extension.Grid
 import util.HtmlUtil
 import util.Util
@@ -87,20 +88,20 @@ data class Pos(val x: Double, val y: Double) {
         private val pixelPartLng = lngDist / Dim.height
 
         private val xMax = Dim.maxDeploymentRange.toInt() * 2
-        private fun createRandomNoOffset() = Pos(Util.randomInt(Dim.width), Util.randomInt(Dim.height))
+        private fun createRandomNoOffset() = Pos(Util.randomInt(Sim.width), Util.randomInt(Sim.height))
         private fun createRandom(): Pos {
-            val x = Dim.leftOffset + Util.randomInt((Dim.width - Dim.leftOffset - Dim.rightOffset).toInt())
-            val y = Dim.topOffset + Util.randomInt((Dim.height - Dim.topOffset - Dim.botOffset).toInt())
+            val x = Sim.leftOffset + Util.randomInt((Sim.width - Sim.leftOffset - Sim.rightOffset).toInt())
+            val y = Sim.topOffset + Util.randomInt((Sim.height - Sim.topOffset - Sim.botOffset).toInt())
             return Pos(x.toInt(), y.toInt())
         }
 
         fun createRandomForPortal(): Pos {
             if (HtmlUtil.isNotRunningInBrowser()) {
-                return Pos(Util.randomInt(Dim.width), Util.randomInt(Dim.height))
+                return Pos(Util.randomInt(Sim.width), Util.randomInt(Sim.height))
             } else {
                 val grid = World.passableInActionArea()
                     .filterNot { it.key.fromShadow().x < Dim.maxDeploymentRange }
-                    .filterNot { it.key.fromShadow().x > World.w() - Dim.maxDeploymentRange }
+                    .filterNot { it.key.fromShadow().x > World.simW() - Dim.maxDeploymentRange }
                     .filterNot { it.key.fromShadow().hasClosePortal() }
                 check(grid.isNotEmpty()) // map is blocked or there is no more space left.
                 val randomCell = Util.shuffle(grid.toList()).first()

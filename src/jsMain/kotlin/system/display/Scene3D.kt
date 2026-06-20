@@ -5,7 +5,7 @@ import agent.Agent
 import agent.Faction
 import agent.NonFaction
 import agent.action.ActionItem
-import config.Dim
+import config.Sim
 import external.MapLibre
 import external.Three
 import kotlinx.browser.document
@@ -55,6 +55,8 @@ object Scene3D {
     private const val VECTOR_CONE_R = 1.1 // flow-arrow cone radius (metres)
     private const val VECTOR_CONE_H = 3.6 // flow-arrow cone length (metres)
     private const val MARKER_R = 10.0 // build-preview marker radius (metres)
+    private const val BORDER_COLOR = "#22ddff" // playable-area boundary
+    private const val BORDER_Z = 0.3
 
     // Currently selected entity, as "portal:<id>" / "agent:<name>" (see pick()).
     var selected: String? = null
@@ -79,6 +81,7 @@ object Scene3D {
     private var overlayGroup: dynamic = null // passability quad (static; toggled)
     private var vectorFieldGroup: dynamic = null // selected portal's flow field (toggled)
     private var markerGroup: dynamic = null // build-preview marker
+    private var borderGroup: dynamic = null // playable-area boundary outline
     private var passabilityVisible = false
     private var vectorFieldVisible = false
     private var vectorFieldKey: String? = null // selection the flow field was last built for
@@ -125,7 +128,9 @@ object Scene3D {
         agentsGroup = Three.Group().also { newScene.add(it) }
         indicatorsGroup = Three.Group().also { newScene.add(it) }
         markerGroup = Three.Group().also { newScene.add(it) }
+        borderGroup = Three.Group().also { newScene.add(it) }
         scene = newScene
+        buildBorder()
 
         val params: dynamic = js("({})")
         params.canvas = map.getCanvas()
@@ -211,6 +216,14 @@ object Scene3D {
         }
     }
 
+    // Outline the playable area (sim bounds) so the player can see where the world ends.
+    private fun buildBorder() {
+        val group = borderGroup ?: return
+        val corners = arrayOf(Pos(0, 0), Pos(Sim.width, 0), Pos(Sim.width, Sim.height), Pos(0, Sim.height), Pos(0, 0))
+        val points = corners.map { Three.Vector3(sceneX(it), sceneY(it), BORDER_Z) }.toTypedArray()
+        group.add(Three.Line(Three.BufferGeometry().setFromPoints(points), lineMaterial(BORDER_COLOR)))
+    }
+
     /** Place (or clear, when pos is null) the build-preview marker on the ground. */
     fun setBuildMarker(pos: Pos?, state: String) {
         val group = markerGroup ?: return
@@ -245,8 +258,8 @@ object Scene3D {
     }
 
     private fun buildPassabilityMesh(): dynamic {
-        val cols = Dim.width / Pos.res
-        val rows = Dim.height / Pos.res
+        val cols = Sim.width / Pos.res
+        val rows = Sim.height / Pos.res
         val canvas = document.createElement("canvas").asDynamic()
         canvas.width = cols
         canvas.height = rows
@@ -267,7 +280,7 @@ object Scene3D {
         matParams.transparent = true
         matParams.depthWrite = false
         val mesh = Three.Mesh(
-            Three.PlaneGeometry(Dim.width * metersPerPixel, Dim.height * metersPerPixel),
+            Three.PlaneGeometry(Sim.width * metersPerPixel, Sim.height * metersPerPixel),
             Three.MeshBasicMaterial(matParams),
         )
         mesh.asDynamic().position.set(0.0, 0.0, OVERLAY_Z)
@@ -288,13 +301,13 @@ object Scene3D {
         val merc = MapLibre.asDynamic().MercatorCoordinate.fromLngLat(arrayOf(lng, lat), 0.0)
         val eastMeters = (merc.x as Double - (originMerc.x as Double)) / metersScale
         val southMeters = (merc.y as Double - (originMerc.y as Double)) / metersScale
-        val px = eastMeters / metersPerPixel + Dim.width / 2.0
-        val py = southMeters / metersPerPixel + Dim.height / 2.0
+        val px = eastMeters / metersPerPixel + Sim.width / 2.0
+        val py = southMeters / metersPerPixel + Sim.height / 2.0
         return Pos(px.toInt(), py.toInt())
     }
 
-    private fun sceneX(pos: Pos) = (pos.x - Dim.width / 2.0) * metersPerPixel
-    private fun sceneY(pos: Pos) = -(pos.y - Dim.height / 2.0) * metersPerPixel
+    private fun sceneX(pos: Pos) = (pos.x - Sim.width / 2.0) * metersPerPixel
+    private fun sceneY(pos: Pos) = -(pos.y - Sim.height / 2.0) * metersPerPixel
 
     private fun place(obj: dynamic, x: Double, y: Double, z: Double) {
         obj.position.set(x, y, z)
