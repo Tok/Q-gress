@@ -41,8 +41,6 @@ external object Three {
         fun normalize(): Vector3
     }
 
-    class Vector2(x: Double = definedExternally, y: Double = definedExternally)
-
     class Raycaster {
         fun set(origin: Vector3, direction: Vector3)
         fun intersectObjects(objects: dynamic, recursive: Boolean = definedExternally): dynamic
@@ -77,10 +75,6 @@ external object Three {
         radius: dynamic,
         widthSegments: dynamic = definedExternally,
         heightSegments: dynamic = definedExternally,
-    )
-    class LatheGeometry(
-        points: dynamic, // array of Vector2 (radius, height) revolved around the Y axis
-        segments: dynamic = definedExternally,
     )
     class CylinderGeometry(
         radiusTop: dynamic,

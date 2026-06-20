@@ -51,7 +51,8 @@ object Scene3D {
     private const val HEAD_Z = 1.6
     private const val INDICATOR_Z = 2.7
     private const val INDICATOR_SIZE = 1.6
-    private const val POLE_H = 22.5 // link/field anchor height + shatter spawn height (legacy portal top)
+    private const val POLE_R = 2.0
+    private const val POLE_H = 22.5 // portal pole height = link/field anchor + shatter spawn height
     private const val TOP_R = 7.0
     private const val NEUTRAL_COLOR = "#bbbbbb"
     private const val HIGHLIGHT_COLOR = "#f0f0f0" // selection: off-tint grayscale (no new hues)
@@ -69,8 +70,6 @@ object Scene3D {
     private const val SHARD_SPIN = 6.0 // max tumble rad/s
     private const val SHARD_MASS = 1.0
     private const val GRAVITY = 9.8 // m/s²
-    private const val SHARD_TARGET_PATH = 3.0 // pole-shard target size (metres)
-    private const val POLE_SHARD_COUNT = 12
     private const val XMP_RANGE_SCALE = 0.5 // XmpLevel.rangeM → scene-metre blast radius
     private const val XMP_LIFE_BASE = 0.9 // seconds; total detonation lifetime at level 0
     private const val XMP_LIFE_PER_LEVEL = 0.06 // bigger bursters linger a little longer
@@ -107,9 +106,7 @@ object Scene3D {
     // Glass-shatter fracture assets (loaded once from GLBs). Each "shard holder" is a JS object
     // { geo, cx, cy, cz } — a shared geometry + its local centroid (for the burst direction).
     private var flaskVariants: List<List<dynamic>> = emptyList() // sephira/sphere shell-shard variants
-    private var pathShards: List<dynamic> = emptyList() // pole/rod shard library
     private var flaskScale = 1.0 // scale a flask variant to ≈ the portal top sphere
-    private var pathScale = 1.0 // scale a pole shard to ≈ SHARD_TARGET_PATH
     private var shardsGroup: dynamic = null // transient shatter fragments (not cleared by sync)
     private var burstsGroup: dynamic = null // transient XMP shockwaves
     private var showcaseGroup: dynamic = null // demo-scene portal preview (not cleared by sync)
@@ -132,6 +129,9 @@ object Scene3D {
     // Shared geometries/materials (created lazily once three.js is loaded).
     private val headGeo: dynamic by lazy { Three.SphereGeometry(HEAD_R, 10, 10) }
     private val coneGeo: dynamic by lazy { Three.ConeGeometry(VECTOR_CONE_R, VECTOR_CONE_H, 6) }
+    private val poleGeo: dynamic by lazy { Three.CylinderGeometry(POLE_R, POLE_R, POLE_H, 12) } // metal pole
+    private val topGeo: dynamic by lazy { Three.SphereGeometry(TOP_R, 20, 16) } // glass orb (scaled per level)
+    private val gasketGeo: dynamic by lazy { Three.TorusGeometry(POLE_R * 1.15, POLE_R * 0.4, 10, 20) } // rubber donut
     private val burstGeo: dynamic by lazy { Three.SphereGeometry(1.0, 24, 16) } // unit sphere → XMP hot core
     private val torusGeo: dynamic by lazy { Three.TorusGeometry(1.0, 0.42, 16, 48) } // unit donut → rolling cap
     private val ringQuadGeo: dynamic by lazy { Three.PlaneGeometry(2.0, 2.0) } // flat quad → ground shockwave
@@ -312,8 +312,8 @@ object Scene3D {
         group.add(Three.Line(Three.BufferGeometry().setFromPoints(points), lineMaterial(BORDER_COLOR)))
     }
 
-    // Load the glass-shard fracture GLBs once (async). shattered_flask = sphere shell-shard
-    // variants (pieces named "<key>_chunkN"); glass_shards = a small rod-shard library.
+    // Load the glass-orb fracture GLB once (async). shattered_flask = sphere shell-shard variants
+    // (pieces named "<key>_chunkN"); one random variant per shatter, scaled to the orb's level.
     private fun loadShatterAssets() {
         val loader = GLTFLoader()
         loader.load(
@@ -324,15 +324,6 @@ object Scene3D {
             },
             {},
             { e -> console.error("shattered_flask load failed: $e") },
-        )
-        loader.load(
-            "models/glass_shards.glb",
-            { gltf ->
-                pathShards = collectShards(gltf)
-                pathScale = computeScale(pathShards.take(1), SHARD_TARGET_PATH)
-            },
-            {},
-            { e -> console.error("glass_shards load failed: $e") },
         )
     }
 
@@ -359,20 +350,16 @@ object Scene3D {
     }
 
     /** Shatter a removed portal into glass fragments at its location (called from Portal.remove). */
-    fun shatterPortal(location: Pos, color: String) {
+    fun shatterPortal(location: Pos, color: String, level: Int) {
         scene ?: return
         val x = sceneX(location)
         val y = sceneY(location)
-        if (flaskVariants.isNotEmpty()) { // top sphere → shell shards
+        val s = flaskLevelScale(level) // shards reuse the flask model, scaled to this level's orb
+        if (flaskVariants.isNotEmpty()) { // glass orb → shell shards, at the orb's height
             val variant = flaskVariants[(Util.random() * flaskVariants.size).toInt()]
-            variant.forEach { holder -> spawnShard(holder, doubleArrayOf(x, y, POLE_H), flaskScale, color, 6.0) }
+            variant.forEach { holder -> spawnShard(holder, doubleArrayOf(x, y, POLE_H + TOP_R * s), flaskScale * s, color, 6.0) }
         }
-        if (pathShards.isNotEmpty()) { // pole → rod shards along its length
-            for (i in 0 until POLE_SHARD_COUNT) {
-                val holder = pathShards[(Util.random() * pathShards.size).toInt()]
-                spawnShard(holder, doubleArrayOf(x, y, POLE_H * (i + 0.5) / POLE_SHARD_COUNT), pathScale, color, 5.0)
-            }
-        }
+        // (The pole is metal, not glass, so only the orb shatters.)
     }
 
     private fun spawnShard(holder: dynamic, pos: DoubleArray, scale: Double, color: String, burstH: Double) {
@@ -506,12 +493,6 @@ object Scene3D {
         return Three.MeshStandardMaterial(p)
     }
 
-    private fun collectShards(gltf: dynamic): List<dynamic> {
-        val out = mutableListOf<dynamic>()
-        gltf.scene.traverse({ obj: dynamic -> if (obj.geometry != null) out.add(makeShard(obj)) })
-        return out
-    }
-
     private fun parseVariants(gltf: dynamic): List<List<dynamic>> {
         val groups = mutableMapOf<String, MutableList<dynamic>>()
         gltf.scene.traverse({ obj: dynamic ->
@@ -633,31 +614,48 @@ object Scene3D {
         obj.userData = data
     }
 
+    /** Glass orb scale by portal level (1..8): a small flask at L1 growing to a big one at L8. */
+    private fun flaskLevelScale(level: Int) = 0.5 + (level.coerceIn(1, 8) - 1) / 7.0 * 0.8
+
     private fun addPortal(portal: Portal) {
         val id = "portal:${portal.id}"
         val baseColor = portal.owner?.faction?.color ?: NEUTRAL_COLOR
         val color = if (selected == id) HIGHLIGHT_COLOR else baseColor
-        addPortalMesh(portal.location, portal.getLevel().toInt(), color, id)
+        val s = flaskLevelScale(portal.getLevel().toInt())
+        buildPortal(portalsGroup, sceneX(portal.location), sceneY(portal.location), s, color, id)
     }
 
-    /** Build the abstract glass "mushroom" for a portal at [location], shaped by [level] (1..8). */
-    private fun addPortalMesh(location: Pos, level: Int, color: String, id: String) {
-        val x = sceneX(location)
-        val y = sceneY(location)
-        val mesh = Three.Mesh(PortalShape.geometry(level), GlassShader.material(color))
-        place(mesh.asDynamic(), x, y, 0.0)
-        tag(mesh.asDynamic(), id)
-        portalsGroup.add(mesh)
+    /**
+     * A portal: a metallic pole, a small black rubber gasket so the metal doesn't touch the glass,
+     * and a round glass orb on top (scaled by [scale] = level). [id] tags it for picking (null = demo).
+     */
+    private fun buildPortal(parent: dynamic, x: Double, y: Double, scale: Double, color: String, id: String?) {
+        val pole = Three.Mesh(poleGeo, metalMaterial(color))
+        pole.asDynamic().rotation.x = PI / 2 // Y-axis cylinder → vertical (Z up)
+        place(pole.asDynamic(), x, y, POLE_H / 2)
+        val gasket = Three.Mesh(gasketGeo, rubberMaterial()) // torus in XY → flat ring around the pole top
+        place(gasket.asDynamic(), x, y, POLE_H)
+        val orb = Three.Mesh(topGeo, portalGlass(color))
+        place(orb.asDynamic(), x, y, POLE_H + TOP_R * scale) // rests on the pole top (orb bottom = POLE_H)
+        orb.asDynamic().scale.set(scale, scale, scale)
+        id?.let {
+            tag(pole.asDynamic(), it)
+            tag(gasket.asDynamic(), it)
+            tag(orb.asDynamic(), it)
+        }
+        parent.add(pole)
+        parent.add(gasket)
+        parent.add(orb)
     }
 
     /** Demo only (#demo/portal): show a single portal at [level] in a sync-immune group. */
     fun showcasePortal(location: Pos, level: Int, color: String) {
         val grp = showcaseGroup ?: return
         if (showcaseMesh != null) grp.remove(showcaseMesh)
-        val mesh = Three.Mesh(PortalShape.geometry(level), GlassShader.material(color))
-        place(mesh.asDynamic(), sceneX(location), sceneY(location), 0.0)
-        grp.add(mesh)
-        showcaseMesh = mesh
+        val group = Three.Group()
+        buildPortal(group, sceneX(location), sceneY(location), flaskLevelScale(level), color, null)
+        grp.add(group)
+        showcaseMesh = group
     }
 
     private fun addAgent(agent: Agent) {
@@ -704,6 +702,26 @@ object Scene3D {
     private fun solidMaterial(color: String): dynamic = materialCache.getOrPut("s$color") {
         val p: dynamic = js("({})")
         p.color = color
+        Three.MeshStandardMaterial(p)
+    }
+
+    // Brushed metal pole (faction-tinted), the glass orb (cached qlippostasis-style shader),
+    // and a matte black rubber gasket between them so metal never touches glass.
+    private fun metalMaterial(color: String): dynamic = materialCache.getOrPut("m$color") {
+        val p: dynamic = js("({})")
+        p.color = color
+        p.metalness = 0.9
+        p.roughness = 0.35
+        Three.MeshStandardMaterial(p)
+    }
+
+    private fun portalGlass(color: String): dynamic = materialCache.getOrPut("pg$color") { GlassShader.material(color) }
+
+    private fun rubberMaterial(): dynamic = materialCache.getOrPut("rubber") {
+        val p: dynamic = js("({})")
+        p.color = "#0a0a0a"
+        p.metalness = 0.0
+        p.roughness = 0.95
         Three.MeshStandardMaterial(p)
     }
 

@@ -102,7 +102,7 @@ object Demo {
         panel.append(
             button("Shatter", "demoButton") {
                 SoundUtil.enableAudio()
-                Scene3D.shatterPortal(center, shardColor)
+                Scene3D.shatterPortal(center, shardColor, level = 8)
                 SoundUtil.playGlassShatterSound(center, 0.4, 0.9)
             },
         )

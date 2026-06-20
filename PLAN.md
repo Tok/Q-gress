@@ -220,10 +220,12 @@ the vessel itself stays grayscale).
   faction `tint`). View direction approximated from the world normal's verticality (no opaque-pass
   texture in the custom layer); alpha/emission pushed well above Godot's so it reads over the map.
   Double-shell + true SSR still a follow-up.
-- [x] **Portal = 8-stage glass mushroom** — `system/display/PortalShape.kt` lathe profiles
-  (φ-scaled height, thickening stem): L1 flask-on-thin-stem → L5 opening → L8 concave umbrella;
-  cached per level, baked Z-up; `addPortal` now builds these. Verified L1/L5/L8 in the demo.
-- [x] **`#demo/portal` scene** (L1–L8 + faction tint) — plus demos now render on a **gray
+- [x] **Portal = metal pole + rubber gasket + glass orb** (the mushroom was tried and **reverted**
+  per user — too much). A faction-tinted **metallic** pole, a small matte-black **rubber gasket**
+  torus at the junction so metal never touches glass, and a round **glass orb** on top whose size
+  scales with portal **level** (L1 small → L8 large). The **shatter reuses the flask shards**,
+  scaled to the orb's level (the pole is metal, so only the orb shatters). Verified L1/L8 in demo.
+- [x] **`#demo/portal` scene** (L1–L8 orb size + faction tint) — plus demos now render on a **gray
   backdrop** (satellite hidden, checkbox to toggle) and sit **zoomed in** (`DEMO_ZOOM`).
 - [ ] **Follow-ups on the glass/mushroom** still to do: **double-shell** thick-wall + true SSR
   refraction for the shader; **growth + level-up animation** (grow 0 → L1 on `Portal.create`
