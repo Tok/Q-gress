@@ -44,6 +44,10 @@ object Scene3D {
     private const val POLE_H = 45.0
     private const val TOP_R = 7.0
     private const val NEUTRAL_COLOR = "#bbbbbb"
+    private const val HIGHLIGHT_COLOR = "#ffff33"
+
+    // Currently selected entity, as "portal:<id>" / "agent:<name>" (see pick()).
+    var selected: String? = null
 
     private var scene: Three.Scene? = null
     private var camera: Three.Camera? = null
@@ -58,6 +62,7 @@ object Scene3D {
     // Category groups, cleared & rebuilt each sync.
     private var portalsGroup: dynamic = null
     private var agentsGroup: dynamic = null
+    private var indicatorsGroup: dynamic = null // action-indicator sprites (excluded from raycast)
     private var npcsGroup: dynamic = null
     private var linksGroup: dynamic = null
     private var fieldsGroup: dynamic = null
@@ -99,6 +104,7 @@ object Scene3D {
         linksGroup = Three.Group().also { newScene.add(it) }
         npcsGroup = Three.Group().also { newScene.add(it) }
         agentsGroup = Three.Group().also { newScene.add(it) }
+        indicatorsGroup = Three.Group().also { newScene.add(it) }
         scene = newScene
 
         val params: dynamic = js("({})")
@@ -134,11 +140,27 @@ object Scene3D {
         clear(npcsGroup)
         World.allNonFaction.forEach { addNpc(it) }
         clear(agentsGroup)
+        clear(indicatorsGroup)
         World.allAgents.forEach { addAgent(it) }
     }
 
     private fun clear(group: dynamic) {
         group?.clear()
+    }
+
+    /**
+     * Convert a ground lng/lat (e.g. from map.unproject of a click) back to a sim Pos,
+     * the inverse of the Pos→scene bridge. Used for click selection / ground actions, which
+     * is robust under pitch (MapLibre's unproject handles the camera) unlike raycasting the
+     * map's custom projection matrix.
+     */
+    fun lngLatToSimPos(lng: Double, lat: Double): Pos {
+        val merc = MapLibre.asDynamic().MercatorCoordinate.fromLngLat(arrayOf(lng, lat), 0.0)
+        val eastMeters = (merc.x as Double - (originMerc.x as Double)) / metersScale
+        val southMeters = (merc.y as Double - (originMerc.y as Double)) / metersScale
+        val px = eastMeters / metersPerPixel + Dim.width / 2.0
+        val py = southMeters / metersPerPixel + Dim.height / 2.0
+        return Pos(px.toInt(), py.toInt())
     }
 
     private fun sceneX(pos: Pos) = (pos.x - Dim.width / 2.0) * metersPerPixel
@@ -148,30 +170,43 @@ object Scene3D {
         obj.position.set(x, y, z)
     }
 
+    private fun tag(obj: dynamic, id: String) {
+        val data: dynamic = js("({})")
+        data.qid = id
+        obj.userData = data
+    }
+
     private fun addPortal(portal: Portal) {
         val x = sceneX(portal.location)
         val y = sceneY(portal.location)
-        val color = portal.owner?.faction?.color ?: NEUTRAL_COLOR
+        val id = "portal:${portal.id}"
+        val baseColor = portal.owner?.faction?.color ?: NEUTRAL_COLOR
+        val color = if (selected == id) HIGHLIGHT_COLOR else baseColor
         val pole = Three.Mesh(poleGeo, solidMaterial(color))
         pole.asDynamic().rotation.x = PI / 2 // Y-axis cylinder → vertical (Z up)
         place(pole.asDynamic(), x, y, POLE_H / 2)
+        tag(pole.asDynamic(), id)
         portalsGroup.add(pole)
         val top = Three.Mesh(topGeo, solidMaterial(color))
         place(top.asDynamic(), x, y, POLE_H)
+        tag(top.asDynamic(), id)
         portalsGroup.add(top)
     }
 
     private fun addAgent(agent: Agent) {
         val x = sceneX(agent.pos)
         val y = sceneY(agent.pos)
-        val sphere = Three.Mesh(headGeo, solidMaterial(agent.faction.color))
+        val id = "agent:${agent.name}"
+        val color = if (selected == id) HIGHLIGHT_COLOR else agent.faction.color
+        val sphere = Three.Mesh(headGeo, solidMaterial(color))
         place(sphere.asDynamic(), x, y, HEAD_Z)
+        tag(sphere.asDynamic(), id)
         agentsGroup.add(sphere)
         // Action indicator: a camera-facing billboard just above the head.
         val sprite = Three.Sprite(indicatorMaterial(agent.action.item, agent.faction))
         sprite.asDynamic().position.set(x, y, INDICATOR_Z)
         sprite.asDynamic().scale.set(INDICATOR_SIZE, INDICATOR_SIZE, 1.0)
-        agentsGroup.add(sprite)
+        indicatorsGroup.add(sprite)
     }
 
     private fun addNpc(npc: NonFaction) {

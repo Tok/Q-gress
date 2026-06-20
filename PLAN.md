@@ -213,12 +213,19 @@ polished. Leaning toward the custom NN (A) for specificity + visualization, but 
 
 ## Under consideration (icebox)
 
-- **Colony-management direction + per-entity attributes.** Give NPCs and players individual
-  attributes (endurance, speed, agility, max radius, …) so each has strengths/weaknesses,
-  leaning the sim toward a (colony-)management game. Builds on the existing `agent/Skills.kt`
-  (agent speed/deploy/glyph skills) and `agent/AgentSize.kt` (NPC size). Pairs with the 3D
-  humanoid work (Scene3D Stage 4): NPCs are already rendered as a head-sized sphere at head
-  height so a body/attributes can attach later.
+- **Colony-management / roster / gacha direction (gameplay expansion).** Lean the sim toward
+  a management game:
+  - **Per-entity attributes**: endurance, speed, agility, max radius, … so each agent/NPC has
+    strengths/weaknesses (builds on `agent/Skills.kt` and `agent/AgentSize.kt`).
+  - **Gacha-tiered agents**: common/rare/legendary tiers; **recruiting becomes a gacha pull**
+    (extends the Phase-5 recruiting rework). Player **manages their roster**.
+  - **Items**: skateboards, power-banks, second phones, … affecting movement/energy/capacity
+    (extends the existing `items/` + `agent/Inventory.kt`).
+  - **Battery/accu %**: a key player state — when a player's phone energy is depleted they
+    **leave the scene**. New resource distinct from in-game XM.
+  - Cheating isn't a concern (client-only JS), so logic can live client-side.
+  - Pairs with the 3D humanoid work (Scene3D Stage 4): people are already head-sized spheres
+    at head height, ready for bodies + visible gear/tier.
 
 - **Null-safety hardening.** The Kotlin 1.3→2.x migration silently changed
   `max()`/`min()`/`maxBy`/`minBy` from returning `null` on empty to *throwing* — these

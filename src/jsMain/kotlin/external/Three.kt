@@ -30,9 +30,20 @@ external object Three {
         fun makeTranslation(x: Double, y: Double, z: Double): Matrix4
         fun scale(v: Vector3): Matrix4
         fun multiply(m: Matrix4): Matrix4
+        fun copy(m: Matrix4): Matrix4
+        fun invert(): Matrix4
     }
 
-    class Vector3(x: Double = definedExternally, y: Double = definedExternally, z: Double = definedExternally)
+    class Vector3(x: Double = definedExternally, y: Double = definedExternally, z: Double = definedExternally) {
+        fun applyMatrix4(m: Matrix4): Vector3
+        fun subVectors(a: Vector3, b: Vector3): Vector3
+        fun normalize(): Vector3
+    }
+
+    class Raycaster {
+        fun set(origin: Vector3, direction: Vector3)
+        fun intersectObjects(objects: dynamic, recursive: Boolean = definedExternally): dynamic
+    }
 
     class DirectionalLight(color: dynamic, intensity: dynamic = definedExternally)
     class AmbientLight(color: dynamic, intensity: dynamic = definedExternally)

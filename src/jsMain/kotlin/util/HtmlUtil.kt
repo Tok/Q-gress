@@ -31,6 +31,7 @@ import system.display.ui.ActionLimitsDisplay
 import util.data.GeoCoords
 import util.data.Line
 import util.data.Pos
+import util.ui.Inspector
 import kotlin.js.Json
 
 @Suppress("UnusedParameter") // external JS global; param describes the contract
@@ -383,29 +384,25 @@ object HtmlUtil {
 
     private fun handleMouseClick(event: Event) {
         SoundUtil.enableAudio() // first user gesture → resume audio (autoplay policy)
-        if (event is MouseEvent) {
-            val pos = findMousePosition(World.uiCan, event)
-            when {
-                pos.hasClosePortalForClick() -> {
-                    if (World.countPortals() > Config.minPortals) {
-                        SoundUtil.playPortalRemovalSound(pos)
-                        document.defaultView?.setTimeout(pos.findClosestPortal().remove(), 0)
-                    } else {
-                        SoundUtil.playFailSound()
-                    }
-                }
-                pos.isBuildable() -> {
-                    if (World.countPortals() < Config.maxPortals) {
-                        document.defaultView?.setTimeout(World.allPortals.add(Portal.create(pos)), 0)
-                    } else {
-                        SoundUtil.playFailSound()
-                    }
-                }
-                else -> {
+        if (event !is MouseEvent) {
+            console.warn("Unhandled event: $event.")
+            return
+        }
+        // Ground point under the cursor (pitch-safe via map.unproject).
+        val pos = MapUtil.screenToSimPos(event.clientX.toDouble(), event.clientY.toDouble()) ?: return
+        when {
+            // Click on/near a portal → select it for the inspector.
+            pos.hasClosePortalForClick() -> Inspector.select("portal:" + pos.findClosestPortal().id)
+            // Click empty buildable ground → build a portal there; deselect.
+            pos.isBuildable() -> {
+                Inspector.select(null)
+                if (World.countPortals() < Config.maxPortals) {
+                    document.defaultView?.setTimeout(World.allPortals.add(Portal.create(pos)), 0)
+                } else {
+                    SoundUtil.playFailSound()
                 }
             }
-        } else {
-            console.warn("Unhandled event: $event.")
+            else -> Inspector.select(null)
         }
     }
 

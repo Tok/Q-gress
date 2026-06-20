@@ -305,6 +305,42 @@ html, body {
     padding: 5px;
 }
 
+/* Selected-entity inspector panel (screen-fixed DOM overlay). */
+.inspector {
+    position: fixed;
+    top: 110px;
+    right: 10px;
+    width: 210px;
+    background: #000000cc;
+    color: #ffffff;
+    border: 1px solid #888888;
+    border-radius: 5px;
+    padding: 8px 10px;
+    font-family: "Coda", "Lucida Console";
+    font-size: 13px;
+    z-index: 200;
+}
+.inspectorTitle {
+    font-family: "AmarilloUSAF";
+    font-size: 16px;
+}
+.inspectorName {
+    font-size: 14px;
+    margin-bottom: 6px;
+}
+.inspectorRow {
+    margin: 2px 0;
+}
+.inspectorClose {
+    float: right;
+    cursor: pointer;
+    background: none;
+    border: none;
+    color: #ffffff;
+    font-size: 18px;
+    line-height: 1;
+}
+
 .topLabel {
     cursor: default;
     margin-top: 8px;

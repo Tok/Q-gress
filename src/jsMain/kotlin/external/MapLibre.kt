@@ -31,6 +31,7 @@ external object MapLibre {
         fun getBearing(): Double
         fun getPitch(): Double
         fun project(lngLat: dynamic): dynamic
+        fun unproject(point: dynamic): dynamic
         fun getCenter(): dynamic
         fun isMoving(): Boolean
         fun loaded(): Boolean

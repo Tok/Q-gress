@@ -137,6 +137,13 @@ object MapUtil {
         map?.let { it.zoomTo(it.getZoom() + delta, opts) }
     }
 
+    /** Map a screen pixel (client coords) to a sim Pos via the ground point under it (pitch-safe). */
+    fun screenToSimPos(clientX: Double, clientY: Double): Pos? {
+        val m = referenceMap() ?: return null
+        val lngLat: dynamic = m.unproject(arrayOf(clientX, clientY))
+        return Scene3D.lngLatToSimPos(lngLat.lng as Double, lngLat.lat as Double)
+    }
+
     /** Register the 3D scene (three.js custom layer) on the base map, anchored at the grid view. */
     fun enable3D() {
         val targetMap = initMap ?: return

@@ -22,6 +22,7 @@ import system.display.ui.table.TopAgentsDisplay
 import util.data.Circle
 import util.data.Line
 import util.data.Pos
+import util.ui.Inspector
 import kotlin.math.PI
 
 object DrawUtil {
@@ -34,6 +35,7 @@ object DrawUtil {
         // through; the HUD is still drawn 2D in redrawUserInterface().
         clear()
         Scene3D.sync()
+        Inspector.refresh()
     }
 
     fun clear() = redraw(World.can, World.ctx())
