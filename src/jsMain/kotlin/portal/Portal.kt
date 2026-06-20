@@ -23,6 +23,7 @@ import items.level.XmpLevel
 import items.types.ShieldType
 import items.types.VirusType
 import system.Com
+import system.display.Scene3D
 import util.*
 import util.data.Circle
 import util.data.Line
@@ -418,8 +419,12 @@ data class Portal(
     }
 
     fun remove() {
+        // Capture before destroy() clears owner/resonators.
+        val shardColor = owner?.faction?.color ?: "#bbbbbb"
+        val heaviness = (0.1 + getLevel().value * 0.06).coerceAtMost(0.7)
         destroy()
-        SoundUtil.playPortalRemovalSound(location)
+        Scene3D.shatterPortal(location, shardColor) // glass shards fall onto the terrain
+        SoundUtil.playGlassShatterSound(location, heaviness, 0.8)
         World.allAgents.forEach { agent ->
             val portalKeys: List<PortalKey>? = agent.inventory.findKeys().filter { key -> key.portal == this }.toList()
             if (portalKeys != null) {

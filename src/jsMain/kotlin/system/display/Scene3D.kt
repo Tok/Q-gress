@@ -6,17 +6,20 @@ import agent.Faction
 import agent.NonFaction
 import agent.action.ActionItem
 import config.Sim
+import external.GLTFLoader
 import external.MapLibre
 import external.Three
 import kotlinx.browser.document
 import portal.Field
 import portal.Link
 import portal.Portal
+import util.Util
 import util.data.Pos
 import kotlin.math.PI
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.pow
+import kotlin.math.sin
 
 /**
  * Renders the game world as a MapLibre custom layer (three.js): the three.js
@@ -57,6 +60,14 @@ object Scene3D {
     private const val MARKER_R = 10.0 // build-preview marker radius (metres)
     private const val BORDER_COLOR = "#22ddff" // playable-area boundary
     private const val BORDER_Z = 0.3
+    private const val SHARD_OPACITY = 0.6
+    private const val SHARD_FADE = 1.2 // seconds to fade out at end of life
+    private const val SHARD_LIFE_MIN = 3.0
+    private const val SHARD_LIFE_MAX = 5.0
+    private const val SHARD_SPIN = 6.0 // max tumble rad/s
+    private const val GRAVITY = 9.8 // m/s²
+    private const val SHARD_TARGET_PATH = 3.0 // pole-shard target size (metres)
+    private const val POLE_SHARD_COUNT = 12
 
     // Currently selected entity, as "portal:<id>" / "agent:<name>" (see pick()).
     var selected: String? = null
@@ -85,6 +96,26 @@ object Scene3D {
     private var passabilityVisible = false
     private var vectorFieldVisible = false
     private var vectorFieldKey: String? = null // selection the flow field was last built for
+
+    // Glass-shatter fracture assets (loaded once from GLBs). Each "shard holder" is a JS object
+    // { geo, cx, cy, cz } — a shared geometry + its local centroid (for the burst direction).
+    private var flaskVariants: List<List<dynamic>> = emptyList() // sephira/sphere shell-shard variants
+    private var pathShards: List<dynamic> = emptyList() // pole/rod shard library
+    private var flaskScale = 1.0 // scale a flask variant to ≈ the portal top sphere
+    private var pathScale = 1.0 // scale a pole shard to ≈ SHARD_TARGET_PATH
+    private var shardsGroup: dynamic = null // transient shatter fragments (not cleared by sync)
+    private val activeShards = mutableListOf<Shard>()
+    private var lastFrameMs = 0.0 // for per-frame shard physics dt
+
+    /** One in-flight glass fragment: a mesh with velocity + tumble (3 each), fading over its life. */
+    private class Shard(
+        val mesh: dynamic,
+        val mat: dynamic,
+        val vel: DoubleArray,
+        val spin: DoubleArray,
+        var age: Double,
+        val life: Double,
+    )
 
     // Shared geometries/materials (created lazily once three.js is loaded).
     private val headGeo: dynamic by lazy { Three.SphereGeometry(HEAD_R, 10, 10) }
@@ -129,8 +160,10 @@ object Scene3D {
         indicatorsGroup = Three.Group().also { newScene.add(it) }
         markerGroup = Three.Group().also { newScene.add(it) }
         borderGroup = Three.Group().also { newScene.add(it) }
+        shardsGroup = Three.Group().also { newScene.add(it) }
         scene = newScene
         buildBorder()
+        loadShatterAssets()
 
         val params: dynamic = js("({})")
         params.canvas = map.getCanvas()
@@ -148,9 +181,48 @@ object Scene3D {
             .makeTranslation(originMerc.x as Double, originMerc.y as Double, originMerc.z as Double)
             .scale(Three.Vector3(metersScale, -metersScale, metersScale))
         cam.projectionMatrix = mapMatrix.multiply(modelMatrix)
+        if (activeShards.isNotEmpty()) {
+            val nowMs = js("performance.now()") as Double
+            val dt = if (lastFrameMs <= 0.0) 0.016 else ((nowMs - lastFrameMs) / 1000.0).coerceIn(0.0, 0.1)
+            lastFrameMs = nowMs
+            updateShards(dt)
+        } else {
+            lastFrameMs = 0.0
+        }
         activeRenderer.resetState()
         activeRenderer.render(activeScene, cam)
         map.triggerRepaint()
+    }
+
+    private fun updateShards(dt: Double) {
+        val iter = activeShards.iterator()
+        while (iter.hasNext()) {
+            val s = iter.next()
+            s.age += dt
+            s.vel[2] -= GRAVITY * dt
+            val pos = s.mesh.position
+            pos.x = (pos.x as Double) + s.vel[0] * dt
+            pos.y = (pos.y as Double) + s.vel[1] * dt
+            pos.z = (pos.z as Double) + s.vel[2] * dt
+            if ((pos.z as Double) <= 0.0) { // landed on the terrain
+                pos.z = 0.0
+                s.vel[2] = 0.0
+                s.vel[0] *= 0.4
+                s.vel[1] *= 0.4
+            }
+            val rot = s.mesh.rotation
+            rot.x = (rot.x as Double) + s.spin[0] * dt
+            rot.y = (rot.y as Double) + s.spin[1] * dt
+            rot.z = (rot.z as Double) + s.spin[2] * dt
+            if (s.age > s.life - SHARD_FADE) {
+                s.mat.opacity = SHARD_OPACITY * ((s.life - s.age) / SHARD_FADE).coerceIn(0.0, 1.0)
+            }
+            if (s.age >= s.life) {
+                shardsGroup.remove(s.mesh)
+                s.mat.dispose()
+                iter.remove()
+            }
+        }
     }
 
     /** Rebuild the 3D objects from world state. Called once per simulation tick. */
@@ -222,6 +294,130 @@ object Scene3D {
         val corners = arrayOf(Pos(0, 0), Pos(Sim.width, 0), Pos(Sim.width, Sim.height), Pos(0, Sim.height), Pos(0, 0))
         val points = corners.map { Three.Vector3(sceneX(it), sceneY(it), BORDER_Z) }.toTypedArray()
         group.add(Three.Line(Three.BufferGeometry().setFromPoints(points), lineMaterial(BORDER_COLOR)))
+    }
+
+    // Load the glass-shard fracture GLBs once (async). shattered_flask = sphere shell-shard
+    // variants (pieces named "<key>_chunkN"); glass_shards = a small rod-shard library.
+    private fun loadShatterAssets() {
+        val loader = GLTFLoader()
+        loader.load(
+            "models/shattered_flask.glb",
+            { gltf ->
+                flaskVariants = parseVariants(gltf)
+                flaskScale = computeScale(flaskVariants.firstOrNull() ?: emptyList(), TOP_R * 2.0)
+            },
+            {},
+            { e -> console.error("shattered_flask load failed: $e") },
+        )
+        loader.load(
+            "models/glass_shards.glb",
+            { gltf ->
+                pathShards = collectShards(gltf)
+                pathScale = computeScale(pathShards.take(1), SHARD_TARGET_PATH)
+            },
+            {},
+            { e -> console.error("glass_shards load failed: $e") },
+        )
+    }
+
+    // Union bbox of the pieces → uniform scale so they span `target` metres.
+    private fun computeScale(pieces: List<dynamic>, target: Double): Double {
+        if (pieces.isEmpty()) return 1.0
+        var loX = Double.MAX_VALUE
+        var loY = Double.MAX_VALUE
+        var loZ = Double.MAX_VALUE
+        var hiX = -Double.MAX_VALUE
+        var hiY = -Double.MAX_VALUE
+        var hiZ = -Double.MAX_VALUE
+        pieces.forEach { h ->
+            val bb = h.geo.boundingBox
+            loX = minOf(loX, bb.min.x as Double)
+            hiX = maxOf(hiX, bb.max.x as Double)
+            loY = minOf(loY, bb.min.y as Double)
+            hiY = maxOf(hiY, bb.max.y as Double)
+            loZ = minOf(loZ, bb.min.z as Double)
+            hiZ = maxOf(hiZ, bb.max.z as Double)
+        }
+        val d = maxOf(hiX - loX, hiY - loY, hiZ - loZ)
+        return if (d > 0.0) target / d else 1.0
+    }
+
+    /** Shatter a removed portal into glass fragments at its location (called from Portal.remove). */
+    fun shatterPortal(location: Pos, color: String) {
+        scene ?: return
+        val x = sceneX(location)
+        val y = sceneY(location)
+        if (flaskVariants.isNotEmpty()) { // top sphere → shell shards
+            val variant = flaskVariants[(Util.random() * flaskVariants.size).toInt()]
+            variant.forEach { holder -> spawnShard(holder, doubleArrayOf(x, y, POLE_H), flaskScale, color, 6.0) }
+        }
+        if (pathShards.isNotEmpty()) { // pole → rod shards along its length
+            for (i in 0 until POLE_SHARD_COUNT) {
+                val holder = pathShards[(Util.random() * pathShards.size).toInt()]
+                spawnShard(holder, doubleArrayOf(x, y, POLE_H * (i + 0.5) / POLE_SHARD_COUNT), pathScale, color, 5.0)
+            }
+        }
+    }
+
+    private fun spawnShard(holder: dynamic, pos: DoubleArray, scale: Double, color: String, burstH: Double) {
+        val mat = shardMaterial(color)
+        val mesh = Three.Mesh(holder.geo, mat)
+        val d = mesh.asDynamic()
+        d.scale.set(scale, scale, scale)
+        d.rotation.set(PI / 2, Util.random() * 2.0 * PI, Util.random() * 2.0 * PI) // model Y-up → scene Z-up + spin
+        d.position.set(pos[0], pos[1], pos[2])
+        val a = Util.random() * 2.0 * PI
+        val r = burstH * (0.4 + Util.random() * 0.6)
+        val vel = doubleArrayOf(cos(a) * r, sin(a) * r, burstH * (0.5 + Util.random()))
+        val spin = doubleArrayOf(randSpin(), randSpin(), randSpin())
+        activeShards.add(Shard(mesh, mat, vel, spin, 0.0, SHARD_LIFE_MIN + Util.random() * (SHARD_LIFE_MAX - SHARD_LIFE_MIN)))
+        shardsGroup.add(mesh)
+    }
+
+    private fun randSpin() = (Util.random() - 0.5) * 2.0 * SHARD_SPIN
+
+    private fun shardMaterial(color: String): dynamic {
+        val p: dynamic = js("({})")
+        p.color = color
+        p.transparent = true
+        p.opacity = SHARD_OPACITY
+        p.metalness = 0.0
+        p.roughness = 0.1
+        p.emissive = color
+        p.emissiveIntensity = 0.2
+        p.side = 2 // DoubleSide
+        return Three.MeshStandardMaterial(p)
+    }
+
+    private fun collectShards(gltf: dynamic): List<dynamic> {
+        val out = mutableListOf<dynamic>()
+        gltf.scene.traverse({ obj: dynamic -> if (obj.geometry != null) out.add(makeShard(obj)) })
+        return out
+    }
+
+    private fun parseVariants(gltf: dynamic): List<List<dynamic>> {
+        val groups = mutableMapOf<String, MutableList<dynamic>>()
+        gltf.scene.traverse({ obj: dynamic ->
+            if (obj.geometry != null) {
+                val name = obj.name as String
+                val cut = name.indexOf("_chunk")
+                val key = if (cut > 0) name.substring(0, cut) else name
+                groups.getOrPut(key) { mutableListOf() }.add(makeShard(obj))
+            }
+        })
+        return groups.values.map { it.toList() }
+    }
+
+    private fun makeShard(mesh: dynamic): dynamic {
+        val geo = mesh.geometry
+        geo.computeBoundingBox()
+        val bb = geo.boundingBox
+        val holder: dynamic = js("({})")
+        holder.geo = geo
+        holder.cx = ((bb.min.x as Double) + (bb.max.x as Double)) / 2.0
+        holder.cy = ((bb.min.y as Double) + (bb.max.y as Double)) / 2.0
+        holder.cz = ((bb.min.z as Double) + (bb.max.z as Double)) / 2.0
+        return holder
     }
 
     /** Place (or clear, when pos is null) the build-preview marker on the ground. */

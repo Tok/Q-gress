@@ -12,13 +12,16 @@ import external.sound.GainNode
 import external.sound.OscillatorNode
 import external.sound.StereoPannerNode
 import items.level.XmpLevel
+import org.khronos.webgl.set
 import portal.Field
 import portal.Link
 import system.Checkpoint
 import util.data.Pos
+import kotlin.math.exp
 
 object SoundUtil {
     const val DEFAULT_VOLUME = 0.4
+    private const val EPS = 0.0001 // exponentialRamp can't target 0
     private val audioCtx = AudioContext()
 
     // Single master gain all sounds route through; controls overall volume.
@@ -71,6 +74,75 @@ object SoundUtil {
         val pan = pos.x / Sim.width
         val oscNode = createLinearRampOscillator(OscillatorType.SINE, 60.0, 120.0, duration)
         playSound(oscNode, createStaticPan(pan), 1.0, duration)
+    }
+
+    /**
+     * Procedural glass-shatter (ported from qlippostasis GlassShatterSound): a bright high-passed
+     * noise "crack" + a low sine "thud" + a scatter of damped high-sine "tinkles". [heaviness]
+     * 0≈one small object, 1≈big; randomised so no two shatters sound the same.
+     */
+    fun playGlassShatterSound(pos: Pos, heaviness: Double = 0.3, amplitude: Double = 0.7) {
+        if (isMuted()) return
+        val pan = pos.x / Sim.width
+        playNoiseCrack(pan, amplitude, heaviness)
+        playThud(pan, amplitude, heaviness)
+        repeat((9 + heaviness * 17).toInt()) { playTinkle(pan, amplitude) }
+    }
+
+    private fun playNoiseCrack(pan: Double, amplitude: Double, heaviness: Double) {
+        val sr = audioCtx.sampleRate
+        val tau = 0.06 + Util.random() * 0.06 + heaviness * 0.06
+        val dur = tau * 5.0
+        val len = (dur * sr).toInt().coerceAtLeast(1)
+        val buffer = audioCtx.createBuffer(1, len, sr)
+        val data = buffer.getChannelData(0)
+        var i = 0
+        while (i < len) {
+            data[i] = ((Util.random() * 2.0 - 1.0) * exp(-(i.toDouble() / sr) / tau)).toFloat()
+            i++
+        }
+        val source = audioCtx.createBufferSource()
+        source.buffer = buffer
+        val highpass = audioCtx.createBiquadFilter()
+        highpass.type = "highpass"
+        highpass.frequency.setValueAtTime(2000.0, now())
+        val gainNode = createStaticGain(amplitude * 0.8)
+        val panNode = createStaticPan(pan)
+        source.connect(highpass)
+        highpass.connect(gainNode)
+        gainNode.connect(panNode)
+        panNode.connect(masterGain)
+        source.start()
+        source.stop(now() + dur)
+    }
+
+    private fun playThud(pan: Double, amplitude: Double, heaviness: Double) {
+        val tau = 0.07 + Util.random() * 0.07 + heaviness * 0.06
+        val osc = createStaticOscillator(OscillatorType.SINE, 85.0 + Util.random() * 80.0)
+        val gainNode = audioCtx.createGain()
+        val n = now()
+        gainNode.gain.setValueAtTime((0.6 + heaviness * 0.9) * amplitude, n)
+        gainNode.gain.exponentialRampToValueAtTime(EPS, n + tau * 5.0)
+        connectVoice(osc, createStaticPan(pan), gainNode, n + tau * 5.0)
+    }
+
+    private fun playTinkle(pan: Double, amplitude: Double) {
+        val tau = 0.02 + Util.random() * 0.1
+        val osc = createStaticOscillator(OscillatorType.SINE, 2200.0 + Util.random() * 6800.0)
+        val gainNode = audioCtx.createGain()
+        val n = now() + Util.random() * 0.5
+        gainNode.gain.setValueAtTime(EPS, now())
+        gainNode.gain.setValueAtTime((0.12 + Util.random() * 0.33) * amplitude, n)
+        gainNode.gain.exponentialRampToValueAtTime(EPS, n + tau * 5.0)
+        connectVoice(osc, createStaticPan(pan), gainNode, n + tau * 5.0)
+    }
+
+    private fun connectVoice(osc: OscillatorNode, panNode: StereoPannerNode, gainNode: GainNode, stopTime: Double) {
+        osc.connect(panNode)
+        panNode.connect(gainNode)
+        gainNode.connect(masterGain)
+        osc.start()
+        osc.stop(stopTime)
     }
 
     fun playCheckpointSound(@Suppress("UNUSED_PARAMETER") checkpoint: Checkpoint) {
