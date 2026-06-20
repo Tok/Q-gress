@@ -26,42 +26,49 @@ inference). Mobile is explicitly out of scope and should be blocked with a notic
 
 The repo was last touched ~2018 and is frozen on dead tooling. Do not assume it builds.
 
-- **Language:** Kotlin 1.3.10 compiled to JavaScript.
-- **Build:** Gradle with the **`kotlin2js` plugin** (deprecated; superseded by the
-  `org.jetbrains.kotlin.js` / Kotlin Multiplatform plugin) and the **`com.moowork.node`**
-  plugin (abandoned). Targets Node 11.
-- **Maps:** **Mapbox GL JS v0.51.0** (2018) + **OpenLayers v5.3.0**, both pinned in
-  `index.html`. OpenLayers is loaded from **`cdn.rawgit.com`, which was shut down in 2019**
-  — so the legacy page is effectively broken on that front.
-- **Tests:** Kotlin test sources compiled to JS and run under **Mocha**, reported with
-  **mochawesome** (`mochawesome.html` is committed).
-- **Compiled output is committed** under `published/` (`Q-Gress.js`, `kotlin.js`). The page
-  loads these directly; there is no bundler.
+- **Language:** **Kotlin 2.4.0** compiled to JavaScript (IR).
+- **Build:** **Gradle 9.5** with the **`kotlin("multiplatform")`** plugin, single `js()`
+  target. The **browser** environment produces the webpack app bundle (`Q-Gress.js`);
+  **unit tests run in Node** (Mocha) for speed and to suit the pure-logic core. JS
+  dependencies are locked in `kotlin-js-store/yarn.lock` (committed).
+- **Build JVM: JDK 21 (LTS), on purpose** — detekt's latest can't run on JDK 25 (see the
+  header note in `build.gradle.kts`). This is invisible to the product (we ship JS).
+- **Quality gates (enforced):** **ktlint** (format/style, configured in `.editorconfig`)
+  and **detekt** (lint + cyclomatic-complexity limits, `config/detekt/detekt.yml` with a
+  legacy `baseline.xml`). A **pre-commit hook** (`.githooks/pre-commit`, installed via
+  `./gradlew installGitHooks`) blocks commits that fail these.
+- **Maps:** still legacy in source — **Mapbox GL JS v0.51.0** + **OpenLayers v5.3.0** in
+  `index.html` (OpenLayers via the dead `cdn.rawgit.com`). Phase 2 replaces these with
+  **MapLibre GL**.
+- **Coverage:** not yet wired — Kover has no Kotlin/JS support; real coverage arrives with
+  the functional-core split (see `PLAN.md`).
+- The old compiled output under `published/` and the legacy npm/Gradle files under
+  `legacy-build/` are retained only for reference; the live build emits to `build/`.
 
-See `PLAN.md` for the modernization roadmap and stack decisions.
+See `PLAN.md` for the modernization roadmap, stack decisions, and engineering standards.
 
-## Build & run (legacy Gradle tasks)
+## Build, test & dev workflow
 
 ```bash
-./gradlew compileKotlin2Js   # compile Kotlin -> JS
-./gradlew runMocha           # compile tests + run Mocha, writes mochawesome.html
-./gradlew publish            # runs tests, copies kotlin.js + Q-Gress.js into published/
-./gradlew build              # publish (build depends on publish)
-./gradlew cleanup            # remove generated published/*.js, mochawesome.html, build/
+./gradlew installGitHooks            # one-time: enable the pre-commit gate (core.hooksPath)
+./gradlew compileKotlinJs            # compile main sources
+./gradlew jsNodeTest                 # run unit tests in Node (fast, headless)
+./gradlew ktlintFormat               # auto-fix formatting
+./gradlew ktlintCheck detekt         # the quality gate the pre-commit hook runs
+./gradlew jsBrowserDevelopmentRun    # run the app via webpack dev server (browser)
+./gradlew jsBrowserDistribution      # build the browser bundle -> build/dist/js/...
+./gradlew kotlinUpgradeYarnLock      # refresh kotlin-js-store/yarn.lock after dep changes
 ```
 
-The app itself is `index.html` opened in a desktop Chromium browser (it expects a V8
-engine; WebGL is required). `./gradlew openInBrowser` opens it.
-
-> NOTE: these tasks will likely fail until the toolchain is modernized. Verify before
-> relying on them, and update this section as the stack changes.
+Requires **JDK 21** on `JAVA_HOME` and (for browser tests, currently disabled) Chrome on
+`CHROME_BIN`. The app is desktop-only and needs WebGL.
 
 ## Architecture
 
 Entry: `Main.kt` → `window.onload` → `HtmlUtil.load()`. The world is a fixed **1200×800
 canvas** (`config/Dim.kt`) layered over Mapbox map `<div>`s.
 
-Source layout under `src/main/kotlin/`:
+Source layout under `src/jsMain/kotlin/` (tests in `src/jsTest/kotlin/`):
 
 - **`World.kt`** — global mutable game state (agents, portals, grid, tick counter, the
   selected user faction). Singleton `object`.
@@ -114,7 +121,7 @@ params. There is no free-form / "play my hometown" entry yet (a planned feature 
 - Game state lives in the `World` singleton; rendering is separated under `system/display`.
 - Randomness goes through `Util.random()` (wraps JS `Math.random()`), not `kotlin.random`.
   (Being migrated to an **injectable/seedable** RNG so logic is deterministically testable.)
-- Tests live in `src/test/kotlin/` mirroring the main package layout; they must compile
+- Tests live in `src/jsTest/kotlin/` mirroring the main package layout; they must compile
   cleanly to JS.
 - The Mapbox access token is currently inlined in `index.html` (a public `pk.` token).
 

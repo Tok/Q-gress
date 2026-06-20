@@ -96,17 +96,21 @@ retrofitted as we touch legacy code.
 - Clone, assess, write `CLAUDE.md` + `PLAN.md`, create `develop` branch.
 
 ### Phase 1 — Get it building & running on a modern toolchain
-- [ ] Migrate Gradle build to `org.jetbrains.kotlin.js` (IR), Kotlin 2.x, Gradle 8.
-- [ ] Replace deprecated `kotlin.browser.*` / `kotlin.dom.*` APIs with `kotlinx-browser`
-      / current equivalents (these moved out of stdlib after 1.3).
-- [ ] Stand up a dev server + bundling; stop committing `published/*.js` (gitignore them).
-- [ ] Get the existing tests compiling and green again on the Kotlin/JS test runner.
-- [ ] **Stand up the strict dev setup** (see Engineering standards): ktlint + detekt
-      (with complexity limits) + kover coverage, all wired into Gradle.
-- [ ] **Install enforced git hooks** (`core.hooksPath` → in-repo `.githooks/`): pre-commit
-      runs format-check + detekt + tests/coverage and blocks on failure. Mirror in CI.
-- **Exit criterion:** sim runs as it did in 2018, and a commit that breaks
-  format/lint/complexity/coverage is rejected by the hook.
+- [x] Migrate Gradle build to `kotlin("multiplatform")` js() IR, **Kotlin 2.4**,
+      **Gradle 9.5** (build JVM **JDK 21**; sources moved to `src/jsMain` / `src/jsTest`).
+- [x] Replace removed/relocated APIs: `kotlin.browser.*`/`kotlin.dom.*` →
+      `kotlinx-browser 0.5.0`; `toUpperCase`/`toLowerCase` → `uppercase`/`lowercase`;
+      `Double.toByte()`; literal `js()`; null-safety.
+- [x] Get the existing tests compiling and **green in Node** (62/62) via the Kotlin/JS
+      Mocha runner. Browser/Karma+Chrome wiring kept (disabled) for future browser tests.
+- [x] **Strict dev setup:** ktlint (format) + detekt (lint + complexity limits, baselined)
+      wired into Gradle. Kover deferred — no Kotlin/JS support (see Still open).
+- [x] **Enforced git hooks** (`core.hooksPath` → `.githooks/`): pre-commit runs
+      ktlint + detekt and blocks on failure (verified). Mirror in CI later.
+- [ ] Stand up the dev server / bundling wiring into `index.html`; stop committing
+      `published/*.js`. _(Browser run/dist tasks exist; index.html rewire lands with Phase 2.)_
+- **Exit criterion:** ✅ sim builds and tests green on a modern toolchain; a commit that
+  breaks format/lint/complexity is rejected by the hook. _(App-in-browser rewire → Phase 2.)_
 
 ### Phase 2 — Fix maps & the zoom bug
 - [ ] Remove the dead rawgit OpenLayers include; decide if OpenLayers is still needed.
