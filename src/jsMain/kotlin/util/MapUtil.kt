@@ -261,13 +261,14 @@ object MapUtil {
         }.toMap()
     }
 
-    fun showSatelliteMap() {
-        (document.getElementById(INITIAL_MAP))?.addClass(INVISIBLE)
-        (document.getElementById(MAP))?.removeClass(INVISIBLE)
+    // Layer switching: #initialMap holds the satellite style, #map the street style.
+    fun showSatellite() {
+        document.getElementById(INITIAL_MAP)?.removeClass(INVISIBLE)
+        document.getElementById(MAP)?.addClass(INVISIBLE)
     }
 
-    fun hideSatelliteMap() {
-        (document.getElementById(INITIAL_MAP))?.removeClass(INVISIBLE)
-        (document.getElementById(MAP))?.addClass(INVISIBLE)
+    fun showStreet() {
+        document.getElementById(INITIAL_MAP)?.addClass(INVISIBLE)
+        document.getElementById(MAP)?.removeClass(INVISIBLE)
     }
 }

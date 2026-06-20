@@ -165,14 +165,21 @@ from the rendered view**:
 - [ ] Add metrics so we can compare strategies (already have MU checkpoints/cycles).
 - **Exit criterion:** no single slider-maxing strategy dominates; field-building competes.
 
-### Phase 6 — AI-vs-AI with client-side Gemma
-- [ ] Block mobile (UA + capability check) with a "desktop only" notice.
-- [ ] Expose the per-faction sliders as a programmatic API (read current game state →
-      proposed slider vector) instead of only DOM inputs.
-- [ ] Integrate in-browser Gemma (MediaPipe LLM Inference / WebGPU). Two instances (ENL,
-      RES), each given the world state + its faction and asked to set its sliders each
-      cycle. Support different tuning/prompts per side.
-- **Exit criterion:** a Gemma-vs-Gemma match runs end-to-end in a desktop browser.
+### Phase 6 — AI-vs-AI (approach TBD — needs its own plan)
+**Polish the game/sim first** (Phases 4–5) before adding AI. The AI substrate is the
+per-faction slider vector (0..1 each) as the output; the input is the game state. The
+*how* is an open design question that deserves a dedicated mini-plan before coding:
+- **Option A — custom small neural net.** A purpose-built network whose output layer *is*
+  the sliders, trained/tuned for this game. Bonus: visualize the layers/activations and the
+  agents' chosen paths. Smallest, most specific, most "Q-gress"; most control. Feasibility
+  of in-browser training/inference + viz TBD.
+- **Option B — transformers.js** (in-browser, WebGPU) running a small model.
+- **Option C — gemma.js / MediaPipe LLM Inference** (the original idea): prompt a Gemma per
+  faction with the world state → slider vector.
+Cross-cutting regardless of option: block mobile (desktop-only notice); expose sliders as a
+programmatic API (state → slider vector) instead of only DOM inputs; support a different
+tuning per faction. **Decision deferred** — revisit with a focused plan once the sim is
+polished. Leaning toward the custom NN (A) for specificity + visualization, but unproven.
 
 ## Under consideration (icebox)
 

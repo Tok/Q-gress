@@ -283,6 +283,11 @@ html, body {
     padding: 5px;
 }
 
+.volumeSlider {
+    width: 80px;
+    vertical-align: middle;
+}
+
 .topSearch {
     margin: 5px;
     width: 160px;

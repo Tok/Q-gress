@@ -40,7 +40,6 @@ object HtmlUtil {
     private var intervalID = 0
     private const val PAUSE_BUTTON_ID = "pauseButton"
     private const val LOCATION_DROPDOWN_ID = "locationSelect"
-    const val SOUND_CHECKBOX_ID = "soundCheckbox"
 
     fun isRunningInBrowser() = jsTypeOf(document) != "undefined"
     fun isNotRunningInBrowser() = !isRunningInBrowser()
@@ -102,8 +101,8 @@ object HtmlUtil {
         buttonDiv.append(dropDown)
 
         buttonDiv.append(createSearchSpan())
-        buttonDiv.append(createSoundSpan())
-        buttonDiv.append(createSatSpan())
+        buttonDiv.append(createVolumeSpan())
+        buttonDiv.append(createLayerDropdown())
         controlDiv.append(buttonDiv)
 
         rootDiv.append(controlDiv)
@@ -170,39 +169,51 @@ object HtmlUtil {
         return popupDiv
     }
 
-    private fun createSoundSpan(): HTMLSpanElement {
+    private fun createVolumeSpan(): HTMLSpanElement {
         val span = document.createElement("span") as HTMLSpanElement
-        val checkbox = document.createElement("input") as HTMLInputElement
-        checkbox.id = SOUND_CHECKBOX_ID
-        checkbox.type = "checkbox"
-        checkbox.checked = Config.isSoundOn
-        checkbox.addClass("checkbox")
-        span.append(checkbox)
         val label = document.createElement("span") as HTMLSpanElement
         label.addClass("label", "topLabel")
         label.id = "soundLabel"
-        label.innerHTML = "Sound"
-        label.onclick = { checkbox.click() }
+        label.innerHTML = "Volume"
         span.append(label)
+        val slider = document.createElement("input") as HTMLInputElement
+        slider.id = "volumeSlider"
+        slider.type = "range"
+        slider.min = "0.0"
+        slider.max = "1.0"
+        slider.step = "0.05"
+        slider.value = SoundUtil.DEFAULT_VOLUME.toString()
+        slider.addClass("slider", "volumeSlider")
+        slider.oninput = {
+            SoundUtil.setMasterVolume(slider.valueAsNumber)
+            null
+        }
+        span.append(slider)
         return span
     }
 
-    private fun createSatSpan(): HTMLSpanElement {
-        val span = document.createElement("span") as HTMLSpanElement
-        val checkbox = document.createElement("input") as HTMLInputElement
-        checkbox.id = "satCheckbox"
-        checkbox.type = "checkbox"
-        checkbox.checked = Config.isSatOn
-        checkbox.addClass("checkbox")
-        checkbox.onchange = { if (checkbox.checked) MapUtil.showSatelliteMap() else MapUtil.hideSatelliteMap() }
-        span.append(checkbox)
-        val label = document.createElement("span") as HTMLSpanElement
-        label.addClass("label", "topLabel")
-        label.id = "satLabel"
-        label.innerHTML = "Satellite"
-        label.onclick = { checkbox.click() }
-        span.append(label)
-        return span
+    private const val LAYER_DROPDOWN_ID = "layerSelect"
+    private const val LAYER_SATELLITE = "Satellite"
+    private const val LAYER_STREET = "Street"
+
+    // A small dropdown to choose the base map layer. Structured so more styles
+    // can be added later (e.g. a dark/terrain style).
+    private fun createLayerDropdown(): HTMLSelectElement {
+        val select = document.createElement("select") as HTMLSelectElement
+        select.id = LAYER_DROPDOWN_ID
+        select.addClass("topDrop", "amarillo")
+        listOf(LAYER_SATELLITE, LAYER_STREET).forEach { layer ->
+            val opt = document.createElement("option") as HTMLOptionElement
+            opt.text = layer
+            opt.value = layer
+            select.appendChild(opt)
+        }
+        select.onchange = { applySelectedLayer() }
+        return select
+    }
+
+    private fun applySelectedLayer() {
+        if (isShowSatelliteMap()) MapUtil.showSatellite() else MapUtil.showStreet()
     }
 
     private fun createCanvasDiv(): HTMLDivElement {
@@ -320,6 +331,7 @@ object HtmlUtil {
     }
 
     private fun chooseUserFaction(fact: Faction) {
+        SoundUtil.enableAudio() // first user gesture → resume audio (autoplay policy)
         closePopup()
         val pauseButton = document.getElementById(PAUSE_BUTTON_ID) as HTMLButtonElement
         pauseButton.addClass(fact.abbr.lowercase())
@@ -366,6 +378,7 @@ object HtmlUtil {
     }
 
     private fun handleMouseClick(event: Event) {
+        SoundUtil.enableAudio() // first user gesture → resume audio (autoplay policy)
         if (event is MouseEvent) {
             val pos = findMousePosition(World.uiCan, event)
             when {
@@ -515,7 +528,10 @@ object HtmlUtil {
         createAgents(callback)
     })
 
-    fun isShowSatelliteMap() = (document.getElementById("satCheckbox") as HTMLInputElement).checked
+    fun isShowSatelliteMap(): Boolean {
+        val dropdown = document.getElementById(LAYER_DROPDOWN_ID) as? HTMLSelectElement ?: return true
+        return dropdown[dropdown.selectedIndex]?.let { (it as HTMLOptionElement).value } == LAYER_SATELLITE
+    }
 
     private fun onMapload() = fun(grid: Grid) {
         World.grid = grid
@@ -532,9 +548,7 @@ object HtmlUtil {
             createQSliders(World.userFactionOrThrow())
             resetInterval()
             World.isReady = true
-            if (isShowSatelliteMap()) {
-                MapUtil.showSatelliteMap()
-            }
+            applySelectedLayer()
         }
     }
 

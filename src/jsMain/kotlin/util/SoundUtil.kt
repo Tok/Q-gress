@@ -11,22 +11,38 @@ import external.sound.GainNode
 import external.sound.OscillatorNode
 import external.sound.StereoPannerNode
 import items.level.XmpLevel
-import kotlinx.browser.document
-import org.w3c.dom.HTMLInputElement
 import portal.Field
 import portal.Link
 import system.Checkpoint
 import util.data.Pos
 
 object SoundUtil {
+    const val DEFAULT_VOLUME = 0.4
     private val audioCtx = AudioContext()
 
-    private fun isMuted(): Boolean {
-        val soundCheckbox = document.getElementById(HtmlUtil.SOUND_CHECKBOX_ID) as HTMLInputElement
-        return !soundCheckbox.checked
+    // Single master gain all sounds route through; controls overall volume.
+    private val masterGain: GainNode = audioCtx.createGain().also {
+        it.gain.value = 0.0
+        it.connect(audioCtx.destination)
     }
 
-    private fun volume() = if (isMuted()) 0.0 else 0.4 // TODO create volume slider
+    // Master volume in 0..1. Starts muted; enabled on the first user gesture
+    // (browser autoplay policy needs one). The volume slider drives it too.
+    private var masterVolume = 0.0
+
+    /** Resume the audio context and turn sound on. Idempotent; call on a user gesture. */
+    fun enableAudio() {
+        if (audioCtx.state != "running") audioCtx.resume()
+        if (masterVolume <= 0.0) setMasterVolume(DEFAULT_VOLUME)
+    }
+
+    fun setMasterVolume(volume: Double) {
+        if (audioCtx.state != "running") audioCtx.resume()
+        masterVolume = volume
+        masterGain.gain.setTargetAtTime(volume, now(), 0.01)
+    }
+
+    private fun isMuted() = masterVolume <= 0.0
 
     fun playNoiseGenSound() {
         if (!Config.isPlayInitialSound || isMuted()) return
@@ -174,7 +190,7 @@ object SoundUtil {
         val gainNode = createStaticGain(gain)
         oscNode.connect(panNode)
         panNode.connect(gainNode)
-        gainNode.connect(audioCtx.destination)
+        gainNode.connect(masterGain)
         oscNode.start()
         oscNode.stop(now() + duration)
     }
@@ -242,7 +258,7 @@ object SoundUtil {
 
     private fun createStaticGain(gain: Double): GainNode {
         val node = audioCtx.createGain()
-        node.gain.setTargetAtTime(gain * volume(), now(), 0.0)
+        node.gain.setTargetAtTime(gain, now(), 0.0)
         return node
     }
 }
