@@ -6,7 +6,6 @@ import agent.action.ActionItem
 import config.Config
 import portal.Portal
 import system.Com
-import system.display.VectorFields
 import util.Util
 import util.data.Pos
 
@@ -19,7 +18,6 @@ object Explorer : ConditionalAction {
         agent.action.start(actionItem)
         if (Util.random() <= portalDiscoveryChance) {
             val newPortal = Portal.createRandom()
-            VectorFields.draw(newPortal)
             World.allPortals.add(newPortal)
             agent.destination = newPortal.location
             Com.addMessage("$agent discovered a new portal $newPortal.")

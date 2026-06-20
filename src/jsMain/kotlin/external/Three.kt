@@ -73,6 +73,11 @@ external object Three {
         height: dynamic,
         radialSegments: dynamic = definedExternally,
     )
+    class ConeGeometry(
+        radius: dynamic,
+        height: dynamic,
+        radialSegments: dynamic = definedExternally,
+    )
     class BufferGeometry {
         fun setFromPoints(points: dynamic): BufferGeometry
     }

@@ -14,6 +14,7 @@ import portal.Link
 import portal.Portal
 import util.data.Pos
 import kotlin.math.PI
+import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.pow
 
@@ -50,8 +51,9 @@ object Scene3D {
     private const val NEUTRAL_COLOR = "#bbbbbb"
     private const val HIGHLIGHT_COLOR = "#ffff33"
     private const val OVERLAY_Z = 0.2 // passability quad just above ground
-    private const val VECTOR_STRIDE = 3 // subsample the flow field every Nth cell
-    private const val VECTOR_LEN = 6.0 // metres per flow-field arrow
+    private const val VECTOR_STRIDE = 2 // subsample the flow field every Nth cell
+    private const val VECTOR_CONE_R = 1.1 // flow-arrow cone radius (metres)
+    private const val VECTOR_CONE_H = 3.6 // flow-arrow cone length (metres)
     private const val MARKER_R = 10.0 // build-preview marker radius (metres)
 
     // Currently selected entity, as "portal:<id>" / "agent:<name>" (see pick()).
@@ -79,11 +81,13 @@ object Scene3D {
     private var markerGroup: dynamic = null // build-preview marker
     private var passabilityVisible = false
     private var vectorFieldVisible = false
+    private var vectorFieldKey: String? = null // selection the flow field was last built for
 
     // Shared geometries/materials (created lazily once three.js is loaded).
     private val headGeo: dynamic by lazy { Three.SphereGeometry(HEAD_R, 10, 10) }
     private val poleGeo: dynamic by lazy { Three.CylinderGeometry(POLE_R, POLE_R, POLE_H, 8) }
     private val topGeo: dynamic by lazy { Three.SphereGeometry(TOP_R, 16, 16) }
+    private val coneGeo: dynamic by lazy { Three.ConeGeometry(VECTOR_CONE_R, VECTOR_CONE_H, 6) }
     private val materialCache = mutableMapOf<String, dynamic>()
     private val spriteCache = mutableMapOf<String, dynamic>()
 
@@ -158,14 +162,24 @@ object Scene3D {
         clear(agentsGroup)
         clear(indicatorsGroup)
         World.allAgents.forEach { addAgent(it) }
-        clear(vectorFieldGroup)
-        if (vectorFieldVisible) buildVectorFieldArrows()
+        // The selected portal's flow field is static, so only rebuild when the selection
+        // changes (or visibility toggles) — not every tick.
+        when {
+            vectorFieldVisible && selected != vectorFieldKey -> {
+                clear(vectorFieldGroup)
+                buildVectorFieldArrows()
+                vectorFieldKey = selected
+            }
+            !vectorFieldVisible && vectorFieldKey != null -> {
+                clear(vectorFieldGroup)
+                vectorFieldKey = null
+            }
+        }
     }
 
-    /** Toggle the selected portal's flow-field arrows (rebuilt each tick by [sync]). */
+    /** Toggle the selected portal's flow-field arrows (rebuilt by [sync] when selection changes). */
     fun setVectorFieldVisible(visible: Boolean) {
         vectorFieldVisible = visible
-        if (!visible) clear(vectorFieldGroup)
     }
 
     private fun buildVectorFieldArrows() {
@@ -178,14 +192,22 @@ object Scene3D {
             val mag = vec.magnitude
             if (gx % VECTOR_STRIDE != 0 || gy % VECTOR_STRIDE != 0 || mag == 0.0) return@forEach
             val pixel = pos.fromShadow()
-            val sx = sceneX(pixel)
-            val sy = sceneY(pixel)
-            val ex = sx + vec.re / mag * VECTOR_LEN
-            val ey = sy + -vec.im / mag * VECTOR_LEN // sim y is down → scene y is up
-            val geo = Three.BufferGeometry().setFromPoints(
-                arrayOf(Three.Vector3(sx, sy, OVERLAY_Z), Three.Vector3(ex, ey, OVERLAY_Z)),
-            )
-            vectorFieldGroup.add(Three.Line(geo, lineMaterial("#ffee55")))
+            val angle = atan2(-vec.im / mag, vec.re / mag) // sim y is down → scene y is up
+            val cone = Three.Mesh(coneGeo, hueMaterial(angle))
+            cone.asDynamic().position.set(sceneX(pixel), sceneY(pixel), OVERLAY_Z)
+            cone.asDynamic().rotation.z = angle - PI / 2 // cone apex (+Y) → flow direction
+            vectorFieldGroup.add(cone)
+        }
+    }
+
+    // Colour by flow direction (hue), bucketed to 15° so the material cache stays small.
+    private fun hueMaterial(angle: Double): dynamic {
+        val deg = ((angle * 180.0 / PI) + 360.0) % 360.0
+        val bucket = (deg / 15.0).toInt()
+        return materialCache.getOrPut("v$bucket") {
+            val p: dynamic = js("({})")
+            p.color = "hsl(${bucket * 15}, 90%, 55%)"
+            Three.MeshBasicMaterial(p)
         }
     }
 

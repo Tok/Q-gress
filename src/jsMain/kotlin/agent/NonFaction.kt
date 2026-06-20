@@ -10,7 +10,6 @@ import extension.Ctx
 import extension.Grid
 import extension.VectorField
 import portal.Portal
-import system.display.VectorFields
 import system.display.loading.Loading
 import util.*
 import util.data.Circle
@@ -149,7 +148,6 @@ data class NonFaction(
                 val newField = PathUtil.calculateVectorField(PathUtil.generateHeatMap(destination), destination)
                 Loading.draw()
                 SoundUtil.playOffScreenLocationCreationSound()
-                VectorFields.draw(newField)
                 fields[destination] = newField
                 newField
             }

@@ -24,7 +24,6 @@ import portal.Portal
 import portal.XmMap
 import system.Cycle
 import system.display.Scene3D
-import system.display.VectorFields
 import system.display.loading.Loading
 import system.display.loading.LoadingText
 import system.display.ui.ActionLimitsDisplay
@@ -518,7 +517,6 @@ object HtmlUtil {
                     val newPortal = Portal.createRandom()
                     Loading.draw()
                     LoadingText.draw("Creating Portal ${newPortal.name}")
-                    VectorFields.draw(newPortal)
                     World.allPortals.add(newPortal)
                     createPortal(callback, count - 1)
                 } else {
