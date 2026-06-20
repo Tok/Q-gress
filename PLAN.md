@@ -188,6 +188,17 @@ while the **simulation stays 2D**. Staged.
       (transparent) world canvas + `Scene3D.sync()`; HUD stays 2D & screen-fixed. Free 3D nav
       (wheel zoom, RMB pan, WASD, Q/E rotate, R/F pitch) via `Navigation`; the Phase-4 CSS
       camera-follow is retired (the 3D follows the map natively).
+- [x] **Stage 1.5 — Standard map navigation** (verified in headless Chrome): retired the
+      hand-rolled overlay-canvas nav (which only *panned* on RMB and blocked the map). The
+      visible map (`initialMap`) now gets `pointer-events: auto` and the HUD canvas
+      `pointer-events: none`, so **MapLibre's own handlers** drive everything — left-drag pan,
+      **right-drag rotate + tilt**, wheel zoom, all unrestricted (`maxPitch` 85; top-down at
+      pitch 0). Added a **NavigationControl** block (zoom + compass + pitch visualiser,
+      bottom-right). Portal select/build + build-marker hover moved to the map's own
+      `click`/`mousemove` events (`MapUtil.bindInteractions`/`eventToSimPos`); `Navigation`
+      now only layers optional WASD/Q-E/R-F keys. Removed dead `screenToSimPos`/`zoomBy`.
+      _Follow-up:_ **mini-map / mini-globe inset** + a globe-projection toggle (MapLibre 5
+      supports globe) — a second small map synced to the main camera.
 - [ ] **Stage 2 — Ingress fidelity**: resonators ringed at the portal base; pole height ←
       level (L8 ≈ 100 m); raised fields; health/level visuals. **Shield visualization** once
       `Portal.deployMods` actually stores mods (today it's a stub — no deployed-shield state to

@@ -21,6 +21,7 @@ external object MapLibre {
         fun setMaxZoom(zoom: Int)
         fun setZoom(zoom: Int)
         fun setPitch(pitch: Double)
+        fun setMaxPitch(maxPitch: Double)
         fun setBearing(bearing: Double)
         fun setCenter(center: dynamic)
         fun jumpTo(options: dynamic)
@@ -38,12 +39,18 @@ external object MapLibre {
         fun addLayer(config: dynamic)
         fun getCanvas(): dynamic
         fun triggerRepaint()
-        fun addControl(control: dynamic)
+        fun addControl(control: dynamic, position: String = definedExternally)
         fun on(type: String, listener: () -> Unit)
+
+        @JsName("on")
+        fun onEvent(type: String, listener: (event: dynamic) -> Unit) // map events carry a payload (point/lngLat)
         fun once(type: String, listener: () -> Unit)
         fun setPaintProperty(layer: String, name: String, value: dynamic)
         fun remove()
     }
 
     class GeolocateControl(options: dynamic)
+
+    // Standard zoom + compass (+ pitch visualiser) control block.
+    class NavigationControl(options: dynamic = definedExternally)
 }

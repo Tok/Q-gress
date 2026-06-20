@@ -37,8 +37,8 @@ object Controls {
         div.addClass("controlsLegend", "coda")
         div.innerHTML =
             "<b>Controls</b><br>" +
-            "Wheel: zoom &middot; Right-drag: pan<br>" +
-            "WASD: move &middot; Q/E: rotate &middot; R/F: pitch<br>" +
+            "Left-drag: pan &middot; Right-drag: rotate + tilt<br>" +
+            "Wheel: zoom &middot; WASD/Q-E/R-F: move/rotate/pitch<br>" +
             "Click portal: select &middot; Click ground: build"
         document.body?.append(div)
     }

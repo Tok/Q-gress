@@ -19,7 +19,6 @@ import kotlinx.dom.addClass
 import org.w3c.dom.*
 import org.w3c.dom.events.Event
 import org.w3c.dom.events.KeyboardEvent
-import org.w3c.dom.events.MouseEvent
 import org.w3c.dom.url.URL
 import portal.Portal
 import portal.XmMap
@@ -102,7 +101,7 @@ object HtmlUtil {
             return
         }
 
-        World.uiCan.addEventListener("click", { event -> handleMouseClick(event) }, false)
+        // Map clicks/hover are wired to MapLibre after the map loads (see onMapload → bindInteractions).
         val controlDiv = createControlDiv()
         val buttonDiv = document.createElement("div") as HTMLDivElement
         buttonDiv.addClass("buttonDiv")
@@ -127,8 +126,6 @@ object HtmlUtil {
         controlDiv.append(buttonDiv)
 
         rootDiv.append(controlDiv)
-        controlDiv.addEventListener("mousemove", { event -> handleMouseMove(event) }, false)
-        rootDiv.addEventListener("mousemove", { event -> handleMouseMove(event) }, false)
 
         Controls.addLegend()
 
@@ -440,14 +437,10 @@ object HtmlUtil {
             pos.y <= area.to.y
     }
 
-    private fun handleMouseClick(event: Event) {
+    private fun onMapClick(event: dynamic) {
         SoundUtil.enableAudio() // first user gesture → resume audio (autoplay policy)
-        if (event !is MouseEvent) {
-            console.warn("Unhandled event: $event.")
-            return
-        }
-        // Ground point under the cursor (pitch-safe via map.unproject).
-        val pos = MapUtil.screenToSimPos(event.clientX.toDouble(), event.clientY.toDouble()) ?: return
+        // Ground point under the cursor; MapLibre fires "click" only for a click, not after a drag.
+        val pos = MapUtil.eventToSimPos(event) ?: return
         when {
             // Click on/near a portal → select it for the inspector.
             pos.hasClosePortalForClick() -> Inspector.select("portal:" + pos.findClosestPortal().id)
@@ -464,9 +457,8 @@ object HtmlUtil {
         }
     }
 
-    private fun handleMouseMove(event: Event) {
-        if (event !is MouseEvent) return
-        val pos = MapUtil.screenToSimPos(event.clientX.toDouble(), event.clientY.toDouble())
+    private fun onMapMove(event: dynamic) {
+        val pos = MapUtil.eventToSimPos(event)
         if (pos == null) {
             Scene3D.setBuildMarker(null, "")
             return
@@ -603,6 +595,7 @@ object HtmlUtil {
             applySelectedLayer()
             Navigation.setup()
             MapUtil.enable3D()
+            MapUtil.bindInteractions(::onMapClick, ::onMapMove)
         }
     }
 
