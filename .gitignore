@@ -2,11 +2,9 @@
 .idea/tasks.xml
 .gradle
 /build
-/gradle
 /node_modules
 *.meta.js
 *.kjsm
-package-lock.json
 
 # Claude Code local config
 .claude/

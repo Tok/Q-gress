@@ -12,9 +12,9 @@ import org.w3c.dom.ImageData
 import org.w3c.dom.get
 import util.data.Cell
 import util.data.Pos
-import kotlin.browser.document
-import kotlin.dom.addClass
-import kotlin.dom.removeClass
+import kotlinx.browser.document
+import kotlinx.dom.addClass
+import kotlinx.dom.removeClass
 import kotlin.js.Json
 
 object MapUtil {
@@ -26,9 +26,6 @@ object MapUtil {
 
     private fun initShadowMap(): MapBox =
         js("new mapboxgl.Map({'container':'shadowMap','style':'mapbox://styles/zirteq/cjaq7lw9e2y7u2rn7u6xskobn'});")
-
-    private val GEO_CTRL_LITERAL =
-        "new mapboxgl.GeolocateControl({'positionOptions':{'enableHighAccuracy':true,'zoom':18},'trackUserLocation':false})"
 
     private const val INITIAL_MAP = "initialMap"
     private const val MAP = "map"
@@ -79,7 +76,7 @@ object MapUtil {
         if (map == null) {
             map = initMapbox()
             map!!.on("load", fun() { loadShadowMap(center, callback) })
-            map!!.addControl(js(GEO_CTRL_LITERAL))
+            map!!.addControl(js("new mapboxgl.GeolocateControl({'positionOptions':{'enableHighAccuracy':true,'zoom':18},'trackUserLocation':false})"))
             map!!.setMinZoom(MIN_ZOOM)
             map!!.setMaxZoom(MAX_ZOOM)
             map!!.setZoom(ZOOM)

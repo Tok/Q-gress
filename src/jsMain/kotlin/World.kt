@@ -16,8 +16,8 @@ import util.HtmlUtil
 import util.Util
 import util.data.Cell
 import util.data.Pos
-import kotlin.browser.document
-import kotlin.dom.clear
+import kotlinx.browser.document
+import kotlinx.dom.clear
 import kotlin.math.sqrt
 
 
@@ -102,7 +102,7 @@ object World {
     fun createNoiseImage(noiseMap: Array<DoubleArray>, w: Int, h: Int, alpha: Double = 1.0): ImageData {
         fun setPixel(imageData: ImageData, x: Int, y: Int, r: Int, g: Int, b: Int) {
             val index = imageDataIndex(x, y, imageData.width)
-            imageData.data.set(arrayOf(r.toByte(), b.toByte(), g.toByte(), (Byte.MAX_VALUE * alpha).toByte()), index)
+            imageData.data.set(arrayOf(r.toByte(), b.toByte(), g.toByte(), (Byte.MAX_VALUE * alpha).toInt().toByte()), index)
         }
         with(World) {
             val imageData: ImageData = bgCtx().createImageData(w.toDouble(), h.toDouble())
@@ -124,7 +124,7 @@ object World {
                 for (y in 0 until h) {
                     val rawNoise = streetMap[imageDataIndex(x, y, imageData.width)]
                     val index = imageDataIndex(x, h - 1 - y, imageData.width)
-                    imageData.data.set(arrayOf(rawNoise, rawNoise, rawNoise, (Byte.MAX_VALUE * 1.0).toByte()), index)
+                    imageData.data.set(arrayOf(rawNoise, rawNoise, rawNoise, Byte.MAX_VALUE), index)
                 }
             }
             return imageData

@@ -523,7 +523,7 @@ data class Portal(
         if (HtmlUtil.isNotRunningInBrowser()) return
         val xOffset = 34
         val yOffset = 18
-        ctx.drawImage(nameImage, location.x - xOffset, location.y + yOffset)
+        nameImage?.let { ctx.drawImage(it, location.x - xOffset, location.y + yOffset) }
     }
 
     override fun toString() = name

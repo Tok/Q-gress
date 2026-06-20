@@ -26,10 +26,10 @@ import system.display.ui.ActionLimitsDisplay
 import util.data.GeoCoords
 import util.data.Line
 import util.data.Pos
-import kotlin.browser.document
-import kotlin.browser.window
-import kotlin.dom.addClass
-import kotlin.dom.removeClass
+import kotlinx.browser.document
+import kotlinx.browser.window
+import kotlinx.dom.addClass
+import kotlinx.dom.removeClass
 import kotlin.js.Json
 
 object HtmlUtil {
@@ -120,9 +120,9 @@ object HtmlUtil {
     private fun createPopup(id: String): HTMLDivElement {
         fun createButton(faction: Faction): HTMLButtonElement {
             val button = document.createElement("button") as HTMLButtonElement
-            button.id = faction.abbr.toLowerCase() + "Button"
-            button.addClass(faction.abbr.toLowerCase(), "popupButton", "amarillo")
-            button.innerText = faction.abbr.toUpperCase()
+            button.id = faction.abbr.lowercase() + "Button"
+            button.addClass(faction.abbr.lowercase(), "popupButton", "amarillo")
+            button.innerText = faction.abbr.uppercase()
             button.onclick = {
                 chooseUserFaction(faction)
             }
@@ -219,7 +219,7 @@ object HtmlUtil {
         val qDiv = document.createElement("div") as HTMLDivElement
         qDiv.id = id
         qDiv.addClass("qValues", className)
-        qDiv.addClass("q-" + labelText.toLowerCase())
+        qDiv.addClass("q-" + labelText.lowercase())
         val destinationsLabel = document.createElement("div") as HTMLDivElement
         destinationsLabel.addClass("label", "qTitle")
         destinationsLabel.innerHTML = labelText
@@ -235,9 +235,9 @@ object HtmlUtil {
                 slider.max = "1.00"
                 slider.step = "0.01"
                 slider.value = "0.10"
-                slider.addClass("slider", "qSlider", faction.abbr.toLowerCase() + "Slider")
+                slider.addClass("slider", "qSlider", faction.abbr.lowercase() + "Slider")
                 val sliderValue = document.createElement("span") as HTMLSpanElement
-                sliderValue.addClass("qSliderLabel", faction.abbr.toLowerCase() + "Label")
+                sliderValue.addClass("qSliderLabel", faction.abbr.lowercase() + "Label")
                 if (faction != userFaction) {
                     slider.addClass("invisible")
                     sliderValue.addClass("invisible")
@@ -303,7 +303,7 @@ object HtmlUtil {
     private fun chooseUserFaction(fact: Faction) {
         closePopup()
         val pauseButton = document.getElementById(PAUSE_BUTTON_ID) as HTMLButtonElement
-        pauseButton.addClass(fact.abbr.toLowerCase())
+        pauseButton.addClass(fact.abbr.lowercase())
         if (World.userFaction != null) {
             console.warn("Faction ${World.userFaction} was already chosen.")
             return

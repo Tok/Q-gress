@@ -16,7 +16,7 @@ import portal.Field
 import portal.Link
 import system.Checkpoint
 import util.data.Pos
-import kotlin.browser.document
+import kotlinx.browser.document
 
 object SoundUtil {
     private val audioCtx = AudioContext()

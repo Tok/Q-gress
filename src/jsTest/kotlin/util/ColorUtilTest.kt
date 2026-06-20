@@ -12,10 +12,10 @@ class ColorUtilTest {
     fun complexBlack() = assertEquals(Colors.black, ColorUtil.getColor(Complex.ZERO))
 
     @Test
-    fun complexRed() = assertEquals(Colors.red.toUpperCase(), ColorUtil.getColor(Complex.ONE))
+    fun complexRed() = assertEquals(Colors.red.uppercase(), ColorUtil.getColor(Complex.ONE))
 
     @Test
-    fun complexBrown() = assertEquals(Colors.chartreuse.toUpperCase(), ColorUtil.getColor(Complex.I))
+    fun complexBrown() = assertEquals(Colors.chartreuse.uppercase(), ColorUtil.getColor(Complex.I))
 
     @Test
     fun spectrum() {

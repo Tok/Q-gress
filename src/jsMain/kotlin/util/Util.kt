@@ -96,7 +96,7 @@ object Util {
         val length = minLength + randomInt(maxLength - minLength)
         val firstLetter = select(generateFirstSelection(), ' ')
         val name = firstLetter + IntRange(1, length).map { select(generateSelection(), ' ') }.joinToString("")
-        val temp = name.substring(0, 1).toUpperCase() + name.substring(1).toLowerCase()
+        val temp = name.substring(0, 1).uppercase() + name.substring(1).lowercase()
         return if (temp.endsWith('-')) temp.dropLast(1) else temp
     }
 

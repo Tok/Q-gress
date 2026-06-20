@@ -15,7 +15,7 @@ enum class Faction(val abbr: String, val nickName: String, val color: String, va
     }
 
     companion object {
-        fun fromString(s: String?): Faction? = when (s?.toUpperCase()) {
+        fun fromString(s: String?): Faction? = when (s?.uppercase()) {
             "RES" -> RES
             "ENL" -> ENL
             else -> null

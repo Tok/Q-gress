@@ -7,7 +7,7 @@ import agent.qvalue.QActions
 import agent.qvalue.QValue
 import org.w3c.dom.HTMLInputElement
 import util.Util
-import kotlin.browser.window
+import kotlinx.browser.window
 
 object ActionSelector {
     fun doSomethingElse(agent: Agent): Agent {

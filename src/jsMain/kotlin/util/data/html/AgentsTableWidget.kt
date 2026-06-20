@@ -2,8 +2,8 @@ package util.data.html
 
 import agent.Agent
 import org.w3c.dom.HTMLDivElement
-import kotlin.browser.document
-import kotlin.dom.addClass
+import kotlinx.browser.document
+import kotlinx.dom.addClass
 
 
 class AgentsTableWidget private constructor(val div: HTMLDivElement) {

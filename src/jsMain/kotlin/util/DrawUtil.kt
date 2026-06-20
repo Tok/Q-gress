@@ -22,7 +22,7 @@ import system.display.ui.table.TopAgentsDisplay
 import util.data.Circle
 import util.data.Line
 import util.data.Pos
-import kotlin.browser.document
+import kotlinx.browser.document
 import kotlin.math.PI
 
 object DrawUtil {
