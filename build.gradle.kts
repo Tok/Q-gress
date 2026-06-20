@@ -92,6 +92,8 @@ kotlin {
             implementation("org.jetbrains.kotlinx:kotlinx-browser:0.5.0")
             // three.js is bundled via webpack (was a UMD CDN <script>); npm/ESM unlocks GLTFLoader.
             implementation(npm("three", "0.160.0"))
+            // cannon-es: rigid-body physics for the glass shards (tumble + settle).
+            implementation(npm("cannon-es", "0.20.0"))
         }
         jsTest.dependencies {
             implementation(kotlin("test"))

@@ -7,6 +7,7 @@ import agent.NonFaction
 import agent.action.ActionItem
 import config.Colors
 import config.Sim
+import external.Cannon
 import external.GLTFLoader
 import external.MapLibre
 import external.Three
@@ -15,6 +16,7 @@ import kotlinx.browser.document
 import portal.Field
 import portal.Link
 import portal.Portal
+import util.SoundUtil
 import util.Util
 import util.data.Pos
 import kotlin.math.PI
@@ -67,6 +69,7 @@ object Scene3D {
     private const val SHARD_LIFE_MIN = 3.0
     private const val SHARD_LIFE_MAX = 5.0
     private const val SHARD_SPIN = 6.0 // max tumble rad/s
+    private const val SHARD_MASS = 1.0
     private const val GRAVITY = 9.8 // m/s²
     private const val SHARD_TARGET_PATH = 3.0 // pole-shard target size (metres)
     private const val POLE_SHARD_COUNT = 12
@@ -110,19 +113,13 @@ object Scene3D {
     private var pathScale = 1.0 // scale a pole shard to ≈ SHARD_TARGET_PATH
     private var shardsGroup: dynamic = null // transient shatter fragments (not cleared by sync)
     private var burstsGroup: dynamic = null // transient XMP shockwaves
+    private var physicsWorld: Cannon.World? = null // cannon-es world for the shards
     private val activeShards = mutableListOf<Shard>()
     private val activeBursts = mutableListOf<Burst>()
     private var lastFrameMs = 0.0 // for per-frame shard physics dt
 
-    /** One in-flight glass fragment: a mesh with velocity + tumble (3 each), fading over its life. */
-    private class Shard(
-        val mesh: dynamic,
-        val mat: dynamic,
-        val vel: DoubleArray,
-        val spin: DoubleArray,
-        var age: Double,
-        val life: Double,
-    )
+    /** One in-flight glass fragment: a mesh driven by its cannon-es rigid [body], fading over [life]. */
+    private class Shard(val mesh: dynamic, val mat: dynamic, val body: Cannon.Body, var age: Double, val life: Double)
 
     /** An expanding XMP shockwave dome: grows to maxR while fading over its life. */
     private class Burst(val mesh: dynamic, val mat: dynamic, val maxR: Double, var age: Double, val life: Double)
@@ -173,6 +170,7 @@ object Scene3D {
         borderGroup = Three.Group().also { newScene.add(it) }
         shardsGroup = Three.Group().also { newScene.add(it) }
         burstsGroup = Three.Group().also { newScene.add(it) }
+        physicsWorld = createPhysicsWorld()
         scene = newScene
         buildBorder()
         loadShatterAssets()
@@ -208,29 +206,20 @@ object Scene3D {
     }
 
     private fun updateShards(dt: Double) {
+        physicsWorld?.step(1.0 / 60.0, dt, 3)
         val iter = activeShards.iterator()
         while (iter.hasNext()) {
             val s = iter.next()
             s.age += dt
-            s.vel[2] -= GRAVITY * dt
-            val pos = s.mesh.position
-            pos.x = (pos.x as Double) + s.vel[0] * dt
-            pos.y = (pos.y as Double) + s.vel[1] * dt
-            pos.z = (pos.z as Double) + s.vel[2] * dt
-            if ((pos.z as Double) <= 0.0) { // landed on the terrain
-                pos.z = 0.0
-                s.vel[2] = 0.0
-                s.vel[0] *= 0.4
-                s.vel[1] *= 0.4
-            }
-            val rot = s.mesh.rotation
-            rot.x = (rot.x as Double) + s.spin[0] * dt
-            rot.y = (rot.y as Double) + s.spin[1] * dt
-            rot.z = (rot.z as Double) + s.spin[2] * dt
+            val bodyPos = s.body.asDynamic().position
+            s.mesh.position.set(bodyPos.x as Double, bodyPos.y as Double, bodyPos.z as Double)
+            val bodyQuat = s.body.asDynamic().quaternion
+            s.mesh.quaternion.set(bodyQuat.x as Double, bodyQuat.y as Double, bodyQuat.z as Double, bodyQuat.w as Double)
             if (s.age > s.life - SHARD_FADE) {
                 s.mat.opacity = SHARD_OPACITY * ((s.life - s.age) / SHARD_FADE).coerceIn(0.0, 1.0)
             }
             if (s.age >= s.life) {
+                physicsWorld?.removeBody(s.body)
                 shardsGroup.remove(s.mesh)
                 s.mat.dispose()
                 iter.remove()
@@ -373,18 +362,39 @@ object Scene3D {
     }
 
     private fun spawnShard(holder: dynamic, pos: DoubleArray, scale: Double, color: String, burstH: Double) {
+        val world = physicsWorld ?: return
         val mat = shardMaterial(color)
         val mesh = Three.Mesh(holder.geo, mat)
-        val d = mesh.asDynamic()
-        d.scale.set(scale, scale, scale)
-        d.rotation.set(PI / 2, Util.random() * 2.0 * PI, Util.random() * 2.0 * PI) // model Y-up → scene Z-up + spin
-        d.position.set(pos[0], pos[1], pos[2])
+        mesh.asDynamic().scale.set(scale, scale, scale)
+        val opts: dynamic = js("({})")
+        opts.mass = SHARD_MASS
+        opts.position = Cannon.Vec3(pos[0], pos[1], pos[2])
+        opts.shape = Cannon.Box(
+            Cannon.Vec3(
+                ((holder.hx as Double) * scale).coerceAtLeast(0.1),
+                ((holder.hy as Double) * scale).coerceAtLeast(0.1),
+                ((holder.hz as Double) * scale).coerceAtLeast(0.1),
+            ),
+        )
+        opts.linearDamping = 0.04
+        opts.angularDamping = 0.2
+        val body = Cannon.Body(opts)
         val a = Util.random() * 2.0 * PI
         val r = burstH * (0.4 + Util.random() * 0.6)
-        val vel = doubleArrayOf(cos(a) * r, sin(a) * r, burstH * (0.5 + Util.random()))
-        val spin = doubleArrayOf(randSpin(), randSpin(), randSpin())
-        activeShards.add(Shard(mesh, mat, vel, spin, 0.0, SHARD_LIFE_MIN + Util.random() * (SHARD_LIFE_MAX - SHARD_LIFE_MIN)))
+        body.asDynamic().velocity.set(cos(a) * r, sin(a) * r, burstH * (0.5 + Util.random()))
+        body.asDynamic().angularVelocity.set(randSpin(), randSpin(), randSpin())
+        world.addBody(body)
         shardsGroup.add(mesh)
+        activeShards.add(Shard(mesh, mat, body, 0.0, SHARD_LIFE_MIN + Util.random() * (SHARD_LIFE_MAX - SHARD_LIFE_MIN)))
+    }
+
+    private fun createPhysicsWorld(): Cannon.World {
+        val world = Cannon.World()
+        world.asDynamic().gravity.set(0.0, 0.0, -GRAVITY)
+        val groundOpts: dynamic = js("({ mass: 0 })") // static ground plane at z=0 (normal +Z)
+        groundOpts.shape = Cannon.Plane()
+        world.addBody(Cannon.Body(groundOpts))
+        return world
     }
 
     private fun randSpin() = (Util.random() - 0.5) * 2.0 * SHARD_SPIN
@@ -404,6 +414,7 @@ object Scene3D {
         mesh.asDynamic().position.set(sceneX(location), sceneY(location), 0.0)
         burstsGroup.add(mesh)
         activeBursts.add(Burst(mesh, mat, rangeM * XMP_RANGE_SCALE, 0.0, XMP_LIFE))
+        SoundUtil.playXmpSound(location, level)
     }
 
     private fun updateBursts(dt: Double) {
@@ -457,13 +468,14 @@ object Scene3D {
 
     private fun makeShard(mesh: dynamic): dynamic {
         val geo = mesh.geometry
+        geo.rotateX(PI / 2) // bake model Y-up → scene Z-up so the rigid-body quaternion drives the mesh
         geo.computeBoundingBox()
         val bb = geo.boundingBox
         val holder: dynamic = js("({})")
         holder.geo = geo
-        holder.cx = ((bb.min.x as Double) + (bb.max.x as Double)) / 2.0
-        holder.cy = ((bb.min.y as Double) + (bb.max.y as Double)) / 2.0
-        holder.cz = ((bb.min.z as Double) + (bb.max.z as Double)) / 2.0
+        holder.hx = ((bb.max.x as Double) - (bb.min.x as Double)) / 2.0 // half-extents for the box collider
+        holder.hy = ((bb.max.y as Double) - (bb.min.y as Double)) / 2.0
+        holder.hz = ((bb.max.z as Double) - (bb.min.z as Double)) / 2.0
         return holder
     }
 

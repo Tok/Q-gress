@@ -89,6 +89,21 @@ object SoundUtil {
         repeat((9 + heaviness * 17).toInt()) { playTinkle(pan, amplitude) }
     }
 
+    /** XMP burst: a low sine "boom" sweeping down + a high-passed noise "fwoom", sized by level (1..8). */
+    fun playXmpSound(pos: Pos, level: Int) {
+        if (isMuted()) return
+        val pan = pos.x / Sim.width
+        val amp = 0.5 + level * 0.06
+        val dur = 0.35 + level * 0.02
+        val osc = createExponentialRampOscillator(OscillatorType.SINE, 180.0 + level * 8.0, 40.0, dur)
+        val gainNode = audioCtx.createGain()
+        val n = now()
+        gainNode.gain.setValueAtTime(amp, n)
+        gainNode.gain.exponentialRampToValueAtTime(EPS, n + dur)
+        connectVoice(osc, createStaticPan(pan), gainNode, n + dur)
+        playNoiseCrack(pan, amp * 0.6, 0.2 + level * 0.04)
+    }
+
     private fun playNoiseCrack(pan: Double, amplitude: Double, heaviness: Double) {
         val sr = audioCtx.sampleRate
         val tau = 0.06 + Util.random() * 0.06 + heaviness * 0.06
