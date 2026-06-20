@@ -15,6 +15,14 @@ object Config {
     const val factionChangeRate = 0.01
     const val portalRemovalRate = 0.1
 
+    // --- Recruitment balance (Phase 5) ---------------------------------------
+    // Recruiting used to be free, making "recruit-rush" a strictly-positive
+    // throughput multiplier. Now it costs XM (competing with linking/deploying,
+    // which also cost XM) and yields diminishing returns as the faction fills
+    // toward its cap — so growing the roster is a real tradeoff, not free.
+    const val recruitmentXmCost = 250 // XM spent per recruit attempt (cf. link = 250)
+    const val recruitmentBaseChance = 0.05 // success chance at an empty roster; scales →0 at the cap
+
     const val startPortals = 5
     fun startFrogs() = if (HtmlUtil.isQuickstart()) 8 else minFrogs
     fun startSmurfs() = if (HtmlUtil.isQuickstart()) 8 else minSmurfs

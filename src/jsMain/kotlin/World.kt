@@ -68,6 +68,18 @@ object World {
         .filter { ActionLimitsDisplay.isNotBlocked(it.key.fromShadow()) }
 
     val allAgents: MutableSet<Agent> = mutableSetOf()
+
+    // Agents recruited mid-tick are buffered here and flushed after the agent
+    // loop, so we never mutate allAgents while iterating it (avoids CME).
+    val pendingAgents: MutableList<Agent> = mutableListOf()
+
+    fun flushPendingAgents() {
+        if (pendingAgents.isNotEmpty()) {
+            allAgents.addAll(pendingAgents)
+            pendingAgents.clear()
+        }
+    }
+
     val frogs = allAgents.filter { it.faction == Faction.ENL }.toSet()
     val smurfs = allAgents.filter { it.faction == Faction.RES }.toSet()
     fun countAgents() = allAgents.count()

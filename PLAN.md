@@ -161,11 +161,21 @@ icebox — needs on-demand pathfinding).
   map; verified in headless Chrome with 0 console errors. _(Sim remains anchored to its
   build area — a growing world is the deferred follow-up.)_
 
-### Phase 5 — Game balance / make it interesting
-- [ ] Neutralize the recruit-rush: add recruitment cost/upkeep or diminishing returns;
-      retune `QActions`/`QDestinations` weights and `Config` caps.
-- [ ] Add metrics so we can compare strategies (already have MU checkpoints/cycles).
-- **Exit criterion:** no single slider-maxing strategy dominates; field-building competes.
+### Phase 5 — Game balance / make it interesting  ✅ (first pass; tune via playtest)
+Root cause: recruiting was **free** (no resource cost), making roster size a strictly
+positive throughput multiplier — recruit-rush = free head start. Fix:
+- [x] Recruiting now **costs XM** (`Config.recruitmentXmCost`, = link cost) and is gated on
+      having it, so growing the roster competes with linking/deploying for the same energy.
+- [x] **Diminishing returns**: success chance (`Config.recruitmentBaseChance`) scales →0 as
+      the faction fills toward its cap, so rushing the cap pays less and less.
+- [x] Fixed a latent **ConcurrentModificationException** (recruiting mutated `allAgents`
+      mid-tick): recruits buffer in `World.pendingAgents`, flushed after the agent loop; the
+      tick iterates a snapshot.
+- Metrics: the per-faction **MU cycle graph** (Cycle) + agent-count displays already show
+  who's winning — use them to judge balance.
+- **Exit criterion (tunable):** recruit-rush is no longer free; the balance constants live
+  in `Config` for playtest tuning. _Deeper "no strategy dominates" validation is iterative
+  (playtest via ./start.sh, or a future headless strategy-comparison harness)._
 
 ### Phase 6 — AI-vs-AI (approach TBD — needs its own plan)
 **Polish the game/sim first** (Phases 4–5) before adding AI. The AI substrate is the

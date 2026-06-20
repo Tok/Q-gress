@@ -51,11 +51,14 @@ object HtmlUtil {
             return
         }
 
-        val nextAgents = World.allAgents.map { it.act() }.toSet()
+        // Iterate a snapshot so mid-tick recruiting can't mutate the set we're
+        // looping (recruits are buffered in World.pendingAgents, flushed below).
+        val nextAgents = World.allAgents.toList().map { it.act() }.toSet()
         XmMap.updateStrayXm()
 
         World.allAgents.clear()
         World.allAgents.addAll(nextAgents)
+        World.flushPendingAgents()
 
         World.allNonFaction.forEach { it.act() }
         window.requestAnimationFrame {

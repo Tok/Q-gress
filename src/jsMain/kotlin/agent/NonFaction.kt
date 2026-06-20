@@ -112,7 +112,6 @@ data class NonFaction(
     fun draw(ctx: Ctx) = ctx.drawImage(NonFaction.image(size), pos.x, pos.y)
 
     companion object {
-        val changeToBeRecruited = 0.05
         private val OFFSCREEN_DISTANCE = Pos.res * (MapUtil.OFFSCREEN_CELL_ROWS / 2)
         private val DESTINATIONS = listOf(
             // NORTH
