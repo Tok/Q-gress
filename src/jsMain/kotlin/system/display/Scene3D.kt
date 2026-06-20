@@ -134,8 +134,15 @@ object Scene3D {
     private val topGeo: dynamic by lazy { Three.SphereGeometry(TOP_R, 16, 16) }
     private val coneGeo: dynamic by lazy { Three.ConeGeometry(VECTOR_CONE_R, VECTOR_CONE_H, 6) }
     private val burstGeo: dynamic by lazy { Three.SphereGeometry(1.0, 24, 16) } // unit sphere → XMP hot core
-    private val torusGeo: dynamic by lazy { Three.TorusGeometry(1.0, 0.42, 16, 48) } // unit donut → rolling fireball
+    private val torusGeo: dynamic by lazy { Three.TorusGeometry(1.0, 0.42, 16, 48) } // unit donut → rolling cap
     private val ringQuadGeo: dynamic by lazy { Three.PlaneGeometry(2.0, 2.0) } // flat quad → ground shockwave
+
+    // Unit cylinder (taller toward the cap) baked Y-up→Z-up once → the rising mushroom stem.
+    private val stemGeo: dynamic by lazy {
+        val g = Three.CylinderGeometry(1.0, 0.5, 1.0, 12).asDynamic()
+        g.rotateX(PI / 2) // bake Y-up cylinder to Z-up so the stem rises along +Z
+        g
+    }
     private val materialCache = mutableMapOf<String, dynamic>()
     private val spriteCache = mutableMapOf<String, dynamic>()
 
@@ -386,8 +393,9 @@ object Scene3D {
         opts.angularDamping = 0.2
         val body = Cannon.Body(opts)
         val a = Util.random() * 2.0 * PI
-        val r = burstH * (0.4 + Util.random() * 0.6)
-        body.asDynamic().velocity.set(cos(a) * r, sin(a) * r, burstH * (0.5 + Util.random()))
+        val r = burstH * (0.1 + Util.random() * 0.25) // gentle outward drift; gravity does the rest
+        val up = burstH * (0.05 + Util.random() * 0.3) // a small pop up, then it mostly falls
+        body.asDynamic().velocity.set(cos(a) * r, sin(a) * r, up)
         body.asDynamic().angularVelocity.set(randSpin(), randSpin(), randSpin())
         world.addBody(body)
         shardsGroup.add(mesh)
@@ -405,23 +413,11 @@ object Scene3D {
 
     private fun randSpin() = (Util.random() - 0.5) * 2.0 * SHARD_SPIN
 
-    private fun makeShaderMat(vert: String, frag: String, uni: dynamic): dynamic {
-        val p: dynamic = js("({})")
-        p.vertexShader = vert
-        p.fragmentShader = frag
-        p.uniforms = uni
-        p.transparent = true
-        p.depthWrite = false
-        p.depthTest = false // transient additive FX float over the scene; avoids ground z-fighting
-        p.blending = Three.AdditiveBlending
-        p.side = 2 // DoubleSide — additive back faces fill out the volume
-        return Three.ShaderMaterial(p)
-    }
-
     /**
-     * Fire a synthwave micro-nuke at a location, scaled by burster [level] (1..8): an initial
-     * white flash + a rolling fireball (torus cap), a hot turbulent core, and an expanding neon
-     * ground shockwave ring. All three meshes share one uniforms object animated by updateBursts.
+     * Fire a synthwave micro-nuke at a location, scaled by burster [level] (1..8): a rising
+     * mushroom — turbulent stem column → rolling fireball cap (torus) with a hot flashing core —
+     * plus an expanding neon ground shockwave ring. All four meshes share one uniforms object
+     * (uTime/uProgress/uSeed) animated by updateBursts. Meshes order: stem, cap, core, ring.
      */
     fun playXmpBurst(location: Pos, level: Int) {
         scene ?: return
@@ -431,17 +427,22 @@ object Scene3D {
         val cy = sceneY(location)
         val uni: dynamic = js("({ uTime: { value: 0.0 }, uProgress: { value: 0.0 }, uSeed: { value: 0.0 } })")
         uni.uSeed.value = Util.random() * 10.0
-        val cap = Three.Mesh(torusGeo, makeShaderMat(XmpShaders.SURFACE_VERT, XmpShaders.CAP_FRAG, uni))
-        val core = Three.Mesh(burstGeo, makeShaderMat(XmpShaders.SURFACE_VERT, XmpShaders.CORE_FRAG, uni))
-        val ring = Three.Mesh(ringQuadGeo, makeShaderMat(XmpShaders.UV_VERT, XmpShaders.RING_FRAG, uni))
-        cap.asDynamic().position.set(cx, cy, maxR * 0.3)
-        core.asDynamic().position.set(cx, cy, maxR * 0.3)
+        val stem = Three.Mesh(stemGeo, XmpShaders.material(XmpShaders.SURFACE_VERT, XmpShaders.STEM_FRAG, uni, additive = false))
+        val cap = Three.Mesh(torusGeo, XmpShaders.material(XmpShaders.SURFACE_VERT, XmpShaders.CAP_FRAG, uni, additive = false))
+        val core = Three.Mesh(burstGeo, XmpShaders.material(XmpShaders.SURFACE_VERT, XmpShaders.CORE_FRAG, uni))
+        val ring = Three.Mesh(ringQuadGeo, XmpShaders.material(XmpShaders.UV_VERT, XmpShaders.RING_FRAG, uni))
         ring.asDynamic().position.set(cx, cy, RING_Z)
+        // Render order (depthTest is off): ground ring, then smoke, then the glowing core on top.
+        ring.asDynamic().renderOrder = 1
+        stem.asDynamic().renderOrder = 2
+        cap.asDynamic().renderOrder = 3
+        core.asDynamic().renderOrder = 4
+        burstsGroup.add(stem)
         burstsGroup.add(cap)
         burstsGroup.add(core)
         burstsGroup.add(ring)
         val life = XMP_LIFE_BASE + level * XMP_LIFE_PER_LEVEL
-        activeBursts.add(Burst(arrayOf(cap, core, ring), uni, doubleArrayOf(cx, cy, maxR, life), 0.0))
+        activeBursts.add(Burst(arrayOf(stem, cap, core, ring), uni, doubleArrayOf(cx, cy, maxR, life), 0.0))
         SoundUtil.playXmpSound(location, level)
     }
 
@@ -458,18 +459,24 @@ object Scene3D {
             b.uni.uProgress.value = f
             b.uni.uTime.value = b.age
             val ease = 1.0 - (1.0 - f) * (1.0 - f) // easeOutQuad
-            val rise = maxR * (0.15 + 0.9 * f * f) // accelerating mushroom climb
-            val capR = maxR * (0.18 + 0.5 * ease)
-            val capH = rise + capR * 0.45
-            val flat = 1.0 - 0.45 * smoothstep01(0.4, 1.0, f) // cap flattens as it mushrooms
-            val cap = b.meshes[0]
-            val core = b.meshes[1]
+            val rise = maxR * (0.1 + 0.5 * f * f) // slower mushroom climb
+            val capR = maxR * (0.22 + 0.5 * ease)
+            val capH = rise + capR * 0.5
+            val flat = 1.0 - 0.4 * smoothstep01(0.4, 1.0, f) // cap flattens as it mushrooms
+            // Stem: a tapered column from the ground up to the cap.
+            val stem = b.meshes[0]
+            val stemR = maxR * (0.08 + 0.05 * ease)
+            val stemH = capH.coerceAtLeast(0.01)
+            stem.scale.set(stemR, stemR, stemH)
+            stem.position.set(cx, cy, stemH * 0.5)
+            val cap = b.meshes[1]
             cap.scale.set(capR, capR, capR * flat)
             cap.position.set(cx, cy, capH)
-            val coreR = maxR * (0.14 + 0.34 * ease)
+            val core = b.meshes[2]
+            val coreR = maxR * (0.16 + 0.3 * ease)
             core.scale.set(coreR, coreR, coreR)
             core.position.set(cx, cy, capH)
-            b.meshes[2].scale.set(maxR, maxR, 1.0)
+            b.meshes[3].scale.set(maxR, maxR, 1.0)
             if (b.age >= life) {
                 for (m in b.meshes) {
                     burstsGroup.remove(m)

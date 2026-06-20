@@ -1,5 +1,7 @@
 package system.display
 
+import external.Three
+
 /**
  * GLSL ES source for the XMP "micro-nuke" detonation (see [Scene3D.playXmpBurst]).
  *
@@ -14,6 +16,24 @@ package system.display
  *  - [RING_FRAG] neon ground shockwave ring (flat quad) racing outward over the terrain.
  */
 object XmpShaders {
+    /**
+     * Build a transient-FX ShaderMaterial. [additive] true → glowing core/ring (light adds up);
+     * false → normal alpha blend so the smoke's soot reads as genuinely *dark*. Depth test/write
+     * are off (these float over the scene and must not z-fight the ground).
+     */
+    fun material(vert: String, frag: String, uni: dynamic, additive: Boolean = true): dynamic {
+        val p: dynamic = js("({})")
+        p.vertexShader = vert
+        p.fragmentShader = frag
+        p.uniforms = uni
+        p.transparent = true
+        p.depthWrite = false
+        p.depthTest = false
+        p.blending = if (additive) Three.AdditiveBlending else Three.NormalBlending
+        p.side = 2 // DoubleSide — back faces fill out the volume
+        return Three.ShaderMaterial(p)
+    }
+
     // Vertex passing uv only (ground ring) and uv + local position (curved fireball surfaces).
     const val UV_VERT =
         "varying vec2 vUv;\n" +
@@ -36,7 +56,13 @@ object XmpShaders {
             " for (int i = 0; i < 5; i++){ s += a * noise(p); p *= 2.02; a *= 0.5; } return s; }\n" +
             "vec3 heatToColor(float h){ vec3 c = mix(vec3(0.0), vec3(1.0, 0.3, 0.0), clamp(h * 4.0 - 0.5, 0.0, 1.0));\n" +
             " c = mix(c, vec3(1.0, 0.85, 0.35), clamp(h * 4.0 - 1.6, 0.0, 1.0));\n" +
-            " c = mix(c, vec3(1.0, 0.97, 0.88), clamp(h * 6.0 - 3.4, 0.0, 1.0)); return c; }\n"
+            " c = mix(c, vec3(1.0, 0.97, 0.88), clamp(h * 6.0 - 3.4, 0.0, 1.0)); return c; }\n" +
+            // Dirty detonation smoke (alpha-blended): black soot → gray → ember → fire → white-hot.
+            "vec3 smokeColor(float h){ vec3 c = mix(vec3(0.015, 0.015, 0.02), vec3(0.16, 0.15, 0.18)," +
+            " smoothstep(0.0, 0.34, h));\n" +
+            " c = mix(c, vec3(0.5, 0.18, 0.05), smoothstep(0.34, 0.55, h));\n" +
+            " c = mix(c, vec3(1.0, 0.5, 0.12), smoothstep(0.55, 0.78, h));\n" +
+            " c = mix(c, vec3(1.0, 0.92, 0.72), smoothstep(0.84, 1.0, h)); return c; }\n"
 
     const val CAP_FRAG =
         GLSL_NOISE +
@@ -44,13 +70,28 @@ object XmpShaders {
             "uniform float uTime; uniform float uProgress; uniform float uSeed;\n" +
             "void main(){ float roll = uTime * 2.4 + uProgress * 2.5;\n" +
             " float ta = vUv.y * 6.2831853 + roll; float ma = vUv.x * 6.2831853;\n" +
-            " vec3 sp = vec3(cos(ma), sin(ta) * 0.6, sin(ma)) * 2.3 + vec3(uSeed, -uTime * 1.3, uSeed * 0.5);\n" +
-            " float d = fbm(sp); float heat = clamp(d * 1.5 - uProgress * 0.7, 0.0, 1.0);\n" +
-            " vec3 col = heatToColor(heat);\n" +
-            " col += vec3(0.9, 0.06, 0.7) * smoothstep(0.35, 0.0, heat) * (1.0 - uProgress);\n" +
-            " col += vec3(0.05, 0.5, 1.0) * smoothstep(0.12, 0.0, heat) * (1.0 - uProgress) * 0.6;\n" +
-            " float a = clamp(d * 1.4 - 0.3, 0.0, 1.0) * (1.0 - uProgress);\n" +
-            " if (a < 0.01) discard; gl_FragColor = vec4(col, a); }"
+            " vec3 sp = vec3(cos(ma), sin(ta) * 0.6, sin(ma)) * 2.6 + vec3(uSeed, -uTime * 1.3, uSeed * 0.5);\n" +
+            " float d = fbm(sp) + fbm(sp * 2.7 + uTime * 0.6) * 0.5; d *= 0.72;\n" +
+            " float heat = clamp(d * 1.8 - uProgress * 0.7, 0.0, 1.0);\n" +
+            " vec3 col = smokeColor(heat);\n" +
+            " col += vec3(0.9, 0.06, 0.7) * smoothstep(0.5, 0.28, heat) * (1.0 - uProgress) * 0.5;\n" +
+            " col += vec3(0.05, 0.5, 1.0) * smoothstep(0.3, 0.12, heat) * (1.0 - uProgress) * 0.4;\n" +
+            " float a = clamp(d * 1.9 - 0.05, 0.0, 1.0) * (1.0 - uProgress * 0.8);\n" +
+            " if (a < 0.02) discard; gl_FragColor = vec4(col, a); }"
+
+    // Rising mushroom stem (tapered cylinder): turbulent smoke flowing upward, denser at the base.
+    const val STEM_FRAG =
+        GLSL_NOISE +
+            "varying vec2 vUv;\nvarying vec3 vPos;\n" +
+            "uniform float uTime; uniform float uProgress; uniform float uSeed;\n" +
+            "void main(){ float ang = vUv.x * 6.2831853;\n" +
+            " vec3 sp = vec3(cos(ang), vUv.y * 3.2 - uTime * 1.4, sin(ang)) * 2.0 + uSeed;\n" +
+            " float d = fbm(sp) + fbm(sp * 2.4) * 0.4; d *= 0.74;\n" +
+            " float heat = clamp(d * 1.7 - uProgress * 0.6 - vUv.y * 0.35, 0.0, 1.0);\n" +
+            " vec3 col = smokeColor(heat);\n" +
+            " col += vec3(0.9, 0.06, 0.7) * smoothstep(0.45, 0.25, heat) * (1.0 - uProgress) * 0.45;\n" +
+            " float a = clamp(d * 1.9 - 0.1, 0.0, 1.0) * (1.0 - uProgress * 0.8) * smoothstep(1.0, 0.15, vUv.y);\n" +
+            " if (a < 0.02) discard; gl_FragColor = vec4(col, a); }"
 
     const val CORE_FRAG =
         GLSL_NOISE +
