@@ -32,7 +32,10 @@ import kotlin.math.pow
  */
 @Suppress("TooManyFunctions")
 object Scene3D {
-    private const val METERS_PER_PIXEL_Z0 = 156543.03392 // at zoom 0, equator
+    // Metres per CSS pixel at zoom 0 on the equator, for MapLibre's 512-px tiles
+    // (earthCircumference / 512). NOTE: the common 156543.03392 value is for 256-px
+    // tiles — using it here scaled the whole scene 2× too large.
+    private const val METERS_PER_PIXEL_Z0 = 78271.516964
 
     // People (NPCs and players) are human-scale: a head-sized sphere at head
     // height, so a humanoid body can later be added beneath it. Players are
