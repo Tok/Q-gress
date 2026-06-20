@@ -20,6 +20,8 @@ external object MapLibre {
         fun setMinZoom(zoom: Int)
         fun setMaxZoom(zoom: Int)
         fun setZoom(zoom: Int)
+        fun setPitch(pitch: Double)
+        fun setBearing(bearing: Double)
         fun setCenter(center: dynamic)
         fun jumpTo(options: dynamic)
         fun flyTo(options: dynamic)

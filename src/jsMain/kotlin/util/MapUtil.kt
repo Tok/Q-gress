@@ -94,6 +94,7 @@ object MapUtil {
     private const val ZOOM = 18
     private const val MIN_ZOOM = 3
     private const val MAX_ZOOM = 21
+    private const val DEFAULT_PITCH = 50.0 // tilt the visible maps so the 3D scene reads as 3D
 
     private var map: MapLibre.Map? = null
     private var initMap: MapLibre.Map? = null
@@ -179,6 +180,7 @@ object MapUtil {
             newMap.setMaxZoom(MAX_ZOOM)
             newMap.setZoom(ZOOM)
             newMap.setCenter(center)
+            newMap.setPitch(DEFAULT_PITCH)
         } else {
             existing.on("moveend") {
                 addLayers(existing)
@@ -208,6 +210,7 @@ object MapUtil {
             newMap.setMaxZoom(MAX_ZOOM)
             newMap.setZoom(ZOOM)
             newMap.setCenter(center)
+            newMap.setPitch(DEFAULT_PITCH)
         } else {
             existing.on("moveend", fun() {
                 loadShadowMap(center, callback)

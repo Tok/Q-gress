@@ -195,6 +195,13 @@ polished. Leaning toward the custom NN (A) for specificity + visualization, but 
 
 ## Under consideration (icebox)
 
+- **Colony-management direction + per-entity attributes.** Give NPCs and players individual
+  attributes (endurance, speed, agility, max radius, …) so each has strengths/weaknesses,
+  leaning the sim toward a (colony-)management game. Builds on the existing `agent/Skills.kt`
+  (agent speed/deploy/glyph skills) and `agent/AgentSize.kt` (NPC size). Pairs with the 3D
+  humanoid work (Scene3D Stage 4): NPCs are already rendered as a head-sized sphere at head
+  height so a body/attributes can attach later.
+
 - **Null-safety hardening.** The Kotlin 1.3→2.x migration silently changed
   `max()`/`min()`/`maxBy`/`minBy` from returning `null` on empty to *throwing* — these
   compiled with only warnings but crashed at runtime (hit during Phase 2: empty wavefront

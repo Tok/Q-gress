@@ -11,9 +11,8 @@ import items.level.PortalLevel
 import kotlinx.browser.document
 import org.w3c.dom.*
 import portal.Portal
-import portal.XmMap
 import system.Com
-import system.display.Attacks
+import system.display.Scene3D
 import system.display.TickDisplay
 import system.display.ui.ActionLimitsDisplay
 import system.display.ui.CycleDisplay
@@ -30,21 +29,11 @@ object DrawUtil {
     const val AMARILLO = "AmarilloUSAF"
 
     fun redraw() {
+        // World entities now render in the 3D scene (Scene3D). The 2D world
+        // canvas is kept clear so the 3D (on the map layer beneath) shows
+        // through; the HUD is still drawn 2D in redrawUserInterface().
         clear()
-        with(World) {
-            XmMap.draw()
-            allAgents.forEach { it.drawRadius(ctx()) }
-            allPortals.forEach { it.drawResonators(ctx()) }
-            if (Styles.isDrawPortalNames) {
-                allPortals.forEach { it.drawName(ctx()) }
-            }
-            allNonFaction.forEach { it.draw(ctx()) }
-            allAgents.forEach { it.draw(ctx()) }
-            allFields().forEach { it.draw(ctx()) }
-            allLinks().forEach { it.draw(ctx()) }
-            allPortals.forEach { it.drawCenter(ctx()) }
-            Attacks.draw()
-        }
+        Scene3D.sync()
     }
 
     fun clear() = redraw(World.can, World.ctx())
