@@ -5,10 +5,12 @@ import agent.Agent
 import agent.Faction
 import agent.NonFaction
 import agent.action.ActionItem
+import config.Colors
 import config.Sim
 import external.GLTFLoader
 import external.MapLibre
 import external.Three
+import items.level.XmpLevel
 import kotlinx.browser.document
 import portal.Field
 import portal.Link
@@ -68,6 +70,9 @@ object Scene3D {
     private const val GRAVITY = 9.8 // m/s²
     private const val SHARD_TARGET_PATH = 3.0 // pole-shard target size (metres)
     private const val POLE_SHARD_COUNT = 12
+    private const val XMP_OPACITY = 0.4
+    private const val XMP_LIFE = 0.6 // seconds for the shockwave to expand + fade
+    private const val XMP_RANGE_SCALE = 0.5 // XmpLevel.rangeM → scene-metre radius
 
     // Currently selected entity, as "portal:<id>" / "agent:<name>" (see pick()).
     var selected: String? = null
@@ -104,7 +109,9 @@ object Scene3D {
     private var flaskScale = 1.0 // scale a flask variant to ≈ the portal top sphere
     private var pathScale = 1.0 // scale a pole shard to ≈ SHARD_TARGET_PATH
     private var shardsGroup: dynamic = null // transient shatter fragments (not cleared by sync)
+    private var burstsGroup: dynamic = null // transient XMP shockwaves
     private val activeShards = mutableListOf<Shard>()
+    private val activeBursts = mutableListOf<Burst>()
     private var lastFrameMs = 0.0 // for per-frame shard physics dt
 
     /** One in-flight glass fragment: a mesh with velocity + tumble (3 each), fading over its life. */
@@ -117,11 +124,15 @@ object Scene3D {
         val life: Double,
     )
 
+    /** An expanding XMP shockwave dome: grows to maxR while fading over its life. */
+    private class Burst(val mesh: dynamic, val mat: dynamic, val maxR: Double, var age: Double, val life: Double)
+
     // Shared geometries/materials (created lazily once three.js is loaded).
     private val headGeo: dynamic by lazy { Three.SphereGeometry(HEAD_R, 10, 10) }
     private val poleGeo: dynamic by lazy { Three.CylinderGeometry(POLE_R, POLE_R, POLE_H, 8) }
     private val topGeo: dynamic by lazy { Three.SphereGeometry(TOP_R, 16, 16) }
     private val coneGeo: dynamic by lazy { Three.ConeGeometry(VECTOR_CONE_R, VECTOR_CONE_H, 6) }
+    private val burstGeo: dynamic by lazy { Three.SphereGeometry(1.0, 24, 16) } // unit sphere, scaled per burst
     private val materialCache = mutableMapOf<String, dynamic>()
     private val spriteCache = mutableMapOf<String, dynamic>()
 
@@ -161,6 +172,7 @@ object Scene3D {
         markerGroup = Three.Group().also { newScene.add(it) }
         borderGroup = Three.Group().also { newScene.add(it) }
         shardsGroup = Three.Group().also { newScene.add(it) }
+        burstsGroup = Three.Group().also { newScene.add(it) }
         scene = newScene
         buildBorder()
         loadShatterAssets()
@@ -181,11 +193,12 @@ object Scene3D {
             .makeTranslation(originMerc.x as Double, originMerc.y as Double, originMerc.z as Double)
             .scale(Three.Vector3(metersScale, -metersScale, metersScale))
         cam.projectionMatrix = mapMatrix.multiply(modelMatrix)
-        if (activeShards.isNotEmpty()) {
+        if (activeShards.isNotEmpty() || activeBursts.isNotEmpty()) {
             val nowMs = js("performance.now()") as Double
             val dt = if (lastFrameMs <= 0.0) 0.016 else ((nowMs - lastFrameMs) / 1000.0).coerceIn(0.0, 0.1)
             lastFrameMs = nowMs
-            updateShards(dt)
+            if (activeShards.isNotEmpty()) updateShards(dt)
+            if (activeBursts.isNotEmpty()) updateBursts(dt)
         } else {
             lastFrameMs = 0.0
         }
@@ -375,6 +388,40 @@ object Scene3D {
     }
 
     private fun randSpin() = (Util.random() - 0.5) * 2.0 * SHARD_SPIN
+
+    /** Play an expanding XMP shockwave dome at a location, sized by the burster level (1..8). */
+    fun playXmpBurst(location: Pos, level: Int) {
+        scene ?: return
+        val rangeM = XmpLevel.values().find { it.level == level }?.rangeM ?: XmpLevel.ONE.rangeM
+        val p: dynamic = js("({})")
+        p.color = Colors.damage
+        p.transparent = true
+        p.opacity = XMP_OPACITY
+        p.side = 2 // DoubleSide
+        p.depthWrite = false
+        val mat = Three.MeshBasicMaterial(p)
+        val mesh = Three.Mesh(burstGeo, mat)
+        mesh.asDynamic().position.set(sceneX(location), sceneY(location), 0.0)
+        burstsGroup.add(mesh)
+        activeBursts.add(Burst(mesh, mat, rangeM * XMP_RANGE_SCALE, 0.0, XMP_LIFE))
+    }
+
+    private fun updateBursts(dt: Double) {
+        val iter = activeBursts.iterator()
+        while (iter.hasNext()) {
+            val b = iter.next()
+            b.age += dt
+            val f = (b.age / b.life).coerceIn(0.0, 1.0)
+            val r = (b.maxR * f).coerceAtLeast(0.01)
+            b.mesh.scale.set(r, r, r)
+            b.mat.opacity = XMP_OPACITY * (1.0 - f)
+            if (b.age >= b.life) {
+                burstsGroup.remove(b.mesh)
+                b.mat.dispose()
+                iter.remove()
+            }
+        }
+    }
 
     private fun shardMaterial(color: String): dynamic {
         val p: dynamic = js("({})")

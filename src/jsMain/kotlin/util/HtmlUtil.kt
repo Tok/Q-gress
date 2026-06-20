@@ -9,6 +9,7 @@ import agent.qvalue.QDestinations
 import agent.qvalue.QValue
 import config.*
 import config.Location
+import config.Sim
 import extension.Canvas
 import extension.Ctx
 import extension.Grid
@@ -31,6 +32,7 @@ import util.data.GeoCoords
 import util.data.Line
 import util.data.Pos
 import util.ui.Controls
+import util.ui.Demo
 import util.ui.Inspector
 import kotlin.js.Json
 
@@ -89,9 +91,17 @@ object HtmlUtil {
         World.can = createCanvas("mainCanvas")
         World.bgCan = createCanvas("backgroundCanvas")
         World.uiCan = createCanvas("uiCanvas")
-        World.uiCan.addEventListener("click", { event -> handleMouseClick(event) }, false)
         rootDiv.append(createCanvasDiv())
 
+        // /demo harness (hash-routed): a menu of effect demo scenes, separate from the game.
+        val demoScene = Demo.route(window.location.hash)
+        if (demoScene != null) {
+            window.addEventListener("hashchange", { window.location.reload() })
+            if (demoScene == Demo.MENU) Demo.showMenu() else loadDemoScene(demoScene)
+            return
+        }
+
+        World.uiCan.addEventListener("click", { event -> handleMouseClick(event) }, false)
         val controlDiv = createControlDiv()
         val buttonDiv = document.createElement("div") as HTMLDivElement
         buttonDiv.addClass("buttonDiv")
@@ -327,6 +337,26 @@ object HtmlUtil {
             "1000" -> "1.00"
             else -> fixed
         }
+    }
+
+    // Minimal bootstrap for a demo scene: the 3D scene + one central portal, no game.
+    private fun loadDemoScene(scene: String) {
+        World.userFaction = Faction.ENL
+        World.resetAllCanvas()
+        val center = Pos(Sim.width / 2, Sim.height / 2)
+        MapUtil.loadMaps(Location.DEFAULT.toJSON(), fun(grid: Grid) {
+            World.grid = grid
+            World.isReady = true
+            Navigation.setup()
+            MapUtil.enable3D()
+            document.defaultView?.setTimeout({ World.allPortals.add(Portal.create(center)) }, 0)
+            intervalID = document.defaultView?.setInterval({ demoTick() }, Time.minTickInterval) ?: 0
+            Demo.showControls(scene, center)
+        })
+    }
+
+    private fun demoTick() {
+        if (World.isReady) window.requestAnimationFrame { DrawUtil.redraw() }
     }
 
     private fun initWorld() {

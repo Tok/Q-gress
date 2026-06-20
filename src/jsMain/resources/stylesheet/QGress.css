@@ -395,6 +395,78 @@ html, body {
     background: #555555;
 }
 
+/* /demo harness: full-screen menu + per-scene control panel (grayscale). */
+.demoMenu {
+    position: fixed;
+    inset: 0;
+    background: #000000;
+    color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+}
+.demoMenu .demoPanelTitle {
+    font-size: 30px;
+}
+.demoLink {
+    font-size: 22px;
+    color: #ffffff;
+    text-decoration: none;
+    margin: 6px;
+    padding: 10px 30px;
+    border: 1px solid #888888;
+    border-radius: 5px;
+    background: #222222;
+}
+.demoLink:hover {
+    background: #444444;
+}
+.demoBack {
+    color: #aaaaaa;
+    margin-top: 20px;
+    text-decoration: none;
+    font-size: 14px;
+}
+.demoPanel {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    width: 150px;
+    display: flex;
+    flex-direction: column;
+    background: #000000cc;
+    color: #ffffff;
+    border: 1px solid #888888;
+    border-radius: 5px;
+    padding: 10px;
+    z-index: 200;
+}
+.demoPanelTitle {
+    font-size: 18px;
+    margin-bottom: 8px;
+}
+.demoButton {
+    margin: 3px 0;
+    padding: 6px;
+    font-family: "Coda", "Lucida Console";
+    background: #333333;
+    color: #ffffff;
+    border: 1px solid #888888;
+    border-radius: 3px;
+    cursor: pointer;
+}
+.demoButton:hover {
+    background: #555555;
+}
+.demoButton.enl {
+    border-color: var(--enl-color);
+}
+.demoButton.res {
+    border-color: var(--res-color);
+}
+
 .topLabel {
     cursor: default;
     margin-top: 8px;
