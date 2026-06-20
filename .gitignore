@@ -7,3 +7,6 @@
 *.meta.js
 *.kjsm
 package-lock.json
+
+# Claude Code local config
+.claude/
