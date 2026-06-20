@@ -209,6 +209,56 @@ while the **simulation stays 2D**. Staged.
       field viz.
 - [ ] **Stage 4 — later**: humanoid glTF models (+ the colony-management attributes above).
 
+#### Portal / link / field visual overhaul — detailed plan (2026-06-21, from user direction)
+
+The throughline is **abstract glass**: portals, the tubes between them, and the shards are all
+one "glass apparatus" look (à la qlippostasis), tinted by faction (the only allowed colour;
+the vessel itself stays grayscale).
+
+- [ ] **Glass shader (foundation — reused by portals, link pipes, shards).** Port qlippostasis
+  `Shaders/glass.gdshader` to a three.js `ShaderMaterial` (`system/display/GlassShader.kt`):
+  Fresnel rim `pow(1 − dot(N,V), rim_power) · rim_strength` + manual `EMISSION`, procedural
+  `vnoise` model-space **smudges**, `DoubleSide` + `depthWrite = false` + mix blend, grayscale
+  vessel with a per-instance **`tint`** (faction colour = the "Queen-Scale" exception).
+  Thick-wall illusion via **concentric double shells** (outer + ~1.7%-smaller inner mesh).
+  ⚠ Godot's `hint_screen_texture` screen-space refraction needs the opaque pass as a texture,
+  which our MapLibre custom layer doesn't readily expose — **v1 ships fresnel + smudge +
+  emission** (the bulk of the look) and fakes refraction; true SSR is a follow-up (render-target
+  ping-pong). Today's portal glass is just `MeshStandardMaterial` α0.45 — this replaces it.
+- [ ] **Portal = abstract growing glass "mushroom" (8 level-stages).** Replace pole+sphere with
+  a procedural profile revolved by **`LatheGeometry`** (new Three binding), morphing across the
+  8 levels — kept **abstract** (inspired by, not evoking, a real mushroom):
+  L1 small round flask on a very thin stem · L2–4 stem + flask grow · L5 top opens into a flat
+  cylinder/umbrella · L6 convex cap → L7 flat → L8 concave (cap "opens up"). Stem **thickens**
+  with level. **Golden ratio φ = 1.618** drives height-(and girth-)per-level. Implementation: a
+  `portalProfile(level) → control points` → lathe → glass material; level-up re-lathes/tweens.
+- [ ] **Growth + level-up animation.** On `Portal.create`, **grow** from 0 → L1 (~0.6 s φ-eased
+  scale) instead of popping in; on level-up, tween the profile with a small glass "chime".
+- [ ] **`#demo/portal` scene.** L1–L8 buttons + a grow-replay + level-up stepper, to tune the 8
+  profiles and the animation (extends the existing demo menu).
+- [ ] **GLB compaction + shard reuse (needs Blender).** Decimate `shattered_flask.glb` /
+  `glass_shards.glb` (fewer pieces, lower poly) for our scale; reuse shard **panels** to build the
+  open umbrella cap at high levels (cap reads as fitted glass shards). Glass look stays
+  shader-driven (no bake). *This is the one piece that genuinely needs Blender.*
+- [ ] **Links → 3D glass pipes.** Replace the 2D `Line` links with thin **tubes**
+  (`CylinderGeometry`/`TubeGeometry` between portal tops) on the glass shader — qlippostasis's
+  "glass tubing"; optional concentric inner tube for thickness.
+- [ ] **Fields → plasma + lifecycle.** A **plasma `ShaderMaterial`** for the control-field
+  triangles (animated energy/scanlines, faction-tinted, fits the synthwave look) + a **create**
+  animation (fill inward from the three links) and **teardown** (dissolve), each with a
+  synthesized **sound** (field-up hum/whoosh, field-down collapse) in `SoundUtil`.
+- [ ] **Portal names from map data (replace the random gibberish).** OpenFreeMap serves the
+  **OpenMapTiles** schema, which has a **`poi` layer** (name + class: monument, artwork, fountain,
+  memorial, place_of_worship, artwork… — i.e. real Ingress-portal-like POIs) plus
+  **`transportation_name`** / `place` for streets/areas. At portal creation,
+  `map.queryRenderedFeatures` (or query the vector source) near the portal lng/lat → prefer a
+  named POI, else nearest **street name** ("…, <Street>"), else fall back to the generator.
+  **Spike first (~30 min):** confirm those layers exist & carry `name` at zoom 18 in OpenFreeMap.
+
+**Blender needed?** Only for GLB compaction + authoring the shard/umbrella panels. The glass
+shader, the lathe-based mushroom growth, the pipes, the plasma fields, and the naming are all
+procedural/data — no Blender.
+
 ### UI rework (a better UI) — see `.claude/plans/` for the full master plan
 - [x] **UI Stage 1** (verified): **portal/agent selection** (click → `map.unproject` → sim Pos
       → nearest portal; pitch-safe) + a DOM **inspector panel** (`util/ui/Inspector.kt`); an
