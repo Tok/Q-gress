@@ -57,7 +57,8 @@ object HtmlUtil {
         World.allNonFaction.forEach { it.act() }
         window.requestAnimationFrame {
             DrawUtil.redraw()
-            val factions = World.userFaction!! to World.userFaction?.enemy()!!
+            val userFaction = World.userFactionOrThrow()
+            val factions = userFaction to userFaction.enemy()
             val enlMu = World.calcTotalMu(Faction.ENL)
             val resMu = World.calcTotalMu(Faction.RES)
             Cycle.updateCheckpoints(World.tick, enlMu, resMu)
@@ -521,7 +522,7 @@ object HtmlUtil {
             if (World.userFaction == null) {
                 chooseUserFaction(Faction.random())
             }
-            createQSliders(World.userFaction!!)
+            createQSliders(World.userFactionOrThrow())
             resetInterval()
             World.isReady = true
             if (isShowSatelliteMap()) {
@@ -543,7 +544,7 @@ object HtmlUtil {
         val url = document.location?.href
         val token = Constants.token()
         val target = Constants.targetUrl() + token
-        val newUrl = if (url?.contains(token) == true) {
+        val newUrl = if (url?.contains(token) ?: false) {
             url.split(token)[0] + token
         } else {
             target

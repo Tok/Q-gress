@@ -14,9 +14,8 @@ object Hacker : ConditionalAction {
         agent.action.start(actionItem)
         val hackResult = agent.actionPortal.tryHack(agent)
         SoundUtil.playHackingSound(agent.actionPortal.location)
-        val isSuccess = hackResult.items != null
-        if (isSuccess) {
-            val newStuff: List<QgressItem> = hackResult.items!!
+        val newStuff: List<QgressItem>? = hackResult.items
+        if (newStuff != null) {
             agent.inventory.items.addAll(newStuff)
         }
         return agent

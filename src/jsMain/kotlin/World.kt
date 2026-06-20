@@ -24,6 +24,8 @@ object World {
     var isReady = false
     var userFaction: Faction? = null
 
+    fun userFactionOrThrow(): Faction = requireNotNull(userFaction) { "user faction has not been chosen yet" }
+
     lateinit var can: Canvas
     fun ctx() = HtmlUtil.getContext2D(can)
 

@@ -59,7 +59,7 @@ data class Pos(val x: Double, val y: Double) {
     private fun findClosePortals() = World.allPortals.filter { isClose(it.location) }
     fun hasClosePortalForClick() = findClosePortalsForClick().isNotEmpty()
     fun hasClosePortal() = findClosePortals().isNotEmpty()
-    fun isPassable() = World.grid.isNotEmpty() && World.grid[toShadow()]!!.isPassable
+    fun isPassable() = World.grid[toShadow()]?.isPassable ?: false
     fun findClosestPortal() = findClosePortals().first()
     fun isBuildable(): Boolean {
         val r = Dim.minDistancePortalToImpassable.toInt()
@@ -121,7 +121,7 @@ data class Pos(val x: Double, val y: Double) {
             }
             check(grid.isNotEmpty())
             val random = createRandomNoOffset()
-            return if (grid[random.toShadow()]!!.isPassable) {
+            return if (grid[random.toShadow()]?.isPassable ?: false) {
                 random
             } else {
                 if (retries > 0) {

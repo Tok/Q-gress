@@ -104,28 +104,30 @@ object MapUtil {
 
     private fun loadInitialMap(center: Json, callback: (MapLibre.Map) -> Unit) {
         document.getElementById(INITIAL_MAP)?.removeClass(INVISIBLE)
-        fun addLayers() {
+        fun addLayers(targetMap: MapLibre.Map) {
             if (Styles.use3DBuildings) {
-                initMap!!.addLayer(buildingLayerConfig())
+                targetMap.addLayer(buildingLayerConfig())
             }
         }
-        if (initMap == null) {
-            initMap = initInitialMapbox()
-            initMap!!.on("load") {
-                addLayers()
-                callback(initMap!!)
+        val existing = initMap
+        if (existing == null) {
+            val newMap = initInitialMapbox()
+            initMap = newMap
+            newMap.on("load") {
+                addLayers(newMap)
+                callback(newMap)
             }
-            initMap!!.setMinZoom(MIN_ZOOM)
-            initMap!!.setMaxZoom(MAX_ZOOM)
-            initMap!!.setZoom(ZOOM)
-            initMap!!.setCenter(center)
+            newMap.setMinZoom(MIN_ZOOM)
+            newMap.setMaxZoom(MAX_ZOOM)
+            newMap.setZoom(ZOOM)
+            newMap.setCenter(center)
         } else {
-            initMap!!.on("moveend") {
-                addLayers()
-                callback(initMap!!)
+            existing.on("moveend") {
+                addLayers(existing)
+                callback(existing)
             }
             val options: Json = JSON.parse("""{"center": [$center], "zoom": $ZOOM}""")
-            initMap!!.jumpTo(options)
+            existing.jumpTo(options)
         }
     }
 
@@ -133,27 +135,29 @@ object MapUtil {
     private fun loadMap(initMap: MapLibre.Map, callback: (Grid) -> Unit) {
         val center = initMap.getCenter()
         document.getElementById(MAP)?.removeClass(INVISIBLE)
-        if (map == null) {
-            map = initMapbox()
-            map!!.on("load", fun() {
+        val existing = map
+        if (existing == null) {
+            val newMap = initMapbox()
+            map = newMap
+            newMap.on("load", fun() {
                 loadShadowMap(center, callback)
             })
             val geoCtrl: dynamic = js("({})")
             geoCtrl.positionOptions = js("({enableHighAccuracy: true})")
             geoCtrl.trackUserLocation = false
-            map!!.addControl(MapLibre.GeolocateControl(geoCtrl))
-            map!!.setMinZoom(MIN_ZOOM)
-            map!!.setMaxZoom(MAX_ZOOM)
-            map!!.setZoom(ZOOM)
-            map!!.setCenter(center)
+            newMap.addControl(MapLibre.GeolocateControl(geoCtrl))
+            newMap.setMinZoom(MIN_ZOOM)
+            newMap.setMaxZoom(MAX_ZOOM)
+            newMap.setZoom(ZOOM)
+            newMap.setCenter(center)
         } else {
-            map!!.on("moveend", fun() {
+            existing.on("moveend", fun() {
                 loadShadowMap(center, callback)
             })
             val lng = center["lng"]
             val lat = center["lat"]
             val options: Json = JSON.parse("""{"center": [$lng,$lat],"zoom": $ZOOM}""")
-            map!!.jumpTo(options)
+            existing.jumpTo(options)
         }
     }
 
@@ -163,16 +167,17 @@ object MapUtil {
         div.id = SHADOW_MAP
         div.addClass(SHADOW_MAP, "top")
         document.body?.append(div)
-        shadowMap = initShadowMap()
+        val newMap = initShadowMap()
+        shadowMap = newMap
         // Wait for 'idle' (all tiles loaded AND fully rendered), not 'load',
         // before reading pixels — otherwise the street mask can be incomplete.
-        shadowMap!!.once("idle", fun() {
+        newMap.once("idle", fun() {
             addGrid(callback)
         })
-        shadowMap!!.setMinZoom(MIN_ZOOM)
-        shadowMap!!.setMaxZoom(MAX_ZOOM)
-        shadowMap!!.setZoom(ZOOM)
-        shadowMap!!.setCenter(center)
+        newMap.setMinZoom(MIN_ZOOM)
+        newMap.setMaxZoom(MAX_ZOOM)
+        newMap.setZoom(ZOOM)
+        newMap.setCenter(center)
     }
 
     private fun addGrid(callback: (Grid) -> Unit) {

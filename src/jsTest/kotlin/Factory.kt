@@ -30,7 +30,7 @@ object Factory {
         val agent = agent(faction)
         portal.owner = agent
         val reso = Resonator.create(agent, 1)
-        portal.slots[Octant.N]!!.deployReso(agent, reso, Dim.maxDeploymentRange.toInt())
+        portal.slots.getValue(Octant.N).deployReso(agent, reso, Dim.maxDeploymentRange.toInt())
         return portal
     }
     fun portalPair() = portal() to portal()

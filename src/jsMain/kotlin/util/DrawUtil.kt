@@ -81,9 +81,7 @@ object DrawUtil {
         if (Styles.isDrawTopAgents) {
             TopAgentsDisplay.draw()
         }
-        if (World.mousePos != null) {
-            highlightMouse(World.mousePos!!)
-        }
+        World.mousePos?.let { highlightMouse(it) }
         if (Config.isHighlighActionLimit) {
             ActionLimitsDisplay.draw()
         } else {
@@ -106,7 +104,7 @@ object DrawUtil {
         tempCan.height = 2 * circle.radius.toInt()
         val xOffset = -(circle.center.x - r)
         val yOffset = -(circle.center.y - r)
-        tempCtx.putImageData(World.shadowStreetMap!!, xOffset, yOffset)
+        World.shadowStreetMap?.let { tempCtx.putImageData(it, xOffset, yOffset) }
 
         ctx.beginPath()
         ctx.arc(circle.center.x, circle.center.y, circle.radius, 0.0, 2.0 * PI)

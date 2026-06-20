@@ -87,8 +87,7 @@ data class Portal(
     }
 
     fun filledSlots() = slots.map { it.value }.filterNot { it.resonator == null }
-    fun resoMap() = slots.filterNot { it.value.resonator == null }
-        .map { it.key to it.value.resonator!! }.toMap()
+    fun resoMap() = slots.mapNotNull { (octant, slot) -> slot.resonator?.let { octant to it } }.toMap()
 
     private fun calculateLinkMitigation(): Int {
         val maxMitigation = 95
@@ -125,7 +124,7 @@ data class Portal(
         val xOffset: Int = (distance * cos(angle)).toInt()
         val yOffset: Int = (distance * sin(angle)).toInt()
         val point = location.copy(x = location.x + xOffset, y = location.y + yOffset)
-        return if (World.grid[point.toShadow()]?.isPassable == true) {
+        return if (World.grid[point.toShadow()]?.isPassable ?: false) {
             point
         } else {
             findRandomPointNearPortal(distance)
@@ -135,7 +134,7 @@ data class Portal(
     private fun findConnectedPortals(): List<Portal> = findOutgoingTo() + findIncomingFrom()
 
     fun findLinkableForKeys(linker: Agent): List<Portal> {
-        val keyset = linker.inventory.findUniqueKeys()!!
+        val keyset = linker.inventory.findUniqueKeys() ?: return emptyList()
         val allLinks = World.allPortals.flatMap { it.links }.filter { Link.isNotExisting(it) }.toSet()
         val nonIntersecting: List<Portal> = keyset.map { it.portal }.filter { destination ->
             val line = Line(location, destination.location)
@@ -309,7 +308,7 @@ data class Portal(
             }
             Cooldown.NONE
         } else {
-            val agentsLastHacks: MutableList<Int> = lastHacks.get(key)!!
+            val agentsLastHacks: MutableList<Int> = lastHacks.getValue(key)
             if (agentsLastHacks.count() < MAX_HACKS) {
                 cool(agentsLastHacks, World.tick)
             } else {
@@ -362,7 +361,7 @@ data class Portal(
                     isCapture && index == 0 -> 500
                     index < firstResoCount -> 125
                     index == firstResoCount && firstResoCount + initialResoCount == 8 -> 250
-                    oldReso?.isOwnedBy(deployer) == true -> 65
+                    (oldReso?.isOwnedBy(deployer) ?: false) -> 65
                     else -> 0
                 },
             )
@@ -502,7 +501,7 @@ data class Portal(
         octantSlots.map { octantSlot ->
             val octant: Octant = octantSlot.first
             val slot = octantSlot.second
-            val reso = slot.resonator!!
+            val reso = requireNotNull(slot.resonator) { "filtered slot must have a resonator" }
             val resoLevel = reso.level
             val x = location.x + octant.calcXOffset(slot.distance)
             val y = location.y + octant.calcYOffset(slot.distance)
@@ -596,9 +595,9 @@ data class Portal(
             emptyMap()
         }
 
-        private fun getCenterImage(faction: Faction?, level: PortalLevel): Canvas = if (faction == null) whiteCenter!! else centerImages[faction to level]!!
+        private fun getCenterImage(faction: Faction?, level: PortalLevel): Canvas = if (faction == null) requireNotNull(whiteCenter) { "whiteCenter not initialized" } else centerImages.getValue(faction to level)
 
-        private fun getHealthBarImage(faction: Faction, health: Int): Canvas = healthBarImages[faction to health]!!
+        private fun getHealthBarImage(faction: Faction, health: Int): Canvas = healthBarImages.getValue(faction to health)
 
         fun renderPortalCenter(color: String, level: PortalLevel?): Canvas {
             val lw = Dim.portalLineWidth

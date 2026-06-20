@@ -44,9 +44,9 @@ data class ActionItem(val text: String, val durationSeconds: Int, val qName: Str
         }
 
         fun getIcon(item: ActionItem, faction: Faction? = null): Canvas = when (faction) {
-            Faction.ENL -> enlImages[item] ?: enlImages[WAIT]!!
-            Faction.RES -> resImages[item] ?: resImages[WAIT]!!
-            else -> nonImages[item] ?: nonImages[WAIT]!!
+            Faction.ENL -> enlImages[item] ?: requireNotNull(enlImages[WAIT]) { "missing ENL WAIT icon" }
+            Faction.RES -> resImages[item] ?: requireNotNull(resImages[WAIT]) { "missing RES WAIT icon" }
+            else -> nonImages[item] ?: requireNotNull(nonImages[WAIT]) { "missing non-faction WAIT icon" }
         }
 
         private fun drawTemplate(item: ActionItem, faction: Faction? = null): Canvas? {

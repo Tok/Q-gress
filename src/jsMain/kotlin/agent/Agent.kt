@@ -165,9 +165,8 @@ data class Agent(
                     return actionPortal.location // center
                 }
                 val maybeDestination = actionPortal.findStrongestResoPos()
-                val isPassable = maybeDestination != null && maybeDestination.isPassable()
-                return if (isPassable) {
-                    maybeDestination!!
+                return if (maybeDestination != null && maybeDestination.isPassable()) {
+                    maybeDestination
                 } else {
                     actionPortal.location // center
                 }

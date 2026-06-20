@@ -35,7 +35,8 @@ object StatsDisplay : Display {
         }
 
         val xPos = Dim.width - Dim.statsRightOffset
-        val factions: Pair<Faction, Faction> = World.userFaction!! to World.userFaction!!.enemy()
+        val userFaction = World.userFactionOrThrow()
+        val factions: Pair<Faction, Faction> = userFaction to userFaction.enemy()
         return with(World) {
             (1..4).forEach { step ->
                 when (step) {

@@ -35,7 +35,7 @@ data class Resonator(
         val newEnergy = max(energy - decayEnergy(), 0)
         this.energy = newEnergy
         if (newEnergy <= 0) {
-            portal?.removeReso(octant!!, null)
+            octant?.let { portal?.removeReso(it, null) }
         }
     }
 
@@ -44,7 +44,7 @@ data class Resonator(
         this.energy = newEnergy
         if (newEnergy <= newEnergy) {
             agent.addAp(75)
-            portal?.removeReso(octant!!, agent)
+            octant?.let { portal?.removeReso(it, agent) }
         }
     }
 

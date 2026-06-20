@@ -14,9 +14,8 @@ object Glypher : ConditionalAction {
         agent.action.start(actionItem)
         val glyphResult = agent.actionPortal.tryGlyph(agent)
         SoundUtil.playGlyphingSound(agent.actionPortal.location)
-        val isSuccess = glyphResult.items != null
-        if (isSuccess) {
-            val newStuff: List<QgressItem> = glyphResult.items!!
+        val newStuff: List<QgressItem>? = glyphResult.items
+        if (newStuff != null) {
             agent.inventory.items.addAll(newStuff)
         }
         return agent
