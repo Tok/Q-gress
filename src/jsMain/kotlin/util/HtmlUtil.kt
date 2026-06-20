@@ -18,6 +18,7 @@ import kotlinx.dom.addClass
 import kotlinx.dom.removeClass
 import org.w3c.dom.*
 import org.w3c.dom.events.Event
+import org.w3c.dom.events.KeyboardEvent
 import org.w3c.dom.events.MouseEvent
 import org.w3c.dom.url.URL
 import portal.Portal
@@ -31,6 +32,9 @@ import util.data.GeoCoords
 import util.data.Line
 import util.data.Pos
 import kotlin.js.Json
+
+@Suppress("UnusedParameter") // external JS global; param describes the contract
+external fun encodeURIComponent(uri: String): String
 
 object HtmlUtil {
     private var intervalID = 0
@@ -97,6 +101,7 @@ object HtmlUtil {
         setLocationDropdownSelection(dropDown, selectionName)
         buttonDiv.append(dropDown)
 
+        buttonDiv.append(createSearchSpan())
         buttonDiv.append(createSoundSpan())
         buttonDiv.append(createSatSpan())
         controlDiv.append(buttonDiv)
@@ -534,25 +539,64 @@ object HtmlUtil {
     }
 
     private fun mapChangeHandler() {
-        val center: Json = getCenterFromDropdown()
+        val center: dynamic = getCenterFromDropdown()
         val name = getLocationNameFromDropdown()
-        document.location?.href = createNewUrl(center, name)
+        navigateToLocation((center[0] as Number).toDouble(), (center[1] as Number).toDouble(), name)
     }
 
-    private fun createNewUrl(center: Json, name: String = "unknown"): String {
-        val split = center.toString().split(",")
-        val lng = split[0]
-        val lat = split[1]
-        val url = document.location?.href
-        val token = Constants.token()
-        val target = Constants.targetUrl() + token
-        val newUrl = if (url?.contains(token) ?: false) {
-            url.split(token)[0] + token
-        } else {
-            target
+    private const val LOCATION_SEARCH_ID = "locationSearch"
+
+    // Free-form "play your hometown" search: geocode any place/address via the
+    // keyless Nominatim (OpenStreetMap) service, then recenter through the same
+    // URL flow the preset dropdown uses.
+    private fun createSearchSpan(): HTMLSpanElement {
+        val span = document.createElement("span") as HTMLSpanElement
+        val input = document.createElement("input") as HTMLInputElement
+        input.id = LOCATION_SEARCH_ID
+        input.type = "text"
+        input.placeholder = "play a place…"
+        input.addClass("topSearch", "coda")
+        input.addEventListener("keydown", { event ->
+            if ((event as KeyboardEvent).key == "Enter") handleLocationSearch(input.value)
+        })
+        val button = createButton("locationSearchButton", "topButton", "Go") {
+            handleLocationSearch(input.value)
         }
+        span.append(input)
+        span.append(button)
+        return span
+    }
+
+    private fun handleLocationSearch(query: String) {
+        val trimmed = query.trim()
+        if (trimmed.isEmpty()) return
+        val url = "https://nominatim.openstreetmap.org/search?format=json&limit=1&q=" + encodeURIComponent(trimmed)
+        val request: dynamic = window.asDynamic().fetch(url)
+        request.then { response: dynamic -> response.json() }
+            .then { results: dynamic ->
+                if (results.length > 0) {
+                    val first = results[0]
+                    val lng = (first.lon as String).toDouble()
+                    val lat = (first.lat as String).toDouble()
+                    navigateToLocation(lng, lat, trimmed)
+                } else {
+                    window.alert("No location found for \"$trimmed\".")
+                }
+            }
+            .catch { error: dynamic -> console.error("Geocoding failed:", error) }
+    }
+
+    private fun navigateToLocation(lng: Double, lat: Double, name: String) {
+        document.location?.href = createNewUrl(lng.toString(), lat.toString(), name)
+    }
+
+    // Build off the current origin + path so recentering works on any host
+    // (local dev server, GitHub Pages, …) rather than a hard-coded port.
+    private fun createNewUrl(lng: String, lat: String, name: String): String {
+        val location = document.location
+        val base = (location?.origin ?: "") + (location?.pathname ?: "/")
         val fact = World.userFaction?.abbr ?: ""
-        return addParameters(newUrl, fact, lng, lat, name, isQuickstart())
+        return addParameters(base, fact, lng, lat, name, isQuickstart())
     }
 
     private fun getCenterFromDropdown(): Json {
@@ -578,9 +622,11 @@ object HtmlUtil {
             }
         }
         if (!hasMatch) {
+            // A custom (searched) location: show its name and real coordinates.
+            val geo = getLngLatFromUrl()
             val opt = document.createElement("option") as HTMLOptionElement
-            opt.text = "Unknown Location"
-            opt.value = "[0.0,0.0]"
+            opt.text = if (cleanName.isNotBlank() && cleanName != "unknown") cleanName else "Custom Location"
+            opt.value = if (geo != null) "[${geo.lng},${geo.lat}]" else "[0.0,0.0]"
             dropdown.add(opt)
             dropdown.selectedIndex = dropdown.length - 1
         }

@@ -128,11 +128,16 @@ retrofitted as we touch legacy code.
 - **Exit criterion:** ✅ map renders, grid builds reliably, sim runs end-to-end (22 sliders,
   agents/portals spawn, 0 console errors) — confirmed via headless-Chrome verification.
 
-### Phase 3 — Universal locations ("play your hometown")
-- [ ] Add a free-form location input (search box) with **geocoding** (Nominatim/Mapbox
-      Geocoding) → lng/lat, alongside the existing presets.
-- [ ] Persist arbitrary coordinates through the existing `?lng=&lat=&name=` URL flow.
-- **Exit criterion:** any city/address playable, not just the dropdown.
+### Phase 3 — Universal locations ("play your hometown")  ✅ (verified in headless Chrome)
+- [x] Free-form search box that geocodes any place/address via keyless **Nominatim/OSM**
+      → lng/lat, alongside the preset dropdown.
+- [x] Recenters through the `?lng=&lat=&name=` URL flow; the dropdown shows the searched
+      location's name (not "Unknown Location").
+- [x] Fixed `createNewUrl` to build off the current origin/path (was a hard-coded
+      `localhost:63342`), so recentering works on any host — this also unbroke the preset
+      dropdown's navigation.
+- **Exit criterion:** ✅ any city/address playable — verified by searching "Brandenburg
+      Gate, Berlin" and confirming the sim recenters there and builds its grid.
 
 ### Phase 4 — Free navigation & decoupling the sim from the 2D screen grid
 The headline goal: **free map controls** — mouse-scroll zoom, drag / right-button pan, and
