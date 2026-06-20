@@ -49,7 +49,7 @@ object Scene3D {
     private const val POLE_H = 22.5
     private const val TOP_R = 7.0
     private const val NEUTRAL_COLOR = "#bbbbbb"
-    private const val HIGHLIGHT_COLOR = "#ffff33"
+    private const val HIGHLIGHT_COLOR = "#f0f0f0" // selection: off-tint grayscale (no new hues)
     private const val OVERLAY_Z = 0.2 // passability quad just above ground
     private const val VECTOR_STRIDE = 2 // subsample the flow field every Nth cell
     private const val VECTOR_CONE_R = 1.1 // flow-arrow cone radius (metres)
