@@ -53,7 +53,15 @@ external object Three {
     class Sprite(material: dynamic)
     class Line(geometry: dynamic, material: dynamic)
 
+    val NearestFilter: Int
+
     class BoxGeometry(width: dynamic, height: dynamic, depth: dynamic)
+    class PlaneGeometry(width: dynamic, height: dynamic)
+    class RingGeometry(
+        innerRadius: dynamic,
+        outerRadius: dynamic,
+        thetaSegments: dynamic = definedExternally,
+    )
     class SphereGeometry(
         radius: dynamic,
         widthSegments: dynamic = definedExternally,

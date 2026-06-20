@@ -15,7 +15,6 @@ import extension.Grid
 import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.dom.addClass
-import kotlinx.dom.removeClass
 import org.w3c.dom.*
 import org.w3c.dom.events.Event
 import org.w3c.dom.events.KeyboardEvent
@@ -24,6 +23,7 @@ import org.w3c.dom.url.URL
 import portal.Portal
 import portal.XmMap
 import system.Cycle
+import system.display.Scene3D
 import system.display.VectorFields
 import system.display.loading.Loading
 import system.display.loading.LoadingText
@@ -112,6 +112,8 @@ object HtmlUtil {
         buttonDiv.append(createSearchSpan())
         buttonDiv.append(createVolumeSpan())
         buttonDiv.append(createLayerDropdown())
+        buttonDiv.append(createCheckbox("passabilityToggle", "Passability") { Scene3D.setPassabilityVisible(it) })
+        buttonDiv.append(createCheckbox("vectorFieldToggle", "Vectors") { Scene3D.setVectorFieldVisible(it) })
         controlDiv.append(buttonDiv)
 
         rootDiv.append(controlDiv)
@@ -178,6 +180,25 @@ object HtmlUtil {
         popupDiv.append(popupButtonDiv)
         popupDiv.append(quickstartDiv)
         return popupDiv
+    }
+
+    private fun createCheckbox(id: String, labelText: String, onChange: (Boolean) -> Unit): HTMLSpanElement {
+        val span = document.createElement("span") as HTMLSpanElement
+        val check = document.createElement("input") as HTMLInputElement
+        check.id = id
+        check.type = "checkbox"
+        check.addClass("checkbox")
+        check.onchange = {
+            onChange(check.checked)
+            null
+        }
+        val label = document.createElement("span") as HTMLSpanElement
+        label.addClass("label", "topLabel")
+        label.innerHTML = labelText
+        label.onclick = { check.click() }
+        span.append(check)
+        span.append(label)
+        return span
     }
 
     private fun createVolumeSpan(): HTMLSpanElement {
@@ -414,23 +435,18 @@ object HtmlUtil {
     }
 
     private fun handleMouseMove(event: Event) {
-        val pos = findMousePosition(World.uiCan, event as MouseEvent)
-        if (ActionLimitsDisplay.isBlocked(pos)) {
-            World.mousePos = null
-            World.uiCan.addClass("unclickable")
-        } else {
-            World.mousePos = pos
-            World.uiCan.removeClass("unclickable")
+        if (event !is MouseEvent) return
+        val pos = MapUtil.screenToSimPos(event.clientX.toDouble(), event.clientY.toDouble())
+        if (pos == null) {
+            Scene3D.setBuildMarker(null, "")
+            return
         }
-    }
-
-    private fun findMousePosition(canvas: HTMLCanvasElement, mouseEvent: MouseEvent): Pos {
-        val rect = canvas.getBoundingClientRect()
-        val scaleX = canvas.width / rect.width
-        val scaleY = canvas.height / rect.height
-        val x = (mouseEvent.clientX - rect.left) * scaleX
-        val y = (mouseEvent.clientY - rect.top) * scaleY
-        return Pos(x.toInt(), y.toInt())
+        val state = when {
+            pos.hasClosePortalForClick() -> "portal"
+            pos.isBuildable() -> "build"
+            else -> "blocked"
+        }
+        Scene3D.setBuildMarker(pos, state)
     }
 
     private fun maybeWidth(id: String) = document.getElementById(id)?.clientWidth
@@ -546,7 +562,6 @@ object HtmlUtil {
         if (World.grid.isEmpty()) {
             console.error("Grid is empty!")
         }
-        DrawUtil.drawGrid()
         createAgentsAndPortals {
             LoadingText.draw("Ready.")
             DrawUtil.clearBackground()

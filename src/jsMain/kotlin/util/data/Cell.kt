@@ -1,6 +1,21 @@
 package util.data
 
+import util.PathUtil
+
 data class Cell(val position: Pos, val isPassable: Boolean, val movementPenalty: Int) {
+    /**
+     * Colour for the 3D passability overlay: blocked cells read as dark blocks, walkable cells
+     * as a white(fast road)→grey(high-penalty ground) ramp. Semi-transparent so the map shows
+     * through. (A green→red penalty heatmap mode can be added later.)
+     */
+    fun overlayColor(): String {
+        if (!isPassable) return "rgba(0, 0, 0, 0.75)"
+        val span = (PathUtil.MAX_HEAT - PathUtil.MIN_HEAT).toDouble()
+        val t = ((movementPenalty - PathUtil.MIN_HEAT) / span).coerceIn(0.0, 1.0)
+        val v = (255 - t * 175).toInt() // 255 = road, ~80 = high-penalty ground
+        return "rgba($v, $v, $v, 0.45)"
+    }
+
     fun getColor() = if (isPassableInAllDirections()) {
         "#ffffff33"
     } else if (isPassable) {

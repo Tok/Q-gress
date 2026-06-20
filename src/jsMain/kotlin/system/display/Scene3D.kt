@@ -8,6 +8,7 @@ import agent.action.ActionItem
 import config.Dim
 import external.MapLibre
 import external.Three
+import kotlinx.browser.document
 import portal.Field
 import portal.Link
 import portal.Portal
@@ -45,6 +46,10 @@ object Scene3D {
     private const val TOP_R = 7.0
     private const val NEUTRAL_COLOR = "#bbbbbb"
     private const val HIGHLIGHT_COLOR = "#ffff33"
+    private const val OVERLAY_Z = 0.2 // passability quad just above ground
+    private const val VECTOR_STRIDE = 3 // subsample the flow field every Nth cell
+    private const val VECTOR_LEN = 6.0 // metres per flow-field arrow
+    private const val MARKER_R = 10.0 // build-preview marker radius (metres)
 
     // Currently selected entity, as "portal:<id>" / "agent:<name>" (see pick()).
     var selected: String? = null
@@ -66,6 +71,11 @@ object Scene3D {
     private var npcsGroup: dynamic = null
     private var linksGroup: dynamic = null
     private var fieldsGroup: dynamic = null
+    private var overlayGroup: dynamic = null // passability quad (static; toggled)
+    private var vectorFieldGroup: dynamic = null // selected portal's flow field (toggled)
+    private var markerGroup: dynamic = null // build-preview marker
+    private var passabilityVisible = false
+    private var vectorFieldVisible = false
 
     // Shared geometries/materials (created lazily once three.js is loaded).
     private val headGeo: dynamic by lazy { Three.SphereGeometry(HEAD_R, 10, 10) }
@@ -99,12 +109,15 @@ object Scene3D {
         sun.asDynamic().position.set(60.0, 90.0, 140.0)
         newScene.add(sun)
 
+        overlayGroup = Three.Group().also { newScene.add(it) }
+        vectorFieldGroup = Three.Group().also { newScene.add(it) }
         portalsGroup = Three.Group().also { newScene.add(it) }
         fieldsGroup = Three.Group().also { newScene.add(it) }
         linksGroup = Three.Group().also { newScene.add(it) }
         npcsGroup = Three.Group().also { newScene.add(it) }
         agentsGroup = Three.Group().also { newScene.add(it) }
         indicatorsGroup = Three.Group().also { newScene.add(it) }
+        markerGroup = Three.Group().also { newScene.add(it) }
         scene = newScene
 
         val params: dynamic = js("({})")
@@ -142,6 +155,98 @@ object Scene3D {
         clear(agentsGroup)
         clear(indicatorsGroup)
         World.allAgents.forEach { addAgent(it) }
+        clear(vectorFieldGroup)
+        if (vectorFieldVisible) buildVectorFieldArrows()
+    }
+
+    /** Toggle the selected portal's flow-field arrows (rebuilt each tick by [sync]). */
+    fun setVectorFieldVisible(visible: Boolean) {
+        vectorFieldVisible = visible
+        if (!visible) clear(vectorFieldGroup)
+    }
+
+    private fun buildVectorFieldArrows() {
+        val id = selected ?: return
+        if (!id.startsWith("portal:")) return
+        val portal = World.allPortals.find { "portal:${it.id}" == id } ?: return
+        portal.vectors.forEach { (pos, vec) ->
+            val gx = pos.x.toInt()
+            val gy = pos.y.toInt()
+            val mag = vec.magnitude
+            if (gx % VECTOR_STRIDE != 0 || gy % VECTOR_STRIDE != 0 || mag == 0.0) return@forEach
+            val pixel = pos.fromShadow()
+            val sx = sceneX(pixel)
+            val sy = sceneY(pixel)
+            val ex = sx + vec.re / mag * VECTOR_LEN
+            val ey = sy + -vec.im / mag * VECTOR_LEN // sim y is down → scene y is up
+            val geo = Three.BufferGeometry().setFromPoints(
+                arrayOf(Three.Vector3(sx, sy, OVERLAY_Z), Three.Vector3(ex, ey, OVERLAY_Z)),
+            )
+            vectorFieldGroup.add(Three.Line(geo, lineMaterial("#ffee55")))
+        }
+    }
+
+    /** Place (or clear, when pos is null) the build-preview marker on the ground. */
+    fun setBuildMarker(pos: Pos?, state: String) {
+        val group = markerGroup ?: return
+        group.clear()
+        if (pos == null) return
+        val color = when (state) {
+            "build" -> "#ffffff"
+            "portal" -> "#ff9900"
+            else -> "#ff3333"
+        }
+        val mesh = Three.Mesh(Three.RingGeometry(MARKER_R * 0.6, MARKER_R, 24), markerMaterial(color))
+        mesh.asDynamic().position.set(sceneX(pos), sceneY(pos), OVERLAY_Z)
+        group.add(mesh)
+    }
+
+    private fun markerMaterial(color: String): dynamic = materialCache.getOrPut("m$color") {
+        val p: dynamic = js("({})")
+        p.color = color
+        p.transparent = true
+        p.opacity = 0.8
+        p.side = 2 // DoubleSide
+        p.depthWrite = false
+        Three.MeshBasicMaterial(p)
+    }
+
+    /** Toggle the passability overlay (a textured ground quad built from the movement grid). */
+    fun setPassabilityVisible(visible: Boolean) {
+        passabilityVisible = visible
+        val group = overlayGroup ?: return
+        group.clear()
+        if (visible && World.isReady) group.add(buildPassabilityMesh())
+    }
+
+    private fun buildPassabilityMesh(): dynamic {
+        val cols = Dim.width / Pos.res
+        val rows = Dim.height / Pos.res
+        val canvas = document.createElement("canvas").asDynamic()
+        canvas.width = cols
+        canvas.height = rows
+        val ctx = canvas.getContext("2d")
+        World.grid.forEach { (pos, cell) ->
+            val gx = pos.x.toInt()
+            val gy = pos.y.toInt()
+            if (gx in 0 until cols && gy in 0 until rows) {
+                ctx.fillStyle = cell.overlayColor()
+                ctx.fillRect(gx, gy, 1, 1)
+            }
+        }
+        val texture = Three.CanvasTexture(canvas)
+        texture.asDynamic().magFilter = Three.NearestFilter
+        texture.asDynamic().minFilter = Three.NearestFilter
+        val matParams: dynamic = js("({})")
+        matParams.map = texture
+        matParams.transparent = true
+        matParams.depthWrite = false
+        val mesh = Three.Mesh(
+            Three.PlaneGeometry(Dim.width * metersPerPixel, Dim.height * metersPerPixel),
+            Three.MeshBasicMaterial(matParams),
+        )
+        mesh.asDynamic().position.set(0.0, 0.0, OVERLAY_Z)
+        return mesh
     }
 
     private fun clear(group: dynamic) {

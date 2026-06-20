@@ -45,15 +45,47 @@ object MapUtil {
         ]
     }"""
 
-    // Black background, white road centerlines. Bright pixels = walkable street,
-    // dark = blocked. Read back via readPixels to build the passability grid.
+    // Grayscale passability mask, read back via readPixels to build the movement grid.
+    // Brightness = walkability: white roads/paths (cheap) > bright-grey grass/park > darker-grey
+    // default ground (high penalty) > black buildings & water (impassable). Layer order matters
+    // (later paints over earlier): roads sit on top, so bridges/streets stay walkable.
     private val SHADOW_STYLE = """{
         "version": 8,
         "sources": {
             "openmaptiles": { "type": "vector", "url": "$OPENMAPTILES_URL" }
         },
         "layers": [
-            { "id": "bg", "type": "background", "paint": { "background-color": "#000000" } },
+            { "id": "bg", "type": "background", "paint": { "background-color": "#555555" } },
+            {
+                "id": "landcover",
+                "type": "fill",
+                "source": "openmaptiles",
+                "source-layer": "landcover",
+                "paint": { "fill-color": "#aaaaaa" }
+            },
+            {
+                "id": "landuse-green",
+                "type": "fill",
+                "source": "openmaptiles",
+                "source-layer": "landuse",
+                "filter": ["match", ["get", "class"],
+                    ["park", "garden", "recreation_ground", "pitch", "grass", "cemetery"], true, false],
+                "paint": { "fill-color": "#aaaaaa" }
+            },
+            {
+                "id": "water",
+                "type": "fill",
+                "source": "openmaptiles",
+                "source-layer": "water",
+                "paint": { "fill-color": "#000000" }
+            },
+            {
+                "id": "buildings",
+                "type": "fill",
+                "source": "openmaptiles",
+                "source-layer": "building",
+                "paint": { "fill-color": "#000000" }
+            },
             {
                 "id": "roads",
                 "type": "line",
