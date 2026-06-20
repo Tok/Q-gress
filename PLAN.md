@@ -134,12 +134,25 @@ retrofitted as we touch legacy code.
 - [ ] Persist arbitrary coordinates through the existing `?lng=&lat=&name=` URL flow.
 - **Exit criterion:** any city/address playable, not just the dropdown.
 
-### Phase 4 — Scale & dynamic zoom
-- [ ] Decouple game geometry from the fixed 1200×800 @ z18 assumption: derive
-      `pixelToMFactor`, portal/range sizes, and grid resolution from the current zoom.
-- [ ] Support a configurable zoom and then **dynamic zoom** (rebuild/rescale grid + vector
-      fields on zoom change without breaking in-flight agents).
-- **Exit criterion:** zoom level is a parameter; changing it keeps the sim consistent.
+### Phase 4 — Free navigation & decoupling the sim from the 2D screen grid
+The headline goal: **free map controls** — mouse-scroll zoom, drag / right-button pan, and
+WASD — i.e. drop the fixed top-down zoom-18 restriction entirely. This is *not* a toggle:
+today portals/agents live in screen pixels and the passability grid is baked once from the
+rendered view, so any pan/zoom desyncs everything. The fix is to **decouple the simulation
+from the rendered view**:
+- [ ] **Geo-anchor entities.** Store portals/agents/links in geographic coordinates
+      (lng/lat), and project to screen space each frame via the map. Pan/zoom then just
+      reprojects; entities stay glued to the world.
+- [ ] **Replace the pixel-readback grid.** Derive walkability/penalties from the **vector
+      tile road geometry** (query rendered features / GeoJSON) or a street graph/navmesh,
+      instead of reading rasterized shadow-map pixels. Removes the screen-space coupling and
+      the fixed-zoom assumption (also unblocks "going 3D"). Folds in the icebox pathfinding
+      rework.
+- [ ] **Free controls.** Let map gestures through (the overlay canvas currently swallows
+      them): scroll-zoom, drag / RMB pan, optional WASD. Rebuild/refresh the nav data on
+      `moveend`/`zoomend`; derive scale (`pixelToMFactor`, ranges) from the live zoom.
+- **Exit criterion:** the user can freely zoom/pan (and WASD) and the simulation stays
+  consistent and glued to the real world.
 
 ### Phase 5 — Game balance / make it interesting
 - [ ] Neutralize the recruit-rush: add recruitment cost/upkeep or diminishing returns;
