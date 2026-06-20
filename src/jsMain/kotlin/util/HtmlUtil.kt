@@ -94,9 +94,10 @@ object HtmlUtil {
         rootDiv.append(createCanvasDiv())
 
         // /demo harness (hash-routed): a menu of effect demo scenes, separate from the game.
+        // Reload on any hash change so switching game ⇄ demo (or between scenes) re-bootstraps.
+        window.addEventListener("hashchange", { window.location.reload() })
         val demoScene = Demo.route(window.location.hash)
         if (demoScene != null) {
-            window.addEventListener("hashchange", { window.location.reload() })
             if (demoScene == Demo.MENU) Demo.showMenu() else loadDemoScene(demoScene)
             return
         }

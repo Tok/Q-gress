@@ -28,8 +28,8 @@ object Demo {
 
     private var shardColor = NEUTRAL
 
-    /** The demo route for a location hash, or null for the normal game. */
-    fun route(hash: String): String? = when (hash.removePrefix("#").removeSuffix("/")) {
+    /** The demo route for a location hash, or null for the normal game. Accepts #demo and #/demo. */
+    fun route(hash: String): String? = when (hash.removePrefix("#").removePrefix("/").removeSuffix("/")) {
         "demo" -> MENU
         "demo/portal-shatter" -> "portal-shatter"
         "demo/xmp" -> "xmp"
