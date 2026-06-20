@@ -4,7 +4,7 @@ import World
 import config.Config
 import config.Styles
 import extension.*
-import external.MapBox
+import external.MapLibre
 import kotlinx.browser.document
 import kotlinx.dom.addClass
 import kotlinx.dom.removeClass
@@ -12,17 +12,74 @@ import org.khronos.webgl.Uint8Array
 import org.khronos.webgl.get
 import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.ImageData
-import org.w3c.dom.get
 import util.data.Cell
 import util.data.Pos
 import kotlin.js.Json
 
 object MapUtil {
-    private fun initInitialMapbox(): MapBox = js("new mapboxgl.Map({'container':'initialMap','style':'mapbox://styles/zirteq/cjazhkywuppf42rnx453i73z5'});")
+    // --- Open, keyless tile sources (no access token / billing) -------------
+    // Street backdrop: hosted OpenFreeMap style. Satellite: Esri World Imagery
+    // raster. Passability "shadow": OpenFreeMap vector tiles rendered as a
+    // white-roads-on-black mask that we read back via WebGL.
+    private const val OPENMAPTILES_URL = "https://tiles.openfreemap.org/planet"
+    private const val STREET_STYLE_URL = "https://tiles.openfreemap.org/styles/positron"
+    private const val ESRI_IMAGERY_TILES =
+        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
 
-    private fun initMapbox(): MapBox = js("new mapboxgl.Map({'container':'map','style':'mapbox://styles/zirteq/cjb19u1dy02a82slyklj33o6g'});")
+    private val SATELLITE_STYLE = """{
+        "version": 8,
+        "glyphs": "https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf",
+        "sources": {
+            "satellite": {
+                "type": "raster",
+                "tiles": ["$ESRI_IMAGERY_TILES"],
+                "tileSize": 256,
+                "attribution": "Imagery © Esri, Maxar, Earthstar Geographics"
+            },
+            "openmaptiles": { "type": "vector", "url": "$OPENMAPTILES_URL" }
+        },
+        "layers": [
+            { "id": "satellite", "type": "raster", "source": "satellite" }
+        ]
+    }"""
 
-    private fun initShadowMap(): MapBox = js("new mapboxgl.Map({'container':'shadowMap','style':'mapbox://styles/zirteq/cjaq7lw9e2y7u2rn7u6xskobn'});")
+    // Black background, white road centerlines. Bright pixels = walkable street,
+    // dark = blocked. Read back via readPixels to build the passability grid.
+    private val SHADOW_STYLE = """{
+        "version": 8,
+        "sources": {
+            "openmaptiles": { "type": "vector", "url": "$OPENMAPTILES_URL" }
+        },
+        "layers": [
+            { "id": "bg", "type": "background", "paint": { "background-color": "#000000" } },
+            {
+                "id": "roads",
+                "type": "line",
+                "source": "openmaptiles",
+                "source-layer": "transportation",
+                "paint": {
+                    "line-color": "#ffffff",
+                    "line-width": ["interpolate", ["linear"], ["zoom"], 14, 6, 18, 24]
+                }
+            }
+        ]
+    }"""
+
+    private fun mapOptions(container: String, style: dynamic, preserveBuffer: Boolean): dynamic {
+        val opts: dynamic = js("({})")
+        opts.container = container
+        opts.style = style
+        opts.preserveDrawingBuffer = preserveBuffer
+        return opts
+    }
+
+    private fun initInitialMapbox(): MapLibre.Map = MapLibre.Map(mapOptions(INITIAL_MAP, JSON.parse<Json>(SATELLITE_STYLE), false))
+
+    private fun initMapbox(): MapLibre.Map = MapLibre.Map(mapOptions(MAP, STREET_STYLE_URL, false))
+
+    // preserveDrawingBuffer is required so the rendered street mask can be read
+    // back with gl.readPixels (otherwise the buffer is cleared after compositing).
+    private fun initShadowMap(): MapLibre.Map = MapLibre.Map(mapOptions(SHADOW_MAP, JSON.parse<Json>(SHADOW_STYLE), true))
 
     private const val INITIAL_MAP = "initialMap"
     private const val MAP = "map"
@@ -33,19 +90,19 @@ object MapUtil {
     private const val MIN_ZOOM = 18
     private const val MAX_ZOOM = 18
 
-    private var map: MapBox? = null
-    private var initMap: MapBox? = null
-    private var shadowMap: MapBox? = null
+    private var map: MapLibre.Map? = null
+    private var initMap: MapLibre.Map? = null
+    private var shadowMap: MapLibre.Map? = null
 
     fun loadMaps(center: Json, callback: (Grid) -> Unit) {
         document.getElementById(MAP)?.addClass(INVISIBLE)
         document.getElementById(SHADOW_MAP)?.addClass(INVISIBLE)
-        loadInitialMap(center, fun(initMap: MapBox) {
+        loadInitialMap(center, fun(initMap: MapLibre.Map) {
             loadMap(initMap, callback)
         })
     }
 
-    private fun loadInitialMap(center: Json, callback: (MapBox) -> Unit) {
+    private fun loadInitialMap(center: Json, callback: (MapLibre.Map) -> Unit) {
         document.getElementById(INITIAL_MAP)?.removeClass(INVISIBLE)
         fun addLayers() {
             if (Styles.use3DBuildings) {
@@ -67,13 +124,13 @@ object MapUtil {
                 addLayers()
                 callback(initMap!!)
             }
-            val options: Json = JSON.parse("""{"center": [$center], "zoom": 18}""".trimMargin())
+            val options: Json = JSON.parse("""{"center": [$center], "zoom": $ZOOM}""")
             initMap!!.jumpTo(options)
         }
     }
 
-    // https://www.mapbox.com/mapbox-gl-js/api/
-    private fun loadMap(initMap: MapBox, callback: (Grid) -> Unit) {
+    // https://maplibre.org/maplibre-gl-js/docs/API/
+    private fun loadMap(initMap: MapLibre.Map, callback: (Grid) -> Unit) {
         val center = initMap.getCenter()
         document.getElementById(MAP)?.removeClass(INVISIBLE)
         if (map == null) {
@@ -81,7 +138,10 @@ object MapUtil {
             map!!.on("load", fun() {
                 loadShadowMap(center, callback)
             })
-            map!!.addControl(js("new mapboxgl.GeolocateControl({'positionOptions':{'enableHighAccuracy':true,'zoom':18},'trackUserLocation':false})"))
+            val geoCtrl: dynamic = js("({})")
+            geoCtrl.positionOptions = js("({enableHighAccuracy: true})")
+            geoCtrl.trackUserLocation = false
+            map!!.addControl(MapLibre.GeolocateControl(geoCtrl))
             map!!.setMinZoom(MIN_ZOOM)
             map!!.setMaxZoom(MAX_ZOOM)
             map!!.setZoom(ZOOM)
@@ -92,7 +152,7 @@ object MapUtil {
             })
             val lng = center["lng"]
             val lat = center["lat"]
-            val options: Json = JSON.parse("""{"center": [$lng,$lat],"zoom": 18}""".trimMargin())
+            val options: Json = JSON.parse("""{"center": [$lng,$lat],"zoom": $ZOOM}""")
             map!!.jumpTo(options)
         }
     }
@@ -104,7 +164,9 @@ object MapUtil {
         div.addClass(SHADOW_MAP, "top")
         document.body?.append(div)
         shadowMap = initShadowMap()
-        shadowMap!!.on("load", fun() {
+        // Wait for 'idle' (all tiles loaded AND fully rendered), not 'load',
+        // before reading pixels — otherwise the street mask can be incomplete.
+        shadowMap!!.once("idle", fun() {
             addGrid(callback)
         })
         shadowMap!!.setMinZoom(MIN_ZOOM)
@@ -114,9 +176,12 @@ object MapUtil {
     }
 
     private fun addGrid(callback: (Grid) -> Unit) {
-        val maps = document.getElementsByClassName("mapboxgl-canvas")
-        val shadowMapCan: dynamic = maps[2] // !
-        val gl: dynamic = shadowMapCan.getContext("webgl")
+        // Select the shadow map's own canvas robustly (query within its
+        // container) instead of relying on a fragile global canvas index.
+        val container = document.getElementById(SHADOW_MAP)
+        val shadowMapCan: dynamic = container?.asDynamic()?.querySelector("canvas.maplibregl-canvas")
+        // MapLibre renders with WebGL2; fall back to WebGL1 just in case.
+        val gl: dynamic = shadowMapCan.getContext("webgl2") ?: shadowMapCan.getContext("webgl")
         val width = gl.canvas.width as Int
         val height = gl.canvas.height as Int
         val rawBuf = Uint8Array((width * height * 4))
@@ -128,18 +193,19 @@ object MapUtil {
         callback(grid)
     }
 
+    // 3D building extrusions from the OpenFreeMap (openmaptiles) vector tiles.
+    // openmaptiles exposes render_height / render_min_height on the building layer.
     private fun buildingLayerConfig(): Json = JSON.parse(
         """{
             "id": "3d-buildings",
-            "source": "composite",
+            "source": "openmaptiles",
             "source-layer": "building",
-            "filter": ["==", "extrude", "true"],
             "type": "fill-extrusion",
-            "minzoom": 15,
+            "minzoom": 14,
             "paint": {
                 "fill-extrusion-color": "#333333",
-                "fill-extrusion-height": ["interpolate", ["linear"], ["zoom"], 15, 0, 15.05, ["get", "height"]],
-                "fill-extrusion-base": ["interpolate", ["linear"], ["zoom"], 15, 0, 15.05, ["get", "min_height"]],
+                "fill-extrusion-height": ["coalesce", ["get", "render_height"], 8],
+                "fill-extrusion-base": ["coalesce", ["get", "render_min_height"], 0],
                 "fill-extrusion-opacity": 0.9
             }
         }""",

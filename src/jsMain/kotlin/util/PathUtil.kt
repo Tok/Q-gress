@@ -51,7 +51,7 @@ object PathUtil {
         while (true) {
             val (layer, hasMaybeMore) = createWaveFront(map, passable, heat++)
             map.putAll(layer)
-            val layerMax = (layer.map { it.value }.max() ?: 0)
+            val layerMax = (layer.map { it.value }.maxOrNull() ?: 0)
             maxHeat = max(maxHeat, layerMax)
             val overCount = heat - maxHeat
             val hasMore = hasMaybeMore || overCount < MAX_HEAT
@@ -80,7 +80,7 @@ object PathUtil {
     }
 
     fun calculateVectorField(heatMap: GridMap, destination: Pos): VectorField {
-        val maxHeat = heatMap.values.max()!!
+        val maxHeat = heatMap.values.max()
         val fields = World.grid.map {
             val raw = createVec(heatMap, maxHeat, destination, it.key)
             val vec = raw.copyWithNewMagnitude(1.0) // FIXME use terrain penalty

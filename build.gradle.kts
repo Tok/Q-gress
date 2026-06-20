@@ -7,11 +7,8 @@
 // runtime version). detekt is our cyclomatic-complexity gate, so we keep the
 // build JVM at 21 to keep that gate working. This is purely a build-tool
 // choice — the project targets Kotlin/JS and ships no JVM bytecode, so the
-// JDK running Gradle does not affect the product at all.
-//
-// TODO: revisit once detekt ships a JDK 25+ compatible release (e.g. detekt
-//       2.0). When it does, bump detekt and move the build back to the latest
-//       JDK. Tracking: https://github.com/detekt/detekt/issues
+// JDK running Gradle does not affect the product at all. This is a settled
+// decision: we stay on JDK 21 LTS for the build and keep Kotlin/Gradle current.
 // ============================================================================
 
 plugins {

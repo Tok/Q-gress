@@ -74,7 +74,7 @@ data class NonFaction(
         }
     }
 
-    private fun findNearest() = World.allNonFaction.filterNot { it == this }.minBy {
+    private fun findNearest() = World.allNonFaction.filterNot { it == this }.minByOrNull {
         it.pos.distanceTo(this.pos)
     } ?: throw IllegalStateException("Unable to find nearest to $pos")
 
@@ -176,7 +176,7 @@ data class NonFaction(
             })
         }
 
-        fun findNearestTo(pos: Pos) = World.allNonFaction.minBy {
+        fun findNearestTo(pos: Pos) = World.allNonFaction.minByOrNull {
             it.pos.distanceTo(pos)
         } ?: throw IllegalStateException("Unable to find nearest to $pos")
 

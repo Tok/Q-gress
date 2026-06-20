@@ -57,7 +57,7 @@ object TopAgentsDisplay : UiTable() {
                 )
                 val itemsByLevel: Map<Int, List<DeployableItem>> = items.groupBy { it.getLevel() }
                 val countsByLevel: Map<Int, Int> = itemsByLevel.mapValues { it.value.count() }
-                val maxCount = countsByLevel.map { it.value }.max() ?: 0
+                val maxCount = countsByLevel.map { it.value }.maxOrNull() ?: 0
                 if (isShields) {
                     (1..4).forEach { level ->
                         val count = countsByLevel[level] ?: 0

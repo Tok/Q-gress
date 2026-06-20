@@ -33,7 +33,7 @@ object MovementUtil {
     fun moveToFriendlyHighLevelPortal(agent: Agent): Agent {
         check(hasFriendlyPortals(agent))
         val friendlyPortals = World.allPortals.filter { it.isFriendlyTo(agent) }
-        val maxLevel = friendlyPortals.maxBy { it.getLevel() }?.getLevel() ?: PortalLevel.ZERO
+        val maxLevel = friendlyPortals.maxByOrNull { it.getLevel() }?.getLevel() ?: PortalLevel.ZERO
         val selection = friendlyPortals.filter { it.getLevel() == maxLevel }
         val target = selection[(Util.random() * (selection.size - 1)).toInt()]
         return goToDestinationPortal(agent, target)

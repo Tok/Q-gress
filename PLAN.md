@@ -75,12 +75,11 @@ retrofitted as we touch legacy code.
    (e.g. a free street style for the shadow/grid map). `external/MapBox.kt` becomes a
    MapLibre declaration.
 
-3. **Build JVM — DECIDED: run Gradle on JDK 21 (LTS), not JDK 25.** detekt's latest
-   release (1.23.8) crashes inside a JDK 25 process, and detekt is our complexity gate.
-   Since the project targets Kotlin/JS (no JVM bytecode shipped), the JDK running the build
-   is a pure tooling detail and JDK 21 costs the product nothing. Kotlin stays 2.4, Gradle
-   9.5. JDK 25 remains installed. **TODO:** bump back to the latest JDK once detekt ships a
-   JDK 25+ compatible release (see `build.gradle.kts` header note).
+3. **Build JVM — DECIDED (settled): run Gradle on JDK 21 (LTS), not JDK 25.** detekt's
+   latest release (1.23.8) crashes inside a JDK 25 process, and detekt is our complexity
+   gate. Since the project targets Kotlin/JS (no JVM bytecode shipped), the JDK running the
+   build is a pure tooling detail and JDK 21 costs the product nothing. Kotlin stays 2.4,
+   Gradle 9.5. Not revisiting unless a concrete need arises.
 
 ### Still open
 - **Bundler.** Lean on the Kotlin/JS Gradle plugin's built-in webpack/dev-server first;
@@ -112,14 +111,22 @@ retrofitted as we touch legacy code.
 - **Exit criterion:** ✅ sim builds and tests green on a modern toolchain; a commit that
   breaks format/lint/complexity is rejected by the hook. _(App-in-browser rewire → Phase 2.)_
 
-### Phase 2 — Fix maps & the zoom bug
-- [ ] Remove the dead rawgit OpenLayers include; decide if OpenLayers is still needed.
-- [ ] Upgrade Mapbox GL → v3 **or** switch to MapLibre GL (per decision #2). Update
-      `MapUtil` map init, style URLs, and the `external/MapBox.kt` declarations.
-- [ ] Fix inconsistent zoom: make the grid build deterministic w.r.t. the *actual* rendered
-      zoom (wait for `idle`/`load` reliably before `readPixels`; today it indexes
-      `mapboxgl-canvas`[2] by position, which is fragile).
-- **Exit criterion:** map renders, grid builds reliably every load at a known zoom.
+### Phase 2 — Fix maps & the zoom bug  ✅ (verified in headless Chrome)
+- [x] Removed the dead rawgit OpenLayers include (it was unused in Kotlin).
+- [x] Switched Mapbox GL → **MapLibre GL 5.24** (`external/MapLibre.kt`); dropped the
+      access token. Open, keyless tiles: OpenFreeMap (street + vector) + Esri imagery.
+- [x] Authored open styles: positron street backdrop, satellite (Esri + openmaptiles for
+      3D buildings), and the **black-bg/white-streets shadow mask** for the passability grid.
+- [x] Fixed the grid/zoom reliability bug: `preserveDrawingBuffer:true`, wait for `idle`
+      (not `load`) before `readPixels`, and select the shadow canvas by container query
+      (not a global index). Tuned road width so streets survive the 10× grid downscale as
+      cells passable-in-all-directions.
+- [x] Fixed latent migration crashes: the `[0,0]` default-center sentinel (→ pin to a
+      covered default location) and `max()/min()/maxBy/minBy` throwing on empty.
+- [x] Moved web assets into `src/jsMain/resources`; the webpack bundle now drives a served
+      `index.html` (`start.sh` builds + serves + opens it). Retired `published/*.js`.
+- **Exit criterion:** ✅ map renders, grid builds reliably, sim runs end-to-end (22 sliders,
+  agents/portals spawn, 0 console errors) — confirmed via headless-Chrome verification.
 
 ### Phase 3 — Universal locations ("play your hometown")
 - [ ] Add a free-form location input (search box) with **geocoding** (Nominatim/Mapbox
@@ -148,6 +155,37 @@ retrofitted as we touch legacy code.
       RES), each given the world state + its faction and asked to set its sliders each
       cycle. Support different tuning/prompts per side.
 - **Exit criterion:** a Gemma-vs-Gemma match runs end-to-end in a desktop browser.
+
+## Under consideration (icebox)
+
+- **Null-safety hardening.** The Kotlin 1.3→2.x migration silently changed
+  `max()`/`min()`/`maxBy`/`minBy` from returning `null` on empty to *throwing* — these
+  compiled with only warnings but crashed at runtime (hit during Phase 2: empty wavefront
+  layer → `NoSuchElementException`). Fixed the known sites by switching to the `…OrNull`
+  variants. Follow-up: **audit every `!!` in the project** and replace with safer constructs
+  (`?.`, `?:`, `requireNotNull(x) { "msg" }`, `let`, early return). `!!` is the same class
+  of latent NPE/`NoSuchElement` hazard; the codebase leans on it heavily.
+
+- **Rework the movement / pathfinding model.** Today: a "shadow" map is rendered as a
+  black-background / white-streets mask, read back via WebGL `readPixels`, and turned into a
+  per-cell penalty grid; agents are circles that flow along vector fields, preferring
+  streets because off-street cells carry a higher penalty (the "ants" look). Phase 2
+  preserves this exactly, just sourcing the mask from MapLibre + OpenFreeMap vector tiles
+  instead of a custom Mapbox style. **But** the screen-pixel → grid coupling is fragile and
+  ties the simulation to a fixed top-down 2D view (also the blocker for dynamic zoom and
+  "going 3D"). Worth replacing with something better: derive walkability/penalties directly
+  from the **vector tile road geometry** (query rendered features / GeoJSON) rather than
+  reading rasterized pixels, and/or a proper graph/navmesh over the street network. This
+  decouples the sim from the render and is the natural partner of the functional-core split.
+
+- **Going 3D.** MapLibre supports map pitch, 3D terrain, and prominent extruded
+  buildings. Worth exploring for visual impact. **Caveat:** the gameplay grid is built by
+  reading the *top-down* rendered map pixels and mapping screen → flat game cells; a pitched
+  / 3D camera breaks that linear mapping. So "going 3D" is not a toggle — it needs either a
+  decoupled simulation grid (game logic stops depending on screen-space pixels) or a 3D
+  pathfinding model. Revisit after the functional-core split, which is the natural place to
+  separate the simulation space from the render space. (3D *buildings* in the top-down
+  satellite view already work and stay.)
 
 ## Constraints / agreements
 - Commit to `develop`; **no pushing** until something works end-to-end.

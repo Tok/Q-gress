@@ -177,7 +177,7 @@ enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>, var image: Canvas
 
             return HtmlUtil.preRender(w, h, fun(ctx: Ctx) {
                 val checkpoints = Cycle.INSTANCE.checkpoints
-                val maxTotal = checkpoints.values.maxBy { it.total() }?.total() ?: 0
+                val maxTotal = checkpoints.values.maxByOrNull { it.total() }?.total() ?: 0
                 drawBackground(ctx)
                 drawBaseLine(ctx)
                 checkpoints.values.zipWithNext().mapIndexed { i, pair ->

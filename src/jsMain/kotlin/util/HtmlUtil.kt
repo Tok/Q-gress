@@ -287,8 +287,13 @@ object HtmlUtil {
         World.noiseImage = World.createNoiseImage(World.noiseMap, w, h, noiseAlpha)
         World.resetAllCanvas()
         ActionLimitsDisplay.drawTop()
-        val maybeCenter = getSelectedCenterFromUrl()
-        val center = if (maybeCenter.toString() != "0,0") maybeCenter else Location.random().toJSON()
+        // Default (no explicit location) → a known, well-covered location rather
+        // than the [0,0] "Unknown Location" sentinel (open ocean: no streets, so
+        // the passability grid would be empty). Detect the sentinel by its
+        // coordinates — a string compare on the JS array is unreliable here.
+        val selected: dynamic = getSelectedCenterFromUrl()
+        val hasRealCenter = selected != null && (selected[0] != 0.0 || selected[1] != 0.0)
+        val center: Json = if (hasRealCenter) selected.unsafeCast<Json>() else Location.DEFAULT.toJSON()
         MapUtil.loadMaps(center, onMapload())
     }
 
