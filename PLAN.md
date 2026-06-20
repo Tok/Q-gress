@@ -62,20 +62,22 @@ retrofitted as we touch legacy code.
   `installGitHooks` task) so the rules travel with the repo, not just one machine.
 - **Small, reviewable commits** on `develop`, each green.
 
-## Open decisions (resolve before Phase 1 work)
+## Decisions
 
-1. **Stack direction.** Recommendation: **modernize Kotlin/JS in place** — migrate to the
-   current `kotlin("js")` plugin (Kotlin 2.x, Gradle 8, IR backend) and keep all game
-   logic. A full TypeScript rewrite throws away 7,200 lines of working, tested code for no
-   gameplay gain. (See question posed to user.)
-2. **Map provider.** Recommendation: evaluate **MapLibre GL JS** (open-source fork of
-   Mapbox GL, no token/billing) vs staying on **Mapbox GL JS v3** (needs account + usage
-   billing). The game only needs: a styled street raster to read pixels from, a satellite
-   layer, and 3D buildings. MapLibre can do all three. Decision affects the pixel-grid
-   styling.
-3. **Bundler.** Likely Vite (fast, simple) to replace committed `published/*.js`, or lean
-   on the Kotlin/JS Gradle plugin's webpack integration. Lean toward whatever the Kotlin
-   plugin gives us for free first.
+1. **Stack direction — DECIDED: modernize Kotlin/JS in place.** Migrate to the current
+   `kotlin("js")` plugin (Kotlin 2.x, Gradle 8, IR backend) and keep all game logic +
+   tests. A full TS rewrite was rejected (throws away 7,200 lines of working, tested code
+   for no gameplay gain). Plain `kotlin/js`, not KMP — no non-browser targets planned.
+   Gemma (WebGPU/MediaPipe) interops fine from Kotlin/JS via `external` declarations.
+2. **Map provider — DECIDED: switch to MapLibre GL JS.** Open-source, no token/billing.
+   Covers the three needs (street raster for the pixel grid, satellite, 3D buildings). We
+   replace the Mapbox GL include + custom Mapbox style URLs with MapLibre + an open style
+   (e.g. a free street style for the shadow/grid map). `external/MapBox.kt` becomes a
+   MapLibre declaration.
+
+### Still open
+- **Bundler.** Lean on the Kotlin/JS Gradle plugin's built-in webpack/dev-server first;
+  only reach for Vite if that proves limiting. Either way, stop committing `published/*.js`.
 
 ## Roadmap
 
