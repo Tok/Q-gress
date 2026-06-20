@@ -23,6 +23,10 @@ external object MapLibre {
         fun setCenter(center: dynamic)
         fun jumpTo(options: dynamic)
         fun flyTo(options: dynamic)
+        fun panBy(offset: dynamic, options: dynamic = definedExternally)
+        fun zoomTo(zoom: Double, options: dynamic = definedExternally)
+        fun getZoom(): Double
+        fun project(lngLat: dynamic): dynamic
         fun getCenter(): dynamic
         fun isMoving(): Boolean
         fun loaded(): Boolean

@@ -218,6 +218,7 @@ object HtmlUtil {
 
     private fun createCanvasDiv(): HTMLDivElement {
         val div = document.createElement("div") as HTMLDivElement
+        div.id = Navigation.CANVAS_LAYER_ID // transformed to follow the map camera
         div.append(World.uiCan)
         div.append(World.bgCan)
         div.append(World.can)
@@ -549,6 +550,7 @@ object HtmlUtil {
             resetInterval()
             World.isReady = true
             applySelectedLayer()
+            Navigation.setup()
         }
     }
 

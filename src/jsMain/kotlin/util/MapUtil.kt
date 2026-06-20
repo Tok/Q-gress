@@ -16,6 +16,7 @@ import org.w3c.dom.ImageData
 import util.data.Cell
 import util.data.Pos
 import kotlin.js.Json
+import kotlin.math.pow
 
 object MapUtil {
     // --- Open, keyless tile sources (no access token / billing) -------------
@@ -87,13 +88,61 @@ object MapUtil {
     private const val SHADOW_MAP = "shadowMap"
     private const val INVISIBLE = "invisible"
 
+    // The grid/sim is built at ZOOM (the anchor). Min/max are a free range for the
+    // camera; zooming just scales the canvas layer — the grid is never rebuilt.
     private const val ZOOM = 18
-    private const val MIN_ZOOM = 18
-    private const val MAX_ZOOM = 18
+    private const val MIN_ZOOM = 3
+    private const val MAX_ZOOM = 21
 
     private var map: MapLibre.Map? = null
     private var initMap: MapLibre.Map? = null
     private var shadowMap: MapLibre.Map? = null
+
+    // Camera-follow anchor: the simulation lives in a fixed pixel space built at
+    // this map view. We transform the canvas layer to follow the live camera.
+    private var anchorCenter: dynamic = null
+    private var anchorZoom = 0.0
+
+    private fun referenceMap(): MapLibre.Map? = initMap ?: map
+
+    /** Capture the view the grid/sim was built at (call once the grid is ready). */
+    private fun captureAnchor() {
+        val m = referenceMap() ?: return
+        anchorCenter = m.getCenter()
+        anchorZoom = m.getZoom()
+    }
+
+    /** CSS transform mapping anchored sim pixels → current screen, tracking the map camera. */
+    fun cameraTransform(): String {
+        val m = referenceMap() ?: return "none"
+        if (anchorCenter == null) return "none"
+        val scale = 2.0.pow(m.getZoom() - anchorZoom)
+        val projected: dynamic = m.project(anchorCenter)
+        val centerX = Dim.width / 2.0
+        val centerY = Dim.height / 2.0
+        val tx = (projected.x as Double) - centerX * scale
+        val ty = (projected.y as Double) - centerY * scale
+        return "translate(${tx}px, ${ty}px) scale($scale)"
+    }
+
+    /** Register a listener fired whenever the camera moves (and once immediately). */
+    fun onCameraMove(listener: () -> Unit) {
+        referenceMap()?.on("move") { listener() }
+        listener()
+    }
+
+    fun panBy(dx: Double, dy: Double) {
+        val opts: dynamic = js("({animate: false})")
+        val offset = arrayOf(dx, dy)
+        initMap?.panBy(offset, opts)
+        map?.panBy(offset, opts)
+    }
+
+    fun zoomBy(delta: Double) {
+        val opts: dynamic = js("({animate: false})")
+        initMap?.let { it.zoomTo(it.getZoom() + delta, opts) }
+        map?.let { it.zoomTo(it.getZoom() + delta, opts) }
+    }
 
     fun loadMaps(center: Json, callback: (Grid) -> Unit) {
         document.getElementById(MAP)?.addClass(INVISIBLE)
@@ -196,6 +245,7 @@ object MapUtil {
         World.shadowStreetMap = imageData
         val grid = createGrid(imageData, width, height)
         document.getElementById(SHADOW_MAP)?.addClass(INVISIBLE)
+        captureAnchor()
         callback(grid)
     }
 

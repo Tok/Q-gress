@@ -139,25 +139,27 @@ retrofitted as we touch legacy code.
 - **Exit criterion:** ✅ any city/address playable — verified by searching "Brandenburg
       Gate, Berlin" and confirming the sim recenters there and builds its grid.
 
-### Phase 4 — Free navigation & decoupling the sim from the 2D screen grid
-The headline goal: **free map controls** — mouse-scroll zoom, drag / right-button pan, and
-WASD — i.e. drop the fixed top-down zoom-18 restriction entirely. This is *not* a toggle:
-today portals/agents live in screen pixels and the passability grid is baked once from the
-rendered view, so any pan/zoom desyncs everything. The fix is to **decouple the simulation
-from the rendered view**:
-- [ ] **Geo-anchor entities.** Store portals/agents/links in geographic coordinates
-      (lng/lat), and project to screen space each frame via the map. Pan/zoom then just
-      reprojects; entities stay glued to the world.
-- [ ] **Replace the pixel-readback grid.** Derive walkability/penalties from the **vector
-      tile road geometry** (query rendered features / GeoJSON) or a street graph/navmesh,
-      instead of reading rasterized shadow-map pixels. Removes the screen-space coupling and
-      the fixed-zoom assumption (also unblocks "going 3D"). Folds in the icebox pathfinding
-      rework.
-- [ ] **Free controls.** Let map gestures through (the overlay canvas currently swallows
-      them): scroll-zoom, drag / RMB pan, optional WASD. Rebuild/refresh the nav data on
-      `moveend`/`zoomend`; derive scale (`pixelToMFactor`, ranges) from the live zoom.
-- **Exit criterion:** the user can freely zoom/pan (and WASD) and the simulation stays
-  consistent and glued to the real world.
+### Phase 4 — Free navigation (camera-follow) + UI polish  ✅ (verified in headless Chrome)
+Approach: keep the **grid/sim fixed** (built once at an anchor view) and make the *camera*
+free — the canvas layer is CSS-transformed to track the MapLibre camera. This sidesteps the
+vector-field-recompute and off-screen-portal problems (panning needs zero recompute; the
+existing off-screen border handles invisible portals). A *growing* world is deferred (see
+icebox — needs on-demand pathfinding).
+- [x] **Free controls** (`util/Navigation.kt`): wheel = zoom, right-button drag = pan, WASD
+      = pan, driven on `uiCan`; left-click stays portal placement. Relaxed the map min/max
+      zoom (was locked at 18) to a free range.
+- [x] **Camera-follow transform**: `MapUtil` captures the anchor center/zoom and exposes
+      `cameraTransform()` = `translate(screenC0 - center0·s) scale(s)`,
+      `s = 2^(zoom − anchorZoom)`; `#canvasLayer` (the canvas container) gets this CSS
+      transform on every map `move`. Verified exact (scale = 2^Δzoom, zoom-to-center, pan =
+      drag delta).
+- [x] **Part B** — base-map **layer dropdown** (Satellite/Street) replacing the satellite
+      checkbox.
+- [x] **Part C** — **volume slider** + master gain replacing the sound checkbox; audio
+      resumes on first user gesture.
+- **Exit criterion:** ✅ user can wheel-zoom / RMB-pan / WASD and the sim stays glued to the
+  map; verified in headless Chrome with 0 console errors. _(Sim remains anchored to its
+  build area — a growing world is the deferred follow-up.)_
 
 ### Phase 5 — Game balance / make it interesting
 - [ ] Neutralize the recruit-rush: add recruitment cost/upkeep or diminishing returns;
