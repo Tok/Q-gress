@@ -459,13 +459,13 @@ object Scene3D {
             b.uni.uProgress.value = f
             b.uni.uTime.value = b.age
             val ease = 1.0 - (1.0 - f) * (1.0 - f) // easeOutQuad
-            val rise = maxR * (0.1 + 0.5 * f * f) // slower mushroom climb
-            val capR = maxR * (0.22 + 0.5 * ease)
+            val rise = maxR * (0.12 + 0.6 * f * f) // mushroom climb (cap clears the stem)
+            val capR = maxR * (0.1 + 0.2 * ease) // a head, not a giant donut
             val capH = rise + capR * 0.5
             val flat = 1.0 - 0.4 * smoothstep01(0.4, 1.0, f) // cap flattens as it mushrooms
             // Stem: a tapered column from the ground up to the cap.
             val stem = b.meshes[0]
-            val stemR = maxR * (0.08 + 0.05 * ease)
+            val stemR = maxR * (0.06 + 0.04 * ease)
             val stemH = capH.coerceAtLeast(0.01)
             stem.scale.set(stemR, stemR, stemH)
             stem.position.set(cx, cy, stemH * 0.5)
@@ -473,7 +473,7 @@ object Scene3D {
             cap.scale.set(capR, capR, capR * flat)
             cap.position.set(cx, cy, capH)
             val core = b.meshes[2]
-            val coreR = maxR * (0.16 + 0.3 * ease)
+            val coreR = maxR * (0.1 + 0.16 * ease)
             core.scale.set(coreR, coreR, coreR)
             core.position.set(cx, cy, capH)
             b.meshes[3].scale.set(maxR, maxR, 1.0)

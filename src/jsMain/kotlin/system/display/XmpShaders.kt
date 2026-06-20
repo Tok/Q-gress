@@ -76,8 +76,8 @@ object XmpShaders {
             " vec3 col = smokeColor(heat);\n" +
             " col += vec3(0.9, 0.06, 0.7) * smoothstep(0.5, 0.28, heat) * (1.0 - uProgress) * 0.5;\n" +
             " col += vec3(0.05, 0.5, 1.0) * smoothstep(0.3, 0.12, heat) * (1.0 - uProgress) * 0.4;\n" +
-            " float a = clamp(d * 1.9 - 0.05, 0.0, 1.0) * (1.0 - uProgress * 0.8);\n" +
-            " if (a < 0.02) discard; gl_FragColor = vec4(col, a); }"
+            " float a = clamp(d * 2.6 + 0.12, 0.0, 1.0) * (1.0 - uProgress * 0.6);\n" +
+            " if (a < 0.04) discard; gl_FragColor = vec4(col, a); }"
 
     // Rising mushroom stem (tapered cylinder): turbulent smoke flowing upward, denser at the base.
     const val STEM_FRAG =
@@ -90,8 +90,8 @@ object XmpShaders {
             " float heat = clamp(d * 1.7 - uProgress * 0.6 - vUv.y * 0.35, 0.0, 1.0);\n" +
             " vec3 col = smokeColor(heat);\n" +
             " col += vec3(0.9, 0.06, 0.7) * smoothstep(0.45, 0.25, heat) * (1.0 - uProgress) * 0.45;\n" +
-            " float a = clamp(d * 1.9 - 0.1, 0.0, 1.0) * (1.0 - uProgress * 0.8) * smoothstep(1.0, 0.15, vUv.y);\n" +
-            " if (a < 0.02) discard; gl_FragColor = vec4(col, a); }"
+            " float a = clamp(d * 2.6 + 0.05, 0.0, 1.0) * (1.0 - uProgress * 0.6) * smoothstep(1.0, 0.12, vUv.y);\n" +
+            " if (a < 0.03) discard; gl_FragColor = vec4(col, a); }"
 
     const val CORE_FRAG =
         GLSL_NOISE +
