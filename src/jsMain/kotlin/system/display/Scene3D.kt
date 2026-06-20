@@ -32,12 +32,14 @@ import kotlin.math.pow
 @Suppress("TooManyFunctions")
 object Scene3D {
     private const val METERS_PER_PIXEL_Z0 = 156543.03392 // at zoom 0, equator
-    private const val AGENT_R = 6.0
 
-    // NPCs (and later players) are human-scale: a head-sized sphere at head
-    // height, so a humanoid body can later be added beneath it.
-    private const val NPC_HEAD_R = 0.45
-    private const val NPC_HEAD_Z = 1.6
+    // People (NPCs and players) are human-scale: a head-sized sphere at head
+    // height, so a humanoid body can later be added beneath it. Players are
+    // faction-coloured with an action indicator floating just above the head.
+    private const val HEAD_R = 0.45
+    private const val HEAD_Z = 1.6
+    private const val INDICATOR_Z = 2.7
+    private const val INDICATOR_SIZE = 1.6
     private const val POLE_R = 2.0
     private const val POLE_H = 45.0
     private const val TOP_R = 7.0
@@ -61,8 +63,7 @@ object Scene3D {
     private var fieldsGroup: dynamic = null
 
     // Shared geometries/materials (created lazily once three.js is loaded).
-    private val agentGeo: dynamic by lazy { Three.SphereGeometry(AGENT_R, 12, 12) }
-    private val npcGeo: dynamic by lazy { Three.SphereGeometry(NPC_HEAD_R, 10, 10) }
+    private val headGeo: dynamic by lazy { Three.SphereGeometry(HEAD_R, 10, 10) }
     private val poleGeo: dynamic by lazy { Three.CylinderGeometry(POLE_R, POLE_R, POLE_H, 8) }
     private val topGeo: dynamic by lazy { Three.SphereGeometry(TOP_R, 16, 16) }
     private val materialCache = mutableMapOf<String, dynamic>()
@@ -163,19 +164,19 @@ object Scene3D {
     private fun addAgent(agent: Agent) {
         val x = sceneX(agent.pos)
         val y = sceneY(agent.pos)
-        val sphere = Three.Mesh(agentGeo, solidMaterial(agent.faction.color))
-        place(sphere.asDynamic(), x, y, AGENT_R)
+        val sphere = Three.Mesh(headGeo, solidMaterial(agent.faction.color))
+        place(sphere.asDynamic(), x, y, HEAD_Z)
         agentsGroup.add(sphere)
-        // Action indicator: a camera-facing billboard above the agent.
+        // Action indicator: a camera-facing billboard just above the head.
         val sprite = Three.Sprite(indicatorMaterial(agent.action.item, agent.faction))
-        sprite.asDynamic().position.set(x, y, AGENT_R * 2 + 10)
-        sprite.asDynamic().scale.set(10.0, 10.0, 1.0)
+        sprite.asDynamic().position.set(x, y, INDICATOR_Z)
+        sprite.asDynamic().scale.set(INDICATOR_SIZE, INDICATOR_SIZE, 1.0)
         agentsGroup.add(sprite)
     }
 
     private fun addNpc(npc: NonFaction) {
-        val sphere = Three.Mesh(npcGeo, solidMaterial(NEUTRAL_COLOR))
-        place(sphere.asDynamic(), sceneX(npc.pos), sceneY(npc.pos), NPC_HEAD_Z)
+        val sphere = Three.Mesh(headGeo, solidMaterial(NEUTRAL_COLOR))
+        place(sphere.asDynamic(), sceneX(npc.pos), sceneY(npc.pos), HEAD_Z)
         npcsGroup.add(sphere)
     }
 
