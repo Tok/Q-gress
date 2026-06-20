@@ -215,31 +215,25 @@ The throughline is **abstract glass**: portals, the tubes between them, and the 
 one "glass apparatus" look (à la qlippostasis), tinted by faction (the only allowed colour;
 the vessel itself stays grayscale).
 
-- [ ] **Glass shader (foundation — reused by portals, link pipes, shards).** Port qlippostasis
-  `Shaders/glass.gdshader` to a three.js `ShaderMaterial` (`system/display/GlassShader.kt`):
-  Fresnel rim `pow(1 − dot(N,V), rim_power) · rim_strength` + manual `EMISSION`, procedural
-  `vnoise` model-space **smudges**, `DoubleSide` + `depthWrite = false` + mix blend, grayscale
-  vessel with a per-instance **`tint`** (faction colour = the "Queen-Scale" exception).
-  Thick-wall illusion via **concentric double shells** (outer + ~1.7%-smaller inner mesh).
-  ⚠ Godot's `hint_screen_texture` screen-space refraction needs the opaque pass as a texture,
-  which our MapLibre custom layer doesn't readily expose — **v1 ships fresnel + smudge +
-  emission** (the bulk of the look) and fakes refraction; true SSR is a follow-up (render-target
-  ping-pong). Today's portal glass is just `MeshStandardMaterial` α0.45 — this replaces it.
-- [ ] **Portal = abstract growing glass "mushroom" (8 level-stages).** Replace pole+sphere with
-  a procedural profile revolved by **`LatheGeometry`** (new Three binding), morphing across the
-  8 levels — kept **abstract** (inspired by, not evoking, a real mushroom):
-  L1 small round flask on a very thin stem · L2–4 stem + flask grow · L5 top opens into a flat
-  cylinder/umbrella · L6 convex cap → L7 flat → L8 concave (cap "opens up"). Stem **thickens**
-  with level. **Golden ratio φ = 1.618** drives height-(and girth-)per-level. Implementation: a
-  `portalProfile(level) → control points` → lathe → glass material; level-up re-lathes/tweens.
-- [ ] **Growth + level-up animation.** On `Portal.create`, **grow** from 0 → L1 (~0.6 s φ-eased
-  scale) instead of popping in; on level-up, tween the profile with a small glass "chime".
-- [ ] **`#demo/portal` scene.** L1–L8 buttons + a grow-replay + level-up stepper, to tune the 8
-  profiles and the animation (extends the existing demo menu).
+- [x] **Glass shader (foundation)** — `system/display/GlassShader.kt` ShaderMaterial ported from
+  qlippostasis (Fresnel rim + emission + vnoise smudges, DoubleSide, no depth write, per-instance
+  faction `tint`). View direction approximated from the world normal's verticality (no opaque-pass
+  texture in the custom layer); alpha/emission pushed well above Godot's so it reads over the map.
+  Double-shell + true SSR still a follow-up.
+- [x] **Portal = 8-stage glass mushroom** — `system/display/PortalShape.kt` lathe profiles
+  (φ-scaled height, thickening stem): L1 flask-on-thin-stem → L5 opening → L8 concave umbrella;
+  cached per level, baked Z-up; `addPortal` now builds these. Verified L1/L5/L8 in the demo.
+- [x] **`#demo/portal` scene** (L1–L8 + faction tint) — plus demos now render on a **gray
+  backdrop** (satellite hidden, checkbox to toggle) and sit **zoomed in** (`DEMO_ZOOM`).
+- [ ] **Follow-ups on the glass/mushroom** still to do: **double-shell** thick-wall + true SSR
+  refraction for the shader; **growth + level-up animation** (grow 0 → L1 on `Portal.create`
+  instead of popping in; tween the profile on level-up, with a glass "chime"); a grow-replay +
+  level-up stepper in the demo scene; tune the L2–L4/L6–L7 in-between profiles.
 - [ ] **GLB compaction + shard reuse (needs Blender).** Decimate `shattered_flask.glb` /
   `glass_shards.glb` (fewer pieces, lower poly) for our scale; reuse shard **panels** to build the
   open umbrella cap at high levels (cap reads as fitted glass shards). Glass look stays
-  shader-driven (no bake). *This is the one piece that genuinely needs Blender.*
+  shader-driven (no bake). *This is the one piece that genuinely needs Blender.* **Commit the
+  raw `.blend` source files under `/assets/blender/`** (not just the exported `.glb` in `models/`).
 - [ ] **Links → 3D glass pipes.** Replace the 2D `Line` links with thin **tubes**
   (`CylinderGeometry`/`TubeGeometry` between portal tops) on the glass shader — qlippostasis's
   "glass tubing"; optional concentric inner tube for thickness.

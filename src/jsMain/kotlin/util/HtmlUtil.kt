@@ -342,12 +342,14 @@ object HtmlUtil {
         World.userFaction = Faction.ENL
         World.resetAllCanvas()
         val center = Pos(Sim.width / 2, Sim.height / 2)
-        MapUtil.loadMaps(Location.DEFAULT.toJSON(), fun(grid: Grid) {
+        MapUtil.loadMaps(Location.DEFAULT.toJSON(), demo = true, callback = fun(grid: Grid) {
             World.grid = grid
             World.isReady = true
             Navigation.setup()
             MapUtil.enable3D()
-            document.defaultView?.setTimeout({ World.allPortals.add(Portal.create(center)) }, 0)
+            if (!Demo.ownsPortal(scene)) {
+                document.defaultView?.setTimeout({ World.allPortals.add(Portal.create(center)) }, 0)
+            }
             intervalID = document.defaultView?.setInterval({ demoTick() }, Time.minTickInterval) ?: 0
             Demo.showControls(scene, center)
         })
@@ -373,7 +375,7 @@ object HtmlUtil {
         val selected: dynamic = getSelectedCenterFromUrl()
         val hasRealCenter = selected != null && (selected[0] != 0.0 || selected[1] != 0.0)
         val center: Json = if (hasRealCenter) selected.unsafeCast<Json>() else Location.DEFAULT.toJSON()
-        MapUtil.loadMaps(center, onMapload())
+        MapUtil.loadMaps(center, callback = onMapload())
     }
 
     private fun closePopup() {

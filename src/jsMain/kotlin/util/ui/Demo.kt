@@ -6,7 +6,10 @@ import kotlinx.dom.addClass
 import org.w3c.dom.HTMLAnchorElement
 import org.w3c.dom.HTMLButtonElement
 import org.w3c.dom.HTMLDivElement
+import org.w3c.dom.HTMLInputElement
+import org.w3c.dom.HTMLLabelElement
 import system.display.Scene3D
+import util.MapUtil
 import util.SoundUtil
 import util.data.Pos
 
@@ -22,15 +25,21 @@ object Demo {
 
     // route → display title. Add future scenes here (building styles, field shaders, NPC tuning…).
     private val SCENES = listOf(
+        "portal" to "Portal Levels",
         "portal-shatter" to "Portal Shatter",
         "xmp" to "XMP Effects",
     )
 
     private var shardColor = NEUTRAL
+    private var portalColor = Faction.ENL.color
+
+    /** Scenes that should NOT spawn the default central game portal (they manage their own meshes). */
+    fun ownsPortal(scene: String): Boolean = scene == "portal"
 
     /** The demo route for a location hash, or null for the normal game. Accepts #demo and #/demo. */
     fun route(hash: String): String? = when (hash.removePrefix("#").removePrefix("/").removeSuffix("/")) {
         "demo" -> MENU
+        "demo/portal" -> "portal"
         "demo/portal-shatter" -> "portal-shatter"
         "demo/xmp" -> "xmp"
         else -> null
@@ -50,11 +59,42 @@ object Demo {
         panel.id = PANEL_ID
         panel.addClass("demoPanel", "coda")
         when (scene) {
+            "portal" -> buildPortalControls(panel, center)
             "portal-shatter" -> buildShatterControls(panel, center)
             "xmp" -> buildXmpControls(panel, center)
         }
+        panel.append(satelliteToggle()) // gray backdrop by default; opt in to satellite
         panel.append(link("#demo", "≡ Menu", "demoBack"))
         document.body?.append(panel)
+    }
+
+    /** A "Satellite" checkbox (off by default) — demos render over a gray backdrop unless ticked. */
+    private fun satelliteToggle(): HTMLLabelElement {
+        val label = document.createElement("label") as HTMLLabelElement
+        label.addClass("demoToggle", "coda")
+        val check = document.createElement("input") as HTMLInputElement
+        check.type = "checkbox"
+        check.checked = false
+        check.onchange = {
+            MapUtil.setDemoSatellite(check.checked)
+            null
+        }
+        label.append(check)
+        label.append(document.createTextNode(" Satellite"))
+        return label
+    }
+
+    private fun buildPortalControls(panel: HTMLDivElement, center: Pos) {
+        panel.append(titleEl("Portal Levels"))
+        for (level in 1..8) {
+            panel.append(
+                button("L$level", "demoButton") { Scene3D.showcasePortal(center, level, portalColor) },
+            )
+        }
+        panel.append(button("ENL", "demoButton enl") { portalColor = Faction.ENL.color })
+        panel.append(button("RES", "demoButton res") { portalColor = Faction.RES.color })
+        panel.append(button("Neutral", "demoButton") { portalColor = NEUTRAL })
+        Scene3D.showcasePortal(center, 1, portalColor) // start on L1
     }
 
     private fun buildShatterControls(panel: HTMLDivElement, center: Pos) {

@@ -46,6 +46,7 @@ external object MapLibre {
         fun onEvent(type: String, listener: (event: dynamic) -> Unit) // map events carry a payload (point/lngLat)
         fun once(type: String, listener: () -> Unit)
         fun setPaintProperty(layer: String, name: String, value: dynamic)
+        fun setLayoutProperty(layer: String, name: String, value: dynamic)
         fun remove()
     }
 

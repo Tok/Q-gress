@@ -47,6 +47,20 @@ object MapUtil {
         ]
     }"""
 
+    // Demo scenes: a plain gray backdrop so effects/portals read clearly. The satellite raster is
+    // present but hidden (visibility:none) so a demo checkbox can toggle it on via setLayoutProperty.
+    private val DEMO_STYLE = """{
+        "version": 8,
+        "glyphs": "https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf",
+        "sources": {
+            "satellite": { "type": "raster", "tiles": ["$ESRI_IMAGERY_TILES"], "tileSize": 256 }
+        },
+        "layers": [
+            { "id": "bg", "type": "background", "paint": { "background-color": "#8c8c8c" } },
+            { "id": "satellite", "type": "raster", "source": "satellite", "layout": { "visibility": "none" } }
+        ]
+    }"""
+
     // Grayscale passability mask, read back via readPixels to build the movement grid.
     // Brightness = walkability: white roads/paths (cheap) > bright-grey grass/park > darker-grey
     // default ground (high penalty) > black buildings & water (impassable). Layer order matters
@@ -109,7 +123,10 @@ object MapUtil {
         return opts
     }
 
-    private fun initInitialMapbox(): MapLibre.Map = MapLibre.Map(mapOptions(INITIAL_MAP, JSON.parse<Json>(SATELLITE_STYLE), false))
+    private fun initInitialMapbox(): MapLibre.Map {
+        val style = if (demoMode) DEMO_STYLE else SATELLITE_STYLE
+        return MapLibre.Map(mapOptions(INITIAL_MAP, JSON.parse<Json>(style), false))
+    }
 
     private fun initMapbox(): MapLibre.Map = MapLibre.Map(mapOptions(MAP, STREET_STYLE_URL, false))
 
@@ -131,6 +148,9 @@ object MapUtil {
     // The grid is read from the shadow map at ZOOM over a Sim-sized canvas (SCALE× the screen).
     // The visible maps start zoomed out to frame that whole play area; the anchor stays at ZOOM.
     private val DISPLAY_ZOOM = (ZOOM - log2(Sim.SCALE)).roundToInt()
+    private const val DEMO_ZOOM = 19 // demos frame one central object, so sit closer than the game
+    private var demoMode = false
+    private fun displayZoom() = if (demoMode) DEMO_ZOOM else DISPLAY_ZOOM
     private const val DEFAULT_PITCH = 50.0 // tilt the visible maps so the 3D scene reads as 3D
     private const val MAX_PITCH = 85.0 // MapLibre's ceiling; lets you tilt to near-horizon (and to 0 = top-down)
 
@@ -202,7 +222,8 @@ object MapUtil {
         return Scene3D.lngLatToSimPos(lngLat.lng as Double, lngLat.lat as Double)
     }
 
-    fun loadMaps(center: Json, callback: (Grid) -> Unit) {
+    fun loadMaps(center: Json, demo: Boolean = false, callback: (Grid) -> Unit) {
+        demoMode = demo
         document.getElementById(MAP)?.addClass(INVISIBLE)
         document.getElementById(SHADOW_MAP)?.addClass(INVISIBLE)
         loadInitialMap(center, fun(initMap: MapLibre.Map) {
@@ -210,10 +231,15 @@ object MapUtil {
         })
     }
 
+    /** Demo scenes only: toggle the (hidden-by-default) satellite raster over the gray backdrop. */
+    fun setDemoSatellite(on: Boolean) {
+        initMap?.setLayoutProperty("satellite", "visibility", if (on) "visible" else "none")
+    }
+
     private fun loadInitialMap(center: Json, callback: (MapLibre.Map) -> Unit) {
         document.getElementById(INITIAL_MAP)?.removeClass(INVISIBLE)
         fun addLayers(targetMap: MapLibre.Map) {
-            if (Styles.use3DBuildings) {
+            if (!demoMode && Styles.use3DBuildings) { // demos use the bare gray style, no buildings
                 targetMap.addLayer(buildingLayerConfig())
             }
         }
@@ -227,7 +253,7 @@ object MapUtil {
             }
             newMap.setMinZoom(MIN_ZOOM)
             newMap.setMaxZoom(MAX_ZOOM)
-            newMap.setZoom(DISPLAY_ZOOM)
+            newMap.setZoom(displayZoom())
             newMap.setCenter(center)
             newMap.setPitch(DEFAULT_PITCH)
         } else {
@@ -235,7 +261,7 @@ object MapUtil {
                 addLayers(existing)
                 callback(existing)
             }
-            val options: Json = JSON.parse("""{"center": [$center], "zoom": $DISPLAY_ZOOM}""")
+            val options: Json = JSON.parse("""{"center": [$center], "zoom": ${displayZoom()}}""")
             existing.jumpTo(options)
         }
     }
@@ -257,7 +283,7 @@ object MapUtil {
             newMap.addControl(MapLibre.GeolocateControl(geoCtrl))
             newMap.setMinZoom(MIN_ZOOM)
             newMap.setMaxZoom(MAX_ZOOM)
-            newMap.setZoom(DISPLAY_ZOOM)
+            newMap.setZoom(displayZoom())
             newMap.setCenter(center)
             newMap.setPitch(DEFAULT_PITCH)
         } else {
@@ -266,7 +292,7 @@ object MapUtil {
             })
             val lng = center["lng"]
             val lat = center["lat"]
-            val options: Json = JSON.parse("""{"center": [$lng,$lat],"zoom": $DISPLAY_ZOOM}""")
+            val options: Json = JSON.parse("""{"center": [$lng,$lat],"zoom": ${displayZoom()}}""")
             existing.jumpTo(options)
         }
     }

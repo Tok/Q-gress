@@ -51,8 +51,7 @@ object Scene3D {
     private const val HEAD_Z = 1.6
     private const val INDICATOR_Z = 2.7
     private const val INDICATOR_SIZE = 1.6
-    private const val POLE_R = 2.0
-    private const val POLE_H = 22.5
+    private const val POLE_H = 22.5 // link/field anchor height + shatter spawn height (legacy portal top)
     private const val TOP_R = 7.0
     private const val NEUTRAL_COLOR = "#bbbbbb"
     private const val HIGHLIGHT_COLOR = "#f0f0f0" // selection: off-tint grayscale (no new hues)
@@ -113,6 +112,8 @@ object Scene3D {
     private var pathScale = 1.0 // scale a pole shard to ≈ SHARD_TARGET_PATH
     private var shardsGroup: dynamic = null // transient shatter fragments (not cleared by sync)
     private var burstsGroup: dynamic = null // transient XMP shockwaves
+    private var showcaseGroup: dynamic = null // demo-scene portal preview (not cleared by sync)
+    private var showcaseMesh: dynamic = null
     private var physicsWorld: Cannon.World? = null // cannon-es world for the shards
     private val activeShards = mutableListOf<Shard>()
     private val activeBursts = mutableListOf<Burst>()
@@ -130,8 +131,6 @@ object Scene3D {
 
     // Shared geometries/materials (created lazily once three.js is loaded).
     private val headGeo: dynamic by lazy { Three.SphereGeometry(HEAD_R, 10, 10) }
-    private val poleGeo: dynamic by lazy { Three.CylinderGeometry(POLE_R, POLE_R, POLE_H, 8) }
-    private val topGeo: dynamic by lazy { Three.SphereGeometry(TOP_R, 16, 16) }
     private val coneGeo: dynamic by lazy { Three.ConeGeometry(VECTOR_CONE_R, VECTOR_CONE_H, 6) }
     private val burstGeo: dynamic by lazy { Three.SphereGeometry(1.0, 24, 16) } // unit sphere → XMP hot core
     private val torusGeo: dynamic by lazy { Three.TorusGeometry(1.0, 0.42, 16, 48) } // unit donut → rolling cap
@@ -183,6 +182,8 @@ object Scene3D {
         borderGroup = Three.Group().also { newScene.add(it) }
         shardsGroup = Three.Group().also { newScene.add(it) }
         burstsGroup = Three.Group().also { newScene.add(it) }
+        showcaseGroup = Three.Group()
+        newScene.add(showcaseGroup)
         physicsWorld = createPhysicsWorld()
         scene = newScene
         buildBorder()
@@ -633,20 +634,30 @@ object Scene3D {
     }
 
     private fun addPortal(portal: Portal) {
-        val x = sceneX(portal.location)
-        val y = sceneY(portal.location)
         val id = "portal:${portal.id}"
         val baseColor = portal.owner?.faction?.color ?: NEUTRAL_COLOR
         val color = if (selected == id) HIGHLIGHT_COLOR else baseColor
-        val pole = Three.Mesh(poleGeo, glassMaterial(color))
-        pole.asDynamic().rotation.x = PI / 2 // Y-axis cylinder → vertical (Z up)
-        place(pole.asDynamic(), x, y, POLE_H / 2)
-        tag(pole.asDynamic(), id)
-        portalsGroup.add(pole)
-        val top = Three.Mesh(topGeo, glassMaterial(color))
-        place(top.asDynamic(), x, y, POLE_H)
-        tag(top.asDynamic(), id)
-        portalsGroup.add(top)
+        addPortalMesh(portal.location, portal.getLevel().toInt(), color, id)
+    }
+
+    /** Build the abstract glass "mushroom" for a portal at [location], shaped by [level] (1..8). */
+    private fun addPortalMesh(location: Pos, level: Int, color: String, id: String) {
+        val x = sceneX(location)
+        val y = sceneY(location)
+        val mesh = Three.Mesh(PortalShape.geometry(level), GlassShader.material(color))
+        place(mesh.asDynamic(), x, y, 0.0)
+        tag(mesh.asDynamic(), id)
+        portalsGroup.add(mesh)
+    }
+
+    /** Demo only (#demo/portal): show a single portal at [level] in a sync-immune group. */
+    fun showcasePortal(location: Pos, level: Int, color: String) {
+        val grp = showcaseGroup ?: return
+        if (showcaseMesh != null) grp.remove(showcaseMesh)
+        val mesh = Three.Mesh(PortalShape.geometry(level), GlassShader.material(color))
+        place(mesh.asDynamic(), sceneX(location), sceneY(location), 0.0)
+        grp.add(mesh)
+        showcaseMesh = mesh
     }
 
     private fun addAgent(agent: Agent) {
@@ -693,21 +704,6 @@ object Scene3D {
     private fun solidMaterial(color: String): dynamic = materialCache.getOrPut("s$color") {
         val p: dynamic = js("({})")
         p.color = color
-        Three.MeshStandardMaterial(p)
-    }
-
-    // Translucent, faintly glowing glass for portals. (A future "shatter" can swap geometry;
-    // XMP hits can later spawn 3D explosion effects.)
-    private fun glassMaterial(color: String): dynamic = materialCache.getOrPut("g$color") {
-        val p: dynamic = js("({})")
-        p.color = color
-        p.transparent = true
-        p.opacity = 0.45
-        p.metalness = 0.0
-        p.roughness = 0.08
-        p.emissive = color
-        p.emissiveIntensity = 0.18
-        p.side = 2 // DoubleSide so the far glass surface shows through
         Three.MeshStandardMaterial(p)
     }
 
