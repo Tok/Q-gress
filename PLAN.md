@@ -177,6 +177,24 @@ positive throughput multiplier — recruit-rush = free head start. Fix:
   in `Config` for playtest tuning. _Deeper "no strategy dominates" validation is iterative
   (playtest via ./start.sh, or a future headless strategy-comparison harness)._
 
+### 3D rework + pathfinding scalability (pre-AI) — see `.claude/plans/` for the full plan
+Pivot rendering to a **three.js scene as a MapLibre custom layer** (real 3D, pitch/rotate)
+while the **simulation stays 2D**. Staged.
+- [x] **Stage 1 — 3D foundation** (verified in headless Chrome): three.js (r160 UMD) custom
+      layer camera-synced via the map matrix (`system/display/Scene3D.kt`, `external/Three.kt`);
+      entities render in 3D — portals as pole+sphere, agents as faction spheres with a
+      camera-facing action-indicator billboard, NPCs as head-sized spheres at head height,
+      links as lines, fields as translucent triangles. `DrawUtil.redraw` now clears the
+      (transparent) world canvas + `Scene3D.sync()`; HUD stays 2D & screen-fixed. Free 3D nav
+      (wheel zoom, RMB pan, WASD, Q/E rotate, R/F pitch) via `Navigation`; the Phase-4 CSS
+      camera-follow is retired (the 3D follows the map natively).
+- [ ] **Stage 2 — Ingress fidelity**: resonators ringed at the portal base; pole height ←
+      level (L8 ≈ 100 m); raised fields; health/level visuals.
+- [ ] **Stage 3 — Pathfinding scalability**: drop the per-portal full-map flow field;
+      multi-mode nav (flow fields near, cheap nav far); NPCs ambient; continuous toggleable
+      field viz.
+- [ ] **Stage 4 — later**: humanoid glTF models (+ the colony-management attributes above).
+
 ### Phase 6 — AI-vs-AI (approach TBD — needs its own plan)
 **Polish the game/sim first** (Phases 4–5) before adding AI. The AI substrate is the
 per-faction slider vector (0..1 each) as the output; the input is the game state. The

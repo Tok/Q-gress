@@ -28,6 +28,8 @@ external object MapLibre {
         fun panBy(offset: dynamic, options: dynamic = definedExternally)
         fun zoomTo(zoom: Double, options: dynamic = definedExternally)
         fun getZoom(): Double
+        fun getBearing(): Double
+        fun getPitch(): Double
         fun project(lngLat: dynamic): dynamic
         fun getCenter(): dynamic
         fun isMoving(): Boolean

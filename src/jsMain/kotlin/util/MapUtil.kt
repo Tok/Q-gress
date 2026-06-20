@@ -17,7 +17,6 @@ import system.display.Scene3D
 import util.data.Cell
 import util.data.Pos
 import kotlin.js.Json
-import kotlin.math.pow
 
 object MapUtil {
     // --- Open, keyless tile sources (no access token / billing) -------------
@@ -95,6 +94,7 @@ object MapUtil {
     private const val MIN_ZOOM = 3
     private const val MAX_ZOOM = 21
     private const val DEFAULT_PITCH = 50.0 // tilt the visible maps so the 3D scene reads as 3D
+    private const val MAX_PITCH = 80.0
 
     private var map: MapLibre.Map? = null
     private var initMap: MapLibre.Map? = null
@@ -114,23 +114,14 @@ object MapUtil {
         anchorZoom = m.getZoom()
     }
 
-    /** CSS transform mapping anchored sim pixels → current screen, tracking the map camera. */
-    fun cameraTransform(): String {
-        val m = referenceMap() ?: return "none"
-        if (anchorCenter == null) return "none"
-        val scale = 2.0.pow(m.getZoom() - anchorZoom)
-        val projected: dynamic = m.project(anchorCenter)
-        val centerX = Dim.width / 2.0
-        val centerY = Dim.height / 2.0
-        val tx = (projected.x as Double) - centerX * scale
-        val ty = (projected.y as Double) - centerY * scale
-        return "translate(${tx}px, ${ty}px) scale($scale)"
+    fun rotateBy(degrees: Double) {
+        initMap?.let { it.setBearing(it.getBearing() + degrees) }
+        map?.let { it.setBearing(it.getBearing() + degrees) }
     }
 
-    /** Register a listener fired whenever the camera moves (and once immediately). */
-    fun onCameraMove(listener: () -> Unit) {
-        referenceMap()?.on("move") { listener() }
-        listener()
+    fun pitchBy(degrees: Double) {
+        initMap?.let { it.setPitch((it.getPitch() + degrees).coerceIn(0.0, MAX_PITCH)) }
+        map?.let { it.setPitch((it.getPitch() + degrees).coerceIn(0.0, MAX_PITCH)) }
     }
 
     fun panBy(dx: Double, dy: Double) {

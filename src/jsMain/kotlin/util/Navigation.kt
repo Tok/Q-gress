@@ -1,36 +1,33 @@
 package util
 
 import World
-import kotlinx.browser.document
 import kotlinx.browser.window
-import org.w3c.dom.HTMLElement
 import org.w3c.dom.events.Event
 import org.w3c.dom.events.KeyboardEvent
 import org.w3c.dom.events.MouseEvent
 
 /**
- * Free map navigation (camera-follow): wheel = zoom, right-button drag = pan,
- * WASD = pan. The simulation stays in its fixed anchored pixel space; the canvas
- * layer is CSS-transformed to track the MapLibre camera so everything stays glued
- * to the world (see MapUtil.cameraTransform). Left-click stays portal placement.
+ * Free 3D map navigation driven from the (top) UI canvas:
+ * - wheel = zoom, right-button drag = pan, WASD = pan,
+ * - Q/E = rotate, R/F = pitch.
+ *
+ * The world is rendered in [system.display.Scene3D] (a MapLibre custom layer),
+ * so moving the map camera moves the scene natively — no canvas transform. The
+ * 2D canvases hold only the (screen-fixed) HUD. Left-click stays portal placement.
  */
 object Navigation {
     const val CANVAS_LAYER_ID = "canvasLayer"
 
     private const val ZOOM_FACTOR = 0.0015
     private const val PAN_STEP = 60.0
+    private const val ROTATE_STEP = 15.0
+    private const val PITCH_STEP = 10.0
 
     private var isPanning = false
     private var lastPanX = 0.0
     private var lastPanY = 0.0
 
-    private fun syncCanvasToCamera() {
-        val layer = document.getElementById(CANVAS_LAYER_ID) as? HTMLElement ?: return
-        layer.style.setProperty("transform", MapUtil.cameraTransform())
-    }
-
     fun setup() {
-        MapUtil.onCameraMove { syncCanvasToCamera() }
         val canvas = World.uiCan
         canvas.addEventListener("wheel", { event ->
             event.preventDefault()
@@ -64,6 +61,10 @@ object Navigation {
                 "s" -> MapUtil.panBy(0.0, PAN_STEP)
                 "a" -> MapUtil.panBy(-PAN_STEP, 0.0)
                 "d" -> MapUtil.panBy(PAN_STEP, 0.0)
+                "q" -> MapUtil.rotateBy(-ROTATE_STEP)
+                "e" -> MapUtil.rotateBy(ROTATE_STEP)
+                "r" -> MapUtil.pitchBy(PITCH_STEP)
+                "f" -> MapUtil.pitchBy(-PITCH_STEP)
             }
         }, false)
     }
