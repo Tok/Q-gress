@@ -7,10 +7,7 @@ import config.*
 import extension.Canvas
 import extension.Ctx
 import extension.clear
-import items.level.PortalLevel
-import kotlinx.browser.document
 import org.w3c.dom.*
-import portal.Portal
 import system.Com
 import system.display.Scene3D
 import system.display.TickDisplay
@@ -72,48 +69,11 @@ object DrawUtil {
         if (Styles.isDrawTopAgents) {
             TopAgentsDisplay.draw()
         }
-        World.mousePos?.let { highlightMouse(it) }
         if (Config.isHighlighActionLimit) {
             ActionLimitsDisplay.draw()
         } else {
             ActionLimitsDisplay.drawTop()
         }
-    }
-
-    private fun highlightMouse(pos: Pos) {
-        when {
-            World.shadowStreetMap == null -> return
-            ActionLimitsDisplay.isBlocked(pos) -> return
-        }
-        val ctx = World.uiCtx()
-        val r = Dim.maxDeploymentRange * Constants.phi
-        val circle = Circle(pos, r)
-
-        val tempCan = document.createElement("canvas") as Canvas
-        val tempCtx = tempCan.getContext("2d") as Ctx
-        tempCan.width = 2 * circle.radius.toInt()
-        tempCan.height = 2 * circle.radius.toInt()
-        val xOffset = -(circle.center.x - r)
-        val yOffset = -(circle.center.y - r)
-        World.shadowStreetMap?.let { tempCtx.putImageData(it, xOffset, yOffset) }
-
-        ctx.beginPath()
-        ctx.arc(circle.center.x, circle.center.y, circle.radius, 0.0, 2.0 * PI)
-        ctx.clip()
-
-        ctx.beginPath()
-        ctx.drawImage(tempCan, pos.x - r, pos.y - r, 2 * r, 2 * r)
-
-        ctx.globalAlpha = 0.5
-
-        val color = when {
-            pos.hasClosePortalForClick() -> Colors.orange
-            pos.isBuildable() -> Colors.white
-            else -> Colors.red
-        }
-        val image = Portal.renderPortalCenter(color, PortalLevel.ZERO)
-        ctx.drawImage(image, pos.x - (image.width / 2), pos.y - (image.height / 2))
-        ctx.globalAlpha = 1.0
     }
 
     fun renderBarImage(color: String, health: Int, h: Double, w: Double, lineWidth: Int): Canvas {

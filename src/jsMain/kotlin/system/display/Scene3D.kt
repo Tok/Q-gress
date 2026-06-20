@@ -41,7 +41,7 @@ object Scene3D {
     private const val INDICATOR_Z = 2.7
     private const val INDICATOR_SIZE = 1.6
     private const val POLE_R = 2.0
-    private const val POLE_H = 45.0
+    private const val POLE_H = 22.5
     private const val TOP_R = 7.0
     private const val NEUTRAL_COLOR = "#bbbbbb"
     private const val HIGHLIGHT_COLOR = "#ffff33"
@@ -182,12 +182,12 @@ object Scene3D {
         val id = "portal:${portal.id}"
         val baseColor = portal.owner?.faction?.color ?: NEUTRAL_COLOR
         val color = if (selected == id) HIGHLIGHT_COLOR else baseColor
-        val pole = Three.Mesh(poleGeo, solidMaterial(color))
+        val pole = Three.Mesh(poleGeo, glassMaterial(color))
         pole.asDynamic().rotation.x = PI / 2 // Y-axis cylinder → vertical (Z up)
         place(pole.asDynamic(), x, y, POLE_H / 2)
         tag(pole.asDynamic(), id)
         portalsGroup.add(pole)
-        val top = Three.Mesh(topGeo, solidMaterial(color))
+        val top = Three.Mesh(topGeo, glassMaterial(color))
         place(top.asDynamic(), x, y, POLE_H)
         tag(top.asDynamic(), id)
         portalsGroup.add(top)
@@ -237,6 +237,21 @@ object Scene3D {
     private fun solidMaterial(color: String): dynamic = materialCache.getOrPut("s$color") {
         val p: dynamic = js("({})")
         p.color = color
+        Three.MeshStandardMaterial(p)
+    }
+
+    // Translucent, faintly glowing glass for portals. (A future "shatter" can swap geometry;
+    // XMP hits can later spawn 3D explosion effects.)
+    private fun glassMaterial(color: String): dynamic = materialCache.getOrPut("g$color") {
+        val p: dynamic = js("({})")
+        p.color = color
+        p.transparent = true
+        p.opacity = 0.45
+        p.metalness = 0.0
+        p.roughness = 0.08
+        p.emissive = color
+        p.emissiveIntensity = 0.18
+        p.side = 2 // DoubleSide so the far glass surface shows through
         Three.MeshStandardMaterial(p)
     }
 

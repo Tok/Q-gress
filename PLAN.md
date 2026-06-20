@@ -189,7 +189,10 @@ while the **simulation stays 2D**. Staged.
       (wheel zoom, RMB pan, WASD, Q/E rotate, R/F pitch) via `Navigation`; the Phase-4 CSS
       camera-follow is retired (the 3D follows the map natively).
 - [ ] **Stage 2 — Ingress fidelity**: resonators ringed at the portal base; pole height ←
-      level (L8 ≈ 100 m); raised fields; health/level visuals.
+      level (L8 ≈ 100 m); raised fields; health/level visuals. **Shield visualization** once
+      `Portal.deployMods` actually stores mods (today it's a stub — no deployed-shield state to
+      draw). Effects: glass **shatter** on portal destruction + 3D **XMP explosion** animations.
+      (Portals already use a translucent glass material.)
 - [ ] **Stage 3 — Pathfinding scalability**: drop the per-portal full-map flow field;
       multi-mode nav (flow fields near, cheap nav far); NPCs ambient; continuous toggleable
       field viz.
