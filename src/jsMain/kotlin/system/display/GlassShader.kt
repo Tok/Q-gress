@@ -19,15 +19,15 @@ import external.Three
  */
 object GlassShader {
     // Tunables (qlippostasis defaults, nudged for readability without its bloom/SSR).
-    private const val RIM_STRENGTH = 2.2
-    private const val RIM_POWER = 2.6
-    private const val BASE_ALPHA = 0.34 // well above Godot's 0.04 — must read over a busy satellite map (no bloom)
-    private const val SMUDGE_AMOUNT = 0.12
+    private const val RIM_STRENGTH = 2.6
+    private const val RIM_POWER = 2.8
+    private const val BASE_ALPHA = 0.08 // thin glass — mostly the rim/edges read, the body is see-through
+    private const val SMUDGE_AMOUNT = 0.1
     private const val SMUDGE_SCALE = 0.6 // metres → our portals are ~10-20 m, not ~1 m
     private const val SMUDGE_THRESHOLD = 0.7
-    private const val INTERIOR_LUM = 0.14
-    private const val RIM_EMISSION = 0.7
-    private const val INTERIOR_EMISSION = 0.28
+    private const val INTERIOR_LUM = 0.04
+    private const val RIM_EMISSION = 0.6
+    private const val INTERIOR_EMISSION = 0.1
 
     private const val VERT =
         "varying vec3 vWorldNormal;\nvarying vec3 vModelPos;\n" +

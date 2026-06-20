@@ -52,8 +52,9 @@ object Scene3D {
     private const val INDICATOR_Z = 2.7
     private const val INDICATOR_SIZE = 1.6
     private const val POLE_R = 2.0
-    private const val POLE_H = 22.5 // portal pole height = link/field anchor + shatter spawn height
-    private const val TOP_R = 7.0
+    private const val POLE_H = 22.5 // base pole height at L1; scales by φ per level
+    private const val TOP_R = 7.0 // base orb radius
+    private const val PHI = 1.618 // golden ratio — pole grows by φ across the 8 levels
     private const val NEUTRAL_COLOR = "#bbbbbb"
     private const val HIGHLIGHT_COLOR = "#f0f0f0" // selection: off-tint grayscale (no new hues)
     private const val OVERLAY_Z = 0.2 // passability quad just above ground
@@ -63,7 +64,7 @@ object Scene3D {
     private const val MARKER_R = 10.0 // build-preview marker radius (metres)
     private const val BORDER_COLOR = "#22ddff" // playable-area boundary
     private const val BORDER_Z = 0.3
-    private const val SHARD_OPACITY = 0.6
+    private const val SHARD_OPACITY = 0.3 // thin glass shards, not opaque chips
     private const val SHARD_FADE = 1.2 // seconds to fade out at end of life
     private const val SHARD_LIFE_MIN = 3.0
     private const val SHARD_LIFE_MAX = 5.0
@@ -111,7 +112,12 @@ object Scene3D {
     private var burstsGroup: dynamic = null // transient XMP shockwaves
     private var showcaseGroup: dynamic = null // demo-scene portal preview (not cleared by sync)
     private var showcaseMesh: dynamic = null
+    private var showcaseOrb: dynamic = null // the preview's glass orb (removed when shattered)
+    private var showcaseGasket: dynamic = null // the preview's static gasket (drops when shattered)
+    private var showcaseLevel = 1
     private var physicsWorld: Cannon.World? = null // cannon-es world for the shards
+    private val tempBodies = mutableListOf<Cannon.Body>() // static pole colliders, live only during a shatter
+    private var shatterRot = doubleArrayOf(0.0, 0.0, 0.0) // per-shatter random orientation of the shards
     private val activeShards = mutableListOf<Shard>()
     private val activeBursts = mutableListOf<Burst>()
     private var lastFrameMs = 0.0 // for per-frame shard physics dt
@@ -239,6 +245,10 @@ object Scene3D {
                 iter.remove()
             }
         }
+        if (activeShards.isEmpty() && tempBodies.isNotEmpty()) { // shatter done → retire the pole colliders
+            tempBodies.forEach { physicsWorld?.removeBody(it) }
+            tempBodies.clear()
+        }
     }
 
     /** Rebuild the 3D objects from world state. Called once per simulation tick. */
@@ -319,47 +329,68 @@ object Scene3D {
         loader.load(
             "models/shattered_flask.glb",
             { gltf ->
-                flaskVariants = parseVariants(gltf)
-                flaskScale = computeScale(flaskVariants.firstOrNull() ?: emptyList(), TOP_R * 2.0)
+                flaskVariants = ShardAssets.parseVariants(gltf)
+                flaskScale = ShardAssets.computeScale(flaskVariants.firstOrNull() ?: emptyList(), TOP_R * 2.0)
             },
             {},
             { e -> console.error("shattered_flask load failed: $e") },
         )
     }
 
-    // Union bbox of the pieces → uniform scale so they span `target` metres.
-    private fun computeScale(pieces: List<dynamic>, target: Double): Double {
-        if (pieces.isEmpty()) return 1.0
-        var loX = Double.MAX_VALUE
-        var loY = Double.MAX_VALUE
-        var loZ = Double.MAX_VALUE
-        var hiX = -Double.MAX_VALUE
-        var hiY = -Double.MAX_VALUE
-        var hiZ = -Double.MAX_VALUE
-        pieces.forEach { h ->
-            val bb = h.geo.boundingBox
-            loX = minOf(loX, bb.min.x as Double)
-            hiX = maxOf(hiX, bb.max.x as Double)
-            loY = minOf(loY, bb.min.y as Double)
-            hiY = maxOf(hiY, bb.max.y as Double)
-            loZ = minOf(loZ, bb.min.z as Double)
-            hiZ = maxOf(hiZ, bb.max.z as Double)
-        }
-        val d = maxOf(hiX - loX, hiY - loY, hiZ - loZ)
-        return if (d > 0.0) target / d else 1.0
-    }
-
-    /** Shatter a removed portal into glass fragments at its location (called from Portal.remove). */
+    /**
+     * Shatter a removed portal's glass orb (called from Portal.remove). Shards reuse the flask
+     * model, scaled to this [level]'s orb and spawned at its height. Each shatter picks a random
+     * variant AND a random orientation for variability; a static pole collider keeps shards from
+     * flying through the (metal) pole, and the rubber gasket drops too. The pole itself is metal,
+     * so it does not shatter.
+     */
     fun shatterPortal(location: Pos, color: String, level: Int) {
-        scene ?: return
+        val world = physicsWorld ?: return
         val x = sceneX(location)
         val y = sceneY(location)
-        val s = flaskLevelScale(level) // shards reuse the flask model, scaled to this level's orb
-        if (flaskVariants.isNotEmpty()) { // glass orb → shell shards, at the orb's height
+        val s = orbScale(level)
+        val poleH = poleHeight(level)
+        shatterRot = doubleArrayOf(Util.random() * 2.0 * PI, Util.random() * 2.0 * PI, Util.random() * 2.0 * PI)
+        if (flaskVariants.isNotEmpty()) {
             val variant = flaskVariants[(Util.random() * flaskVariants.size).toInt()]
-            variant.forEach { holder -> spawnShard(holder, doubleArrayOf(x, y, POLE_H + TOP_R * s), flaskScale * s, color, 6.0) }
+            variant.forEach { holder -> spawnShard(holder, doubleArrayOf(x, y, orbCenterZ(level)), flaskScale * s, color, 6.0) }
         }
-        // (The pole is metal, not glass, so only the orb shatters.)
+        addPoleObstacle(world, x, y, poleH)
+        spawnGasket(world, x, y, poleH)
+    }
+
+    /** A static box collider standing in for the metal pole, so shards bounce off it (not through). */
+    private fun addPoleObstacle(world: Cannon.World, x: Double, y: Double, poleH: Double) {
+        val opts: dynamic = js("({ mass: 0 })")
+        opts.position = Cannon.Vec3(x, y, poleH / 2)
+        opts.shape = Cannon.Box(Cannon.Vec3(POLE_R, POLE_R, poleH / 2))
+        val body = Cannon.Body(opts)
+        world.addBody(body)
+        tempBodies.add(body)
+    }
+
+    /** The rubber gasket as a falling rigid body when the portal is destroyed. */
+    private fun spawnGasket(world: Cannon.World, x: Double, y: Double, poleH: Double) {
+        val p: dynamic = js("({})")
+        p.color = "#0a0a0a"
+        p.metalness = 0.0
+        p.roughness = 0.95
+        p.transparent = true
+        p.opacity = 1.0
+        val mat = Three.MeshStandardMaterial(p)
+        val mesh = Three.Mesh(gasketGeo, mat)
+        val opts: dynamic = js("({})")
+        opts.mass = SHARD_MASS
+        opts.position = Cannon.Vec3(x, y, poleH)
+        opts.shape = Cannon.Box(Cannon.Vec3(POLE_R * 1.5, POLE_R * 1.5, POLE_R * 0.5))
+        opts.linearDamping = 0.05
+        opts.angularDamping = 0.3
+        val body = Cannon.Body(opts)
+        body.asDynamic().velocity.set((Util.random() - 0.5) * 3.0, (Util.random() - 0.5) * 3.0, -1.0)
+        body.asDynamic().angularVelocity.set(randSpin() * 0.4, randSpin() * 0.4, randSpin() * 0.4)
+        world.addBody(body)
+        shardsGroup.add(mesh)
+        activeShards.add(Shard(mesh, mat, body, 0.0, SHARD_LIFE_MIN + Util.random() * (SHARD_LIFE_MAX - SHARD_LIFE_MIN)))
     }
 
     private fun spawnShard(holder: dynamic, pos: DoubleArray, scale: Double, color: String, burstH: Double) {
@@ -380,6 +411,7 @@ object Scene3D {
         opts.linearDamping = 0.04
         opts.angularDamping = 0.2
         val body = Cannon.Body(opts)
+        body.asDynamic().quaternion.setFromEuler(shatterRot[0], shatterRot[1], shatterRot[2]) // random per-shatter
         val a = Util.random() * 2.0 * PI
         val r = burstH * (0.1 + Util.random() * 0.25) // gentle outward drift; gravity does the rest
         val up = burstH * (0.05 + Util.random() * 0.3) // a small pop up, then it mostly falls
@@ -486,37 +518,11 @@ object Scene3D {
         p.transparent = true
         p.opacity = SHARD_OPACITY
         p.metalness = 0.0
-        p.roughness = 0.1
+        p.roughness = 0.05
         p.emissive = color
-        p.emissiveIntensity = 0.2
+        p.emissiveIntensity = 0.35 // glassy edge glow so thin shards still catch the eye
         p.side = 2 // DoubleSide
         return Three.MeshStandardMaterial(p)
-    }
-
-    private fun parseVariants(gltf: dynamic): List<List<dynamic>> {
-        val groups = mutableMapOf<String, MutableList<dynamic>>()
-        gltf.scene.traverse({ obj: dynamic ->
-            if (obj.geometry != null) {
-                val name = obj.name as String
-                val cut = name.indexOf("_chunk")
-                val key = if (cut > 0) name.substring(0, cut) else name
-                groups.getOrPut(key) { mutableListOf() }.add(makeShard(obj))
-            }
-        })
-        return groups.values.map { it.toList() }
-    }
-
-    private fun makeShard(mesh: dynamic): dynamic {
-        val geo = mesh.geometry
-        geo.rotateX(PI / 2) // bake model Y-up → scene Z-up so the rigid-body quaternion drives the mesh
-        geo.computeBoundingBox()
-        val bb = geo.boundingBox
-        val holder: dynamic = js("({})")
-        holder.geo = geo
-        holder.hx = ((bb.max.x as Double) - (bb.min.x as Double)) / 2.0 // half-extents for the box collider
-        holder.hy = ((bb.max.y as Double) - (bb.min.y as Double)) / 2.0
-        holder.hz = ((bb.max.z as Double) - (bb.min.z as Double)) / 2.0
-        return holder
     }
 
     /** Place (or clear, when pos is null) the build-preview marker on the ground. */
@@ -614,30 +620,35 @@ object Scene3D {
         obj.userData = data
     }
 
-    /** Glass orb scale by portal level (1..8): a small flask at L1 growing to a big one at L8. */
-    private fun flaskLevelScale(level: Int) = 0.5 + (level.coerceIn(1, 8) - 1) / 7.0 * 0.8
+    private fun orbScale(level: Int) = 0.5 + (level.coerceIn(1, 8) - 1) / 7.0 * 0.8 // orb radius: L1 small → L8 big
+    private fun poleScale(level: Int) = PHI.pow((level.coerceIn(1, 8) - 1) / 7.0) // pole height: 1 → φ across levels
+    private fun poleHeight(level: Int) = POLE_H * poleScale(level)
+    private fun orbCenterZ(level: Int) = poleHeight(level) + TOP_R * orbScale(level) // orb rests on the pole top
 
     private fun addPortal(portal: Portal) {
         val id = "portal:${portal.id}"
         val baseColor = portal.owner?.faction?.color ?: NEUTRAL_COLOR
         val color = if (selected == id) HIGHLIGHT_COLOR else baseColor
-        val s = flaskLevelScale(portal.getLevel().toInt())
-        buildPortal(portalsGroup, sceneX(portal.location), sceneY(portal.location), s, color, id)
+        buildPortal(portalsGroup, sceneX(portal.location), sceneY(portal.location), portal.getLevel().toInt(), color, id)
     }
 
     /**
-     * A portal: a metallic pole, a small black rubber gasket so the metal doesn't touch the glass,
-     * and a round glass orb on top (scaled by [scale] = level). [id] tags it for picking (null = demo).
+     * A portal: a metallic pole (taller with [level]), a black rubber gasket so the metal doesn't
+     * touch the glass, and a round glass orb on top (bigger with [level]). [id] tags it for picking
+     * (null = demo). Returns [orb, gasket] so the demo can drop them when the portal shatters.
      */
-    private fun buildPortal(parent: dynamic, x: Double, y: Double, scale: Double, color: String, id: String?) {
-        val pole = Three.Mesh(poleGeo, metalMaterial(color))
+    private fun buildPortal(parent: dynamic, x: Double, y: Double, level: Int, color: String, id: String?): Array<dynamic> {
+        val poleH = poleHeight(level)
+        val s = orbScale(level)
+        val pole = Three.Mesh(poleGeo, Materials.metal(color))
         pole.asDynamic().rotation.x = PI / 2 // Y-axis cylinder → vertical (Z up)
-        place(pole.asDynamic(), x, y, POLE_H / 2)
-        val gasket = Three.Mesh(gasketGeo, rubberMaterial()) // torus in XY → flat ring around the pole top
-        place(gasket.asDynamic(), x, y, POLE_H)
-        val orb = Three.Mesh(topGeo, portalGlass(color))
-        place(orb.asDynamic(), x, y, POLE_H + TOP_R * scale) // rests on the pole top (orb bottom = POLE_H)
-        orb.asDynamic().scale.set(scale, scale, scale)
+        pole.asDynamic().scale.set(1.0, poleScale(level), 1.0) // grow height (local Y) only
+        place(pole.asDynamic(), x, y, poleH / 2)
+        val gasket = Three.Mesh(gasketGeo, Materials.rubber()) // torus in XY → flat ring around the pole top
+        place(gasket.asDynamic(), x, y, poleH)
+        val orb = Three.Mesh(topGeo, Materials.glass(color))
+        place(orb.asDynamic(), x, y, orbCenterZ(level))
+        orb.asDynamic().scale.set(s, s, s)
         id?.let {
             tag(pole.asDynamic(), it)
             tag(gasket.asDynamic(), it)
@@ -646,6 +657,7 @@ object Scene3D {
         parent.add(pole)
         parent.add(gasket)
         parent.add(orb)
+        return arrayOf(orb, gasket)
     }
 
     /** Demo only (#demo/portal): show a single portal at [level] in a sync-immune group. */
@@ -653,9 +665,24 @@ object Scene3D {
         val grp = showcaseGroup ?: return
         if (showcaseMesh != null) grp.remove(showcaseMesh)
         val group = Three.Group()
-        buildPortal(group, sceneX(location), sceneY(location), flaskLevelScale(level), color, null)
+        val parts = buildPortal(group, sceneX(location), sceneY(location), level, color, null)
         grp.add(group)
         showcaseMesh = group
+        showcaseOrb = parts[0]
+        showcaseGasket = parts[1]
+        showcaseLevel = level
+    }
+
+    /** Demo only: shatter the preview portal — its orb vanishes, the gasket drops, the pole stays. */
+    fun shatterShowcase(location: Pos, color: String) {
+        val g = showcaseMesh
+        if (g != null) {
+            if (showcaseOrb != null) g.remove(showcaseOrb)
+            if (showcaseGasket != null) g.remove(showcaseGasket)
+        }
+        showcaseOrb = null
+        showcaseGasket = null
+        shatterPortal(location, color, showcaseLevel)
     }
 
     private fun addAgent(agent: Agent) {
@@ -663,7 +690,7 @@ object Scene3D {
         val y = sceneY(agent.pos)
         val id = "agent:${agent.name}"
         val color = if (selected == id) HIGHLIGHT_COLOR else agent.faction.color
-        val sphere = Three.Mesh(headGeo, solidMaterial(color))
+        val sphere = Three.Mesh(headGeo, Materials.solid(color))
         place(sphere.asDynamic(), x, y, HEAD_Z)
         tag(sphere.asDynamic(), id)
         agentsGroup.add(sphere)
@@ -675,7 +702,7 @@ object Scene3D {
     }
 
     private fun addNpc(npc: NonFaction) {
-        val sphere = Three.Mesh(headGeo, solidMaterial(NEUTRAL_COLOR))
+        val sphere = Three.Mesh(headGeo, Materials.solid(NEUTRAL_COLOR))
         place(sphere.asDynamic(), sceneX(npc.pos), sceneY(npc.pos), HEAD_Z)
         npcsGroup.add(sphere)
     }
@@ -697,32 +724,6 @@ object Scene3D {
         )
         val geo = Three.BufferGeometry().setFromPoints(points)
         fieldsGroup.add(Three.Mesh(geo, fieldMaterial(field.owner.faction.color)))
-    }
-
-    private fun solidMaterial(color: String): dynamic = materialCache.getOrPut("s$color") {
-        val p: dynamic = js("({})")
-        p.color = color
-        Three.MeshStandardMaterial(p)
-    }
-
-    // Brushed metal pole (faction-tinted), the glass orb (cached qlippostasis-style shader),
-    // and a matte black rubber gasket between them so metal never touches glass.
-    private fun metalMaterial(color: String): dynamic = materialCache.getOrPut("m$color") {
-        val p: dynamic = js("({})")
-        p.color = color
-        p.metalness = 0.9
-        p.roughness = 0.35
-        Three.MeshStandardMaterial(p)
-    }
-
-    private fun portalGlass(color: String): dynamic = materialCache.getOrPut("pg$color") { GlassShader.material(color) }
-
-    private fun rubberMaterial(): dynamic = materialCache.getOrPut("rubber") {
-        val p: dynamic = js("({})")
-        p.color = "#0a0a0a"
-        p.metalness = 0.0
-        p.roughness = 0.95
-        Three.MeshStandardMaterial(p)
     }
 
     private fun lineMaterial(color: String): dynamic = materialCache.getOrPut("l$color") {
