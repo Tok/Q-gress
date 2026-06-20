@@ -554,6 +554,7 @@ object HtmlUtil {
             World.isReady = true
             applySelectedLayer()
             Navigation.setup()
+            MapUtil.enable3D()
         }
     }
 

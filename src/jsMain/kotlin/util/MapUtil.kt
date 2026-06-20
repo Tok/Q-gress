@@ -13,6 +13,7 @@ import org.khronos.webgl.Uint8Array
 import org.khronos.webgl.get
 import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.ImageData
+import system.display.Scene3D
 import util.data.Cell
 import util.data.Pos
 import kotlin.js.Json
@@ -142,6 +143,13 @@ object MapUtil {
         val opts: dynamic = js("({animate: false})")
         initMap?.let { it.zoomTo(it.getZoom() + delta, opts) }
         map?.let { it.zoomTo(it.getZoom() + delta, opts) }
+    }
+
+    /** Register the 3D scene (three.js custom layer) on the base map, anchored at the grid view. */
+    fun enable3D() {
+        val targetMap = initMap ?: return
+        val center = anchorCenter ?: return
+        Scene3D.register(targetMap, center.lng as Double, center.lat as Double, anchorZoom)
     }
 
     fun loadMaps(center: Json, callback: (Grid) -> Unit) {

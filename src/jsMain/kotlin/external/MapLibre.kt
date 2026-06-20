@@ -31,6 +31,8 @@ external object MapLibre {
         fun isMoving(): Boolean
         fun loaded(): Boolean
         fun addLayer(config: dynamic)
+        fun getCanvas(): dynamic
+        fun triggerRepaint()
         fun addControl(control: dynamic)
         fun on(type: String, listener: () -> Unit)
         fun once(type: String, listener: () -> Unit)

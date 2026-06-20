@@ -9,6 +9,9 @@
     <!-- MapLibre GL JS (open-source fork of Mapbox GL; no access token required) -->
     <script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
     <link href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css" rel="stylesheet"/>
+    <!-- three.js (UMD global THREE) for the 3D scene rendered as a MapLibre custom layer.
+         TODO: migrate to the npm/ESM build (0.160 is the last with a UMD bundle). -->
+    <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
 </head>
 <body>
 <div id="root" style="font-family:'AmarilloUSAF';font-weight:normal;font-size:21px;height:100%"></div>
