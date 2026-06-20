@@ -55,9 +55,16 @@ external object Three {
     class Line(geometry: dynamic, material: dynamic)
 
     val NearestFilter: Int
+    val AdditiveBlending: Int
 
     class BoxGeometry(width: dynamic, height: dynamic, depth: dynamic)
     class PlaneGeometry(width: dynamic, height: dynamic)
+    class TorusGeometry(
+        radius: dynamic,
+        tube: dynamic,
+        radialSegments: dynamic = definedExternally,
+        tubularSegments: dynamic = definedExternally,
+    )
     class RingGeometry(
         innerRadius: dynamic,
         outerRadius: dynamic,
@@ -85,6 +92,7 @@ external object Three {
 
     class MeshBasicMaterial(params: dynamic)
     class MeshStandardMaterial(params: dynamic)
+    class ShaderMaterial(params: dynamic)
     class LineBasicMaterial(params: dynamic)
     class SpriteMaterial(params: dynamic)
     class CanvasTexture(canvas: dynamic)

@@ -5,7 +5,6 @@ import agent.Agent
 import agent.Faction
 import agent.NonFaction
 import agent.action.ActionItem
-import config.Colors
 import config.Sim
 import external.Cannon
 import external.GLTFLoader
@@ -73,9 +72,10 @@ object Scene3D {
     private const val GRAVITY = 9.8 // m/s²
     private const val SHARD_TARGET_PATH = 3.0 // pole-shard target size (metres)
     private const val POLE_SHARD_COUNT = 12
-    private const val XMP_OPACITY = 0.4
-    private const val XMP_LIFE = 0.6 // seconds for the shockwave to expand + fade
-    private const val XMP_RANGE_SCALE = 0.5 // XmpLevel.rangeM → scene-metre radius
+    private const val XMP_RANGE_SCALE = 0.5 // XmpLevel.rangeM → scene-metre blast radius
+    private const val XMP_LIFE_BASE = 0.9 // seconds; total detonation lifetime at level 0
+    private const val XMP_LIFE_PER_LEVEL = 0.06 // bigger bursters linger a little longer
+    private const val RING_Z = 0.28 // ground shockwave quad height (above passability overlay)
 
     // Currently selected entity, as "portal:<id>" / "agent:<name>" (see pick()).
     var selected: String? = null
@@ -121,15 +121,21 @@ object Scene3D {
     /** One in-flight glass fragment: a mesh driven by its cannon-es rigid [body], fading over [life]. */
     private class Shard(val mesh: dynamic, val mat: dynamic, val body: Cannon.Body, var age: Double, val life: Double)
 
-    /** An expanding XMP shockwave dome: grows to maxR while fading over its life. */
-    private class Burst(val mesh: dynamic, val mat: dynamic, val maxR: Double, var age: Double, val life: Double)
+    /**
+     * A synthwave micro-nuke detonation. [meshes] = (rolling fireball cap torus, hot core sphere,
+     * ground shockwave ring); all three ShaderMaterials share [uni] (uTime/uProgress/uSeed).
+     * [geom] = (sceneX, sceneY, blast-radius m, life s). Animated by [age] in updateBursts.
+     */
+    private class Burst(val meshes: Array<dynamic>, val uni: dynamic, val geom: DoubleArray, var age: Double)
 
     // Shared geometries/materials (created lazily once three.js is loaded).
     private val headGeo: dynamic by lazy { Three.SphereGeometry(HEAD_R, 10, 10) }
     private val poleGeo: dynamic by lazy { Three.CylinderGeometry(POLE_R, POLE_R, POLE_H, 8) }
     private val topGeo: dynamic by lazy { Three.SphereGeometry(TOP_R, 16, 16) }
     private val coneGeo: dynamic by lazy { Three.ConeGeometry(VECTOR_CONE_R, VECTOR_CONE_H, 6) }
-    private val burstGeo: dynamic by lazy { Three.SphereGeometry(1.0, 24, 16) } // unit sphere, scaled per burst
+    private val burstGeo: dynamic by lazy { Three.SphereGeometry(1.0, 24, 16) } // unit sphere → XMP hot core
+    private val torusGeo: dynamic by lazy { Three.TorusGeometry(1.0, 0.42, 16, 48) } // unit donut → rolling fireball
+    private val ringQuadGeo: dynamic by lazy { Three.PlaneGeometry(2.0, 2.0) } // flat quad → ground shockwave
     private val materialCache = mutableMapOf<String, dynamic>()
     private val spriteCache = mutableMapOf<String, dynamic>()
 
@@ -399,21 +405,43 @@ object Scene3D {
 
     private fun randSpin() = (Util.random() - 0.5) * 2.0 * SHARD_SPIN
 
-    /** Play an expanding XMP shockwave dome at a location, sized by the burster level (1..8). */
+    private fun makeShaderMat(vert: String, frag: String, uni: dynamic): dynamic {
+        val p: dynamic = js("({})")
+        p.vertexShader = vert
+        p.fragmentShader = frag
+        p.uniforms = uni
+        p.transparent = true
+        p.depthWrite = false
+        p.depthTest = false // transient additive FX float over the scene; avoids ground z-fighting
+        p.blending = Three.AdditiveBlending
+        p.side = 2 // DoubleSide — additive back faces fill out the volume
+        return Three.ShaderMaterial(p)
+    }
+
+    /**
+     * Fire a synthwave micro-nuke at a location, scaled by burster [level] (1..8): an initial
+     * white flash + a rolling fireball (torus cap), a hot turbulent core, and an expanding neon
+     * ground shockwave ring. All three meshes share one uniforms object animated by updateBursts.
+     */
     fun playXmpBurst(location: Pos, level: Int) {
         scene ?: return
         val rangeM = XmpLevel.values().find { it.level == level }?.rangeM ?: XmpLevel.ONE.rangeM
-        val p: dynamic = js("({})")
-        p.color = Colors.damage
-        p.transparent = true
-        p.opacity = XMP_OPACITY
-        p.side = 2 // DoubleSide
-        p.depthWrite = false
-        val mat = Three.MeshBasicMaterial(p)
-        val mesh = Three.Mesh(burstGeo, mat)
-        mesh.asDynamic().position.set(sceneX(location), sceneY(location), 0.0)
-        burstsGroup.add(mesh)
-        activeBursts.add(Burst(mesh, mat, rangeM * XMP_RANGE_SCALE, 0.0, XMP_LIFE))
+        val maxR = rangeM * XMP_RANGE_SCALE
+        val cx = sceneX(location)
+        val cy = sceneY(location)
+        val uni: dynamic = js("({ uTime: { value: 0.0 }, uProgress: { value: 0.0 }, uSeed: { value: 0.0 } })")
+        uni.uSeed.value = Util.random() * 10.0
+        val cap = Three.Mesh(torusGeo, makeShaderMat(XmpShaders.SURFACE_VERT, XmpShaders.CAP_FRAG, uni))
+        val core = Three.Mesh(burstGeo, makeShaderMat(XmpShaders.SURFACE_VERT, XmpShaders.CORE_FRAG, uni))
+        val ring = Three.Mesh(ringQuadGeo, makeShaderMat(XmpShaders.UV_VERT, XmpShaders.RING_FRAG, uni))
+        cap.asDynamic().position.set(cx, cy, maxR * 0.3)
+        core.asDynamic().position.set(cx, cy, maxR * 0.3)
+        ring.asDynamic().position.set(cx, cy, RING_Z)
+        burstsGroup.add(cap)
+        burstsGroup.add(core)
+        burstsGroup.add(ring)
+        val life = XMP_LIFE_BASE + level * XMP_LIFE_PER_LEVEL
+        activeBursts.add(Burst(arrayOf(cap, core, ring), uni, doubleArrayOf(cx, cy, maxR, life), 0.0))
         SoundUtil.playXmpSound(location, level)
     }
 
@@ -422,16 +450,39 @@ object Scene3D {
         while (iter.hasNext()) {
             val b = iter.next()
             b.age += dt
-            val f = (b.age / b.life).coerceIn(0.0, 1.0)
-            val r = (b.maxR * f).coerceAtLeast(0.01)
-            b.mesh.scale.set(r, r, r)
-            b.mat.opacity = XMP_OPACITY * (1.0 - f)
-            if (b.age >= b.life) {
-                burstsGroup.remove(b.mesh)
-                b.mat.dispose()
+            val cx = b.geom[0]
+            val cy = b.geom[1]
+            val maxR = b.geom[2]
+            val life = b.geom[3]
+            val f = (b.age / life).coerceIn(0.0, 1.0)
+            b.uni.uProgress.value = f
+            b.uni.uTime.value = b.age
+            val ease = 1.0 - (1.0 - f) * (1.0 - f) // easeOutQuad
+            val rise = maxR * (0.15 + 0.9 * f * f) // accelerating mushroom climb
+            val capR = maxR * (0.18 + 0.5 * ease)
+            val capH = rise + capR * 0.45
+            val flat = 1.0 - 0.45 * smoothstep01(0.4, 1.0, f) // cap flattens as it mushrooms
+            val cap = b.meshes[0]
+            val core = b.meshes[1]
+            cap.scale.set(capR, capR, capR * flat)
+            cap.position.set(cx, cy, capH)
+            val coreR = maxR * (0.14 + 0.34 * ease)
+            core.scale.set(coreR, coreR, coreR)
+            core.position.set(cx, cy, capH)
+            b.meshes[2].scale.set(maxR, maxR, 1.0)
+            if (b.age >= life) {
+                for (m in b.meshes) {
+                    burstsGroup.remove(m)
+                    m.material.dispose()
+                }
                 iter.remove()
             }
         }
+    }
+
+    private fun smoothstep01(edge0: Double, edge1: Double, x: Double): Double {
+        val t = ((x - edge0) / (edge1 - edge0)).coerceIn(0.0, 1.0)
+        return t * t * (3.0 - 2.0 * t)
     }
 
     private fun shardMaterial(color: String): dynamic {
