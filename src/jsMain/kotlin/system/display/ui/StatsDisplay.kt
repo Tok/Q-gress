@@ -20,8 +20,14 @@ object StatsDisplay : Display {
         val yOff = Dim.statsTopOffset
         val yStep = fontSize * 3 / 2
         val xStep = 55
-        fun drawRow(pos: Int, header: String, factions: Pair<Faction, Faction>,
-                    first: Int, second: Int, total: Int) {
+        fun drawRow(
+            pos: Int,
+            header: String,
+            factions: Pair<Faction, Faction>,
+            first: Int,
+            second: Int,
+            total: Int,
+        ) {
             drawCell(Pos(pos, yOff), header, Colors.white)
             drawCell(Pos(pos, yOff + yStep), first.toString(), factions.first.color)
             drawCell(Pos(pos, yOff + yStep * 2), second.toString(), factions.second.color)

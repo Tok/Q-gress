@@ -45,13 +45,11 @@ object MovementUtil {
 
     fun attackMostLinkedPortal(a: Agent) = goAttack(a, findEnemyPortals(a).sortedBy { it.links.size }.firstOrNull())
     fun attackMostVulnerablePortal(a: Agent) = goAttack(a, findEnemyPortals(a).sortedBy { -it.calcHealth() }.firstOrNull())
-    private fun goAttack(agent: Agent, target: Portal?): Agent {
-        return if (target != null) {
-            goToDestinationPortal(agent, target)
-        } else {
-            agent.action.end()
-            agent
-        }
+    private fun goAttack(agent: Agent, target: Portal?): Agent = if (target != null) {
+        goToDestinationPortal(agent, target)
+    } else {
+        agent.action.end()
+        agent
     }
     /* End Enemy Portals */
 
@@ -61,9 +59,7 @@ object MovementUtil {
         return goToDestinationPortal(agent, target)
     }
 
-    fun moveToRandomPortal(agent: Agent): Agent {
-        return goToDestinationPortal(agent, World.randomPortal())
-    }
+    fun moveToRandomPortal(agent: Agent): Agent = goToDestinationPortal(agent, World.randomPortal())
     /* End All Portals */
 
     private fun goToDestinationPortal(agent: Agent, destination: Portal): Agent {
@@ -74,7 +70,7 @@ object MovementUtil {
     }
 
     fun move(velocity: Complex, force: Complex, limit: Double): Complex {
-        //if (isDrunk && Util.randomBool()) { return Complex.random() } //TODO
+        // if (isDrunk && Util.randomBool()) { return Complex.random() } //TODO
         val actualForce = if (force != Complex.ZERO) force else Complex.random()
         val newVelo = velocity + actualForce
         return if (newVelo.mag <= limit) {

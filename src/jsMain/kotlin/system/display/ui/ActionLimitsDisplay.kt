@@ -4,8 +4,8 @@ import World
 import config.Dim
 import system.display.Display
 import util.HtmlUtil
-import util.data.Pos
 import util.data.Line
+import util.data.Pos
 
 object ActionLimitsDisplay : Display {
     private fun topArea() = Line.create(0, 0, Dim.width, HtmlUtil.topActionOffset())

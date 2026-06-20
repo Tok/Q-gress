@@ -20,7 +20,7 @@ object Styles {
     fun isColorVectors() = !HtmlUtil.isShowSatelliteMap()
     val isDrawObstructedVectors = false
 
-    //settings with impact on performance
+    // settings with impact on performance
     val isDrawResoLineGradient = true
     val isFillMuDisplay = true
 }

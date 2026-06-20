@@ -13,8 +13,8 @@ import util.ColorUtil
 import util.DrawUtil
 import util.HtmlUtil
 import util.data.Complex
-import util.data.Pos
 import util.data.Line
+import util.data.Pos
 
 object VectorFields {
     fun draw(portal: Portal) {
@@ -66,7 +66,7 @@ object VectorFields {
         val style = Styles.vectorStyle()
         val isColor = Styles.isColorVectors()
         val center = Pos.res / 2
-        val vecMag = center.toDouble() //* complex.magnitude
+        val vecMag = center.toDouble() // * complex.magnitude
         val scaled = Complex.fromMagnitudeAndPhase(vecMag, complex.phase)
         val line = createLine(center, scaled)
         val maybeImage = findVec(line, style, isColor)
@@ -94,8 +94,12 @@ object VectorFields {
     }
 
     private fun createVectorImage(
-        w: Int, h: Int, complex: Complex, line: Line,
-        style: VectorStyle, isColor: Boolean
+        w: Int,
+        h: Int,
+        complex: Complex,
+        line: Line,
+        style: VectorStyle,
+        isColor: Boolean,
     ): Canvas {
         val brightness = 1.0 - Constants.phi
         val stroke =

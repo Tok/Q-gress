@@ -12,7 +12,7 @@ object Recycler : ConditionalAction {
     override fun performAction(agent: Agent): Agent {
         agent.action.start(actionItem)
 
-        //TODO improve
+        // TODO improve
         val cubes: List<PowerCube> = agent.inventory.findPowerCubes()
         if (cubes.isNotEmpty()) {
             val cube: PowerCube = cubes.first()

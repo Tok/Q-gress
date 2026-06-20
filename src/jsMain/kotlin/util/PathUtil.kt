@@ -13,24 +13,22 @@ object PathUtil {
     const val MIN_HEAT = 35
     const val MAX_HEAT = 100
 
-    private fun calcPosCost(pos: Pos, heat: Int) =
-        heat + (World.grid[pos]?.movementPenalty ?: MAX_HEAT)
+    private fun calcPosCost(pos: Pos, heat: Int) = heat + (World.grid[pos]?.movementPenalty ?: MAX_HEAT)
 
-    private fun posToCost(positions: Set<Pos>, heat: Int) =
-        positions.map { pos -> pos to calcPosCost(pos, heat) }.toMap()
+    private fun posToCost(positions: Set<Pos>, heat: Int) = positions.map { pos -> pos to calcPosCost(pos, heat) }.toMap()
 
-    private fun mergeMaps(maps: Set<GridMap>) =
-        maps.flatMap { m -> m.map { it.key to it.value } }.toMap()
+    private fun mergeMaps(maps: Set<GridMap>) = maps.flatMap { m -> m.map { it.key to it.value } }.toMap()
 
-    private fun findSuccessors(currentMap: GridMap, passable: Grid, sameHeat: Set<Pos>, heat: Int) =
-        sameHeat.map { pos ->
-            val successors = findUnmarkedSurrounding(pos, passable, currentMap)
-            posToCost(successors, heat) to successors.isNotEmpty()
-        }.toMap()
+    private fun findSuccessors(currentMap: GridMap, passable: Grid, sameHeat: Set<Pos>, heat: Int) = sameHeat.map { pos ->
+        val successors = findUnmarkedSurrounding(pos, passable, currentMap)
+        posToCost(successors, heat) to successors.isNotEmpty()
+    }.toMap()
 
     private fun calcFront(
-        currentMap: GridMap, passable: Grid,
-        sameHeat: Set<Pos>, heat: Int
+        currentMap: GridMap,
+        passable: Grid,
+        sameHeat: Set<Pos>,
+        heat: Int,
     ): Pair<GridMap, Boolean> {
         val result = findSuccessors(currentMap, passable, sameHeat, heat)
         val front = mergeMaps(result.keys)
@@ -85,18 +83,17 @@ object PathUtil {
         val maxHeat = heatMap.values.max()!!
         val fields = World.grid.map {
             val raw = createVec(heatMap, maxHeat, destination, it.key)
-            val vec = raw.copyWithNewMagnitude(1.0) //FIXME use terrain penalty
+            val vec = raw.copyWithNewMagnitude(1.0) // FIXME use terrain penalty
             it.key to vec
         }.toMap()
         return smooth(fields, Config.vectorSmoothCount).toMap()
     }
 
-    private fun smooth(vectors: VectorField, count: Int): VectorField =
-        if (count > 0) {
-            smooth(smoothVectorMap(vectors), count - 1)
-        } else {
-            vectors
-        }
+    private fun smooth(vectors: VectorField, count: Int): VectorField = if (count > 0) {
+        smooth(smoothVectorMap(vectors), count - 1)
+    } else {
+        vectors
+    }
 
     private fun smoothVectorMap(vectors: VectorField): VectorField {
         val n = 1
@@ -111,26 +108,23 @@ object PathUtil {
             }.fold(Complex.ZERO) { acc, complex -> acc.plus(complex) }
             val magnitude = sum.magnitude / (xRange.count() * yRange.count())
             val phase = sum.phase
-            it.key to Complex.fromMagnitudeAndPhase(magnitude, phase) //FIXME use terrain penalty
+            it.key to Complex.fromMagnitudeAndPhase(magnitude, phase) // FIXME use terrain penalty
         }.toMap()
     }
 
-    private fun findUnmarkedSurrounding(node: Pos, passable: Grid, heatMap: GridMap): Set<Pos> =
-        findAllSurrounding(node)
-            .filterNot { heatMap.containsKey(it) }
-            .filter { passable.containsKey(it) }
-            .toSet()
+    private fun findUnmarkedSurrounding(node: Pos, passable: Grid, heatMap: GridMap): Set<Pos> = findAllSurrounding(node)
+        .filterNot { heatMap.containsKey(it) }
+        .filter { passable.containsKey(it) }
+        .toSet()
 
-    private fun findAllSurrounding(node: Pos): List<Pos> {
-        return listOfNotNull(
-            Pos(node.x - 1, node.y - 1),
-            Pos(node.x - 1, node.y),
-            Pos(node.x - 1, node.y + 1),
-            Pos(node.x, node.y - 1),
-            Pos(node.x, node.y + 1),
-            Pos(node.x + 1, node.y - 1),
-            Pos(node.x + 1, node.y),
-            Pos(node.x + 1, node.y + 1)
-        )
-    }
+    private fun findAllSurrounding(node: Pos): List<Pos> = listOfNotNull(
+        Pos(node.x - 1, node.y - 1),
+        Pos(node.x - 1, node.y),
+        Pos(node.x - 1, node.y + 1),
+        Pos(node.x, node.y - 1),
+        Pos(node.x, node.y + 1),
+        Pos(node.x + 1, node.y - 1),
+        Pos(node.x + 1, node.y),
+        Pos(node.x + 1, node.y + 1),
+    )
 }

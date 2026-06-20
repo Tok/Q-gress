@@ -11,12 +11,12 @@ import external.sound.GainNode
 import external.sound.OscillatorNode
 import external.sound.StereoPannerNode
 import items.level.XmpLevel
+import kotlinx.browser.document
 import org.w3c.dom.HTMLInputElement
 import portal.Field
 import portal.Link
 import system.Checkpoint
 import util.data.Pos
-import kotlinx.browser.document
 
 object SoundUtil {
     private val audioCtx = AudioContext()
@@ -26,7 +26,7 @@ object SoundUtil {
         return !soundCheckbox.checked
     }
 
-    private fun volume() = if (isMuted()) 0.0 else 0.4 //TODO create volume slider
+    private fun volume() = if (isMuted()) 0.0 else 0.4 // TODO create volume slider
 
     fun playNoiseGenSound() {
         if (!Config.isPlayInitialSound || isMuted()) return

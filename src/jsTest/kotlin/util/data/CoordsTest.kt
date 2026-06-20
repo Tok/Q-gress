@@ -15,8 +15,7 @@ class CoordsTest {
     }
 
     @Test
-    fun countSurroundingAtCenter() =
-        assertEquals(8, Pos(1, 1).surrounding(3, 3).size)
+    fun countSurroundingAtCenter() = assertEquals(8, Pos(1, 1).surrounding(3, 3).size)
 
     @Test
     fun countSurroundingAtBorder() {

@@ -12,7 +12,8 @@ enum class UltraStrikeLevel(val level: Int, val damage: Int, val rangeM: Int, va
     FIVE(5, 1200, 21, 250),
     SIX(6, 1500, 24, 360),
     SEVEN(7, 1800, 27, 490),
-    EIGHT(8, 2700, 30, 640);
+    EIGHT(8, 2700, 30, 640),
+    ;
 
     fun calculateRecycleXm(): Int = level * 20
     fun critRate(): Double = 0.05

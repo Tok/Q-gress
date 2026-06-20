@@ -6,12 +6,12 @@ import items.PowerCube
 import items.XmpBurster
 import items.deployable.Resonator
 import portal.Link
+import portal.Octant
 import portal.Portal
 import portal.PortalKey
 import portal.ResonatorSlot
 import util.data.Cell
 import util.data.Pos
-import portal.Octant
 
 object Factory {
     fun coords() = Pos(0, 0)

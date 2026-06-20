@@ -8,9 +8,15 @@ import util.data.Pos
 import kotlin.math.max
 import kotlin.math.min
 
-data class Resonator(val owner: Agent, val level: ResonatorLevel, var energy: Int,
-                     var portal: Portal? = null, var octant: Octant? = null, var position: Pos? = null) : DeployableItem {
-    //TODO move location and octant to ResonatorSlot
+data class Resonator(
+    val owner: Agent,
+    val level: ResonatorLevel,
+    var energy: Int,
+    var portal: Portal? = null,
+    var octant: Octant? = null,
+    var position: Pos? = null,
+) : DeployableItem {
+    // TODO move location and octant to ResonatorSlot
     fun calcHealthPercent() = energy * 100 / level.energy
 
     fun isAtCriticalLevel() = calcHealthPercent() < 20

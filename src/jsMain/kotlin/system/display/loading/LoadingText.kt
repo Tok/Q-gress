@@ -22,7 +22,7 @@ object LoadingText : Loading() {
             h,
             DrawUtil.AMARILLO,
             lineWidth,
-            Colors.black
+            Colors.black,
         )
     }
 }

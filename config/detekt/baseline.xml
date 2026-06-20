@@ -1,0 +1,109 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>CyclomaticComplexMethod:ActionItem.kt$ActionItem.Companion$private fun drawTemplate(item: ActionItem, faction: Faction? = null): Canvas?</ID>
+    <ID>CyclomaticComplexMethod:Agent.kt$Agent.Companion$private fun getLevel(actionPoints: Int): Int</ID>
+    <ID>CyclomaticComplexMethod:Agent.kt$Agent.Companion$private fun xmCapacity(level: Int): Int</ID>
+    <ID>CyclomaticComplexMethod:Cell.kt$Cell$fun isPassableInAllDirections(): Boolean</ID>
+    <ID>ExplicitItLambdaParameter:Portal.kt$Portal${ it -&gt; destroyer?.addAp(Field.destroyAp) it.origin.fields.remove(it) }</ID>
+    <ID>ForEachOnRange:HtmlUtil.kt$HtmlUtil$0 until dropdown.options.length</ID>
+    <ID>ForEachOnRange:HtmlUtil.kt$HtmlUtil$1..Config.startFrogs()</ID>
+    <ID>ForEachOnRange:HtmlUtil.kt$HtmlUtil$1..Config.startSmurfs()</ID>
+    <ID>ForEachOnRange:MapUtil.kt$MapUtil$0..Config.shadowBlurCount</ID>
+    <ID>ForEachOnRange:SoundUtil.kt$SoundUtil$0..max</ID>
+    <ID>ForEachOnRange:StatsDisplay.kt$StatsDisplay$1..4</ID>
+    <ID>ForEachOnRange:TopAgentsDisplay.kt$TopAgentsDisplay$1..4</ID>
+    <ID>ForEachOnRange:TopAgentsDisplay.kt$TopAgentsDisplay$1..8</ID>
+    <ID>ForEachOnRange:VectorBar.kt$VectorBar$0 until of</ID>
+    <ID>ForEachOnRange:XmHeap.kt$XmHeap.Companion$1..coreCount</ID>
+    <ID>FunctionOnlyReturningConstant:UltraStrikeLevel.kt$UltraStrikeLevel$fun critRate(): Double</ID>
+    <ID>InvalidPackageDeclaration:TickDisplay.kt$package system.display</ID>
+    <ID>LongParameterList:DrawUtil.kt$DrawUtil$( ctx: Ctx, pos: Pos, text: String, fill: String, fontSize: Int, fontName: String = CODA, lineWidth: Double = 0.0, stroke: String = Colors.black, textAlign: CanvasTextAlign = CanvasTextAlign.START, )</ID>
+    <ID>MayBeConst:Checkpoint.kt$Checkpoint.Companion$val durationH = 5</ID>
+    <ID>MayBeConst:Cycle.kt$Cycle.Companion$val ww = 8</ID>
+    <ID>MayBeConst:Dim.kt$Dim$val agentDeployCircleLineWidth = 1.0</ID>
+    <ID>MayBeConst:Dim.kt$Dim$val agentLineWidth = 2</ID>
+    <ID>MayBeConst:Dim.kt$Dim$val agentRadius = 3</ID>
+    <ID>MayBeConst:Dim.kt$Dim$val botActionOffset = 160.0</ID>
+    <ID>MayBeConst:Dim.kt$Dim$val comBottomOffset = 34</ID>
+    <ID>MayBeConst:Dim.kt$Dim$val comFontSize = 11</ID>
+    <ID>MayBeConst:Dim.kt$Dim$val comRightOffset = 340</ID>
+    <ID>MayBeConst:Dim.kt$Dim$val cycleH = 86</ID>
+    <ID>MayBeConst:Dim.kt$Dim$val cycleRightOffset = 510</ID>
+    <ID>MayBeConst:Dim.kt$Dim$val cycleTopOffset = 3</ID>
+    <ID>MayBeConst:Dim.kt$Dim$val height = 800</ID>
+    <ID>MayBeConst:Dim.kt$Dim$val linkLineWidth = 3.0</ID>
+    <ID>MayBeConst:Dim.kt$Dim$val maxDeploymentRange = 34.0</ID>
+    <ID>MayBeConst:Dim.kt$Dim$val minDeploymentRange = 13.0</ID>
+    <ID>MayBeConst:Dim.kt$Dim$val muBottomOffset = 89</ID>
+    <ID>MayBeConst:Dim.kt$Dim$val muFontSize = 21</ID>
+    <ID>MayBeConst:Dim.kt$Dim$val muLeftOffset = 13</ID>
+    <ID>MayBeConst:Dim.kt$Dim$val npcXmSpawnRadius = 10</ID>
+    <ID>MayBeConst:Dim.kt$Dim$val pixelToMFactor = 0.5</ID>
+    <ID>MayBeConst:Dim.kt$Dim$val portalLineWidth = 2</ID>
+    <ID>MayBeConst:Dim.kt$Dim$val portalNameFontSize = 12</ID>
+    <ID>MayBeConst:Dim.kt$Dim$val portalRadius = 8.0</ID>
+    <ID>MayBeConst:Dim.kt$Dim$val portalXmSpawnRadius = 40</ID>
+    <ID>MayBeConst:Dim.kt$Dim$val resoRadius = 2.0</ID>
+    <ID>MayBeConst:Dim.kt$Dim$val statsRightOffset = 170</ID>
+    <ID>MayBeConst:Dim.kt$Dim$val statsTopOffset = 13</ID>
+    <ID>MayBeConst:Dim.kt$Dim$val tickBottomOffset = 55</ID>
+    <ID>MayBeConst:Dim.kt$Dim$val tickFontSize = 12</ID>
+    <ID>MayBeConst:Dim.kt$Dim$val topAgentsBottomOffset = 0</ID>
+    <ID>MayBeConst:Dim.kt$Dim$val topAgentsFontSize = 11</ID>
+    <ID>MayBeConst:Dim.kt$Dim$val topAgentsInventoryFontSize = 11</ID>
+    <ID>MayBeConst:Dim.kt$Dim$val topAgentsLeftOffset = 210</ID>
+    <ID>MayBeConst:Dim.kt$Dim$val width = 1200 // Compare to dimensions defined in CSS</ID>
+    <ID>MayBeConst:NonFaction.kt$NonFaction.Companion$val changeToBeRecruited = 0.05</ID>
+    <ID>MayBeConst:OscillatorType.kt$OscillatorType$val CUSTOM = "custom"</ID>
+    <ID>MayBeConst:OscillatorType.kt$OscillatorType$val SAW = "sawtooth"</ID>
+    <ID>MayBeConst:OscillatorType.kt$OscillatorType$val SINE = "sine"</ID>
+    <ID>MayBeConst:OscillatorType.kt$OscillatorType$val SQUARE = "square"</ID>
+    <ID>MayBeConst:OscillatorType.kt$OscillatorType$val TRIANGLE = "triangle"</ID>
+    <ID>MayBeConst:Probabilities.kt$Probabilities$val glyphChance = 0.50</ID>
+    <ID>MayBeConst:Probabilities.kt$Probabilities$val hackChance = 0.75</ID>
+    <ID>MayBeConst:Probabilities.kt$Probabilities$val keyChance = 0.8</ID>
+    <ID>MayBeConst:Probabilities.kt$Probabilities$val unclaimedGlyphChance = 0.60</ID>
+    <ID>MayBeConst:Probabilities.kt$Probabilities$val unclaimedHackChance = 0.85</ID>
+    <ID>MayBeConst:Styles.kt$Styles$// settings with impact on performance val isDrawResoLineGradient = true</ID>
+    <ID>MayBeConst:Styles.kt$Styles$val fieldTransparency = 0.4</ID>
+    <ID>MayBeConst:Styles.kt$Styles$val isDrawAgentRange = false</ID>
+    <ID>MayBeConst:Styles.kt$Styles$val isDrawCom = true</ID>
+    <ID>MayBeConst:Styles.kt$Styles$val isDrawDestination = false</ID>
+    <ID>MayBeConst:Styles.kt$Styles$val isDrawNoiseMap = false</ID>
+    <ID>MayBeConst:Styles.kt$Styles$val isDrawObstructedVectors = false</ID>
+    <ID>MayBeConst:Styles.kt$Styles$val isDrawPortalNames = true</ID>
+    <ID>MayBeConst:Styles.kt$Styles$val isDrawResoLevels = false</ID>
+    <ID>MayBeConst:Styles.kt$Styles$val isDrawTopAgents = true</ID>
+    <ID>MayBeConst:Styles.kt$Styles$val isFillMuDisplay = true</ID>
+    <ID>MayBeConst:Styles.kt$Styles$val use3DBuildings = true</ID>
+    <ID>NestedBlockDepth:DeployerTest.kt$DeployerTest$@Test fun resoLevelDeployment()</ID>
+    <ID>SwallowedException:DeployerTest.kt$DeployerTest$e: IllegalStateException</ID>
+    <ID>UnusedParameter:AudioParam.kt$AudioParam$cancelTime: Double</ID>
+    <ID>UnusedParameter:AudioParam.kt$AudioParam$endTime: Double</ID>
+    <ID>UnusedParameter:AudioParam.kt$AudioParam$startTime: Double</ID>
+    <ID>UnusedParameter:AudioParam.kt$AudioParam$timeConstant: Double</ID>
+    <ID>UnusedParameter:AudioParam.kt$AudioParam$value: Double</ID>
+    <ID>UnusedPrivateMember:Agent.kt$Agent$private fun isXmBarEmpty()</ID>
+    <ID>UnusedPrivateMember:Agent.kt$Agent.Companion$private fun getLinkingRange(level: Int): Int</ID>
+    <ID>UnusedPrivateMember:Inventory.kt$Inventory$private fun powerCubeCount(): Int</ID>
+    <ID>UnusedPrivateMember:Inventory.kt$Inventory$private fun resoCount(): Int</ID>
+    <ID>UnusedPrivateMember:Inventory.kt$Inventory$private fun shieldCount(): Int</ID>
+    <ID>UnusedPrivateMember:Inventory.kt$Inventory$private fun weaponCount(): Int</ID>
+    <ID>UnusedPrivateMember:NonFaction.kt$NonFaction$private fun distanceToPortal(portal: Portal): Double</ID>
+    <ID>UnusedPrivateMember:Portal.kt$Portal$private fun calcTotalXm(): Int</ID>
+    <ID>UnusedPrivateMember:Portal.kt$Portal$private fun calculateLinkMitigation(): Int</ID>
+    <ID>UnusedPrivateMember:Pos.kt$Pos.Companion$private fun createRandom(): Pos</ID>
+    <ID>UnusedPrivateProperty:NonFaction.kt$NonFaction$private val isDrunk = Util.random() &lt;= 0.02 // TODO</ID>
+    <ID>UnusedPrivateProperty:Pos.kt$Pos.Companion$private val xMax = Dim.maxDeploymentRange.toInt() * 2</ID>
+    <ID>UnusedPrivateProperty:StereoPannerNode.kt$StereoPannerNode$context: AudioContext</ID>
+    <ID>UnusedPrivateProperty:StereoPannerNode.kt$StereoPannerNode$options: AudioNodeOptions</ID>
+    <ID>UseCheckOrError:Inventory.kt$Inventory$throw IllegalStateException("Key should exist.")</ID>
+    <ID>UseCheckOrError:NonFaction.kt$NonFaction$throw IllegalStateException("Unable to find nearest to $pos")</ID>
+    <ID>UseCheckOrError:NonFaction.kt$NonFaction.Companion$throw IllegalStateException("Unable to find nearest to $pos")</ID>
+    <ID>UseRequire:Complex.kt$Complex$throw IllegalArgumentException("Imaginary part is 0.")</ID>
+    <ID>UseRequire:Complex.kt$Complex$throw IllegalArgumentException("Real part is 0.")</ID>
+    <ID>VariableNaming:XmHeap.kt$XmHeap$private val IMAGE = drawHeapTemplate()</ID>
+  </CurrentIssues>
+</SmellBaseline>

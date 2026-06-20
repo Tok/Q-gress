@@ -11,8 +11,8 @@ import items.types.ShieldType
 import org.w3c.dom.RIGHT
 import org.w3c.dom.START
 import util.DrawUtil
-import util.data.Pos
 import util.data.Line
+import util.data.Pos
 
 object TopAgentsDisplay : UiTable() {
     fun draw() {
@@ -41,7 +41,7 @@ object TopAgentsDisplay : UiTable() {
                     DrawUtil.CODA,
                     lineWidth,
                     Colors.black,
-                    org.w3c.dom.CanvasTextAlign.RIGHT
+                    org.w3c.dom.CanvasTextAlign.RIGHT,
                 )
             } else {
                 DrawUtil.strokeText(
@@ -53,7 +53,7 @@ object TopAgentsDisplay : UiTable() {
                     DrawUtil.CODA,
                     lineWidth,
                     Colors.black,
-                    org.w3c.dom.CanvasTextAlign.RIGHT
+                    org.w3c.dom.CanvasTextAlign.RIGHT,
                 )
                 val itemsByLevel: Map<Int, List<DeployableItem>> = items.groupBy { it.getLevel() }
                 val countsByLevel: Map<Int, Int> = itemsByLevel.mapValues { it.value.count() }

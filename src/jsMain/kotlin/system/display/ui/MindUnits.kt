@@ -11,9 +11,15 @@ import kotlin.math.round
 
 object MindUnits {
     fun draw(firstMu: Int, secondMu: Int, factions: Pair<Faction, Faction>) {
-        //TODO only redraw if updated.
-        fun fillMuRect(from: Pos, width: Double, height: Double,
-                       fill: String, stroke: String, line: Double) {
+        // TODO only redraw if updated.
+        fun fillMuRect(
+            from: Pos,
+            width: Double,
+            height: Double,
+            fill: String,
+            stroke: String,
+            line: Double,
+        ) {
             with(World.uiCtx()) {
                 if (Styles.isFillMuDisplay) {
                     globalAlpha = 0.3

@@ -1,7 +1,7 @@
 package config
 
 object Dim {
-    val width = 1200 //Compare to dimensions defined in CSS
+    val width = 1200 // Compare to dimensions defined in CSS
     val height = 800
 
     val portalRadius = 8.0
@@ -22,7 +22,7 @@ object Dim {
     val npcXmSpawnRadius = 10
     val agentXmCollectionRadius = maxDeploymentRange
 
-    val leftOffset = maxDeploymentRange.toInt() * Constants.phi //no portals will be placed here
+    val leftOffset = maxDeploymentRange.toInt() * Constants.phi // no portals will be placed here
     val rightOffset = maxDeploymentRange.toInt() * Constants.phi
     val topOffset = maxDeploymentRange.toInt() * Constants.phi
     val botOffset = maxDeploymentRange.toInt() * Constants.phi

@@ -23,32 +23,32 @@ class ColorUtilTest {
         assertEquals(
             Triple(1.0, fact, 0.0),
             ColorUtil.spectrum(0, fact),
-            "Red -> Yellow"
+            "Red -> Yellow",
         )
         assertEquals(
             Triple(1.0 - fact, 1.0, 0.0),
             ColorUtil.spectrum(1, fact),
-            "Yellow -> Green"
+            "Yellow -> Green",
         )
         assertEquals(
             Triple(0.0, 1.0, fact),
             ColorUtil.spectrum(2, fact),
-            "Green -> Cyan"
+            "Green -> Cyan",
         )
         assertEquals(
             Triple(0.0, 1.0 - fact, 1.0),
             ColorUtil.spectrum(3, fact),
-            "Cyan -> Blue"
+            "Cyan -> Blue",
         )
         assertEquals(
             Triple(fact, 0.0, 1.0),
             ColorUtil.spectrum(4, fact),
-            "Blue -> Magenta"
+            "Blue -> Magenta",
         )
         assertEquals(
             Triple(1.0, 0.0, 1.0 - fact),
             ColorUtil.spectrum(5, fact),
-            "Magenta -> Red"
+            "Magenta -> Red",
         )
     }
 

@@ -12,7 +12,8 @@ enum class ResonatorLevel(val level: Int, val deployablePerPlayer: Int, val ener
     FIVE(5, 2, 3000),
     SIX(6, 2, 4000),
     SEVEN(7, 1, 5000),
-    EIGHT(8, 1, 6000);
+    EIGHT(8, 1, 6000),
+    ;
 
     fun calculateRecycleXm(): Int = level * 20
 

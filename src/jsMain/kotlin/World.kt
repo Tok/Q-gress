@@ -5,6 +5,8 @@ import config.Config
 import extension.Canvas
 import extension.Grid
 import extension.clear
+import kotlinx.browser.document
+import kotlinx.dom.clear
 import org.khronos.webgl.Uint8Array
 import org.khronos.webgl.get
 import org.w3c.dom.ImageData
@@ -14,12 +16,8 @@ import system.display.loading.LoadingText
 import system.display.ui.ActionLimitsDisplay
 import util.HtmlUtil
 import util.Util
-import util.data.Cell
 import util.data.Pos
-import kotlinx.browser.document
-import kotlinx.dom.clear
 import kotlin.math.sqrt
-
 
 object World {
     var tick: Int = 0
@@ -44,7 +42,7 @@ object World {
         uiCtx().clear(uiCan)
     }
 
-    //var center: JSON = MapUtil.INITIAL_MAP_CENTER
+    // var center: JSON = MapUtil.INITIAL_MAP_CENTER
     var mousePos: Pos? = null
 
     fun w() = can.width
@@ -109,7 +107,7 @@ object World {
             for (x in 0 until w) {
                 for (y in 0 until h) {
                     val rawNoise = noiseMap[x][y]
-                    val noisePoint = ((1 + (-1 * rawNoise)) * 0.5 * Byte.MAX_VALUE.toInt()).toInt() //- 96
+                    val noisePoint = ((1 + (-1 * rawNoise)) * 0.5 * Byte.MAX_VALUE.toInt()).toInt() // - 96
                     setPixel(imageData, x, y, noisePoint, noisePoint, noisePoint)
                 }
             }

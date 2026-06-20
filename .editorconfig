@@ -1,0 +1,25 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+indent_style = space
+indent_size = 4
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+[*.{kt,kts}]
+ktlint_code_style = intellij_idea
+# JSON/JS interop string literals in this codebase are long and not wrappable.
+ktlint_standard_max-line-length = disabled
+# Existing code leans on a few package wildcard imports; allow them for now.
+ktlint_standard_no-wildcard-imports = disabled
+# Object-level camelCase "constants" (e.g. Pos.res) are pervasive; detekt's
+# naming rules (with baseline) track these instead of churning every call site.
+ktlint_standard_property-naming = disabled
+
+[*.{yml,yaml,json}]
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false

@@ -12,6 +12,10 @@ import config.Location
 import extension.Canvas
 import extension.Ctx
 import extension.Grid
+import kotlinx.browser.document
+import kotlinx.browser.window
+import kotlinx.dom.addClass
+import kotlinx.dom.removeClass
 import org.w3c.dom.*
 import org.w3c.dom.events.Event
 import org.w3c.dom.events.MouseEvent
@@ -26,10 +30,6 @@ import system.display.ui.ActionLimitsDisplay
 import util.data.GeoCoords
 import util.data.Line
 import util.data.Pos
-import kotlinx.browser.document
-import kotlinx.browser.window
-import kotlinx.dom.addClass
-import kotlinx.dom.removeClass
 import kotlin.js.Json
 
 object HtmlUtil {
@@ -73,7 +73,7 @@ object HtmlUtil {
         val rootDiv = document.getElementById("root") as HTMLDivElement
         rootDiv.addClass("container")
 
-        //Prepare all canvas..
+        // Prepare all canvas..
         World.can = createCanvas("mainCanvas")
         World.bgCan = createCanvas("backgroundCanvas")
         World.uiCan = createCanvas("uiCanvas")
@@ -145,7 +145,7 @@ object HtmlUtil {
         quickstartCheck.type = "checkbox"
         quickstartCheck.checked = isQuickstartFromUrl()
         quickstartCheck.addClass("checkbox")
-        quickstartCheck.disabled = true //FIXME
+        quickstartCheck.disabled = true // FIXME
         val quickstartLabel = document.createElement("span") as HTMLSpanElement
         quickstartLabel.addClass("coda", "loadLabel")
         quickstartLabel.id = "quickstartLabel"
@@ -213,8 +213,11 @@ object HtmlUtil {
     }
 
     private fun createSliderDiv(
-        id: String, qValues: List<QValue>, className: String,
-        labelText: String, userFaction: Faction
+        id: String,
+        qValues: List<QValue>,
+        className: String,
+        labelText: String,
+        userFaction: Faction,
     ): HTMLDivElement {
         val qDiv = document.createElement("div") as HTMLDivElement
         qDiv.id = id
@@ -242,7 +245,10 @@ object HtmlUtil {
                     slider.addClass("invisible")
                     sliderValue.addClass("invisible")
                 } else {
-                    slider.oninput = { sliderValue.innerHTML = qDisplay(slider.value); null }
+                    slider.oninput = {
+                        sliderValue.innerHTML = qDisplay(slider.value)
+                        null
+                    }
                 }
                 sliderValue.innerHTML = qDisplay(slider.value)
                 sliderDiv.append(slider)
@@ -331,15 +337,19 @@ object HtmlUtil {
 
     private fun isInMapboxArea(pos: Pos): Boolean {
         val area = Line(Pos(-20, Dim.height - 40), Pos(90, Dim.height))
-        return pos.x > area.from.x && pos.x <= area.to.x &&
-                pos.y > area.from.y && pos.y <= area.to.y
+        return pos.x > area.from.x &&
+            pos.x <= area.to.x &&
+            pos.y > area.from.y &&
+            pos.y <= area.to.y
     }
 
     private fun isInOsmArea(pos: Pos): Boolean {
         val w = Dim.width
         val area = Line(Pos(w - 280, Dim.height - 30), Pos(w, Dim.height))
-        return pos.x > area.from.x && pos.x <= area.to.x &&
-                pos.y > area.from.y && pos.y <= area.to.y
+        return pos.x > area.from.x &&
+            pos.x <= area.to.x &&
+            pos.y > area.from.y &&
+            pos.y <= area.to.y
     }
 
     private fun handleMouseClick(event: Event) {
@@ -401,7 +411,7 @@ object HtmlUtil {
         id: String,
         className: String,
         text: String,
-        callback: ((Event) -> Unit)?
+        callback: ((Event) -> Unit)?,
     ): HTMLButtonElement {
         val button = document.createElement("BUTTON") as HTMLButtonElement
         button.id = id
@@ -488,31 +498,32 @@ object HtmlUtil {
         World.createNonFaction(callback, Config.maxFor())
     }
 
-    private fun createAgentsAndPortals(callback: () -> Unit) = createPortals(fun() { createAgents(callback) })
+    private fun createAgentsAndPortals(callback: () -> Unit) = createPortals(fun() {
+        createAgents(callback)
+    })
 
     fun isShowSatelliteMap() = (document.getElementById("satCheckbox") as HTMLInputElement).checked
 
-    private fun onMapload() =
-        fun(grid: Grid) {
-            World.grid = grid
-            if (World.grid.isEmpty()) {
-                console.error("Grid is empty!")
+    private fun onMapload() = fun(grid: Grid) {
+        World.grid = grid
+        if (World.grid.isEmpty()) {
+            console.error("Grid is empty!")
+        }
+        DrawUtil.drawGrid()
+        createAgentsAndPortals {
+            LoadingText.draw("Ready.")
+            DrawUtil.clearBackground()
+            if (World.userFaction == null) {
+                chooseUserFaction(Faction.random())
             }
-            DrawUtil.drawGrid()
-            createAgentsAndPortals {
-                LoadingText.draw("Ready.")
-                DrawUtil.clearBackground()
-                if (World.userFaction == null) {
-                    chooseUserFaction(Faction.random())
-                }
-                createQSliders(World.userFaction!!)
-                resetInterval()
-                World.isReady = true
-                if (isShowSatelliteMap()) {
-                    MapUtil.showSatelliteMap()
-                }
+            createQSliders(World.userFaction!!)
+            resetInterval()
+            World.isReady = true
+            if (isShowSatelliteMap()) {
+                MapUtil.showSatelliteMap()
             }
         }
+    }
 
     private fun mapChangeHandler() {
         val center: Json = getCenterFromDropdown()
@@ -581,16 +592,16 @@ object HtmlUtil {
         return GeoCoords.fromStrings(lngString, latString)
     }
 
-    private fun getFactionFromUrl() =
-        Faction.fromString(url().searchParams.get("faction"))
+    private fun getFactionFromUrl() = Faction.fromString(url().searchParams.get("faction"))
 
-    private fun isQuickstartFromUrl() =
-        url().searchParams.get("quickstart")?.toBoolean() ?: false
+    private fun isQuickstartFromUrl() = url().searchParams.get("quickstart")?.toBoolean() ?: false
 
     private fun addParameters(
-        url: String, faction: String, lng: String, lat: String,
-        name: String, isQs: Boolean
-    ): String {
-        return "$url?faction=$faction&lng=$lng&lat=$lat&name=$name&quickstart=$isQs"
-    }
+        url: String,
+        faction: String,
+        lng: String,
+        lat: String,
+        name: String,
+        isQs: Boolean,
+    ): String = "$url?faction=$faction&lng=$lng&lat=$lat&name=$name&quickstart=$isQs"
 }

@@ -13,7 +13,7 @@ data class LinkAmp(val type: LinkAmpType, val slot: ModSlot?, val owner: Agent) 
 
     override fun toString() = type.abbr
     override fun getOwnerId() = owner.key()
-    override fun getLevel(): Int = -1 //TODO
+    override fun getLevel(): Int = -1 // TODO
 
     companion object {
         fun calculateImprovedRange(allModsInPortal: List<DeployableItem>, range: Double): Double {

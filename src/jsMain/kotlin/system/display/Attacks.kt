@@ -11,8 +11,8 @@ import system.Queues
 import util.DrawUtil
 import util.HtmlUtil
 import util.data.Circle
-import util.data.Pos
 import util.data.Damage
+import util.data.Pos
 import kotlin.math.max
 
 object Attacks : Display {
@@ -27,7 +27,7 @@ object Attacks : Display {
                 val bursters = attackEntry.value
                 bursters.forEach { xmp ->
                     val image = damageCircleImages[xmp.level to ticksInFuture]
-                    if (image != null) { //FIXME
+                    if (image != null) { // FIXME
                         World.ctx().drawImage(image, pos.x - (image.width / 2), pos.y - (image.height / 2))
                     }
                 }

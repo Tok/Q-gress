@@ -7,7 +7,7 @@ import items.deployable.Resonator
 data class ResonatorSlot(var owner: Agent?, var resonator: Resonator?, var distance: Int) {
     fun isEmpty() = resonator == null
     fun isOwnedBy(agent: Agent) = owner == agent
-    fun isOwnedByEnemy(agent: Agent) = owner?.faction != null &&  owner?.faction != agent.faction
+    fun isOwnedByEnemy(agent: Agent) = owner?.faction != null && owner?.faction != agent.faction
     fun deployReso(deployer: Agent, reso: Resonator, dist: Int) {
         check(dist >= Dim.minDeploymentRange)
         check(dist <= Dim.maxDeploymentRange)

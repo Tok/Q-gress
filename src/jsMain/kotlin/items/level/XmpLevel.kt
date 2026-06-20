@@ -12,7 +12,8 @@ enum class XmpLevel(val level: Int, val damage: Int, val rangeM: Int, val xmCost
     FIVE(5, 1200, 90, 250),
     SIX(6, 1500, 112, 360),
     SEVEN(7, 1800, 138, 490),
-    EIGHT(8, 2700, 168, 640);
+    EIGHT(8, 2700, 168, 640),
+    ;
 
     fun calculateRecycleXm(): Int = level * 20
 

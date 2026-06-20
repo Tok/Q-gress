@@ -15,8 +15,13 @@ abstract class UiTable {
         DrawUtil.strokeText(World.uiCtx(), pos, text, Colors.white, Dim.topAgentsFontSize, DrawUtil.CODA, 3.0)
     }
 
-    fun strokeTableText(headerPos: Pos, offset: Int, text: String,
-                        textAlign: CanvasTextAlign = CanvasTextAlign.START, fill: String = Colors.white) {
+    fun strokeTableText(
+        headerPos: Pos,
+        offset: Int,
+        text: String,
+        textAlign: CanvasTextAlign = CanvasTextAlign.START,
+        fill: String = Colors.white,
+    ) {
         val pos = Pos(headerPos.x + offset, headerPos.y)
         DrawUtil.strokeText(World.uiCtx(), pos, text, fill, Dim.topAgentsFontSize, DrawUtil.CODA, 3.0, Colors.black, textAlign)
     }

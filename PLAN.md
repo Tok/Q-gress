@@ -75,9 +75,20 @@ retrofitted as we touch legacy code.
    (e.g. a free street style for the shadow/grid map). `external/MapBox.kt` becomes a
    MapLibre declaration.
 
+3. **Build JVM — DECIDED: run Gradle on JDK 21 (LTS), not JDK 25.** detekt's latest
+   release (1.23.8) crashes inside a JDK 25 process, and detekt is our complexity gate.
+   Since the project targets Kotlin/JS (no JVM bytecode shipped), the JDK running the build
+   is a pure tooling detail and JDK 21 costs the product nothing. Kotlin stays 2.4, Gradle
+   9.5. JDK 25 remains installed. **TODO:** bump back to the latest JDK once detekt ships a
+   JDK 25+ compatible release (see `build.gradle.kts` header note).
+
 ### Still open
 - **Bundler.** Lean on the Kotlin/JS Gradle plugin's built-in webpack/dev-server first;
   only reach for Vite if that proves limiting. Either way, stop committing `published/*.js`.
+- **Coverage tooling.** Kover does **not** support Kotlin/JS (JVM/Android only). Real
+  line-coverage therefore arrives with the functional-core split: extract pure logic into a
+  `commonMain` source set + a `jvm()` test target, and run Kover there. Until then the
+  enforced gates are ktlint (format) + detekt (lint/complexity) + tests.
 
 ## Roadmap
 

@@ -10,9 +10,12 @@ object QDestinations {
     val MOVE_TO_STRONG_ENEMY = QValue("toStrongEnemy", 0.02, "strong enemy")
 
     fun values() = listOf(
-            MOVE_TO_RANDOM, MOVE_TO_NEAR,
-            MOVE_TO_UNCAPTURED,
-            MOVE_TO_MOST_FRIENDLY,
-            MOVE_TO_NEAR_ENEMY, MOVE_TO_WEAK_ENEMY, MOVE_TO_STRONG_ENEMY
+        MOVE_TO_RANDOM,
+        MOVE_TO_NEAR,
+        MOVE_TO_UNCAPTURED,
+        MOVE_TO_MOST_FRIENDLY,
+        MOVE_TO_NEAR_ENEMY,
+        MOVE_TO_WEAK_ENEMY,
+        MOVE_TO_STRONG_ENEMY,
     )
 }

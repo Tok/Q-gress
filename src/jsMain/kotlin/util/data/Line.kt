@@ -6,10 +6,10 @@ import kotlin.math.sqrt
 
 data class Line(val from: Pos, val to: Pos) {
     constructor(fromX: Double, fromY: Double, toX: Double, toY: Double) :
-            this(Pos(fromX, fromY), Pos(toX, toY))
+        this(Pos(fromX, fromY), Pos(toX, toY))
 
     constructor(fromX: Int, fromY: Int, toX: Int, toY: Int) :
-            this(Pos(fromX, fromY), Pos(toX, toY))
+        this(Pos(fromX, fromY), Pos(toX, toY))
 
     val fromX = from.x
     val fromY = from.y
@@ -53,14 +53,13 @@ data class Line(val from: Pos, val to: Pos) {
         }
     }
 
-    fun isValidArea() =
-        this.from.x <= this.to.x && this.from.y <= this.to.y //tests if 'from' is top left and 'to' is bottom right
+    fun isValidArea() = this.from.x <= this.to.x && this.from.y <= this.to.y // tests if 'from' is top left and 'to' is bottom right
 
-    fun isPointInArea(point: Pos) = isValidArea()
-            && point.x >= this.from.x
-            && point.y >= this.from.y
-            && point.x <= this.to.x
-            && point.y <= this.to.y
+    fun isPointInArea(point: Pos) = isValidArea() &&
+        point.x >= this.from.x &&
+        point.y >= this.from.y &&
+        point.x <= this.to.x &&
+        point.y <= this.to.y
 
     override fun toString() = from.toString() + "-" + to.toString()
 

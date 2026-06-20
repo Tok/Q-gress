@@ -60,8 +60,7 @@ data class Complex(val re: Double, val im: Double = 0.0) {
         fun fromImaginary(imaginary: Double) = Complex(0.0, imaginary)
         fun fromImaginaryInt(imaginary: Int) = Complex(0.0, imaginary.toDouble())
         fun valueOf(magnitude: Double, phase: Double) = fromMagnitudeAndPhase(magnitude, phase)
-        fun fromMagnitudeAndPhase(magnitude: Double, phase: Double) =
-                Complex(magnitude * cos(phase), magnitude * sin(phase))
+        fun fromMagnitudeAndPhase(magnitude: Double, phase: Double) = Complex(magnitude * cos(phase), magnitude * sin(phase))
 
         fun random(): Complex {
             val mag = Util.random()

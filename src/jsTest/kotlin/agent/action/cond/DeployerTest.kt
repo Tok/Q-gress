@@ -65,10 +65,10 @@ class DeployerTest {
                     try {
                         portal.deploy(agent, resos, Dim.maxDeploymentRange.toInt())
                     } catch (e: IllegalStateException) {
-                        //Portal can be fully deployed with level 1 resonators.
+                        // Portal can be fully deployed with level 1 resonators.
                         assertFalse { level.level == 1 }
-                        //ISE should only be thrown when portal was fully
-                        //deployed with resonators of the same level.
+                        // ISE should only be thrown when portal was fully
+                        // deployed with resonators of the same level.
                         val filled = portal.filledSlots()
                         assertEquals(level.deployablePerPlayer, filled.count())
                     }

@@ -16,11 +16,12 @@ import util.DrawUtil
 import util.HtmlUtil
 import util.SoundUtil
 import util.Util
-import util.data.Pos
 import util.data.Line
+import util.data.Pos
 
 enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>, var image: Canvas?) {
-    INSTANCE(mutableMapOf(), null);
+    INSTANCE(mutableMapOf(), null),
+    ;
 
     companion object {
         private const val numberOfCheckpoints = 35
@@ -142,7 +143,7 @@ enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>, var image: Canvas
                 ctx: CanvasRenderingContext2D,
                 index: Int,
                 withNext: Pair<Checkpoint, Checkpoint>,
-                maxTotal: Int
+                maxTotal: Int,
             ) {
                 fun calcY(mu: Int, maxTotal: Int) = Dim.cycleH - (mu * Dim.cycleH / maxTotal)
                 val x = (index * ww)

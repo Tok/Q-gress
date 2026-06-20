@@ -1,7 +1,6 @@
 package portal
 
 import Factory
-import agent.Faction
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith

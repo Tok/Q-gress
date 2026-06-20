@@ -5,9 +5,9 @@ import agent.Faction
 import agent.action.cond.*
 import agent.qvalue.QActions
 import agent.qvalue.QValue
+import kotlinx.browser.window
 import org.w3c.dom.HTMLInputElement
 import util.Util
-import kotlinx.browser.window
 
 object ActionSelector {
     fun doSomethingElse(agent: Agent): Agent {
@@ -28,14 +28,11 @@ object ActionSelector {
 
     private fun default(agent: Agent) = { agent.doNothing() }
     private fun doAnywhereAction(agent: Agent): Agent = Util.select(actionsForAnywhere(agent), default(agent)).invoke()
-    private fun doNeutralPortalAction(agent: Agent): Agent =
-        Util.select(actionsForNeutralPortals(agent), default(agent)).invoke()
+    private fun doNeutralPortalAction(agent: Agent): Agent = Util.select(actionsForNeutralPortals(agent), default(agent)).invoke()
 
-    private fun doFriendlyPortalAction(agent: Agent): Agent =
-        Util.select(actionsForFriendlyPortals(agent), default(agent)).invoke()
+    private fun doFriendlyPortalAction(agent: Agent): Agent = Util.select(actionsForFriendlyPortals(agent), default(agent)).invoke()
 
-    private fun doEnemyPortalAction(agent: Agent): Agent =
-        Util.select(actionsForEnemyPortals(agent), default(agent)).invoke()
+    private fun doEnemyPortalAction(agent: Agent): Agent = Util.select(actionsForEnemyPortals(agent), default(agent)).invoke()
 
     private fun actionsForAnywhere(agent: Agent): List<Pair<Double, () -> Agent>> {
         val moveElsewhereQ = q(agent.faction, QActions.MOVE_ELSEWHERE)
@@ -48,7 +45,7 @@ object ActionSelector {
             recycleQ to { Recycler.performAction(agent) },
             rechargeQ to { Recharger.performAction(agent) },
             recruitQ to { Recruiter.performAction(agent) },
-            exploreQ to { Explorer.performAction(agent) }
+            exploreQ to { Explorer.performAction(agent) },
         )
     }
 
@@ -58,7 +55,7 @@ object ActionSelector {
         val glyphQ = if (Glypher.isActionPossible(agent)) q(agent.faction, QActions.GLYPH) else -1.0
         return basicValues + listOf(
             hackQ to { Hacker.performAction(agent) },
-            glyphQ to { Glypher.performAction(agent) }
+            glyphQ to { Glypher.performAction(agent) },
         )
     }
 
@@ -66,7 +63,7 @@ object ActionSelector {
         val basicValues = actionsForPortals(agent)
         val captureQ = if (Deployer.isActionPossible(agent)) q(agent.faction, QActions.CAPTURE) else -1.0
         return basicValues + listOf(
-            captureQ to { agent.capturePortal(true) }
+            captureQ to { agent.capturePortal(true) },
         )
     }
 
@@ -76,7 +73,7 @@ object ActionSelector {
         val linkQ = if (Linker.isActionPossible(agent)) q(agent.faction, QActions.LINK) else -1.0
         return basicValues + listOf(
             deployQ to { agent.deployPortal(true) },
-            linkQ to { Linker.performAction(agent) }
+            linkQ to { Linker.performAction(agent) },
         )
     }
 
@@ -84,7 +81,7 @@ object ActionSelector {
         val basicValues = actionsForPortals(agent)
         val attackQ = if (Attacker.isActionPossible(agent)) q(agent.faction, QActions.ATTACK) else -1.0
         return basicValues + listOf(
-            attackQ to { agent.attackPortal(true) }
+            attackQ to { agent.attackPortal(true) },
         )
     }
 }

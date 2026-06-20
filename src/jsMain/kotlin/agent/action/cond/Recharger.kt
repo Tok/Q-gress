@@ -8,8 +8,8 @@ object Recharger : ConditionalAction {
     override val actionItem = ActionItem.RECYCLE
 
     override fun isActionPossible(agent: Agent) = agent.isXmFilled() &&
-            chargeableKeys(agent).isNotEmpty() &&
-            rechargeResos(agent).isNotEmpty()
+        chargeableKeys(agent).isNotEmpty() &&
+        rechargeResos(agent).isNotEmpty()
 
     override fun performAction(agent: Agent): Agent {
         agent.action.start(actionItem)

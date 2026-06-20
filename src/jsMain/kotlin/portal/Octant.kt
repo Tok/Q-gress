@@ -12,7 +12,8 @@ enum class Octant(val arrow: Char, private val angle: Double) {
     W('←', 180 * PI / 180),
     NW('↖', 225 * PI / 180),
     N('↑', 270 * PI / 180),
-    NE('↗', 315 * PI / 180);
+    NE('↗', 315 * PI / 180),
+    ;
 
     fun calcXOffset(radius: Int): Int = (radius * cos(angle)).toInt()
     fun calcYOffset(radius: Int): Int = (radius * sin(angle)).toInt()

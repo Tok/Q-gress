@@ -8,6 +8,7 @@ import extension.Canvas
 import extension.Ctx
 import extension.clear
 import items.level.PortalLevel
+import kotlinx.browser.document
 import org.w3c.dom.*
 import portal.Portal
 import portal.XmMap
@@ -22,7 +23,6 @@ import system.display.ui.table.TopAgentsDisplay
 import util.data.Circle
 import util.data.Line
 import util.data.Pos
-import kotlinx.browser.document
 import kotlin.math.PI
 
 object DrawUtil {
@@ -154,14 +154,14 @@ object DrawUtil {
     fun drawRect(ctx: Ctx, rect: Line, fill: String, stroke: String, lineWidth: Double) {
         ctx.fillStyle = fill
         with(rect) {
-            ctx.fillRect(fromX, fromY, toY, -toX) //argument switch
+            ctx.fillRect(fromX, fromY, toY, -toX) // argument switch
         }
         ctx.fill()
         ctx.strokeStyle = stroke
         ctx.lineWidth = lineWidth
         ctx.beginPath()
         with(rect) {
-            ctx.strokeRect(fromX, fromY, toY, -toX) //argument switch
+            ctx.strokeRect(fromX, fromY, toY, -toX) // argument switch
         }
         ctx.closePath()
         ctx.stroke()
@@ -193,9 +193,15 @@ object DrawUtil {
     }
 
     fun strokeText(
-        ctx: Ctx, pos: Pos, text: String, fill: String, fontSize: Int,
-        fontName: String = CODA, lineWidth: Double = 0.0,
-        stroke: String = Colors.black, textAlign: CanvasTextAlign = CanvasTextAlign.START
+        ctx: Ctx,
+        pos: Pos,
+        text: String,
+        fill: String,
+        fontSize: Int,
+        fontName: String = CODA,
+        lineWidth: Double = 0.0,
+        stroke: String = Colors.black,
+        textAlign: CanvasTextAlign = CanvasTextAlign.START,
     ) {
         val xOff: Double = (fontSize / 2.0) - 2
         val yOff: Double = fontSize / 3.0
@@ -218,8 +224,12 @@ object DrawUtil {
     }
 
     fun drawCircle(
-        ctx: Ctx, circle: Circle, stroke: String, lineWidth: Double,
-        fill: String? = null, alpha: Double = 1.0
+        ctx: Ctx,
+        circle: Circle,
+        stroke: String,
+        lineWidth: Double,
+        fill: String? = null,
+        alpha: Double = 1.0,
     ) {
         ctx.globalAlpha = alpha
         ctx.strokeStyle = stroke
@@ -236,8 +246,12 @@ object DrawUtil {
     }
 
     private fun drawPath(
-        ctx: Ctx, path: Path2D, stroke: String, lineWidth: Double,
-        fill: String? = null, alpha: Double = 1.0
+        ctx: Ctx,
+        path: Path2D,
+        stroke: String,
+        lineWidth: Double,
+        fill: String? = null,
+        alpha: Double = 1.0,
     ) {
         ctx.globalAlpha = alpha
         if (fill != null) {

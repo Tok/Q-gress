@@ -26,12 +26,18 @@ import kotlin.math.max
 import kotlin.math.min
 
 data class Agent(
-    val faction: Faction, val name: String, val pos: Pos, val skills: Skills,
-    val inventory: Inventory, val action: Action,
-    var actionPortal: Portal, var destination: Pos,
+    val faction: Faction,
+    val name: String,
+    val pos: Pos,
+    val skills: Skills,
+    val inventory: Inventory,
+    val action: Action,
+    var actionPortal: Portal,
+    var destination: Pos,
     private var lastPosition: Pos,
-    var ap: Int = 0, var xm: Int = 0,
-    var velocity: Complex = Complex.ZERO
+    var ap: Int = 0,
+    var xm: Int = 0,
+    var velocity: Complex = Complex.ZERO,
 ) {
     fun key() = toString()
     private fun distanceToDestination(): Double = pos.distanceTo(destination)
@@ -94,7 +100,7 @@ data class Agent(
                 friendlyQ to { MovementUtil.moveToFriendlyHighLevelPortal(agent) },
                 nearEnemyQ to { MovementUtil.attackClosePortal(agent) },
                 weakEnemyQ to { MovementUtil.attackMostVulnerablePortal(agent) },
-                strongEnemyQ to { MovementUtil.attackMostLinkedPortal(agent) }
+                strongEnemyQ to { MovementUtil.attackMostLinkedPortal(agent) },
             )
             val newAgent = Util.select(qValues, { MovementUtil.moveToNearestPortal(agent) }).invoke()
             newAgent.action.start(ActionItem.MOVE)
@@ -156,14 +162,14 @@ data class Agent(
             action.start(ActionItem.ATTACK)
             fun findExactDestination(): Pos {
                 if (actionPortal.calcHealth() > 0.8) {
-                    return actionPortal.location //center
+                    return actionPortal.location // center
                 }
                 val maybeDestination = actionPortal.findStrongestResoPos()
                 val isPassable = maybeDestination != null && maybeDestination.isPassable()
                 return if (isPassable) {
                     maybeDestination!!
                 } else {
-                    actionPortal.location //center
+                    actionPortal.location // center
                 }
             }
 
@@ -279,14 +285,14 @@ data class Agent(
             in 300000..600000 -> 6
             in 600000..1200000 -> 7
             in 1200000..2400000 -> 8
-            in 2400000..4000000 -> 9 //+ 1 gold 4 silver
-            in 4000000..6000000 -> 10 //+ 2 gold 5 silver
-            in 6000000..8400000 -> 11 //+ 4 gold 6 silver
-            in 8400000..12000000 -> 12 //+ 6 gold 7 silver
-            in 12000000..17000000 -> 13 //+ 1 Platinum 7 Gold
-            in 17000000..24000000 -> 14 //+ 2 Platinum 7 Gold
-            in 24000000..40000000 -> 15 //+ 3 Platinum 7 Gold
-            else -> 16 //TODO + 2 Black 4 Platinum 7 Gold
+            in 2400000..4000000 -> 9 // + 1 gold 4 silver
+            in 4000000..6000000 -> 10 // + 2 gold 5 silver
+            in 6000000..8400000 -> 11 // + 4 gold 6 silver
+            in 8400000..12000000 -> 12 // + 6 gold 7 silver
+            in 12000000..17000000 -> 13 // + 1 Platinum 7 Gold
+            in 17000000..24000000 -> 14 // + 2 Platinum 7 Gold
+            in 24000000..40000000 -> 15 // + 3 Platinum 7 Gold
+            else -> 16 // TODO + 2 Black 4 Platinum 7 Gold
         }
 
         private fun getLinkingRange(level: Int): Int = when (level) {
@@ -311,16 +317,20 @@ data class Agent(
                     xmKey(fac, it) to DrawUtil.renderBarImage(fac.color, it, 3.0, w, lw)
                 }
             }.toMap()
-        } else { emptyMap() }
+        } else {
+            emptyMap()
+        }
 
         private fun getXmBarImage(faction: Faction, percent: Int): Canvas {
             check(percent in 0..100)
             return xmBarImages.getValue(xmKey(faction, percent))
         }
 
-        private fun initialActionPortal(pos: Pos) =
-            if (HtmlUtil.isRunningInBrowser()) Util.findNearestPortal(pos) ?: World.allPortals[0]
-            else Portal.create(pos)
+        private fun initialActionPortal(pos: Pos) = if (HtmlUtil.isRunningInBrowser()) {
+            Util.findNearestPortal(pos) ?: World.allPortals[0]
+        } else {
+            Portal.create(pos)
+        }
 
         fun createFrog(grid: Grid) = create(grid, Faction.ENL)
         fun createSmurf(grid: Grid) = create(grid, Faction.RES)
@@ -332,7 +342,7 @@ data class Agent(
             val agent = Agent(
                 faction, Util.generateAgentName(), coords, Skills.createRandom(),
                 Inventory.empty(), Action.create(), actionPortal, actionPortal.location,
-                coords, ap, initialXm
+                coords, ap, initialXm,
             )
             if (HtmlUtil.isQuickstart()) {
                 agent.inventory.items.addAll(Inventory.quickStart(agent))

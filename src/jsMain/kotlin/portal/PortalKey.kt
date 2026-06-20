@@ -5,7 +5,6 @@ import config.Probabilities
 import items.deployable.DeployableItem
 import util.Util
 
-
 class PortalKey(val portal: Portal, val owner: Agent) : DeployableItem {
     override fun toString() = "Key-$portal"
     override fun getOwnerId(): String = owner.key()
@@ -13,7 +12,7 @@ class PortalKey(val portal: Portal, val owner: Agent) : DeployableItem {
     fun isFriendlyToOwner() = portal.owner?.faction == owner.faction
 
     companion object {
-        //TODO Probabilities
+        // TODO Probabilities
         fun tryHack(portal: Portal, agent: Agent): PortalKey? = if (Util.random() < Probabilities.keyChance) {
             PortalKey(portal, agent)
         } else {

@@ -1,10 +1,9 @@
 package util.data.html
 
 import agent.Agent
-import org.w3c.dom.HTMLDivElement
 import kotlinx.browser.document
 import kotlinx.dom.addClass
-
+import org.w3c.dom.HTMLDivElement
 
 class AgentsTableWidget private constructor(val div: HTMLDivElement) {
     fun update(agents: Set<Agent>) {

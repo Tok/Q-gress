@@ -32,7 +32,7 @@ data class XmpBurster(val owner: Agent, val level: XmpLevel) : DeployableItem {
     override fun getLevel(): Int = level.level
 
     companion object {
-        const val GLOBAL_DAMAGE_MULTIPLIER = 0.20 //FIXME
+        const val GLOBAL_DAMAGE_MULTIPLIER = 0.20 // FIXME
         const val CRIT_DAMAGE_MULTIPLIER = 3
         const val CRIT_RATE = 0.2
         fun create(owner: Agent, level: XmpLevel) = XmpBurster(owner, level)

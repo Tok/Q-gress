@@ -36,7 +36,7 @@ data class Pos(val x: Double, val y: Double) {
         Pos(x + 1.0, y),
         Pos(x - 1.0, y + 1.0),
         Pos(x, y + 1.0),
-        Pos(x + 1.0, y + 1.0)
+        Pos(x + 1.0, y + 1.0),
     ).filter {
         it.x >= 0.0 && it.x <= (w - 1.0) && it.y >= 0.0 && it.y <= (h - 1.0)
     }
@@ -50,7 +50,7 @@ data class Pos(val x: Double, val y: Double) {
     fun toGeo(): GeoCoords {
         val latitude = minLat + (x * pixelPartLat)
         val longitude = minLng - (y * pixelPartLng)
-        return GeoCoords(longitude, latitude) //longitude = -Y, latitude = X
+        return GeoCoords(longitude, latitude) // longitude = -Y, latitude = X
     }
 
     private fun isCloseForClick(location: Pos) = Line(location, this).length() < Dim.portalRadius * 2
@@ -63,11 +63,12 @@ data class Pos(val x: Double, val y: Double) {
     fun findClosestPortal() = findClosePortals().first()
     fun isBuildable(): Boolean {
         val r = Dim.minDistancePortalToImpassable.toInt()
-        return isPassable() && !hasClosePortal() &&
-                World.grid[Pos(x - r, y).toShadow()]?.isPassable ?: false &&
-                World.grid[Pos(x + r, y).toShadow()]?.isPassable ?: false &&
-                World.grid[Pos(x, y - r).toShadow()]?.isPassable ?: false &&
-                World.grid[Pos(x, y + r).toShadow()]?.isPassable ?: false
+        return isPassable() &&
+            !hasClosePortal() &&
+            World.grid[Pos(x - r, y).toShadow()]?.isPassable ?: false &&
+            World.grid[Pos(x + r, y).toShadow()]?.isPassable ?: false &&
+            World.grid[Pos(x, y - r).toShadow()]?.isPassable ?: false &&
+            World.grid[Pos(x, y + r).toShadow()]?.isPassable ?: false
     }
 
     override fun toString() = "X$x:Y$y"
@@ -76,8 +77,8 @@ data class Pos(val x: Double, val y: Double) {
 
     companion object {
         val res = Config.pathResolution
-        private const val defaultLat = 47.4220454 //X
-        private const val defaultLng = 9.3733032 //-Y
+        private const val defaultLat = 47.4220454 // X
+        private const val defaultLng = 9.3733032 // -Y
         private const val latDist = 0.002
         private val lngDist = latDist * Dim.height / Dim.width
         private const val minLat = defaultLat - latDist
@@ -101,7 +102,7 @@ data class Pos(val x: Double, val y: Double) {
                     .filterNot { it.key.fromShadow().x < Dim.maxDeploymentRange }
                     .filterNot { it.key.fromShadow().x > World.w() - Dim.maxDeploymentRange }
                     .filterNot { it.key.fromShadow().hasClosePortal() }
-                check(grid.isNotEmpty()) //map is blocked or there is no more space left.
+                check(grid.isNotEmpty()) // map is blocked or there is no more space left.
                 val randomCell = Util.shuffle(grid.toList()).first()
                 val pos = randomCell.first.fromShadow()
                 val offset = res / 2
@@ -112,8 +113,11 @@ data class Pos(val x: Double, val y: Double) {
         fun createRandomPassable(grid: Grid) = createRandomPassable(grid, 10)
         private fun createRandomPassable(grid: Grid, retries: Int): Pos {
             if (HtmlUtil.isNotRunningInBrowser()) {
-                return if (grid.isEmpty()) Pos(0, 0)
-                else Util.shuffle(grid.keys).first()
+                return if (grid.isEmpty()) {
+                    Pos(0, 0)
+                } else {
+                    Util.shuffle(grid.keys).first()
+                }
             }
             check(grid.isNotEmpty())
             val random = createRandomNoOffset()
@@ -124,7 +128,7 @@ data class Pos(val x: Double, val y: Double) {
                     createRandomPassable(grid, retries - 1)
                 } else {
                     console.warn("Blocked Position: $random")
-                    random //FIXME workaround..
+                    random // FIXME workaround..
                 }
             }
         }

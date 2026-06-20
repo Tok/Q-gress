@@ -9,7 +9,8 @@ enum class PortalLevel(val value: Int, val display: String) {
     FIVE(5, "5"),
     SIX(6, "6"),
     SEVEN(7, "7"),
-    EIGHT(8, "8");
+    EIGHT(8, "8"),
+    ;
 
     fun toInt(): Int = value
     fun getColor(): String = LevelColor.map[value] ?: "#FFFFFF"

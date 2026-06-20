@@ -14,7 +14,8 @@ enum class Location(val displayName: String, val lng: Double, val lat: Double) {
     EIFFEL_TOWER("Eiffel Tower", 2.29486, 48.85824),
     PRIME_TOWER("Prime Tower", 8.51831, 47.38673),
     GROUND_ZERO("Ground Zero", -74.01230, 40.71250),
-    PLATZSPITZ("Platzspitz", 8.53900, 47.38210);
+    PLATZSPITZ("Platzspitz", 8.53900, 47.38210),
+    ;
 
     fun toJSONString() = "[$lng,$lat]"
     fun toJSON(): Json = JSON.parse(toJSONString())

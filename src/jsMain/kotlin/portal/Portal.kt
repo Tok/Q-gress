@@ -30,8 +30,14 @@ import util.data.Pos
 import kotlin.math.*
 
 data class Portal(
-    val name: String, val location: Pos, val heatMap: GridMap, val vectors: VectorField,
-    val slots: Slots, val links: MutableSet<Link>, val fields: MutableSet<Field>, var owner: Agent?
+    val name: String,
+    val location: Pos,
+    val heatMap: GridMap,
+    val vectors: VectorField,
+    val slots: Slots,
+    val links: MutableSet<Link>,
+    val fields: MutableSet<Field>,
+    var owner: Agent?,
 ) {
     private val lastHacks: MutableMap<String, MutableList<Int>> = mutableMapOf()
     val id: String = "P-" + location.x + ":" + location.y + "-" + name
@@ -48,16 +54,26 @@ data class Portal(
     }
 
     fun canHack(hacker: Agent): Boolean = handleCooldown(hacker, true) == Cooldown.NONE
-    fun canLinkOut(linker: Agent) = isLinkable(linker) && (links.isEmpty() || links.count() < 8) &&
-            !isCoveredByField() && isInside()
+    fun canLinkOut(linker: Agent) = isLinkable(linker) &&
+        (links.isEmpty() || links.count() < 8) &&
+        !isCoveredByField() &&
+        isInside()
 
-    private fun calculateLevel() = if (owner == null) 1 else clipLevel(slots.values.map {
-        (it.resonator?.level?.level ?: 0)
-    }.sum() / 8)
+    private fun calculateLevel() = if (owner == null) {
+        1
+    } else {
+        clipLevel(
+            slots.values.map {
+                (it.resonator?.level?.level ?: 0)
+            }.sum() / 8,
+        )
+    }
 
-    fun getLevel() =
-        if (World.isReady) PortalLevel.findByValue(calculateLevel())
-        else PortalLevel.ZERO
+    fun getLevel() = if (World.isReady) {
+        PortalLevel.findByValue(calculateLevel())
+    } else {
+        PortalLevel.ZERO
+    }
 
     fun x() = location.x
     fun y() = location.y
@@ -76,7 +92,7 @@ data class Portal(
 
     private fun calculateLinkMitigation(): Int {
         val maxMitigation = 95
-        //TODO shields...
+        // TODO shields...
         val incoming = findIncomingFrom()
         val totalLinkCount = incoming.count() + links.count()
         return min(maxMitigation, round(400.0 / 9.0 * atan(totalLinkCount / E)).toInt())
@@ -100,7 +116,7 @@ data class Portal(
 
     private fun calcTotalXm(): Int = getAllResos().map { it.energy }.sum()
     fun calculateLinkingRangeInMeters() = {
-        val x = averageResoLevel() //kotlin.math.pow?
+        val x = averageResoLevel() // kotlin.math.pow?
         if (isFullyDeployed()) 160 * x * x * x * x else 0.0
     }
 
@@ -256,7 +272,7 @@ data class Portal(
     }
 
     private fun handleCooldown(hacker: Agent, readOnly: Boolean): Cooldown {
-        //a result of NONE should add a the ticknumber to the list of the last hacks
+        // a result of NONE should add a the ticknumber to the list of the last hacks
         val key = hacker.key()
         fun cool(agentsLastHacks: MutableList<Int>, tickNr: Int): Cooldown {
             agentsLastHacks.sort()
@@ -282,7 +298,7 @@ data class Portal(
                     agentsLastHacks.add(tickNr)
                     lastHacks[key] = mutableListOf(tickNr)
                 }
-                return Cooldown.NONE //reset
+                return Cooldown.NONE // reset
             }
         }
 
@@ -303,7 +319,7 @@ data class Portal(
     }
 
     fun deployMods(deployer: Agent, @Suppress("UNUSED_PARAMETER") mods: Map<Octant, DeployableItem>) {
-        val isCommon = true //TODO implement
+        val isCommon = true // TODO implement
         val isRare = false
         val isVeryRare = false
         if (isCommon) {
@@ -337,7 +353,7 @@ data class Portal(
             val sameLevelCount = slots.count { it.value.resonator?.level == level }
 
             val isUnableToDeployMoreOfTheSame = sameLevelCount >= level.deployablePerPlayer
-            if (isUnableToDeployMoreOfTheSame) { //should only happen rarely
+            if (isUnableToDeployMoreOfTheSame) { // should only happen rarely
                 return
             }
 
@@ -348,12 +364,12 @@ data class Portal(
                     index == firstResoCount && firstResoCount + initialResoCount == 8 -> 250
                     oldReso?.isOwnedBy(deployer) == true -> 65
                     else -> 0
-                }
+                },
             )
             deployer.removeXm(level.level * 20)
             val oldDistance = oldReso?.distance
             val newDistance = (if (oldDistance == 0) distance else oldDistance) ?: distance
-            //console.trace("$agent deploys ${resonator} to $octant at $this. $distance $oldDistance")
+            // console.trace("$agent deploys ${resonator} to $octant at $this. $distance $oldDistance")
             slots[octant]?.deployReso(deployer, resonator, newDistance)
             val xx = location.x + octant.calcXOffset(newDistance)
             val yy = location.y + octant.calcYOffset(newDistance)
@@ -423,16 +439,14 @@ data class Portal(
         }
     }
 
-    fun findAllowedResoLevels(deployer: Agent): Map<ResonatorLevel, Int> {
-        return if (owner == null || owner?.faction == deployer.faction) {
-            ResonatorLevel.values().map { level ->
-                level to level.deployablePerPlayer - this.slots.count { slot ->
-                    slot.value.isOwnedBy(deployer) && slot.value.resonator?.level?.level == level.level
-                }
-            }.toMap()
-        } else {
-            mapOf()
-        }
+    fun findAllowedResoLevels(deployer: Agent): Map<ResonatorLevel, Int> = if (owner == null || owner?.faction == deployer.faction) {
+        ResonatorLevel.values().map { level ->
+            level to level.deployablePerPlayer - this.slots.count { slot ->
+                slot.value.isOwnedBy(deployer) && slot.value.resonator?.level?.level == level.level
+            }
+        }.toMap()
+    } else {
+        mapOf()
     }
 
     fun leakXm(): Pair<Pos, Int> {
@@ -466,7 +480,7 @@ data class Portal(
             ctx.closePath()
             ctx.stroke()
             ctx.lineWidth = lineWidth
-            if (Styles.isDrawResoLineGradient) { //CPU intensive
+            if (Styles.isDrawResoLineGradient) { // CPU intensive
                 val gradient = ctx.createLinearGradient(line.from.x, line.from.y, line.to.x, line.to.y)
                 gradient.addColorStop(0.2, levelColor)
                 gradient.addColorStop(0.7, factionColor)
@@ -548,7 +562,7 @@ data class Portal(
                 Dim.portalNameFontSize,
                 DrawUtil.CODA,
                 lineWidth,
-                Colors.black
+                Colors.black,
             )
         })
     }
@@ -582,11 +596,9 @@ data class Portal(
             emptyMap()
         }
 
-        private fun getCenterImage(faction: Faction?, level: PortalLevel): Canvas =
-            if (faction == null) whiteCenter!! else centerImages[faction to level]!!
+        private fun getCenterImage(faction: Faction?, level: PortalLevel): Canvas = if (faction == null) whiteCenter!! else centerImages[faction to level]!!
 
-        private fun getHealthBarImage(faction: Faction, health: Int): Canvas =
-            healthBarImages[faction to health]!!
+        private fun getHealthBarImage(faction: Faction, health: Int): Canvas = healthBarImages[faction to health]!!
 
         fun renderPortalCenter(color: String, level: PortalLevel?): Canvas {
             val lw = Dim.portalLineWidth
@@ -603,7 +615,7 @@ data class Portal(
             })
         }
 
-        const val MAX_HACKS = 4 //TODO implement multihacks
+        const val MAX_HACKS = 4 // TODO implement multihacks
         private fun clipLevel(level: Int): Int = max(1, min(level, 8))
         fun create(location: Pos): Portal {
             val slots: Slots = Octant.values().map { it to ResonatorSlot.create() }.toMap().toMutableMap()
@@ -615,8 +627,14 @@ data class Portal(
                 mutableMapOf<Pos, Int>() to mutableMapOf()
             }
             return Portal(
-                Util.generatePortalName(), location, heatMap, vectorField,
-                slots, mutableSetOf(), mutableSetOf(), null
+                Util.generatePortalName(),
+                location,
+                heatMap,
+                vectorField,
+                slots,
+                mutableSetOf(),
+                mutableSetOf(),
+                null,
             )
         }
 

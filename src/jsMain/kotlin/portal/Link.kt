@@ -36,10 +36,15 @@ data class Link(val origin: Portal, val destination: Portal, val creator: Agent)
     }
 
     override fun toString() = origin.toString() + " --> " + destination.toString()
-    //equals and hashCode symmetrical
+
+    // equals and hashCode symmetrical
     override fun equals(other: Any?) = other is Link &&
-            (origin == other.origin && destination == other.destination ||
-                    origin == other.destination && destination == other.origin)
+        (
+            origin == other.origin &&
+                destination == other.destination ||
+                origin == other.destination &&
+                destination == other.origin
+            )
 
     override fun hashCode() = origin.hashCode() + destination.hashCode()
 

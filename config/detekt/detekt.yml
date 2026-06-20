@@ -1,0 +1,56 @@
+# Detekt config for Q-Gress. Builds upon the default rule set
+# (buildUponDefaultConfig = true); this file only tunes the gates we care
+# about most — complexity limits — and silences a few rules that fight the
+# Kotlin/JS interop style. Existing legacy violations are captured in
+# config/detekt/baseline.xml so the gate fails only on NEW code; the baseline
+# is meant to shrink as the functional-core refactor lands.
+
+build:
+  maxIssues: 0
+
+complexity:
+  active: true
+  CyclomaticComplexMethod:
+    active: true
+    threshold: 15
+  CognitiveComplexMethod:
+    active: true
+    threshold: 20
+  LongMethod:
+    active: true
+    threshold: 60
+  LongParameterList:
+    active: true
+    functionThreshold: 7
+    constructorThreshold: 8
+  NestedBlockDepth:
+    active: true
+    threshold: 5
+  TooManyFunctions:
+    active: false
+
+style:
+  active: true
+  MagicNumber:
+    # A simulation/game is inherently full of tuning constants; this rule
+    # would be pure noise here.
+    active: false
+  WildcardImport:
+    active: false
+  ReturnCount:
+    active: true
+    max: 5
+  MaxLineLength:
+    active: false
+
+naming:
+  active: true
+  # Game/domain terms (XM, MU, AP, ENL, RES) drive some non-standard names.
+  FunctionNaming:
+    active: true
+  TopLevelPropertyNaming:
+    active: true
+
+exceptions:
+  TooGenericExceptionThrown:
+    active: false

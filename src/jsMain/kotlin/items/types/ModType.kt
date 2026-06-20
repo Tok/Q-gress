@@ -6,5 +6,5 @@ enum class ModType(val label: String) {
     FORCE_AMP("Force Amp"),
     HEATSINK("Heat Sink"),
     TURRET("Turret"),
-    LINK_AMPLIFIER("Link Amp")
+    LINK_AMPLIFIER("Link Amp"),
 }

@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+#
+# Q-Gress pre-commit gate: formatting (ktlint), linting + cyclomatic-complexity
+# limits (detekt). Runs only when Kotlin sources are staged. Install with:
+#     ./gradlew installGitHooks      (sets core.hooksPath to .githooks)
+#
+# To bypass in an emergency: git commit --no-verify  (don't make a habit of it).
+
+set -euo pipefail
+
+# Only gate Kotlin / Kotlin-script changes.
+staged_kotlin="$(git diff --cached --name-only --diff-filter=ACMR | grep -E '\.kts?$' || true)"
+if [ -z "$staged_kotlin" ]; then
+    exit 0
+fi
+
+repo_root="$(git rev-parse --show-toplevel)"
+cd "$repo_root"
+
+# Best-effort: pick up the project toolchain if the committing shell is bare.
+if [ -z "${JAVA_HOME:-}" ] && [ -x /usr/lib/jvm/java-21-openjdk-amd64/bin/java ]; then
+    export JAVA_HOME="/usr/lib/jvm/java-21-openjdk-amd64"
+fi
+
+echo "[pre-commit] ktlint + detekt on staged Kotlin..."
+if ! ./gradlew --quiet --console=plain ktlintCheck detekt; then
+    echo
+    echo "[pre-commit] FAILED. Fix formatting with './gradlew ktlintFormat' and address"
+    echo "             detekt findings, then re-stage and commit."
+    exit 1
+fi
+
+echo "[pre-commit] OK."

@@ -5,9 +5,8 @@ import agent.Agent
 import config.Time
 import items.XmpBurster
 import util.SoundUtil
-import util.data.Pos
 import util.data.Damage
-
+import util.data.Pos
 
 object Queues {
     val attackQueue: MutableMap<Int, MutableMap<Pos, List<XmpBurster>>> = mutableMapOf()

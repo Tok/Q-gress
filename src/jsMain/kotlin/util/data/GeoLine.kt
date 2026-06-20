@@ -31,7 +31,7 @@ data class GeoLine(val from: GeoCoords, val to: GeoCoords) {
     fun findClosestPointTo(geoPoint: GeoCoords): GeoCoords {
         val xDiff = (to.lng - from.lng)
         val yDiff = (to.lat - from.lat)
-        check (xDiff != 0.0 || yDiff != 0.0)
+        check(xDiff != 0.0 || yDiff != 0.0)
         val u = ((geoPoint.lng - from.lng) * xDiff + (geoPoint.lat - from.lat) * yDiff) / (xDiff * xDiff + yDiff * yDiff)
         return when {
             u < 0 -> GeoCoords(from.lng, from.lat)

@@ -13,7 +13,7 @@ data class Multihack(val type: MultihackType, val slot: ModSlot?, val owner: Age
 
     override fun toString() = type.abbr
     override fun getOwnerId(): String = owner.key()
-    override fun getLevel(): Int = -1 //TODO
+    override fun getLevel(): Int = -1 // TODO
 
     companion object {
         fun calculateImprovedBurnout(allModsInPortal: List<DeployableItem>): Double {

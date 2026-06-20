@@ -31,12 +31,12 @@ object ColorUtil {
     }
 
     fun spectrum(range: Int, fraction: Double) = when (range) {
-        0 -> Triple(1.0, fraction, 0.0) //Red -> Yellow
-        1 -> Triple(1.0 - fraction, 1.0, 0.0) //Yellow -> Green
-        2 -> Triple(0.0, 1.0, fraction) //Green -> Cyan
-        3 -> Triple(0.0, 1.0 - fraction, 1.0) //Cyan -> Blue
-        4 -> Triple(fraction, 0.0, 1.0) //Blue -> Magenta
-        5 -> Triple(1.0, 0.0, 1.0 - fraction) //Magenta -> Red
+        0 -> Triple(1.0, fraction, 0.0) // Red -> Yellow
+        1 -> Triple(1.0 - fraction, 1.0, 0.0) // Yellow -> Green
+        2 -> Triple(0.0, 1.0, fraction) // Green -> Cyan
+        3 -> Triple(0.0, 1.0 - fraction, 1.0) // Cyan -> Blue
+        4 -> Triple(fraction, 0.0, 1.0) // Blue -> Magenta
+        5 -> Triple(1.0, 0.0, 1.0 - fraction) // Magenta -> Red
         else -> throw IllegalArgumentException("Out of range: $range")
     }
 }

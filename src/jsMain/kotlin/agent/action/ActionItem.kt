@@ -11,7 +11,6 @@ import util.data.Circle
 import util.data.Line
 import util.data.Pos
 
-
 data class ActionItem(val text: String, val durationSeconds: Int, val qName: String) {
     companion object {
         val MOVE = ActionItem("moving", 60, "Move")
@@ -26,22 +25,28 @@ data class ActionItem(val text: String, val durationSeconds: Int, val qName: Str
         val DEPLOY = ActionItem("deploying", 15, "Deploy")
         val CAPTURE = ActionItem("capturing", 15, "Capture")
         val LINK = ActionItem("linking", 30, "Link")
-        fun values() =
-            listOf(MOVE, WAIT, RECHARGE, RECRUIT, EXPLORE, RECYCLE, HACK, GLYPH, ATTACK, DEPLOY, CAPTURE, LINK)
+        fun values() = listOf(MOVE, WAIT, RECHARGE, RECRUIT, EXPLORE, RECYCLE, HACK, GLYPH, ATTACK, DEPLOY, CAPTURE, LINK)
 
-        private val enlImages = if (HtmlUtil.isRunningInBrowser())
-            values().map { it to drawTemplate(it, Faction.ENL) }.toMap() else emptyMap()
-        private val resImages = if (HtmlUtil.isRunningInBrowser())
-            values().map { it to drawTemplate(it, Faction.RES) }.toMap() else emptyMap()
-        private val nonImages = if (HtmlUtil.isRunningInBrowser())
-            values().map { it to drawTemplate(it) }.toMap() else emptyMap()
+        private val enlImages = if (HtmlUtil.isRunningInBrowser()) {
+            values().map { it to drawTemplate(it, Faction.ENL) }.toMap()
+        } else {
+            emptyMap()
+        }
+        private val resImages = if (HtmlUtil.isRunningInBrowser()) {
+            values().map { it to drawTemplate(it, Faction.RES) }.toMap()
+        } else {
+            emptyMap()
+        }
+        private val nonImages = if (HtmlUtil.isRunningInBrowser()) {
+            values().map { it to drawTemplate(it) }.toMap()
+        } else {
+            emptyMap()
+        }
 
-        fun getIcon(item: ActionItem, faction: Faction? = null): Canvas {
-            return when (faction) {
-                Faction.ENL -> enlImages[item] ?: enlImages[WAIT]!!
-                Faction.RES -> resImages[item] ?: resImages[WAIT]!!
-                else -> nonImages[item] ?: nonImages[WAIT]!!
-            }
+        fun getIcon(item: ActionItem, faction: Faction? = null): Canvas = when (faction) {
+            Faction.ENL -> enlImages[item] ?: enlImages[WAIT]!!
+            Faction.RES -> resImages[item] ?: resImages[WAIT]!!
+            else -> nonImages[item] ?: nonImages[WAIT]!!
         }
 
         private fun drawTemplate(item: ActionItem, faction: Faction? = null): Canvas? {
