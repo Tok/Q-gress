@@ -19,4 +19,7 @@ object XmMap {
     }
 
     fun findXmInRange(pos: Pos) = strayXm.filter { it.key.distanceTo(pos) <= Dim.agentXmCollectionRadius }
+
+    /** All uncollected stray-XM heaps (read-only) — for 3D rendering. */
+    fun all(): Map<Pos, XmHeap> = strayXm
 }

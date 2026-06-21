@@ -25,6 +25,7 @@ import portal.XmMap
 import system.Cycle
 import system.display.PassabilityOverlay
 import system.display.Scene3D
+import system.display.VectorFieldOverlay
 import util.data.GeoCoords
 import util.data.Line
 import util.data.Pos
@@ -125,7 +126,7 @@ object HtmlUtil {
         buttonDiv.append(createVolumeSpan())
         buttonDiv.append(LayerView.createDropdown())
         buttonDiv.append(createCheckbox("passabilityToggle", "Terrain") { PassabilityOverlay.setVisible(it) })
-        buttonDiv.append(createCheckbox("vectorFieldToggle", "Vectors") { Scene3D.setVectorFieldVisible(it) })
+        buttonDiv.append(createCheckbox("vectorFieldToggle", "Vectors") { VectorFieldOverlay.setVisible(it) })
         controlDiv.append(buttonDiv)
 
         rootDiv.append(controlDiv)
@@ -575,7 +576,7 @@ object HtmlUtil {
             DrawUtil.clearBackground()
             // Clear the during-build vector preview so the game starts with nothing selected.
             Scene3D.selected = null
-            Scene3D.setVectorFieldVisible(false)
+            VectorFieldOverlay.setVisible(false)
             if (World.userFaction == null) {
                 chooseUserFaction(Faction.random())
             }

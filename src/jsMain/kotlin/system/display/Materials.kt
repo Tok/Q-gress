@@ -51,6 +51,17 @@ object Materials {
         Three.MeshBasicMaterial(p)
     }
 
+    /** Additive white glow for stray-XM motes (XM is neutral — no faction hue). */
+    fun xmGlow(): dynamic = cache.getOrPut("xmGlow") {
+        val p: dynamic = js("({})")
+        p.color = "#dfeaff"
+        p.transparent = true
+        p.opacity = 0.85
+        p.blending = Three.AdditiveBlending
+        p.depthWrite = false
+        Three.MeshBasicMaterial(p)
+    }
+
     /** Matte black rubber for the gasket between pole and orb (and the resonator slot rings). */
     fun rubber(): dynamic = cache.getOrPut("rubber") {
         val p: dynamic = js("({})")

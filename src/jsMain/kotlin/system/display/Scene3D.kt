@@ -14,10 +14,11 @@ import portal.Field
 import portal.Link
 import portal.Octant
 import portal.Portal
+import portal.XmHeap
+import portal.XmMap
 import util.SoundUtil
 import util.data.Pos
 import kotlin.math.PI
-import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.pow
 import kotlin.math.sin
@@ -48,6 +49,8 @@ object Scene3D {
     // faction-coloured with an action indicator floating just above the head.
     private const val HEAD_R = 0.45
     private const val HEAD_Z = 1.6
+    private const val XM_R = 0.7 // stray-XM mote radius (metres)
+    private const val XM_Z = 1.2 // stray-XM floats just above the ground
     private const val NPC_DROP_S = 0.8 // seconds for an NPC to fall in from the sky on first appearance
     private const val NPC_DROP_HEIGHT = 70.0 // metres an NPC drops from
     private const val INDICATOR_Z = 2.7
@@ -74,9 +77,6 @@ object Scene3D {
     private const val NEUTRAL_COLOR = "#bbbbbb"
     private const val HIGHLIGHT_COLOR = "#f0f0f0" // selection: off-tint grayscale (no new hues)
     private const val OVERLAY_Z = 0.2 // passability quad just above ground
-    private const val VECTOR_STRIDE = 2 // subsample the flow field every Nth cell
-    private const val VECTOR_CONE_R = 1.1 // flow-arrow cone radius (metres)
-    private const val VECTOR_CONE_H = 3.6 // flow-arrow cone length (metres)
     private const val MARKER_R = 10.0 // build-preview marker radius (metres)
     private const val SHOWCASE_SELECT_R = 55.0 // demo: click within this (sim px) selects a portal / min place gap
     private const val BORDER_COLOR = "#ffffff" // playable-area boundary (white — no non-faction hues)
@@ -103,13 +103,11 @@ object Scene3D {
     private var agentsGroup: dynamic = null
     private var indicatorsGroup: dynamic = null // action-indicator sprites (excluded from raycast)
     private var npcsGroup: dynamic = null
+    private var xmGroup: dynamic = null // stray collectible XM motes
     private var linksGroup: dynamic = null
     private var fieldsGroup: dynamic = null
-    private var vectorFieldGroup: dynamic = null // selected portal's flow field (toggled)
     private var markerGroup: dynamic = null // build-preview marker
     private var borderGroup: dynamic = null // playable-area boundary outline
-    private var vectorFieldVisible = false
-    private var vectorFieldKey: String? = null // selection the flow field was last built for
 
     // Glass-orb shatter fracture variants (loaded once from the GLB via ShardAssets).
     private var flaskVariants: List<List<dynamic>> = emptyList()
@@ -129,7 +127,7 @@ object Scene3D {
 
     // Shared geometries (created lazily once three.js is loaded).
     private val headGeo: dynamic by lazy { Three.SphereGeometry(HEAD_R, 10, 10) }
-    private val coneGeo: dynamic by lazy { Three.ConeGeometry(VECTOR_CONE_R, VECTOR_CONE_H, 6) }
+    private val xmGeo: dynamic by lazy { Three.SphereGeometry(XM_R, 8, 8) } // stray-XM mote
     private val poleGeo: dynamic by lazy { Three.CylinderGeometry(POLE_R, POLE_R, POLE_H, 12) } // metal pole
     private val topGeo: dynamic by lazy { Three.SphereGeometry(TOP_R, 20, 16) } // glass orb (scaled per level)
     private val gasketGeo: dynamic by lazy { Three.TorusGeometry(POLE_R * 1.15, POLE_R * 0.4, 10, 20) } // rubber donut
@@ -166,11 +164,12 @@ object Scene3D {
         newScene.add(sun)
 
         PassabilityOverlay.register(newScene)
-        vectorFieldGroup = Three.Group().also { newScene.add(it) }
+        VectorFieldOverlay.register(newScene)
         portalsGroup = Three.Group().also { newScene.add(it) }
         fieldsGroup = Three.Group().also { newScene.add(it) }
         linksGroup = Three.Group().also { newScene.add(it) }
         npcsGroup = Three.Group().also { newScene.add(it) }
+        xmGroup = Three.Group().also { newScene.add(it) }
         agentsGroup = Three.Group().also { newScene.add(it) }
         indicatorsGroup = Three.Group().also { newScene.add(it) }
         markerGroup = Three.Group().also { newScene.add(it) }
@@ -239,57 +238,13 @@ object Scene3D {
         World.allLinks().forEach { addLink(it) }
         clear(npcsGroup)
         World.allNonFaction.forEach { addNpc(it) }
+        clear(xmGroup)
+        XmMap.all().forEach { (pos, heap) -> addXm(pos, heap) }
         clear(agentsGroup)
         clear(indicatorsGroup)
         World.allAgents.forEach { addAgent(it) }
         teardownGone(Spawns.endSync())
-        // The selected portal's flow field is static, so only rebuild when the selection
-        // changes (or visibility toggles) — not every tick.
-        when {
-            vectorFieldVisible && selected != vectorFieldKey -> {
-                clear(vectorFieldGroup)
-                buildVectorFieldArrows()
-                vectorFieldKey = selected
-            }
-            !vectorFieldVisible && vectorFieldKey != null -> {
-                clear(vectorFieldGroup)
-                vectorFieldKey = null
-            }
-        }
-    }
-
-    /** Toggle the selected portal's flow-field arrows (rebuilt by [sync] when selection changes). */
-    fun setVectorFieldVisible(visible: Boolean) {
-        vectorFieldVisible = visible
-    }
-
-    private fun buildVectorFieldArrows() {
-        val id = selected ?: return
-        if (!id.startsWith("portal:")) return
-        val portal = World.allPortals.find { "portal:${it.id}" == id } ?: return
-        portal.vectors.forEach { (pos, vec) ->
-            val gx = pos.x.toInt()
-            val gy = pos.y.toInt()
-            val mag = vec.magnitude
-            if (gx % VECTOR_STRIDE != 0 || gy % VECTOR_STRIDE != 0 || mag == 0.0) return@forEach
-            val pixel = pos.fromShadow()
-            val angle = atan2(-vec.im / mag, vec.re / mag) // sim y is down → scene y is up
-            val cone = Three.Mesh(coneGeo, hueMaterial(angle))
-            cone.asDynamic().position.set(sceneX(pixel), sceneY(pixel), OVERLAY_Z)
-            cone.asDynamic().rotation.z = angle - PI / 2 // cone apex (+Y) → flow direction
-            vectorFieldGroup.add(cone)
-        }
-    }
-
-    // Colour by flow direction (hue), bucketed to 15° so the material cache stays small.
-    private fun hueMaterial(angle: Double): dynamic {
-        val deg = ((angle * 180.0 / PI) + 360.0) % 360.0
-        val bucket = (deg / 15.0).toInt()
-        return materialCache.getOrPut("v$bucket") {
-            val p: dynamic = js("({})")
-            p.color = "hsl(${bucket * 15}, 90%, 55%)"
-            Three.MeshBasicMaterial(p)
-        }
+        VectorFieldOverlay.sync(selected) // the selected portal's flow-field debug arrows
     }
 
     // Mark the playable area: a white outline plus a dark mask greying out everything beyond it.
@@ -404,8 +359,8 @@ object Scene3D {
         return Pos(px.toInt(), py.toInt())
     }
 
-    private fun sceneX(pos: Pos) = (pos.x - Sim.width / 2.0) * metersPerPixel
-    private fun sceneY(pos: Pos) = -(pos.y - Sim.height / 2.0) * metersPerPixel
+    internal fun sceneX(pos: Pos) = (pos.x - Sim.width / 2.0) * metersPerPixel
+    internal fun sceneY(pos: Pos) = -(pos.y - Sim.height / 2.0) * metersPerPixel
 
     /**
      * Stereo pan (−1 left … +1 right) for a sim [pos], from the live camera projection — so audio
@@ -683,6 +638,15 @@ object Scene3D {
         val z = HEAD_Z + h * (1.0 - f * f)
         place(sphere.asDynamic(), sceneX(npc.pos), sceneY(npc.pos), z)
         npcsGroup.add(sphere)
+    }
+
+    /** A stray-XM heap: a small additive glow mote, scaled a touch by how much XM it holds. */
+    private fun addXm(pos: Pos, heap: XmHeap) {
+        val mote = Three.Mesh(xmGeo, Materials.xmGlow())
+        val s = 0.85 + (heap.xm / 300.0).coerceIn(0.0, 1.0) * 0.5 // bigger heaps glow a touch larger
+        mote.asDynamic().scale.set(s, s, s)
+        place(mote.asDynamic(), sceneX(pos), sceneY(pos), XM_Z)
+        xmGroup.add(mote)
     }
 
     /**

@@ -393,13 +393,13 @@ animation (`afada15`); **game XMP burst + hack collar-spin** now fire in-game vi
 default-on + location label + New Game/Reset menu (`bb6ba87`); marble NPC drop + dead-2D-draw sweep.
 
 ### Smaller deferred follow-ups (this session)
-- [ ] **Orphaned `Queues.endTick`.** The attack/damage-queue trim only ran from the now-removed
-  `Attacks.draw`, so it's been disconnected since the 3D switch (stale-entry leak, not a gameplay
-  bug — damage applies synchronously via `Attacker`). Decide: delete the `Attacks`/queue viz system,
-  or re-render the attack/damage telegraphs in 3D.
-- [ ] **XM heaps + attack/damage indicators have no 3D representation** (their 2D draw was already
-  dead). Bring stray XM (`portal/XmMap`/`XmHeap`) and attack telegraphs into Scene3D if we want them
-  visible.
+- [x] **Orphaned `Queues.endTick` — removed** (`b73766d`). The attack/damage queues only fed the
+  dead `Attacks.draw` telegraph and leaked; damage applies synchronously in `XmpBurster.dealDamage`.
+  Deleted the whole telegraph/queue system (`Attacks`/`Display`/`Damage`/`Queues`); `Attacker` now
+  applies damage + sound + the 3D XMP burst inline. Attacks ARE visualised in 3D now (the burst).
+- [ ] **XM heaps have no 3D representation** (their 2D draw was dead). Bring stray XM
+  (`portal/XmMap`/`XmHeap`) into Scene3D so the collectible XM is visible. (Attack telegraphs are now
+  covered by the 3D XMP burst; floating damage numbers stay dropped.)
 - [ ] **Full Web Audio 3D (optional).** Current panning is screen-projected (`Scene3D.audioPan`); a
   true `PannerNode` + listener driven by the camera would add distance attenuation + front/back +
   elevation. Only if we want richer spatialisation.
