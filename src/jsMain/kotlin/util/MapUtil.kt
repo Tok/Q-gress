@@ -149,10 +149,11 @@ object MapUtil {
 
     // The grid is read from the shadow map at ZOOM over a Sim-sized canvas (SCALE× the screen).
     // The visible maps start zoomed out to frame that whole play area; the anchor stays at ZOOM.
-    private val DISPLAY_ZOOM = (ZOOM - log2(Sim.SCALE)).roundToInt()
+    // Framed so the chosen play-area size fits; read at call time since the size is picked at onboarding.
+    private fun displayZoomForSize() = (ZOOM - log2(Sim.scale)).roundToInt()
     private const val DEMO_ZOOM = 19 // demos frame one central object, so sit closer than the game
     private var demoMode = false
-    private fun displayZoom() = if (demoMode) DEMO_ZOOM else DISPLAY_ZOOM
+    private fun displayZoom() = if (demoMode) DEMO_ZOOM else displayZoomForSize()
     private const val DEFAULT_PITCH = 50.0 // tilt the visible maps so the 3D scene reads as 3D
     private const val MAX_PITCH = 85.0 // MapLibre's ceiling; lets you tilt to near-horizon (and to 0 = top-down)
 

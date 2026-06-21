@@ -23,7 +23,7 @@ object Config {
     const val recruitmentXmCost = 250 // XM spent per recruit attempt (cf. link = 250)
     const val recruitmentBaseChance = 0.05 // success chance at an empty roster; scales →0 at the cap
 
-    const val startPortals = 5
+    var startPortals = 5 // initial portal count (chosen at onboarding — the "portal density")
     fun startFrogs() = if (HtmlUtil.isQuickstart()) 8 else minFrogs
     fun startSmurfs() = if (HtmlUtil.isQuickstart()) 8 else minSmurfs
     fun initialAp() = if (HtmlUtil.isQuickstart()) 2000000 else 0

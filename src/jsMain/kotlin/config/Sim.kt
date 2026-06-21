@@ -2,16 +2,35 @@ package config
 
 /**
  * Simulation/grid extent — independent of the screen ([Dim], which drives the HUD). The world
- * covers [SCALE]× the screen linearly (SCALE² area) so the playable area spans the pitched
- * view, not just the top-down footprint. The Pos→metre bridge stays anchored at zoom 18.
+ * covers some multiple of the screen ([scale]) so the playable area spans the pitched view, not
+ * just the top-down footprint. The Pos→metre bridge stays anchored at zoom 18.
  *
- * Larger scales should wait for the pathfinding rework: each portal builds a full-map flow
- * field, so cost grows with the area (see PLAN.md, 3D-rework Stage 3).
+ * Size is chosen at onboarding (the map-size step): bigger = more grid cells = a slower build and
+ * pricier per-portal flow fields (each portal builds a full-map field). "Large" is the original
+ * SCALE=2.0; the default is "Normal" (a bit smaller); "Small" is way smaller.
  */
 object Sim {
-    const val SCALE = 2.0
-    val width = (Dim.width * SCALE).toInt()
-    val height = (Dim.height * SCALE).toInt()
+    const val SMALL_SCALE = 1.0
+    const val NORMAL_SCALE = 1.5
+    const val LARGE_SCALE = 2.0
+    private const val MAX_SCALE = 3.0
+
+    var width = (Dim.width * NORMAL_SCALE).toInt()
+        private set
+    var height = (Dim.height * NORMAL_SCALE).toInt()
+        private set
+
+    /** Effective scale vs the screen — drives the framed display zoom (MapUtil). */
+    val scale: Double get() = maxOf(width.toDouble() / Dim.width, height.toDouble() / Dim.height)
+
+    /** Set the play-area size (clamped to a sane range around the screen size). */
+    fun setSize(w: Int, h: Int) {
+        width = w.coerceIn(Dim.width, (Dim.width * MAX_SCALE).toInt())
+        height = h.coerceIn(Dim.height, (Dim.height * MAX_SCALE).toInt())
+    }
+
+    fun presetWidth(scaleOf: Double) = (Dim.width * scaleOf).toInt()
+    fun presetHeight(scaleOf: Double) = (Dim.height * scaleOf).toInt()
 
     // Spawn margins where no portals are placed (absolute, same as Dim's).
     val leftOffset = Dim.leftOffset

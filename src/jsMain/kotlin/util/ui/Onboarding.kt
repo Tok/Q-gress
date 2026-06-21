@@ -2,10 +2,12 @@ package util.ui
 
 import agent.Faction
 import config.Location
+import config.Sim
 import kotlinx.browser.document
 import kotlinx.dom.addClass
 import org.w3c.dom.HTMLButtonElement
 import org.w3c.dom.HTMLElement
+import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLOptionElement
 import org.w3c.dom.HTMLSelectElement
 
@@ -61,6 +63,76 @@ object Onboarding {
 
         document.body?.appendChild(screen)
         MiniMap.create(mapHolder, Location.DEFAULT.lng, Location.DEFAULT.lat)
+    }
+
+    /** Step 3 — map size (width/height, with presets) + portal density. [onStart] gets w, h, portals. */
+    fun showMapSize(defaultPortals: Int, onStart: (Int, Int, Int) -> Unit) {
+        val screen = screen("MAP SIZE & PORTALS")
+        val widthInput = numberInput(Sim.width)
+        val heightInput = numberInput(Sim.height)
+
+        val presets = div("onboardRow")
+        listOf("Small" to Sim.SMALL_SCALE, "Normal" to Sim.NORMAL_SCALE, "Large" to Sim.LARGE_SCALE).forEach { (label, sc) ->
+            presets.appendChild(
+                button(label, "onboardPreset") {
+                    widthInput.value = Sim.presetWidth(sc).toString()
+                    heightInput.value = Sim.presetHeight(sc).toString()
+                },
+            )
+        }
+        screen.appendChild(presets)
+
+        val fields = div("onboardRow")
+        fields.appendChild(labeledInput("Width", widthInput))
+        fields.appendChild(labeledInput("Height", heightInput))
+        val portalsInput = numberInput(defaultPortals)
+        fields.appendChild(labeledInput("Portals", portalsInput))
+        screen.appendChild(fields)
+
+        val warn = div("onboardWarn")
+        warn.textContent = "Larger maps take longer to generate and use more processing whenever portals spawn."
+        screen.appendChild(warn)
+
+        screen.appendChild(
+            button("Start", "topButton amarillo onboardStart") {
+                onStart(
+                    widthInput.value.toIntOrNull() ?: Sim.width,
+                    heightInput.value.toIntOrNull() ?: Sim.height,
+                    portalsInput.value.toIntOrNull() ?: defaultPortals,
+                )
+            },
+        )
+        document.body?.appendChild(screen)
+    }
+
+    private fun button(label: String, classes: String, onClick: () -> Unit): HTMLButtonElement {
+        val b = document.createElement("button") as HTMLButtonElement
+        classes.split(" ").forEach { b.addClass(it) }
+        b.textContent = label
+        b.onclick = { onClick() }
+        return b
+    }
+
+    private fun numberInput(value: Int): HTMLInputElement {
+        val i = document.createElement("input") as HTMLInputElement
+        i.type = "number"
+        i.value = value.toString()
+        i.addClass("onboardInput", "coda")
+        return i
+    }
+
+    private fun labeledInput(label: String, input: HTMLInputElement): HTMLElement {
+        val wrap = div("onboardField")
+        val l = div("onboardFieldLabel")
+        l.textContent = label
+        wrap.appendChild(l)
+        wrap.appendChild(input)
+        return wrap
+    }
+
+    /** Remove the current onboarding screen (the last step loads the world without a reload). */
+    fun close() {
+        document.getElementById(SCREEN_ID)?.remove()
     }
 
     private fun screen(titleText: String): HTMLElement {

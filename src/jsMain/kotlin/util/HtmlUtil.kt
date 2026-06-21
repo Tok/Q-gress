@@ -153,7 +153,12 @@ object HtmlUtil {
             }
             else -> {
                 chooseUserFaction(faction)
-                initWorld()
+                // Final step: pick map size + portal density (no reload — set in-memory, then load).
+                Onboarding.showMapSize(Config.startPortals) { w, h, portals ->
+                    Sim.setSize(w, h)
+                    Config.startPortals = portals
+                    initWorld()
+                }
             }
         }
     }
@@ -309,6 +314,7 @@ object HtmlUtil {
     }
 
     private fun initWorld() {
+        Onboarding.close() // dismiss the map-size screen (it loads without a reload)
         // Staged loading overlay, up before the first tile request (the world build runs ~2 min on Big).
         LoadingOverlay.show()
         val noiseAlpha = 0.8
