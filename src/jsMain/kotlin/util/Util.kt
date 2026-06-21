@@ -19,7 +19,35 @@ object Util {
     fun clip(value: Int, from: Int, to: Int): Int = max(from, min(to, value))
     fun clipDouble(value: Double, from: Double, to: Double): Double = max(from, min(to, value))
 
-    fun random(): Double = js("Math.random();") as Double // native JS replacement for deprecated kotlin.js.Math.random()
+    // Seedable PRNG (mulberry32). random() is the ONLY randomness source in the game, so seeding it
+    // makes the whole world (and a fresh playthrough) reproducible — the basis for shareable links
+    // and, later, deterministic AI matches (PLAN Phase 6.0). A fresh seed is rolled if none is set,
+    // and captured so it can be shared. (Kotlin Int arithmetic wraps mod 2^32 = uint32 semantics.)
+    private var rngState = 0
+    private var theSeed = 0
+    private var seeded = false
+
+    /** Seed the RNG (resets the sequence). Call before world generation to reproduce a world. */
+    fun seed(value: Int) {
+        theSeed = value
+        rngState = value
+        seeded = true
+    }
+
+    /** The seed driving the current world (for sharing). */
+    fun currentSeed(): Int = theSeed
+
+    /** A fresh random 32-bit seed (used when no seed is supplied). */
+    fun freshSeed(): Int = js("(Math.random() * 4294967296) | 0") as Int
+
+    fun random(): Double {
+        if (!seeded) seed(freshSeed())
+        val a = rngState + 0x6D2B79F5
+        rngState = a
+        var t = (a xor (a ushr 15)) * (1 or a)
+        t = (t + ((t xor (t ushr 7)) * (61 or t))) xor t
+        return (t xor (t ushr 14)).toUInt().toDouble() / 4294967296.0
+    }
 
     fun randomBool() = random() <= 0.5
 

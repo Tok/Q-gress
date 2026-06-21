@@ -36,6 +36,9 @@ import util.ui.LoadingOverlay
 import util.ui.Onboarding
 import kotlin.js.Json
 
+@Suppress("UnusedParameter") // external JS global; param describes the contract
+external fun encodeURIComponent(uri: String): String
+
 object HtmlUtil {
     private var intervalID = 0
     private const val PAUSE_BUTTON_ID = "pauseButton"
@@ -339,6 +342,10 @@ object HtmlUtil {
     }
 
     private fun initWorld(center: Json) {
+        // Size + seed from a shared link (if present) → reproduce the exact world; else a fresh seed
+        // (captured for sharing). Set before generation, since Util.random is the sole RNG source.
+        getSizeFromUrl()?.let { Sim.setSize(it.first, it.second) }
+        Util.seed(getSeedFromUrl() ?: Util.freshSeed())
         Onboarding.close() // dismiss the onboarding screen (it loads without a reload)
         // Staged loading overlay, up before the first tile request (the world build runs ~2 min on Big).
         LoadingOverlay.show()
@@ -584,6 +591,7 @@ object HtmlUtil {
         menu.addClass("gameMenu", "invisible")
         menu.append(createButton("menuNewGame", "menuItem amarillo", "New Game") { doNewGame() })
         menu.append(createButton("menuReset", "menuItem amarillo", "Reset") { doReset() })
+        menu.append(createButton("menuShare", "menuItem amarillo", "Copy link") { copyShareLink() })
         // Overlay toggles live in the menu now (no longer always-visible in the top bar).
         menu.append(createMenuCheckbox("passabilityToggle", "Terrain") { PassabilityOverlay.setVisible(it) })
         menu.append(createMenuCheckbox("vectorFieldToggle", "Vectors") { VectorFieldOverlay.setVisible(it) })
@@ -660,17 +668,41 @@ object HtmlUtil {
         document.location?.href = createNewUrl(lng.toString(), lat.toString(), name)
     }
 
-    // Build off the current origin + path so recentering works on any host
-    // (local dev server, GitHub Pages, …) rather than a hard-coded port.
-    private fun createNewUrl(lng: String, lat: String, name: String): String {
+    // Navigation URL (reset / preset / search): same location + size, but a FRESH world (no seed).
+    private fun createNewUrl(lng: String, lat: String, name: String): String = buildUrl(lng, lat, name, null)
+
+    /** A shareable link reproducing the exact current world — location + size + seed. */
+    private fun shareUrl(): String = buildUrl(currentLng.toString(), currentLat.toString(), currentLocationName, Util.currentSeed())
+
+    // Build off the current origin + path so it works on any host (local dev, GitHub Pages, …).
+    private fun buildUrl(lng: String, lat: String, name: String, seed: Int?): String {
         val location = document.location
         val base = (location?.origin ?: "") + (location?.pathname ?: "/")
         val fact = World.userFaction?.abbr ?: ""
-        return addParameters(base, fact, lng, lat, name, isQuickstart())
+        val seedPart = if (seed != null) "&seed=$seed" else ""
+        return "$base?faction=$fact&lng=$lng&lat=$lat&name=${encodeURIComponent(name)}" +
+            "&w=${Sim.width}&h=${Sim.height}&quickstart=${isQuickstart()}$seedPart"
+    }
+
+    /** Copy the shareable link to the clipboard (with brief in-menu feedback). */
+    private fun copyShareLink() {
+        val clipboard = window.navigator.asDynamic().clipboard
+        if (clipboard != null) clipboard.writeText(shareUrl())
+        (document.getElementById("menuShare") as? HTMLButtonElement)?.let { btn ->
+            btn.innerText = "Copied!"
+            window.setTimeout({ btn.innerText = "Copy link" }, 1200)
+        }
     }
 
     private fun url() = URL(document.location?.href ?: "")
     private fun getLocationNameFromUrl() = url().searchParams.get("name")
+    private fun getSeedFromUrl(): Int? = url().searchParams.get("seed")?.toIntOrNull()
+    private fun getSizeFromUrl(): Pair<Int, Int>? {
+        val w = url().searchParams.get("w")?.toIntOrNull()
+        val h = url().searchParams.get("h")?.toIntOrNull()
+        return if (w != null && h != null) w to h else null
+    }
+
     private fun getLngLatFromUrl(): GeoCoords? {
         val url = url()
         val lngString = url.searchParams.get("lng")
@@ -679,13 +711,4 @@ object HtmlUtil {
     }
 
     private fun getFactionFromUrl() = Faction.fromString(url().searchParams.get("faction"))
-
-    private fun addParameters(
-        url: String,
-        faction: String,
-        lng: String,
-        lat: String,
-        name: String,
-        isQs: Boolean,
-    ): String = "$url?faction=$faction&lng=$lng&lat=$lat&name=$name&quickstart=$isQs"
 }
