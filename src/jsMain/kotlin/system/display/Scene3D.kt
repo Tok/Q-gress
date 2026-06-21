@@ -37,7 +37,11 @@ import kotlin.math.sqrt
  * The simulation stays 2D; [sync] is called each tick to (re)place 3D objects
  * from world state. Rendering happens continuously via the custom layer.
  */
-@Suppress("TooManyFunctions")
+// LargeClass suppressed: Scene3D is the renderer hub; subsystems are already extracted (ShatterFx,
+// HackFx, FieldFx, CaptureFx, PortalChangeSound, Spawns, ShardAssets, GlassShader). The remaining
+// size is mostly the self-contained demo/showcase code — extracting that is the tracked follow-up
+// (PLAN.md → "extract the demo/showcase subsystem from Scene3D").
+@Suppress("TooManyFunctions", "LargeClass")
 object Scene3D {
     // Metres per CSS pixel at zoom 0 on the equator, for MapLibre's 512-px tiles
     // (earthCircumference / 512). NOTE: the common 156543.03392 value is for 256-px
@@ -59,6 +63,7 @@ object Scene3D {
     private const val LINK_R = 0.7 // glass-pipe link radius (metres)
     private const val CORE_R_FRAC = 0.3 // bright inner-filament radius as a fraction of LINK_R
     private const val PORTAL_GROW_S = 0.5 // seconds for a new portal's orb to grow in
+    private const val CAPTURE_SHATTER_WEIGHT = 0.22 // glass-shatter heaviness on capture (light — only the orb)
     private const val FIELD_FILL_S = 0.4 // seconds for a new control field to fill in
     private const val LEVEL_TWEEN_RATE = 0.18 // per-sync ease of the rendered level toward the real one
     private const val POLE_H = 22.5 // base pole height at L1; scales by φ per level
@@ -421,14 +426,25 @@ object Scene3D {
         val id = "portal:${portal.id}"
         PortalChangeSound.check(id, portal) // upgrade / downgrade / neutralize sounds on state change
         val baseColor = portal.owner?.faction?.color ?: NEUTRAL_COLOR
-        val color = if (selected == id) HIGHLIGHT_COLOR else baseColor
         val level = tweenedLevel(id, portal.getLevel().toInt()) // eases on level-up
+        // Capture: the old-colour orb shatters in place and the new one pops back in (reform factor).
+        CaptureFx.check(id, baseColor) { old ->
+            val lv = displayedLevel[id] ?: level
+            ShatterFx.shatterOrb(sceneX(portal.location), sceneY(portal.location), orbCenterZ(lv), orbScale(lv), old, flaskVariants, flaskScale)
+            SoundUtil.playGlassShatterSound(portal.location, CAPTURE_SHATTER_WEIGHT)
+        }
+        val reform = CaptureFx.reformFactor(id)
+        val color = if (selected == id) HIGHLIGHT_COLOR else baseColor
         val resos = portal.resoMap().mapValues { it.value.getLevel() } // octant → reso level (real-time)
         val parts = buildPortal(portalsGroup, portal.location, level, color, id, resos)
         HackFx.bind(id, parts[3]) // spin the collar if this portal is being hacked
-        // Build-in: the pole rises and the orb grows from the ground over the first moments.
+        // Build-in: the pole rises and the orb grows from the ground; [reform] re-pops the orb only.
         val g = Spawns.appear(id, PORTAL_GROW_S)
-        if (g < 1.0) applyBuildGrow(level, g, parts)
+        if (g < 1.0) {
+            applyBuildGrow(level, g, parts, reform)
+        } else if (reform < 1.0) {
+            applyBuildGrow(level, 1.0, parts, reform) // orb pops back in after a capture
+        }
     }
 
     /**
@@ -517,10 +533,10 @@ object Scene3D {
     }
 
     /** Rise the pole + grow the orb from the ground for the build-in animation ([g] = 0→1). */
-    private fun applyBuildGrow(level: Double, g: Double, parts: Array<dynamic>) {
+    private fun applyBuildGrow(level: Double, g: Double, parts: Array<dynamic>, reform: Double = 1.0) {
         val gg = g.coerceAtLeast(0.0)
         val poleH = poleHeight(level)
-        val s = orbScale(level) * gg
+        val s = orbScale(level) * gg * reform
         parts[2].scale.set(1.0, poleScale(level) * gg, 1.0) // pole
         parts[2].position.z = poleH * gg / 2.0
         parts[1].position.z = poleH * gg // gasket
@@ -760,6 +776,7 @@ object Scene3D {
                 SoundUtil.playFieldDownSound()
             }
             displayedLevel.remove(id) // forget removed portals' level tween
+            CaptureFx.forget(id) // forget removed portals' capture/colour state
         }
     }
 

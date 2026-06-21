@@ -77,6 +77,19 @@ object ShatterFx {
         spawnGasket(w, gasketGeo, x, y, poleH)
     }
 
+    /**
+     * Just the orb's glass shards (no pole/gasket) — for a **capture**: the portal stays standing
+     * while its orb re-skins to the new faction, so only the old-colour orb shards fly off.
+     */
+    @Suppress("LongParameterList") // position + size + colour + the shard assets
+    fun shatterOrb(x: Double, y: Double, orbZ: Double, orbScale: Double, color: String, variants: List<List<dynamic>>, flaskScale: Double) {
+        val w = world ?: return
+        if (variants.isEmpty()) return
+        shatterRot = doubleArrayOf(Util.random() * 2.0 * PI, Util.random() * 2.0 * PI, Util.random() * 2.0 * PI)
+        val variant = variants[(Util.random() * variants.size).toInt()]
+        variant.forEach { holder -> spawnShard(w, holder, doubleArrayOf(x, y, orbZ), flaskScale * orbScale, color) }
+    }
+
     private fun spawnSinkingPole(poleGeo: dynamic, x: Double, y: Double, poleH: Double, poleScaleVal: Double) {
         val pole = Three.Mesh(poleGeo, Materials.metal())
         pole.asDynamic().rotation.x = PI / 2 // Y-axis cylinder → vertical

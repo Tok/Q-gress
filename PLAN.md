@@ -140,6 +140,10 @@ dominates" validation is iterative (playtest, or a future headless strategy-comp
 - **TTS announcements (low priority).** Speak important events (captures, recruits, new fields, cycle
   changes) via the Web Speech API (`speechSynthesis`), throttled so it doesn't spam; per-faction
   voices a nice touch; off by default, behind a toggle + the master volume.
+- **Extract the demo/showcase subsystem from `Scene3D`.** Scene3D keeps hitting detekt `LargeClass`
+  (currently suppressed); the bulk of the remaining size is the self-contained sandbox code (`Showcase`
+  / `DemoLink`, place/click/remove/hack/xmp/step/link/update showcase, demo cursor). Move it to a
+  `Showcases` object (Scene3D build helpers go `internal`), then drop the `LargeClass` suppress.
 - **Evaluate NVIDIA Komodo.** (Per user.) Investigate what it offers and whether it fits Q-Gress
   (rendering / AI / acceleration?) before committing — scope unknown; an evaluation item.
 - **Legacy 2D gameplay TODOs (from the old README), still open:** smarter agent behaviour (more
