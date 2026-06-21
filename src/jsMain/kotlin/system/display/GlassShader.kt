@@ -13,11 +13,29 @@ import external.Three
  * per-instance **tint** (the faction colour — the "Queen-Scale" exception).
  *
  * One unavoidable difference: Godot's screen-space refraction (`hint_screen_texture`) needs the
- * opaque pass as a texture, which our custom layer doesn't expose — so we approximate the view
- * direction from the world-space normal's verticality (Z is up) instead of the true camera ray.
- * Good enough for the rim; true SSR is a follow-up.
+ * opaque pass as a texture, which our custom layer doesn't expose — so we drop SSR (a follow-up).
+ *
+ * The Fresnel rim now **tracks the camera**: [Scene3D] feeds the eye position (sim-space) each
+ * frame via [setEye], and the fragment shader computes the true per-fragment view direction
+ * `uEye - worldPos`. Because the custom layer bakes the whole perspective transform into the
+ * camera's `projectionMatrix` (the camera itself sits at the origin), `modelViewMatrix * position`
+ * is already a **sim-space** position and `normalMatrix * normal` a sim-space normal — so the dot
+ * is correct even under the link tubes' non-uniform Y scale, with no extra world-matrix juggling.
  */
 object GlassShader {
+    /** Brightness multiplier for the dedicated link variant (orb glass is near-transparent). */
+    const val LINK_BRIGHT = 2.6
+
+    // Camera eye in sim-space, shared by every glass material and refreshed per frame by setEye().
+    private val eyeUniform: dynamic = js("({ value: { x: 0.0, y: 0.0, z: 1.0e6 } })")
+
+    /** Feed the current camera eye (sim-space metres: x east, y north, z up); call once per frame. */
+    fun setEye(x: Double, y: Double, z: Double) {
+        eyeUniform.value.x = x
+        eyeUniform.value.y = y
+        eyeUniform.value.z = z
+    }
+
     // Tunables (qlippostasis defaults, nudged for readability without its bloom/SSR).
     private const val RIM_STRENGTH = 2.6
     private const val RIM_POWER = 2.8
@@ -30,42 +48,50 @@ object GlassShader {
     private const val INTERIOR_EMISSION = 0.05
 
     private const val VERT =
-        "varying vec3 vWorldNormal;\nvarying vec3 vModelPos;\n" +
-            "void main() { vModelPos = position; vWorldNormal = normalize(normalMatrix * normal);" +
+        "varying vec3 vWorldNormal;\nvarying vec3 vModelPos;\nvarying vec3 vWorldPos;\n" +
+            "void main() { vModelPos = position;" +
+            " vWorldPos = (modelViewMatrix * vec4(position, 1.0)).xyz;" + // sim-space here (see header)
+            " vWorldNormal = normalize(normalMatrix * normal);" +
             " gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }"
 
     private val FRAG =
-        "varying vec3 vWorldNormal;\nvarying vec3 vModelPos;\n" +
-            "uniform vec3 uTint;\n" +
+        "varying vec3 vWorldNormal;\nvarying vec3 vModelPos;\nvarying vec3 vWorldPos;\n" +
+            "uniform vec3 uTint;\nuniform vec3 uEye;\nuniform float uBright;\n" +
             "float hash(vec3 p){ p = fract(p * vec3(0.1031, 0.1030, 0.0973)); p += dot(p, p.yxz + 33.33);" +
             " return fract((p.x + p.y) * p.z); }\n" +
             "float vnoise(vec3 p){ vec3 i = floor(p); vec3 f = fract(p); f = f * f * (3.0 - 2.0 * f);\n" +
             " return mix(mix(mix(hash(i), hash(i + vec3(1,0,0)), f.x), mix(hash(i + vec3(0,1,0))," +
             " hash(i + vec3(1,1,0)), f.x), f.y), mix(mix(hash(i + vec3(0,0,1)), hash(i + vec3(1,0,1)), f.x)," +
             " mix(hash(i + vec3(0,1,1)), hash(i + vec3(1,1,1)), f.x), f.y), f.z); }\n" +
-            // Fixed view ~matching the default pitched map camera (no real camera ray in the custom
-            // layer). abs(dot) → a thin silhouette RING perpendicular to V (not abs(N.z)'s equator band).
-            "const vec3 VIEW = normalize(vec3(0.0, -0.5, 0.866));\n" +
             "void main(){\n" +
-            " float ndv = abs(dot(normalize(vWorldNormal), VIEW));\n" +
+            // True view direction from the per-frame camera eye. abs(dot) → a thin silhouette RING
+            // perpendicular to V (the glass edge lights up wherever the surface turns away).
+            " vec3 V = normalize(uEye - vWorldPos);\n" +
+            " float ndv = abs(dot(normalize(vWorldNormal), V));\n" +
             " float fres = pow(1.0 - ndv, ${RIM_POWER.glsl()});\n" +
             " float rim = fres * ${RIM_STRENGTH.glsl()};\n" +
             " float n = vnoise(vModelPos * ${SMUDGE_SCALE.glsl()});\n" +
             " float smudge = smoothstep(${SMUDGE_THRESHOLD.glsl()}, ${(SMUDGE_THRESHOLD + 0.16).glsl()}, n)" +
             " * ${SMUDGE_AMOUNT.glsl()};\n" +
             " float bright = clamp(rim + smudge * 0.4 + ${INTERIOR_LUM.glsl()}, 0.0, 1.0);\n" +
-            " vec3 col = vec3(bright) * uTint + uTint * (rim * ${RIM_EMISSION.glsl()} + ${INTERIOR_EMISSION.glsl()});\n" +
-            " float alpha = clamp(${BASE_ALPHA.glsl()} + rim * 0.55 + smudge * 0.5, 0.04, 0.95);\n" +
+            " vec3 col = (vec3(bright) * uTint + uTint * (rim * ${RIM_EMISSION.glsl()} + ${INTERIOR_EMISSION.glsl()})) * uBright;\n" +
+            " float alpha = clamp((${BASE_ALPHA.glsl()} + rim * 0.55 + smudge * 0.5) * uBright, 0.04, 0.97);\n" +
             " gl_FragColor = vec4(col, alpha); }"
 
-    /** A glass [Three.ShaderMaterial] tinted with [hexColor] (e.g. a faction colour "#03DC03"). */
-    fun material(hexColor: String): dynamic {
+    /**
+     * A glass [Three.ShaderMaterial] tinted with [hexColor] (e.g. a faction colour "#03DC03").
+     * [bright] scales emission + opacity above the near-transparent orb default — use [LINK_BRIGHT]
+     * for the thin link tubes, which would otherwise read too faint.
+     */
+    fun material(hexColor: String, bright: Double = 1.0): dynamic {
         val rgb = hexToRgb(hexColor)
-        val uni: dynamic = js("({ uTint: { value: null } })")
+        val uni: dynamic = js("({ uTint: { value: null }, uBright: { value: 1.0 } })")
         uni.uTint.value = js("({ x: 0.0, y: 0.0, z: 0.0 })")
         uni.uTint.value.x = rgb[0]
         uni.uTint.value.y = rgb[1]
         uni.uTint.value.z = rgb[2]
+        uni.uBright.value = bright
+        uni.uEye = eyeUniform // shared, refreshed each frame by setEye()
         val p: dynamic = js("({})")
         p.vertexShader = VERT
         p.fragmentShader = FRAG

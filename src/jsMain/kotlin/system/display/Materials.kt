@@ -37,6 +37,20 @@ object Materials {
     /** The portal's glass orb (qlippostasis-style shader, faction-tinted). */
     fun glass(color: String): dynamic = cache.getOrPut("pg$color") { GlassShader.material(color) }
 
+    /** Brighter glass variant for the thin link tubes (the orb glass reads too faint at pipe radius). */
+    fun linkGlass(color: String): dynamic = cache.getOrPut("lg$color") { GlassShader.material(color, GlassShader.LINK_BRIGHT) }
+
+    /** Additive emissive filament running down the centre of a link tube — the "plasma core". */
+    fun linkCore(color: String): dynamic = cache.getOrPut("lc$color") {
+        val p: dynamic = js("({})")
+        p.color = color
+        p.transparent = true
+        p.opacity = 0.85
+        p.blending = Three.AdditiveBlending
+        p.depthWrite = false
+        Three.MeshBasicMaterial(p)
+    }
+
     /** Matte black rubber for the gasket between pole and orb. */
     fun rubber(): dynamic = cache.getOrPut("rubber") {
         val p: dynamic = js("({})")

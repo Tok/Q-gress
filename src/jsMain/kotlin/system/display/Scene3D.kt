@@ -18,6 +18,7 @@ import util.SoundUtil
 import util.Util
 import util.data.Pos
 import kotlin.math.PI
+import kotlin.math.abs
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.pow
@@ -53,6 +54,7 @@ object Scene3D {
     private const val INDICATOR_SIZE = 1.6
     private const val POLE_R = 2.0
     private const val LINK_R = 0.7 // glass-pipe link radius (metres)
+    private const val CORE_R_FRAC = 0.3 // bright inner-filament radius as a fraction of LINK_R
     private const val PORTAL_GROW_S = 0.5 // seconds for a new portal's orb to grow in
     private const val FIELD_FILL_S = 0.4 // seconds for a new control field to fill in
     private const val LEVEL_TWEEN_RATE = 0.18 // per-sync ease of the rendered level toward the real one
@@ -136,6 +138,7 @@ object Scene3D {
     private val topGeo: dynamic by lazy { Three.SphereGeometry(TOP_R, 20, 16) } // glass orb (scaled per level)
     private val gasketGeo: dynamic by lazy { Three.TorusGeometry(POLE_R * 1.15, POLE_R * 0.4, 10, 20) } // rubber donut
     private val linkGeo: dynamic by lazy { Three.CylinderGeometry(LINK_R, LINK_R, 1.0, 8) } // unit glass tube (scaled to length)
+    private val coreGeo: dynamic by lazy { Three.CylinderGeometry(LINK_R * CORE_R_FRAC, LINK_R * CORE_R_FRAC, 1.0, 6) } // bright filament inside the tube
     private val materialCache = mutableMapOf<String, dynamic>()
     private val spriteCache = mutableMapOf<String, dynamic>()
 
@@ -200,6 +203,7 @@ object Scene3D {
             .makeTranslation(originMerc.x as Double, originMerc.y as Double, originMerc.z as Double)
             .scale(Three.Vector3(metersScale, -metersScale, metersScale))
         cam.projectionMatrix = mapMatrix.multiply(modelMatrix)
+        feedCameraEye(cam.projectionMatrix) // camera-tracking glass rim (orbs + links)
         PlasmaShader.setTime((js("performance.now()") as Double) / 1000.0) // animate control fields
         if (activeShards.isNotEmpty() || XmpBurst.hasActive() || FieldFx.hasActive()) {
             val nowMs = js("performance.now()") as Double
@@ -219,6 +223,28 @@ object Scene3D {
         activeRenderer.resetState()
         activeRenderer.render(activeScene, cam)
         map.triggerRepaint()
+    }
+
+    /**
+     * Recover the camera eye in **sim space** from the combined sim→clip matrix and hand it to
+     * [GlassShader]. MapLibre 5.24 exposes no free-camera API, and the whole perspective transform
+     * is baked into [cam.projectionMatrix], so we solve for the camera centre directly: it is the
+     * null vector of the 3×4 projection formed by the x, y and w rows of the 4×4 matrix
+     * (the classic `P·C = 0` camera-centre, with the depth row dropped).
+     */
+    private fun feedCameraEye(matrix: dynamic) {
+        val e = matrix.elements // three.js Matrix4: column-major, e[col*4 + row]
+
+        // 3×3 determinant over columns (c0,c1,c2) using rows x(0), y(1), w(3).
+        fun det3(c0: Int, c1: Int, c2: Int): Double {
+            fun m(r: Int, c: Int): Double = e[c * 4 + r] as Double
+            return m(0, c0) * (m(1, c1) * m(3, c2) - m(1, c2) * m(3, c1)) -
+                m(0, c1) * (m(1, c0) * m(3, c2) - m(1, c2) * m(3, c0)) +
+                m(0, c2) * (m(1, c0) * m(3, c1) - m(1, c1) * m(3, c0))
+        }
+        val cw = -det3(0, 1, 2)
+        if (abs(cw) < 1e-9) return // degenerate (e.g. pre-first-frame) — keep the last eye
+        GlassShader.setEye(det3(1, 2, 3) / cw, -det3(0, 2, 3) / cw, det3(0, 1, 3) / cw)
     }
 
     private fun updateShards(dt: Double) {
@@ -650,15 +676,23 @@ object Scene3D {
         npcsGroup.add(sphere)
     }
 
-    /** A link is a thin glass pipe between the two portals' orbs (à la qlippostasis tubing). */
+    /**
+     * A link is a thin glass pipe between the two portals' orbs (à la qlippostasis tubing): a
+     * brighter glass shell ([Materials.linkGlass]) around an additive **plasma core** filament, so
+     * the link still reads strongly even though the orb glass is near-transparent at pipe radius.
+     */
     private fun addLink(link: Link) {
+        val color = link.creator.faction.color
         val z0 = orbCenterZ(link.origin.getLevel().toInt().toDouble())
         val z1 = orbCenterZ(link.destination.getLevel().toInt().toDouble())
-        val tube = Three.Mesh(linkGeo, Materials.glass(link.creator.faction.color))
         val a = doubleArrayOf(sceneX(link.origin.location), sceneY(link.origin.location), z0)
         val b = doubleArrayOf(sceneX(link.destination.location), sceneY(link.destination.location), z1)
+        val tube = Three.Mesh(linkGeo, Materials.linkGlass(color))
         orientTube(tube.asDynamic(), a, b)
         linksGroup.add(tube)
+        val core = Three.Mesh(coreGeo, Materials.linkCore(color))
+        orientTube(core.asDynamic(), a, b)
+        linksGroup.add(core)
     }
 
     /** Place a unit (Y-axis) cylinder so it spans [a]→[b]: midpoint, Y-scaled to length, Y rotated to dir. */
