@@ -417,6 +417,7 @@ object Scene3D {
 
     private fun addPortal(portal: Portal) {
         val id = "portal:${portal.id}"
+        detectPortalChange(id, portal) // upgrade / downgrade / neutralize sounds on state change
         val baseColor = portal.owner?.faction?.color ?: NEUTRAL_COLOR
         val color = if (selected == id) HIGHLIGHT_COLOR else baseColor
         val level = tweenedLevel(id, portal.getLevel().toInt()) // eases on level-up
@@ -426,6 +427,24 @@ object Scene3D {
         // Build-in: the pole rises and the orb grows from the ground over the first moments.
         val g = Spawns.appear(id, PORTAL_GROW_S)
         if (g < 1.0) applyBuildGrow(level, g, parts)
+    }
+
+    private val prevPortalLevel = mutableMapOf<String, Int>()
+    private val prevPortalOwned = mutableMapOf<String, Boolean>()
+
+    /** Compare [portal] to the previous sync and play the upgrade / downgrade / neutralize sound. */
+    private fun detectPortalChange(id: String, portal: Portal) {
+        val lvl = portal.getLevel().toInt()
+        prevPortalLevel[id]?.let { prev ->
+            when {
+                lvl > prev -> SoundUtil.playUpgradeSound(portal.location)
+                lvl < prev && portal.owner != null -> SoundUtil.playDowngradeSound(portal.location)
+            }
+        }
+        prevPortalLevel[id] = lvl
+        val owned = portal.owner != null
+        if (prevPortalOwned[id] == true && !owned) SoundUtil.playNeutralizeSound(portal.location)
+        prevPortalOwned[id] = owned
     }
 
     /**
@@ -585,9 +604,12 @@ object Scene3D {
         val target = activeShowcase() ?: return
         val newLevel = (target.level + delta).coerceIn(1, 8)
         if (newLevel == target.level) return
+        val pos = target.pos
+        val up = newLevel > target.level
         showcaseGroup?.remove(target.group)
         showcases.remove(target)
-        placeShowcase(target.pos, newLevel, target.color) // re-places + re-selects
+        placeShowcase(pos, newLevel, target.color) // re-places + re-selects
+        if (up) SoundUtil.playUpgradeSound(pos) else SoundUtil.playDowngradeSound(pos)
     }
 
     /** Demo: move the ground cursor ring to [location] (null hides it); colour shows select vs place. */

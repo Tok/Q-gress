@@ -319,6 +319,34 @@ object SoundUtil {
         ring.stop(n + dur + 0.25)
     }
 
+    /** Portal gained a level: a quick rising note. */
+    fun playUpgradeSound(pos: Pos) {
+        if (isMuted()) return
+        val dur = 0.18
+        val osc = createExponentialRampOscillator(OscillatorType.SINE, 520.0, 880.0, dur)
+        playSound(osc, createPanner(pos), 0.08, dur)
+    }
+
+    /** Portal lost a level: a quick falling note. */
+    fun playDowngradeSound(pos: Pos) {
+        if (isMuted()) return
+        val dur = 0.2
+        val osc = createExponentialRampOscillator(OscillatorType.SINE, 520.0, 300.0, dur)
+        playSound(osc, createPanner(pos), 0.08, dur)
+    }
+
+    /** Portal neutralized (lost its owner): a short descending "power-down" sweep. */
+    fun playNeutralizeSound(pos: Pos) {
+        if (isMuted()) return
+        val dur = 0.5
+        val osc = createExponentialRampOscillator(OscillatorType.SAW, 440.0, 90.0, dur)
+        val n = now()
+        val gainNode = audioCtx.createGain()
+        gainNode.gain.setValueAtTime(0.12, n)
+        gainNode.gain.exponentialRampToValueAtTime(EPS, n + dur)
+        connectVoice(osc, createPanner(pos), gainNode, n + dur)
+    }
+
     fun playXmpSound(level: XmpLevel, pos: Pos) {
         if (isMuted()) return
         val freq = 160.0 - (level.level * 5)
