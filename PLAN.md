@@ -305,6 +305,9 @@ the Blender step happens, commit the raw `.blend` under `/assets/blender/`, `.gl
       and the **TopAgentsDisplay table** (the two complex ones — want a **charting library** /
       table component), plus retiring `ActionLimitsDisplay`. Stats stays a **graph-migration +
       stats-improvement phase** (richer time-series, more metrics), not a one-shot port.
+      _The loading HUD is already fully DOM (`5bd5452`)._ **Next focused step:** add a chart dep
+      (uPlot — light/fast for the MU time-series; or Chart.js) to the webpack build + `external`
+      decls, then move the Cycle graph + TopAgents table to DOM and retire the canvas HUD.
 - Map visuals (done, this batch): **grayscale terrain default** + Colored/Street views
       (`util/ui/LayerView`; raster-saturation on the satellite layer only); **white** play-area
       border + **dimmed out-of-bounds** (`system/display/PlayAreaMask`); rule: no new colours,
@@ -339,8 +342,12 @@ A richer start-up flow before the sim runs.
 - **Location selection** follow-ups: (1) **Home / nearest city** via Geolocation API; (2) a
   **curated list** of preselected places (extend the preset enum); (3) **Random**. Free-form search
   exists in-game but isn't on the onboarding screen yet.
-- **Map size**: **[Small] [Normal] [Big]** — sets the play-area `Sim.SCALE`; warn on Big (slow).
-  The progress bar already shows from frame 0; remaining is real per-stage % (esp. flow fields).
+- [x] **Map size + portal density** (`a1f150b`): onboarding step after location — Small/Normal/Large
+  presets + editable Width/Height (`Sim.width/height` now runtime `var`, default Normal=1.5×) and an
+  editable initial portal count (`Config.startPortals` now `var`), with a slow-build warning. Loads
+  in-memory (no reload). Remaining: real per-stage load % (esp. flow fields); Geolocation/random.
+- [x] **Loading unified into the DOM** (`5bd5452`): overall + sub-process bars + live "Creating X
+  (n/total)" detail; retired the canvas `Loading`/`VectorBar`/`NpcBar`/`LoadingText`.
 - **Faction selection**: already exists (ENL/RES).
 - **Initial roster** (later): optionally "roll" a few starting individuals — ties into the
   rarity-tiered agents in the icebox; **light flavour, not a gacha/gambling loop**.
