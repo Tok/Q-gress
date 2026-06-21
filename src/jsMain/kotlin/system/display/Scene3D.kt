@@ -69,10 +69,10 @@ object Scene3D {
     private const val MARKER_R = 10.0 // build-preview marker radius (metres)
     private const val BORDER_COLOR = "#22ddff" // playable-area boundary
     private const val BORDER_Z = 0.3
-    private const val SHARD_OPACITY = 0.9 // glass shards read near-solid (they were washed out)
+    private const val SHARD_OPACITY = 0.7 // glassy translucence — 0.5 washed out, 0.9 read as plastic
     private const val SHARD_FADE = 1.2 // seconds to fade out at end of life
-    private const val SHARD_LIFE_MIN = 3.0
-    private const val SHARD_LIFE_MAX = 5.0
+    private const val SHARD_LIFE_MIN = 6.0 // doubled — shards linger before fading
+    private const val SHARD_LIFE_MAX = 10.0
     private const val SHARD_SPIN = 1.8 // max tumble rad/s — a gentle turn, not a whirl
     private const val SHARD_GROUP = 2 // collision group: shards collide with the ground/pole only…
     private const val SHARD_MASK = 1 // …not each other (their box colliders all sit at the orb centre)
