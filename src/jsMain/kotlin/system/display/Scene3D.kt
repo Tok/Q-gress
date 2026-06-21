@@ -71,9 +71,6 @@ object Scene3D {
     private const val RESO_RADIUS_FRAC = 1.15 // slot distance from the pole axis (× POLE_R)
     private const val RESO_COLLAR_FRAC = 0.78 // collar height as a fraction of the pole height
     private const val RESO_ROD_LEN_FRAC = 0.22 // rod length as a fraction of the pole height
-    private const val HACK_SPIN_S = 2.0 // seconds the resonator collar spins on a hack (demo)
-    private const val HACK_SPIN_RATE = 6.0 // collar spin speed (rad/s)
-    private const val HACK_TILT_MAX = 0.7 // peak outward rod splay during a hack (rad ≈ 40°)
     private const val NEUTRAL_COLOR = "#bbbbbb"
     private const val HIGHLIGHT_COLOR = "#f0f0f0" // selection: off-tint grayscale (no new hues)
     private const val OVERLAY_Z = 0.2 // passability quad just above ground
@@ -208,6 +205,7 @@ object Scene3D {
             lastFrameMs = nowMs
             if (ShatterFx.hasActive()) ShatterFx.update(dt)
             if (showcasesHacking()) updateShowcaseHacks(dt)
+            if (HackFx.hasActive()) HackFx.update()
             if (FieldFx.hasActive()) FieldFx.update(dt)
             if (XmpBurst.hasActive()) {
                 val invProj = Three.Matrix4().copy(cam.projectionMatrix).invert()
@@ -223,12 +221,13 @@ object Scene3D {
         map.triggerRepaint()
     }
 
-    private fun hasActiveEffects() = ShatterFx.hasActive() || showcasesHacking() || XmpBurst.hasActive() || FieldFx.hasActive()
+    private fun hasActiveEffects() = ShatterFx.hasActive() || showcasesHacking() || HackFx.hasActive() || XmpBurst.hasActive() || FieldFx.hasActive()
 
     /** Rebuild the 3D objects from world state. Called once per simulation tick. */
     fun sync() {
         scene ?: return
         Spawns.beginSync()
+        HackFx.resetBindings() // re-bound below as each portal's reso group is rebuilt
         clear(portalsGroup)
         World.allPortals.forEach { addPortal(it) }
         clear(fieldsGroup)
@@ -347,11 +346,14 @@ object Scene3D {
         }
     }
 
-    /** Fire an XMP detonation at a location, scaled by burster [level] (1..8). See [XmpBurst]. */
-    fun playXmpBurst(location: Pos, level: Int) {
+    /**
+     * Fire an XMP detonation at a location, scaled by burster [level] (1..8). See [XmpBurst].
+     * [sound] = false when the caller already plays the attack sound (the game's Queues path).
+     */
+    fun playXmpBurst(location: Pos, level: Int, sound: Boolean = true) {
         scene ?: return
         XmpBurst.play(sceneX(location), sceneY(location), level)
-        SoundUtil.playXmpSound(location, level)
+        if (sound) SoundUtil.playXmpSound(location, level)
     }
 
     /** Place (or clear, when pos is null) the build-preview marker on the ground. */
@@ -445,6 +447,7 @@ object Scene3D {
         val level = tweenedLevel(id, portal.getLevel().toInt()) // eases on level-up
         val resos = portal.resoMap().mapValues { it.value.getLevel() } // octant → reso level (real-time)
         val parts = buildPortal(portalsGroup, portal.location, level, color, id, resos)
+        HackFx.bind(id, parts[3]) // spin the collar if this portal is being hacked
         // Build-in: the pole rises and the orb grows from the ground over the first moments.
         val g = Spawns.appear(id, PORTAL_GROW_S)
         if (g < 1.0) applyBuildGrow(level, g, parts)
@@ -563,12 +566,12 @@ object Scene3D {
 
     /** Demo: spin the nearest portal's resonator collar (the "hack" animation). */
     fun hackShowcaseNear(location: Pos) {
-        showcases.minByOrNull { it.pos.distanceTo(location) }?.let { it.hackAge = HACK_SPIN_S }
+        showcases.minByOrNull { it.pos.distanceTo(location) }?.let { it.hackAge = HackFx.SPIN_S }
     }
 
     /** Demo (Hack button): spin the most recently placed portal's resonator collar. */
     fun hackLastShowcase() {
-        showcases.lastOrNull()?.let { it.hackAge = HACK_SPIN_S }
+        showcases.lastOrNull()?.let { it.hackAge = HackFx.SPIN_S }
     }
 
     /** Demo (XMP button): fire an XMP burst at the most recently placed portal, at burster [level]. */
@@ -606,24 +609,7 @@ object Scene3D {
         showcases.forEach { sc ->
             if (sc.hackAge > 0.0) {
                 sc.hackAge = (sc.hackAge - dt).coerceAtLeast(0.0)
-                sc.resoGroup.rotation.z = sc.resoGroup.rotation.z + HACK_SPIN_RATE * dt
-                // Rods splay radially outward (centrifuge), peaking mid-hack then settling back.
-                val tilt = HACK_TILT_MAX * sin((1.0 - sc.hackAge / HACK_SPIN_S) * PI)
-                tiltRods(sc.resoGroup, tilt)
-            }
-        }
-    }
-
-    /** Swing each top-jointed rod's loose bottom outward (about its tangential axis) by [tilt] rad. */
-    private fun tiltRods(resoGroup: dynamic, tilt: Double) {
-        val kids = resoGroup.children
-        val n = kids.length as Int
-        for (i in 0 until n) {
-            val pivot = kids[i]
-            if (pivot.userData.isRodPivot == true) {
-                val ang = pivot.userData.baseAngle as Double
-                // Negative angle: with the joint at the top, this swings the bottom end radially out.
-                pivot.setRotationFromAxisAngle(Three.Vector3(-sin(ang), cos(ang), 0.0), -tilt)
+                HackFx.spin(sc.resoGroup, HackFx.SPIN_S - sc.hackAge) // same spin+centrifuge as live portals
             }
         }
     }

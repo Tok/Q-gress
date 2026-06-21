@@ -6,6 +6,7 @@ import agent.action.ActionItem
 import config.Constants
 import items.XmpBurster
 import system.Queues
+import system.display.Scene3D
 import util.Util
 
 object Attacker : ConditionalAction {
@@ -18,6 +19,10 @@ object Attacker : ConditionalAction {
         val xmps = xmpsForAttack(agent.inventory)
         doAttack(agent, xmps)
         agent.inventory.consumeXmps(xmps)
+        // 3D XMP burst at the target portal (the attack sound comes from the Queues path).
+        if (xmps.isNotEmpty()) {
+            Scene3D.playXmpBurst(agent.actionPortal.location, xmps.maxOf { it.level.level }, sound = false)
+        }
         Queues.registerAttack(agent, xmps, i)
         val isDoItAgain = xmps.isNotEmpty() && Util.random() <= 1 / Constants.phi
         return if (isDoItAgain) performAction(agent, i + 1) else agent
