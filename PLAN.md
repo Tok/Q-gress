@@ -298,13 +298,17 @@ the Blender step happens, commit the raw `.blend` under `/assets/blender/`, `.gl
 - [ ] **UI Stage 2** — map views & info layers: Satellite (default) + **Schematic** base
       (reuse `SHADOW_STYLE`), and independent toggleable overlays (movement-penalty heatmap,
       vector field, …).
-- [ ] **UI Stage 3 — stats: canvas → DOM + dynamic graphs.** Move *all* the info currently
-      drawn to the 2D canvas info layer (MindUnits, StatsDisplay, TickDisplay, Com log,
-      TopAgentsDisplay, the CycleDisplay graph) into themeable **DOM** panels, reusing the same
-      faction colours, symbols/icons and overall design. Add a **charting library** for dynamic
-      graphs — stats is an area we'll keep improving, so treat this as a **graph-migration +
-      stats-improvement phase** (richer time-series, more metrics) rather than a one-shot port.
-      Retire the canvas HUD + `ActionLimitsDisplay`.
+- [~] **UI Stage 3 — stats: canvas → DOM + dynamic graphs.** _First slice done (`8b35296`):_
+      **MindUnits, the entity-count table, the tick/timestamp and the Com log** are now themeable
+      **DOM** panels (`util/ui/StatsPanel`, faction colours); retired the canvas `MindUnits`/
+      `StatsDisplay`/`TickDisplay` + `Com.draw`. _Remaining:_ the **CycleDisplay time-series graph**
+      and the **TopAgentsDisplay table** (the two complex ones — want a **charting library** /
+      table component), plus retiring `ActionLimitsDisplay`. Stats stays a **graph-migration +
+      stats-improvement phase** (richer time-series, more metrics), not a one-shot port.
+- Map visuals (done, this batch): **grayscale terrain default** + Colored/Street views
+      (`util/ui/LayerView`; raster-saturation on the satellite layer only); **white** play-area
+      border + **dimmed out-of-bounds** (`system/display/PlayAreaMask`); rule: no new colours,
+      faction colours for faction things only.
 - [ ] **UI Stage 4** — tuning-slider panel redesign (both factions, presets) for the AI phase.
 - [ ] **UI Stage 5** — visual theme + responsiveness.
 
@@ -324,16 +328,19 @@ programmatic API (state → slider vector) instead of only DOM inputs; support a
 tuning per faction. **Decision deferred** — revisit with a focused plan once the sim is
 polished. Leaning toward the custom NN (A) for specificity + visualization, but unproven.
 
-### Phase 7 — Init / onboarding selections (later; own/compacted session)
-A richer start-up flow before the sim runs. Mostly deferred to a fresh session.
-- **Location selection** (extends Phase 3): (1) **Home / nearest city** — requires the user to
-  share location (Geolocation API) → center there; (2) a **curated list of preselected places**
-  (still to be authored); (3) **Random** — same pool as (2), chosen at random.
-- **Map size**: **[Small] [Normal] [Big]** — sets the play-area `Sim.SCALE` (grid/area). Bigger =
-  longer load (grid readback + per-portal flow fields). **Rework the initial progress bar**:
-  today a Normal/Big load can take ~2 min but the countdown graph only starts ~30 s in, so it
-  looks *stuck*. Show real "loading / preparing" progress from the first frame (staged: map tiles
-  → shadow readback → grid build → flow fields), and a **warning when Big is selected** (slow).
+### Phase 7 — Init / onboarding selections (started)
+A richer start-up flow before the sim runs.
+- [x] **Ordered onboarding** (`e0caf08`): **faction → location → load** (`startOnboardingOrWorld`
+  + `util/ui/Onboarding`). Faction screen (ENL/RES), then location screen (preset dropdown + globe
+  preview via `MiniMap`), then the world loads. URL-param driven; `?local=true` auto-starts.
+- [x] **Initial progress bar reworked** (`361364c`/`37ae0bd`): `util/ui/LoadingOverlay` shows
+  staged progress from the first frame (map tiles → street tiles → passability map → street grid
+  → building world), faction-tinted, translucent at the build stage to reveal the spawning world.
+- **Location selection** follow-ups: (1) **Home / nearest city** via Geolocation API; (2) a
+  **curated list** of preselected places (extend the preset enum); (3) **Random**. Free-form search
+  exists in-game but isn't on the onboarding screen yet.
+- **Map size**: **[Small] [Normal] [Big]** — sets the play-area `Sim.SCALE`; warn on Big (slow).
+  The progress bar already shows from frame 0; remaining is real per-stage % (esp. flow fields).
 - **Faction selection**: already exists (ENL/RES).
 - **Initial roster** (later): optionally "roll" a few starting individuals — ties into the
   rarity-tiered agents in the icebox; **light flavour, not a gacha/gambling loop**.
