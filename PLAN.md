@@ -215,6 +215,18 @@ The throughline is **abstract glass**: portals, the tubes between them, and the 
 one "glass apparatus" look (à la qlippostasis), tinted by faction (the only allowed colour;
 the vessel itself stays grayscale).
 
+> **Status — end of 2026-06-21 session (resume here).** This overhaul is **essentially complete**
+> and committed on `develop` (gate-green; last commit `1de3946`). Done: glass shader · metal-pole +
+> rubber-gasket + glass-orb portals (φ-scaled, **grow-on-spawn** + **level-up tween**) · gray demo
+> with satellite/buildings toggle · physics shatter (randomized, scaled, low-energy) · **volumetric
+> raymarched XMP fireball** + click-to-detonate (`/#demo/xmp`) + explosion sound · **glass-pipe
+> links** · **plasma fields** (fill-in + dissolve + collapse sound) · **real portal names** from map
+> POI/street data. New files this push: `GlassShader`, `PlasmaShader`, `XmpShaders`, `XmpBurst`,
+> `FieldFx`, `Spawns`, `Materials`, `ShardAssets`, `PortalShape`(unused/removed), `util/PortalNames`.
+> **What's left** = the small follow-ups below + separate features (mini-map/globe, `?debug`,
+> Phase 7 onboarding) + the Blender GLB step. Nothing is mid-flight; pick any item to start.
+> Verify visually with `./start.sh` (game + `/#demo/portal` + `/#demo/xmp`).
+
 - [x] **Glass shader (foundation)** — `system/display/GlassShader.kt` ShaderMaterial ported from
   qlippostasis (Fresnel rim + emission + vnoise smudges, DoubleSide, no depth write, per-instance
   faction `tint`). View direction approximated from the world normal's verticality (no opaque-pass
@@ -227,10 +239,11 @@ the vessel itself stays grayscale).
   scaled to the orb's level (the pole is metal, so only the orb shatters). Verified L1/L8 in demo.
 - [x] **`#demo/portal` scene** (L1–L8 orb size + faction tint) — plus demos now render on a **gray
   backdrop** (satellite hidden, checkbox to toggle) and sit **zoomed in** (`DEMO_ZOOM`).
-- [ ] **Follow-ups on the glass/mushroom** still to do: **double-shell** thick-wall + true SSR
-  refraction for the shader; **growth + level-up animation** (grow 0 → L1 on `Portal.create`
-  instead of popping in; tween the profile on level-up, with a glass "chime"); a grow-replay +
-  level-up stepper in the demo scene; tune the L2–L4/L6–L7 in-between profiles.
+- [ ] **Glass shader follow-ups:** **double-shell** thick-wall + true SSR refraction; a **brighter
+  link variant** (the orb glass is very transparent, so thin pipes read faint) + optional concentric
+  inner tube; **camera-tracking rim** (the fresnel currently uses a fixed view dir — MapLibre 5.24
+  has no `getFreeCameraOptions`, so reconstruct the eye from the projection matrix if wanted).
+  (Grow-on-spawn + level-up animation are **done** — see the lifecycle bullet.)
 - [ ] **GLB compaction + shard reuse (needs Blender).** Decimate `shattered_flask.glb` /
   `glass_shards.glb` (fewer pieces, lower poly) for our scale; reuse shard **panels** to build the
   open umbrella cap at high levels (cap reads as fitted glass shards). Glass look stays
@@ -263,9 +276,9 @@ the vessel itself stays grayscale).
   right on a POI could adopt its `class` (fountain/monument…); gate the diagnostic log behind
   `?debug`.
 
-**Blender needed?** Only for GLB compaction + authoring the shard/umbrella panels. The glass
-shader, the lathe-based mushroom growth, the pipes, the plasma fields, and the naming are all
-procedural/data — no Blender.
+**Blender needed?** Only for GLB compaction + authoring shard panels. The glass shader, the
+portals, the pipes, the plasma fields, and the naming are all procedural/data — no Blender. (When
+the Blender step happens, commit the raw `.blend` under `/assets/blender/`, `.glb` in `models/`.)
 
 ### UI rework (a better UI) — see `.claude/plans/` for the full master plan
 - [x] **UI Stage 1** (verified): **portal/agent selection** (click → `map.unproject` → sim Pos
