@@ -41,7 +41,13 @@ external fun encodeURIComponent(uri: String): String
 object HtmlUtil {
     private var intervalID = 0
     private const val PAUSE_BUTTON_ID = "pauseButton"
-    private const val LOCATION_DROPDOWN_ID = "locationSelect"
+    private const val LOCATION_LABEL_ID = "locationLabel"
+
+    // The actually-loaded location (set by setLoadedLocation) — named in the top bar, and the target
+    // a Reset reloads onto.
+    private var currentLng = Location.DEFAULT.lng
+    private var currentLat = Location.DEFAULT.lat
+    private var currentLocationName = Location.DEFAULT.displayName
 
     fun isRunningInBrowser() = jsTypeOf(document) != "undefined"
     fun isNotRunningInBrowser() = !isRunningInBrowser()
@@ -111,13 +117,8 @@ object HtmlUtil {
         pauseButton.addClass("non", "amarillo")
         buttonDiv.append(pauseButton)
 
-        val dropDown = createDropdown(LOCATION_DROPDOWN_ID) { mapChangeHandler() }
-        // No location in the URL → show the default location (which initWorld also
-        // centers on), so the dropdown matches what's actually rendered.
-        val selectionName = getLocationNameFromUrl() ?: Location.DEFAULT.displayName
-        setLocationDropdownSelection(dropDown, selectionName)
-        buttonDiv.append(dropDown)
-
+        buttonDiv.append(createLocationLabel()) // names the actual loaded location (set by setLoadedLocation)
+        buttonDiv.append(createMenuSpan()) // New Game / Reset
         buttonDiv.append(createSearchSpan())
         buttonDiv.append(createVolumeSpan())
         buttonDiv.append(LayerView.createDropdown())
@@ -143,10 +144,12 @@ object HtmlUtil {
         when {
             isAutoStartFromUrl() -> {
                 chooseUserFaction(faction ?: Faction.random())
+                setLoadedLocation(urlCenter?.lng ?: Location.DEFAULT.lng, urlCenter?.lat ?: Location.DEFAULT.lat, getLocationNameFromUrl() ?: Location.DEFAULT.displayName)
                 initWorld(centerOrDefault())
             }
             faction != null && urlCenter != null -> { // deep link → straight to load
                 chooseUserFaction(faction)
+                setLoadedLocation(urlCenter.lng, urlCenter.lat, getLocationNameFromUrl() ?: "Custom location")
                 initWorld(centerOrDefault())
             }
             else -> runOnboarding()
@@ -160,7 +163,10 @@ object HtmlUtil {
                 Sim.setSize(w, h) // size first, so the location screen's play-area box is the real size
                 Config.startPortals = portals
                 Config.quickStart = quick
-                Onboarding.showLocation { lng, lat, _ -> initWorld(centerJson(lng, lat)) }
+                Onboarding.showLocation { lng, lat, name ->
+                    setLoadedLocation(lng, lat, name)
+                    initWorld(centerJson(lng, lat))
+                }
             }
         }
     }
@@ -469,22 +475,6 @@ object HtmlUtil {
         return button
     }
 
-    private fun createLocationOptions(): List<HTMLOptionElement> = Location.values().map {
-        val opt = document.createElement("option") as HTMLOptionElement
-        opt.text = it.displayName
-        opt.value = it.toJSONString()
-        opt
-    }
-
-    private fun createDropdown(id: String, callback: ((Event) -> Unit)?): HTMLSelectElement {
-        val select = document.createElement("select") as HTMLSelectElement
-        select.id = id
-        select.addClass("topDrop", "amarillo")
-        select.onchange = callback
-        createLocationOptions().forEach { select.appendChild(it) }
-        return select
-    }
-
     private fun createCanvas(className: String): Canvas {
         val canvas = document.createElement("canvas") as Canvas
         canvas.addClass("canvas", className)
@@ -586,10 +576,47 @@ object HtmlUtil {
         }
     }
 
-    private fun mapChangeHandler() {
-        val center: dynamic = getCenterFromDropdown()
-        val name = getLocationNameFromDropdown()
-        navigateToLocation((center[0] as Number).toDouble(), (center[1] as Number).toDouble(), name)
+    /** Record (and name in the top bar) the location the world actually loaded at. */
+    private fun setLoadedLocation(lng: Double, lat: Double, name: String) {
+        currentLng = lng
+        currentLat = lat
+        currentLocationName = name.replace("%20", " ").ifBlank { "Custom location" }
+        document.getElementById(LOCATION_LABEL_ID)?.textContent = currentLocationName
+    }
+
+    private fun createLocationLabel(): HTMLSpanElement {
+        val span = document.createElement("span") as HTMLSpanElement
+        span.id = LOCATION_LABEL_ID
+        span.addClass("topLocation", "amarillo")
+        span.textContent = currentLocationName
+        return span
+    }
+
+    /** "Menu" button → a small popup with New Game (re-onboard) and Reset (reload this location). */
+    private fun createMenuSpan(): HTMLSpanElement {
+        val span = document.createElement("span") as HTMLSpanElement
+        span.addClass("menuSpan")
+        val menu = document.createElement("div") as HTMLDivElement
+        menu.addClass("gameMenu", "invisible")
+        menu.append(createButton("menuNewGame", "menuItem amarillo", "New Game") { doNewGame() })
+        menu.append(createButton("menuReset", "menuItem amarillo", "Reset") { doReset() })
+        val button = createButton("menuButton", "topButton amarillo", "Menu") {
+            menu.classList.toggle("invisible")
+        }
+        span.append(button)
+        span.append(menu)
+        return span
+    }
+
+    /** New Game: drop all URL params and reload → the onboarding flow runs from scratch. */
+    private fun doNewGame() {
+        val loc = document.location
+        document.location?.href = (loc?.origin ?: "") + (loc?.pathname ?: "/")
+    }
+
+    /** Reset: reload onto the current location (deep link) → a fresh world at the same place. */
+    private fun doReset() {
+        navigateToLocation(currentLng, currentLat, currentLocationName)
     }
 
     private const val LOCATION_SEARCH_ID = "locationSearch"
@@ -645,39 +672,6 @@ object HtmlUtil {
         val base = (location?.origin ?: "") + (location?.pathname ?: "/")
         val fact = World.userFaction?.abbr ?: ""
         return addParameters(base, fact, lng, lat, name, isQuickstart())
-    }
-
-    private fun getCenterFromDropdown(): Json {
-        val dropdown = document.getElementById(LOCATION_DROPDOWN_ID) as HTMLSelectElement
-        val selection = dropdown[dropdown.selectedIndex] as HTMLOptionElement
-        return JSON.parse(selection.value)
-    }
-
-    private fun getLocationNameFromDropdown(): String {
-        val dropdown = document.getElementById(LOCATION_DROPDOWN_ID) as HTMLSelectElement
-        val selection = dropdown[dropdown.selectedIndex] as HTMLOptionElement
-        return selection.text
-    }
-
-    private fun setLocationDropdownSelection(dropdown: HTMLSelectElement, name: String) {
-        val cleanName = name.replace("%20", " ")
-        var hasMatch = false
-        (0 until dropdown.options.length).forEach {
-            val option = dropdown.options[it] as HTMLOptionElement
-            if (option.label == cleanName) {
-                dropdown.selectedIndex = it
-                hasMatch = true
-            }
-        }
-        if (!hasMatch) {
-            // A custom (searched) location: show its name and real coordinates.
-            val geo = getLngLatFromUrl()
-            val opt = document.createElement("option") as HTMLOptionElement
-            opt.text = if (cleanName.isNotBlank() && cleanName != "unknown") cleanName else "Custom Location"
-            opt.value = if (geo != null) "[${geo.lng},${geo.lat}]" else "[0.0,0.0]"
-            dropdown.add(opt)
-            dropdown.selectedIndex = dropdown.length - 1
-        }
     }
 
     private fun url() = URL(document.location?.href ?: "")

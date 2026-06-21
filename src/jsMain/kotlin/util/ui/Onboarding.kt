@@ -160,6 +160,7 @@ object Onboarding {
 
         val quickCheck = document.createElement("input") as HTMLInputElement
         quickCheck.type = "checkbox"
+        quickCheck.checked = true // quick start on by default — the early game moves right away
         quickCheck.addClass("checkbox")
         val quickLabel = div("onboardCheck")
         quickLabel.appendChild(quickCheck)
