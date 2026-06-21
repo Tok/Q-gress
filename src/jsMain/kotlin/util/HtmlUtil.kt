@@ -42,6 +42,7 @@ object HtmlUtil {
     private var intervalID = 0
     private const val PAUSE_BUTTON_ID = "pauseButton"
     private const val LOCATION_LABEL_ID = "locationLabel"
+    private const val MIN_WALKABILITY = 0.12 // below this the area is mostly water/blocked → unplayable
 
     // The actually-loaded location (set by setLoadedLocation) — named in the top bar, and the target
     // a Reset reloads onto.
@@ -551,6 +552,12 @@ object HtmlUtil {
         if (World.grid.isEmpty()) {
             console.error("Grid is empty!")
         }
+        // Gate mostly-water / unplayable locations before the expensive world build. Auto-start
+        // (dev/headless) is exempt so tests never block.
+        if (World.walkability < MIN_WALKABILITY && !isAutoStartFromUrl()) {
+            showUnplayableGate()
+            return
+        }
         // Anchor the 3D scene BEFORE spawning portals: Portal.create → PortalNames.nameFor projects
         // POI/street lng/lat through Scene3D.lngLatToSimPos, which throws until Scene3D is registered.
         // Registering first means portals actually adopt their real map names (else all fall back to
@@ -606,6 +613,24 @@ object HtmlUtil {
         span.append(button)
         span.append(menu)
         return span
+    }
+
+    /** Block the build when the chosen area is mostly water/blocked; offer to pick another location. */
+    private fun showUnplayableGate() {
+        LoadingOverlay.done()
+        val screen = document.createElement("div") as HTMLDivElement
+        screen.id = "unplayableGate"
+        screen.addClass("onboardScreen")
+        val title = document.createElement("div") as HTMLDivElement
+        title.addClass("onboardTitle")
+        title.textContent = "Not enough ground to play"
+        screen.append(title)
+        val hint = document.createElement("div") as HTMLDivElement
+        hint.addClass("onboardHint")
+        hint.textContent = "“$currentLocationName” is only ${(World.walkability * 100).toInt()}% walkable — mostly water or blocked. Pick another location."
+        screen.append(hint)
+        screen.append(createButton("gateNewGame", "topButton amarillo onboardStart", "Choose another location") { doNewGame() })
+        document.body?.append(screen)
     }
 
     /** New Game: drop all URL params and reload → the onboarding flow runs from scratch. */
