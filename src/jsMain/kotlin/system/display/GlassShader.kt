@@ -15,8 +15,8 @@ import external.Three
  * One unavoidable difference: Godot's screen-space refraction (`hint_screen_texture`) needs the
  * opaque pass as a texture, which our custom layer doesn't expose — so we drop SSR (a follow-up).
  *
- * The Fresnel rim now **tracks the camera**: [Scene3D] feeds the eye position (sim-space) each
- * frame via [setEye], and the fragment shader computes the true per-fragment view direction
+ * The Fresnel rim now **tracks the camera**: [updateEye] recovers the eye position (sim-space) each
+ * frame from the map matrix, and the fragment shader computes the true per-fragment view direction
  * `uEye - worldPos`. Because the custom layer bakes the whole perspective transform into the
  * camera's `projectionMatrix` (the camera itself sits at the origin), `modelViewMatrix * position`
  * is already a **sim-space** position and `normalMatrix * normal` a sim-space normal — so the dot
@@ -26,14 +26,31 @@ object GlassShader {
     /** Brightness multiplier for the dedicated link variant (orb glass is near-transparent). */
     const val LINK_BRIGHT = 2.6
 
-    // Camera eye in sim-space, shared by every glass material and refreshed per frame by setEye().
+    // Camera eye in sim-space, shared by every glass material and refreshed per frame by updateEye().
     private val eyeUniform: dynamic = js("({ value: { x: 0.0, y: 0.0, z: 1.0e6 } })")
 
-    /** Feed the current camera eye (sim-space metres: x east, y north, z up); call once per frame. */
-    fun setEye(x: Double, y: Double, z: Double) {
-        eyeUniform.value.x = x
-        eyeUniform.value.y = y
-        eyeUniform.value.z = z
+    /**
+     * Recover the camera eye in **sim space** from the combined sim→clip [matrix] (three.js
+     * `Matrix4`) and update the shared rim uniform; call once per frame. MapLibre 5.24 exposes no
+     * free-camera API and the whole perspective is baked into that matrix, so we solve for the
+     * camera centre directly: it is the null vector of the 3×4 projection formed by the x, y and w
+     * rows of the 4×4 (the classic `P·C = 0` camera centre, with the depth row dropped).
+     */
+    fun updateEye(matrix: dynamic) {
+        val e = matrix.elements // column-major, e[col*4 + row]
+
+        // 3×3 determinant over columns (c0,c1,c2) using rows x(0), y(1), w(3).
+        fun det3(c0: Int, c1: Int, c2: Int): Double {
+            fun m(r: Int, c: Int): Double = e[c * 4 + r] as Double
+            return m(0, c0) * (m(1, c1) * m(3, c2) - m(1, c2) * m(3, c1)) -
+                m(0, c1) * (m(1, c0) * m(3, c2) - m(1, c2) * m(3, c0)) +
+                m(0, c2) * (m(1, c0) * m(3, c1) - m(1, c1) * m(3, c0))
+        }
+        val cw = -det3(0, 1, 2)
+        if (kotlin.math.abs(cw) < 1e-9) return // degenerate (e.g. pre-first-frame) — keep the last eye
+        eyeUniform.value.x = det3(1, 2, 3) / cw
+        eyeUniform.value.y = -det3(0, 2, 3) / cw
+        eyeUniform.value.z = det3(0, 1, 3) / cw
     }
 
     // Tunables (qlippostasis defaults, nudged for readability without its bloom/SSR).
@@ -91,7 +108,7 @@ object GlassShader {
         uni.uTint.value.y = rgb[1]
         uni.uTint.value.z = rgb[2]
         uni.uBright.value = bright
-        uni.uEye = eyeUniform // shared, refreshed each frame by setEye()
+        uni.uEye = eyeUniform // shared, refreshed each frame by updateEye()
         val p: dynamic = js("({})")
         p.vertexShader = VERT
         p.fragmentShader = FRAG

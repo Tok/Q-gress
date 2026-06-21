@@ -18,7 +18,6 @@ import util.SoundUtil
 import util.Util
 import util.data.Pos
 import kotlin.math.PI
-import kotlin.math.abs
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.pow
@@ -70,11 +69,13 @@ object Scene3D {
     private const val MARKER_R = 10.0 // build-preview marker radius (metres)
     private const val BORDER_COLOR = "#22ddff" // playable-area boundary
     private const val BORDER_Z = 0.3
-    private const val SHARD_OPACITY = 0.5 // translucent glass shards
+    private const val SHARD_OPACITY = 0.9 // glass shards read near-solid (they were washed out)
     private const val SHARD_FADE = 1.2 // seconds to fade out at end of life
     private const val SHARD_LIFE_MIN = 3.0
     private const val SHARD_LIFE_MAX = 5.0
-    private const val SHARD_SPIN = 6.0 // max tumble rad/s
+    private const val SHARD_SPIN = 1.8 // max tumble rad/s — a gentle turn, not a whirl
+    private const val SHARD_GROUP = 2 // collision group: shards collide with the ground/pole only…
+    private const val SHARD_MASK = 1 // …not each other (their box colliders all sit at the orb centre)
     private const val SHARD_MASS = 1.0
     private const val GRAVITY = 9.8 // m/s²
     const val CUSTOM_LAYER_ID = "qgress-3d" // MapLibre layer id for the three.js scene
@@ -203,7 +204,7 @@ object Scene3D {
             .makeTranslation(originMerc.x as Double, originMerc.y as Double, originMerc.z as Double)
             .scale(Three.Vector3(metersScale, -metersScale, metersScale))
         cam.projectionMatrix = mapMatrix.multiply(modelMatrix)
-        feedCameraEye(cam.projectionMatrix) // camera-tracking glass rim (orbs + links)
+        GlassShader.updateEye(cam.projectionMatrix) // camera-tracking glass rim (orbs + links)
         PlasmaShader.setTime((js("performance.now()") as Double) / 1000.0) // animate control fields
         if (activeShards.isNotEmpty() || XmpBurst.hasActive() || FieldFx.hasActive()) {
             val nowMs = js("performance.now()") as Double
@@ -223,28 +224,6 @@ object Scene3D {
         activeRenderer.resetState()
         activeRenderer.render(activeScene, cam)
         map.triggerRepaint()
-    }
-
-    /**
-     * Recover the camera eye in **sim space** from the combined sim→clip matrix and hand it to
-     * [GlassShader]. MapLibre 5.24 exposes no free-camera API, and the whole perspective transform
-     * is baked into [cam.projectionMatrix], so we solve for the camera centre directly: it is the
-     * null vector of the 3×4 projection formed by the x, y and w rows of the 4×4 matrix
-     * (the classic `P·C = 0` camera-centre, with the depth row dropped).
-     */
-    private fun feedCameraEye(matrix: dynamic) {
-        val e = matrix.elements // three.js Matrix4: column-major, e[col*4 + row]
-
-        // 3×3 determinant over columns (c0,c1,c2) using rows x(0), y(1), w(3).
-        fun det3(c0: Int, c1: Int, c2: Int): Double {
-            fun m(r: Int, c: Int): Double = e[c * 4 + r] as Double
-            return m(0, c0) * (m(1, c1) * m(3, c2) - m(1, c2) * m(3, c1)) -
-                m(0, c1) * (m(1, c0) * m(3, c2) - m(1, c2) * m(3, c0)) +
-                m(0, c2) * (m(1, c0) * m(3, c1) - m(1, c1) * m(3, c0))
-        }
-        val cw = -det3(0, 1, 2)
-        if (abs(cw) < 1e-9) return // degenerate (e.g. pre-first-frame) — keep the last eye
-        GlassShader.setEye(det3(1, 2, 3) / cw, -det3(0, 2, 3) / cw, det3(0, 1, 3) / cw)
     }
 
     private fun updateShards(dt: Double) {
@@ -378,7 +357,7 @@ object Scene3D {
         shatterRot = doubleArrayOf(Util.random() * 2.0 * PI, Util.random() * 2.0 * PI, Util.random() * 2.0 * PI)
         if (flaskVariants.isNotEmpty()) {
             val variant = flaskVariants[(Util.random() * flaskVariants.size).toInt()]
-            variant.forEach { holder -> spawnShard(holder, doubleArrayOf(x, y, orbCenterZ(lv)), flaskScale * s, color, 2.0) }
+            variant.forEach { holder -> spawnShard(holder, doubleArrayOf(x, y, orbCenterZ(lv)), flaskScale * s, color, 1.0) }
         }
         addPoleObstacle(world, x, y, poleH)
         spawnGasket(world, x, y, poleH)
@@ -435,6 +414,10 @@ object Scene3D {
         )
         opts.linearDamping = 0.04
         opts.angularDamping = 0.2
+        // Shards don't collide with each other — their boxes all sit at the orb centre, so mutual
+        // overlap would make the solver eject them explosively. They still rest on ground + pole.
+        opts.collisionFilterGroup = SHARD_GROUP
+        opts.collisionFilterMask = SHARD_MASK
         val body = Cannon.Body(opts)
         body.asDynamic().quaternion.setFromEuler(shatterRot[0], shatterRot[1], shatterRot[2]) // random per-shatter
         val a = Util.random() * 2.0 * PI
