@@ -280,6 +280,13 @@ html, body {
     color: #ffffff;
     font-family: "Chakra Petch", sans-serif;
 }
+/* Standalone three.js thunderbolt scene behind the title content (above the gradient). */
+.titleCanvas {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+}
 /* Big brand wordmark on the first (faction) screen — the first thing a player sees. */
 .titleBrand {
     font-family: "Chakra Petch", sans-serif;
