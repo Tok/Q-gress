@@ -1,14 +1,17 @@
-/* Black Ops One (SIL Open Font License 1.1) — see fonts/OFL.txt. Self-hosted,
-   latin subset. Replaces the shareware Amarillo USAF; same military-stencil look. */
+/* Chakra Petch (SIL Open Font License 1.1) — see fonts/OFL.txt. Self-hosted,
+   bold (700) latin subset. Replaces the shareware Amarillo USAF. A techno / sci-fi-HUD
+   face (fits the science-vs-luddite theme, not a military one). Declared as normal
+   weight so the family resolves to this single cut everywhere (the app CSS doesn't
+   manage font weights). */
 @font-face {
-    font-family: 'Black Ops One';
+    font-family: 'Chakra Petch';
     font-style: normal;
     font-weight: normal;
-    src: local('Black Ops One'), url('../fonts/blackopsone-latin.woff2') format('woff2');
+    src: local('Chakra Petch'), url('../fonts/chakrapetch-700-latin.woff2') format('woff2');
 }
 
 .amarillo {
-    font-family: 'Black Ops One';
+    font-family: 'Chakra Petch';
 }
 
 @font-face {
@@ -186,7 +189,7 @@ html, body {
     opacity: 0.35;
 }
 .statsMuLabel {
-    font-family: "Black Ops One", sans-serif;
+    font-family: "Chakra Petch", sans-serif;
     font-size: 20px;
 }
 .statsTickRow {
@@ -254,7 +257,7 @@ html, body {
     gap: 18px;
     background: radial-gradient(ellipse at center, #0c1410 0%, #000000 100%);
     color: #ffffff;
-    font-family: "Black Ops One", sans-serif;
+    font-family: "Chakra Petch", sans-serif;
 }
 .onboardTitle {
     font-size: 40px;
@@ -368,7 +371,7 @@ html, body {
     justify-content: center;
     background: radial-gradient(ellipse at center, #0c1410 0%, #000000 100%);
     color: #ffffff;
-    font-family: "Black Ops One", sans-serif;
+    font-family: "Chakra Petch", sans-serif;
     transition: opacity 0.6s ease;
 }
 .loadingOverlayDone {
@@ -584,7 +587,7 @@ html, body {
     text-shadow: -1px 0px black, 0px 1px black, 1px 0px black, 0px -1px black;
 }
 .qTitle {
-    font-family: "Black Ops One";
+    font-family: "Chakra Petch";
     margin-top: 2px;
     margin-bottom: 2px;
     margin-left: 5px;
@@ -813,7 +816,7 @@ html, body {
     z-index: 200;
 }
 .inspectorTitle {
-    font-family: "Black Ops One";
+    font-family: "Chakra Petch";
     font-size: 16px;
 }
 .inspectorName {
@@ -836,7 +839,7 @@ html, body {
     margin-top: 8px;
     width: 100%;
     padding: 5px;
-    font-family: "Black Ops One";
+    font-family: "Chakra Petch";
     font-size: 14px;
     background: #333333;
     color: #ffffff;
