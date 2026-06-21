@@ -403,9 +403,17 @@ default-on + location label + New Game/Reset menu (`bb6ba87`); marble NPC drop +
 - [ ] **Full Web Audio 3D (optional).** Current panning is screen-projected (`Scene3D.audioPan`); a
   true `PannerNode` + listener driven by the camera would add distance attenuation + front/back +
   elevation. Only if we want richer spatialisation.
-- [ ] **Misc:** re-add the **demo build-grow** (reverted for the LargeClass limit; room exists now);
-  refine resonator **rod spacing** so slots read as distinct from a top-down angle; swap the
-  **Amarillo USAF** font (Shareware) for an OFL alternative (user confirmed non-commercial).
+- [x] **Stray XM in 3D** (`b06274a`): glowing additive-white motes per heap (`Materials.xmGlow`),
+  scaled by amount. Extracted `VectorFieldOverlay` to fit under the size limit.
+- [x] **Demo build-grow + rod spacing** (`2f54642`): demo portals grow in on place/upgrade;
+  `RESO_RADIUS_FRAC` 1.15→1.7 so resonator slots read distinct from top-down.
+- [ ] **Font swap:** Amarillo USAF (Shareware) → an OFL alternative (user confirmed non-commercial).
+- [ ] **Full Web Audio 3D** (next, after compact): `PannerNode` + camera-driven listener for distance
+  attenuation + front/back + elevation (current `Scene3D.audioPan` is screen-projected stereo only).
+
+**Tooling:** the pre-commit hook now runs the FULL gate (`2f54642` era) — ktlintFormat (auto-fix +
+re-stage) then compile + ktlintCheck + detekt + jsNodeTest — so `git add -A && git commit` enforces
+everything; no manual `./gradlew` gate runs needed.
 
 ## Under consideration (icebox)
 
