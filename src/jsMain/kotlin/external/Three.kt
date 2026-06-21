@@ -41,6 +41,10 @@ external object Three {
         fun normalize(): Vector3
     }
 
+    class Quaternion {
+        fun setFromUnitVectors(from: Vector3, to: Vector3): Quaternion
+    }
+
     class Raycaster {
         fun set(origin: Vector3, direction: Vector3)
         fun intersectObjects(objects: dynamic, recursive: Boolean = definedExternally): dynamic

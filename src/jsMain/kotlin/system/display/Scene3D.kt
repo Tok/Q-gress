@@ -22,6 +22,7 @@ import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.pow
 import kotlin.math.sin
+import kotlin.math.sqrt
 
 /**
  * Renders the game world as a MapLibre custom layer (three.js): the three.js
@@ -51,6 +52,7 @@ object Scene3D {
     private const val INDICATOR_Z = 2.7
     private const val INDICATOR_SIZE = 1.6
     private const val POLE_R = 2.0
+    private const val LINK_R = 0.7 // glass-pipe link radius (metres)
     private const val POLE_H = 22.5 // base pole height at L1; scales by φ per level
     private const val TOP_R = 7.0 // base orb radius
     private const val PHI = 1.618 // golden ratio — pole grows by φ across the 8 levels
@@ -124,6 +126,7 @@ object Scene3D {
     private val poleGeo: dynamic by lazy { Three.CylinderGeometry(POLE_R, POLE_R, POLE_H, 12) } // metal pole
     private val topGeo: dynamic by lazy { Three.SphereGeometry(TOP_R, 20, 16) } // glass orb (scaled per level)
     private val gasketGeo: dynamic by lazy { Three.TorusGeometry(POLE_R * 1.15, POLE_R * 0.4, 10, 20) } // rubber donut
+    private val linkGeo: dynamic by lazy { Three.CylinderGeometry(LINK_R, LINK_R, 1.0, 8) } // unit glass tube (scaled to length)
     private val materialCache = mutableMapOf<String, dynamic>()
     private val spriteCache = mutableMapOf<String, dynamic>()
 
@@ -616,13 +619,28 @@ object Scene3D {
         npcsGroup.add(sphere)
     }
 
+    /** A link is a thin glass pipe between the two portals' orbs (à la qlippostasis tubing). */
     private fun addLink(link: Link) {
-        val points = arrayOf(
-            Three.Vector3(sceneX(link.origin.location), sceneY(link.origin.location), POLE_H),
-            Three.Vector3(sceneX(link.destination.location), sceneY(link.destination.location), POLE_H),
-        )
-        val geo = Three.BufferGeometry().setFromPoints(points)
-        linksGroup.add(Three.Line(geo, lineMaterial(link.creator.faction.color)))
+        val z0 = orbCenterZ(link.origin.getLevel().toInt())
+        val z1 = orbCenterZ(link.destination.getLevel().toInt())
+        val tube = Three.Mesh(linkGeo, Materials.glass(link.creator.faction.color))
+        val a = doubleArrayOf(sceneX(link.origin.location), sceneY(link.origin.location), z0)
+        val b = doubleArrayOf(sceneX(link.destination.location), sceneY(link.destination.location), z1)
+        orientTube(tube.asDynamic(), a, b)
+        linksGroup.add(tube)
+    }
+
+    /** Place a unit (Y-axis) cylinder so it spans [a]→[b]: midpoint, Y-scaled to length, Y rotated to dir. */
+    private fun orientTube(mesh: dynamic, a: DoubleArray, b: DoubleArray) {
+        val dx = b[0] - a[0]
+        val dy = b[1] - a[1]
+        val dz = b[2] - a[2]
+        val len = sqrt(dx * dx + dy * dy + dz * dz)
+        if (len < 0.001) return
+        mesh.position.set((a[0] + b[0]) / 2.0, (a[1] + b[1]) / 2.0, (a[2] + b[2]) / 2.0)
+        mesh.scale.set(1.0, len, 1.0)
+        val quat = Three.Quaternion().setFromUnitVectors(Three.Vector3(0.0, 1.0, 0.0), Three.Vector3(dx / len, dy / len, dz / len))
+        mesh.quaternion.copy(quat)
     }
 
     private fun addField(field: Field) {

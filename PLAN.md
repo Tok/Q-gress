@@ -236,9 +236,11 @@ the vessel itself stays grayscale).
   open umbrella cap at high levels (cap reads as fitted glass shards). Glass look stays
   shader-driven (no bake). *This is the one piece that genuinely needs Blender.* **Commit the
   raw `.blend` source files under `/assets/blender/`** (not just the exported `.glb` in `models/`).
-- [ ] **Links → 3D glass pipes.** Replace the 2D `Line` links with thin **tubes**
-  (`CylinderGeometry`/`TubeGeometry` between portal tops) on the glass shader — qlippostasis's
-  "glass tubing"; optional concentric inner tube for thickness.
+- [x] **Links → 3D glass pipes.** The 2D `Line` links are now thin **glass cylinders**
+  (`linkGeo` + `orientTube`: a unit Y-cylinder placed at the midpoint, Y-scaled to length, Y
+  rotated to the direction via `Quaternion.setFromUnitVectors`) spanning the two portals' **orb
+  centres** (`orbCenterZ`), on the shared `GlassShader` (faction-tinted). _Follow-up:_ may want a
+  brighter link variant (the orb glass is very transparent) + an optional concentric inner tube.
 - [ ] **Fields → plasma + lifecycle.** A **plasma `ShaderMaterial`** for the control-field
   triangles (animated energy/scanlines, faction-tinted, fits the synthwave look) + a **create**
   animation (fill inward from the three links) and **teardown** (dissolve), each with a
