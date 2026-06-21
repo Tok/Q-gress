@@ -280,6 +280,16 @@ html, body {
     color: #ffffff;
     font-family: "Chakra Petch", sans-serif;
 }
+/* Big brand wordmark on the first (faction) screen — the first thing a player sees. */
+.titleBrand {
+    font-family: "Chakra Petch", sans-serif;
+    font-weight: 700;
+    font-size: 92px;
+    letter-spacing: 14px;
+    line-height: 1;
+    color: #ffffff;
+    text-shadow: 0 0 16px rgba(3, 220, 3, 0.45), 0 0 34px rgba(0, 136, 255, 0.35);
+}
 .onboardTitle {
     font-size: 40px;
     letter-spacing: 5px;
@@ -290,10 +300,21 @@ html, body {
     gap: 28px;
 }
 .onboardRow .popupButton {
-    width: 150px;
-    height: 80px;
+    width: 160px;
+    height: 84px;
     font-size: 34px;
     cursor: pointer;
+    /* Override the generic .popupButton 55px side padding (it was off-centering the ENL/RES label). */
+    padding: 0;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.12s, box-shadow 0.12s;
+}
+.onboardRow .popupButton:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 26px rgba(255, 255, 255, 0.55);
 }
 .onboardMap {
     position: relative;
