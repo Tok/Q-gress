@@ -442,6 +442,18 @@ object Scene3D {
     private fun sceneX(pos: Pos) = (pos.x - Sim.width / 2.0) * metersPerPixel
     private fun sceneY(pos: Pos) = -(pos.y - Sim.height / 2.0) * metersPerPixel
 
+    /**
+     * Stereo pan (−1 left … +1 right) for a sim [pos], from the live camera projection — so audio
+     * tracks the actual on-screen position under rotate/pitch/zoom (not a fixed sim-X mapping). 0
+     * (centre) until the scene is ready. Projects head height through the camera to NDC x.
+     */
+    fun audioPan(pos: Pos): Double {
+        val cam = camera ?: return 0.0
+        val v = Three.Vector3(sceneX(pos), sceneY(pos), HEAD_Z).asDynamic()
+        v.applyMatrix4(cam.projectionMatrix) // → normalised device coords (perspective divide included)
+        return (v.x as Double).coerceIn(-1.0, 1.0)
+    }
+
     private fun place(obj: dynamic, x: Double, y: Double, z: Double) {
         obj.position.set(x, y, z)
     }

@@ -16,6 +16,7 @@ import org.khronos.webgl.set
 import portal.Field
 import portal.Link
 import system.Checkpoint
+import system.display.Scene3D
 import util.data.Pos
 import kotlin.math.exp
 
@@ -63,7 +64,7 @@ object SoundUtil {
     fun playPortalCreationSound(pos: Pos, gain: Double = 1.0) {
         if (isMuted()) return
         val duration = 0.5
-        val pan = pos.x / Sim.width
+        val pan = Scene3D.audioPan(pos)
         val oscNode = createLinearRampOscillator(OscillatorType.SINE, 120.0, 0.0, duration)
         playSound(oscNode, createStaticPan(pan), gain, duration)
     }
@@ -71,7 +72,7 @@ object SoundUtil {
     fun playPortalRemovalSound(pos: Pos) {
         if (isMuted()) return
         val duration = 0.5
-        val pan = pos.x / Sim.width
+        val pan = Scene3D.audioPan(pos)
         val oscNode = createLinearRampOscillator(OscillatorType.SINE, 60.0, 120.0, duration)
         playSound(oscNode, createStaticPan(pan), 1.0, duration)
     }
@@ -83,7 +84,7 @@ object SoundUtil {
      */
     fun playGlassShatterSound(pos: Pos, heaviness: Double = 0.3, amplitude: Double = 0.7) {
         if (isMuted()) return
-        val pan = pos.x / Sim.width
+        val pan = Scene3D.audioPan(pos)
         playNoiseCrack(pan, amplitude, heaviness)
         playThud(pan, amplitude, heaviness)
         repeat((9 + heaviness * 17).toInt()) { playTinkle(pan, amplitude) }
@@ -92,7 +93,7 @@ object SoundUtil {
     /** XMP burst: a low sine "boom" sweeping down + a high-passed noise "fwoom", sized by level (1..8). */
     fun playXmpSound(pos: Pos, level: Int) {
         if (isMuted()) return
-        val pan = pos.x / Sim.width
+        val pan = Scene3D.audioPan(pos)
         val amp = 0.5 + level * 0.06
         // Deep boom: a sine sweeping well down, with a longer decay.
         val dur = 0.5 + level * 0.04
@@ -193,7 +194,7 @@ object SoundUtil {
     fun playCheckpointSound(@Suppress("UNUSED_PARAMETER") checkpoint: Checkpoint) {
         if (isMuted()) return
         val duration = 0.05
-        val pan = 0.5
+        val pan = 0.0 // centre
         val oscNode = createLinearRampOscillator(OscillatorType.SINE, 440.0, 440.0, duration)
         playSound(oscNode, createStaticPan(pan), 0.5, duration)
     }
@@ -208,27 +209,28 @@ object SoundUtil {
     fun playCycleSound() {
         if (isMuted()) return
         val duration = 0.01
-        val pan = 0.5
+        val pan = 0.0 // centre
         val oscNode = createLinearRampOscillator(OscillatorType.SINE, 220.0, 220.0, duration)
         playSound(oscNode, createStaticPan(pan), 0.5, duration)
     }
 
+    /** A marble "tok": a short triangle with a quick downward pitch drop — the NPC dropping in. */
     fun playNpcCreationSound(npc: NonFaction) {
         if (isMuted()) return
-        val duration = 0.02
-        val pan = npc.pos.x / Sim.width
-        val offset = -(npc.size.offset * 120.0)
-        val start = 660.0
-        val end = 660.0 + offset
-        val oscNode = createLinearRampOscillator(OscillatorType.SINE, start, end, duration)
-        playSound(oscNode, createStaticPan(pan), 0.2, duration)
+        val duration = 0.05
+        val pan = Scene3D.audioPan(npc.pos)
+        val sizePitch = 1.0 - npc.size.offset * 0.18 // smaller NPC → higher-pitched marble
+        val start = 1150.0 * sizePitch
+        val end = 480.0 * sizePitch // fast downward chirp = a marble tap
+        val oscNode = createExponentialRampOscillator(OscillatorType.TRIANGLE, start, end, duration)
+        playSound(oscNode, createStaticPan(pan), 0.22, duration)
     }
 
     fun playHackingSound(pos: Pos) {
         if (isMuted()) return
         val freq = 500.0
         val osc = createStaticOscillator(OscillatorType.SINE, freq)
-        val pan = pos.x / Sim.width
+        val pan = Scene3D.audioPan(pos)
         val gain = 0.04
         val duration = 0.02
         playSound(osc, createStaticPan(pan), gain, duration)
@@ -238,7 +240,7 @@ object SoundUtil {
         if (isMuted()) return
         val freq = 400.0
         val osc = createStaticOscillator(OscillatorType.SINE, freq)
-        val pan = pos.x / Sim.width
+        val pan = Scene3D.audioPan(pos)
         val gain = 0.04
         val duration = 0.06
         playSound(osc, createStaticPan(pan), gain, duration)
@@ -248,7 +250,7 @@ object SoundUtil {
         if (isMuted()) return
         val freq = 160.0 - (level.level * 5)
         val osc = createStaticOscillator(OscillatorType.SQUARE, freq)
-        val pan = pos.x / Sim.width
+        val pan = Scene3D.audioPan(pos)
         val gain = (0.04 + (level.level * 0.006))
         val duration = 0.005 + (0.001 * level.level)
         playSound(osc, createStaticPan(pan), gain, duration)
@@ -263,7 +265,7 @@ object SoundUtil {
         val baseFreq = -250.0
         val startFreq = minFreq + (baseFreq * ratio)
         val endFreq = minFreq + (baseFreq * ratio * 2)
-        val pan = pos.x / Sim.width
+        val pan = Scene3D.audioPan(pos)
         val oscNode = createLinearRampOscillator(OscillatorType.SINE, startFreq, endFreq, duration)
         playSound(oscNode, createStaticPan(pan), gain, duration)
     }
@@ -277,8 +279,8 @@ object SoundUtil {
         val baseFreq = 500.0
         val startFreq = minFreq + (baseFreq * ratio)
         val endFreq = minFreq + (baseFreq * ratio * 2)
-        val startPan = link.getLine().from.x / Sim.width
-        val endPan = link.getLine().to.x / Sim.width
+        val startPan = Scene3D.audioPan(link.getLine().from)
+        val endPan = Scene3D.audioPan(link.getLine().to)
         val oscNode = createLinearRampOscillator(OscillatorType.SINE, startFreq, endFreq, duration)
         val panNode = createLinearRampPan(startPan, endPan, duration)
         playSound(oscNode, panNode, gain, duration)
@@ -293,7 +295,7 @@ object SoundUtil {
         val n = now()
         gainNode.gain.setValueAtTime(0.35, n)
         gainNode.gain.exponentialRampToValueAtTime(EPS, n + dur)
-        connectVoice(osc, createStaticPan(0.5), gainNode, n + dur)
+        connectVoice(osc, createStaticPan(0.0), gainNode, n + dur)
     }
 
     fun playFieldingSound(field: Field) {
@@ -309,8 +311,9 @@ object SoundUtil {
         val baseFreq = 20.0
         val startFreq = minFreq + (baseFreq * areaRatio)
         val endFreq = startFreq * 2.0
-        val startPan = field.origin.x() / Sim.width
-        val endPan = 0.5 * (field.primaryAnchor.x() + field.secondaryAnchor.x()) / Sim.width
+        val startPan = Scene3D.audioPan(field.origin.location)
+        val midAnchor = Pos((field.primaryAnchor.x() + field.secondaryAnchor.x()) / 2, (field.primaryAnchor.y() + field.secondaryAnchor.y()) / 2)
+        val endPan = Scene3D.audioPan(midAnchor)
         val oscNode = createExponentialRampOscillator(OscillatorType.TRIANGLE, startFreq, endFreq, duration)
         val panNode = createLinearRampPan(startPan, endPan, duration)
         playSound(oscNode, panNode, gain, duration)
@@ -372,7 +375,7 @@ object SoundUtil {
         val max = 1000
         val n = now()
         (0..max).forEach {
-            val pan = Util.random()
+            val pan = Util.random() * 2.0 - 1.0 // full −1…+1 stereo field
             val tc = timeConstant * it
             node.pan.setTargetAtTime(pan, n + tc, timeConstant)
         }
