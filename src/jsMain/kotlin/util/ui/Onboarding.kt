@@ -4,7 +4,9 @@ import agent.Faction
 import config.Location
 import config.Sim
 import kotlinx.browser.document
+import kotlinx.browser.window
 import kotlinx.dom.addClass
+import kotlinx.dom.removeClass
 import org.w3c.dom.HTMLButtonElement
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLInputElement
@@ -12,15 +14,14 @@ import org.w3c.dom.HTMLOptionElement
 import org.w3c.dom.HTMLSelectElement
 
 /**
- * Pre-load onboarding screens, shown in order before any map loads: **faction** first, then
- * **location**. Each step navigates via the URL (?faction, then ?lng/&lat/&name) so the existing
- * reload-based flow carries the choices; once both are present the world loads (see HtmlUtil.load).
- * The location step previews the picked place on the globe inset ([MiniMap]).
+ * Pre-load onboarding screens, shown in order before any map loads: **faction → map-size →
+ * location**, chained in-memory (no reloads) by `HtmlUtil.runOnboarding`. The location step is last
+ * so its play-area box reflects the already-chosen map size; it previews on the globe ([MiniMap]).
  */
 object Onboarding {
     private const val SCREEN_ID = "onboard"
 
-    /** Step 1 — pick a faction. [onPick] should persist it (e.g. navigate with ?faction). */
+    /** Step 1 — pick a faction. [onPick] receives it. */
     fun showFaction(onPick: (Faction) -> Unit) {
         val screen = screen("CHOOSE YOUR FACTION")
         val row = div("onboardRow")
@@ -35,43 +36,102 @@ object Onboarding {
         document.body?.appendChild(screen)
     }
 
-    /** Step 2 — pick a location (preset list + globe preview). [onStart] receives the chosen place. */
+    /**
+     * Step 3 — location. Three modes: **Home** (Geolocation), **Random** (default; re-rolls from the
+     * preset list), **Select** (reveals the preset list). The globe flies to each new choice; the
+     * player can pan/zoom to fine-tune, then confirms the play-area box. [onStart] gets lng, lat, name.
+     */
     fun showLocation(onStart: (Double, Double, String) -> Unit) {
         val screen = screen("CHOOSE A LOCATION")
+        var currentName = ""
+
         val select = document.createElement("select") as HTMLSelectElement
-        select.addClass("topDrop", "amarillo")
+        select.addClass("topDrop", "amarillo", "invisible") // shown only in Select mode
         Location.values().forEach { loc ->
             val opt = document.createElement("option") as HTMLOptionElement
             opt.text = loc.displayName
             opt.value = loc.name
             select.appendChild(opt)
         }
+        fun fly(lng: Double, lat: Double, name: String) {
+            currentName = name
+            MiniMap.setCenter(lng, lat)
+        }
         select.onchange = {
             val loc = Location.valueOf(select.value)
-            MiniMap.setCenter(loc.lng, loc.lat)
+            fly(loc.lng, loc.lat, loc.displayName)
         }
+
+        val modes = div("onboardRow")
+        val homeBtn = modeButton("Home")
+        val randomBtn = modeButton("Random")
+        val selectBtn = modeButton("Select")
+        val all = listOf(homeBtn, randomBtn, selectBtn)
+        fun activate(btn: HTMLButtonElement) {
+            all.forEach { it.removeClass("onboardActive") }
+            btn.addClass("onboardActive")
+        }
+        fun rollRandom() {
+            val loc = Location.random()
+            select.value = loc.name
+            fly(loc.lng, loc.lat, loc.displayName)
+        }
+        homeBtn.onclick = {
+            activate(homeBtn)
+            select.addClass("invisible")
+            useGeolocation { lng, lat -> fly(lng, lat, "Your location") }
+        }
+        randomBtn.onclick = {
+            activate(randomBtn)
+            select.addClass("invisible")
+            rollRandom()
+        }
+        selectBtn.onclick = {
+            activate(selectBtn)
+            select.removeClass("invisible")
+        }
+        all.forEach { modes.appendChild(it) }
+        screen.appendChild(modes)
         screen.appendChild(select)
 
         val mapHolder = div("onboardMap")
         screen.appendChild(mapHolder)
-
         val hint = div("onboardHint")
-        hint.textContent = "Pan/zoom the globe to position the white play-area box, then confirm."
+        hint.textContent = "Pan/zoom to position the white play-area box, then confirm."
         screen.appendChild(hint)
 
-        val confirm = document.createElement("button") as HTMLButtonElement
-        confirm.addClass("topButton", "amarillo", "onboardStart")
-        confirm.textContent = "Confirm location"
-        confirm.onclick = {
-            val center = MiniMap.confirmCenter()
-            if (center != null) {
-                onStart(center.first, center.second, Location.valueOf(select.value).displayName)
-            }
-        }
-        screen.appendChild(confirm)
-
+        screen.appendChild(
+            button("Confirm location", "topButton amarillo onboardStart") {
+                MiniMap.confirmCenter()?.let { onStart(it.first, it.second, currentName) }
+            },
+        )
         document.body?.appendChild(screen)
-        MiniMap.create(mapHolder, Location.DEFAULT.lng, Location.DEFAULT.lat)
+
+        // Default mode: Random — open the globe on a random preset.
+        val initial = Location.random()
+        select.value = initial.name
+        currentName = initial.displayName
+        activate(randomBtn)
+        MiniMap.create(mapHolder, initial.lng, initial.lat)
+    }
+
+    private fun modeButton(label: String): HTMLButtonElement {
+        val b = document.createElement("button") as HTMLButtonElement
+        b.addClass("onboardPreset")
+        b.textContent = label
+        return b
+    }
+
+    /** Center on the player's location via the Geolocation API (no preset). Falls back with an alert. */
+    private fun useGeolocation(onLoc: (Double, Double) -> Unit) {
+        if (js("typeof navigator === 'undefined' || !navigator.geolocation").unsafeCast<Boolean>()) {
+            window.alert("Geolocation isn't available — pick a location instead.")
+            return
+        }
+        window.asDynamic().navigator.geolocation.getCurrentPosition(
+            { pos: dynamic -> onLoc(pos.coords.longitude as Double, pos.coords.latitude as Double) },
+            { _: dynamic -> window.alert("Couldn't get your location — pick a location instead.") },
+        )
     }
 
     /** Step 3 — map size (width/height, with presets) + portal density. [onStart] gets w, h, portals. */

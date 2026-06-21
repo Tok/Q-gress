@@ -134,34 +134,40 @@ object HtmlUtil {
     }
 
     /**
-     * Gate the world load behind the onboarding order: faction → location → load. Each step
-     * navigates with URL params so the choices survive the reload; once both are present (or a
-     * `?local=true` auto-start) the world loads. Demo scenes returned earlier, before this.
+     * Gate the world load behind the onboarding order: **faction → map-size → location → load**, run
+     * as in-memory screens (no reloads). `?local=true` auto-starts; a faction+lng/lat deep link loads
+     * directly (e.g. the in-game location dropdown's reload). Demo scenes returned earlier, before this.
      */
     private fun startOnboardingOrWorld() {
         val faction = getFactionFromUrl()
-        val hasLocation = getLngLatFromUrl() != null
+        val urlCenter = getLngLatFromUrl()
         when {
             isAutoStartFromUrl() -> {
                 chooseUserFaction(faction ?: Faction.random())
-                initWorld()
+                initWorld(centerOrDefault())
             }
-            faction == null -> Onboarding.showFaction { navigateToFaction(it) }
-            !hasLocation -> {
+            faction != null && urlCenter != null -> { // deep link → straight to load
                 chooseUserFaction(faction)
-                Onboarding.showLocation { lng, lat, name -> navigateToLocation(lng, lat, name) }
+                initWorld(centerOrDefault())
             }
-            else -> {
-                chooseUserFaction(faction)
-                // Final step: pick map size + portal density (no reload — set in-memory, then load).
-                Onboarding.showMapSize(Config.startPortals) { w, h, portals ->
-                    Sim.setSize(w, h)
-                    Config.startPortals = portals
-                    initWorld()
-                }
+            else -> runOnboarding()
+        }
+    }
+
+    private fun runOnboarding() {
+        Onboarding.showFaction { f ->
+            chooseUserFaction(f)
+            Onboarding.showMapSize(Config.startPortals) { w, h, portals ->
+                Sim.setSize(w, h) // size first, so the location screen's play-area box is the real size
+                Config.startPortals = portals
+                Onboarding.showLocation { lng, lat, _ -> initWorld(centerJson(lng, lat)) }
             }
         }
     }
+
+    private fun centerOrDefault(): Json = getLngLatFromUrl()?.toJson() ?: Location.DEFAULT.toJSON()
+
+    private fun centerJson(lng: Double, lat: Double): Json = JSON.parse("[$lng,$lat]")
 
     private fun createCheckbox(id: String, labelText: String, onChange: (Boolean) -> Unit): HTMLSpanElement {
         val span = document.createElement("span") as HTMLSpanElement
@@ -313,8 +319,8 @@ object HtmlUtil {
         if (World.isReady) window.requestAnimationFrame { DrawUtil.redraw() }
     }
 
-    private fun initWorld() {
-        Onboarding.close() // dismiss the map-size screen (it loads without a reload)
+    private fun initWorld(center: Json) {
+        Onboarding.close() // dismiss the onboarding screen (it loads without a reload)
         // Staged loading overlay, up before the first tile request (the world build runs ~2 min on Big).
         LoadingOverlay.show()
         val noiseAlpha = 0.8
@@ -325,25 +331,11 @@ object HtmlUtil {
         World.noiseImage = World.createNoiseImage(World.noiseMap, w, h, noiseAlpha)
         World.resetAllCanvas()
         ActionLimitsDisplay.drawTop()
-        // Default (no explicit location) → a known, well-covered location rather
-        // than the [0,0] "Unknown Location" sentinel (open ocean: no streets, so
-        // the passability grid would be empty). Detect the sentinel by its
-        // coordinates — a string compare on the JS array is unreliable here.
-        val selected: dynamic = getSelectedCenterFromUrl()
-        val hasRealCenter = selected != null && (selected[0] != 0.0 || selected[1] != 0.0)
-        val center: Json = if (hasRealCenter) selected.unsafeCast<Json>() else Location.DEFAULT.toJSON()
         MapUtil.loadMaps(center, callback = onMapload())
     }
 
     private fun closePopup() {
         (document.getElementById("popup") as? HTMLDivElement)?.addClass("invisible")
-    }
-
-    /** Step 1 of onboarding: persist the chosen faction in the URL and reload into step 2. */
-    private fun navigateToFaction(faction: Faction) {
-        val location = document.location
-        val base = (location?.origin ?: "") + (location?.pathname ?: "/")
-        document.location?.href = "$base?faction=${faction.abbr}"
     }
 
     private fun isAutoStartFromUrl() = url().searchParams.get("local")?.toBoolean() ?: false
@@ -670,11 +662,6 @@ object HtmlUtil {
             dropdown.add(opt)
             dropdown.selectedIndex = dropdown.length - 1
         }
-    }
-
-    private fun getSelectedCenterFromUrl(): Json {
-        val geo: GeoCoords? = getLngLatFromUrl()
-        return geo?.toJson() ?: getCenterFromDropdown()
     }
 
     private fun url() = URL(document.location?.href ?: "")

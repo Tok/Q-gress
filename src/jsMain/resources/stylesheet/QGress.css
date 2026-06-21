@@ -254,6 +254,10 @@ html, body {
     border: 1px solid rgba(255, 255, 255, 0.4);
     border-radius: 3px;
 }
+.onboardActive {
+    background: rgba(255, 255, 255, 0.85);
+    color: #000000;
+}
 .onboardField {
     display: flex;
     flex-direction: column;
