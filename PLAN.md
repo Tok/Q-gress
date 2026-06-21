@@ -197,8 +197,12 @@ while the **simulation stays 2D**. Staged.
       bottom-right). Portal select/build + build-marker hover moved to the map's own
       `click`/`mousemove` events (`MapUtil.bindInteractions`/`eventToSimPos`); `Navigation`
       now only layers optional WASD/Q-E/R-F keys. Removed dead `screenToSimPos`/`zoomBy`.
-      _Follow-up:_ **mini-map / mini-globe inset** + a globe-projection toggle (MapLibre 5
-      supports globe) — a second small map synced to the main camera.
+      _Follow-up DONE (`90e82f1`):_ **mini-globe inset** (`util/ui/MiniMap`) — a circular second
+      MapLibre map (globe projection) on the mid-left edge, synced to the main camera so the played
+      location stays centred under a static pin; **FLAT/GLOBE** button toggles the projection
+      (`MapLibre.setProjection`). `interactive:false` (passive overview); game-only. Mounts the map
+      in an inner div so MapLibre's own `maplibregl-map{position:relative}` doesn't override the
+      wrapper's fixed positioning.
 - [ ] **Stage 2 — Ingress fidelity**: resonators ringed at the portal base; pole height ←
       level (L8 ≈ 100 m); raised fields; health/level visuals. **Shield visualization** once
       `Portal.deployMods` actually stores mods (today it's a stub — no deployed-shield state to
