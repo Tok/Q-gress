@@ -298,16 +298,14 @@ the Blender step happens, commit the raw `.blend` under `/assets/blender/`, `.gl
 - [ ] **UI Stage 2** — map views & info layers: Satellite (default) + **Schematic** base
       (reuse `SHADOW_STYLE`), and independent toggleable overlays (movement-penalty heatmap,
       vector field, …).
-- [~] **UI Stage 3 — stats: canvas → DOM + dynamic graphs.** _First slice done (`8b35296`):_
-      **MindUnits, the entity-count table, the tick/timestamp and the Com log** are now themeable
-      **DOM** panels (`util/ui/StatsPanel`, faction colours); retired the canvas `MindUnits`/
-      `StatsDisplay`/`TickDisplay` + `Com.draw`. _Remaining:_ the **CycleDisplay time-series graph**
-      and the **TopAgentsDisplay table** (the two complex ones — want a **charting library** /
-      table component), plus retiring `ActionLimitsDisplay`. Stats stays a **graph-migration +
-      stats-improvement phase** (richer time-series, more metrics), not a one-shot port.
-      _The loading HUD is already fully DOM (`5bd5452`)._ **Next focused step:** add a chart dep
-      (uPlot — light/fast for the MU time-series; or Chart.js) to the webpack build + `external`
-      decls, then move the Cycle graph + TopAgents table to DOM and retire the canvas HUD.
+- [x] **UI Stage 3 — stats: canvas → DOM + dynamic graphs — DONE.** The whole canvas HUD is now
+      themeable **DOM**: `StatsPanel` (MindUnits + entity counts + tick + Com, `8b35296`), the MU
+      **time-series graph** via **uPlot** (`CycleChart`, `b51fd02`; uPlot added by CDN like MapLibre,
+      `external/UPlot.kt`), and the **TopAgents leaderboard table** (`TopAgentsPanel`, `fb7f626`,
+      per-level inventory bars in grayscale). Retired the canvas `MindUnits`/`StatsDisplay`/
+      `TickDisplay`/`Com.draw`/`CycleDisplay`/`TopAgentsDisplay`/`UiTable`/`ActionLimitsDisplay`, and
+      the loading HUD (`5bd5452`). _Follow-up (stays a stats-improvement phase):_ richer time-series /
+      more metrics; the `uiCanvas` is now unused (could drop `clearUserInterface`).
 - Map visuals (done, this batch): **grayscale terrain default** + Colored/Street views
       (`util/ui/LayerView`; raster-saturation on the satellite layer only); **white** play-area
       border + **dimmed out-of-bounds** (`system/display/PlayAreaMask`); rule: no new colours,
