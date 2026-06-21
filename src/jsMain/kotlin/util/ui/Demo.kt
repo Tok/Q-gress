@@ -18,56 +18,35 @@ import util.data.Pos
  * HtmlUtil.loadDemoScene). Add a scene by listing it in [SCENES] + handling it in [showControls].
  */
 object Demo {
-    const val MENU = "menu"
+    const val SANDBOX = "sandbox"
     private const val NEUTRAL = "#bbbbbb"
     private const val PANEL_ID = "demoPanel"
 
-    // route → display title. Add future scenes here (building styles, field shaders, NPC tuning…).
-    private val SCENES = listOf(
-        "portal" to "Portals & Shatter",
-        "xmp" to "XMP Effects",
-    )
-
     private var portalColor = Faction.ENL.color
     private var demoLevel = 8
-    private var xmpLevelSel = 1
-    private var xmpButtons: List<HTMLButtonElement> = emptyList()
+    private var placementMode = true // ON: LMB place / RMB remove · OFF: LMB XMP / RMB hack
     private var portalButtons: List<HTMLButtonElement> = emptyList()
 
-    /** The XMP level the user has selected (the xmp demo detonates this on click). */
-    fun xmpLevel(): Int = xmpLevelSel
-
-    /** The level + colour the portal demo places on LMB (HtmlUtil wires the map clicks). */
+    /** The selected level + colour (HtmlUtil wires the map clicks). */
     fun portalLevel(): Int = demoLevel
     fun portalColorValue(): String = portalColor
 
-    /** The demo route for a location hash, or null for the normal game. Accepts #demo and #/demo. */
+    /** True in build mode (place/remove portals); false in effect mode (XMP / hack). */
+    fun isPlacement(): Boolean = placementMode
+
+    /** One unified sandbox scene. #demo and #demo/portal both route to it (xmp folded in). */
     fun route(hash: String): String? = when (hash.removePrefix("#").removePrefix("/").removeSuffix("/")) {
-        "demo" -> MENU
-        "demo/portal" -> "portal"
-        "demo/xmp" -> "xmp"
+        "demo", "demo/portal", "demo/sandbox" -> SANDBOX
         else -> null
     }
 
-    fun showMenu() {
-        val menu = document.createElement("div") as HTMLDivElement
-        menu.addClass("demoMenu", "coda")
-        menu.append(titleEl("Demo Scenes"))
-        SCENES.forEach { (route, title) -> menu.append(link("#demo/$route", title, "demoLink amarillo")) }
-        menu.append(link("#", "← Back to game", "demoBack"))
-        document.body?.append(menu)
-    }
-
-    fun showControls(scene: String, center: Pos) {
+    fun showControls(center: Pos) {
         val panel = document.createElement("div") as HTMLDivElement
         panel.id = PANEL_ID
         panel.addClass("demoPanel", "coda")
-        when (scene) {
-            "portal" -> buildPortalControls(panel, center)
-            "xmp" -> buildXmpControls(panel)
-        }
+        buildSandboxControls(panel, center)
         panel.append(satelliteToggle()) // gray backdrop by default; opt in to satellite
-        panel.append(link("#demo", "≡ Menu", "demoBack"))
+        panel.append(link("#", "← Back to game", "demoBack"))
         document.body?.append(panel)
     }
 
@@ -88,34 +67,38 @@ object Demo {
         return label
     }
 
-    private fun buildPortalControls(panel: HTMLDivElement, center: Pos) {
-        panel.append(titleEl("Portal — LMB place · RMB shatter"))
+    private var modeButton: HTMLButtonElement? = null
+
+    private fun buildSandboxControls(panel: HTMLDivElement, center: Pos) {
+        panel.append(titleEl("Portal Sandbox"))
         val lvlButtons = (1..8).map { level -> button("L$level", "demoButton") { selectPortalLevel(level) } }
         lvlButtons.forEach { panel.append(it) }
         portalButtons = lvlButtons
-        selectPortalLevel(demoLevel) // highlight the current selection
+        selectPortalLevel(demoLevel)
         panel.append(button("ENL", "demoButton enl") { portalColor = Faction.ENL.color })
         panel.append(button("RES", "demoButton res") { portalColor = Faction.RES.color })
         panel.append(button("Neutral", "demoButton") { portalColor = NEUTRAL })
+
+        val mode = button(modeLabel(), "demoButton demoSel") { togglePlacement() }
+        modeButton = mode
+        panel.append(mode)
+        panel.append(button("Upgrade", "demoButton") { Scene3D.stepLastShowcaseLevel(1) })
+        panel.append(button("Downgrade", "demoButton") { Scene3D.stepLastShowcaseLevel(-1) })
+        panel.append(button("Link", "demoButton") { Scene3D.linkLastShowcases() })
+
         Scene3D.placeShowcase(center, demoLevel, portalColor) // a starter portal in the middle
+    }
+
+    private fun modeLabel() = if (placementMode) "Mode: Build (LMB place · RMB remove)" else "Mode: Effects (LMB XMP · RMB hack)"
+
+    private fun togglePlacement() {
+        placementMode = !placementMode
+        modeButton?.innerHTML = modeLabel()
     }
 
     private fun selectPortalLevel(level: Int) {
         demoLevel = level
         portalButtons.forEachIndexed { i, b -> b.className = if (i + 1 == level) "demoButton demoSel" else "demoButton" }
-    }
-
-    private fun buildXmpControls(panel: HTMLDivElement) {
-        panel.append(titleEl("XMP — click map to detonate"))
-        val btns = (1..8).map { level -> button("L$level", "demoButton") { selectXmp(level) } }
-        btns.forEach { panel.append(it) }
-        xmpButtons = btns
-        selectXmp(xmpLevelSel) // highlight the current selection
-    }
-
-    private fun selectXmp(level: Int) {
-        xmpLevelSel = level
-        xmpButtons.forEachIndexed { i, b -> b.className = if (i + 1 == level) "demoButton demoSel" else "demoButton" }
     }
 
     private fun titleEl(text: String): HTMLDivElement {

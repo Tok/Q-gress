@@ -97,7 +97,7 @@ object HtmlUtil {
         window.addEventListener("hashchange", { window.location.reload() })
         val demoScene = Demo.route(window.location.hash)
         if (demoScene != null) {
-            if (demoScene == Demo.MENU) Demo.showMenu() else loadDemoScene(demoScene)
+            loadDemoScene()
             return
         }
 
@@ -293,8 +293,8 @@ object HtmlUtil {
         }
     }
 
-    // Minimal bootstrap for a demo scene: just the 3D scene (each scene manages its own meshes).
-    private fun loadDemoScene(scene: String) {
+    // Minimal bootstrap for the unified sandbox demo scene: just the 3D scene + the sandbox controls.
+    private fun loadDemoScene() {
         World.userFaction = Faction.ENL
         World.resetAllCanvas()
         val center = Pos(Sim.width / 2, Sim.height / 2)
@@ -303,30 +303,32 @@ object HtmlUtil {
             World.isReady = true
             Navigation.setup()
             MapUtil.enable3D()
-            if (scene == "xmp") { // click anywhere → detonate an XMP at the selected level
-                MapUtil.bindClick(fun(event: dynamic) {
+            // Unified sandbox: a placement toggle picks what LMB/RMB do.
+            // Build mode: LMB places a portal · RMB shatters the nearest.
+            // Effect mode: LMB detonates an XMP · RMB hacks (spins) the nearest portal's resonators.
+            MapUtil.bindPortalDemo(
+                fun(event: dynamic) {
+                    val pos = MapUtil.eventToSimPos(event) ?: return
                     SoundUtil.enableAudio()
-                    val pos = MapUtil.eventToSimPos(event)
-                    if (pos != null) Scene3D.playXmpBurst(pos, Demo.xmpLevel())
-                })
-            }
-            if (scene == "portal") { // LMB places a portal at the selected level, RMB shatters the nearest
-                MapUtil.bindPortalDemo(
-                    fun(event: dynamic) {
-                        val pos = MapUtil.eventToSimPos(event) ?: return
-                        SoundUtil.enableAudio()
+                    if (Demo.isPlacement()) {
                         Scene3D.placeShowcase(pos, Demo.portalLevel(), Demo.portalColorValue())
                         SoundUtil.playPortalCreationSound(pos)
-                    },
-                    fun(event: dynamic) {
-                        val pos = MapUtil.eventToSimPos(event) ?: return
+                    } else {
+                        Scene3D.playXmpBurst(pos, Demo.portalLevel())
+                    }
+                },
+                fun(event: dynamic) {
+                    val pos = MapUtil.eventToSimPos(event) ?: return
+                    if (Demo.isPlacement()) {
                         Scene3D.removeShowcaseNear(pos)
                         SoundUtil.playGlassShatterSound(pos, 0.4, 0.9)
-                    },
-                )
-            }
+                    } else {
+                        Scene3D.hackShowcaseNear(pos)
+                    }
+                },
+            )
             intervalID = document.defaultView?.setInterval({ demoTick() }, Time.minTickInterval) ?: 0
-            Demo.showControls(scene, center)
+            Demo.showControls(center)
         })
     }
 

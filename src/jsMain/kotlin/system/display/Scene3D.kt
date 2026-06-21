@@ -70,6 +70,8 @@ object Scene3D {
     private const val RESO_RADIUS_FRAC = 1.15 // slot distance from the pole axis (× POLE_R)
     private const val RESO_COLLAR_FRAC = 0.78 // collar height as a fraction of the pole height
     private const val RESO_ROD_LEN_FRAC = 0.22 // rod length as a fraction of the pole height
+    private const val HACK_SPIN_S = 2.0 // seconds the resonator collar spins on a hack (demo)
+    private const val HACK_SPIN_RATE = 6.0 // collar spin speed (rad/s)
     private const val NEUTRAL_COLOR = "#bbbbbb"
     private const val HIGHLIGHT_COLOR = "#f0f0f0" // selection: off-tint grayscale (no new hues)
     private const val OVERLAY_Z = 0.2 // passability quad just above ground
@@ -115,7 +117,7 @@ object Scene3D {
     private var flaskVariants: List<List<dynamic>> = emptyList()
     private var flaskScale = 1.0 // scale a flask variant to ≈ the portal top sphere
     private var showcaseGroup: dynamic = null // demo-scene placed portals (not cleared by sync)
-    private class Showcase(val group: dynamic, val pos: Pos, val level: Int, val color: String)
+    private class Showcase(val group: dynamic, val resoGroup: dynamic, val pos: Pos, var level: Int, val color: String, var hackAge: Double)
     private val showcases = mutableListOf<Showcase>()
     private var lastFrameMs = 0.0 // for per-frame effect dt
 
@@ -205,6 +207,7 @@ object Scene3D {
             val dt = if (lastFrameMs <= 0.0) 0.016 else ((nowMs - lastFrameMs) / 1000.0).coerceIn(0.0, 0.1)
             lastFrameMs = nowMs
             if (ShatterFx.hasActive()) ShatterFx.update(dt)
+            if (showcasesHacking()) updateShowcaseHacks(dt)
             if (FieldFx.hasActive()) FieldFx.update(dt)
             if (XmpBurst.hasActive()) {
                 val invProj = Three.Matrix4().copy(cam.projectionMatrix).invert()
@@ -220,7 +223,7 @@ object Scene3D {
         map.triggerRepaint()
     }
 
-    private fun hasActiveEffects() = ShatterFx.hasActive() || XmpBurst.hasActive() || FieldFx.hasActive()
+    private fun hasActiveEffects() = ShatterFx.hasActive() || showcasesHacking() || XmpBurst.hasActive() || FieldFx.hasActive()
 
     /** Rebuild the 3D objects from world state. Called once per simulation tick. */
     fun sync() {
@@ -543,18 +546,60 @@ object Scene3D {
         val grp = showcaseGroup ?: return
         val group = Three.Group()
         val resos = Octant.values().associateWith { level } // demo: show a full set at the placed level
-        buildPortal(group, location, level.toDouble(), color, null, resos)
+        val parts = buildPortal(group, location, level.toDouble(), color, null, resos)
         grp.add(group)
-        showcases.add(Showcase(group, location, level, color))
+        showcases.add(Showcase(group, parts[3], location, level, color, 0.0))
     }
 
-    /** Demo only (RMB): shatter + remove the placed portal nearest [location] (shards fly, gasket drops). */
+    /** Demo only (RMB in build mode): shatter + remove the placed portal nearest [location]. */
     fun removeShowcaseNear(location: Pos) {
         val target = showcases.minByOrNull { it.pos.distanceTo(location) } ?: return
         showcaseGroup?.remove(target.group)
         showcases.remove(target)
         shatterPortal(target.pos, target.color, target.level)
     }
+
+    /** Demo (RMB in effect mode): spin the nearest portal's resonator collar (the "hack" animation). */
+    fun hackShowcaseNear(location: Pos) {
+        showcases.minByOrNull { it.pos.distanceTo(location) }?.let { it.hackAge = HACK_SPIN_S }
+    }
+
+    /** Demo (Upgrade/Downgrade): re-place the last portal at level±[delta] (grows in at the new size). */
+    fun stepLastShowcaseLevel(delta: Int) {
+        val target = showcases.lastOrNull() ?: return
+        val newLevel = (target.level + delta).coerceIn(1, 8)
+        if (newLevel == target.level) return
+        showcaseGroup?.remove(target.group)
+        showcases.remove(target)
+        placeShowcase(target.pos, newLevel, target.color)
+    }
+
+    /** Demo (Link): glass-pipe the two most recently placed portals' orbs. */
+    fun linkLastShowcases() {
+        val grp = showcaseGroup ?: return
+        if (showcases.size < 2) return
+        val a = showcases[showcases.size - 1]
+        val b = showcases[showcases.size - 2]
+        val pa = doubleArrayOf(sceneX(a.pos), sceneY(a.pos), orbCenterZ(a.level.toDouble()))
+        val pb = doubleArrayOf(sceneX(b.pos), sceneY(b.pos), orbCenterZ(b.level.toDouble()))
+        val tube = Three.Mesh(linkGeo, Materials.linkGlass(a.color))
+        orientTube(tube.asDynamic(), pa, pb)
+        grp.add(tube)
+        val core = Three.Mesh(coreGeo, Materials.linkCore(a.color))
+        orientTube(core.asDynamic(), pa, pb)
+        grp.add(core)
+    }
+
+    private fun updateShowcaseHacks(dt: Double) {
+        showcases.forEach { sc ->
+            if (sc.hackAge > 0.0) {
+                sc.hackAge = (sc.hackAge - dt).coerceAtLeast(0.0)
+                sc.resoGroup.rotation.z = sc.resoGroup.rotation.z + HACK_SPIN_RATE * dt
+            }
+        }
+    }
+
+    private fun showcasesHacking() = showcases.any { it.hackAge > 0.0 }
 
     private fun addAgent(agent: Agent) {
         val x = sceneX(agent.pos)
