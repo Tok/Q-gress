@@ -46,7 +46,13 @@ object PortalNames {
     fun nameFor(location: Pos): String? = try {
         val p = pois ?: project(rawPois).also { pois = it }
         val s = streets ?: project(rawStreets).also { streets = it }
-        nearest(p, location, POI_RADIUS) ?: nearest(s, location, STREET_RADIUS)
+        // Prefer a *close* named POI, then a close street; but rather than fall back to random
+        // gibberish for portals in POI/street-sparse spots, adopt the nearest street (then nearest
+        // POI) at any distance — so every portal gets a real map-derived name.
+        nearest(p, location, POI_RADIUS)
+            ?: nearest(s, location, STREET_RADIUS)
+            ?: nearest(s, location, Double.POSITIVE_INFINITY)
+            ?: nearest(p, location, Double.POSITIVE_INFINITY)
     } catch (e: Throwable) {
         null // Scene3D not anchored yet → fall back to the generator (and retry on the next portal)
     }

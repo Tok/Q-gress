@@ -589,6 +589,11 @@ object HtmlUtil {
         if (World.grid.isEmpty()) {
             console.error("Grid is empty!")
         }
+        // Anchor the 3D scene BEFORE spawning portals: Portal.create → PortalNames.nameFor projects
+        // POI/street lng/lat through Scene3D.lngLatToSimPos, which throws until Scene3D is registered.
+        // Registering first means portals actually adopt their real map names (else all fall back to
+        // the random generator).
+        MapUtil.enable3D()
         createAgentsAndPortals {
             LoadingText.draw("Ready.")
             DrawUtil.clearBackground()
@@ -600,7 +605,6 @@ object HtmlUtil {
             World.isReady = true
             applySelectedLayer()
             Navigation.setup()
-            MapUtil.enable3D()
             MapUtil.bindInteractions(::onMapClick, ::onMapMove)
         }
     }
