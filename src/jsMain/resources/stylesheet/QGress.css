@@ -901,7 +901,7 @@ html, body {
     position: fixed;
     top: 10px;
     left: 10px;
-    width: 150px;
+    width: 188px;
     display: flex;
     flex-direction: column;
     background: #000000cc;
@@ -913,7 +913,39 @@ html, body {
 }
 .demoPanelTitle {
     font-size: 18px;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
+}
+/* Full-width section label + instructional line inside the demo panel. */
+.demoLabel {
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #9aa6a0;
+    margin: 8px 0 2px;
+}
+.demoHint {
+    font-size: 11px;
+    line-height: 1.35;
+    color: #b8c4bc;
+    margin-bottom: 4px;
+}
+/* Horizontal wrapping group (the L1-8 / X1-8 selectors + faction/action rows). */
+.demoRow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin: 2px 0;
+}
+.demoRow .demoButton {
+    margin: 0;
+    flex: 1 1 auto;
+}
+/* Compact square-ish selector buttons (L1-8, X1-8). */
+.demoMini {
+    min-width: 34px;
+    flex: 0 0 auto;
+    padding: 6px 0;
+    text-align: center;
 }
 .demoButton {
     margin: 3px 0;

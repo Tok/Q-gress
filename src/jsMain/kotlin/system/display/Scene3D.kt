@@ -565,12 +565,14 @@ object Scene3D {
         shatterPortal(target.pos, target.color, target.level, resos)
     }
 
-    /** Demo (effects-mode RMB): spin the nearest portal's resonator collar (the "hack" animation). */
-    fun hackShowcaseNear(location: Pos) {
-        showcases.minByOrNull { it.pos.distanceTo(location) }?.let {
-            it.hackAge = HackFx.SPIN_S
-            selectedShowcase = it
-        }
+    /** Demo (Hack button): spin the active (selected, else last) portal's resonator collar. */
+    fun hackActiveShowcase() {
+        activeShowcase()?.let { it.hackAge = HackFx.SPIN_S }
+    }
+
+    /** Demo (XMP buttons): detonate a level-[level] XMP fireball at the active portal. */
+    fun xmpActiveShowcase(level: Int) {
+        activeShowcase()?.let { playXmpBurst(it.pos, level) }
     }
 
     /** Demo (Upgrade/Downgrade): re-place the active portal at level±[delta] (grows in at the new size). */

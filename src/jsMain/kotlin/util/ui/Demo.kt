@@ -24,15 +24,11 @@ object Demo {
 
     private var portalColor = Faction.ENL.color
     private var demoLevel = 8
-    private var placementMode = true // ON: LMB place / RMB remove · OFF: LMB XMP-at-click / RMB hack
     private var portalButtons: List<HTMLButtonElement> = emptyList()
 
-    /** The selected level + colour (HtmlUtil wires the map clicks per [isPlacement]). */
+    /** The selected portal level + colour the map uses when placing (LMB). */
     fun portalLevel(): Int = demoLevel
     fun portalColorValue(): String = portalColor
-
-    /** True in build mode (LMB place / RMB remove); false in effects mode (LMB XMP / RMB hack). */
-    fun isPlacement(): Boolean = placementMode
 
     /** One unified sandbox scene. #demo and #demo/portal both route to it (xmp folded in). */
     fun route(hash: String): String? = when (hash.removePrefix("#").removePrefix("/").removeSuffix("/")) {
@@ -67,46 +63,78 @@ object Demo {
         return label
     }
 
-    private var modeButton: HTMLButtonElement? = null
-
     private fun buildSandboxControls(panel: HTMLDivElement, center: Pos) {
         panel.append(titleEl("Portal Sandbox"))
+        panel.append(hintEl("Map: LMB place / select a portal · RMB shatter it. The buttons below act on the selected portal."))
 
-        val lvlButtons = (1..8).map { level -> button("L$level", "demoButton") { selectPortalLevel(level) } }
-        lvlButtons.forEach { panel.append(it) }
+        panel.append(labelEl("Place level"))
+        val lvlButtons = (1..8).map { level -> button("L$level", "demoButton demoMini") { selectPortalLevel(level) } }
+        panel.append(rowOf(lvlButtons))
         portalButtons = lvlButtons
         selectPortalLevel(demoLevel)
-        panel.append(button("ENL", "demoButton enl") { portalColor = Faction.ENL.color })
-        panel.append(button("RES", "demoButton res") { portalColor = Faction.RES.color })
-        panel.append(button("Neutral", "demoButton") { portalColor = NEUTRAL })
+        panel.append(
+            rowOf(
+                listOf(
+                    button("ENL", "demoButton enl") { portalColor = Faction.ENL.color },
+                    button("RES", "demoButton res") { portalColor = Faction.RES.color },
+                    button("Neutral", "demoButton") { portalColor = NEUTRAL },
+                ),
+            ),
+        )
 
-        // Mode toggle: place/remove portals, or fire XMPs / hack. Upgrade/Downgrade/Link act on the
-        // active (selected, else last) portal.
-        val mode = button(modeLabel(), "demoButton demoSel") { togglePlacement() }
-        modeButton = mode
-        panel.append(mode)
-        panel.append(button("Upgrade", "demoButton") { Scene3D.stepLastShowcaseLevel(1) })
-        panel.append(button("Downgrade", "demoButton") { Scene3D.stepLastShowcaseLevel(-1) })
-        panel.append(button("Link", "demoButton") { Scene3D.linkLastShowcases() })
+        panel.append(labelEl("Selected portal"))
+        panel.append(
+            rowOf(
+                listOf(
+                    button("Upgrade", "demoButton") { Scene3D.stepLastShowcaseLevel(1) },
+                    button("Downgrade", "demoButton") { Scene3D.stepLastShowcaseLevel(-1) },
+                    button("Link", "demoButton") { Scene3D.linkLastShowcases() },
+                    button("Hack", "demoButton") { Scene3D.hackActiveShowcase() },
+                ),
+            ),
+        )
+
+        panel.append(labelEl("Fire XMP at selected"))
+        val xmpButtons = (1..8).map { level -> button("X$level", "demoButton demoMini") { Scene3D.xmpActiveShowcase(level) } }
+        panel.append(rowOf(xmpButtons))
 
         Scene3D.placeShowcase(center, demoLevel, portalColor) // a starter portal in the middle
     }
 
-    private fun modeLabel() = if (placementMode) "Mode: Build (LMB place · RMB remove)" else "Mode: Effects (LMB XMP · RMB hack)"
-
-    private fun togglePlacement() {
-        placementMode = !placementMode
-        modeButton?.innerHTML = modeLabel()
+    /** Lay buttons out in a horizontal wrapping row (compact — for the L1-8 / X1-8 selectors). */
+    private fun rowOf(buttons: List<HTMLButtonElement>): HTMLDivElement {
+        val row = document.createElement("div") as HTMLDivElement
+        row.addClass("demoRow")
+        buttons.forEach { row.append(it) }
+        return row
     }
 
     private fun selectPortalLevel(level: Int) {
         demoLevel = level
-        portalButtons.forEachIndexed { i, b -> b.className = if (i + 1 == level) "demoButton demoSel" else "demoButton" }
+        portalButtons.forEachIndexed { i, b ->
+            b.className = if (i + 1 == level) "demoButton demoMini demoSel" else "demoButton demoMini"
+        }
     }
 
     private fun titleEl(text: String): HTMLDivElement {
         val div = document.createElement("div") as HTMLDivElement
         div.addClass("demoPanelTitle", "amarillo")
+        div.innerHTML = text
+        return div
+    }
+
+    /** A full-width section label that breaks the button row (e.g. "Fire XMP"). */
+    private fun labelEl(text: String): HTMLDivElement {
+        val div = document.createElement("div") as HTMLDivElement
+        div.addClass("demoLabel", "coda")
+        div.innerHTML = text
+        return div
+    }
+
+    /** A full-width instructional line. */
+    private fun hintEl(text: String): HTMLDivElement {
+        val div = document.createElement("div") as HTMLDivElement
+        div.addClass("demoHint", "coda")
         div.innerHTML = text
         return div
     }

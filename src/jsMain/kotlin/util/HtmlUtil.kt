@@ -306,31 +306,22 @@ object HtmlUtil {
             World.isReady = true
             Navigation.setup()
             MapUtil.enable3D()
-            // Unified sandbox with a Build/Effects mode toggle.
-            // Build: LMB selects the portal under the cursor (a ground ring previews place vs select)
-            //   or places a new one if the spot is clear; RMB shatters the nearest.
-            // Effects: LMB detonates an XMP where you click; RMB hacks the nearest portal.
+            // Sandbox map interaction: LMB places a portal on empty ground (a ground ring previews
+            // place vs select) or selects the one under the cursor; RMB shatters the nearest. The
+            // effects (Hack / Fire XMP) are panel buttons that act on the selected portal.
             MapUtil.bindPortalDemo(
                 fun(event: dynamic) {
                     val pos = MapUtil.eventToSimPos(event) ?: return
                     SoundUtil.enableAudio()
-                    if (Demo.isPlacement()) {
-                        if (Scene3D.clickShowcase(pos, Demo.portalLevel(), Demo.portalColorValue())) {
-                            SoundUtil.playPortalCreationSound(pos)
-                        }
-                    } else {
-                        Scene3D.playXmpBurst(pos, Demo.portalLevel())
+                    if (Scene3D.clickShowcase(pos, Demo.portalLevel(), Demo.portalColorValue())) {
+                        SoundUtil.playPortalCreationSound(pos)
                     }
                 },
                 fun(event: dynamic) {
                     val pos = MapUtil.eventToSimPos(event) ?: return
                     SoundUtil.enableAudio()
-                    if (Demo.isPlacement()) {
-                        Scene3D.removeShowcaseNear(pos)
-                        SoundUtil.playGlassShatterSound(pos, 0.4, 0.9)
-                    } else {
-                        Scene3D.hackShowcaseNear(pos)
-                    }
+                    Scene3D.removeShowcaseNear(pos)
+                    SoundUtil.playGlassShatterSound(pos, 0.4, 0.9)
                 },
                 fun(event: dynamic) {
                     Scene3D.updateDemoCursor(MapUtil.eventToSimPos(event))
