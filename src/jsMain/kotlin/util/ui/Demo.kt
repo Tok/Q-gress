@@ -29,7 +29,7 @@ object Demo {
     )
 
     private var portalColor = Faction.ENL.color
-    private var demoLevel = 1
+    private var demoLevel = 8
     private var xmpLevelSel = 1
     private var xmpButtons: List<HTMLButtonElement> = emptyList()
     private var portalButtons: List<HTMLButtonElement> = emptyList()

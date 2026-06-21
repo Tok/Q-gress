@@ -6,7 +6,6 @@ import agent.Faction
 import agent.NonFaction
 import agent.action.ActionItem
 import config.Sim
-import external.Cannon
 import external.GLTFLoader
 import external.MapLibre
 import external.Three
@@ -15,13 +14,11 @@ import portal.Field
 import portal.Link
 import portal.Portal
 import util.SoundUtil
-import util.Util
 import util.data.Pos
 import kotlin.math.PI
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.pow
-import kotlin.math.sin
 import kotlin.math.sqrt
 
 /**
@@ -59,7 +56,7 @@ object Scene3D {
     private const val LEVEL_TWEEN_RATE = 0.18 // per-sync ease of the rendered level toward the real one
     private const val POLE_H = 22.5 // base pole height at L1; scales by φ per level
     private const val TOP_R = 7.0 // base orb radius
-    private const val INNER_SHELL_FRAC = 0.72 // inner glass shell radius (× orb) — the thick-wall cue
+    private const val INNER_SHELL_FRAC = 0.89 // inner glass shell radius (× orb) — a thin wall (~2.5× thinner) matching the shards
     private const val PHI = 1.618 // golden ratio — pole grows by φ across the 8 levels
     private const val NEUTRAL_COLOR = "#bbbbbb"
     private const val HIGHLIGHT_COLOR = "#f0f0f0" // selection: off-tint grayscale (no new hues)
@@ -72,15 +69,6 @@ object Scene3D {
     private const val BORDER_Z = 0.3
     private const val OUTSIDE_DIM = 0.4 // opacity of the dark mask greying out everything beyond the border
     private const val OUTSIDE_FAR = 12.0 // how far past the play area the dim mask extends (× the half-extent)
-    private const val SHARD_BRIGHT = 1.4 // shards use the orb's GlassShader; a touch brighter so the small pieces read
-    private const val SHARD_FADE = 1.2 // seconds to fade out at end of life
-    private const val SHARD_LIFE_MIN = 6.0 // shards linger before fading
-    private const val SHARD_LIFE_MAX = 10.0
-    private const val SHARD_SPIN = 1.8 // max tumble rad/s — a gentle turn, not a whirl
-    private const val SHARD_GROUP = 2 // collision group: shards collide with the ground/pole only…
-    private const val SHARD_MASK = 1 // …not each other (their box colliders all sit at the orb centre)
-    private const val SHARD_MASS = 1.0
-    private const val GRAVITY = 20.0 // ~2× real g — shards drop with weight (true 9.8 reads sluggish at this scale)
     const val CUSTOM_LAYER_ID = "qgress-3d" // MapLibre layer id for the three.js scene
 
     // Currently selected entity, as "portal:<id>" / "agent:<name>" (see pick()).
@@ -114,29 +102,10 @@ object Scene3D {
     // Glass-orb shatter fracture variants (loaded once from the GLB via ShardAssets).
     private var flaskVariants: List<List<dynamic>> = emptyList()
     private var flaskScale = 1.0 // scale a flask variant to ≈ the portal top sphere
-    private var shardsGroup: dynamic = null // transient shatter fragments (not cleared by sync)
     private var showcaseGroup: dynamic = null // demo-scene placed portals (not cleared by sync)
     private class Showcase(val group: dynamic, val pos: Pos, val level: Int, val color: String)
     private val showcases = mutableListOf<Showcase>()
-    private var physicsWorld: Cannon.World? = null // cannon-es world for the shards
-    private val tempBodies = mutableListOf<Cannon.Body>() // static pole colliders, live only during a shatter
-    private var shatterRot = doubleArrayOf(0.0, 0.0, 0.0) // per-shatter random orientation of the shards
-    private val activeShards = mutableListOf<Shard>()
-    private var lastFrameMs = 0.0 // for per-frame shard physics dt
-
-    /**
-     * One in-flight glass fragment: a mesh driven by its cannon-es rigid [body], fading over [life].
-     * [setFade] applies a 1→0 opacity factor — the glass shards drive their shader `uFade`, the
-     * rubber gasket its material opacity.
-     */
-    private class Shard(
-        val mesh: dynamic,
-        val mat: dynamic,
-        val body: Cannon.Body,
-        var age: Double,
-        val life: Double,
-        val setFade: (Double) -> Unit,
-    )
+    private var lastFrameMs = 0.0 // for per-frame effect dt
 
     /** Last-known shape of a control field (centroid + 3 centroid-relative vertices), for its dissolve. */
     private class FieldRecord(val cx: Double, val cy: Double, val cz: Double, val rel: Array<DoubleArray>, val color: String)
@@ -190,12 +159,11 @@ object Scene3D {
         indicatorsGroup = Three.Group().also { newScene.add(it) }
         markerGroup = Three.Group().also { newScene.add(it) }
         borderGroup = Three.Group().also { newScene.add(it) }
-        shardsGroup = Three.Group().also { newScene.add(it) }
         XmpBurst.register(newScene)
         FieldFx.register(newScene)
+        ShatterFx.register(newScene)
         showcaseGroup = Three.Group()
         newScene.add(showcaseGroup)
-        physicsWorld = createPhysicsWorld()
         scene = newScene
         buildBorder()
         loadShatterAssets()
@@ -218,11 +186,11 @@ object Scene3D {
         cam.projectionMatrix = mapMatrix.multiply(modelMatrix)
         GlassShader.updateEye(cam.projectionMatrix) // camera-tracking glass rim (orbs + links)
         PlasmaShader.setTime((js("performance.now()") as Double) / 1000.0) // animate control fields
-        if (activeShards.isNotEmpty() || XmpBurst.hasActive() || FieldFx.hasActive()) {
+        if (hasActiveEffects()) {
             val nowMs = js("performance.now()") as Double
             val dt = if (lastFrameMs <= 0.0) 0.016 else ((nowMs - lastFrameMs) / 1000.0).coerceIn(0.0, 0.1)
             lastFrameMs = nowMs
-            if (activeShards.isNotEmpty()) updateShards(dt)
+            if (ShatterFx.hasActive()) ShatterFx.update(dt)
             if (FieldFx.hasActive()) FieldFx.update(dt)
             if (XmpBurst.hasActive()) {
                 val invProj = Three.Matrix4().copy(cam.projectionMatrix).invert()
@@ -238,31 +206,7 @@ object Scene3D {
         map.triggerRepaint()
     }
 
-    private fun updateShards(dt: Double) {
-        physicsWorld?.step(1.0 / 60.0, dt, 3)
-        val iter = activeShards.iterator()
-        while (iter.hasNext()) {
-            val s = iter.next()
-            s.age += dt
-            val bodyPos = s.body.asDynamic().position
-            s.mesh.position.set(bodyPos.x as Double, bodyPos.y as Double, bodyPos.z as Double)
-            val bodyQuat = s.body.asDynamic().quaternion
-            s.mesh.quaternion.set(bodyQuat.x as Double, bodyQuat.y as Double, bodyQuat.z as Double, bodyQuat.w as Double)
-            if (s.age > s.life - SHARD_FADE) {
-                s.setFade(((s.life - s.age) / SHARD_FADE).coerceIn(0.0, 1.0))
-            }
-            if (s.age >= s.life) {
-                physicsWorld?.removeBody(s.body)
-                shardsGroup.remove(s.mesh)
-                s.mat.dispose()
-                iter.remove()
-            }
-        }
-        if (activeShards.isEmpty() && tempBodies.isNotEmpty()) { // shatter done → retire the pole colliders
-            tempBodies.forEach { physicsWorld?.removeBody(it) }
-            tempBodies.clear()
-        }
-    }
+    private fun hasActiveEffects() = ShatterFx.hasActive() || XmpBurst.hasActive() || FieldFx.hasActive()
 
     /** Rebuild the 3D objects from world state. Called once per simulation tick. */
     fun sync() {
@@ -356,113 +300,16 @@ object Scene3D {
     }
 
     /**
-     * Shatter a removed portal's glass orb (called from Portal.remove). Shards reuse the flask
-     * model, scaled to this [level]'s orb and spawned at its height. Each shatter picks a random
-     * variant AND a random orientation for variability; a static pole collider keeps shards from
-     * flying through the (metal) pole, and the rubber gasket drops too. The pole itself is metal,
-     * so it does not shatter.
+     * Shatter a removed portal (from Portal.remove / the demo RMB): glass shards fly, the gasket
+     * drops, the metal pole sinks. The physics live in [ShatterFx]; we just hand it the geometry.
      */
     fun shatterPortal(location: Pos, color: String, level: Int) {
-        val world = physicsWorld ?: return
-        val x = sceneX(location)
-        val y = sceneY(location)
         val lv = level.toDouble()
-        val s = orbScale(lv)
-        val poleH = poleHeight(lv)
-        shatterRot = doubleArrayOf(Util.random() * 2.0 * PI, Util.random() * 2.0 * PI, Util.random() * 2.0 * PI)
-        if (flaskVariants.isNotEmpty()) {
-            val variant = flaskVariants[(Util.random() * flaskVariants.size).toInt()]
-            variant.forEach { holder -> spawnShard(holder, doubleArrayOf(x, y, orbCenterZ(lv)), flaskScale * s, color, 1.0) }
-        }
-        addPoleObstacle(world, x, y, poleH)
-        spawnGasket(world, x, y, poleH)
-    }
-
-    /** A static box collider standing in for the metal pole, so shards bounce off it (not through). */
-    private fun addPoleObstacle(world: Cannon.World, x: Double, y: Double, poleH: Double) {
-        val opts: dynamic = js("({ mass: 0 })")
-        opts.position = Cannon.Vec3(x, y, poleH / 2)
-        opts.shape = Cannon.Box(Cannon.Vec3(POLE_R, POLE_R, poleH / 2))
-        val body = Cannon.Body(opts)
-        world.addBody(body)
-        tempBodies.add(body)
-    }
-
-    /** The rubber gasket as a falling rigid body when the portal is destroyed. */
-    private fun spawnGasket(world: Cannon.World, x: Double, y: Double, poleH: Double) {
-        val p: dynamic = js("({})")
-        p.color = "#0a0a0a"
-        p.metalness = 0.0
-        p.roughness = 0.95
-        p.transparent = true
-        p.opacity = 1.0
-        val mat = Three.MeshStandardMaterial(p)
-        val mesh = Three.Mesh(gasketGeo, mat)
-        val opts: dynamic = js("({})")
-        opts.mass = SHARD_MASS
-        opts.position = Cannon.Vec3(x, y, poleH)
-        opts.shape = Cannon.Box(Cannon.Vec3(POLE_R * 1.5, POLE_R * 1.5, POLE_R * 0.5))
-        opts.linearDamping = 0.05
-        opts.angularDamping = 0.3
-        val body = Cannon.Body(opts)
-        body.asDynamic().velocity.set((Util.random() - 0.5) * 3.0, (Util.random() - 0.5) * 3.0, -1.0)
-        body.asDynamic().angularVelocity.set(randSpin() * 0.4, randSpin() * 0.4, randSpin() * 0.4)
-        world.addBody(body)
-        shardsGroup.add(mesh)
-        // The gasket is opaque rubber, so it fades via its plain material opacity.
-        activeShards.add(
-            Shard(mesh, mat, body, 0.0, SHARD_LIFE_MIN + Util.random() * (SHARD_LIFE_MAX - SHARD_LIFE_MIN)) { f -> mat.asDynamic().opacity = f },
+        ShatterFx.shatter(
+            sceneX(location), sceneY(location), poleHeight(lv), poleScale(lv), orbCenterZ(lv), orbScale(lv),
+            color, flaskVariants, flaskScale, poleGeo, gasketGeo,
         )
     }
-
-    private fun spawnShard(holder: dynamic, pos: DoubleArray, scale: Double, color: String, burstH: Double) {
-        val world = physicsWorld ?: return
-        val mat = shardMaterial(color)
-        val mesh = Three.Mesh(holder.geo, mat)
-        mesh.asDynamic().scale.set(scale, scale, scale)
-        val opts: dynamic = js("({})")
-        opts.mass = SHARD_MASS
-        opts.position = Cannon.Vec3(pos[0], pos[1], pos[2])
-        opts.shape = Cannon.Box(
-            Cannon.Vec3(
-                ((holder.hx as Double) * scale).coerceAtLeast(0.1),
-                ((holder.hy as Double) * scale).coerceAtLeast(0.1),
-                ((holder.hz as Double) * scale).coerceAtLeast(0.1),
-            ),
-        )
-        opts.linearDamping = 0.04
-        opts.angularDamping = 0.2
-        // Shards don't collide with each other — their boxes all sit at the orb centre, so mutual
-        // overlap would make the solver eject them explosively. They still rest on ground + pole.
-        opts.collisionFilterGroup = SHARD_GROUP
-        opts.collisionFilterMask = SHARD_MASK
-        val body = Cannon.Body(opts)
-        body.asDynamic().quaternion.setFromEuler(shatterRot[0], shatterRot[1], shatterRot[2]) // random per-shatter
-        val a = Util.random() * 2.0 * PI
-        val r = burstH * (0.02 + Util.random() * 0.06) // almost no outward push
-        val up = burstH * Util.random() * 0.08 // the faintest pop; gravity takes over — they just drop
-        body.asDynamic().velocity.set(cos(a) * r, sin(a) * r, up)
-        body.asDynamic().angularVelocity.set(randSpin(), randSpin(), randSpin())
-        world.addBody(body)
-        shardsGroup.add(mesh)
-        // Glass shards fade via the GlassShader uFade uniform.
-        activeShards.add(
-            Shard(mesh, mat, body, 0.0, SHARD_LIFE_MIN + Util.random() * (SHARD_LIFE_MAX - SHARD_LIFE_MIN)) { f ->
-                mat.uniforms.uFade.value = f // mat is already dynamic — no .asDynamic()
-            },
-        )
-    }
-
-    private fun createPhysicsWorld(): Cannon.World {
-        val world = Cannon.World()
-        world.asDynamic().gravity.set(0.0, 0.0, -GRAVITY)
-        val groundOpts: dynamic = js("({ mass: 0 })") // static ground plane at z=0 (normal +Z)
-        groundOpts.shape = Cannon.Plane()
-        world.addBody(Cannon.Body(groundOpts))
-        return world
-    }
-
-    private fun randSpin() = (Util.random() - 0.5) * 2.0 * SHARD_SPIN
 
     /** Fire an XMP detonation at a location, scaled by burster [level] (1..8). See [XmpBurst]. */
     fun playXmpBurst(location: Pos, level: Int) {
@@ -470,10 +317,6 @@ object Scene3D {
         XmpBurst.play(sceneX(location), sceneY(location), level)
         SoundUtil.playXmpSound(location, level)
     }
-
-    // Shatter shards share the orb's glass look (the user confirmed the orb reads right as glass),
-    // a touch brighter so the small fragments still register against the map.
-    private fun shardMaterial(color: String): dynamic = GlassShader.material(color, SHARD_BRIGHT)
 
     /** Place (or clear, when pos is null) the build-preview marker on the ground. */
     fun setBuildMarker(pos: Pos?, state: String) {
@@ -590,12 +433,9 @@ object Scene3D {
         val color = if (selected == id) HIGHLIGHT_COLOR else baseColor
         val level = tweenedLevel(id, portal.getLevel().toInt()) // eases on level-up
         val parts = buildPortal(portalsGroup, sceneX(portal.location), sceneY(portal.location), level, color, id)
-        // Grow the glass orb in over its first moments (the pole/gasket appear immediately).
+        // Build-in: the pole rises and the orb grows from the ground over the first moments.
         val g = Spawns.appear(id, PORTAL_GROW_S)
-        if (g < 1.0) {
-            val s = orbScale(level) * g.coerceAtLeast(0.0)
-            parts[0].scale.set(s, s, s)
-        }
+        if (g < 1.0) applyBuildGrow(level, g, parts)
     }
 
     /**
@@ -629,7 +469,19 @@ object Scene3D {
         parent.add(pole)
         parent.add(gasket)
         parent.add(orb)
-        return arrayOf(orb, gasket)
+        return arrayOf(orb, gasket, pole)
+    }
+
+    /** Rise the pole + grow the orb from the ground for the build-in animation ([g] = 0→1). */
+    private fun applyBuildGrow(level: Double, g: Double, parts: Array<dynamic>) {
+        val gg = g.coerceAtLeast(0.0)
+        val poleH = poleHeight(level)
+        val s = orbScale(level) * gg
+        parts[2].scale.set(1.0, poleScale(level) * gg, 1.0) // pole
+        parts[2].position.z = poleH * gg / 2.0
+        parts[1].position.z = poleH * gg // gasket
+        parts[0].scale.set(s, s, s) // orb
+        parts[0].position.z = poleH * gg + TOP_R * s
     }
 
     /** Demo only (#demo/portal): place a portal at [location]/[level] in a sync-immune group (LMB). */
