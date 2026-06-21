@@ -392,9 +392,20 @@ object MapUtil {
         val imageData: ImageData = World.createStreetImage(rawBuf, width, height)
         val grid = createGrid(imageData, width, height)
         shadowMap?.let { PortalNames.build(it) } // query POI/street names while the tiles are loaded
-        document.getElementById(SHADOW_MAP)?.addClass(INVISIBLE)
+        teardownShadowMap() // grid + names are read — destroy the shadow map to free its WebGL context
         captureAnchor()
         callback(grid)
+    }
+
+    /**
+     * The shadow map is only needed at build time (passability readback + POI/street names). Destroy
+     * the MapLibre instance (frees its WebGL context — otherwise it leaked, since rebuilds only ever
+     * dropped its DOM container) and remove the container. A later rebuild re-creates it fresh.
+     */
+    private fun teardownShadowMap() {
+        shadowMap?.asDynamic()?.remove()
+        shadowMap = null
+        document.getElementById(SHADOW_MAP)?.remove()
     }
 
     // 3D building extrusions from the OpenFreeMap (openmaptiles) vector tiles.

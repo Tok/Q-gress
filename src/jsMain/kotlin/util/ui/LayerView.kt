@@ -9,21 +9,20 @@ import util.MapUtil
 
 /**
  * Base-map view dropdown, split out of [util.HtmlUtil] (size limit). Grayscale satellite is the
- * default view; "Colored" reveals the satellite's real hues, "Street" switches to the street map.
- * Only the terrain is recoloured — the 3D portals/agents render in a separate layer and stay
- * faction-coloured.
+ * default view; "Colored" reveals the satellite's real hues. (The old "Street" view was dropped —
+ * its flat street tiles showed no buildings/portals, so it was useless.) Only the terrain is
+ * recoloured — the 3D portals/agents render in a separate layer and stay faction-coloured.
  */
 object LayerView {
     private const val DROPDOWN_ID = "layerSelect"
     private const val SATELLITE = "Satellite" // grayscale satellite (default)
     private const val COLORED = "Colored"
-    private const val STREET = "Street"
 
     fun createDropdown(): HTMLSelectElement {
         val select = document.createElement("select") as HTMLSelectElement
         select.id = DROPDOWN_ID
         select.addClass("topDrop", "amarillo")
-        listOf(SATELLITE, COLORED, STREET).forEach { layer ->
+        listOf(SATELLITE, COLORED).forEach { layer ->
             val opt = document.createElement("option") as HTMLOptionElement
             opt.text = layer
             opt.value = layer
@@ -35,21 +34,9 @@ object LayerView {
 
     /** Apply the currently-selected view to the maps (also the startup default = grayscale satellite). */
     fun apply() {
-        when (selected()) {
-            STREET -> MapUtil.showStreet()
-            COLORED -> {
-                MapUtil.showSatellite()
-                MapUtil.setGrayscale(false)
-            }
-            else -> {
-                MapUtil.showSatellite()
-                MapUtil.setGrayscale(true)
-            }
-        }
+        MapUtil.showSatellite()
+        MapUtil.setGrayscale(selected() != COLORED)
     }
-
-    /** True while a satellite base is shown (Satellite or Colored), false for Street. */
-    fun isSatellite(): Boolean = selected() != STREET
 
     private fun selected(): String {
         val dropdown = document.getElementById(DROPDOWN_ID) as? HTMLSelectElement ?: return SATELLITE

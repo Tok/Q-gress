@@ -24,7 +24,7 @@ import kotlin.math.exp
 import kotlin.math.sqrt
 
 object SoundUtil {
-    const val DEFAULT_VOLUME = 0.4
+    const val DEFAULT_VOLUME = 1.0
     private const val EPS = 0.0001 // exponentialRamp can't target 0
 
     // 3D-audio tuning (sim-space is real metres). The play area is hundreds of metres across, so a

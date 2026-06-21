@@ -109,25 +109,25 @@ object HtmlUtil {
         val buttonDiv = document.createElement("div") as HTMLDivElement
         buttonDiv.addClass("buttonDiv")
 
-        // Left group, far left: Menu (also holds the Terrain/Vectors overlay toggles), Pause/Resume,
-        // and the loaded-location name.
+        // Left group, far left: Menu (also holds the Terrain/Vectors overlay toggles), Home,
+        // Pause/Resume, and the loaded-location name.
         val leftGroup = document.createElement("div") as HTMLDivElement
         leftGroup.addClass("toolbarGroup")
         leftGroup.append(createMenuSpan()) // New Game / Reset + overlay toggles
+        // Recenter top-down over the play area (find your way back after panning/rotating away).
+        leftGroup.append(createButton("homeButton", "topButton amarillo", "Home") { MapUtil.goHome() })
         val pauseButton = createButton(PAUSE_BUTTON_ID, "topButton", "Pause") {
             intervalID = pauseHandler(intervalID) { tick() }
         }
         pauseButton.addClass("non", "amarillo")
         leftGroup.append(pauseButton)
-        // Recenter top-down over the play area (find your way back after panning/rotating away).
-        leftGroup.append(createButton("homeButton", "topButton amarillo", "Home") { MapUtil.goHome() })
         leftGroup.append(createLocationLabel()) // names the actual loaded location (set by setLoadedLocation)
 
-        // Right group, far right: base-map view dropdown + volume.
+        // Right group, far right: volume + base-map view dropdown.
         val rightGroup = document.createElement("div") as HTMLDivElement
         rightGroup.addClass("toolbarGroup")
-        rightGroup.append(LayerView.createDropdown())
         rightGroup.append(createVolumeSpan())
+        rightGroup.append(LayerView.createDropdown())
 
         buttonDiv.append(leftGroup)
         buttonDiv.append(rightGroup)
@@ -361,8 +361,6 @@ object HtmlUtil {
     private fun chooseUserFaction(fact: Faction) {
         SoundUtil.enableAudio() // first user gesture → resume audio (autoplay policy)
         closePopup()
-        val pauseButton = document.getElementById(PAUSE_BUTTON_ID) as HTMLButtonElement
-        pauseButton.addClass(fact.abbr.lowercase())
         if (World.userFaction != null) {
             console.warn("Faction ${World.userFaction} was already chosen.")
             return
