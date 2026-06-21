@@ -54,6 +54,7 @@ object Scene3D {
     private const val POLE_R = 2.0
     private const val LINK_R = 0.7 // glass-pipe link radius (metres)
     private const val PORTAL_GROW_S = 0.5 // seconds for a new portal's orb to grow in
+    private const val FIELD_FILL_S = 0.4 // seconds for a new control field to fill in
     private const val POLE_H = 22.5 // base pole height at L1; scales by φ per level
     private const val TOP_R = 7.0 // base orb radius
     private const val PHI = 1.618 // golden ratio — pole grows by φ across the 8 levels
@@ -654,18 +655,32 @@ object Scene3D {
         mesh.quaternion.copy(quat)
     }
 
-    /** A control field is an animated plasma sheet across the three portals' orbs. */
+    /** A control field is an animated plasma sheet across the three portals' orbs; it fills in on creation. */
     private fun addField(field: Field) {
+        val a = orbPos(field.origin)
+        val b = orbPos(field.primaryAnchor)
+        val c = orbPos(field.secondaryAnchor)
+        val cx = (a[0] + b[0] + c[0]) / 3.0
+        val cy = (a[1] + b[1] + c[1]) / 3.0
+        val cz = (a[2] + b[2] + c[2]) / 3.0
+        // Geometry relative to the centroid so the mesh can scale in from its centre.
         val points = arrayOf(
-            orbVertex(field.origin),
-            orbVertex(field.primaryAnchor),
-            orbVertex(field.secondaryAnchor),
+            Three.Vector3(a[0] - cx, a[1] - cy, a[2] - cz),
+            Three.Vector3(b[0] - cx, b[1] - cy, b[2] - cz),
+            Three.Vector3(c[0] - cx, c[1] - cy, c[2] - cz),
         )
         val geo = Three.BufferGeometry().setFromPoints(points)
-        fieldsGroup.add(Three.Mesh(geo, PlasmaShader.material(field.owner.faction.color)))
+        val mesh = Three.Mesh(geo, PlasmaShader.material(field.owner.faction.color))
+        mesh.asDynamic().position.set(cx, cy, cz)
+        val g = Spawns.appear(fieldId(field), FIELD_FILL_S)
+        if (g < 1.0) mesh.asDynamic().scale.set(g.coerceAtLeast(0.0), g.coerceAtLeast(0.0), g.coerceAtLeast(0.0))
+        fieldsGroup.add(mesh)
     }
 
-    private fun orbVertex(portal: Portal): dynamic = Three.Vector3(sceneX(portal.location), sceneY(portal.location), orbCenterZ(portal.getLevel().toInt()))
+    private fun orbPos(portal: Portal): DoubleArray = doubleArrayOf(sceneX(portal.location), sceneY(portal.location), orbCenterZ(portal.getLevel().toInt()))
+
+    /** Stable id for a field, independent of which corner is "origin" (its three portals, sorted). */
+    private fun fieldId(field: Field): String = listOf(field.origin.id, field.primaryAnchor.id, field.secondaryAnchor.id).sorted().joinToString("|", "field:")
 
     private fun lineMaterial(color: String): dynamic = materialCache.getOrPut("l$color") {
         val p: dynamic = js("({})")
