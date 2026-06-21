@@ -387,6 +387,7 @@ object HtmlUtil {
             return
         }
         World.userFaction = fact
+        LoadingOverlay.setAccent(fact.color) // tint the loading screen with the chosen faction
     }
 
     private fun resetInterval() {
@@ -528,6 +529,11 @@ object HtmlUtil {
                     Loading.draw()
                     LoadingText.draw("Creating Portal ${newPortal.name}")
                     World.allPortals.add(newPortal)
+                    // Render the spawning world behind the (now translucent) loading screen: the new
+                    // portal grows in and its colour-coded flow vectors show.
+                    Scene3D.selected = "portal:${newPortal.id}"
+                    Scene3D.setVectorFieldVisible(true)
+                    Scene3D.sync()
                     createPortal(callback, count - 1)
                 } else {
                     callback()
@@ -574,6 +580,9 @@ object HtmlUtil {
         createAgentsAndPortals {
             LoadingText.draw("Ready.")
             DrawUtil.clearBackground()
+            // Clear the during-build vector preview so the game starts with nothing selected.
+            Scene3D.selected = null
+            Scene3D.setVectorFieldVisible(false)
             if (World.userFaction == null) {
                 chooseUserFaction(Faction.random())
             }

@@ -8,8 +8,10 @@ import org.w3c.dom.HTMLElement
  * tiles → shadow-map render → grid readback → flow fields → spawn) never looks frozen. Previously
  * the only progress was the canvas VectorBar, which appears ~halfway through (once portals spawn).
  *
- * Staged: each [stage] sets a labelled step + a target fill %, with a shimmer animation so even a
- * long single stage (waiting on shadow-map tiles) reads as alive. [done] fades it out.
+ * Tinted by the chosen faction ([setAccent]) — the only colour, per the "faction colour for faction
+ * things" rule. Staged: each [stage] sets a labelled step + a target fill %, with a shimmer so even
+ * a long single stage reads as alive. At the world-build stage the backdrop goes translucent so the
+ * spawning world (portals + their colour-coded flow vectors) shows through behind the progress.
  */
 object LoadingOverlay {
     // Stage fill targets (%), in load order — kept here so HtmlUtil + MapUtil share one scale.
@@ -20,8 +22,11 @@ object LoadingOverlay {
     const val PCT_WORLD = 78
 
     private const val OVERLAY_ID = "loadingOverlay"
+    private const val DEFAULT_ACCENT = "#ffffff"
     private var statusEl: HTMLElement? = null
     private var fillEl: HTMLElement? = null
+    private var titleEl: HTMLElement? = null
+    private var accent = DEFAULT_ACCENT
 
     /** Build + show the overlay (call once, as early as possible). No-op if already shown. */
     fun show() {
@@ -48,12 +53,29 @@ object LoadingOverlay {
         body.appendChild(overlay)
         statusEl = status
         fillEl = fill
+        titleEl = title
+        applyAccent()
+    }
+
+    /** Tint the overlay with the chosen faction colour (call once a faction is picked). */
+    fun setAccent(color: String) {
+        accent = color
+        applyAccent()
+    }
+
+    private fun applyAccent() {
+        titleEl?.style?.textShadow = "0 0 18px $accent"
+        fillEl?.style?.background = "linear-gradient(90deg, ${accent}66, $accent)"
     }
 
     /** Advance to a labelled [text] step at [percent] (0..100) fill. */
     fun stage(percent: Int, text: String) {
         statusEl?.textContent = text
         fillEl?.style?.width = "${percent.coerceIn(0, 100)}%"
+        // At the world-build stage, reveal the scene behind so the spawning portals + flow vectors show.
+        if (percent >= PCT_WORLD) {
+            (document.getElementById(OVERLAY_ID) as? HTMLElement)?.className = "loadingOverlay loadingOverlayReveal"
+        }
     }
 
     /** Fill to 100% and fade the overlay out, then remove it. */
@@ -63,6 +85,7 @@ object LoadingOverlay {
         overlay.className = "loadingOverlay loadingOverlayDone"
         statusEl = null
         fillEl = null
+        titleEl = null
         // Remove after the CSS fade so it stops intercepting nothing (it's already pointer-events:none).
         window.setTimeout({ overlay.remove() }, FADE_MS)
     }

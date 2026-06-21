@@ -187,6 +187,10 @@ html, body {
     opacity: 0;
     pointer-events: none;
 }
+/* World-build stage: drop the opaque backdrop so the spawning world shows behind the progress. */
+.loadingOverlayReveal {
+    background: rgba(0, 0, 0, 0.35);
+}
 .loadingTitle {
     font-size: 54px;
     letter-spacing: 6px;
