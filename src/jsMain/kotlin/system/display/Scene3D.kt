@@ -72,6 +72,7 @@ object Scene3D {
     private const val RESO_ROD_LEN_FRAC = 0.22 // rod length as a fraction of the pole height
     private const val HACK_SPIN_S = 2.0 // seconds the resonator collar spins on a hack (demo)
     private const val HACK_SPIN_RATE = 6.0 // collar spin speed (rad/s)
+    private const val HACK_TILT_MAX = 0.7 // peak outward rod splay during a hack (rad ≈ 40°)
     private const val NEUTRAL_COLOR = "#bbbbbb"
     private const val HIGHLIGHT_COLOR = "#f0f0f0" // selection: off-tint grayscale (no new hues)
     private const val OVERLAY_Z = 0.2 // passability quad just above ground
@@ -534,11 +535,18 @@ object Scene3D {
             group.asDynamic().add(ring)
             val lvl = resos[octant]
             if (lvl != null) {
+                // Rod lives in a pivot at the slot base so a hack can tilt it radially outward
+                // (centrifuge) without disturbing its grommet. Pivot tagged for updateShowcaseHacks.
+                val pivot = Three.Group()
+                pivot.asDynamic().position.set(ox, oy, 0.0)
+                pivot.asDynamic().userData.isRodPivot = true
+                pivot.asDynamic().userData.baseAngle = ang
                 val rod = Three.Mesh(resoRodGeo, Materials.resonator(LevelColor.map[lvl] ?: "#ffffff"))
                 rod.asDynamic().rotation.x = PI / 2 // unit Y-cylinder → vertical
                 rod.asDynamic().scale.set(1.0, rodLen, 1.0)
-                rod.asDynamic().position.set(ox, oy, rodLen / 2.0) // stands up out of the grommet
-                group.asDynamic().add(rod)
+                rod.asDynamic().position.set(0.0, 0.0, rodLen / 2.0) // stands up out of the grommet
+                pivot.asDynamic().add(rod)
+                group.asDynamic().add(pivot)
             }
         }
         group.asDynamic().position.set(x, y, poleH * RESO_COLLAR_FRAC)
@@ -615,6 +623,22 @@ object Scene3D {
             if (sc.hackAge > 0.0) {
                 sc.hackAge = (sc.hackAge - dt).coerceAtLeast(0.0)
                 sc.resoGroup.rotation.z = sc.resoGroup.rotation.z + HACK_SPIN_RATE * dt
+                // Rods splay radially outward (centrifuge), peaking mid-hack then settling back.
+                val tilt = HACK_TILT_MAX * sin((1.0 - sc.hackAge / HACK_SPIN_S) * PI)
+                tiltRods(sc.resoGroup, tilt)
+            }
+        }
+    }
+
+    /** Tilt each rod-pivot outward (about its tangential axis) by [tilt] radians, 0 = upright. */
+    private fun tiltRods(resoGroup: dynamic, tilt: Double) {
+        val kids = resoGroup.children
+        val n = kids.length as Int
+        for (i in 0 until n) {
+            val pivot = kids[i]
+            if (pivot.userData.isRodPivot == true) {
+                val ang = pivot.userData.baseAngle as Double
+                pivot.setRotationFromAxisAngle(Three.Vector3(-sin(ang), cos(ang), 0.0), tilt)
             }
         }
     }
