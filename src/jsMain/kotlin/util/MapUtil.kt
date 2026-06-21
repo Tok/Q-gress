@@ -16,6 +16,7 @@ import org.w3c.dom.ImageData
 import system.display.Scene3D
 import util.data.Cell
 import util.data.Pos
+import util.ui.LoadingOverlay
 import util.ui.MiniMap
 import kotlin.js.Json
 import kotlin.math.log2
@@ -232,6 +233,7 @@ object MapUtil {
 
     fun loadMaps(center: Json, demo: Boolean = false, callback: (Grid) -> Unit) {
         demoMode = demo
+        if (!demo) LoadingOverlay.stage(LoadingOverlay.PCT_MAP, "Loading map…")
         document.getElementById(MAP)?.addClass(INVISIBLE)
         document.getElementById(SHADOW_MAP)?.addClass(INVISIBLE)
         loadInitialMap(center, fun(initMap: MapLibre.Map) {
@@ -288,6 +290,7 @@ object MapUtil {
 
     // https://maplibre.org/maplibre-gl-js/docs/API/
     private fun loadMap(initMap: MapLibre.Map, callback: (Grid) -> Unit) {
+        if (!demoMode) LoadingOverlay.stage(LoadingOverlay.PCT_STREET, "Loading street tiles…")
         val center = initMap.getCenter()
         document.getElementById(MAP)?.removeClass(INVISIBLE)
         val existing = map
@@ -318,6 +321,7 @@ object MapUtil {
     }
 
     private fun loadShadowMap(center: Json, callback: (Grid) -> Unit) {
+        if (!demoMode) LoadingOverlay.stage(LoadingOverlay.PCT_SHADOW, "Rendering passability map…")
         document.getElementById(SHADOW_MAP)?.remove()
         val div = document.createElement("div") as HTMLDivElement
         div.id = SHADOW_MAP
@@ -341,6 +345,7 @@ object MapUtil {
     }
 
     private fun addGrid(callback: (Grid) -> Unit) {
+        if (!demoMode) LoadingOverlay.stage(LoadingOverlay.PCT_GRID, "Reading street grid…")
         // Select the shadow map's own canvas robustly (query within its
         // container) instead of relying on a fragile global canvas index.
         val container = document.getElementById(SHADOW_MAP)

@@ -33,6 +33,7 @@ import util.data.Pos
 import util.ui.Controls
 import util.ui.Demo
 import util.ui.Inspector
+import util.ui.LoadingOverlay
 import kotlin.js.Json
 
 @Suppress("UnusedParameter") // external JS global; param describes the contract
@@ -85,6 +86,9 @@ object HtmlUtil {
         }
         val rootDiv = document.getElementById("root") as HTMLDivElement
         rootDiv.addClass("container")
+
+        // Staged loading overlay, up from the first frame (the world build runs ~2 min on Big).
+        LoadingOverlay.show()
 
         // Prepare all canvas..
         World.can = createCanvas("mainCanvas")
@@ -594,6 +598,7 @@ object HtmlUtil {
         // Registering first means portals actually adopt their real map names (else all fall back to
         // the random generator).
         MapUtil.enable3D()
+        LoadingOverlay.stage(LoadingOverlay.PCT_WORLD, "Building world…")
         createAgentsAndPortals {
             LoadingText.draw("Ready.")
             DrawUtil.clearBackground()
@@ -606,6 +611,7 @@ object HtmlUtil {
             applySelectedLayer()
             Navigation.setup()
             MapUtil.bindInteractions(::onMapClick, ::onMapMove)
+            LoadingOverlay.done()
         }
     }
 
