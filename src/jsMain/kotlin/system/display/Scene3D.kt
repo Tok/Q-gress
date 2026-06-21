@@ -113,7 +113,9 @@ object Scene3D {
     private var flaskVariants: List<List<dynamic>> = emptyList()
     private var flaskScale = 1.0 // scale a flask variant to ≈ the portal top sphere
     private var showcaseGroup: dynamic = null // demo-scene placed portals (not cleared by sync)
-    private class Showcase(val group: dynamic, val parts: Array<dynamic>, val pos: Pos, var level: Int, val color: String, var hackAge: Double, var growAge: Double)
+    private class Showcase(val group: dynamic, val parts: Array<dynamic>, val pos: Pos, var level: Int, val color: String, var hackAge: Double, var growAge: Double) {
+        var hackGlyph: Boolean = false // the active hack is a (stronger) glyph hack
+    }
     private val showcases = mutableListOf<Showcase>()
     private var selectedShowcase: Showcase? = null // demo: the portal the action buttons act on
     private var demoCursor: dynamic = null // demo: ground ring under the mouse (place vs select)
@@ -566,8 +568,11 @@ object Scene3D {
     }
 
     /** Demo (Hack button): spin the active (selected, else last) portal's resonator collar. */
-    fun hackActiveShowcase() {
-        activeShowcase()?.let { it.hackAge = HackFx.SPIN_S }
+    fun hackActiveShowcase(glyph: Boolean = false) {
+        activeShowcase()?.let {
+            it.hackAge = if (glyph) HackFx.GLYPH_SPIN_S else HackFx.SPIN_S
+            it.hackGlyph = glyph
+        }
     }
 
     /** Demo (XMP buttons): detonate a level-[level] XMP fireball at the active portal. */
@@ -628,7 +633,9 @@ object Scene3D {
             }
             if (sc.hackAge > 0.0) { // hack: collar spins + rods centrifuge (same as live portals)
                 sc.hackAge = (sc.hackAge - dt).coerceAtLeast(0.0)
-                HackFx.spin(sc.parts[3], HackFx.SPIN_S - sc.hackAge)
+                val dir = if (sc.color == Faction.ENL.color) -1.0 else 1.0 // ENL cw, else ccw
+                val dur = if (sc.hackGlyph) HackFx.GLYPH_SPIN_S else HackFx.SPIN_S
+                HackFx.spinShowcase(sc.parts[3], dur - sc.hackAge, dir, sc.hackGlyph)
             }
         }
     }

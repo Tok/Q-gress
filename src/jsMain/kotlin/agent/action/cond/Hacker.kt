@@ -15,7 +15,8 @@ object Hacker : ConditionalAction {
         agent.action.start(actionItem)
         val hackResult = agent.actionPortal.tryHack(agent)
         SoundUtil.playHackingSound(agent.actionPortal.location)
-        HackFx.record("portal:${agent.actionPortal.id}") // spin the collar in 3D
+        // ENL spins clockwise, RES counter-clockwise; a plain hack (not a glyph).
+        HackFx.record("portal:${agent.actionPortal.id}", agent.faction, glyph = false)
         val newStuff: List<QgressItem>? = hackResult.items
         if (newStuff != null) {
             agent.inventory.items.addAll(newStuff)

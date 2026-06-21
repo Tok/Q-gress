@@ -22,9 +22,12 @@ object Demo {
     private const val NEUTRAL = "#bbbbbb"
     private const val PANEL_ID = "demoPanel"
 
-    private var portalColor = Faction.ENL.color
+    private var portalColor = NEUTRAL // the demo has no faction preference — defaults to Neutral
     private var demoLevel = 8
     private var portalButtons: List<HTMLButtonElement> = emptyList()
+    private var factionButtons: List<HTMLButtonElement> = emptyList()
+    private val factionColors = listOf(Faction.ENL.color, Faction.RES.color, NEUTRAL)
+    private val factionBaseClass = listOf("demoButton enl", "demoButton res", "demoButton")
 
     /** The selected portal level + colour the map uses when placing (LMB). */
     fun portalLevel(): Int = demoLevel
@@ -72,15 +75,14 @@ object Demo {
         panel.append(rowOf(lvlButtons))
         portalButtons = lvlButtons
         selectPortalLevel(demoLevel)
-        panel.append(
-            rowOf(
-                listOf(
-                    button("ENL", "demoButton enl") { portalColor = Faction.ENL.color },
-                    button("RES", "demoButton res") { portalColor = Faction.RES.color },
-                    button("Neutral", "demoButton") { portalColor = NEUTRAL },
-                ),
-            ),
+        // Faction tint of placed portals (also sets the hack spin direction). Defaults to Neutral.
+        factionButtons = listOf(
+            button("ENL", factionBaseClass[0]) { selectFaction(0) },
+            button("RES", factionBaseClass[1]) { selectFaction(1) },
+            button("Neutral", factionBaseClass[2]) { selectFaction(2) },
         )
+        panel.append(rowOf(factionButtons))
+        selectFaction(2)
 
         panel.append(labelEl("Selected portal"))
         panel.append(
@@ -89,7 +91,8 @@ object Demo {
                     button("Upgrade", "demoButton") { Scene3D.stepLastShowcaseLevel(1) },
                     button("Downgrade", "demoButton") { Scene3D.stepLastShowcaseLevel(-1) },
                     button("Link", "demoButton") { Scene3D.linkLastShowcases() },
-                    button("Hack", "demoButton") { Scene3D.hackActiveShowcase() },
+                    button("Hack", "demoButton") { Scene3D.hackActiveShowcase(false) },
+                    button("Glyph", "demoButton") { Scene3D.hackActiveShowcase(true) },
                 ),
             ),
         )
@@ -113,6 +116,13 @@ object Demo {
         demoLevel = level
         portalButtons.forEachIndexed { i, b ->
             b.className = if (i + 1 == level) "demoButton demoMini demoSel" else "demoButton demoMini"
+        }
+    }
+
+    private fun selectFaction(idx: Int) {
+        portalColor = factionColors[idx]
+        factionButtons.forEachIndexed { i, b ->
+            b.className = if (i == idx) "${factionBaseClass[i]} demoSel" else factionBaseClass[i]
         }
     }
 

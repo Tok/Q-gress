@@ -255,22 +255,68 @@ object SoundUtil {
         playSound(oscNode, createPanner(npc.pos), 0.22, duration)
     }
 
+    /** Hack: a short centrifuge whir that spins up then eases off — matches the collar animation. */
     fun playHackingSound(pos: Pos) {
         if (isMuted()) return
-        val freq = 500.0
-        val osc = createStaticOscillator(OscillatorType.SINE, freq)
-        val gain = 0.04
-        val duration = 0.02
-        playSound(osc, createPanner(pos), gain, duration)
+        val dur = 0.5
+        val n = now()
+        val panner = createPanner(pos)
+        val osc = audioCtx.createOscillator()
+        osc.type = OscillatorType.TRIANGLE
+        osc.frequency.setValueAtTime(180.0, n)
+        osc.frequency.exponentialRampToValueAtTime(560.0, n + dur * 0.5) // spin up
+        osc.frequency.exponentialRampToValueAtTime(300.0, n + dur) // ease off
+        val gainNode = audioCtx.createGain()
+        gainNode.gain.setValueAtTime(EPS, n)
+        gainNode.gain.linearRampToValueAtTime(0.05, n + 0.04)
+        gainNode.gain.exponentialRampToValueAtTime(EPS, n + dur)
+        osc.connect(gainNode)
+        gainNode.connect(panner)
+        panner.connect(masterGain)
+        osc.start()
+        osc.stop(n + dur)
     }
 
+    /** Glyph hack: a deeper, longer whir + a glassy resonant chime — reads as stronger than a hack. */
     fun playGlyphingSound(pos: Pos) {
         if (isMuted()) return
-        val freq = 400.0
-        val osc = createStaticOscillator(OscillatorType.SINE, freq)
-        val gain = 0.04
-        val duration = 0.06
-        playSound(osc, createPanner(pos), gain, duration)
+        val dur = 0.95
+        val n = now()
+        val panner = createPanner(pos)
+        // Deeper centrifuge whir (sawtooth softened through a lowpass).
+        val osc = audioCtx.createOscillator()
+        osc.type = OscillatorType.SAW
+        osc.frequency.setValueAtTime(150.0, n)
+        osc.frequency.exponentialRampToValueAtTime(680.0, n + dur * 0.55)
+        osc.frequency.exponentialRampToValueAtTime(280.0, n + dur)
+        val lowpass = audioCtx.createBiquadFilter()
+        lowpass.type = "lowpass"
+        lowpass.frequency.setValueAtTime(1300.0, n)
+        val gainNode = audioCtx.createGain()
+        gainNode.gain.setValueAtTime(EPS, n)
+        gainNode.gain.linearRampToValueAtTime(0.08, n + 0.05)
+        gainNode.gain.exponentialRampToValueAtTime(EPS, n + dur)
+        osc.connect(lowpass)
+        lowpass.connect(gainNode)
+        gainNode.connect(panner)
+        panner.connect(masterGain)
+        osc.start()
+        osc.stop(n + dur)
+        // A glassy chime rings up as it completes (the "stronger / skill" flourish).
+        val ring = audioCtx.createOscillator()
+        ring.type = OscillatorType.SINE
+        val rt = n + dur * 0.45
+        ring.frequency.setValueAtTime(1040.0, rt)
+        ring.frequency.exponentialRampToValueAtTime(1640.0, n + dur)
+        val ringGain = audioCtx.createGain()
+        ringGain.gain.setValueAtTime(EPS, n) // silent until the chime onset at rt
+        ringGain.gain.setValueAtTime(EPS, rt)
+        ringGain.gain.linearRampToValueAtTime(0.05, rt + 0.05)
+        ringGain.gain.exponentialRampToValueAtTime(EPS, n + dur + 0.25)
+        ring.connect(ringGain)
+        ringGain.connect(panner)
+        ring.start()
+        ring.stop(n + dur + 0.25)
     }
 
     fun playXmpSound(level: XmpLevel, pos: Pos) {
