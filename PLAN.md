@@ -18,6 +18,10 @@ the AI layer lands, the slider sim is the substrate we keep hardening.
   null it out after `addGrid` to free the held WebGL context.
 
 ## 3D / rendering
+- [ ] **Animate the world build (buildings inflate)** — during world creation, make the 3D buildings
+  rise out of the ground (lerp their extrusion height / position up, or start vertically flattened and
+  "pump" into shape) so the city inflates into place as the world loads, instead of popping in. Pairs
+  with the existing staged loading overlay.
 - [ ] **Stage 2 leftovers** — **shield visualization** (needs `Portal.deployMods` to actually store
   mods; today a stub); a richer field-up "whoosh".
 - [ ] **Stage 3 — pathfinding scalability** — drop the per-portal full-map flow field; multi-mode
