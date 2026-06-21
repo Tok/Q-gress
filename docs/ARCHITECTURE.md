@@ -1,0 +1,111 @@
+# ARCHITECTURE.md — how Q-Gress is put together
+
+How the running system fits together. For *what's shipped* see [FEATURES.md](FEATURES.md);
+for *what's next* see [../PLAN.md](../PLAN.md).
+
+## Entry & top-level shape
+
+`Main.kt` → `window.onload` → `HtmlUtil.load()`. The simulation lives in a fixed pixel
+space (`config/Dim.kt`, `config/Sim.kt` — Sim is a scaled-up multiple of the screen). The
+world is **rendered in 3D** by a three.js scene mounted as a **MapLibre custom layer**; the
+HUD is **DOM**. There is no on-screen 2D game canvas anymore (see *Rendering* below).
+
+`World` (`World.kt`, a singleton `object`) holds all mutable game state: agents, portals,
+the passability grid, the tick counter, and the selected user faction. Game logic mutates
+`World` directly today (the functional-core split that would isolate this is future work —
+see PLAN.md).
+
+## Source layout (`src/jsMain/kotlin/`, tests mirror under `src/jsTest/kotlin/`)
+
+- **`World.kt`** — global mutable game state.
+- **`agent/`** — the AI. `Agent` (faction members), `NonFaction` (recruitable NPCs),
+  movement, skills, inventory, and:
+  - **`agent/action/`** — `ActionSelector` is the brain: each tick every agent picks an
+    action by **weighted-random selection** (`Util.select`) over candidate actions.
+  - **`agent/action/cond/`** — one object per action (`Recruiter`, `Hacker`, `Linker`,
+    `Deployer`, `Attacker`, `Recharger`, `Glypher`, `Explorer`, `Recycler`).
+  - **`agent/qvalue/`** — `QActions` (11) and `QDestinations` (7) define the tunable
+    behaviours. Each `QValue` has a base `weight`; the **slider value (0..1) × weight** is the
+    selection probability. Sliders exist per faction (`…SliderFrog` / `…SliderSmurf`).
+- **`portal/`** — portals, resonators, links, fields, XM, cooldowns, level/quality.
+- **`items/`** — bursters, power cubes, resonators, mods, levels.
+- **`config/`** — `Config` (balance constants), `Dim`/`Sim` (geometry), `Location` (preset
+  places), `Styles`, `Colors`, `Time`.
+- **`system/`** — `Cycle`/`Checkpoint` (scoring/history over time), `Com` (message log), and
+  **`system/display/`** (all 3D rendering: `Scene3D` + the shader/effect/material modules).
+- **`util/`** — `HtmlUtil` (DOM/UI construction + the main tick loop), `MapUtil` (MapLibre
+  lifecycle + grid build + camera), `PathUtil` (vector-field pathfinding), `Navigation`,
+  `SoundUtil`, `GridConnectivity`, `DrawUtil` (canvas-icon prerender helpers), geometry under
+  `util/data/`, DOM panels under `util/ui/`.
+- **`external/`** — thin `external` declarations: `MapLibre`, `Three`, `GLTFLoader`, `UPlot`,
+  the Web Audio API, cannon-es.
+
+## The selection brain (sliders → behaviour)
+
+`ActionSelector.q(faction, qValue)` currently reads the slider straight from the DOM
+(`getElementById("${id}Slider${nick}").valueAsNumber × qValue.weight`) and feeds the weight
+into `Util.select` (cumulative-probability weighted random). **This DOM read is the exact
+seam** the future AI drivers plug into (PLAN.md Phase 6 replaces it with a `FactionPolicy`).
+
+Scoring: `World.calcTotalMu(faction)` (Mind Units = summed field area control) is the headline
+metric. `system/Cycle` snapshots a `Checkpoint` every `Config.ticksPerCheckpoint` ticks into a
+rolling window (~35 points) — per-faction MU **and** Portals/Links/Fields/Agents counts — which
+feeds the HUD history dashboard.
+
+## How the map becomes a playfield
+
+`MapUtil` instantiates **three MapLibre maps** over divs:
+- **`initMap`** (satellite, Esri + openmaptiles for 3D buildings) — the **visible** map; it
+  hosts the three.js custom layer and receives all navigation gestures.
+- **`map`** (street, OpenFreeMap positron) — the alternate base layer (View dropdown toggle).
+- **`shadowMap`** (a black-bg / white-streets / graded-landcover mask) — rendered once at
+  startup; its WebGL canvas is read with **`gl.readPixels()`** to build the passability
+  **`Grid`** (bright = walkable, dark = impassable; landcover class → movement penalty). Hidden
+  after the grid + POI/street names are read.
+
+`MapUtil.addGrid` reads the shadow pixels into an `ImageData` (allocated via a **detached
+offscreen `World.bgCan`** — the only surviving use of a 2D canvas), `createGrid` turns it into
+the cell grid, and `GridConnectivity.connectIslands` carves corridors so no area is sealed off.
+`PathUtil` computes per-portal vector fields over that grid (flow magnitude scaled by terrain
+penalty). `util/PortalNames` queries the shadow map's vector source for real POI/street names.
+
+**Zoom is calibrated to 18**: the grid, the pixel-to-metre factor, portal sizes, and ranges
+are all implicitly tied to zoom 18. The display zooms out to *frame* the whole Sim area, but
+the grid anchor stays at 18. Dynamic-zoom would require rebuilding the grid + rescaling — see
+the "rework movement model" / "going 3D" icebox notes in PLAN.md.
+
+## Rendering pipeline (3D + DOM, no 2D game canvas)
+
+- **World → 3D.** `system/display/Scene3D` builds/refreshes three.js meshes each tick
+  (`sync()`): portals as metal pole + rubber gasket + glass orb (+ resonator rods), links as
+  glass pipes, fields as plasma sheets, agents/NPCs as faction spheres, stray XM as glowing
+  motes. The whole "glass apparatus" look is shader-driven (`GlassShader`, `PlasmaShader`,
+  `XmpShaders`) — grayscale vessel, faction colour as the only tint. Effects (shatter via
+  cannon-es, XMP fireball, hack centrifuge, spawn/teardown) live in `ShatterFx`/`XmpBurst`/
+  `HackFx`/`FieldFx`/`Spawns`.
+- **HUD → DOM.** `util/ui/`: `StatsPanel` (MU bars + time/tick + action LOG), `HistoryPanel`
+  (per-metric uPlot sparklines + live values), `TopAgentsPanel`, `Inspector`, `LayerView`,
+  `Onboarding`, `LoadingOverlay`, `MiniMap` (globe inset), `Controls`. Styled by
+  `resources/stylesheet/QGress.css` (faction colours via `--enl-color`/`--res-color`;
+  **Chakra Petch** title face, **Coda** for text/numbers).
+- **No 2D game canvas.** The old `mainCanvas`/`uiCanvas` layers are gone; `DrawUtil` keeps only
+  the offscreen prerender of agent action icons (→ 3D textures). `World.bgCan` survives solely
+  as a detached `ImageData` factory for the grid readback.
+
+The tick loop (`HtmlUtil.tick`) advances agents on a snapshot (recruits buffer in
+`World.pendingAgents`, flushed after), then a `requestAnimationFrame` drives `DrawUtil.redraw`
+(→ `Scene3D.sync`) + the DOM HUD update.
+
+## Locations
+
+`config/Location.kt` is a fixed `enum` of preset places (lng/lat). Selecting one (onboarding
+or in-game) routes through `?lng=&lat=&name=` URL params. Free-form geocoding (Nominatim) is
+available in onboarding/search history; arbitrary coordinates work.
+
+## Build & toolchain
+
+Kotlin 2.4 → JS (IR), Gradle 9.5, build JVM **JDK 21** (detekt can't run on 25). Browser
+bundle via the Kotlin/JS webpack; **unit tests run in Node** (Mocha). Quality gates: **ktlint**
++ **detekt** (complexity limits) + tests, enforced by an in-repo **pre-commit hook**
+(`.githooks/`, `core.hooksPath`). three.js / cannon-es / MapLibre / uPlot come via npm or CDN
+`external` declarations. See [../CLAUDE.md](../CLAUDE.md) for commands.

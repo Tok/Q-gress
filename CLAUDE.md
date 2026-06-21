@@ -1,51 +1,40 @@
 # CLAUDE.md
 
-Guidance for Claude Code (and humans) working in this repository.
+Guidance for Claude Code (and humans) working in this repository. Kept to the point; deeper
+docs live under `docs/`.
 
 ## What this is
 
-**Q-Gress** is a browser-based simulation of the mobile game *Ingress*. Two factions —
-**ENL** ("frogs", green) and **RES** ("smurfs", blue) — fight to capture portals, link
-them, and create control fields over a real-world map. It is a *simulation*, not a
-playable map game: the user tunes AI behaviour with sliders and watches the two factions
-play themselves out. No real Ingress/portal data is used; everything is generated.
+**Q-Gress** is a desktop browser simulation of the mobile game *Ingress*. Two factions —
+**ENL** ("frogs", green) and **RES** ("smurfs", blue) — capture portals, link them, and create
+control fields over a real-world map. It is a **simulation, not a playable map game**: you tune
+AI behaviour with sliders (per faction) and watch the two factions play themselves out. No real
+Ingress/portal data is used; everything is generated.
 
-Live (legacy) build: https://tok.github.io/Q-gress/
+**North star:** AI-vs-AI — each faction driven by a client-side model (custom NN and/or
+in-browser LLM) whose output *is* the behaviour sliders. Desktop-only by design (WebGL pixel
+reads + heavy 3D + future WebGPU inference); mobile is explicitly out of scope and blocked.
 
-## The vision (north star)
+## Where things live
 
-The endgame is **AI-vs-AI**: each faction is driven by a client-side **Gemma** model
-(running in-browser, e.g. via MediaPipe LLM Inference / WebGPU) that tunes the faction's
-behaviour sliders. ENL-Gemma vs RES-Gemma, each possibly tuned differently. The name
-"Q-Gress" comes from the original idea of Q-learning agents tuning the per-action values.
+- **`docs/ARCHITECTURE.md`** — how the system fits together (entry point, `World`, the
+  selection brain, map→grid pipeline, the 3D + DOM rendering, locations, toolchain).
+- **`PLAN.md`** — the roadmap / future TODOs (incl. the Phase 6 AI plan).
+- **`docs/FEATURES.md`** — what's already shipped.
+- **`docs/NN.md` / `docs/LLM.md`** — design notes for the two AI-driver tracks.
 
-This is **desktop-only** by design (WebGL pixel reads + heavy canvas work + WebGPU LLM
-inference). Mobile is explicitly out of scope and should be blocked with a notice.
+Keep these current as work lands, and **don't duplicate** info across them (architecture →
+ARCHITECTURE, shipped → FEATURES, future → PLAN, how-to-work → here).
 
-## Tech stack (LEGACY — being modernized)
+## Tech stack
 
-The repo was last touched ~2018 and is frozen on dead tooling. Do not assume it builds.
-
-- **Language:** **Kotlin 2.4.0** compiled to JavaScript (IR).
-- **Build:** **Gradle 9.5** with the **`kotlin("multiplatform")`** plugin, single `js()`
-  target. The **browser** environment produces the webpack app bundle (`Q-Gress.js`);
-  **unit tests run in Node** (Mocha) for speed and to suit the pure-logic core. JS
-  dependencies are locked in `kotlin-js-store/yarn.lock` (committed).
-- **Build JVM: JDK 21 (LTS), on purpose** — detekt's latest can't run on JDK 25 (see the
-  header note in `build.gradle.kts`). This is invisible to the product (we ship JS).
-- **Quality gates (enforced):** **ktlint** (format/style, configured in `.editorconfig`)
-  and **detekt** (lint + cyclomatic-complexity limits, `config/detekt/detekt.yml` with a
-  legacy `baseline.xml`). A **pre-commit hook** (`.githooks/pre-commit`, installed via
-  `./gradlew installGitHooks`) blocks commits that fail these.
-- **Maps:** still legacy in source — **Mapbox GL JS v0.51.0** + **OpenLayers v5.3.0** in
-  `index.html` (OpenLayers via the dead `cdn.rawgit.com`). Phase 2 replaces these with
-  **MapLibre GL**.
-- **Coverage:** not yet wired — Kover has no Kotlin/JS support; real coverage arrives with
-  the functional-core split (see `PLAN.md`).
-- The old compiled output under `published/` and the legacy npm/Gradle files under
-  `legacy-build/` are retained only for reference; the live build emits to `build/`.
-
-See `PLAN.md` for the modernization roadmap, stack decisions, and engineering standards.
+- **Kotlin 2.4 → JavaScript (IR)**, **Gradle 9.5**, single `js()` target. Browser bundle via
+  the Kotlin/JS webpack; **unit tests run in Node** (Mocha).
+- **Build JVM: JDK 21** on purpose (detekt's latest can't run on JDK 25; we ship JS, so the
+  build JVM is a pure tooling detail).
+- **Maps:** MapLibre GL JS (keyless, OpenFreeMap + Esri tiles). **3D:** three.js custom layer +
+  cannon-es physics. **Charts:** uPlot. All via npm or CDN `external` declarations.
+- JS deps locked in `kotlin-js-store/yarn.lock` (committed). Mapbox token: none (MapLibre).
 
 ## Build, test & dev workflow
 
@@ -54,95 +43,41 @@ See `PLAN.md` for the modernization roadmap, stack decisions, and engineering st
 ./gradlew compileKotlinJs            # compile main sources
 ./gradlew jsNodeTest                 # run unit tests in Node (fast, headless)
 ./gradlew ktlintFormat               # auto-fix formatting
-./gradlew ktlintCheck detekt         # the quality gate the pre-commit hook runs
-./gradlew jsBrowserDevelopmentRun    # run the app via webpack dev server (browser)
-./gradlew jsBrowserDistribution      # build the browser bundle -> build/dist/js/...
-./gradlew kotlinUpgradeYarnLock      # refresh kotlin-js-store/yarn.lock after dep changes
+./gradlew ktlintCheck detekt         # style + complexity gate
+./gradlew jsBrowserDevelopmentRun    # webpack dev server (browser)
+./gradlew jsBrowserDistribution      # build the browser bundle
+./gradlew kotlinUpgradeYarnLock      # refresh yarn.lock after dep changes
+./start.sh                           # build + serve + open the app (desktop, needs WebGL)
 ```
 
-Requires **JDK 21** on `JAVA_HOME` and (for browser tests, currently disabled) Chrome on
-`CHROME_BIN`. The app is desktop-only and needs WebGL.
-
-## Architecture
-
-Entry: `Main.kt` → `window.onload` → `HtmlUtil.load()`. The world is a fixed **1200×800
-canvas** (`config/Dim.kt`) layered over Mapbox map `<div>`s.
-
-Source layout under `src/jsMain/kotlin/` (tests in `src/jsTest/kotlin/`):
-
-- **`World.kt`** — global mutable game state (agents, portals, grid, tick counter, the
-  selected user faction). Singleton `object`.
-- **`agent/`** — the AI. `Agent` (faction members), `NonFaction` (recruitable NPCs),
-  movement, skills, and:
-  - **`agent/action/`** — `ActionSelector` is the brain: every tick each agent picks an
-    action by **weighted-random selection** (`Util.select`) over candidate actions.
-  - **`agent/action/cond/`** — one object per action (`Recruiter`, `Hacker`, `Linker`,
-    `Deployer`, `Attacker`, `Recharger`, `Glypher`, `Explorer`, `Recycler`).
-  - **`agent/qvalue/`** — `QActions` and `QDestinations` define the tunable behaviours.
-    Each `QValue` has a base `weight`; the **slider value (0..1) × weight** is the
-    selection probability. Sliders exist per faction (`...SliderEnl` / `...SliderRes`).
-- **`portal/`** — portals, resonators, links, fields, XM, cooldowns, level/quality.
-- **`items/`** — bursters, power cubes, resonators, mods, levels.
-- **`config/`** — `Config` (game balance constants), `Dim` (geometry), `Location` (the
-  hard-coded dropdown of playable locations), `Constants`, colors/styles/time.
-- **`system/`** — `Cycle`/`Checkpoint` (scoring over time), `Com` (message log), and
-  **`system/display/`** (all canvas + DOM/UI rendering, incl. the sliders/tables).
-- **`util/`** — `Util` (random/select helpers), `MapUtil` (Mapbox lifecycle + grid build),
-  `HtmlUtil` (DOM/UI construction + the main tick loop), `PathUtil` (vector-field
-  pathfinding), `DrawUtil`, geometry under `util/data/`.
-- **`external/`** — thin `external` declarations for Mapbox (`MapBox.kt`) and the Web Audio
-  API.
-
-### How the map becomes a playfield (important)
-
-`MapUtil` instantiates **three** Mapbox maps over hidden divs: a satellite-ish `initialMap`,
-the visible street `map`, and a `shadowMap` styled for pixel reading. After the shadow map
-loads, `MapUtil.addGrid()` calls **`gl.readPixels()` on the shadow map's WebGL canvas** and
-turns the pixels into a passability **`Grid`** (`extension/Grid.kt`): bright pixels =
-walkable streets, dark = impassable buildings. Pathfinding vector fields are computed on
-this grid (`PathUtil`).
-
-**Zoom is hard-coded to 18** (`MapUtil.ZOOM/MIN_ZOOM/MAX_ZOOM`) because the grid, the
-pixel-to-meter factor (`Dim.pixelToMFactor`), portal sizes, and deployment ranges are all
-implicitly calibrated to zoom 18. This is the root of "zoom not working consistently" and
-the blocker for dynamic zoom — changing zoom requires rebuilding the grid and rescaling
-the geometry.
-
-### Locations
-
-`config/Location.kt` is a fixed `enum` of ~11 places (lng/lat) shown in a dropdown
-(`HtmlUtil.createDropdown`). Selecting one reloads the page with `?lng=&lat=&name=` URL
-params. There is no free-form / "play my hometown" entry yet (a planned feature — geocoding
-+ arbitrary coordinates).
+Requires **JDK 21** on `JAVA_HOME`. The app is desktop-only and needs WebGL.
 
 ## Conventions
 
-- Kotlin, official code style (`kotlin.code.style=official`). 4-space indent.
-- Game state lives in the `World` singleton; rendering is separated under `system/display`.
-- Randomness goes through `Util.random()` (wraps JS `Math.random()`), not `kotlin.random`.
-  (Being migrated to an **injectable/seedable** RNG so logic is deterministically testable.)
-- Tests live in `src/jsTest/kotlin/` mirroring the main package layout; they must compile
-  cleanly to JS.
-- The Mapbox access token is currently inlined in `index.html` (a public `pk.` token).
+- Kotlin official style (`kotlin.code.style=official`), 4-space indent.
+- Game state lives in the `World` singleton; the AI brain is `agent/action/ActionSelector`;
+  rendering is 3D (`system/display/Scene3D` + shader/effect modules) with a **DOM HUD**
+  (`util/ui/`). There is no 2D game canvas.
+- Randomness goes through `Util.random()` (not `kotlin.random`) — being migrated to an
+  injectable/seedable RNG for deterministic tests (PLAN Phase 6.0).
+- No `!!`; prefer `?:` / `requireNotNull` / `getValue` / early return.
+- Tests mirror the main package layout under `src/jsTest/kotlin/` and must compile to JS.
+- Commit raw Blender sources under `assets/blender/` (not just the exported `.glb` in `models/`).
 
 ## Engineering standards (enforced)
 
-Quality and testability are first-class. See `PLAN.md` → "Engineering standards" for the
-full policy. In short:
-
 - **Functional core, imperative shell.** Keep game logic in **pure functions** (state in →
-  decision/new-state out, no I/O, no global mutation). Isolate side effects (canvas/DOM,
-  Mapbox/WebGL, audio, timers, `World` mutation, RNG) at the edges. Prefer
-  `pure(state) → effect` over logic that reaches into the DOM/`World` directly.
-- **Test everything pure**, deterministically (injected RNG). Aim for high coverage
-  (≥80% on the functional core; selection/balance logic near 100%).
-- **Commits are gated** by a pre-commit hook (in-repo via `core.hooksPath`): formatting
-  (ktlint), linting + **complexity limits** (detekt), and tests + coverage floor (kover).
-  Don't bypass it; fix the code. The same checks run in CI.
-- Keep commits small and green.
+  decision/new-state out); isolate side effects (3D/DOM, MapLibre/WebGL, audio, timers, `World`
+  mutation, RNG) at the edges. (Logic and effects are still partly entangled — the split is
+  in-progress; see PLAN.)
+- **Test everything pure**, deterministically (injected RNG). Aim high on the functional core
+  (selection/balance logic near 100%).
+- **Commits are gated** by the in-repo pre-commit hook (`.githooks/`, `core.hooksPath`): it runs
+  the **full gate** — `ktlintFormat` (auto-fix + restage), then compile + ktlintCheck + detekt
+  (complexity limits) + `jsNodeTest`. Don't bypass it; fix the code. Keep commits small and green.
 
-## Working agreements for this effort
+## Working agreements
 
 - Branch is **`develop`**. Commit there; **do not push** until something works end-to-end.
-- See **`PLAN.md`** for goals, sequencing, and open decisions. Keep it updated as the
-  source of truth for the modernization.
+- End commit messages with the `Co-Authored-By` trailer.
+- The user does the visual checks (`./start.sh`); don't block on screenshots.
