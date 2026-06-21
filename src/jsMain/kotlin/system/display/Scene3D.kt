@@ -9,9 +9,11 @@ import config.Sim
 import external.GLTFLoader
 import external.MapLibre
 import external.Three
+import items.level.LevelColor
 import kotlinx.browser.document
 import portal.Field
 import portal.Link
+import portal.Octant
 import portal.Portal
 import util.SoundUtil
 import util.data.Pos
@@ -19,6 +21,7 @@ import kotlin.math.PI
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.pow
+import kotlin.math.sin
 import kotlin.math.sqrt
 
 /**
@@ -58,6 +61,15 @@ object Scene3D {
     private const val TOP_R = 7.0 // base orb radius
     private const val INNER_SHELL_FRAC = 0.89 // inner glass shell radius (× orb) — a thin wall (~2.5× thinner) matching the shards
     private const val PHI = 1.618 // golden ratio — pole grows by φ across the 8 levels
+
+    // Resonators: 8 rubber slot-rings around the pole collar (just below the gasket), each holding a
+    // colour-coded rod (the resonator) when filled.
+    private const val RESO_RING_R = POLE_R * 0.42 // grommet ring radius
+    private const val RESO_RING_TUBE = POLE_R * 0.13
+    private const val RESO_ROD_R = POLE_R * 0.26
+    private const val RESO_RADIUS_FRAC = 1.15 // slot distance from the pole axis (× POLE_R)
+    private const val RESO_COLLAR_FRAC = 0.78 // collar height as a fraction of the pole height
+    private const val RESO_ROD_LEN_FRAC = 0.22 // rod length as a fraction of the pole height
     private const val NEUTRAL_COLOR = "#bbbbbb"
     private const val HIGHLIGHT_COLOR = "#f0f0f0" // selection: off-tint grayscale (no new hues)
     private const val OVERLAY_Z = 0.2 // passability quad just above ground
@@ -121,6 +133,8 @@ object Scene3D {
     private val gasketGeo: dynamic by lazy { Three.TorusGeometry(POLE_R * 1.15, POLE_R * 0.4, 10, 20) } // rubber donut
     private val linkGeo: dynamic by lazy { Three.CylinderGeometry(LINK_R, LINK_R, 1.0, 8) } // unit glass tube (scaled to length)
     private val coreGeo: dynamic by lazy { Three.CylinderGeometry(LINK_R * CORE_R_FRAC, LINK_R * CORE_R_FRAC, 1.0, 6) } // bright filament inside the tube
+    private val resoRingGeo: dynamic by lazy { Three.TorusGeometry(RESO_RING_R, RESO_RING_TUBE, 8, 14) } // rubber slot grommet
+    private val resoRodGeo: dynamic by lazy { Three.CylinderGeometry(RESO_ROD_R, RESO_ROD_R, 1.0, 8) } // unit rod, scaled to length
     private val materialCache = mutableMapOf<String, dynamic>()
     private val spriteCache = mutableMapOf<String, dynamic>()
 
@@ -432,7 +446,8 @@ object Scene3D {
         val baseColor = portal.owner?.faction?.color ?: NEUTRAL_COLOR
         val color = if (selected == id) HIGHLIGHT_COLOR else baseColor
         val level = tweenedLevel(id, portal.getLevel().toInt()) // eases on level-up
-        val parts = buildPortal(portalsGroup, sceneX(portal.location), sceneY(portal.location), level, color, id)
+        val resos = portal.resoMap().mapValues { it.value.getLevel() } // octant → reso level (real-time)
+        val parts = buildPortal(portalsGroup, portal.location, level, color, id, resos)
         // Build-in: the pole rises and the orb grows from the ground over the first moments.
         val g = Spawns.appear(id, PORTAL_GROW_S)
         if (g < 1.0) applyBuildGrow(level, g, parts)
@@ -443,7 +458,16 @@ object Scene3D {
      * touch the glass, and a round glass orb on top (bigger with [level]). [id] tags it for picking
      * (null = demo). Returns [orb, gasket] so the demo can drop them when the portal shatters.
      */
-    private fun buildPortal(parent: dynamic, x: Double, y: Double, level: Double, color: String, id: String?): Array<dynamic> {
+    private fun buildPortal(
+        parent: dynamic,
+        location: Pos,
+        level: Double,
+        color: String,
+        id: String?,
+        resos: Map<Octant, Int> = emptyMap(),
+    ): Array<dynamic> {
+        val x = sceneX(location)
+        val y = sceneY(location)
         val poleH = poleHeight(level)
         val s = orbScale(level)
         val pole = Three.Mesh(poleGeo, Materials.metal())
@@ -469,7 +493,35 @@ object Scene3D {
         parent.add(pole)
         parent.add(gasket)
         parent.add(orb)
-        return arrayOf(orb, gasket, pole)
+        val resoGroup = buildResonators(parent, x, y, level, resos)
+        return arrayOf(orb, gasket, pole, resoGroup)
+    }
+
+    /** 8 rubber slot-rings around the pole collar; a colour-coded rod stands in each filled slot. */
+    private fun buildResonators(parent: dynamic, x: Double, y: Double, level: Double, resos: Map<Octant, Int>): dynamic {
+        val group = Three.Group()
+        val poleH = poleHeight(level)
+        val rodLen = poleH * RESO_ROD_LEN_FRAC
+        val ringR = POLE_R * RESO_RADIUS_FRAC
+        Octant.values().forEachIndexed { i, octant ->
+            val ang = i * PI / 4.0
+            val ox = ringR * cos(ang)
+            val oy = ringR * sin(ang)
+            val ring = Three.Mesh(resoRingGeo, Materials.rubber()) // grommet lies flat (hole up)
+            ring.asDynamic().position.set(ox, oy, 0.0)
+            group.asDynamic().add(ring)
+            val lvl = resos[octant]
+            if (lvl != null) {
+                val rod = Three.Mesh(resoRodGeo, Materials.resonator(LevelColor.map[lvl] ?: "#ffffff"))
+                rod.asDynamic().rotation.x = PI / 2 // unit Y-cylinder → vertical
+                rod.asDynamic().scale.set(1.0, rodLen, 1.0)
+                rod.asDynamic().position.set(ox, oy, rodLen / 2.0) // stands up out of the grommet
+                group.asDynamic().add(rod)
+            }
+        }
+        group.asDynamic().position.set(x, y, poleH * RESO_COLLAR_FRAC)
+        parent.add(group)
+        return group
     }
 
     /** Rise the pole + grow the orb from the ground for the build-in animation ([g] = 0→1). */
@@ -482,13 +534,16 @@ object Scene3D {
         parts[1].position.z = poleH * gg // gasket
         parts[0].scale.set(s, s, s) // orb
         parts[0].position.z = poleH * gg + TOP_R * s
+        parts[3].scale.set(gg, gg, gg) // resonators grow in with the collar
+        parts[3].position.z = poleH * gg * RESO_COLLAR_FRAC
     }
 
     /** Demo only (#demo/portal): place a portal at [location]/[level] in a sync-immune group (LMB). */
     fun placeShowcase(location: Pos, level: Int, color: String) {
         val grp = showcaseGroup ?: return
         val group = Three.Group()
-        buildPortal(group, sceneX(location), sceneY(location), level.toDouble(), color, null)
+        val resos = Octant.values().associateWith { level } // demo: show a full set at the placed level
+        buildPortal(group, location, level.toDouble(), color, null, resos)
         grp.add(group)
         showcases.add(Showcase(group, location, level, color))
     }

@@ -51,12 +51,23 @@ object Materials {
         Three.MeshBasicMaterial(p)
     }
 
-    /** Matte black rubber for the gasket between pole and orb. */
+    /** Matte black rubber for the gasket between pole and orb (and the resonator slot rings). */
     fun rubber(): dynamic = cache.getOrPut("rubber") {
         val p: dynamic = js("({})")
         p.color = "#0a0a0a"
         p.metalness = 0.0
         p.roughness = 0.95
+        Three.MeshStandardMaterial(p)
+    }
+
+    /** A resonator rod, coloured by its level (the rarity/level colour); slight emissive so it reads. */
+    fun resonator(color: String): dynamic = cache.getOrPut("reso$color") {
+        val p: dynamic = js("({})")
+        p.color = color
+        p.metalness = 0.3
+        p.roughness = 0.5
+        p.emissive = color
+        p.emissiveIntensity = 0.35
         Three.MeshStandardMaterial(p)
     }
 
