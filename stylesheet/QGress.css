@@ -164,9 +164,12 @@ html, body {
     text-shadow: 0 0 3px #000, 0 0 3px #000;
 }
 .statsMuPanel {
+    width: 260px; /* fixed: MU/XM digits no longer reflow the pane width */
+    box-sizing: border-box;
     background: rgba(0, 0, 0, 0.45);
     padding: 6px 10px 7px;
     border-radius: 3px;
+    order: 1; /* below the tuning sliders */
 }
 .statsMuRow {
     display: flex;
@@ -178,6 +181,8 @@ html, body {
     height: 15px;
     border: 2px solid currentColor;
     margin-right: 8px;
+    box-sizing: border-box; /* both faction bars share an identical box → same left edge */
+    flex: none;
 }
 .statsMuBar {
     height: 100%;
@@ -659,9 +664,13 @@ html, body {
 }
 .qValues {
     font-size: 13px;
-    padding-bottom: 2px;
+    padding: 5px 10px 6px;
+    background: rgba(0, 0, 0, 0.45); /* glass pane behind the sliders, separating them from the panels */
+    border-radius: 3px;
     pointer-events: auto; /* the tuning sliders are interactive inside the (click-through) HUD column */
 }
+/* Sliders sit at the TOP of both columns (above the scoreboard / dashboard). */
+#left-sliders { order: 0; }
 /* Right intel column order: Destinations sliders on top, then the dashboard, then the LOG. */
 #right-sliders { order: 0; }
 .historyPanel { order: 1; }
