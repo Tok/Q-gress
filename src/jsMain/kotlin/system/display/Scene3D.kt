@@ -68,8 +68,10 @@ object Scene3D {
     private const val VECTOR_CONE_R = 1.1 // flow-arrow cone radius (metres)
     private const val VECTOR_CONE_H = 3.6 // flow-arrow cone length (metres)
     private const val MARKER_R = 10.0 // build-preview marker radius (metres)
-    private const val BORDER_COLOR = "#22ddff" // playable-area boundary
+    private const val BORDER_COLOR = "#ffffff" // playable-area boundary (white — no non-faction hues)
     private const val BORDER_Z = 0.3
+    private const val OUTSIDE_DIM = 0.4 // opacity of the dark mask greying out everything beyond the border
+    private const val OUTSIDE_FAR = 12.0 // how far past the play area the dim mask extends (× the half-extent)
     private const val SHARD_BRIGHT = 1.4 // shards use the orb's GlassShader; a touch brighter so the small pieces read
     private const val SHARD_FADE = 1.2 // seconds to fade out at end of life
     private const val SHARD_LIFE_MIN = 6.0 // shards linger before fading
@@ -329,9 +331,12 @@ object Scene3D {
         }
     }
 
-    // Outline the playable area (sim bounds) so the player can see where the world ends.
+    // Mark the playable area: a white outline plus a dark mask greying out everything beyond it.
     private fun buildBorder() {
         val group = borderGroup ?: return
+        val hx = sceneX(Pos(Sim.width, 0)) // play-area half-extents (scene metres); sceneY flips sim-y → +hy is the top edge
+        val hy = sceneY(Pos(0, 0))
+        PlayAreaMask.build(group, hx, hy, OUTSIDE_FAR * maxOf(hx, hy), BORDER_Z - 0.05, OUTSIDE_DIM)
         val corners = arrayOf(Pos(0, 0), Pos(Sim.width, 0), Pos(Sim.width, Sim.height), Pos(0, Sim.height), Pos(0, 0))
         val points = corners.map { Three.Vector3(sceneX(it), sceneY(it), BORDER_Z) }.toTypedArray()
         group.add(Three.Line(Three.BufferGeometry().setFromPoints(points), lineMaterial(BORDER_COLOR)))
@@ -477,10 +482,10 @@ object Scene3D {
         val group = markerGroup ?: return
         group.clear()
         if (pos == null) return
-        val color = when (state) {
+        val color = when (state) { // grayscale only — colour is reserved for faction things
             "build" -> "#ffffff"
-            "portal" -> "#ff9900"
-            else -> "#ff3333"
+            "portal" -> "#999999"
+            else -> "#555555"
         }
         val mesh = Three.Mesh(Three.RingGeometry(MARKER_R * 0.6, MARKER_R, 24), markerMaterial(color))
         mesh.asDynamic().position.set(sceneX(pos), sceneY(pos), OVERLAY_Z)

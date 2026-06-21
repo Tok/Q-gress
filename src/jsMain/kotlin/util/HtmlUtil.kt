@@ -33,6 +33,7 @@ import util.data.Pos
 import util.ui.Controls
 import util.ui.Demo
 import util.ui.Inspector
+import util.ui.LayerView
 import util.ui.LoadingOverlay
 import kotlin.js.Json
 
@@ -124,7 +125,7 @@ object HtmlUtil {
 
         buttonDiv.append(createSearchSpan())
         buttonDiv.append(createVolumeSpan())
-        buttonDiv.append(createLayerDropdown())
+        buttonDiv.append(LayerView.createDropdown())
         buttonDiv.append(createCheckbox("passabilityToggle", "Passability") { Scene3D.setPassabilityVisible(it) })
         buttonDiv.append(createCheckbox("vectorFieldToggle", "Vectors") { Scene3D.setVectorFieldVisible(it) })
         controlDiv.append(buttonDiv)
@@ -233,30 +234,6 @@ object HtmlUtil {
         }
         span.append(slider)
         return span
-    }
-
-    private const val LAYER_DROPDOWN_ID = "layerSelect"
-    private const val LAYER_SATELLITE = "Satellite"
-    private const val LAYER_STREET = "Street"
-
-    // A small dropdown to choose the base map layer. Structured so more styles
-    // can be added later (e.g. a dark/terrain style).
-    private fun createLayerDropdown(): HTMLSelectElement {
-        val select = document.createElement("select") as HTMLSelectElement
-        select.id = LAYER_DROPDOWN_ID
-        select.addClass("topDrop", "amarillo")
-        listOf(LAYER_SATELLITE, LAYER_STREET).forEach { layer ->
-            val opt = document.createElement("option") as HTMLOptionElement
-            opt.text = layer
-            opt.value = layer
-            select.appendChild(opt)
-        }
-        select.onchange = { applySelectedLayer() }
-        return select
-    }
-
-    private fun applySelectedLayer() {
-        if (isShowSatelliteMap()) MapUtil.showSatellite() else MapUtil.showStreet()
     }
 
     private fun createCanvasDiv(): HTMLDivElement {
@@ -583,11 +560,6 @@ object HtmlUtil {
         createAgents(callback)
     })
 
-    fun isShowSatelliteMap(): Boolean {
-        val dropdown = document.getElementById(LAYER_DROPDOWN_ID) as? HTMLSelectElement ?: return true
-        return dropdown[dropdown.selectedIndex]?.let { (it as HTMLOptionElement).value } == LAYER_SATELLITE
-    }
-
     private fun onMapload() = fun(grid: Grid) {
         World.grid = grid
         if (World.grid.isEmpty()) {
@@ -608,7 +580,7 @@ object HtmlUtil {
             createQSliders(World.userFactionOrThrow())
             resetInterval()
             World.isReady = true
-            applySelectedLayer()
+            LayerView.apply()
             Navigation.setup()
             MapUtil.bindInteractions(::onMapClick, ::onMapMove)
             LoadingOverlay.done()

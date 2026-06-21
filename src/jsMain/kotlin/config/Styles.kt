@@ -1,6 +1,6 @@
 package config
 
-import util.HtmlUtil
+import util.ui.LayerView
 
 object Styles {
     val fieldTransparency = 0.4
@@ -16,8 +16,8 @@ object Styles {
 
     val use3DBuildings = true
 
-    fun vectorStyle() = if (HtmlUtil.isShowSatelliteMap()) VectorStyle.SQUARE else VectorStyle.CIRCLE
-    fun isColorVectors() = !HtmlUtil.isShowSatelliteMap()
+    fun vectorStyle() = if (LayerView.isSatellite()) VectorStyle.SQUARE else VectorStyle.CIRCLE
+    fun isColorVectors() = !LayerView.isSatellite()
     val isDrawObstructedVectors = false
 
     // settings with impact on performance

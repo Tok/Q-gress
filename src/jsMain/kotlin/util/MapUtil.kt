@@ -17,7 +17,6 @@ import system.display.Scene3D
 import util.data.Cell
 import util.data.Pos
 import util.ui.LoadingOverlay
-import util.ui.MiniMap
 import kotlin.js.Json
 import kotlin.math.log2
 import kotlin.math.roundToInt
@@ -198,7 +197,6 @@ object MapUtil {
         val center = anchorCenter ?: return
         Scene3D.register(targetMap, center.lng as Double, center.lat as Double, anchorZoom)
         setupNavigation(targetMap)
-        if (!demoMode) MiniMap.create(targetMap) // overview globe inset (game only)
     }
 
     /**
@@ -436,5 +434,13 @@ object MapUtil {
     fun showStreet() {
         document.getElementById(INITIAL_MAP)?.addClass(INVISIBLE)
         document.getElementById(MAP)?.removeClass(INVISIBLE)
+    }
+
+    /**
+     * Desaturate the satellite raster (terrain only — the 3D portals/agents render in a separate
+     * custom layer and stay coloured). Grayscale is the default view; "Colored" turns it off.
+     */
+    fun setGrayscale(on: Boolean) {
+        initMap?.setPaintProperty("satellite", "raster-saturation", if (on) -1.0 else 0.0)
     }
 }
