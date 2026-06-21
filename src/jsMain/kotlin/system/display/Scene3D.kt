@@ -59,6 +59,7 @@ object Scene3D {
     private const val LEVEL_TWEEN_RATE = 0.18 // per-sync ease of the rendered level toward the real one
     private const val POLE_H = 22.5 // base pole height at L1; scales by φ per level
     private const val TOP_R = 7.0 // base orb radius
+    private const val INNER_SHELL_FRAC = 0.72 // inner glass shell radius (× orb) — the thick-wall cue
     private const val PHI = 1.618 // golden ratio — pole grows by φ across the 8 levels
     private const val NEUTRAL_COLOR = "#bbbbbb"
     private const val HIGHLIGHT_COLOR = "#f0f0f0" // selection: off-tint grayscale (no new hues)
@@ -611,6 +612,12 @@ object Scene3D {
         val orb = Three.Mesh(topGeo, Materials.glass(color))
         place(orb.asDynamic(), x, y, orbCenterZ(level))
         orb.asDynamic().scale.set(s, s, s)
+        // Double-shell: a concentric inner glass surface gives the orb real wall thickness — its
+        // rim sits inside the outer rim, so the orb reads as a thick blown-glass vessel, not a film.
+        // (Child of the orb, so it inherits the per-level scale + the grow-in tween for free.)
+        val inner = Three.Mesh(topGeo, Materials.glass(color))
+        inner.asDynamic().scale.set(INNER_SHELL_FRAC, INNER_SHELL_FRAC, INNER_SHELL_FRAC)
+        orb.asDynamic().add(inner)
         id?.let {
             tag(pole.asDynamic(), it)
             tag(gasket.asDynamic(), it)
