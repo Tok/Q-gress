@@ -10,11 +10,11 @@ import extension.clear
 import org.w3c.dom.*
 import system.display.Scene3D
 import system.display.ui.ActionLimitsDisplay
-import system.display.ui.CycleDisplay
 import system.display.ui.table.TopAgentsDisplay
 import util.data.Circle
 import util.data.Line
 import util.data.Pos
+import util.ui.CycleChart
 import util.ui.Inspector
 import util.ui.StatsPanel
 import kotlin.math.PI
@@ -56,10 +56,10 @@ object DrawUtil {
 
     fun redrawUserInterface(firstMu: Int, secondMu: Int, factions: Pair<Faction, Faction>) {
         clearUserInterface()
-        // MindUnits + entity counts + tick + Com are now DOM panels (UI Stage 3, canvas→DOM).
-        // The Cycle graph + TopAgents table stay on canvas pending a charting/table component.
+        // MindUnits + entity counts + tick + Com + the Cycle MU graph (uPlot) are now DOM panels
+        // (UI Stage 3, canvas→DOM). The TopAgents table is the last canvas widget pending migration.
         StatsPanel.update(firstMu, secondMu, factions)
-        CycleDisplay.draw()
+        CycleChart.update()
         if (Styles.isDrawTopAgents) {
             TopAgentsDisplay.draw()
         }

@@ -134,11 +134,22 @@ html, body {
 }
 .statsTickRow .statsTime { margin-right: 10px; }
 .statsCountsPanel {
-    top: 40px;
+    top: 320px;
     right: 14px;
     display: flex;
     gap: 6px;
     text-align: right;
+}
+/* MU time-series chart (uPlot), right edge below the destination sliders. */
+.cycleChart {
+    position: fixed;
+    top: 200px;
+    right: 14px;
+    z-index: 60;
+    pointer-events: none;
+    background: rgba(0, 0, 0, 0.45);
+    padding: 4px;
+    border-radius: 3px;
 }
 .statsCol {
     display: flex;

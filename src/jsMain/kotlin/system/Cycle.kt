@@ -2,25 +2,16 @@ package system
 
 import World
 import agent.Agent
-import agent.Faction
 import agent.action.ActionItem
-import config.Colors
 import config.Config
 import config.Dim
-import extension.Canvas
-import extension.Ctx
-import org.w3c.dom.CanvasRenderingContext2D
 import portal.XmHeap
 import portal.XmMap
-import util.DrawUtil
-import util.HtmlUtil
 import util.SoundUtil
 import util.Util
-import util.data.Line
-import util.data.Pos
 
-enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>, var image: Canvas?) {
-    INSTANCE(mutableMapOf(), null),
+enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>) {
+    INSTANCE(mutableMapOf()),
     ;
 
     companion object {
@@ -40,7 +31,6 @@ enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>, var image: Canvas
                 INSTANCE.checkpoints.clear()
                 INSTANCE.checkpoints.putAll(old)
                 INSTANCE.checkpoints[tick] = cp
-                INSTANCE.image = createImage()
                 if (cp.isCycleEnd) {
                     spawnXm()
                     removePortals()
@@ -121,69 +111,6 @@ enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>, var image: Canvas
                 .shuffled()
                 .take((World.allNonFaction.size * Config.npcXmSpawnRatio).toInt())
                 .map { XmMap.createStrayXm(it.pos.randomNearPoint(Dim.npcXmSpawnRadius), false) }
-        }
-
-        val ww = 8
-        private fun createImage(): Canvas {
-            val off = 4
-            val h = Dim.cycleH + (2 * off)
-            val w = (ww * Cycle.numberOfCheckpoints - 1) + (2 * off)
-            val lineAlpha = 0.5
-            val dotAlpha = 0.5
-            val lineWidth = 1.0
-            val r = 2.0
-
-            fun drawCheckpointDot(ctx: Ctx, pos: Pos, style: String, isCycleEnded: Boolean) {
-                val radius = if (isCycleEnded) r + 1 else r
-                val circle = util.data.Circle(pos, radius)
-                util.DrawUtil.drawCircle(ctx, circle, config.Colors.black, lineWidth, style, dotAlpha)
-            }
-
-            fun drawCheckpoint(
-                ctx: CanvasRenderingContext2D,
-                index: Int,
-                withNext: Pair<Checkpoint, Checkpoint>,
-                maxTotal: Int,
-            ) {
-                fun calcY(mu: Int, maxTotal: Int) = Dim.cycleH - (mu * Dim.cycleH / maxTotal)
-                val x = (index * ww)
-                Faction.all().forEach { faction ->
-                    val y = calcY(withNext.first.mu(faction), maxTotal)
-                    val current = Pos(x, y + r.toInt() + 2)
-                    val nextY = calcY(withNext.second.mu(faction), maxTotal)
-                    val next = Pos(x + ww, nextY + r.toInt() + 2)
-                    val top = Pos(x + ww, 0)
-                    val bot = Pos(x + ww, h - 3)
-                    val lw = if (withNext.second.isCycleEnd) 2.0 else 0.3
-                    DrawUtil.drawLine(ctx, Line(top, bot), Colors.white, lw, 0.3)
-                    if (index > 0) {
-                        DrawUtil.drawLine(ctx, Line(current, next), faction.color, lineWidth, lineAlpha)
-                    }
-                    drawCheckpointDot(ctx, next, faction.color, withNext.second.isCycleEnd)
-                }
-            }
-
-            fun drawBackground(ctx: Ctx) {
-                val rect = Line(0, 0, -h, w - 8)
-                DrawUtil.drawRect(ctx, rect, "#00000077", "#00000077", 0.0)
-            }
-
-            fun drawBaseLine(ctx: Ctx) {
-                val y = h - off
-                val from = Pos(off, y)
-                val to = Pos(w - off - 8, y)
-                DrawUtil.drawLine(ctx, Line(from, to), Colors.white, 2.0, 0.3)
-            }
-
-            return HtmlUtil.preRender(w, h, fun(ctx: Ctx) {
-                val checkpoints = Cycle.INSTANCE.checkpoints
-                val maxTotal = checkpoints.values.maxByOrNull { it.total() }?.total() ?: 0
-                drawBackground(ctx)
-                drawBaseLine(ctx)
-                checkpoints.values.zipWithNext().mapIndexed { i, pair ->
-                    drawCheckpoint(ctx, i, pair, maxTotal)
-                }
-            })
         }
     }
 }
