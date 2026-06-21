@@ -10,7 +10,6 @@ import external.Cannon
 import external.GLTFLoader
 import external.MapLibre
 import external.Three
-import items.level.XmpLevel
 import kotlinx.browser.document
 import portal.Field
 import portal.Link
@@ -64,17 +63,14 @@ object Scene3D {
     private const val MARKER_R = 10.0 // build-preview marker radius (metres)
     private const val BORDER_COLOR = "#22ddff" // playable-area boundary
     private const val BORDER_Z = 0.3
-    private const val SHARD_OPACITY = 0.3 // thin glass shards, not opaque chips
+    private const val SHARD_OPACITY = 0.5 // translucent glass shards
     private const val SHARD_FADE = 1.2 // seconds to fade out at end of life
     private const val SHARD_LIFE_MIN = 3.0
     private const val SHARD_LIFE_MAX = 5.0
     private const val SHARD_SPIN = 6.0 // max tumble rad/s
     private const val SHARD_MASS = 1.0
     private const val GRAVITY = 9.8 // m/s²
-    private const val XMP_RANGE_SCALE = 0.5 // XmpLevel.rangeM → scene-metre blast radius
-    private const val XMP_LIFE_BASE = 0.9 // seconds; total detonation lifetime at level 0
-    private const val XMP_LIFE_PER_LEVEL = 0.06 // bigger bursters linger a little longer
-    private const val RING_Z = 0.28 // ground shockwave quad height (above passability overlay)
+    const val CUSTOM_LAYER_ID = "qgress-3d" // MapLibre layer id for the three.js scene
 
     // Currently selected entity, as "portal:<id>" / "agent:<name>" (see pick()).
     var selected: String? = null
@@ -104,12 +100,10 @@ object Scene3D {
     private var vectorFieldVisible = false
     private var vectorFieldKey: String? = null // selection the flow field was last built for
 
-    // Glass-shatter fracture assets (loaded once from GLBs). Each "shard holder" is a JS object
-    // { geo, cx, cy, cz } — a shared geometry + its local centroid (for the burst direction).
-    private var flaskVariants: List<List<dynamic>> = emptyList() // sephira/sphere shell-shard variants
+    // Glass-orb shatter fracture variants (loaded once from the GLB via ShardAssets).
+    private var flaskVariants: List<List<dynamic>> = emptyList()
     private var flaskScale = 1.0 // scale a flask variant to ≈ the portal top sphere
     private var shardsGroup: dynamic = null // transient shatter fragments (not cleared by sync)
-    private var burstsGroup: dynamic = null // transient XMP shockwaves
     private var showcaseGroup: dynamic = null // demo-scene portal preview (not cleared by sync)
     private var showcaseMesh: dynamic = null
     private var showcaseOrb: dynamic = null // the preview's glass orb (removed when shattered)
@@ -119,35 +113,17 @@ object Scene3D {
     private val tempBodies = mutableListOf<Cannon.Body>() // static pole colliders, live only during a shatter
     private var shatterRot = doubleArrayOf(0.0, 0.0, 0.0) // per-shatter random orientation of the shards
     private val activeShards = mutableListOf<Shard>()
-    private val activeBursts = mutableListOf<Burst>()
     private var lastFrameMs = 0.0 // for per-frame shard physics dt
 
     /** One in-flight glass fragment: a mesh driven by its cannon-es rigid [body], fading over [life]. */
     private class Shard(val mesh: dynamic, val mat: dynamic, val body: Cannon.Body, var age: Double, val life: Double)
 
-    /**
-     * A synthwave micro-nuke detonation. [meshes] = (rolling fireball cap torus, hot core sphere,
-     * ground shockwave ring); all three ShaderMaterials share [uni] (uTime/uProgress/uSeed).
-     * [geom] = (sceneX, sceneY, blast-radius m, life s). Animated by [age] in updateBursts.
-     */
-    private class Burst(val meshes: Array<dynamic>, val uni: dynamic, val geom: DoubleArray, var age: Double)
-
-    // Shared geometries/materials (created lazily once three.js is loaded).
+    // Shared geometries (created lazily once three.js is loaded).
     private val headGeo: dynamic by lazy { Three.SphereGeometry(HEAD_R, 10, 10) }
     private val coneGeo: dynamic by lazy { Three.ConeGeometry(VECTOR_CONE_R, VECTOR_CONE_H, 6) }
     private val poleGeo: dynamic by lazy { Three.CylinderGeometry(POLE_R, POLE_R, POLE_H, 12) } // metal pole
     private val topGeo: dynamic by lazy { Three.SphereGeometry(TOP_R, 20, 16) } // glass orb (scaled per level)
     private val gasketGeo: dynamic by lazy { Three.TorusGeometry(POLE_R * 1.15, POLE_R * 0.4, 10, 20) } // rubber donut
-    private val burstGeo: dynamic by lazy { Three.SphereGeometry(1.0, 24, 16) } // unit sphere → XMP hot core
-    private val torusGeo: dynamic by lazy { Three.TorusGeometry(1.0, 0.42, 16, 48) } // unit donut → rolling cap
-    private val ringQuadGeo: dynamic by lazy { Three.PlaneGeometry(2.0, 2.0) } // flat quad → ground shockwave
-
-    // Unit cylinder (taller toward the cap) baked Y-up→Z-up once → the rising mushroom stem.
-    private val stemGeo: dynamic by lazy {
-        val g = Three.CylinderGeometry(1.0, 0.5, 1.0, 12).asDynamic()
-        g.rotateX(PI / 2) // bake Y-up cylinder to Z-up so the stem rises along +Z
-        g
-    }
     private val materialCache = mutableMapOf<String, dynamic>()
     private val spriteCache = mutableMapOf<String, dynamic>()
 
@@ -160,7 +136,7 @@ object Scene3D {
 
     private fun buildCustomLayer(map: MapLibre.Map): dynamic {
         val layer: dynamic = js("({})")
-        layer.id = "qgress-3d"
+        layer.id = CUSTOM_LAYER_ID
         layer.type = "custom"
         layer.renderingMode = "3d"
         layer.onAdd = { _: dynamic, gl: dynamic -> onAdd(map, gl) }
@@ -187,7 +163,7 @@ object Scene3D {
         markerGroup = Three.Group().also { newScene.add(it) }
         borderGroup = Three.Group().also { newScene.add(it) }
         shardsGroup = Three.Group().also { newScene.add(it) }
-        burstsGroup = Three.Group().also { newScene.add(it) }
+        XmpBurst.register(newScene)
         showcaseGroup = Three.Group()
         newScene.add(showcaseGroup)
         physicsWorld = createPhysicsWorld()
@@ -211,12 +187,12 @@ object Scene3D {
             .makeTranslation(originMerc.x as Double, originMerc.y as Double, originMerc.z as Double)
             .scale(Three.Vector3(metersScale, -metersScale, metersScale))
         cam.projectionMatrix = mapMatrix.multiply(modelMatrix)
-        if (activeShards.isNotEmpty() || activeBursts.isNotEmpty()) {
+        if (activeShards.isNotEmpty() || XmpBurst.hasActive()) {
             val nowMs = js("performance.now()") as Double
             val dt = if (lastFrameMs <= 0.0) 0.016 else ((nowMs - lastFrameMs) / 1000.0).coerceIn(0.0, 0.1)
             lastFrameMs = nowMs
             if (activeShards.isNotEmpty()) updateShards(dt)
-            if (activeBursts.isNotEmpty()) updateBursts(dt)
+            if (XmpBurst.hasActive()) XmpBurst.update(dt)
         } else {
             lastFrameMs = 0.0
         }
@@ -353,7 +329,7 @@ object Scene3D {
         shatterRot = doubleArrayOf(Util.random() * 2.0 * PI, Util.random() * 2.0 * PI, Util.random() * 2.0 * PI)
         if (flaskVariants.isNotEmpty()) {
             val variant = flaskVariants[(Util.random() * flaskVariants.size).toInt()]
-            variant.forEach { holder -> spawnShard(holder, doubleArrayOf(x, y, orbCenterZ(level)), flaskScale * s, color, 6.0) }
+            variant.forEach { holder -> spawnShard(holder, doubleArrayOf(x, y, orbCenterZ(level)), flaskScale * s, color, 4.0) }
         }
         addPoleObstacle(world, x, y, poleH)
         spawnGasket(world, x, y, poleH)
@@ -413,8 +389,8 @@ object Scene3D {
         val body = Cannon.Body(opts)
         body.asDynamic().quaternion.setFromEuler(shatterRot[0], shatterRot[1], shatterRot[2]) // random per-shatter
         val a = Util.random() * 2.0 * PI
-        val r = burstH * (0.1 + Util.random() * 0.25) // gentle outward drift; gravity does the rest
-        val up = burstH * (0.05 + Util.random() * 0.3) // a small pop up, then it mostly falls
+        val r = burstH * (0.04 + Util.random() * 0.12) // barely any outward push
+        val up = burstH * Util.random() * 0.15 // a tiny pop; gravity does the rest — they mostly drop
         body.asDynamic().velocity.set(cos(a) * r, sin(a) * r, up)
         body.asDynamic().angularVelocity.set(randSpin(), randSpin(), randSpin())
         world.addBody(body)
@@ -433,83 +409,11 @@ object Scene3D {
 
     private fun randSpin() = (Util.random() - 0.5) * 2.0 * SHARD_SPIN
 
-    /**
-     * Fire a synthwave micro-nuke at a location, scaled by burster [level] (1..8): a rising
-     * mushroom — turbulent stem column → rolling fireball cap (torus) with a hot flashing core —
-     * plus an expanding neon ground shockwave ring. All four meshes share one uniforms object
-     * (uTime/uProgress/uSeed) animated by updateBursts. Meshes order: stem, cap, core, ring.
-     */
+    /** Fire an XMP detonation at a location, scaled by burster [level] (1..8). See [XmpBurst]. */
     fun playXmpBurst(location: Pos, level: Int) {
         scene ?: return
-        val rangeM = XmpLevel.values().find { it.level == level }?.rangeM ?: XmpLevel.ONE.rangeM
-        val maxR = rangeM * XMP_RANGE_SCALE
-        val cx = sceneX(location)
-        val cy = sceneY(location)
-        val uni: dynamic = js("({ uTime: { value: 0.0 }, uProgress: { value: 0.0 }, uSeed: { value: 0.0 } })")
-        uni.uSeed.value = Util.random() * 10.0
-        val stem = Three.Mesh(stemGeo, XmpShaders.material(XmpShaders.SURFACE_VERT, XmpShaders.STEM_FRAG, uni, additive = false))
-        val cap = Three.Mesh(torusGeo, XmpShaders.material(XmpShaders.SURFACE_VERT, XmpShaders.CAP_FRAG, uni, additive = false))
-        val core = Three.Mesh(burstGeo, XmpShaders.material(XmpShaders.SURFACE_VERT, XmpShaders.CORE_FRAG, uni))
-        val ring = Three.Mesh(ringQuadGeo, XmpShaders.material(XmpShaders.UV_VERT, XmpShaders.RING_FRAG, uni))
-        ring.asDynamic().position.set(cx, cy, RING_Z)
-        // Render order (depthTest is off): ground ring, then smoke, then the glowing core on top.
-        ring.asDynamic().renderOrder = 1
-        stem.asDynamic().renderOrder = 2
-        cap.asDynamic().renderOrder = 3
-        core.asDynamic().renderOrder = 4
-        burstsGroup.add(stem)
-        burstsGroup.add(cap)
-        burstsGroup.add(core)
-        burstsGroup.add(ring)
-        val life = XMP_LIFE_BASE + level * XMP_LIFE_PER_LEVEL
-        activeBursts.add(Burst(arrayOf(stem, cap, core, ring), uni, doubleArrayOf(cx, cy, maxR, life), 0.0))
+        XmpBurst.play(sceneX(location), sceneY(location), level)
         SoundUtil.playXmpSound(location, level)
-    }
-
-    private fun updateBursts(dt: Double) {
-        val iter = activeBursts.iterator()
-        while (iter.hasNext()) {
-            val b = iter.next()
-            b.age += dt
-            val cx = b.geom[0]
-            val cy = b.geom[1]
-            val maxR = b.geom[2]
-            val life = b.geom[3]
-            val f = (b.age / life).coerceIn(0.0, 1.0)
-            b.uni.uProgress.value = f
-            b.uni.uTime.value = b.age
-            val ease = 1.0 - (1.0 - f) * (1.0 - f) // easeOutQuad
-            val rise = maxR * (0.12 + 0.6 * f * f) // mushroom climb (cap clears the stem)
-            val capR = maxR * (0.1 + 0.2 * ease) // a head, not a giant donut
-            val capH = rise + capR * 0.5
-            val flat = 1.0 - 0.4 * smoothstep01(0.4, 1.0, f) // cap flattens as it mushrooms
-            // Stem: a tapered column from the ground up to the cap.
-            val stem = b.meshes[0]
-            val stemR = maxR * (0.06 + 0.04 * ease)
-            val stemH = capH.coerceAtLeast(0.01)
-            stem.scale.set(stemR, stemR, stemH)
-            stem.position.set(cx, cy, stemH * 0.5)
-            val cap = b.meshes[1]
-            cap.scale.set(capR, capR, capR * flat)
-            cap.position.set(cx, cy, capH)
-            val core = b.meshes[2]
-            val coreR = maxR * (0.1 + 0.16 * ease)
-            core.scale.set(coreR, coreR, coreR)
-            core.position.set(cx, cy, capH)
-            b.meshes[3].scale.set(maxR, maxR, 1.0)
-            if (b.age >= life) {
-                for (m in b.meshes) {
-                    burstsGroup.remove(m)
-                    m.material.dispose()
-                }
-                iter.remove()
-            }
-        }
-    }
-
-    private fun smoothstep01(edge0: Double, edge1: Double, x: Double): Double {
-        val t = ((x - edge0) / (edge1 - edge0)).coerceIn(0.0, 1.0)
-        return t * t * (3.0 - 2.0 * t)
     }
 
     private fun shardMaterial(color: String): dynamic {
@@ -520,7 +424,7 @@ object Scene3D {
         p.metalness = 0.0
         p.roughness = 0.05
         p.emissive = color
-        p.emissiveIntensity = 0.35 // glassy edge glow so thin shards still catch the eye
+        p.emissiveIntensity = 0.25 // glassy edge glow
         p.side = 2 // DoubleSide
         return Three.MeshStandardMaterial(p)
     }
@@ -640,7 +544,7 @@ object Scene3D {
     private fun buildPortal(parent: dynamic, x: Double, y: Double, level: Int, color: String, id: String?): Array<dynamic> {
         val poleH = poleHeight(level)
         val s = orbScale(level)
-        val pole = Three.Mesh(poleGeo, Materials.metal(color))
+        val pole = Three.Mesh(poleGeo, Materials.metal())
         pole.asDynamic().rotation.x = PI / 2 // Y-axis cylinder → vertical (Z up)
         pole.asDynamic().scale.set(1.0, poleScale(level), 1.0) // grow height (local Y) only
         place(pole.asDynamic(), x, y, poleH / 2)

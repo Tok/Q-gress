@@ -1,6 +1,8 @@
 package system.display
 
 import external.Three
+import kotlinx.browser.document
+import org.w3c.dom.HTMLCanvasElement
 
 /**
  * Cached three.js materials for the scene's solid entities and portal parts, split out of
@@ -18,12 +20,17 @@ object Materials {
         Three.MeshStandardMaterial(p)
     }
 
-    /** Brushed metal for the portal pole (faction-tinted). */
-    fun metal(color: String): dynamic = cache.getOrPut("m$color") {
+    // Sky→ground gradient reflected by the chrome (a bare metal with nothing to reflect is black).
+    private val envTex: dynamic by lazy { buildEnv() }
+
+    /** Shiny off-tint chrome for the portal pole (the orb carries the faction colour). */
+    fun metal(): dynamic = cache.getOrPut("chrome") {
         val p: dynamic = js("({})")
-        p.color = color
-        p.metalness = 0.9
-        p.roughness = 0.35
+        p.color = "#c9ccd2" // cool off-white chrome
+        p.metalness = 0.95
+        p.roughness = 0.12
+        p.envMap = envTex
+        p.envMapIntensity = 1.4
         Three.MeshStandardMaterial(p)
     }
 
@@ -37,5 +44,21 @@ object Materials {
         p.metalness = 0.0
         p.roughness = 0.95
         Three.MeshStandardMaterial(p)
+    }
+
+    private fun buildEnv(): dynamic {
+        val canvas = document.createElement("canvas") as HTMLCanvasElement
+        canvas.width = 8
+        canvas.height = 64
+        val ctx = canvas.getContext("2d").asDynamic()
+        val grad = ctx.createLinearGradient(0.0, 0.0, 0.0, 64.0)
+        grad.addColorStop(0.0, "#f4f6fb") // sky
+        grad.addColorStop(0.55, "#9aa0aa")
+        grad.addColorStop(1.0, "#2a2c30") // ground
+        ctx.fillStyle = grad
+        ctx.fillRect(0.0, 0.0, 8.0, 64.0)
+        val tex = Three.CanvasTexture(canvas)
+        tex.asDynamic().mapping = Three.EquirectangularReflectionMapping
+        return tex
     }
 }

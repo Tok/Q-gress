@@ -57,6 +57,7 @@ external object Three {
     val NearestFilter: Int
     val AdditiveBlending: Int
     val NormalBlending: Int
+    val EquirectangularReflectionMapping: Int
 
     class BoxGeometry(width: dynamic, height: dynamic, depth: dynamic)
     class PlaneGeometry(width: dynamic, height: dynamic)

@@ -25,9 +25,9 @@ object GlassShader {
     private const val SMUDGE_AMOUNT = 0.1
     private const val SMUDGE_SCALE = 0.6 // metres → our portals are ~10-20 m, not ~1 m
     private const val SMUDGE_THRESHOLD = 0.7
-    private const val INTERIOR_LUM = 0.04
+    private const val INTERIOR_LUM = 0.02
     private const val RIM_EMISSION = 0.6
-    private const val INTERIOR_EMISSION = 0.1
+    private const val INTERIOR_EMISSION = 0.05
 
     private const val VERT =
         "varying vec3 vWorldNormal;\nvarying vec3 vModelPos;\n" +
@@ -43,8 +43,11 @@ object GlassShader {
             " return mix(mix(mix(hash(i), hash(i + vec3(1,0,0)), f.x), mix(hash(i + vec3(0,1,0))," +
             " hash(i + vec3(1,1,0)), f.x), f.y), mix(mix(hash(i + vec3(0,0,1)), hash(i + vec3(1,0,1)), f.x)," +
             " mix(hash(i + vec3(0,1,1)), hash(i + vec3(1,1,1)), f.x), f.y), f.z); }\n" +
+            // Fixed view ~matching the default pitched map camera (no real camera ray in the custom
+            // layer). abs(dot) → a thin silhouette RING perpendicular to V (not abs(N.z)'s equator band).
+            "const vec3 VIEW = normalize(vec3(0.0, -0.5, 0.866));\n" +
             "void main(){\n" +
-            " float ndv = abs(normalize(vWorldNormal).z);\n" + // 1 facing camera (top-down), 0 at silhouette
+            " float ndv = abs(dot(normalize(vWorldNormal), VIEW));\n" +
             " float fres = pow(1.0 - ndv, ${RIM_POWER.glsl()});\n" +
             " float rim = fres * ${RIM_STRENGTH.glsl()};\n" +
             " float n = vnoise(vModelPos * ${SMUDGE_SCALE.glsl()});\n" +

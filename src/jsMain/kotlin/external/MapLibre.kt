@@ -36,7 +36,7 @@ external object MapLibre {
         fun getCenter(): dynamic
         fun isMoving(): Boolean
         fun loaded(): Boolean
-        fun addLayer(config: dynamic)
+        fun addLayer(config: dynamic, beforeId: dynamic = definedExternally)
         fun getCanvas(): dynamic
         fun triggerRepaint()
         fun addControl(control: dynamic, position: String = definedExternally)

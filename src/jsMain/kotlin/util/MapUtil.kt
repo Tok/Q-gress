@@ -53,7 +53,8 @@ object MapUtil {
         "version": 8,
         "glyphs": "https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf",
         "sources": {
-            "satellite": { "type": "raster", "tiles": ["$ESRI_IMAGERY_TILES"], "tileSize": 256 }
+            "satellite": { "type": "raster", "tiles": ["$ESRI_IMAGERY_TILES"], "tileSize": 256 },
+            "openmaptiles": { "type": "vector", "url": "$OPENMAPTILES_URL" }
         },
         "layers": [
             { "id": "bg", "type": "background", "paint": { "background-color": "#8c8c8c" } },
@@ -231,9 +232,21 @@ object MapUtil {
         })
     }
 
-    /** Demo scenes only: toggle the (hidden-by-default) satellite raster over the gray backdrop. */
+    private var demoBuildingsAdded = false
+
+    /**
+     * Demo scenes only: toggle the (hidden-by-default) satellite raster over the gray backdrop.
+     * With satellite on we also bring up the 3D buildings (beneath the custom 3D layer) for depth.
+     */
     fun setDemoSatellite(on: Boolean) {
-        initMap?.setLayoutProperty("satellite", "visibility", if (on) "visible" else "none")
+        val m = initMap ?: return
+        m.setLayoutProperty("satellite", "visibility", if (on) "visible" else "none")
+        if (on && !demoBuildingsAdded) {
+            m.addLayer(buildingLayerConfig(), Scene3D.CUSTOM_LAYER_ID) // under the portals/agents
+            demoBuildingsAdded = true
+        } else if (demoBuildingsAdded) {
+            m.setLayoutProperty("3d-buildings", "visibility", if (on) "visible" else "none")
+        }
     }
 
     private fun loadInitialMap(center: Json, callback: (MapLibre.Map) -> Unit) {
