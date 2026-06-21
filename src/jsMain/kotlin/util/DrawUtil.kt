@@ -48,8 +48,6 @@ object DrawUtil {
         }
     }
 
-    fun drawAllPortals(ctx: Ctx) = World.allPortals.forEach { it.drawCenter(ctx) }
-
     fun redrawUserInterface(firstMu: Int, secondMu: Int, factions: Pair<Faction, Faction>) {
         clearUserInterface()
         // The whole HUD is now DOM (UI Stage 3, canvas→DOM): MindUnits + counts + tick + Com
@@ -60,71 +58,6 @@ object DrawUtil {
         if (Styles.isDrawTopAgents) {
             TopAgentsPanel.update()
         }
-    }
-
-    fun renderBarImage(color: String, health: Int, h: Double, w: Double, lineWidth: Int): Canvas {
-        val pWidth = health * w / 100
-        return HtmlUtil.preRender(w.toInt(), h.toInt(), fun(ctx: Ctx) {
-            if (color != Colors.white) {
-                val path = Path2D()
-                path.moveTo(0.0, 0.0)
-                path.lineTo(w, 0.0)
-                path.lineTo(w, h)
-                path.lineTo(0.0, h)
-                path.lineTo(0.0, 0.0)
-                path.closePath()
-                DrawUtil.drawPath(ctx, path, Colors.black, lineWidth.toDouble())
-                val fillPath = Path2D()
-                fillPath.moveTo(0.0, 0.0)
-                fillPath.lineTo(pWidth, 0.0)
-                fillPath.lineTo(pWidth, h)
-                fillPath.lineTo(0.0, h)
-                fillPath.lineTo(0.0, 0.0)
-                fillPath.closePath()
-                DrawUtil.drawPath(ctx, fillPath, Colors.black, lineWidth.toDouble(), color)
-            }
-        })
-    }
-
-    fun drawRect(ctx: Ctx, rect: Line, fill: String, stroke: String, lineWidth: Double) {
-        ctx.fillStyle = fill
-        with(rect) {
-            ctx.fillRect(fromX, fromY, toY, -toX) // argument switch
-        }
-        ctx.fill()
-        ctx.strokeStyle = stroke
-        ctx.lineWidth = lineWidth
-        ctx.beginPath()
-        with(rect) {
-            ctx.strokeRect(fromX, fromY, toY, -toX) // argument switch
-        }
-        ctx.closePath()
-        ctx.stroke()
-    }
-
-    fun drawGrid() {
-        with(World) {
-            if (isReady) {
-                grid.forEach {
-                    val pos = it.key.fromShadow()
-                    val cell = it.value
-                    bgCtx().fillStyle = cell.getColor()
-                    val w = Pos.res - 1.0
-                    val h = w
-                    bgCtx().fillRect(pos.x + 1, pos.y + 1, w, h)
-                    bgCtx().fill()
-                }
-            }
-        }
-    }
-
-    fun drawText(ctx: Ctx, pos: Pos, text: String, fill: String, fontSize: Int, fontName: String) {
-        ctx.textAlign = CanvasTextAlign.START
-        ctx.font = fontSize.toString() + "px '$fontName'"
-        ctx.fillStyle = fill
-        val xOff = (fontSize / 2) - 2
-        val yOff = fontSize / 3
-        ctx.fillText(text, pos.x - xOff, pos.y + yOff)
     }
 
     fun strokeText(
@@ -177,28 +110,6 @@ object DrawUtil {
             ctx.fillStyle = fill
             ctx.fill()
         }
-        ctx.globalAlpha = 1.0
-    }
-
-    private fun drawPath(
-        ctx: Ctx,
-        path: Path2D,
-        stroke: String,
-        lineWidth: Double,
-        fill: String? = null,
-        alpha: Double = 1.0,
-    ) {
-        ctx.globalAlpha = alpha
-        if (fill != null) {
-            ctx.fillStyle = fill
-            ctx.fill(path)
-        }
-        ctx.strokeStyle = stroke
-        ctx.lineWidth = lineWidth
-        ctx.beginPath()
-        ctx.stroke(path)
-        ctx.closePath()
-        ctx.stroke()
         ctx.globalAlpha = 1.0
     }
 

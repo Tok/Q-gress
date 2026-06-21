@@ -7,18 +7,13 @@ import agent.action.ActionSelector
 import agent.action.cond.Attacker
 import agent.action.cond.Deployer
 import agent.qvalue.QDestinations
-import config.Colors
 import config.Config
 import config.Dim
-import config.Styles
-import extension.Canvas
-import extension.Ctx
 import extension.Grid
 import items.deployable.Resonator
 import items.level.XmpLevel
 import portal.Portal
 import portal.XmMap
-import util.DrawUtil
 import util.HtmlUtil
 import util.Util
 import util.data.*
@@ -43,8 +38,6 @@ data class Agent(
     private fun distanceToDestination(): Double = pos.distanceTo(destination)
     fun distanceToPortal(portal: Portal): Double = pos.distanceTo(portal.location)
     fun isAtActionPortal(): Boolean = distanceToPortal(actionPortal) < Dim.maxDeploymentRange
-    private fun lineToPortal(portal: Portal) = Line(pos, portal.location)
-    private fun lineToDestination() = Line(pos, destination)
 
     fun getLevel(): Int = getLevel(this.ap)
     fun xmCapacity(): Int = xmCapacity(getLevel())
@@ -231,26 +224,6 @@ data class Agent(
         return resosInRange.map { it.resonator }.filterNotNull()
     }
 
-    fun draw(ctx: Ctx) {
-        if (HtmlUtil.isNotRunningInBrowser()) return
-        val image = ActionItem.getIcon(action.item, faction)
-        ctx.drawImage(image, pos.x, pos.y)
-        val xmBar = getXmBarImage(faction, xmBarPercent())
-        ctx.drawImage(xmBar, pos.x, pos.y - 3)
-    }
-
-    fun drawRadius(ctx: Ctx) {
-        if (HtmlUtil.isNotRunningInBrowser()) return
-        if (Styles.isDrawDestination) {
-            DrawUtil.drawLine(ctx, lineToPortal(actionPortal), Colors.nextPortal, 1.0)
-            DrawUtil.drawLine(ctx, lineToDestination(), Colors.destination, 1.0)
-        }
-        if (Styles.isDrawAgentRange) {
-            val deployCircle = Circle(pos, Dim.maxDeploymentRange)
-            DrawUtil.drawCircle(ctx, deployCircle, Colors.agentDeployCircle, Dim.agentDeployCircleLineWidth)
-        }
-    }
-
     override fun toString() = "L" + getLevel() + " " + faction.abbr + "-" + name
     override fun equals(other: Any?) = other is Agent && this.key() == other.key()
     override fun hashCode() = this.key().hashCode() * 31
@@ -304,25 +277,6 @@ data class Agent(
             15 -> 3750
             16 -> 4000
             else -> 2000
-        }
-
-        private fun xmKey(faction: Faction, percent: Int) = faction.abbr + ":" + percent
-        private val xmBarImages = if (HtmlUtil.isRunningInBrowser()) {
-            Faction.values().flatMap { fac ->
-                (0..100).map {
-                    val lw = Dim.agentLineWidth
-                    val r = Dim.agentRadius
-                    val w = (r + lw) * 2.0
-                    xmKey(fac, it) to DrawUtil.renderBarImage(fac.color, it, 3.0, w, lw)
-                }
-            }.toMap()
-        } else {
-            emptyMap()
-        }
-
-        private fun getXmBarImage(faction: Faction, percent: Int): Canvas {
-            check(percent in 0..100)
-            return xmBarImages.getValue(xmKey(faction, percent))
         }
 
         private fun initialActionPortal(pos: Pos) = if (HtmlUtil.isRunningInBrowser()) {

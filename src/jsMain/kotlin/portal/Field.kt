@@ -2,10 +2,7 @@ package portal
 
 import World
 import agent.Agent
-import config.Styles
-import extension.Ctx
 import util.data.Line
-import util.data.Pos
 import kotlin.math.max
 import kotlin.math.sqrt
 
@@ -51,51 +48,6 @@ data class Field private constructor(
         val s = (a + b + c) / 2 // semiperimeter
         val area = sqrt(s * (s - a) * (s - b) * (s - c)).toInt()
         return max(1, area / 100) // FIXME
-    }
-
-    fun draw(ctx: Ctx) {
-        // Field is drawn in 4 parts like a 'Triforce':
-        // - One non transparent center field connecting the center-points of each three links
-        // - from each of the three anchors to the center field, with radial gradient transparency for portal health
-        val fullStyle = owner.faction.fieldStyle + Styles.fieldTransparency + ")"
-        fun drawCenter(one: Pos, two: Pos, three: Pos) {
-            with(ctx) {
-                fillStyle = fullStyle
-                beginPath()
-                moveTo(one.x, one.y)
-                lineTo(two.x, two.y)
-                lineTo(three.x, three.y)
-                fill()
-                closePath()
-            }
-        }
-
-        fun drawLinear(portal: Portal, first: Pos, second: Pos) {
-            fun calcStyle(health: Int) = owner.faction.fieldStyle + (Styles.fieldTransparency * health / 100) + ")"
-            val originHp = calcStyle(portal.calcHealth())
-            with(ctx) {
-                val point = Line(first, second).findClosestPointTo(portal.location)
-                val gradient = World.ctx().createLinearGradient(portal.x(), portal.y(), point.x, point.y)
-                gradient.addColorStop(0.1, originHp)
-                gradient.addColorStop(1.0, fullStyle)
-                fillStyle = gradient
-                beginPath()
-                moveTo(portal.x(), portal.y())
-                lineTo(first.x, first.y)
-                lineTo(second.x, second.y)
-                fill()
-                closePath()
-            }
-        }
-
-        val originAndPrimary = Line(origin.location, primaryAnchor.location).center()
-        val primaryAndSecondary = Line(primaryAnchor.location, secondaryAnchor.location).center()
-        val secondaryAndOrigin = Line(secondaryAnchor.location, origin.location).center()
-
-        drawCenter(originAndPrimary, primaryAndSecondary, secondaryAndOrigin)
-        drawLinear(origin, originAndPrimary, secondaryAndOrigin)
-        drawLinear(primaryAnchor, originAndPrimary, primaryAndSecondary)
-        drawLinear(secondaryAnchor, secondaryAndOrigin, primaryAndSecondary)
     }
 
     override fun toString() = calculateArea().toString() + "MU"

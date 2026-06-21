@@ -2,11 +2,7 @@ package portal
 
 import World
 import agent.Agent
-import agent.Faction
 import agent.action.ActionItem
-import config.Colors
-import config.Dim
-import config.Styles
 import config.Time
 import extension.*
 import items.PowerCube
@@ -25,7 +21,6 @@ import items.types.VirusType
 import system.Com
 import system.display.Scene3D
 import util.*
-import util.data.Circle
 import util.data.Line
 import util.data.Pos
 import kotlin.math.*
@@ -474,151 +469,14 @@ data class Portal(
         }
     }
 
-    fun drawResonators(ctx: Ctx) {
-        if (HtmlUtil.isNotRunningInBrowser()) return
-        fun drawResoLine(line: Line, levelColor: String, factionColor: String, lineWidth: Double, alpha: Double = 1.0) {
-            ctx.globalAlpha = alpha
-            ctx.strokeStyle = Colors.black
-            ctx.lineWidth = lineWidth + 1.5
-            ctx.beginPath()
-            ctx.moveTo(line.from.x, line.from.y)
-            ctx.lineTo(line.to.x, line.to.y)
-            ctx.closePath()
-            ctx.stroke()
-            ctx.lineWidth = lineWidth
-            if (Styles.isDrawResoLineGradient) { // CPU intensive
-                val gradient = ctx.createLinearGradient(line.from.x, line.from.y, line.to.x, line.to.y)
-                gradient.addColorStop(0.2, levelColor)
-                gradient.addColorStop(0.7, factionColor)
-                ctx.strokeStyle = gradient
-            } else {
-                ctx.strokeStyle = levelColor
-            }
-            ctx.beginPath()
-            ctx.moveTo(line.from.x, line.from.y)
-            ctx.lineTo(line.to.x, line.to.y)
-            ctx.closePath()
-            ctx.stroke()
-            ctx.globalAlpha = 1.0
-        }
-
-        val octantSlots: List<Pair<Octant, ResonatorSlot>> = slots.filter {
-            it.value.owner != null && it.value.resonator != null
-        }.toList()
-        octantSlots.map { octantSlot ->
-            val octant: Octant = octantSlot.first
-            val slot = octantSlot.second
-            val reso = requireNotNull(slot.resonator) { "filtered slot must have a resonator" }
-            val resoLevel = reso.level
-            val x = location.x + octant.calcXOffset(slot.distance)
-            val y = location.y + octant.calcYOffset(slot.distance)
-
-            val lineToPortal = Line(Pos(x, y), location)
-            val alpha = reso.calcHealthPercent().toDouble()
-            val color = owner?.faction?.color ?: Colors.white
-            drawResoLine(lineToPortal, resoLevel.getColor(), color, 1.0, alpha)
-
-            val resoCircle = Circle(Pos(x, y), Dim.resoRadius)
-            DrawUtil.drawCircle(ctx, resoCircle, Colors.black, 2.0, resoLevel.getColor(), alpha)
-            if (Styles.isDrawResoLevels) {
-                DrawUtil.drawText(ctx, Pos(x, y), reso.level.level.toString(), Colors.black, 8, DrawUtil.CODA)
-            }
-        }
-    }
-
-    fun drawCenter(ctx: Ctx, isDrawHealthBar: Boolean = true) {
-        if (HtmlUtil.isNotRunningInBrowser()) return
-        val image = getCenterImage(owner?.faction, getLevel())
-        val x = location.x - (image.width / 2)
-        val y = location.y - (image.height / 2)
-        ctx.drawImage(image, x, y)
-        val fact = owner?.faction
-        if (isDrawHealthBar && fact != null) {
-            val healthBarImage: Canvas = getHealthBarImage(fact, calcHealth())
-            ctx.drawImage(healthBarImage, x, y + image.height + 1)
-        }
-    }
-
-    fun drawName(ctx: Ctx) {
-        if (HtmlUtil.isNotRunningInBrowser()) return
-        val xOffset = 34
-        val yOffset = 18
-        nameImage?.let { ctx.drawImage(it, location.x - xOffset, location.y + yOffset) }
-    }
-
     override fun toString() = name
     override fun equals(other: Any?) = other is Portal && id == other.id
     override fun hashCode() = id.hashCode() * 31
-
-    private val nameImage = if (HtmlUtil.isRunningInBrowser()) createNameImage() else null
-    private fun createNameImage(): Canvas? {
-        val fontSize = Dim.portalNameFontSize
-        val lineWidth = 2.0
-        val w = 100
-        val h = fontSize + (2 * lineWidth)
-        val x = lineWidth + (fontSize / 2)
-        val y = lineWidth + (fontSize * 2 / 3)
-        return HtmlUtil.preRender(w, h.toInt(), fun(ctx: Ctx) {
-            val coords = Pos(x.toInt(), y.toInt())
-            DrawUtil.strokeText(
-                ctx,
-                coords,
-                name,
-                Colors.white,
-                Dim.portalNameFontSize,
-                DrawUtil.CODA,
-                lineWidth,
-                Colors.black,
-            )
-        })
-    }
 
     companion object {
         fun findChargeableForKeys(agent: Agent, keys: List<PortalKey>): List<Portal>? {
             val chargeable = World.factionPortals(agent.faction).filter { it.calcHealth() <= 90 }.toSet()
             return chargeable.filter { keys.map { a -> a.portal }.contains(it) }
-        }
-
-        private val whiteCenter: Canvas? = if (HtmlUtil.isRunningInBrowser()) {
-            renderPortalCenter(Colors.white, null)
-        } else {
-            null
-        }
-        private val centerImages: Map<Pair<Faction, PortalLevel>, Canvas> = if (HtmlUtil.isRunningInBrowser()) {
-            PortalLevel.values().flatMap { level ->
-                Faction.values().map { (it to level) to renderPortalCenter(it.color, level) }
-            }.toMap()
-        } else {
-            emptyMap()
-        }
-        private val healthBarImages: Map<Pair<Faction, Int>, Canvas> = if (HtmlUtil.isRunningInBrowser()) {
-            (0..100).flatMap { health ->
-                val lw = Dim.portalLineWidth
-                val r = Dim.portalRadius.toInt()
-                val w = (r * 2.0) + (2.0 * lw)
-                Faction.values().map { (it to health) to DrawUtil.renderBarImage(it.color, health, 5.0, w, lw) }
-            }.toMap()
-        } else {
-            emptyMap()
-        }
-
-        private fun getCenterImage(faction: Faction?, level: PortalLevel): Canvas = if (faction == null) requireNotNull(whiteCenter) { "whiteCenter not initialized" } else centerImages.getValue(faction to level)
-
-        private fun getHealthBarImage(faction: Faction, health: Int): Canvas = healthBarImages.getValue(faction to health)
-
-        fun renderPortalCenter(color: String, level: PortalLevel?): Canvas {
-            val lw = Dim.portalLineWidth
-            val r = Dim.portalRadius.toInt()
-            val w = (r * 2) + (2 * lw)
-            val h = w
-            return HtmlUtil.preRender(w, h, fun(ctx: Ctx) {
-                val portalCircle = Circle(Pos(r + lw, r + lw), r.toDouble())
-                DrawUtil.drawCircle(ctx, portalCircle, Colors.black, 2.0, color)
-                if (level != null) {
-                    val pos = Pos(r + lw + if (level.value > 1) 0 else 1, r + lw)
-                    DrawUtil.drawText(ctx, pos, level.display, Colors.black, 13, DrawUtil.CODA)
-                }
-            })
         }
 
         const val MAX_HACKS = 4 // TODO implement multihacks
