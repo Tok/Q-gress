@@ -53,6 +53,7 @@ object Scene3D {
     private const val INDICATOR_SIZE = 1.6
     private const val POLE_R = 2.0
     private const val LINK_R = 0.7 // glass-pipe link radius (metres)
+    private const val PORTAL_GROW_S = 0.5 // seconds for a new portal's orb to grow in
     private const val POLE_H = 22.5 // base pole height at L1; scales by φ per level
     private const val TOP_R = 7.0 // base orb radius
     private const val PHI = 1.618 // golden ratio — pole grows by φ across the 8 levels
@@ -239,6 +240,7 @@ object Scene3D {
     /** Rebuild the 3D objects from world state. Called once per simulation tick. */
     fun sync() {
         scene ?: return
+        Spawns.beginSync()
         clear(portalsGroup)
         World.allPortals.forEach { addPortal(it) }
         clear(fieldsGroup)
@@ -250,6 +252,7 @@ object Scene3D {
         clear(agentsGroup)
         clear(indicatorsGroup)
         World.allAgents.forEach { addAgent(it) }
+        Spawns.endSync()
         // The selected portal's flow field is static, so only rebuild when the selection
         // changes (or visibility toggles) — not every tick.
         when {
@@ -542,7 +545,14 @@ object Scene3D {
         val id = "portal:${portal.id}"
         val baseColor = portal.owner?.faction?.color ?: NEUTRAL_COLOR
         val color = if (selected == id) HIGHLIGHT_COLOR else baseColor
-        buildPortal(portalsGroup, sceneX(portal.location), sceneY(portal.location), portal.getLevel().toInt(), color, id)
+        val level = portal.getLevel().toInt()
+        val parts = buildPortal(portalsGroup, sceneX(portal.location), sceneY(portal.location), level, color, id)
+        // Grow the glass orb in over its first moments (the pole/gasket appear immediately).
+        val g = Spawns.appear(id, PORTAL_GROW_S)
+        if (g < 1.0) {
+            val s = orbScale(level) * g.coerceAtLeast(0.0)
+            parts[0].scale.set(s, s, s)
+        }
     }
 
     /**
