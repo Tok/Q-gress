@@ -24,6 +24,9 @@ object Onboarding {
     /** Step 1 — pick a faction. [onPick] receives it. */
     fun showFaction(onPick: (Faction) -> Unit) {
         val screen = screen("CHOOSE YOUR FACTION")
+        val brand = div("titleBrand") // the big Q-GRESS wordmark — first thing a player sees
+        brand.textContent = "Q-GRESS"
+        screen.insertBefore(brand, screen.firstChild)
         val row = div("onboardRow")
         listOf(Faction.ENL, Faction.RES).forEach { f ->
             val btn = document.createElement("button") as HTMLButtonElement

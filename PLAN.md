@@ -63,7 +63,22 @@ the AI layer lands, the slider sim is the substrate we keep hardening.
   - **Force amp / turret / link amp** — combat + range modifiers (later).
   Needs a mod item type + real `Portal.deployMods` storage + a deploy-mod action + mod/shield
   visualization. Pairs with the colony-management items in the icebox.
+- [ ] **Portal retaliation ("thunderbolts").** Portals **defend when attacked**: a tesla-coil-style
+  **bolt flash** arcs from the portal to the attacker on hit (like Ingress's portal-attack feedback),
+  with a **thunderbolt sound**. Model TBD — pure VFX/audio first, then optional retaliation damage
+  (higher-level / shielded portals zap harder). The same bolt VFX + sound feed the **title-screen
+  demo** (below). **Reference the `qlippostasis` project** for the thunderbolt visuals + sounds (the
+  glass-shatter sound was already ported from there).
 
+## Spectacular title / faction screen (planned)
+- [ ] The **CHOOSE YOUR FACTION** screen is the first thing a player sees — make it a showpiece:
+  the big **Q-GRESS** wordmark (done), centred ENL/RES buttons (done), then a **randomized 3D physics
+  demo** behind it: ~3 portals running **non-scripted** random actions — hack/glyph spins, capture
+  shatter+regrow, full shatter+respawn (reusing **cannon-es** + `ShatterFx`/`HackFx`), XMP bursts, and
+  **thunderbolt** retaliation — plus drifting **particles** and a generative **ambient/thunder sound**
+  bed. The 3D part is a **standalone three.js scene** (not the MapLibre custom layer, which loads
+  later) — likely shares portal geometry with `Scene3D` via a small extracted builder. Reference
+  `qlippostasis` for the title thunderbolts + sound.
 ## Phase 6 — AI-vs-AI (the Q-gress payoff)
 
 **Decided:** build **both** AI drivers on **one** shared substrate, so any faction can be Human /
