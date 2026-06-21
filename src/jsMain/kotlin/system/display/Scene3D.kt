@@ -69,9 +69,9 @@ object Scene3D {
     private const val MARKER_R = 10.0 // build-preview marker radius (metres)
     private const val BORDER_COLOR = "#22ddff" // playable-area boundary
     private const val BORDER_Z = 0.3
-    private const val SHARD_OPACITY = 0.7 // glassy translucence — 0.5 washed out, 0.9 read as plastic
+    private const val SHARD_BRIGHT = 1.4 // shards use the orb's GlassShader; a touch brighter so the small pieces read
     private const val SHARD_FADE = 1.2 // seconds to fade out at end of life
-    private const val SHARD_LIFE_MIN = 6.0 // doubled — shards linger before fading
+    private const val SHARD_LIFE_MIN = 6.0 // shards linger before fading
     private const val SHARD_LIFE_MAX = 10.0
     private const val SHARD_SPIN = 1.8 // max tumble rad/s — a gentle turn, not a whirl
     private const val SHARD_GROUP = 2 // collision group: shards collide with the ground/pole only…
@@ -123,8 +123,19 @@ object Scene3D {
     private val activeShards = mutableListOf<Shard>()
     private var lastFrameMs = 0.0 // for per-frame shard physics dt
 
-    /** One in-flight glass fragment: a mesh driven by its cannon-es rigid [body], fading over [life]. */
-    private class Shard(val mesh: dynamic, val mat: dynamic, val body: Cannon.Body, var age: Double, val life: Double)
+    /**
+     * One in-flight glass fragment: a mesh driven by its cannon-es rigid [body], fading over [life].
+     * [setFade] applies a 1→0 opacity factor — the glass shards drive their shader `uFade`, the
+     * rubber gasket its material opacity.
+     */
+    private class Shard(
+        val mesh: dynamic,
+        val mat: dynamic,
+        val body: Cannon.Body,
+        var age: Double,
+        val life: Double,
+        val setFade: (Double) -> Unit,
+    )
 
     /** Last-known shape of a control field (centroid + 3 centroid-relative vertices), for its dissolve. */
     private class FieldRecord(val cx: Double, val cy: Double, val cz: Double, val rel: Array<DoubleArray>, val color: String)
@@ -237,7 +248,7 @@ object Scene3D {
             val bodyQuat = s.body.asDynamic().quaternion
             s.mesh.quaternion.set(bodyQuat.x as Double, bodyQuat.y as Double, bodyQuat.z as Double, bodyQuat.w as Double)
             if (s.age > s.life - SHARD_FADE) {
-                s.mat.opacity = SHARD_OPACITY * ((s.life - s.age) / SHARD_FADE).coerceIn(0.0, 1.0)
+                s.setFade(((s.life - s.age) / SHARD_FADE).coerceIn(0.0, 1.0))
             }
             if (s.age >= s.life) {
                 physicsWorld?.removeBody(s.body)
@@ -394,7 +405,10 @@ object Scene3D {
         body.asDynamic().angularVelocity.set(randSpin() * 0.4, randSpin() * 0.4, randSpin() * 0.4)
         world.addBody(body)
         shardsGroup.add(mesh)
-        activeShards.add(Shard(mesh, mat, body, 0.0, SHARD_LIFE_MIN + Util.random() * (SHARD_LIFE_MAX - SHARD_LIFE_MIN)))
+        // The gasket is opaque rubber, so it fades via its plain material opacity.
+        activeShards.add(
+            Shard(mesh, mat, body, 0.0, SHARD_LIFE_MIN + Util.random() * (SHARD_LIFE_MAX - SHARD_LIFE_MIN)) { f -> mat.asDynamic().opacity = f },
+        )
     }
 
     private fun spawnShard(holder: dynamic, pos: DoubleArray, scale: Double, color: String, burstH: Double) {
@@ -427,7 +441,12 @@ object Scene3D {
         body.asDynamic().angularVelocity.set(randSpin(), randSpin(), randSpin())
         world.addBody(body)
         shardsGroup.add(mesh)
-        activeShards.add(Shard(mesh, mat, body, 0.0, SHARD_LIFE_MIN + Util.random() * (SHARD_LIFE_MAX - SHARD_LIFE_MIN)))
+        // Glass shards fade via the GlassShader uFade uniform.
+        activeShards.add(
+            Shard(mesh, mat, body, 0.0, SHARD_LIFE_MIN + Util.random() * (SHARD_LIFE_MAX - SHARD_LIFE_MIN)) { f ->
+                mat.asDynamic().uniforms.uFade.value = f
+            },
+        )
     }
 
     private fun createPhysicsWorld(): Cannon.World {
@@ -448,18 +467,9 @@ object Scene3D {
         SoundUtil.playXmpSound(location, level)
     }
 
-    private fun shardMaterial(color: String): dynamic {
-        val p: dynamic = js("({})")
-        p.color = color
-        p.transparent = true
-        p.opacity = SHARD_OPACITY
-        p.metalness = 0.0
-        p.roughness = 0.05
-        p.emissive = color
-        p.emissiveIntensity = 0.25 // glassy edge glow
-        p.side = 2 // DoubleSide
-        return Three.MeshStandardMaterial(p)
-    }
+    // Shatter shards share the orb's glass look (the user confirmed the orb reads right as glass),
+    // a touch brighter so the small fragments still register against the map.
+    private fun shardMaterial(color: String): dynamic = GlassShader.material(color, SHARD_BRIGHT)
 
     /** Place (or clear, when pos is null) the build-preview marker on the ground. */
     fun setBuildMarker(pos: Pos?, state: String) {
