@@ -131,6 +131,9 @@ object MapUtil {
         opts.container = container
         opts.style = style
         opts.preserveDrawingBuffer = preserveBuffer
+        // Collapse the required tile attribution to a small "ⓘ" that expands on click (the compliant
+        // way to make it unobtrusive — OSM/Esri terms require attribution, so we don't suppress it).
+        opts.attributionControl = js("({ compact: true })")
         return opts
     }
 

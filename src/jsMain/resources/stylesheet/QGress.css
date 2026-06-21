@@ -147,6 +147,9 @@ html, body {
 .statsMuPanel {
     left: 14px;
     bottom: 40px;
+    background: rgba(0, 0, 0, 0.45);
+    padding: 6px 10px 7px;
+    border-radius: 3px;
 }
 .statsMuRow {
     display: flex;
@@ -652,6 +655,15 @@ html, body {
 .mapboxgl-ctrl-bottom-left,
 .mapboxgl-ctrl-bottom-right {
     z-index: 999 !important;
+}
+/* Required tile attribution: collapsed to a small ⓘ (compact) + dimmed so it's unobtrusive;
+   full opacity on hover/expand. (MapLibre 5 uses the maplibregl- prefix.) */
+.maplibregl-ctrl-attrib, .mapboxgl-ctrl-attrib {
+    font-size: 10px;
+    opacity: 0.5;
+}
+.maplibregl-ctrl-attrib:hover, .mapboxgl-ctrl-attrib:hover {
+    opacity: 1;
 }
 .popup {
     display: block;

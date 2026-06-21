@@ -5,6 +5,7 @@ import agent.Faction
 import config.Time
 import kotlinx.browser.document
 import org.w3c.dom.HTMLElement
+import portal.XmMap
 import system.Com
 
 /**
@@ -24,6 +25,7 @@ object StatsPanel {
     private val muLabels = arrayOfNulls<HTMLElement>(2)
     private var timeEl: HTMLElement? = null
     private var tickEl: HTMLElement? = null
+    private var xmEl: HTMLElement? = null
     private var comPanel: HTMLElement? = null
     private var lastComKey = ""
 
@@ -34,6 +36,7 @@ object StatsPanel {
         updateMindUnits(firstMu, secondMu, f1, f2)
         timeEl?.textContent = Time.ticksToTimestamp(World.tick)
         tickEl?.textContent = "Tick: ${World.tick}"
+        xmEl?.textContent = "Stray XM: ${XmMap.all().values.sumOf { it.xm }}"
         // Per-faction entity counts moved to the history dashboard (HistoryPanel — live values + trend).
         updateCom()
     }
@@ -91,6 +94,9 @@ object StatsPanel {
         timeEl = el("statsTime").also { tickRow.appendChild(it) }
         tickEl = el("statsTick").also { tickRow.appendChild(it) }
         muPanel.appendChild(tickRow)
+        val xmRow = el("statsTickRow")
+        xmEl = el("statsXm").also { xmRow.appendChild(it) }
+        muPanel.appendChild(xmRow)
         body.appendChild(muPanel)
 
         // Action log (bottom-right): a titled log section.
