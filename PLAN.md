@@ -241,10 +241,15 @@ the vessel itself stays grayscale).
   rotated to the direction via `Quaternion.setFromUnitVectors`) spanning the two portals' **orb
   centres** (`orbCenterZ`), on the shared `GlassShader` (faction-tinted). _Follow-up:_ may want a
   brighter link variant (the orb glass is very transparent) + an optional concentric inner tube.
-- [ ] **Fields → plasma + lifecycle.** A **plasma `ShaderMaterial`** for the control-field
-  triangles (animated energy/scanlines, faction-tinted, fits the synthwave look) + a **create**
-  animation (fill inward from the three links) and **teardown** (dissolve), each with a
-  synthesized **sound** (field-up hum/whoosh, field-down collapse) in `SoundUtil`.
+- [x] **Fields → plasma (visual).** Control fields are now an animated **plasma `ShaderMaterial`**
+  (`PlasmaShader`): a faction-tinted energy sheet rippling via summed sine waves, with one shared
+  `uTime` advanced each frame from `Scene3D.render`. Triangles now sit at the three portals' orb
+  centres (`orbCenterZ`), not a flat height. Replaced the flat `MeshBasicMaterial`.
+- [ ] **Fields/portals → create/teardown lifecycle (anim + sounds).** Field fill-in + dissolve and
+  the portal **growth-on-spawn / level-up** animations all need the same thing the per-tick sync
+  rebuild lacks: a **persistent per-entity animation layer** (track create/destroy events, tween
+  over time). Build that once and drive both, with synthesized **sounds** (field-up hum/whoosh,
+  field-down collapse, portal grow chime) in `SoundUtil`.
 - [ ] **Portal names from map data (replace the random gibberish).** OpenFreeMap serves the
   **OpenMapTiles** schema, which has a **`poi` layer** (name + class: monument, artwork, fountain,
   memorial, place_of_worship, artwork… — i.e. real Ingress-portal-like POIs) plus

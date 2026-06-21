@@ -190,6 +190,7 @@ object Scene3D {
             .makeTranslation(originMerc.x as Double, originMerc.y as Double, originMerc.z as Double)
             .scale(Three.Vector3(metersScale, -metersScale, metersScale))
         cam.projectionMatrix = mapMatrix.multiply(modelMatrix)
+        PlasmaShader.setTime((js("performance.now()") as Double) / 1000.0) // animate control fields
         if (activeShards.isNotEmpty() || XmpBurst.hasActive()) {
             val nowMs = js("performance.now()") as Double
             val dt = if (lastFrameMs <= 0.0) 0.016 else ((nowMs - lastFrameMs) / 1000.0).coerceIn(0.0, 0.1)
@@ -643,29 +644,23 @@ object Scene3D {
         mesh.quaternion.copy(quat)
     }
 
+    /** A control field is an animated plasma sheet across the three portals' orbs. */
     private fun addField(field: Field) {
         val points = arrayOf(
-            Three.Vector3(sceneX(field.origin.location), sceneY(field.origin.location), POLE_H),
-            Three.Vector3(sceneX(field.primaryAnchor.location), sceneY(field.primaryAnchor.location), POLE_H),
-            Three.Vector3(sceneX(field.secondaryAnchor.location), sceneY(field.secondaryAnchor.location), POLE_H),
+            orbVertex(field.origin),
+            orbVertex(field.primaryAnchor),
+            orbVertex(field.secondaryAnchor),
         )
         val geo = Three.BufferGeometry().setFromPoints(points)
-        fieldsGroup.add(Three.Mesh(geo, fieldMaterial(field.owner.faction.color)))
+        fieldsGroup.add(Three.Mesh(geo, PlasmaShader.material(field.owner.faction.color)))
     }
+
+    private fun orbVertex(portal: Portal): dynamic = Three.Vector3(sceneX(portal.location), sceneY(portal.location), orbCenterZ(portal.getLevel().toInt()))
 
     private fun lineMaterial(color: String): dynamic = materialCache.getOrPut("l$color") {
         val p: dynamic = js("({})")
         p.color = color
         Three.LineBasicMaterial(p)
-    }
-
-    private fun fieldMaterial(color: String): dynamic = materialCache.getOrPut("f$color") {
-        val p: dynamic = js("({})")
-        p.color = color
-        p.transparent = true
-        p.opacity = 0.22
-        p.side = 2 // DoubleSide
-        Three.MeshBasicMaterial(p)
     }
 
     private fun indicatorMaterial(item: ActionItem, faction: Faction): dynamic = spriteCache.getOrPut(item.text + faction.abbr) {
