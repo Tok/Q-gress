@@ -122,6 +122,11 @@ object Scene3D {
     /** One in-flight glass fragment: a mesh driven by its cannon-es rigid [body], fading over [life]. */
     private class Shard(val mesh: dynamic, val mat: dynamic, val body: Cannon.Body, var age: Double, val life: Double)
 
+    /** Last-known shape of a control field (centroid + 3 centroid-relative vertices), for its dissolve. */
+    private class FieldRecord(val cx: Double, val cy: Double, val cz: Double, val rel: Array<DoubleArray>, val color: String)
+
+    private val fieldRecords = mutableMapOf<String, FieldRecord>()
+
     // Shared geometries (created lazily once three.js is loaded).
     private val headGeo: dynamic by lazy { Three.SphereGeometry(HEAD_R, 10, 10) }
     private val coneGeo: dynamic by lazy { Three.ConeGeometry(VECTOR_CONE_R, VECTOR_CONE_H, 6) }
@@ -169,6 +174,7 @@ object Scene3D {
         borderGroup = Three.Group().also { newScene.add(it) }
         shardsGroup = Three.Group().also { newScene.add(it) }
         XmpBurst.register(newScene)
+        FieldFx.register(newScene)
         showcaseGroup = Three.Group()
         newScene.add(showcaseGroup)
         physicsWorld = createPhysicsWorld()
@@ -193,11 +199,12 @@ object Scene3D {
             .scale(Three.Vector3(metersScale, -metersScale, metersScale))
         cam.projectionMatrix = mapMatrix.multiply(modelMatrix)
         PlasmaShader.setTime((js("performance.now()") as Double) / 1000.0) // animate control fields
-        if (activeShards.isNotEmpty() || XmpBurst.hasActive()) {
+        if (activeShards.isNotEmpty() || XmpBurst.hasActive() || FieldFx.hasActive()) {
             val nowMs = js("performance.now()") as Double
             val dt = if (lastFrameMs <= 0.0) 0.016 else ((nowMs - lastFrameMs) / 1000.0).coerceIn(0.0, 0.1)
             lastFrameMs = nowMs
             if (activeShards.isNotEmpty()) updateShards(dt)
+            if (FieldFx.hasActive()) FieldFx.update(dt)
             if (XmpBurst.hasActive()) {
                 val invProj = Three.Matrix4().copy(cam.projectionMatrix).invert()
                 val canvas = map.getCanvas()
@@ -253,7 +260,7 @@ object Scene3D {
         clear(agentsGroup)
         clear(indicatorsGroup)
         World.allAgents.forEach { addAgent(it) }
-        Spawns.endSync()
+        teardownGone(Spawns.endSync())
         // The selected portal's flow field is static, so only rebuild when the selection
         // changes (or visibility toggles) — not every tick.
         when {
@@ -663,18 +670,32 @@ object Scene3D {
         val cx = (a[0] + b[0] + c[0]) / 3.0
         val cy = (a[1] + b[1] + c[1]) / 3.0
         val cz = (a[2] + b[2] + c[2]) / 3.0
-        // Geometry relative to the centroid so the mesh can scale in from its centre.
-        val points = arrayOf(
-            Three.Vector3(a[0] - cx, a[1] - cy, a[2] - cz),
-            Three.Vector3(b[0] - cx, b[1] - cy, b[2] - cz),
-            Three.Vector3(c[0] - cx, c[1] - cy, c[2] - cz),
+        // Vertices relative to the centroid so the mesh can scale in/out from its centre.
+        val rel = arrayOf(
+            doubleArrayOf(a[0] - cx, a[1] - cy, a[2] - cz),
+            doubleArrayOf(b[0] - cx, b[1] - cy, b[2] - cz),
+            doubleArrayOf(c[0] - cx, c[1] - cy, c[2] - cz),
         )
-        val geo = Three.BufferGeometry().setFromPoints(points)
-        val mesh = Three.Mesh(geo, PlasmaShader.material(field.owner.faction.color))
+        val color = field.owner.faction.color
+        val fid = fieldId(field)
+        fieldRecords[fid] = FieldRecord(cx, cy, cz, rel, color) // remembered for the teardown dissolve
+        val geo = Three.BufferGeometry().setFromPoints(rel.map { Three.Vector3(it[0], it[1], it[2]) }.toTypedArray())
+        val mesh = Three.Mesh(geo, PlasmaShader.material(color))
         mesh.asDynamic().position.set(cx, cy, cz)
-        val g = Spawns.appear(fieldId(field), FIELD_FILL_S)
+        val g = Spawns.appear(fid, FIELD_FILL_S)
         if (g < 1.0) mesh.asDynamic().scale.set(g.coerceAtLeast(0.0), g.coerceAtLeast(0.0), g.coerceAtLeast(0.0))
         fieldsGroup.add(mesh)
+    }
+
+    /** Spawn the dissolve effect for any fields that vanished this sync (and play the collapse sound). */
+    private fun teardownGone(gone: Set<String>) {
+        gone.forEach { id ->
+            val rec = if (id.startsWith("field:")) fieldRecords.remove(id) else null
+            if (rec != null) {
+                FieldFx.dissolve(rec.cx, rec.cy, rec.cz, rec.rel, rec.color)
+                SoundUtil.playFieldDownSound()
+            }
+        }
     }
 
     private fun orbPos(portal: Portal): DoubleArray = doubleArrayOf(sceneX(portal.location), sceneY(portal.location), orbCenterZ(portal.getLevel().toInt()))

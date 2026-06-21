@@ -245,11 +245,13 @@ the vessel itself stays grayscale).
   (`PlasmaShader`): a faction-tinted energy sheet rippling via summed sine waves, with one shared
   `uTime` advanced each frame from `Scene3D.render`. Triangles now sit at the three portals' orb
   centres (`orbCenterZ`), not a flat height. Replaced the flat `MeshBasicMaterial`.
-- [ ] **Fields/portals → create/teardown lifecycle (anim + sounds).** Field fill-in + dissolve and
-  the portal **growth-on-spawn / level-up** animations all need the same thing the per-tick sync
-  rebuild lacks: a **persistent per-entity animation layer** (track create/destroy events, tween
-  over time). Build that once and drive both, with synthesized **sounds** (field-up hum/whoosh,
-  field-down collapse, portal grow chime) in `SoundUtil`.
+- [x] **Lifecycle animation layer + field/portal spawn/teardown.** Built the persistent per-entity
+  animation registry the sync rebuild lacked: `Spawns` (first-seen time per stable id, survives the
+  rebuild, reports vanished ids). On it: **portal orb grows in** on spawn (easeOutBack), **fields
+  fill in** from their centroid, and **fields dissolve** on destruction (`FieldFx` transient shrink)
+  with a **collapse sound** (`SoundUtil.playFieldDownSound`). Field-up + portal-create sounds
+  already existed. _Remaining:_ portal **level-up** tween (the registry animates first-spawn only,
+  not level changes yet); a richer field-up "whoosh".
 - [x] **Portal names from map data (replace the random gibberish).** `util/PortalNames`: at grid
   time it `querySourceFeatures`-queries the shadow map's `openmaptiles` source for the `poi` and
   `transportation_name` source-layers (works even though the shadow style doesn't render them).

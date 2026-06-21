@@ -284,6 +284,18 @@ object SoundUtil {
         playSound(oscNode, panNode, gain, duration)
     }
 
+    /** Field collapse (teardown): a short downward sweep that decays away. */
+    fun playFieldDownSound() {
+        if (isMuted()) return
+        val dur = 0.5
+        val osc = createExponentialRampOscillator(OscillatorType.TRIANGLE, 110.0, 28.0, dur)
+        val gainNode = audioCtx.createGain()
+        val n = now()
+        gainNode.gain.setValueAtTime(0.35, n)
+        gainNode.gain.exponentialRampToValueAtTime(EPS, n + dur)
+        connectVoice(osc, createStaticPan(0.5), gainNode, n + dur)
+    }
+
     fun playFieldingSound(field: Field) {
         if (isMuted()) return
         val areaRatio = field.calculateArea() / World.totalArea()
