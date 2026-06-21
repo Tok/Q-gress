@@ -1,0 +1,349 @@
+@font-face {
+    font-family: 'AmarilloUSAF';
+    font-style: normal;
+    font-weight: normal;
+    src: local('AmarilloUSAF'), url('published/fonts/amarurgt.woff') format('woff');
+}
+
+.amarillo {
+    font-family: 'AmarilloUSAF';
+}
+
+@font-face {
+    font-family: 'Coda';
+    font-style: normal;
+    font-weight: normal;
+    src: local('Coda'), url('published/fonts/Coda.ttf.woff') format('woff');
+}
+
+.coda {
+    font-family: 'Coda';
+}
+
+* {
+    margin: 0 auto;
+}
+
+html {
+    background: linear-gradient(to right, #03dc03, #0088ff);
+    overflow: hidden;
+}
+
+body {
+    width: 1200px; /* Compare to dimensions defined in Dimensions.kt */
+    height: 800px;
+    overflow: hidden;
+}
+.container {
+    position: relative;
+}
+.canvas {
+    display: block;
+    position: absolute;
+}
+.uiCanvas {
+    z-index: 30;
+}
+.mainCanvas {
+    pointer-events: none;
+    z-index: 20;
+}
+.backgroundCanvas {
+    pointer-events: none;
+    z-index: 10;
+}
+.map {
+    pointer-events: none;
+    display: block;
+    position: relative;
+    height: 100%;
+    z-index: 5;
+}
+.initialMap {
+    pointer-events: none;
+    display: block;
+    position: relative;
+    height: 100%;
+    z-index: 8;
+}
+.mapboxgl-map {
+    font-family: "Coda";
+}
+.shadowMap {
+    pointer-events: none;
+    display: block;
+    position: relative;
+    height: 100%;
+    z-index: 2;
+}
+.invisible {
+    visibility: hidden;
+    display: none;
+}
+.mapboxgl-ctrl-top-right {
+    visibility: hidden;
+    display: none;
+}
+.top {
+    top: -100%;
+}
+.unclickable {
+    pointer-events: none;
+}
+.controls {
+    position: relative;
+    display: inline-block;
+    z-index: 100;
+    padding-right: 5px;
+    height: 100px;
+    width: 100%;
+}
+.non {
+    background: #ffffff;
+}
+.enl {
+    background: #03dc03;
+}
+.res {
+    background: #0088ff;
+}
+.enlLabel {
+    color: #03dc03 !important;
+}
+.resLabel {
+    color: #0088ff !important;
+}
+.enlSlider {}
+.enlSlider::-moz-range-thumb {
+    background: #03dc03 !important;
+}
+.enlSlider::-webkit-slider-thumb {
+    background: #03dc03 !important;
+}
+.resSlider {}
+.resSlider::-moz-range-thumb {
+    background: #0088ff !important;
+}
+.resSlider::-webkit-slider-thumb {
+    background: #0088ff !important;
+}
+.button {
+    height: 21px;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    margin-right: 5px;
+    margin-left: 5px;
+    font-family: "Coda", "Lucida Console";
+}
+.buttonDiv {
+    height: 100px;
+}
+.select {
+    height: 21px;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    margin-right: 5px;
+    margin-left: 5px;
+    font-family: "Coda", "Lucida Console";
+}
+.slider {
+    -webkit-appearance: none;
+    border-radius: 5px;
+    background: #d3d3d3;
+    outline: none;
+    opacity: 0.7;
+    -webkit-transition: .2s;
+    transition: opacity .2s;
+    padding-left: 0;
+    padding-right: 0;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    margin-right: 5px;
+    margin-left: 5px;
+}
+.slider:hover {
+    opacity: 1;
+}
+.checkbox {
+    margin-top: 5px;
+    margin-bottom: 5px;
+    margin-right: 5px;
+    margin-left: 5px;
+    font-family: "Coda", "Lucida Console";
+}
+.label {
+    margin-top: 8px;
+    margin-bottom: 8px;
+    color: #ffffff;
+    text-shadow: -1px 0px black, 0px 1px black, 1px 0px black, 0px -1px black;
+}
+.qTitle {
+    font-family: "AmarilloUSAF";
+    margin-top: 2px;
+    margin-bottom: 2px;
+    margin-left: 5px;
+    margin-right: 5px;
+}
+.qSlider {
+    height: 8px;
+    width: 89px;
+}
+.q-actions {
+}
+.q-destinations {
+}
+.qSlider:hover {
+    opacity: 1;
+}
+.qSlider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 13px;
+    height: 13px;
+    border-radius: 62%;
+    background: #777777;
+    cursor: pointer;
+}
+.qSliderLabel {
+    font-size: 13px;
+    height: 13px;
+    width: 12px;
+    text-align: right;
+    display: inline-block;
+    color: #ffffff;
+    text-shadow: -1px 0px black, 0px 1px black, 1px 0px black, 0px -1px black;
+}
+.qSliderTextLabel {
+    font-family: "Coda";
+    font-size: 13px;
+    height: 13px;
+    margin-left: 5px;
+    margin-right: 5px;
+    color: #ffffff;
+    text-shadow: -1px 0px black, 0px 1px black, 1px 0px black, 0px -1px black;
+}
+.qValues {
+    font-size: 13px;
+    padding-bottom: 2px;
+}
+.floatLeft {
+    float: left;
+}
+.floatRight {
+    float: right;
+}
+#locationSelect {
+    width: 233px;
+}
+.mapboxgl-ctrl-bottom-left,
+.mapboxgl-ctrl-bottom-right {
+    z-index: 999 !important;
+}
+/* See: http://aleclownes.com/2017/02/01/crt-display.html */
+.crt::before {
+    content: " ";
+    display: block;
+    position: absolute;
+    top: 0; left: 0; bottom: 0; right: 0;
+    background: linear-gradient(
+      rgba(16, 16, 16, 0) 50%,
+      rgba(0, 0, 0, 0.20) 50%),
+      linear-gradient(
+          90deg,
+          rgba(255, 0, 0, 0.05),
+          rgba(0, 255, 0, 0.05),
+          rgba(0, 0, 255, 0.05)
+      );
+    z-index: 2;
+    background-size: 100% 2px, 3px 100%;
+    pointer-events: none;
+}
+@keyframes flicker {
+      0% { opacity: 0.28; }
+      5% { opacity: 0.75; }
+     10% { opacity: 0.24; }
+     15% { opacity: 0.91; }
+     20% { opacity: 0.18; }
+     25% { opacity: 0.84; }
+     30% { opacity: 0.36; }
+     35% { opacity: 0.68; }
+     40% { opacity: 0.27; }
+     45% { opacity: 0.85; }
+     50% { opacity: 0.96; }
+     55% { opacity: 0.08; }
+     60% { opacity: 0.20; }
+     65% { opacity: 0.72; }
+     70% { opacity: 0.53; }
+     75% { opacity: 0.37; }
+     80% { opacity: 0.71; }
+     85% { opacity: 0.30; }
+     90% { opacity: 0.70; }
+    100% { opacity: 0.24; }
+}
+.crt::after {
+    content: " ";
+    display: block;
+    position: absolute;
+    top: 0; left: 0; bottom: 0; right: 0;
+    background: rgba(16, 16, 16, 0.07);
+    opacity: 0;
+    z-index: 2;
+    pointer-events: none;
+    animation: flicker 0.17s infinite;
+}
+
+.popup {
+    display: block;
+    width: 377px;
+    position: relative;
+    margin: 0 auto;
+    top: 190px;
+    border-radius: 5px;
+    border: 1px solid black;
+    z-index: 9999;
+    background-color: #ffffffaa;
+    padding: 5px;
+}
+
+.popupButton {
+    width: 50%;
+    font-size: 34px;
+    border-radius: 3px;
+    border: 1px solid black;
+    padding-left: 55px;
+    padding-right: 55px;
+}
+
+.topButton {
+    margin: 5px;
+    width: 89px;
+    font-size: 21px;
+    border-radius: 3px;
+    border: 1px solid black;
+    padding: 5px;
+}
+
+.topDrop {
+    margin: 5px;
+    width: 233px;
+    font-size: 13px;
+    border-radius: 3px;
+    border: 1px solid black;
+    padding: 5px;
+}
+
+.topLabel {
+    cursor: default;
+    margin-top: 8px;
+    margin-bottom: 8px;
+    color: #ffffff;
+    text-shadow: -1px 1px black, -1px 1px black, 1px -1px black, 1px -1px black;
+}
+
+.loadLabel {
+    cursor: default;
+}
+
+.quickstartDiv {
+    font-size: 13px;
+}
