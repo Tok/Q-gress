@@ -363,45 +363,34 @@ stereo panning** (`Scene3D.audioPan`, projects through the live camera) + a **ma
 **quick-start default-on**, a **location label + Menu (New Game/Reset)** replacing the old dropdown,
 the **Gradle config cache**, and thinner orb glass + L8 demo default.
 
-### Map playability, terrain & link/field integrity (NEXT — planned 2026-06-21)
-Make every playable map actually playable, give terrain real meaning, and lock down the core
-link/field rules with tests. Investigation done this session — file:line refs inline so the next
-session starts fast.
+### Map playability, terrain & link/field integrity ✅ DONE (2026-06-21)
+Made every playable map actually playable, gave terrain real meaning, and locked down the core
+link/field rules with tests. **23 new unit tests.**
 
-- [ ] **No closed-off areas (grid connectivity).** There is **no flood-fill / reachability check
-  today** — `Pos.createRandomPassable` (`util/data/Pos.kt:114`) and portal/agent/NPC placement can
-  land in sealed pockets. Add connected-components over the `Grid` (`extension/Grid.kt`,
-  `typealias Grid = Map<Pos, Cell>`); for each isolated passable region, **carve an arbitrary path**
-  connecting it to the main region / the off-screen border by overriding the passability grid
-  (`Cell.isPassable`/`movementPenalty`) built in `MapUtil.addGrid` (`util/MapUtil.kt:397-437`). Do it
-  once at grid-build time, after readback.
-- [ ] **Walkability gate (no fully-water/unplayable maps).** Water already renders **impassable**
-  (`#000000` in `SHADOW_STYLE`, `MapUtil.kt:70-118`; pixel ≤32 → `isPassable=false`,
-  `MapUtil.kt:413-417`), so the real problem is **areas that are mostly water/blocked**. Compute a
-  **walkability %** for the chosen play-area box and **block/warn** low-walkability locations in
-  onboarding (`util/ui/Onboarding.kt` `showLocation`, and/or `HtmlUtil` world-init before the long
-  build). Surface the % in the location preview.
-- [ ] **Reassess movement penalties + per-terrain shades.** Today brightness→penalty is ~4 buckets
-  (road `#fff` → grass/green `#aaa` → ground `#555` → impassable `#000`); penalty is in `Cell`
-  (`util/data/Cell.kt`) and used in heatmap cost (`PathUtil.kt:16`) but **NOT in vector-field
-  magnitude** (two `FIXME use terrain penalty`, `PathUtil.kt:86,111`). Distinguish terrain classes
-  in `SHADOW_STYLE` (forest > grass > sand vs concrete/road) by giving the landcover/landuse layers
-  distinct gray levels, retune the penalty curve, and **apply penalty to flow magnitude** so agents
-  actually slow on rough terrain.
-- [ ] **Terrain display option.** Add a **Terrain/Passability** view to the layer picker
-  (`util/ui/LayerView.kt`) next to Satellite — reuse the existing 3D passability quad
-  (`Scene3D.buildPassabilityMesh`/`setPassabilityVisible`, `Scene3D.kt:385-421`, colours via
-  `Cell.overlayColor()`) so the penalty shades are visible as a toggle, not just the debug checkbox.
-- [ ] **Link/field integrity — preserve + TEST (core logic).** Cleanup on remove/neutralize/decay
-  is **functionally correct but almost entirely untested** (`Portal.destroyAllLinksAndFields`,
-  `Portal.kt:379-400`: clears outgoing + incoming links and fields-as-origin/anchor before
-  `World.allPortals.remove`). Latent bug: `Portal.findLinkableForKeys` (`Portal.kt:132`) filters
-  existing links through `Link.isNotExisting`, so its intersection check is a **no-op** — the real
-  no-crossing rule lives in `Linker.targetOptions` (`agent/action/cond/Linker.kt:31-36`). Fix/relocate
-  that, then add `jsTest` coverage for the untested invariants (current tests `LinkTest`/`FieldTest`
-  only cover equality/symmetry): no-crossing (`Line.doesIntersect`), max-8 links, **no dangling
-  link/field after a portal is removed / turned neutral / decays to 0–2 resos**, field coverage
-  (`isCoveringPortal`/`isCoveredByField`/`isInside`), field dedup (`isPossible`).
+- [x] **No closed-off areas (grid connectivity)** (`9ca5144`). New pure, tested `util/GridConnectivity`
+  (`components`/`walkability`/`connectIslands`): BFS from the largest component (the always-passable
+  off-screen ring = the outside) carves the shortest corridor (`CORRIDOR_PENALTY`) to every other
+  passable island. Run in `MapUtil.createGrid` after readback. +6 tests.
+- [x] **Walkability gate** (`30bf33f`). `World.walkability` computed/logged at grid build;
+  `HtmlUtil.onMapload` blocks `< MIN_WALKABILITY` (12%) maps with a "choose another location" overlay
+  before the expensive world build (auto-start exempt).
+- [x] **Location preset conformance** (`36de3de`). `LocationTest` (+7) guards all 62 presets (coords
+  in range, no null-island, unique names+coords, ASCII enum names). Walkability of marina/bridge
+  spots stays a runtime concern (gate) + future jet-skis make water traversable — none removed.
+- [x] **Per-terrain penalties + terrain display** (`df2d242`). `SHADOW_STYLE` grades landcover by
+  class (wood darkest/slowest → wetland → grass/farmland → sand/rock lightest); flow-field magnitude
+  now scales with the cell penalty (`PathUtil`, `MIN_SPEED_FACTOR` floor) so agents physically slow on
+  rough ground; the overlay is relabelled **"Terrain"** (`PassabilityOverlay`, extracted from Scene3D).
+- [x] **Link/field integrity — fix + TEST** (`fed7f00`). Fixed `Portal.findLinkableForKeys` (its
+  no-crossing filter was a no-op via `Link.isNotExisting`; now checks `World.allLines()` directly).
+  New `LinkFieldIntegrityTest` (+10): no-crossing geometry, and **no dangling links/fields** when a
+  portal is destroyed/neutralised (cleanup core = `destroy()`/`destroyAllLinksAndFields`).
+
+**Demo/game polish landed alongside (2026-06-21):** explicit demo **action buttons** for every
+animation (`afada15`); **game XMP burst + hack collar-spin** now fire in-game via new `HackFx`
+(`9ccce9f`); **XMP detonates at the agent**, not aimed (`10fad73`); demo **click-to-select-or-place**
++ mouse cursor ring + min gap (`10fad73`); no vector-field preview during world build; quick-start
+default-on + location label + New Game/Reset menu (`bb6ba87`); marble NPC drop + dead-2D-draw sweep.
 
 ### Smaller deferred follow-ups (this session)
 - [ ] **Orphaned `Queues.endTick`.** The attack/damage-queue trim only ran from the now-removed
