@@ -24,6 +24,7 @@ external object MapLibre {
         fun setMaxPitch(maxPitch: Double)
         fun setBearing(bearing: Double)
         fun setCenter(center: dynamic)
+        fun setProjection(projection: dynamic) // {type:"globe"|"mercator"} — MapLibre 5 globe support
         fun jumpTo(options: dynamic)
         fun flyTo(options: dynamic)
         fun panBy(offset: dynamic, options: dynamic = definedExternally)

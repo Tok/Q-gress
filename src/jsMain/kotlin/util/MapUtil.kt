@@ -16,6 +16,7 @@ import org.w3c.dom.ImageData
 import system.display.Scene3D
 import util.data.Cell
 import util.data.Pos
+import util.ui.MiniMap
 import kotlin.js.Json
 import kotlin.math.log2
 import kotlin.math.roundToInt
@@ -196,6 +197,7 @@ object MapUtil {
         val center = anchorCenter ?: return
         Scene3D.register(targetMap, center.lng as Double, center.lat as Double, anchorZoom)
         setupNavigation(targetMap)
+        if (!demoMode) MiniMap.create(targetMap) // overview globe inset (game only)
     }
 
     /**
