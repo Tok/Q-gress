@@ -313,21 +313,113 @@ the Blender step happens, commit the raw `.blend` under `/assets/blender/`, `.gl
 - [ ] **UI Stage 4** — tuning-slider panel redesign (both factions, presets) for the AI phase.
 - [ ] **UI Stage 5** — visual theme + responsiveness.
 
-### Phase 6 — AI-vs-AI (approach TBD — needs its own plan)
-**Polish the game/sim first** (Phases 4–5) before adding AI. The AI substrate is the
-per-faction slider vector (0..1 each) as the output; the input is the game state. The
-*how* is an open design question that deserves a dedicated mini-plan before coding:
-- **Option A — custom small neural net.** A purpose-built network whose output layer *is*
-  the sliders, trained/tuned for this game. Bonus: visualize the layers/activations and the
-  agents' chosen paths. Smallest, most specific, most "Q-gress"; most control. Feasibility
-  of in-browser training/inference + viz TBD.
-- **Option B — transformers.js** (in-browser, WebGPU) running a small model.
-- **Option C — gemma.js / MediaPipe LLM Inference** (the original idea): prompt a Gemma per
-  faction with the world state → slider vector.
-Cross-cutting regardless of option: block mobile (desktop-only notice); expose sliders as a
-programmatic API (state → slider vector) instead of only DOM inputs; support a different
-tuning per faction. **Decision deferred** — revisit with a focused plan once the sim is
-polished. Leaning toward the custom NN (A) for specificity + visualization, but unproven.
+### Phase 6 — AI-vs-AI (the Q-gress payoff)
+
+**The north star.** Q-Gress is named for the original idea: each faction is driven by an
+agent whose **output layer _is_ the behaviour sliders**. The 18 sliders per faction
+(11 `QActions` + 7 `QDestinations`, each 0..1) were always meant to be the action vector of
+a network, not just human knobs. The endgame: a human can play against an AI, and two AIs
+can be matched against each other — **ENL-brain vs RES-brain**, each possibly a different
+kind of brain.
+
+**Decision — DECIDED (2026-06-21): build _both_ AI drivers on _one_ shared substrate.**
+- **Track A — custom tiny net + neuroevolution** (the "real Q-gress", optimizing + visualizable).
+- **Track B — in-browser LLM** (transformers.js / WebGPU, and/or Gemma via MediaPipe — the
+  original "Gemma-vs-Gemma" idea; reasons about state → sliders, explains itself in words).
+Both speak the same **programmatic slider API** and run on the same **deterministic headless
+match harness**, so any faction can be Human / Net / LLM independently and they can fight in
+any combination. Those two shared pieces (6.0, 6.1) are the bulk of the work and are built
+first; the drivers (6.2, 6.3) then fork cheaply off them.
+
+**Why these mechanisms (recorded so we don't relitigate):**
+- **Trainer = neuroevolution / ES, not gradient RL or tabular Q.** The "Q" is heritage
+  branding. The env is non-differentiable (no gradients through the sim), the reward is
+  **sparse and episodic** (MU resolves over 5-min checkpoints / 30-min cycles), and the
+  action space is **18 continuous** values — that combination is poison for tabular
+  Q-learning and awkward for online policy-gradient, but ideal for **evolution strategies +
+  self-play** (just need a fast headless match and a fitness number; embarrassingly
+  parallel). So we keep the name and ship an honest mechanism.
+- **The slider vector stays the action substrate.** The net/LLM re-tunes the 18 sliders at a
+  **slow cadence** (≈ once per checkpoint, reacting to aggregate world state) — it does **not**
+  replace per-agent `ActionSelector` and does **not** run per-tick. The existing engine is
+  left intact; we only swap _where the slider values come from_.
+
+#### 6.0 — Substrate I: programmatic policy API + determinism _(prereq, no AI yet)_
+The one seam everything plugs into. Today `ActionSelector.q()` reads each slider straight
+from the DOM (`getElementById("${id}Slider${Frog|Smurf}").valueAsNumber * weight`). Replace
+that with a per-faction **`FactionPolicy`** source:
+- [ ] **`FactionPolicy` interface** — `sliderValue(faction, qValue): Double` (or a whole
+      `SliderVector`). Default impl `DomSliderPolicy` reads the DOM exactly as today → **zero
+      gameplay change**, human play untouched. `ActionSelector.q()` calls the policy, not the DOM.
+- [ ] **`Observation` (pure)** — `observe(world, faction): DoubleArray`, a fixed, documented,
+      normalized feature vector (MU + Δ-MU, portal/agent/link/field counts per faction, tick
+      fraction, avg agent XM/level, unclaimed-portal share, …). The NN/LLM input.
+- [ ] **`SliderVector` (pure)** — 18 named slots in a fixed order ↔ `QActions`+`QDestinations`;
+      encode/decode + clamp. The NN/LLM output.
+- [ ] **Injectable seedable RNG** — replace the global `Math.random()` in `Util.random()` with
+      a threaded, seedable `Rng` (this is the determinism standard PLAN already mandates).
+      Thread it through `Util.select`, movement, recruiting, cycle events.
+- **Exit:** human play is byte-identical to today; a faction can be driven by a swapped policy;
+      **same seed → tick-for-tick identical match** (unit test).
+
+#### 6.1 — Substrate II: headless match harness _(the training engine)_
+Training needs thousands of fast, reproducible matches with **no DOM / canvas / MapLibre /
+WebGL**. This is where the **functional-core / imperative-shell split** finally gets paid off.
+- [ ] **`SimRunner` (headless)** — `runMatch(gridFixture, policyEnl, policyRes, seed,
+      maxTicks): MatchResult { enlMu, resMu, checkpoints, winner }`. Runs the tick loop with
+      rendering/audio/DOM stubbed out at the shell boundary.
+- [ ] **Grid fixtures** — serialize a built `Grid` (+ portal seeds) for a handful of locations
+      to committed JSON, so matches reproduce without live map tiles or `readPixels`. (Decouples
+      the sim from the screen-pixel grid — the icebox "rework movement model" item, partially.)
+- [ ] **Speed** — run accelerated in **Node** (tests/CI) and a **Web Worker** (in-tab training)
+      so the UI never blocks. Target: hundreds of full matches/min.
+- **Exit:** a full match runs headless & deterministic in Node, emitting an MU time-series +
+      winner; fast enough to drive a training loop.
+
+#### 6.2 — Track A: custom net + neuroevolution
+- [ ] **Tiny MLP** (`ai/net/`) — input = `Observation` (~16), 1–2 hidden layers, output = 18
+      sigmoid sliders. Hand-rolled forward pass (no framework; it's small), weights = flat array.
+- [ ] **Evolution trainer** — `(μ,λ)`-ES / CMA-ES / GA (mutation + crossover + elitism) over the
+      headless harness; **self-play league** (+ a Hall-of-Fame to curb cycling). Fitness = MU
+      margin / win-rate vs opponents and vs the default-slider baseline. Runs in a Worker / Node.
+- [ ] **Persistence** — serialize the best genome to JSON; `NetPolicy` loads it to drive a live
+      faction.
+- [ ] **Visualization (the Q-gress payoff)** — render the live net's **layers/activations** and
+      the driven faction's **chosen agent paths** while it plays (reuses the 3D/overlay infra).
+- **Exit:** a trained `NetPolicy` beats the default-slider baseline over K seeded matches by a
+      clear margin, loads into the live game, and its activations are visualized.
+
+#### 6.3 — Track B: in-browser LLM driver
+- [ ] **`LlmPolicy`** (same API) driven at **checkpoint cadence**, off the tick loop: build a
+      compact world-state prompt → model → **JSON slider vector** (schema-validated, defensive
+      fallback to the last/default vector on any parse failure). Sim keeps running on the last
+      vector while inference is in flight.
+- [ ] **Engine(s)** behind one interface: **transformers.js** (WebGPU small instruct model)
+      and/or **Gemma via MediaPipe LLM Inference** (the original idea) — `external` decls like
+      MapLibre/uPlot.
+- [ ] **Explainability** — surface the model's reasoning text in a "faction AI commentary" panel.
+- **Exit:** an LLM drives a faction end-to-end in-browser, re-tuning sliders each checkpoint with
+      visible reasoning, sim stays smooth.
+
+#### 6.4 — Mix, match & human-vs-AI
+- [ ] **Per-faction driver selection** (onboarding + UI Stage 4 slider panel): **Human / Net /
+      LLM** chosen independently for ENL and RES → human-vs-net, net-vs-net, net-vs-LLM,
+      LLM-vs-LLM. When a side is AI-driven its sliders animate read-only so you can watch the
+      brain tune itself.
+- [ ] **Tournament / eval view** — round-robin between saved policies → a leaderboard (reuses the
+      headless harness + uPlot).
+- **Exit:** pick a driver per faction at start and watch/participate; saved nets compete in a
+      tournament view.
+
+**Cross-cutting (all of Phase 6):** desktop-only + **WebGPU** gating (block mobile / unsupported);
+seeds surfaced via `?seed=` for reproducible matches; **balance risk** — pure win-maximizing
+self-play may rediscover the recruit-rush degenerate (see Phase 5), so keep tuning `Config` and
+optionally **shape fitness for _interesting_ play** (lead changes / strategy diversity) as a
+follow-up, not v1.
+
+**Still open:** which LLM model (transformers.js choice vs Gemma/MediaPipe), the exact
+grid-fixture serialization format, the precise `Observation` schema, and the fitness-shaping
+function. Resolve each at the start of its sub-phase, not now.
 
 ### Phase 7 — Init / onboarding selections (started)
 A richer start-up flow before the sim runs.
