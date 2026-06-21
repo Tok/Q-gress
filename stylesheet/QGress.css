@@ -291,8 +291,8 @@ html, body {
 .titleBrand {
     font-family: "Chakra Petch", sans-serif;
     font-weight: 700;
-    font-size: 92px;
-    letter-spacing: 14px;
+    font-size: 138px; /* 1.5× — dominant first-impression wordmark */
+    letter-spacing: 16px;
     line-height: 1;
     color: #ffffff;
     /* faction-neutral: white / off-tint grayscale glow only (no green/blue tint on the wordmark). */
