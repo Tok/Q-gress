@@ -2,6 +2,7 @@ import agent.Agent
 import agent.Faction
 import agent.NonFaction
 import config.Config
+import config.Dim
 import config.Sim
 import extension.Canvas
 import extension.Grid
@@ -25,42 +26,26 @@ object World {
 
     fun userFactionOrThrow(): Faction = requireNotNull(userFaction) { "user faction has not been chosen yet" }
 
-    lateinit var can: Canvas
-    fun ctx() = HtmlUtil.getContext2D(can)
-
+    // Offscreen factory canvas: its 2D context only allocates ImageData buffers for the passability
+    // grid readback (see createStreetImage). Never displayed — the world renders in the three.js
+    // custom layer and the HUD is DOM, so the old on-screen main/UI canvases are gone.
     lateinit var bgCan: Canvas
     fun bgCtx() = HtmlUtil.getContext2D(bgCan)
-
-    lateinit var uiCan: Canvas
-    fun uiCtx() = HtmlUtil.getContext2D(uiCan)
-
-    fun resetAllCanvas() {
-        can.clear()
-        ctx().clear(can)
-        bgCan.clear()
-        bgCtx().clear(bgCan)
-        uiCan.clear()
-        uiCtx().clear(uiCan)
-    }
 
     // var center: JSON = MapUtil.INITIAL_MAP_CENTER
     var mousePos: Pos? = null
 
-    // Screen (canvas) extent — HUD/drawing.
-    fun w() = can.width
-    fun h() = can.height
+    // Screen extent — the fixed play area (Dim); used for on/off-screen tests and sound ratios.
+    fun w() = Dim.width
+    fun h() = Dim.height
 
     // Simulation/grid extent (Sim, larger than the screen) — world bounds & grid cells.
     fun simW() = Sim.width
     fun simH() = Sim.height
     fun shadowW() = Sim.width / Pos.res
     fun shadowH() = Sim.height / Pos.res
-    fun diagonalLength() = sqrt((can.width * can.width).toDouble() + (can.height * can.height)).toInt()
-    fun totalArea() = can.width * can.height
-
-    lateinit var noiseMap: Array<DoubleArray>
-    lateinit var noiseImage: ImageData
-    var shadowStreetMap: ImageData? = null
+    fun diagonalLength() = sqrt((Dim.width.toDouble() * Dim.width) + (Dim.height.toDouble() * Dim.height)).toInt()
+    fun totalArea() = Dim.width * Dim.height
 
     lateinit var grid: Grid
     var walkability = 0.0 // fraction of on-screen cells that are passable (set at grid build)
@@ -117,23 +102,6 @@ object World {
     fun calcTotalMu(fact: Faction) = allFields().filter { it.owner.faction == fact }.map { it.calculateMu() }.sum()
 
     private fun imageDataIndex(x: Int, y: Int, w: Int) = (x + (y * w)) * 4
-    fun createNoiseImage(noiseMap: Array<DoubleArray>, w: Int, h: Int, alpha: Double = 1.0): ImageData {
-        fun setPixel(imageData: ImageData, x: Int, y: Int, r: Int, g: Int, b: Int) {
-            val index = imageDataIndex(x, y, imageData.width)
-            imageData.data.set(arrayOf(r.toByte(), b.toByte(), g.toByte(), (Byte.MAX_VALUE * alpha).toInt().toByte()), index)
-        }
-        with(World) {
-            val imageData: ImageData = bgCtx().createImageData(w.toDouble(), h.toDouble())
-            for (x in 0 until w) {
-                for (y in 0 until h) {
-                    val rawNoise = noiseMap[x][y]
-                    val noisePoint = ((1 + (-1 * rawNoise)) * 0.5 * Byte.MAX_VALUE.toInt()).toInt() // - 96
-                    setPixel(imageData, x, y, noisePoint, noisePoint, noisePoint)
-                }
-            }
-            return imageData
-        }
-    }
 
     fun createStreetImage(streetMap: Uint8Array, w: Int, h: Int): ImageData {
         with(World) {

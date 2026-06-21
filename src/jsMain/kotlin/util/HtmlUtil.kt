@@ -1,6 +1,5 @@
 package util
 
-import ImprovedNoise
 import World
 import agent.Agent
 import agent.Faction
@@ -91,11 +90,10 @@ object HtmlUtil {
         val rootDiv = document.getElementById("root") as HTMLDivElement
         rootDiv.addClass("container")
 
-        // Prepare all canvas..
-        World.can = createCanvas("mainCanvas")
-        World.bgCan = createCanvas("backgroundCanvas")
-        World.uiCan = createCanvas("uiCanvas")
-        rootDiv.append(createCanvasDiv())
+        // Offscreen ImageData factory for the passability-grid readback (never displayed). No
+        // on-screen 2D canvas layer remains — the world renders in the three.js custom layer and
+        // the HUD is DOM.
+        World.bgCan = createOffscreenCanvas(Dim.width, Dim.height)
 
         // /demo harness (hash-routed): a menu of effect demo scenes, separate from the game.
         // Reload on any hash change so switching game ⇄ demo (or between scenes) re-bootstraps.
@@ -224,15 +222,6 @@ object HtmlUtil {
         return span
     }
 
-    private fun createCanvasDiv(): HTMLDivElement {
-        val div = document.createElement("div") as HTMLDivElement
-        div.id = Navigation.CANVAS_LAYER_ID // transformed to follow the map camera
-        div.append(World.uiCan)
-        div.append(World.bgCan)
-        div.append(World.can)
-        return div
-    }
-
     private fun createControlDiv(): HTMLDivElement {
         val div = document.createElement("div") as HTMLDivElement
         div.id = "top-controls"
@@ -309,7 +298,6 @@ object HtmlUtil {
     // Minimal bootstrap for the unified sandbox demo scene: just the 3D scene + the sandbox controls.
     private fun loadDemoScene() {
         World.userFaction = Faction.ENL
-        World.resetAllCanvas()
         val center = Pos(Sim.width / 2, Sim.height / 2)
         MapUtil.loadMaps(Location.DEFAULT.toJSON(), demo = true, callback = fun(grid: Grid) {
             World.grid = grid
@@ -359,13 +347,6 @@ object HtmlUtil {
         Onboarding.close() // dismiss the onboarding screen (it loads without a reload)
         // Staged loading overlay, up before the first tile request (the world build runs ~2 min on Big).
         LoadingOverlay.show()
-        val noiseAlpha = 0.8
-        val w = Dim.width
-        val h = Dim.height
-        SoundUtil.playNoiseGenSound()
-        World.noiseMap = ImprovedNoise.generateEdgeMap(w, h)
-        World.noiseImage = World.createNoiseImage(World.noiseMap, w, h, noiseAlpha)
-        World.resetAllCanvas()
         MapUtil.loadMaps(center, callback = onMapload())
     }
 
@@ -488,14 +469,6 @@ object HtmlUtil {
         return button
     }
 
-    private fun createCanvas(className: String): Canvas {
-        val canvas = document.createElement("canvas") as Canvas
-        canvas.addClass("canvas", className)
-        canvas.width = Dim.width
-        canvas.height = Dim.height
-        return canvas
-    }
-
     private fun createOffscreenCanvas(w: Int, h: Int): Canvas {
         val canvas = document.createElement("canvas") as Canvas
         canvas.width = w
@@ -577,7 +550,6 @@ object HtmlUtil {
         LoadingOverlay.stage(LoadingOverlay.PCT_WORLD, "Building world…")
         createAgentsAndPortals {
             LoadingOverlay.detail("Ready.")
-            DrawUtil.clearBackground()
             // Clear the during-build vector preview so the game starts with nothing selected.
             Scene3D.selected = null
             VectorFieldOverlay.setVisible(false)

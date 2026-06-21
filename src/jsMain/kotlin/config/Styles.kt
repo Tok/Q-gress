@@ -8,7 +8,6 @@ object Styles {
     val isDrawAgentRange = false
     val isDrawDestination = false
 
-    val isDrawNoiseMap = false
     val isDrawPortalNames = true
     val isDrawCom = true
     val isDrawResoLevels = false

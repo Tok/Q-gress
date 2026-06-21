@@ -13,8 +13,6 @@ import org.w3c.dom.events.KeyboardEvent
  * ([system.display.Scene3D]), so moving the map camera moves the scene for free.
  */
 object Navigation {
-    const val CANVAS_LAYER_ID = "canvasLayer"
-
     private const val PAN_STEP = 60.0
     private const val ROTATE_STEP = 15.0
     private const val PITCH_STEP = 10.0

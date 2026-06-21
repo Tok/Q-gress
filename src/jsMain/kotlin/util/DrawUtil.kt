@@ -1,11 +1,8 @@
 package util
 
-import World
 import agent.Faction
 import config.*
-import extension.Canvas
 import extension.Ctx
-import extension.clear
 import org.w3c.dom.*
 import system.display.Scene3D
 import util.data.Circle
@@ -21,34 +18,13 @@ object DrawUtil {
     const val CODA = "Coda"
 
     fun redraw() {
-        // World entities now render in the 3D scene (Scene3D). The 2D world
-        // canvas is kept clear so the 3D (on the map layer beneath) shows
-        // through; the HUD is still drawn 2D in redrawUserInterface().
-        clear()
+        // The world renders in the three.js custom layer (Scene3D); the HUD is DOM. No 2D canvas
+        // to paint or clear anymore — just drive the 3D sync and the inspector.
         Scene3D.sync()
         Inspector.refresh()
     }
 
-    fun clear() = redraw(World.can, World.ctx())
-    fun clearBackground() {
-        val maybeImage: ImageData? = if (Styles.isDrawNoiseMap) World.noiseImage else null
-        redraw(World.bgCan, World.bgCtx(), maybeImage)
-    }
-
-    fun clearUserInterface() = redraw(World.uiCan, World.uiCtx())
-
-    private fun redraw(canvas: Canvas, ctx: Ctx, image: ImageData? = null) {
-        canvas.width = Dim.width
-        canvas.height = Dim.height
-        if (image != null) {
-            ctx.putImageData(image, 0.0, 0.0)
-        } else {
-            ctx.clear(canvas)
-        }
-    }
-
     fun redrawUserInterface(firstMu: Int, secondMu: Int, factions: Pair<Faction, Faction>) {
-        clearUserInterface()
         // The whole HUD is DOM: MindUnits + tick + Com log (StatsPanel), the per-metric history
         // dashboard (HistoryPanel/uPlot — MU + Portals/Links/Fields/Agents over time, with live
         // values), and the top-agents table (TopAgentsPanel).

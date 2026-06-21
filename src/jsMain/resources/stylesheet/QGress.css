@@ -46,30 +46,6 @@ html, body {
 .container {
     position: relative;
 }
-/* Canvas layer is CSS-transformed to follow the map camera (pan/zoom). */
-#canvasLayer {
-    position: absolute;
-    top: 0;
-    left: 0;
-    transform-origin: 0 0;
-}
-.canvas {
-    display: block;
-    position: absolute;
-}
-.uiCanvas {
-    z-index: 30;
-    /* HUD only — let mouse gestures fall through to MapLibre's own handlers below. */
-    pointer-events: none;
-}
-.mainCanvas {
-    pointer-events: none;
-    z-index: 20;
-}
-.backgroundCanvas {
-    pointer-events: none;
-    z-index: 10;
-}
 .map {
     pointer-events: none;
     display: block;
