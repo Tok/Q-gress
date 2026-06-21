@@ -352,6 +352,72 @@ A richer start-up flow before the sim runs.
 - **Dev tooling**: a `?debug` URL param enabling **timing measurements + console logging**
   (instrument load stages + tick cost) to profile and optimise the long loads.
 
+### Landed since the 2026-06-21 overhaul note (this session)
+Resonators end-to-end (8 colour-coded rods in rubber slot-rings, real-time from `resoMap()`, grow
+with the pole, **fall on shatter** as physics rods, **hack spin + top-jointed centrifuge**); the
+shatter physics extracted to `ShatterFx` (pole now **sinks**, donut/shards fall free); a **unified
+demo sandbox** (`#demo`: Build/Effects mode toggle — LMB place/RMB remove · LMB XMP/RMB hack — plus
+Upgrade/Downgrade/Link); **NPC marble drop-in** + removal of the dead 2D NPC render; a full
+**dead-2D-draw sweep** (Portal/Agent/Field/Link/XmHeap/XmMap draws + DrawUtil); **camera-aware
+stereo panning** (`Scene3D.audioPan`, projects through the live camera) + a **marble "tok"** sound;
+**quick-start default-on**, a **location label + Menu (New Game/Reset)** replacing the old dropdown,
+the **Gradle config cache**, and thinner orb glass + L8 demo default.
+
+### Map playability, terrain & link/field integrity (NEXT — planned 2026-06-21)
+Make every playable map actually playable, give terrain real meaning, and lock down the core
+link/field rules with tests. Investigation done this session — file:line refs inline so the next
+session starts fast.
+
+- [ ] **No closed-off areas (grid connectivity).** There is **no flood-fill / reachability check
+  today** — `Pos.createRandomPassable` (`util/data/Pos.kt:114`) and portal/agent/NPC placement can
+  land in sealed pockets. Add connected-components over the `Grid` (`extension/Grid.kt`,
+  `typealias Grid = Map<Pos, Cell>`); for each isolated passable region, **carve an arbitrary path**
+  connecting it to the main region / the off-screen border by overriding the passability grid
+  (`Cell.isPassable`/`movementPenalty`) built in `MapUtil.addGrid` (`util/MapUtil.kt:397-437`). Do it
+  once at grid-build time, after readback.
+- [ ] **Walkability gate (no fully-water/unplayable maps).** Water already renders **impassable**
+  (`#000000` in `SHADOW_STYLE`, `MapUtil.kt:70-118`; pixel ≤32 → `isPassable=false`,
+  `MapUtil.kt:413-417`), so the real problem is **areas that are mostly water/blocked**. Compute a
+  **walkability %** for the chosen play-area box and **block/warn** low-walkability locations in
+  onboarding (`util/ui/Onboarding.kt` `showLocation`, and/or `HtmlUtil` world-init before the long
+  build). Surface the % in the location preview.
+- [ ] **Reassess movement penalties + per-terrain shades.** Today brightness→penalty is ~4 buckets
+  (road `#fff` → grass/green `#aaa` → ground `#555` → impassable `#000`); penalty is in `Cell`
+  (`util/data/Cell.kt`) and used in heatmap cost (`PathUtil.kt:16`) but **NOT in vector-field
+  magnitude** (two `FIXME use terrain penalty`, `PathUtil.kt:86,111`). Distinguish terrain classes
+  in `SHADOW_STYLE` (forest > grass > sand vs concrete/road) by giving the landcover/landuse layers
+  distinct gray levels, retune the penalty curve, and **apply penalty to flow magnitude** so agents
+  actually slow on rough terrain.
+- [ ] **Terrain display option.** Add a **Terrain/Passability** view to the layer picker
+  (`util/ui/LayerView.kt`) next to Satellite — reuse the existing 3D passability quad
+  (`Scene3D.buildPassabilityMesh`/`setPassabilityVisible`, `Scene3D.kt:385-421`, colours via
+  `Cell.overlayColor()`) so the penalty shades are visible as a toggle, not just the debug checkbox.
+- [ ] **Link/field integrity — preserve + TEST (core logic).** Cleanup on remove/neutralize/decay
+  is **functionally correct but almost entirely untested** (`Portal.destroyAllLinksAndFields`,
+  `Portal.kt:379-400`: clears outgoing + incoming links and fields-as-origin/anchor before
+  `World.allPortals.remove`). Latent bug: `Portal.findLinkableForKeys` (`Portal.kt:132`) filters
+  existing links through `Link.isNotExisting`, so its intersection check is a **no-op** — the real
+  no-crossing rule lives in `Linker.targetOptions` (`agent/action/cond/Linker.kt:31-36`). Fix/relocate
+  that, then add `jsTest` coverage for the untested invariants (current tests `LinkTest`/`FieldTest`
+  only cover equality/symmetry): no-crossing (`Line.doesIntersect`), max-8 links, **no dangling
+  link/field after a portal is removed / turned neutral / decays to 0–2 resos**, field coverage
+  (`isCoveringPortal`/`isCoveredByField`/`isInside`), field dedup (`isPossible`).
+
+### Smaller deferred follow-ups (this session)
+- [ ] **Orphaned `Queues.endTick`.** The attack/damage-queue trim only ran from the now-removed
+  `Attacks.draw`, so it's been disconnected since the 3D switch (stale-entry leak, not a gameplay
+  bug — damage applies synchronously via `Attacker`). Decide: delete the `Attacks`/queue viz system,
+  or re-render the attack/damage telegraphs in 3D.
+- [ ] **XM heaps + attack/damage indicators have no 3D representation** (their 2D draw was already
+  dead). Bring stray XM (`portal/XmMap`/`XmHeap`) and attack telegraphs into Scene3D if we want them
+  visible.
+- [ ] **Full Web Audio 3D (optional).** Current panning is screen-projected (`Scene3D.audioPan`); a
+  true `PannerNode` + listener driven by the camera would add distance attenuation + front/back +
+  elevation. Only if we want richer spatialisation.
+- [ ] **Misc:** re-add the **demo build-grow** (reverted for the LargeClass limit; room exists now);
+  refine resonator **rod spacing** so slots read as distinct from a top-down angle; swap the
+  **Amarillo USAF** font (Shareware) for an OFL alternative (user confirmed non-commercial).
+
 ## Under consideration (icebox)
 
 - **Colony-management / roster / gacha direction (gameplay expansion).** Lean the sim toward
