@@ -1,5 +1,6 @@
 package system.display
 
+import config.Sim
 import external.Three
 import kotlinx.browser.document
 import kotlinx.browser.window
@@ -8,6 +9,7 @@ import org.khronos.webgl.set
 import org.w3c.dom.HTMLCanvasElement
 import util.SoundUtil
 import util.Util
+import util.data.Pos
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.ln
@@ -123,6 +125,8 @@ object TitleScene3D {
         camera = Three.PerspectiveCamera(55.0, 1.0, 0.1, 240.0)
         camera.position.set(0.0, 1.5, CAM_Z)
         resize()
+        // neutral listener so the (3D-panned) game sounds we reuse pan by portal x and stay audible
+        SoundUtil.updateListener(doubleArrayOf(0.0, 0.0, 0.0), doubleArrayOf(0.0, 0.0, -1.0), doubleArrayOf(0.0, 1.0, 0.0))
 
         poleGeo = Three.CylinderGeometry(POLE_R, POLE_R, 1.0, 10) // unit-tall, scaled per level
         orbGeo = Three.SphereGeometry(ORB_R, 18, 14)
@@ -264,15 +268,22 @@ object TitleScene3D {
         val p = portals[(Util.random() * portals.size).toInt()]
         when ((Util.random() * 5).toInt()) {
             0 -> capture(p)
-            1 -> p.targetLevel = rand(1.0, 8.0)
+            1 -> {
+                val nl = rand(1.0, 8.0)
+                if (nl > p.level) SoundUtil.playUpgradeSound(titlePos(p)) else SoundUtil.playDowngradeSound(titlePos(p))
+                p.targetLevel = nl
+            }
             2 -> {
                 p.resos = (Util.random() * 9).toInt()
                 applyPortal(p)
+                SoundUtil.playHackingSound(titlePos(p))
             }
             3 -> makeLink(p)
             else -> makeField()
         }
     }
+
+    private fun titlePos(p: Portal) = Pos(Sim.width / 2.0 + p.pos[0], Sim.height / 2.0)
 
     private fun capture(p: Portal) {
         p.color = when ((Util.random() * 3).toInt()) {
@@ -284,6 +295,7 @@ object TitleScene3D {
         p.orbMat.emissive.set(p.color)
         p.flash = 1.0 // emissive pop
         applyPortal(p) // reso rods take the new colour
+        SoundUtil.playGlassShatterSound(titlePos(p), 0.22) // the orb re-skins
         emitBolt(orbWorld(p), upFrom(p), p.color) // a discharge on capture
     }
 
@@ -301,6 +313,7 @@ object TitleScene3D {
         orientY(mesh, sub(b, a))
         scene.add(mesh)
         timed.add(Timed(mesh, mat, 0.6, 0.0, LINK_LIFE))
+        SoundUtil.playDeploySound(titlePos(from), 4)
     }
 
     private fun makeField() {
@@ -322,6 +335,7 @@ object TitleScene3D {
         val mesh = Three.Mesh(geo, mat)
         scene.add(mesh)
         timed.add(Timed(mesh, mat, 0.16, 0.0, FIELD_LIFE))
+        SoundUtil.playFieldDownSound()
     }
 
     private fun updateTimed(dt: Double) {

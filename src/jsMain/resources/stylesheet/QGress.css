@@ -325,6 +325,36 @@ html, body {
     transform: scale(1.05);
     box-shadow: 0 0 26px rgba(255, 255, 255, 0.55);
 }
+/* The faction CTA — a glass pane holding the prompt + the two buttons (a call-to-action, not a title). */
+.factionCta {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    padding: 26px 40px 32px;
+    background: rgba(8, 12, 10, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 8px;
+    backdrop-filter: blur(3px);
+}
+.factionCtaLabel {
+    font-family: "Coda", monospace; /* not the brand font, not all-caps — a calm prompt */
+    font-size: 26px;
+    letter-spacing: 3px;
+    color: #e6ebe8;
+}
+/* Volume on the title screen (top-right) — the storm starts loud. */
+.titleVolume {
+    position: absolute;
+    top: 18px;
+    right: 22px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: "Coda", monospace;
+    font-size: 13px;
+    color: #c8d0cc;
+}
 .onboardMap {
     position: relative;
     width: 380px;

@@ -13,6 +13,7 @@ import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLOptionElement
 import org.w3c.dom.HTMLSelectElement
 import system.display.TitleScene3D
+import util.SoundUtil
 
 /**
  * Pre-load onboarding screens, shown in order before any map loads: **faction → map-size →
@@ -24,10 +25,17 @@ object Onboarding {
 
     /** Step 1 — pick a faction. [onPick] receives it. */
     fun showFaction(onPick: (Faction) -> Unit) {
-        val screen = screen("CHOOSE YOUR FACTION")
+        document.getElementById(SCREEN_ID)?.remove()
+        val screen = div("onboardScreen")
+        screen.id = SCREEN_ID
         val brand = div("titleBrand") // the big Q-GRESS wordmark — first thing a player sees
         brand.textContent = "Q-GRESS"
-        screen.insertBefore(brand, screen.firstChild)
+        screen.appendChild(brand)
+        // The CTA is its own glass pane (a call-to-action, not a subtitle): prompt + the two buttons.
+        val cta = div("factionCta")
+        val label = div("factionCtaLabel")
+        label.textContent = "Choose your faction"
+        cta.appendChild(label)
         val row = div("onboardRow")
         listOf(Faction.ENL, Faction.RES).forEach { f ->
             val btn = document.createElement("button") as HTMLButtonElement
@@ -39,9 +47,32 @@ object Onboarding {
             }
             row.appendChild(btn)
         }
-        screen.appendChild(row)
+        cta.appendChild(row)
+        screen.appendChild(cta)
+        screen.appendChild(createTitleVolume()) // an annoyed player can turn it down right away
         document.body?.appendChild(screen)
         TitleScene3D.start(screen) // randomized thunderbolts behind the title
+    }
+
+    /** A small volume slider shown on the title screen (the storm starts loud). */
+    private fun createTitleVolume(): HTMLElement {
+        val wrap = div("titleVolume")
+        val label = div("titleVolumeLabel")
+        label.textContent = "Volume"
+        val slider = document.createElement("input") as HTMLInputElement
+        slider.type = "range"
+        slider.min = "0.0"
+        slider.max = "1.0"
+        slider.step = "0.05"
+        slider.value = "1.0"
+        slider.addClass("slider", "volumeSlider")
+        slider.oninput = {
+            SoundUtil.setMasterVolume(slider.valueAsNumber)
+            null
+        }
+        wrap.appendChild(label)
+        wrap.appendChild(slider)
+        return wrap
     }
 
     /**
