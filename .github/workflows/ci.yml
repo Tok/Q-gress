@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+# Allow the deploy job to push to the gh-pages branch.
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Lint + complexity + tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      # The Kotlin/JS plugin downloads its own Node for the Mocha runner — no browser needed.
+      - name: Quality gate (ktlint + detekt + jsNodeTest)
+        run: ./gradlew --no-configuration-cache --console=plain ktlintCheck detekt jsNodeTest
+
+      # Best-effort: real Kotlin/JS line-coverage needs the functional-core split (Kover is JVM-only;
+      # see PLAN.md). This wires the integration so it lights up once coverage reports exist.
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          fail_ci_if_error: false
+        continue-on-error: true
+
+  deploy:
+    name: Deploy 3D to GitHub Pages (root)
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build production bundle
+        run: ./gradlew --no-configuration-cache --console=plain jsBrowserDistribution
+
+      # Publish the 3D bundle to the gh-pages root. keep_files leaves an optional archived 2D site at
+      # /2D/ untouched (if you choose to seed one — see docs/RELEASE.md).
+      - name: Deploy to gh-pages (root)
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./build/dist/js/productionExecutable
+          keep_files: true

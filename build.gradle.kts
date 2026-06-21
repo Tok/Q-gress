@@ -11,6 +11,10 @@
 // decision: we stay on JDK 21 LTS for the build and keep Kotlin/Gradle current.
 // ============================================================================
 
+import java.time.Instant
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
+
 plugins {
     kotlin("multiplatform") version "2.4.0"
     id("org.jlleitschuh.gradle.ktlint") version "14.2.0"
@@ -58,6 +62,40 @@ tasks.register<Exec>("installGitHooks") {
     doLast { logger.lifecycle("core.hooksPath set to .githooks (pre-commit gate active).") }
 }
 
+// --- Build info: generate config/BuildInfo (timestamp + git short-sha) at build time so any
+// deployed bundle is identifiable in-app. Written into a generated source dir (not committed). ---
+val generateBuildInfo = tasks.register("generateBuildInfo") {
+    val outDir = layout.buildDirectory.dir("generated/buildinfo/kotlin")
+    val projectVersion = version.toString() // captured at config time (config-cache: no script refs in the action)
+    outputs.dir(outDir)
+    doLast {
+        val ts = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm 'UTC'")
+            .withZone(ZoneOffset.UTC).format(Instant.now())
+        val sha = try {
+            ProcessBuilder("git", "rev-parse", "--short", "HEAD")
+                .redirectErrorStream(true).start().inputStream.bufferedReader().readText().trim()
+        } catch (e: Exception) {
+            "unknown"
+        }
+        val label = "3D v$projectVersion · $ts · $sha"
+        val file = outDir.get().file("config/BuildInfo.kt").asFile
+        file.parentFile.mkdirs()
+        file.writeText(
+            """
+            package config
+
+            // Generated at build time (build.gradle.kts: generateBuildInfo). Do not edit.
+            object BuildInfo {
+                const val BUILD_TIME = "$ts"
+                const val GIT_SHA = "$sha"
+                const val VERSION = "$projectVersion"
+                const val LABEL = "$label"
+            }
+            """.trimIndent() + "\n",
+        )
+    }
+}
+
 kotlin {
     js {
         // Output bundle is named after the root project: Q-Gress.js
@@ -87,13 +125,16 @@ kotlin {
     }
 
     sourceSets {
-        jsMain.dependencies {
-            // kotlin.browser.* / kotlin.dom.* moved here after Kotlin 1.4
-            implementation("org.jetbrains.kotlinx:kotlinx-browser:0.5.0")
-            // three.js is bundled via webpack (was a UMD CDN <script>); npm/ESM unlocks GLTFLoader.
-            implementation(npm("three", "0.160.0"))
-            // cannon-es: rigid-body physics for the glass shards (tumble + settle).
-            implementation(npm("cannon-es", "0.20.0"))
+        jsMain {
+            kotlin.srcDir(generateBuildInfo) // generated config/BuildInfo (build timestamp + git-sha)
+            dependencies {
+                // kotlin.browser.* / kotlin.dom.* moved here after Kotlin 1.4
+                implementation("org.jetbrains.kotlinx:kotlinx-browser:0.5.0")
+                // three.js is bundled via webpack (was a UMD CDN <script>); npm/ESM unlocks GLTFLoader.
+                implementation(npm("three", "0.160.0"))
+                // cannon-es: rigid-body physics for the glass shards (tumble + settle).
+                implementation(npm("cannon-es", "0.20.0"))
+            }
         }
         jsTest.dependencies {
             implementation(kotlin("test"))

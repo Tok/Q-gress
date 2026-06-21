@@ -597,6 +597,11 @@ object HtmlUtil {
         menu.append(createMenuCheckbox("vectorFieldToggle", "Vectors") { VectorFieldOverlay.setVisible(it) })
         // Fade the 3D buildings when crowded areas hide the action.
         menu.append(createMenuSlider("Buildings", 0.9) { MapUtil.setBuildingOpacity(it) })
+        // Build version footer (timestamp + git-sha), so any deployed build is identifiable.
+        val version = document.createElement("div") as HTMLDivElement
+        version.addClass("menuVersion")
+        version.textContent = BuildInfo.LABEL
+        menu.append(version)
         val button = createButton("menuButton", "topButton amarillo", "Menu") {
             menu.classList.toggle("invisible")
         }

@@ -14,8 +14,9 @@ can play any side; any two brains can be matched. **Desktop-only**; mobile is bl
 the AI layer lands, the slider sim is the substrate we keep hardening.
 
 ## Near-term queue
-- [ ] **Tear down `shadowMap` after grid build** — it's only needed at startup (grid + POI names);
-  null it out after `addGrid` to free the held WebGL context.
+- [ ] **Ship to GitHub** — the first push in ~7 years: push `develop`, archive the 2D source, wire CI
+  + GitHub Pages deploy (3D at `/3D/`), revoke the old 2D Mapbox token. Full plan + the manual GitHub
+  steps are in [`docs/RELEASE.md`](docs/RELEASE.md).
 
 ## 3D / rendering
 - [ ] **Animate the world build (buildings inflate)** — during world creation, make the 3D buildings
@@ -34,7 +35,10 @@ the AI layer lands, the slider sim is the substrate we keep hardening.
   (e.g. movement-penalty heatmap) alongside the existing Terrain/Vectors toggles.
 - [ ] **Stage 4** — tuning-slider panel redesign (both factions, presets); ties into Phase 6.4
   (per-faction driver selection + AI-driven sliders animating read-only).
-- [ ] **Stage 5** — visual theme pass + responsiveness.
+- [ ] **Stage 5 — a proper, polished UI (the end-state goal).** A cohesive visual theme + layout pass
+  over the whole HUD / onboarding / menus (not the incremental panels we have now): consistent
+  typography, spacing, panels and states; the tuning-slider panel (Stage 4) folded in; responsive to
+  window size. This is the "real UI" we want in the end.
 
 ## Onboarding (Phase 7 leftovers)
 - [ ] **Location selection**: Home / nearest city via Geolocation; a curated preset list; Random;
@@ -133,6 +137,16 @@ dominates" validation is iterative (playtest, or a future headless strategy-comp
 - **Going 3D (gameplay).** A pitched/3D camera breaks the top-down screen→grid mapping; needs a
   decoupled simulation grid or a 3D pathfinding model. Revisit after the functional-core split. (3D
   *buildings* in the top-down satellite view already work.)
+- **TTS announcements (low priority).** Speak important events (captures, recruits, new fields, cycle
+  changes) via the Web Speech API (`speechSynthesis`), throttled so it doesn't spam; per-faction
+  voices a nice touch; off by default, behind a toggle + the master volume.
+- **Evaluate NVIDIA Komodo.** (Per user.) Investigate what it offers and whether it fits Q-Gress
+  (rendering / AI / acceleration?) before committing — scope unknown; an evaluation item.
+- **Legacy 2D gameplay TODOs (from the old README), still open:** smarter agent behaviour (more
+  destinations, **swarming**); an inventory/capacity limit; **ultra-striking** (multi-XMP combo); more
+  items (XM-tanks, quantum capsules — overlaps the colony-management items above); an FPS / perf
+  readout (pairs with `?debug`); unit tests for fielding + deploying. (Shielding is tracked under
+  portal mods / 3D Stage 2; the NN is Phase 6.)
 
 ## Constraints / agreements
 - Commit to `develop`; **no pushing** until something works end-to-end.

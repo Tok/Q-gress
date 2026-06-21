@@ -1,47 +1,85 @@
-# Q-Gress
+# Q-Gress (3D)
 
-Q-Gress is a simulation of Ingress.
-https://tok.github.io/Q-gress/
+[![CI](https://github.com/Tok/Q-gress/actions/workflows/ci.yml/badge.svg)](https://github.com/Tok/Q-gress/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/Tok/Q-gress/graph/badge.svg)](https://codecov.io/gh/Tok/Q-gress)
+[![desktop only](https://img.shields.io/badge/platform-desktop%20only-informational)](#desktop-only)
+[![Kotlin/JS](https://img.shields.io/badge/Kotlin%2FJS-2.4-7F52FF)](https://kotlinlang.org/docs/js-overview.html)
 
-## Work in Progress
+A browser-based **simulation of the mobile game *Ingress***, rebuilt in **3D**. Two factions —
+**ENL** ("frogs", green) and **RES** ("smurfs", blue) — capture portals, link them, and create
+control fields over a **real-world map**. It's a *simulation, not a playable map game*: you tune each
+faction's AI behaviour with sliders and watch the two sides play themselves out. **No real
+Ingress/portal data is used** — everything is generated.
 
-Q-Gress is exclusively designed for desktop browsers that support V8 Engine. 
-Other browsers are not tested with Q-Gress and mobile may not work at all. 
-Chrome or Brave is recommended. 
+> **▶ Live: <https://tok.github.io/Q-gress/>** &nbsp;·&nbsp; **Effects sandbox:
+> <https://tok.github.io/Q-gress/#demo>** &nbsp;·&nbsp; the original 2D build is
+> [archived](#the-original-2d-version).
 
-## Test Report
+The longer-term direction (the project is named for **Q-learning**) is in [`PLAN.md`](PLAN.md).
 
-https://tok.github.io/Q-gress/mochawesome.html
+## Desktop only
 
-## TODO
+This is **desktop-only by design** — it needs WebGL pixel readback, heavy three.js rendering, and
+(eventually) in-browser WebGPU inference. Touch-only / mobile devices are detected and shown a notice
+instead. Use **Chrome / Brave / Edge** on a desktop with a mouse.
 
-### High Priority
-- Create unit test for fielding and deploying
-- Implement shielding
-- Improve agent behavior
-  * More destinations
-    * Swarming
-- Implement inventory limit
+## Highlights
 
-### Medium Priority
-- Improve agent characteristics
-  * action preferences
-  * tendency to randomly create long links
-  * deployment skills
-    * tendency to deploy to the opposite octant of existing max reso
-- Display FPS
+- **3D world** rendered with **three.js** as a **MapLibre** custom layer over a real map (satellite +
+  3D buildings); the simulation itself stays 2D.
+- An **abstract-glass** look: portals are metal-pole + glass-orb vessels with resonator rods, links
+  are glass pipes, control fields are plasma sheets — grayscale vessels, faction colour as the only
+  tint. Physics **shatter**, volumetric **XMP** fireballs, **hack** centrifuge animations.
+- Real **portal names** from map POI/street data; per-terrain movement; **3D positional audio**.
+- A DOM HUD: a live MU "covered area" scoreboard, a per-metric **history dashboard**, an action log.
+- **Play any location** (geocoded) and **shareable links** that reproduce a world from
+  `lng/lat/size/seed` (the RNG is seedable).
 
-### Low Priority
-- Ultra-Striking
-- More Items
-  * XM-Tanks
-  * Quantum-Capsules
+## Build, test & run
 
-### Further Ideas
-- Find a way to hook up a neural network for Q-learning
+Requires **JDK 21** on `JAVA_HOME` (the build runs on 21 because detekt can't run on 25; the product
+ships JS only). The app needs a desktop browser with WebGL.
 
-### Third Party Copyrights
+```bash
+./gradlew installGitHooks            # one-time: enable the pre-commit quality gate
+./start.sh                           # build + serve + open the app in your browser
+./gradlew jsBrowserDevelopmentRun    # alternatively: the webpack dev server
+./gradlew jsNodeTest                 # run the unit tests in Node (fast, headless)
+./gradlew ktlintCheck detekt         # formatting + lint + complexity gate
+./gradlew jsBrowserDistribution      # production bundle → build/dist/js/productionExecutable
+```
 
-- Ingress and the concept of Ingress are Copyright of Niantic, Inc. https://www.nianticlabs.com/
-- Q-gress doesn't scrape any Data from Ingress and there is no intention to use real portal data.
-- All simulated agents and portals are user-created or generated randomly
+## CI / quality
+
+Every push and PR runs a GitHub Actions pipeline ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)):
+**JDK 21 → ktlintCheck + detekt (complexity limits) + jsNodeTest**, and on the main branch it builds
+the production bundle and **deploys it to GitHub Pages**. A local **pre-commit hook** (`.githooks/`,
+installed via `installGitHooks`) runs the same gate so commits land green.
+
+Coverage uploads to **Codecov**. Caveat: Kover has no Kotlin/JS support yet, so real line-coverage
+arrives with the functional-core split (a `commonMain` + `jvm()` test target) — see `PLAN.md`. Until
+then the badge just reflects the test job.
+
+## Project docs
+
+- [`PLAN.md`](PLAN.md) — roadmap / what's next (incl. the Phase 6 AI plan).
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — how the system fits together.
+- [`docs/FEATURES.md`](docs/FEATURES.md) — what's shipped.
+- [`docs/RELEASE.md`](docs/RELEASE.md) — the release / deployment plan.
+- [`docs/NN.md`](docs/NN.md) · [`docs/LLM.md`](docs/LLM.md) — the two AI-driver tracks.
+- [`CLAUDE.md`](CLAUDE.md) — how to work in this repo (conventions + standards).
+
+## The original 2D version
+
+The original ~2018 **2D** build (untouched for ~7 years; also preserved in GitHub's 2020 **Arctic Code
+Vault**) lives on as **archived source** on the **`archive/q-gress-2D`** branch — it depends on
+long-dead tooling and isn't rebuildable. The keyless 3D rewrite replaces it as the primary site; the
+old 2D may optionally still be served at `/2D/`. Its inlined Mapbox token should be revoked — see
+[`docs/RELEASE.md`](docs/RELEASE.md).
+
+## Third-party / copyright
+
+- *Ingress* and the concept of Ingress are © **Niantic, Inc.** Q-Gress scrapes **no** data from
+  Ingress and there is no intention to use real portal data; all agents and portals are generated.
+- Map tiles © OpenStreetMap / OpenMapTiles / OpenFreeMap and Esri / Maxar / Earthstar (see the in-app
+  attribution). Title font **Chakra Petch** (SIL OFL 1.1).
