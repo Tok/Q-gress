@@ -12,6 +12,7 @@ import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLOptionElement
 import org.w3c.dom.HTMLSelectElement
+import system.display.TitleScene3D
 
 /**
  * Pre-load onboarding screens, shown in order before any map loads: **faction → map-size →
@@ -32,11 +33,15 @@ object Onboarding {
             val btn = document.createElement("button") as HTMLButtonElement
             btn.addClass(f.abbr.lowercase(), "popupButton", "amarillo")
             btn.textContent = f.abbr
-            btn.onclick = { onPick(f) }
+            btn.onclick = {
+                TitleScene3D.stop() // tear down the thunderbolt scene before the next step
+                onPick(f)
+            }
             row.appendChild(btn)
         }
         screen.appendChild(row)
         document.body?.appendChild(screen)
+        TitleScene3D.start(screen) // randomized thunderbolts behind the title
     }
 
     /**

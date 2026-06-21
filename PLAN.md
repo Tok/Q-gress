@@ -56,7 +56,9 @@ the AI layer lands, the slider sim is the substrate we keep hardening.
   `Glypher`/`Portal.tryGlyph` + a glyph skill on `agent/Skills`; expose it as a high-risk/high-reward
   QAction the AI weighs (ties into Phase 6 — the net/LLM should learn when glyphing is worth it).
 - [ ] **Portal mods (heat-sinks + others)** — deployable items that slot into a portal and modify it:
-  - **Heat-sink** — reduces the hack cooldown (hack again sooner).
+  - **Heat-sink** — reduces the portal hack cooldown (Common/Rare/V.Rare ≈ ×0.8/×0.5/×0.3; with
+    several, the rarest applies fully and each next is halved) + an instant cooldown/burnout reset for
+    the deploying agent on attach. (Confirmed against current Ingress.)
   - **Multi-hack** — more hacks before the cooldown kicks in.
   - **Shield** — defense; the visual is already stubbed (3D Stage 2) but needs `Portal.deployMods` to
     actually store deployed mods (currently a stub — no state to draw).
@@ -159,6 +161,16 @@ dominates" validation is iterative (playtest, or a future headless strategy-comp
   (currently suppressed); the bulk of the remaining size is the self-contained sandbox code (`Showcase`
   / `DemoLink`, place/click/remove/hack/xmp/step/link/update showcase, demo cursor). Move it to a
   `Showcases` object (Scene3D build helpers go `internal`), then drop the `LargeClass` suppress.
+- **Modern Ingress (post-2018) — optional/future.** We're keeping the ~2018 scope, but a 2026 vs 2018
+  gap review surfaced a few worth considering, most-aligned first:
+  - **Machina (the red AI "third faction").** Added post-2018; the closest real-Ingress analogue to our
+    AI-vs-AI north star — a rules-driven faction that spawns on a cycle, auto-links/auto-resonates,
+    decays, and is easy to clear, giving ENL/RES something neutral-hostile to react to. (Complexity L.)
+  - **Checkpoint / septicycle scoring** — sample MU at fixed checkpoints and average per cycle (not
+    just live MU); a real objective for the brain. Pure logic, deterministic-testable. (S/M.)
+  - **Ultra Strike + flip cards (ADA/JARVIS)**; the **hacking-economy triad** (heat-sink / multi-hack /
+    Portal Fracker, + ITO transmuter) shaping farm rate + item mix; **drones** (remote hack). Skip the
+    real-world/social bits (media, fireworks, kinetic capsules, battle beacons, CORE sub, Apex).
 - **Evaluate NVIDIA Komodo.** (Per user.) Investigate what it offers and whether it fits Q-Gress
   (rendering / AI / acceleration?) before committing — scope unknown; an evaluation item.
 - **Legacy 2D gameplay TODOs (from the old README), still open:** smarter agent behaviour (more

@@ -20,8 +20,11 @@ import portal.Link
 import system.Checkpoint
 import system.display.Scene3D
 import util.data.Pos
+import kotlin.math.PI
 import kotlin.math.exp
+import kotlin.math.sin
 import kotlin.math.sqrt
+import kotlin.math.tanh
 
 object SoundUtil {
     const val DEFAULT_VOLUME = 1.0
@@ -119,6 +122,49 @@ object SoundUtil {
         playNoiseCrack(pos, amplitude, heaviness)
         playThud(pos, amplitude, heaviness)
         repeat((9 + heaviness * 17).toInt()) { playTinkle(pos, amplitude) }
+    }
+
+    /**
+     * Procedural thunder clap for the title-screen lightning (ported from qlippostasis
+     * ThunderSynth.TeslaBolt): white noise through a cascaded 2-pole low-pass whose cutoff sweeps from
+     * a bright crack down to a low rumble, shaped by a fast-attack / exp-decay envelope + a tanh
+     * waveshaper. [pan] = bolt position (−1..1), [decayMult] scales length + depth.
+     */
+    fun playThunderSound(pan: Double, decayMult: Double = 1.0) {
+        if (isMuted()) return
+        val sr = audioCtx.sampleRate
+        val duration = (0.25 * decayMult).coerceIn(0.08, 1.5)
+        val len = (duration * sr).toInt().coerceAtLeast(1)
+        val buffer = audioCtx.createBuffer(1, len, sr)
+        val data = buffer.getChannelData(0)
+        val freqMult = 0.8 + Util.random() * 0.6
+        var blp1 = 0.0
+        var blp2 = 0.0
+        var i = 0
+        while (i < len) {
+            val t = i.toDouble() / sr
+            val env = if (t < 0.001) t / 0.001 else exp(-t * 18.0 / decayMult)
+            val noise = Util.random() * 2.0 - 1.0
+            val sweep = (t / (0.05 * decayMult)).coerceIn(0.0, 1.0)
+            val cutoff = 8000.0 * freqMult + (400.0 - 8000.0 * freqMult) * sweep // bright crack → low rumble
+            val g = sin(PI * (cutoff / sr).coerceIn(0.001, 0.499))
+            blp1 += g * (noise - blp1)
+            blp2 += g * (blp1 - blp2)
+            var filtered = blp2
+            if (t > 0.01 && Util.random() < 0.04) filtered += Util.random() * 1.2 - 0.6 // occasional crackle
+            val shaped = tanh(filtered * env * 0.8 * 5.0)
+            data[i] = (shaped * 0.6).coerceIn(-1.0, 1.0).toFloat()
+            i++
+        }
+        val source = audioCtx.createBufferSource()
+        source.buffer = buffer
+        val gainNode = createStaticGain(0.5)
+        val panNode = createStaticPan(pan.coerceIn(-1.0, 1.0))
+        source.connect(gainNode)
+        gainNode.connect(panNode)
+        panNode.connect(masterGain)
+        source.start()
+        source.stop(now() + duration)
     }
 
     /** XMP burst: a low sine "boom" sweeping down + a high-passed noise "fwoom", sized by level (1..8). */
