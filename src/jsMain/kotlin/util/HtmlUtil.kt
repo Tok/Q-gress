@@ -311,22 +311,31 @@ object HtmlUtil {
             World.isReady = true
             Navigation.setup()
             MapUtil.enable3D()
-            // Unified sandbox: LMB selects the portal under the cursor (a ground ring previews
-            // place vs select) or places a new one if the spot is clear; RMB shatters the nearest.
-            // All other animations (hack, XMP, upgrade/downgrade, link) are panel buttons.
+            // Unified sandbox with a Build/Effects mode toggle.
+            // Build: LMB selects the portal under the cursor (a ground ring previews place vs select)
+            //   or places a new one if the spot is clear; RMB shatters the nearest.
+            // Effects: LMB detonates an XMP where you click; RMB hacks the nearest portal.
             MapUtil.bindPortalDemo(
                 fun(event: dynamic) {
                     val pos = MapUtil.eventToSimPos(event) ?: return
                     SoundUtil.enableAudio()
-                    if (Scene3D.clickShowcase(pos, Demo.portalLevel(), Demo.portalColorValue())) {
-                        SoundUtil.playPortalCreationSound(pos)
+                    if (Demo.isPlacement()) {
+                        if (Scene3D.clickShowcase(pos, Demo.portalLevel(), Demo.portalColorValue())) {
+                            SoundUtil.playPortalCreationSound(pos)
+                        }
+                    } else {
+                        Scene3D.playXmpBurst(pos, Demo.portalLevel())
                     }
                 },
                 fun(event: dynamic) {
                     val pos = MapUtil.eventToSimPos(event) ?: return
                     SoundUtil.enableAudio()
-                    Scene3D.removeShowcaseNear(pos)
-                    SoundUtil.playGlassShatterSound(pos, 0.4, 0.9)
+                    if (Demo.isPlacement()) {
+                        Scene3D.removeShowcaseNear(pos)
+                        SoundUtil.playGlassShatterSound(pos, 0.4, 0.9)
+                    } else {
+                        Scene3D.hackShowcaseNear(pos)
+                    }
                 },
                 fun(event: dynamic) {
                     Scene3D.updateDemoCursor(MapUtil.eventToSimPos(event))

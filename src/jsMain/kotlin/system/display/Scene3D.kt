@@ -510,13 +510,10 @@ object Scene3D {
             val ang = i * PI / 4.0
             val ox = ringR * cos(ang)
             val oy = ringR * sin(ang)
-            val ring = Three.Mesh(resoRingGeo, Materials.rubber()) // grommet lies flat (hole up)
-            ring.asDynamic().position.set(ox, oy, 0.0)
-            group.asDynamic().add(ring)
             val lvl = resos[octant]
             if (lvl != null) {
                 // Rod hangs from a pivot/joint at its TOP, so a hack swings its loose bottom end
-                // radially outward (centrifuge) while the top stays put. Tagged for updateShowcaseHacks.
+                // radially outward (centrifuge) while the top stays put. Tagged for the hack update.
                 val pivot = Three.Group()
                 pivot.asDynamic().position.set(ox, oy, rodLen) // joint at the rod top
                 pivot.asDynamic().userData.isRodPivot = true
@@ -526,7 +523,17 @@ object Scene3D {
                 rod.asDynamic().scale.set(1.0, rodLen, 1.0)
                 rod.asDynamic().position.set(0.0, 0.0, -rodLen / 2.0) // hangs down to the grommet
                 pivot.asDynamic().add(rod)
+                // The grommet is part of the reso: it rides INSIDE the pivot at the rod's bottom, so it
+                // centrifuges out with the rod on a hack instead of staying stuck to the pole collar.
+                val ring = Three.Mesh(resoRingGeo, Materials.rubber())
+                ring.asDynamic().position.set(0.0, 0.0, -rodLen) // rod bottom, in pivot-local space
+                pivot.asDynamic().add(ring)
                 group.asDynamic().add(pivot)
+            } else {
+                // Empty slot: a bare grommet sits flat on the collar (nothing to swing).
+                val ring = Three.Mesh(resoRingGeo, Materials.rubber())
+                ring.asDynamic().position.set(ox, oy, 0.0)
+                group.asDynamic().add(ring)
             }
         }
         group.asDynamic().position.set(x, y, poleH * RESO_COLLAR_FRAC)
@@ -587,14 +594,12 @@ object Scene3D {
         shatterPortal(target.pos, target.color, target.level, resos)
     }
 
-    /** Demo (Hack button): spin the active (selected, else last) portal's resonator collar. */
-    fun hackLastShowcase() {
-        activeShowcase()?.let { it.hackAge = HackFx.SPIN_S }
-    }
-
-    /** Demo (XMP button): fire an XMP burst at the active portal, at burster [level]. */
-    fun xmpAtLastShowcase(level: Int) {
-        activeShowcase()?.let { playXmpBurst(it.pos, level) }
+    /** Demo (effects-mode RMB): spin the nearest portal's resonator collar (the "hack" animation). */
+    fun hackShowcaseNear(location: Pos) {
+        showcases.minByOrNull { it.pos.distanceTo(location) }?.let {
+            it.hackAge = HackFx.SPIN_S
+            selectedShowcase = it
+        }
     }
 
     /** Demo (Upgrade/Downgrade): re-place the active portal at level±[delta] (grows in at the new size). */
