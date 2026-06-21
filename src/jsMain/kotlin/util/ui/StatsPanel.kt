@@ -74,7 +74,7 @@ object StatsPanel {
 
     private fun build() {
         if (built) return
-        val body = document.body ?: return
+        if (document.body == null) return
         built = true
 
         val muPanel = el("statsMuPanel")
@@ -97,15 +97,15 @@ object StatsPanel {
         val xmRow = el("statsTickRow")
         xmEl = el("statsXm").also { xmRow.appendChild(it) }
         muPanel.appendChild(xmRow)
-        body.appendChild(muPanel)
+        Hud.left().appendChild(muPanel) // scoreboard column
 
-        // Action log (bottom-right): a titled log section.
+        // Action log: a titled section in the right "intel" column (below the history dashboard).
         val comWrap = el("statsComPanel")
         val comTitle = el("statsComTitle")
         comTitle.textContent = "LOG"
         comWrap.appendChild(comTitle)
         comPanel = el("statsComLines").also { comWrap.appendChild(it) }
-        body.appendChild(comWrap)
+        Hud.right().appendChild(comWrap)
     }
 
     private fun el(cls: String): HTMLElement {

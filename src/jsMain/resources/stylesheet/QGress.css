@@ -77,10 +77,6 @@ html, body {
 }
 /* Top-agents leaderboard table (UI Stage 3: canvas→DOM). */
 .topAgents {
-    position: fixed;
-    left: 200px;
-    bottom: 22px;
-    z-index: 60;
     pointer-events: none;
     color: #ffffff;
     background: rgba(0, 0, 0, 0.45);
@@ -135,18 +131,39 @@ html, body {
 .taInvBar {
     width: 2px;
 }
-/* DOM stats HUD. All display-only — never intercept map gestures. */
-.statsMuPanel, .historyPanel, .statsComPanel {
+/* HUD layout columns — group the panels instead of scattering them to the corners. All
+   display-only — never intercept map gestures. */
+#hudLeft, #hudRight {
     position: fixed;
+    top: 108px; /* just below the top control bar */
     z-index: 60;
     pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+#hudLeft {
+    left: 14px;
+    align-items: flex-start;
+}
+#hudRight {
+    right: 14px;
+    align-items: flex-end;
+}
+#hudBottom {
+    position: fixed;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 60;
+    pointer-events: none;
+}
+.statsMuPanel, .historyPanel, .statsComPanel {
     font-family: "Coda", monospace;
     color: #ffffff;
     text-shadow: 0 0 3px #000, 0 0 3px #000;
 }
 .statsMuPanel {
-    left: 14px;
-    bottom: 40px;
     background: rgba(0, 0, 0, 0.45);
     padding: 6px 10px 7px;
     border-radius: 3px;
@@ -180,8 +197,6 @@ html, body {
 
 /* Right-side history dashboard (HistoryPanel): per metric — live ENL/RES value + faction sparkline. */
 .historyPanel {
-    top: 250px;
-    right: 14px;
     width: 228px;
     background: rgba(0, 0, 0, 0.45);
     padding: 6px 8px 4px;
@@ -209,10 +224,8 @@ html, body {
     margin-top: 1px;
 }
 
-/* Action log (bottom-right): a titled log section. */
+/* Action log: a titled section, below the history dashboard in the right column. */
 .statsComPanel {
-    right: 14px;
-    bottom: 30px;
     width: 320px;
     max-height: 210px;
     overflow: hidden;
@@ -222,6 +235,7 @@ html, body {
     background: rgba(0, 0, 0, 0.45);
     padding: 5px 8px 6px;
     border-radius: 3px;
+    order: 1; /* below the dashboard (order 0) in #hudRight */
 }
 .statsComTitle {
     font-family: "Chakra Petch", sans-serif;

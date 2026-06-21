@@ -66,7 +66,7 @@ object HistoryPanel {
 
     private fun ensure(): Boolean {
         if (built) return true
-        val body = document.body ?: return false
+        if (document.body == null) return false
         if (js("typeof uPlot === 'undefined'").unsafeCast<Boolean>()) return false // CDN not ready
         val container = el("historyPanel")
         container.id = CONTAINER_ID
@@ -90,7 +90,7 @@ object HistoryPanel {
             container.appendChild(row)
             plots[i] = makePlot(chart)
         }
-        body.appendChild(container)
+        Hud.right().appendChild(container) // intel column (above the LOG)
         built = true
         return true
     }

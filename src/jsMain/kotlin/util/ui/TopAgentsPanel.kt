@@ -72,7 +72,7 @@ object TopAgentsPanel {
 
     private fun ensure() {
         if (tbody != null) return
-        val body = document.body ?: return
+        if (document.body == null) return
         val container = el("div", "topAgents")
         val table = el("table", "taTable")
         val head = el("tr", "taHead")
@@ -87,7 +87,7 @@ object TopAgentsPanel {
         val newBody = el("tbody", "")
         table.appendChild(newBody)
         container.appendChild(table)
-        body.appendChild(container)
+        Hud.bottom().appendChild(container) // centered bottom strip
         tbody = newBody
     }
 
