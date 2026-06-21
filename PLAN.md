@@ -499,7 +499,8 @@ default-on + location label + New Game/Reset menu (`bb6ba87`); marble NPC drop +
   scaled by amount. Extracted `VectorFieldOverlay` to fit under the size limit.
 - [x] **Demo build-grow + rod spacing** (`2f54642`): demo portals grow in on place/upgrade;
   `RESO_RADIUS_FRAC` 1.15→1.7 so resonator slots read distinct from top-down.
-- [ ] **Font swap:** Amarillo USAF (Shareware) → an OFL alternative (user confirmed non-commercial).
+- [x] **Font swap** (`9242bc3`): shareware Amarillo USAF → **Black Ops One** (SIL OFL 1.1), same
+  military-stencil look, self-hosted latin-subset woff2 (no CDN), license under `fonts/OFL.txt`.
 - [ ] **Full Web Audio 3D** (next, after compact): `PannerNode` + camera-driven listener for distance
   attenuation + front/back + elevation (current `Scene3D.audioPan` is screen-projected stereo only).
 
