@@ -1,10 +1,14 @@
 #!/usr/bin/env bash
 #
-# Q-Gress pre-commit gate: formatting (ktlint), linting + cyclomatic-complexity
-# limits (detekt). Runs only when Kotlin sources are staged. Install with:
+# Q-Gress pre-commit gate. Runs only when Kotlin sources are staged and enforces the FULL gate so
+# nobody has to run it by hand:
+#   1. ktlintFormat  — auto-fix formatting, then re-stage the staged Kotlin files
+#   2. compileKotlinJs + ktlintCheck + detekt + jsNodeTest  — compile, style, complexity, unit tests
+# (Config cache keeps this to a few seconds.) Install with:
 #     ./gradlew installGitHooks      (sets core.hooksPath to .githooks)
 #
-# To bypass in an emergency: git commit --no-verify  (don't make a habit of it).
+# NOTE: step 1 re-stages WHOLE staged files, so prefer staging whole files (git add -A). To bypass in
+# an emergency: git commit --no-verify  (don't make a habit of it).
 
 set -euo pipefail
 
@@ -22,11 +26,15 @@ if [ -z "${JAVA_HOME:-}" ] && [ -x /usr/lib/jvm/java-21-openjdk-amd64/bin/java ]
     export JAVA_HOME="/usr/lib/jvm/java-21-openjdk-amd64"
 fi
 
-echo "[pre-commit] ktlint + detekt on staged Kotlin..."
-if ! ./gradlew --quiet --console=plain ktlintCheck detekt; then
+echo "[pre-commit] ktlintFormat (auto-fix)..."
+./gradlew --quiet --console=plain ktlintFormat
+# Re-stage any formatting fixes ktlintFormat made to the already-staged files.
+echo "$staged_kotlin" | xargs -r git add --
+
+echo "[pre-commit] compile + ktlintCheck + detekt + tests..."
+if ! ./gradlew --quiet --console=plain compileKotlinJs ktlintCheck detekt jsNodeTest; then
     echo
-    echo "[pre-commit] FAILED. Fix formatting with './gradlew ktlintFormat' and address"
-    echo "             detekt findings, then re-stage and commit."
+    echo "[pre-commit] FAILED. Fix the compile/detekt/test errors above, re-stage, and commit."
     exit 1
 fi
 
