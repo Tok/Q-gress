@@ -535,16 +535,16 @@ object Scene3D {
             group.asDynamic().add(ring)
             val lvl = resos[octant]
             if (lvl != null) {
-                // Rod lives in a pivot at the slot base so a hack can tilt it radially outward
-                // (centrifuge) without disturbing its grommet. Pivot tagged for updateShowcaseHacks.
+                // Rod hangs from a pivot/joint at its TOP, so a hack swings its loose bottom end
+                // radially outward (centrifuge) while the top stays put. Tagged for updateShowcaseHacks.
                 val pivot = Three.Group()
-                pivot.asDynamic().position.set(ox, oy, 0.0)
+                pivot.asDynamic().position.set(ox, oy, rodLen) // joint at the rod top
                 pivot.asDynamic().userData.isRodPivot = true
                 pivot.asDynamic().userData.baseAngle = ang
                 val rod = Three.Mesh(resoRodGeo, Materials.resonator(LevelColor.map[lvl] ?: "#ffffff"))
                 rod.asDynamic().rotation.x = PI / 2 // unit Y-cylinder → vertical
                 rod.asDynamic().scale.set(1.0, rodLen, 1.0)
-                rod.asDynamic().position.set(0.0, 0.0, rodLen / 2.0) // stands up out of the grommet
+                rod.asDynamic().position.set(0.0, 0.0, -rodLen / 2.0) // hangs down to the grommet
                 pivot.asDynamic().add(rod)
                 group.asDynamic().add(pivot)
             }
@@ -630,7 +630,7 @@ object Scene3D {
         }
     }
 
-    /** Tilt each rod-pivot outward (about its tangential axis) by [tilt] radians, 0 = upright. */
+    /** Swing each top-jointed rod's loose bottom outward (about its tangential axis) by [tilt] rad. */
     private fun tiltRods(resoGroup: dynamic, tilt: Double) {
         val kids = resoGroup.children
         val n = kids.length as Int
@@ -638,7 +638,8 @@ object Scene3D {
             val pivot = kids[i]
             if (pivot.userData.isRodPivot == true) {
                 val ang = pivot.userData.baseAngle as Double
-                pivot.setRotationFromAxisAngle(Three.Vector3(-sin(ang), cos(ang), 0.0), tilt)
+                // Negative angle: with the joint at the top, this swings the bottom end radially out.
+                pivot.setRotationFromAxisAngle(Three.Vector3(-sin(ang), cos(ang), 0.0), -tilt)
             }
         }
     }
