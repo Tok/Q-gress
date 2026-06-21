@@ -79,7 +79,13 @@ object MapUtil {
                 "type": "fill",
                 "source": "openmaptiles",
                 "source-layer": "landcover",
-                "paint": { "fill-color": "#aaaaaa" }
+                "paint": { "fill-color": ["match", ["get", "class"],
+                    "wood", "#6e6e6e",
+                    "wetland", "#5e5e5e",
+                    ["grass", "farmland", "scrub"], "#9a9a9a",
+                    ["sand", "rock", "ice"], "#cccccc",
+                    "#9a9a9a"
+                ] }
             },
             {
                 "id": "landuse-green",
@@ -88,7 +94,10 @@ object MapUtil {
                 "source-layer": "landuse",
                 "filter": ["match", ["get", "class"],
                     ["park", "garden", "recreation_ground", "pitch", "grass", "cemetery"], true, false],
-                "paint": { "fill-color": "#aaaaaa" }
+                "paint": { "fill-color": ["match", ["get", "class"],
+                    ["pitch", "recreation_ground"], "#bdbdbd",
+                    "#9a9a9a"
+                ] }
             },
             {
                 "id": "water",

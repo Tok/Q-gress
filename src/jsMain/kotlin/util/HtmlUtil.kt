@@ -124,7 +124,7 @@ object HtmlUtil {
         buttonDiv.append(createSearchSpan())
         buttonDiv.append(createVolumeSpan())
         buttonDiv.append(LayerView.createDropdown())
-        buttonDiv.append(createCheckbox("passabilityToggle", "Passability") { PassabilityOverlay.setVisible(it) })
+        buttonDiv.append(createCheckbox("passabilityToggle", "Terrain") { PassabilityOverlay.setVisible(it) })
         buttonDiv.append(createCheckbox("vectorFieldToggle", "Vectors") { Scene3D.setVectorFieldVisible(it) })
         controlDiv.append(buttonDiv)
 

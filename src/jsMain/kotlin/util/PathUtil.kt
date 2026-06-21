@@ -12,6 +12,7 @@ import kotlin.math.max
 object PathUtil {
     const val MIN_HEAT = 35
     const val MAX_HEAT = 100
+    private const val MIN_SPEED_FACTOR = 0.45 // slowest terrain still moves at 45% (so agents never stall)
 
     private fun calcPosCost(pos: Pos, heat: Int) = heat + (World.grid[pos]?.movementPenalty ?: MAX_HEAT)
 
@@ -83,8 +84,10 @@ object PathUtil {
         val maxHeat = heatMap.values.max()
         val fields = World.grid.map {
             val raw = createVec(heatMap, maxHeat, destination, it.key)
-            val vec = raw.copyWithNewMagnitude(1.0) // FIXME use terrain penalty
-            it.key to vec
+            // Flow magnitude scales with terrain: agents move slower over rough ground (forest >
+            // grass > concrete), not just route around it. MIN_HEAT cell → full speed, high penalty → slow.
+            val speedFactor = (MIN_HEAT.toDouble() / it.value.movementPenalty).coerceIn(MIN_SPEED_FACTOR, 1.0)
+            it.key to raw.copyWithNewMagnitude(speedFactor)
         }.toMap()
         return smooth(fields, Config.vectorSmoothCount).toMap()
     }
