@@ -29,6 +29,7 @@ import util.data.Line
 import util.data.Pos
 import util.ui.Controls
 import util.ui.Demo
+import util.ui.Hud
 import util.ui.Inspector
 import util.ui.LayerView
 import util.ui.LoadingOverlay
@@ -121,7 +122,6 @@ object HtmlUtil {
         }
         pauseButton.addClass("non", "amarillo")
         leftGroup.append(pauseButton)
-        leftGroup.append(createLocationLabel()) // names the actual loaded location (set by setLoadedLocation)
 
         // Right group, far right: volume + base-map view dropdown.
         val rightGroup = document.createElement("div") as HTMLDivElement
@@ -129,7 +129,9 @@ object HtmlUtil {
         rightGroup.append(createVolumeSpan())
         rightGroup.append(LayerView.createDropdown())
 
+        // The loaded-location name stretches across the middle (flex-grows between the two groups).
         buttonDiv.append(leftGroup)
+        buttonDiv.append(createLocationLabel())
         buttonDiv.append(rightGroup)
         controlDiv.append(buttonDiv)
 
@@ -350,12 +352,13 @@ object HtmlUtil {
     private fun isAutoStartFromUrl() = url().searchParams.get("local")?.toBoolean() ?: false
 
     private fun createQSliders(fact: Faction) {
+        // The tuning sliders are part of the HUD columns now — Actions atop the left scoreboard
+        // column, Destinations atop the right intel column — instead of floating over the panels.
         val actionSliderDiv = createSliderDiv("left-sliders", QActions.values(), "floatLeft", "Actions", fact)
         val destinationSliderDiv =
             createSliderDiv("right-sliders", QDestinations.values(), "floatRight", "Destinations", fact)
-        val controlDiv = document.getElementById("top-controls") as HTMLDivElement
-        controlDiv.append(actionSliderDiv)
-        controlDiv.append(destinationSliderDiv)
+        Hud.left().appendChild(actionSliderDiv)
+        Hud.right().appendChild(destinationSliderDiv)
     }
 
     private fun chooseUserFaction(fact: Faction) {

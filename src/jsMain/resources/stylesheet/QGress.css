@@ -226,7 +226,6 @@ html, body {
 
 /* Action log: a titled section, below the history dashboard in the right column. */
 .statsComPanel {
-    width: 320px;
     max-height: 210px;
     overflow: hidden;
     display: flex;
@@ -235,7 +234,6 @@ html, body {
     background: rgba(0, 0, 0, 0.45);
     padding: 5px 8px 6px;
     border-radius: 3px;
-    order: 1; /* below the dashboard (order 0) in #hudRight */
 }
 .statsComTitle {
     font-family: "Chakra Petch", sans-serif;
@@ -243,14 +241,20 @@ html, body {
     letter-spacing: 2px;
     color: #9aa6a0;
     margin-bottom: 3px;
+    pointer-events: auto; /* clickable to collapse/expand inside the click-through column */
+    cursor: pointer;
 }
 .statsComLines {
+    width: 420px; /* roomier log */
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
     align-items: flex-end;
     text-align: right;
     overflow: hidden;
+}
+.statsComCollapsed .statsComLines {
+    display: none;
 }
 .statsComLine {
     font-size: 11px;
@@ -656,7 +660,12 @@ html, body {
 .qValues {
     font-size: 13px;
     padding-bottom: 2px;
+    pointer-events: auto; /* the tuning sliders are interactive inside the (click-through) HUD column */
 }
+/* Right intel column order: Destinations sliders on top, then the dashboard, then the LOG. */
+#right-sliders { order: 0; }
+.historyPanel { order: 1; }
+.statsComPanel { order: 2; }
 .floatLeft {
     float: left;
 }
@@ -745,12 +754,11 @@ html, body {
 
 /* Loaded-location name (replaces the old preset dropdown). */
 .topLocation {
-    margin: 5px 8px;
+    flex: 1; /* stretch across the middle of the top bar */
+    min-width: 0; /* allow shrinking so the ellipsis works in a flex item */
+    margin: 12px 14px 0;
     font-size: 18px;
     color: #f0f0f0;
-    vertical-align: middle;
-    max-width: 220px;
-    display: inline-block;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;

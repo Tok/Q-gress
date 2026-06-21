@@ -99,10 +99,16 @@ object StatsPanel {
         muPanel.appendChild(xmRow)
         Hud.left().appendChild(muPanel) // scoreboard column
 
-        // Action log: a titled section in the right "intel" column (below the history dashboard).
+        // Action log: a titled, collapsible section in the right "intel" column (starts collapsed).
         val comWrap = el("statsComPanel")
+        comWrap.classList.add("statsComCollapsed")
         val comTitle = el("statsComTitle")
-        comTitle.textContent = "LOG"
+        comTitle.textContent = "LOG ▸"
+        comTitle.onclick = {
+            val collapsed = comWrap.classList.toggle("statsComCollapsed")
+            comTitle.textContent = if (collapsed) "LOG ▸" else "LOG ▾"
+            null
+        }
         comWrap.appendChild(comTitle)
         comPanel = el("statsComLines").also { comWrap.appendChild(it) }
         Hud.right().appendChild(comWrap)
