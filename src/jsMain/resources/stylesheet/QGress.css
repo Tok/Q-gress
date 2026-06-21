@@ -1,12 +1,14 @@
+/* Black Ops One (SIL Open Font License 1.1) — see fonts/OFL.txt. Self-hosted,
+   latin subset. Replaces the shareware Amarillo USAF; same military-stencil look. */
 @font-face {
-    font-family: 'AmarilloUSAF';
+    font-family: 'Black Ops One';
     font-style: normal;
     font-weight: normal;
-    src: local('AmarilloUSAF'), url('../fonts/amarurgt.woff') format('woff');
+    src: local('Black Ops One'), url('../fonts/blackopsone-latin.woff2') format('woff2');
 }
 
 .amarillo {
-    font-family: 'AmarilloUSAF';
+    font-family: 'Black Ops One';
 }
 
 @font-face {
@@ -184,7 +186,7 @@ html, body {
     opacity: 0.35;
 }
 .statsMuLabel {
-    font-family: "AmarilloUSAF", sans-serif;
+    font-family: "Black Ops One", sans-serif;
     font-size: 20px;
 }
 .statsTickRow {
@@ -252,7 +254,7 @@ html, body {
     gap: 18px;
     background: radial-gradient(ellipse at center, #0c1410 0%, #000000 100%);
     color: #ffffff;
-    font-family: "AmarilloUSAF", sans-serif;
+    font-family: "Black Ops One", sans-serif;
 }
 .onboardTitle {
     font-size: 40px;
@@ -366,7 +368,7 @@ html, body {
     justify-content: center;
     background: radial-gradient(ellipse at center, #0c1410 0%, #000000 100%);
     color: #ffffff;
-    font-family: "AmarilloUSAF", sans-serif;
+    font-family: "Black Ops One", sans-serif;
     transition: opacity 0.6s ease;
 }
 .loadingOverlayDone {
@@ -582,7 +584,7 @@ html, body {
     text-shadow: -1px 0px black, 0px 1px black, 1px 0px black, 0px -1px black;
 }
 .qTitle {
-    font-family: "AmarilloUSAF";
+    font-family: "Black Ops One";
     margin-top: 2px;
     margin-bottom: 2px;
     margin-left: 5px;
@@ -811,7 +813,7 @@ html, body {
     z-index: 200;
 }
 .inspectorTitle {
-    font-family: "AmarilloUSAF";
+    font-family: "Black Ops One";
     font-size: 16px;
 }
 .inspectorName {
@@ -834,7 +836,7 @@ html, body {
     margin-top: 8px;
     width: 100%;
     padding: 5px;
-    font-family: "AmarilloUSAF";
+    font-family: "Black Ops One";
     font-size: 14px;
     background: #333333;
     color: #ffffff;

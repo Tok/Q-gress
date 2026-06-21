@@ -19,7 +19,6 @@ import kotlin.math.PI
 
 object DrawUtil {
     const val CODA = "Coda"
-    const val AMARILLO = "AmarilloUSAF"
 
     fun redraw() {
         // World entities now render in the 3D scene (Scene3D). The 2D world
