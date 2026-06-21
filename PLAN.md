@@ -430,8 +430,9 @@ session starts fast.
     sim/AI roster composition that the player *manages*, not a gacha loop the player gambles in.
     (The init "roster roll" — see the onboarding phase — stays light flavour, not a gacha loop.)
     Implement later.
-  - **Items**: skateboards, power-banks, second phones, … affecting movement/energy/capacity
-    (extends the existing `items/` + `agent/Inventory.kt`).
+  - **Items**: skateboards, **jet-skis** (water traversal — would make the marina/bridge/canal
+    location presets fully playable, pairs with per-terrain water cost), power-banks, second phones,
+    … affecting movement/energy/capacity (extends the existing `items/` + `agent/Inventory.kt`).
   - **Battery/accu %**: a key player state — when a player's phone energy is depleted they
     **leave the scene**. New resource distinct from in-game XM.
   - Cheating isn't a concern (client-only JS), so logic can live client-side.
