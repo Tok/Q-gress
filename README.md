@@ -4,11 +4,12 @@
 [![desktop only](https://img.shields.io/badge/platform-desktop%20only-informational)](#desktop-only)
 [![Kotlin/JS](https://img.shields.io/badge/Kotlin%2FJS-2.4-7F52FF)](https://kotlinlang.org/docs/js-overview.html)
 
-A browser-based **simulation of the mobile game *Ingress***, rebuilt in **3D**. Two factions —
-**ENL** ("frogs", green) and **RES** ("smurfs", blue) — capture portals, link them, and create
-control fields over a **real-world map**. It's a *simulation, not a playable map game*: you tune each
-faction's AI behaviour with sliders and watch the two sides play themselves out. **No real
-Ingress/portal data is used** — everything is generated.
+A browser-based **simulacrum of the mobile game *Ingress*** (modelled on its **~2018-era** mechanics —
+resonators, links, fields, XM, bursters, mods), rebuilt in **3D**. Two factions — **ENL** ("frogs",
+green) and **RES** ("smurfs", blue) — capture portals, link them, and create control fields over a
+**real-world map**. It's a *simulacrum, not a playable map game*: you tune each faction's AI behaviour
+with sliders and watch the two sides play themselves out. **No real Ingress/portal data is used** —
+everything is generated. (Modern additions like drones / Machina are out of scope for now.)
 
 <h2 align="center"><a href="https://tok.github.io/Q-gress/">▶&nbsp; Play Q-Gress live</a></h2>
 
