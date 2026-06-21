@@ -24,15 +24,11 @@ object Demo {
 
     private var portalColor = Faction.ENL.color
     private var demoLevel = 8
-    private var placementMode = true // ON: LMB place / RMB remove · OFF: LMB XMP / RMB hack
     private var portalButtons: List<HTMLButtonElement> = emptyList()
 
-    /** The selected level + colour (HtmlUtil wires the map clicks). */
+    /** The selected level + colour (HtmlUtil wires the map clicks: LMB place · RMB remove). */
     fun portalLevel(): Int = demoLevel
     fun portalColorValue(): String = portalColor
-
-    /** True in build mode (place/remove portals); false in effect mode (XMP / hack). */
-    fun isPlacement(): Boolean = placementMode
 
     /** One unified sandbox scene. #demo and #demo/portal both route to it (xmp folded in). */
     fun route(hash: String): String? = when (hash.removePrefix("#").removePrefix("/").removeSuffix("/")) {
@@ -67,10 +63,10 @@ object Demo {
         return label
     }
 
-    private var modeButton: HTMLButtonElement? = null
-
     private fun buildSandboxControls(panel: HTMLDivElement, center: Pos) {
         panel.append(titleEl("Portal Sandbox"))
+        panel.append(hintEl("LMB place · RMB remove. Buttons act on the last-placed portal."))
+
         val lvlButtons = (1..8).map { level -> button("L$level", "demoButton") { selectPortalLevel(level) } }
         lvlButtons.forEach { panel.append(it) }
         portalButtons = lvlButtons
@@ -79,9 +75,11 @@ object Demo {
         panel.append(button("RES", "demoButton res") { portalColor = Faction.RES.color })
         panel.append(button("Neutral", "demoButton") { portalColor = NEUTRAL })
 
-        val mode = button(modeLabel(), "demoButton demoSel") { togglePlacement() }
-        modeButton = mode
-        panel.append(mode)
+        // Explicit action buttons for every animation (act on the most recently placed portal).
+        panel.append(button("Hack", "demoButton") { Scene3D.hackLastShowcase() })
+        val xmp = button("Fire XMP (L$demoLevel)", "demoButton") { Scene3D.xmpAtLastShowcase(demoLevel) }
+        xmpButton = xmp
+        panel.append(xmp)
         panel.append(button("Upgrade", "demoButton") { Scene3D.stepLastShowcaseLevel(1) })
         panel.append(button("Downgrade", "demoButton") { Scene3D.stepLastShowcaseLevel(-1) })
         panel.append(button("Link", "demoButton") { Scene3D.linkLastShowcases() })
@@ -89,21 +87,24 @@ object Demo {
         Scene3D.placeShowcase(center, demoLevel, portalColor) // a starter portal in the middle
     }
 
-    private fun modeLabel() = if (placementMode) "Mode: Build (LMB place · RMB remove)" else "Mode: Effects (LMB XMP · RMB hack)"
-
-    private fun togglePlacement() {
-        placementMode = !placementMode
-        modeButton?.innerHTML = modeLabel()
-    }
+    private var xmpButton: HTMLButtonElement? = null
 
     private fun selectPortalLevel(level: Int) {
         demoLevel = level
         portalButtons.forEachIndexed { i, b -> b.className = if (i + 1 == level) "demoButton demoSel" else "demoButton" }
+        xmpButton?.innerHTML = "Fire XMP (L$level)"
     }
 
     private fun titleEl(text: String): HTMLDivElement {
         val div = document.createElement("div") as HTMLDivElement
         div.addClass("demoPanelTitle", "amarillo")
+        div.innerHTML = text
+        return div
+    }
+
+    private fun hintEl(text: String): HTMLDivElement {
+        val div = document.createElement("div") as HTMLDivElement
+        div.addClass("demoHint", "coda")
         div.innerHTML = text
         return div
     }

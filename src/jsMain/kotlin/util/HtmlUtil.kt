@@ -23,6 +23,7 @@ import org.w3c.dom.url.URL
 import portal.Portal
 import portal.XmMap
 import system.Cycle
+import system.display.PassabilityOverlay
 import system.display.Scene3D
 import util.data.GeoCoords
 import util.data.Line
@@ -123,7 +124,7 @@ object HtmlUtil {
         buttonDiv.append(createSearchSpan())
         buttonDiv.append(createVolumeSpan())
         buttonDiv.append(LayerView.createDropdown())
-        buttonDiv.append(createCheckbox("passabilityToggle", "Passability") { Scene3D.setPassabilityVisible(it) })
+        buttonDiv.append(createCheckbox("passabilityToggle", "Passability") { PassabilityOverlay.setVisible(it) })
         buttonDiv.append(createCheckbox("vectorFieldToggle", "Vectors") { Scene3D.setVectorFieldVisible(it) })
         controlDiv.append(buttonDiv)
 
@@ -310,28 +311,20 @@ object HtmlUtil {
             World.isReady = true
             Navigation.setup()
             MapUtil.enable3D()
-            // Unified sandbox: a placement toggle picks what LMB/RMB do.
-            // Build mode: LMB places a portal · RMB shatters the nearest.
-            // Effect mode: LMB detonates an XMP · RMB hacks (spins) the nearest portal's resonators.
+            // Unified sandbox: LMB places a portal at the selected level/colour, RMB shatters the
+            // nearest. All other animations (hack, XMP, upgrade/downgrade, link) are panel buttons.
             MapUtil.bindPortalDemo(
                 fun(event: dynamic) {
                     val pos = MapUtil.eventToSimPos(event) ?: return
                     SoundUtil.enableAudio()
-                    if (Demo.isPlacement()) {
-                        Scene3D.placeShowcase(pos, Demo.portalLevel(), Demo.portalColorValue())
-                        SoundUtil.playPortalCreationSound(pos)
-                    } else {
-                        Scene3D.playXmpBurst(pos, Demo.portalLevel())
-                    }
+                    Scene3D.placeShowcase(pos, Demo.portalLevel(), Demo.portalColorValue())
+                    SoundUtil.playPortalCreationSound(pos)
                 },
                 fun(event: dynamic) {
                     val pos = MapUtil.eventToSimPos(event) ?: return
-                    if (Demo.isPlacement()) {
-                        Scene3D.removeShowcaseNear(pos)
-                        SoundUtil.playGlassShatterSound(pos, 0.4, 0.9)
-                    } else {
-                        Scene3D.hackShowcaseNear(pos)
-                    }
+                    SoundUtil.enableAudio()
+                    Scene3D.removeShowcaseNear(pos)
+                    SoundUtil.playGlassShatterSound(pos, 0.4, 0.9)
                 },
             )
             intervalID = document.defaultView?.setInterval({ demoTick() }, Time.minTickInterval) ?: 0
@@ -515,9 +508,8 @@ object HtmlUtil {
                     )
                     World.allPortals.add(newPortal)
                     // Render the spawning world behind the (now translucent) loading screen: the new
-                    // portal grows in and its colour-coded flow vectors show.
-                    Scene3D.selected = "portal:${newPortal.id}"
-                    Scene3D.setVectorFieldVisible(true)
+                    // portal grows in. (No flow-vector preview — the field is done the moment it's
+                    // computed and we move straight on, so showing it adds nothing.)
                     Scene3D.sync()
                     createPortal(callback, count - 1)
                 } else {

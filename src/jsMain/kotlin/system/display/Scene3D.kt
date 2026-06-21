@@ -10,7 +10,6 @@ import external.GLTFLoader
 import external.MapLibre
 import external.Three
 import items.level.LevelColor
-import kotlinx.browser.document
 import portal.Field
 import portal.Link
 import portal.Octant
@@ -108,11 +107,9 @@ object Scene3D {
     private var npcsGroup: dynamic = null
     private var linksGroup: dynamic = null
     private var fieldsGroup: dynamic = null
-    private var overlayGroup: dynamic = null // passability quad (static; toggled)
     private var vectorFieldGroup: dynamic = null // selected portal's flow field (toggled)
     private var markerGroup: dynamic = null // build-preview marker
     private var borderGroup: dynamic = null // playable-area boundary outline
-    private var passabilityVisible = false
     private var vectorFieldVisible = false
     private var vectorFieldKey: String? = null // selection the flow field was last built for
 
@@ -168,7 +165,7 @@ object Scene3D {
         sun.asDynamic().position.set(60.0, 90.0, 140.0)
         newScene.add(sun)
 
-        overlayGroup = Three.Group().also { newScene.add(it) }
+        PassabilityOverlay.register(newScene)
         vectorFieldGroup = Three.Group().also { newScene.add(it) }
         portalsGroup = Three.Group().also { newScene.add(it) }
         fieldsGroup = Three.Group().also { newScene.add(it) }
@@ -383,43 +380,6 @@ object Scene3D {
     }
 
     /** Toggle the passability overlay (a textured ground quad built from the movement grid). */
-    fun setPassabilityVisible(visible: Boolean) {
-        passabilityVisible = visible
-        val group = overlayGroup ?: return
-        group.clear()
-        if (visible && World.isReady) group.add(buildPassabilityMesh())
-    }
-
-    private fun buildPassabilityMesh(): dynamic {
-        val cols = Sim.width / Pos.res
-        val rows = Sim.height / Pos.res
-        val canvas = document.createElement("canvas").asDynamic()
-        canvas.width = cols
-        canvas.height = rows
-        val ctx = canvas.getContext("2d")
-        World.grid.forEach { (pos, cell) ->
-            val gx = pos.x.toInt()
-            val gy = pos.y.toInt()
-            if (gx in 0 until cols && gy in 0 until rows) {
-                ctx.fillStyle = cell.overlayColor()
-                ctx.fillRect(gx, gy, 1, 1)
-            }
-        }
-        val texture = Three.CanvasTexture(canvas)
-        texture.asDynamic().magFilter = Three.NearestFilter
-        texture.asDynamic().minFilter = Three.NearestFilter
-        val matParams: dynamic = js("({})")
-        matParams.map = texture
-        matParams.transparent = true
-        matParams.depthWrite = false
-        val mesh = Three.Mesh(
-            Three.PlaneGeometry(Sim.width * metersPerPixel, Sim.height * metersPerPixel),
-            Three.MeshBasicMaterial(matParams),
-        )
-        mesh.asDynamic().position.set(0.0, 0.0, OVERLAY_Z)
-        return mesh
-    }
-
     private fun clear(group: dynamic) {
         group?.clear()
     }
@@ -601,9 +561,19 @@ object Scene3D {
         shatterPortal(target.pos, target.color, target.level, resos)
     }
 
-    /** Demo (RMB in effect mode): spin the nearest portal's resonator collar (the "hack" animation). */
+    /** Demo: spin the nearest portal's resonator collar (the "hack" animation). */
     fun hackShowcaseNear(location: Pos) {
         showcases.minByOrNull { it.pos.distanceTo(location) }?.let { it.hackAge = HACK_SPIN_S }
+    }
+
+    /** Demo (Hack button): spin the most recently placed portal's resonator collar. */
+    fun hackLastShowcase() {
+        showcases.lastOrNull()?.let { it.hackAge = HACK_SPIN_S }
+    }
+
+    /** Demo (XMP button): fire an XMP burst at the most recently placed portal, at burster [level]. */
+    fun xmpAtLastShowcase(level: Int) {
+        showcases.lastOrNull()?.let { playXmpBurst(it.pos, level) }
     }
 
     /** Demo (Upgrade/Downgrade): re-place the last portal at level±[delta] (grows in at the new size). */
