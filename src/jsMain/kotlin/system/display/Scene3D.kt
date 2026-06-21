@@ -200,6 +200,8 @@ object Scene3D {
             .scale(Three.Vector3(metersScale, -metersScale, metersScale))
         cam.projectionMatrix = mapMatrix.multiply(modelMatrix)
         GlassShader.updateEye(cam.projectionMatrix) // camera-tracking glass rim (orbs + links)
+        val invProj = Three.Matrix4().copy(cam.projectionMatrix).invert()
+        updateAudioListener(invProj) // place the Web Audio listener at the live camera
         PlasmaShader.setTime((js("performance.now()") as Double) / 1000.0) // animate control fields
         if (hasActiveEffects()) {
             val nowMs = js("performance.now()") as Double
@@ -210,7 +212,6 @@ object Scene3D {
             if (HackFx.hasActive()) HackFx.update()
             if (FieldFx.hasActive()) FieldFx.update(dt)
             if (XmpBurst.hasActive()) {
-                val invProj = Three.Matrix4().copy(cam.projectionMatrix).invert()
                 val canvas = map.getCanvas()
                 XmpBurst.setView(invProj, canvas.width as Double, canvas.height as Double)
                 XmpBurst.update(dt)
@@ -363,15 +364,29 @@ object Scene3D {
     internal fun sceneY(pos: Pos) = -(pos.y - Sim.height / 2.0) * metersPerPixel
 
     /**
-     * Stereo pan (−1 left … +1 right) for a sim [pos], from the live camera projection — so audio
-     * tracks the actual on-screen position under rotate/pitch/zoom (not a fixed sim-X mapping). 0
-     * (centre) until the scene is ready. Projects head height through the camera to NDC x.
+     * Drive the Web Audio listener from the live camera each frame: position = the recovered eye,
+     * orientation = the view forward + screen-up, all in sim-space metres (the same space the
+     * per-sound [PannerNode]s live in). This gives true 3D audio — distance attenuation, front/back,
+     * elevation — that tracks rotate/pitch/zoom. (Replaces the old screen-projected stereo pan.)
      */
-    fun audioPan(pos: Pos): Double {
-        val cam = camera ?: return 0.0
-        val v = Three.Vector3(sceneX(pos), sceneY(pos), HEAD_Z).asDynamic()
-        v.applyMatrix4(cam.projectionMatrix) // → normalised device coords (perspective divide included)
-        return (v.x as Double).coerceIn(-1.0, 1.0)
+    private fun updateAudioListener(invProj: dynamic) {
+        if (camera == null) return
+        val eye = GlassShader.eye()
+        val mid = unproject(invProj, 0.0, 0.0, 0.0)
+        val far = unproject(invProj, 0.0, 0.0, 1.0)
+        val top = unproject(invProj, 0.0, 1.0, 0.0)
+        SoundUtil.updateListener(
+            eye,
+            doubleArrayOf(far[0] - eye[0], far[1] - eye[1], far[2] - eye[2]), // forward (normalised in SoundUtil)
+            doubleArrayOf(top[0] - mid[0], top[1] - mid[1], top[2] - mid[2]), // up
+        )
+    }
+
+    /** Unproject a normalised-device point (x, y, z ∈ [−1, 1]) back to sim-space via [invProj]. */
+    private fun unproject(invProj: dynamic, x: Double, y: Double, z: Double): DoubleArray {
+        val v = Three.Vector3(x, y, z).asDynamic()
+        v.applyMatrix4(invProj)
+        return doubleArrayOf(v.x as Double, v.y as Double, v.z as Double)
     }
 
     private fun place(obj: dynamic, x: Double, y: Double, z: Double) {

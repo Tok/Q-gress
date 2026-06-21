@@ -16,9 +16,6 @@ the AI layer lands, the slider sim is the substrate we keep hardening.
 ## Near-term queue
 - [ ] **Full Web Audio 3D** — replace the screen-projected `Scene3D.audioPan` with a `PannerNode`
   + camera-driven listener (distance attenuation + front/back + elevation).
-- [ ] **Shard-panel umbrella cap** (Blender + code) — high portal levels get an open glass-shard
-  cap reusing the flask panels; cap-build logic in `Scene3D.buildPortal`/`buildResonators`, gated
-  on level. Look stays shader-driven (no bake).
 - [ ] **Tear down `shadowMap` after grid build** — it's only needed at startup (grid + POI names);
   null it out after `addGrid` to free the held WebGL context.
 

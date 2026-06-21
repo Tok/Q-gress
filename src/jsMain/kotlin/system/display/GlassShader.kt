@@ -53,6 +53,13 @@ object GlassShader {
         eyeUniform.value.z = det3(0, 1, 3) / cw
     }
 
+    /** The recovered camera eye in sim-space (metres), as last refreshed by [updateEye]. */
+    fun eye(): DoubleArray = doubleArrayOf(
+        eyeUniform.value.x as Double,
+        eyeUniform.value.y as Double,
+        eyeUniform.value.z as Double,
+    )
+
     // Tunables (qlippostasis defaults, nudged for readability without its bloom/SSR).
     private const val RIM_STRENGTH = 2.6
     private const val RIM_POWER = 2.8

@@ -5,6 +5,7 @@ package external.sound
  */
 external class AudioContext {
     val destination: AudioNode
+    val listener: AudioListener
     val currentTime: Int
     val sampleRate: Int
 
@@ -15,6 +16,7 @@ external class AudioContext {
 
     fun createOscillator(): OscillatorNode
     fun createStereoPanner(): StereoPannerNode
+    fun createPanner(): PannerNode
     fun createGain(): GainNode
     fun createBiquadFilter(): BiquadFilterNode
     fun createBufferSource(): AudioBufferSourceNode
