@@ -250,8 +250,9 @@ the vessel itself stays grayscale).
   rebuild, reports vanished ids). On it: **portal orb grows in** on spawn (easeOutBack), **fields
   fill in** from their centroid, and **fields dissolve** on destruction (`FieldFx` transient shrink)
   with a **collapse sound** (`SoundUtil.playFieldDownSound`). Field-up + portal-create sounds
-  already existed. _Remaining:_ portal **level-up** tween (the registry animates first-spawn only,
-  not level changes yet); a richer field-up "whoosh".
+  already existed. Portal **level-up** now tweens too: the rendered level eases toward the real one
+  each sync (`tweenedLevel`/`displayedLevel`), so the pole height + orb size grow smoothly when a
+  portal gains a level. _Remaining:_ a richer field-up "whoosh".
 - [x] **Portal names from map data (replace the random gibberish).** `util/PortalNames`: at grid
   time it `querySourceFeatures`-queries the shadow map's `openmaptiles` source for the `poi` and
   `transportation_name` source-layers (works even though the shadow style doesn't render them).

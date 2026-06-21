@@ -55,6 +55,7 @@ object Scene3D {
     private const val LINK_R = 0.7 // glass-pipe link radius (metres)
     private const val PORTAL_GROW_S = 0.5 // seconds for a new portal's orb to grow in
     private const val FIELD_FILL_S = 0.4 // seconds for a new control field to fill in
+    private const val LEVEL_TWEEN_RATE = 0.18 // per-sync ease of the rendered level toward the real one
     private const val POLE_H = 22.5 // base pole height at L1; scales by φ per level
     private const val TOP_R = 7.0 // base orb radius
     private const val PHI = 1.618 // golden ratio — pole grows by φ across the 8 levels
@@ -126,6 +127,7 @@ object Scene3D {
     private class FieldRecord(val cx: Double, val cy: Double, val cz: Double, val rel: Array<DoubleArray>, val color: String)
 
     private val fieldRecords = mutableMapOf<String, FieldRecord>()
+    private val displayedLevel = mutableMapOf<String, Double>() // per-portal eased level (for level-up tween)
 
     // Shared geometries (created lazily once three.js is loaded).
     private val headGeo: dynamic by lazy { Three.SphereGeometry(HEAD_R, 10, 10) }
@@ -344,12 +346,13 @@ object Scene3D {
         val world = physicsWorld ?: return
         val x = sceneX(location)
         val y = sceneY(location)
-        val s = orbScale(level)
-        val poleH = poleHeight(level)
+        val lv = level.toDouble()
+        val s = orbScale(lv)
+        val poleH = poleHeight(lv)
         shatterRot = doubleArrayOf(Util.random() * 2.0 * PI, Util.random() * 2.0 * PI, Util.random() * 2.0 * PI)
         if (flaskVariants.isNotEmpty()) {
             val variant = flaskVariants[(Util.random() * flaskVariants.size).toInt()]
-            variant.forEach { holder -> spawnShard(holder, doubleArrayOf(x, y, orbCenterZ(level)), flaskScale * s, color, 2.0) }
+            variant.forEach { holder -> spawnShard(holder, doubleArrayOf(x, y, orbCenterZ(lv)), flaskScale * s, color, 2.0) }
         }
         addPoleObstacle(world, x, y, poleH)
         spawnGasket(world, x, y, poleH)
@@ -544,16 +547,25 @@ object Scene3D {
         obj.userData = data
     }
 
-    private fun orbScale(level: Int) = 0.5 + (level.coerceIn(1, 8) - 1) / 7.0 * 0.8 // orb radius: L1 small → L8 big
-    private fun poleScale(level: Int) = PHI.pow((level.coerceIn(1, 8) - 1) / 7.0) // pole height: 1 → φ across levels
-    private fun poleHeight(level: Int) = POLE_H * poleScale(level)
-    private fun orbCenterZ(level: Int) = poleHeight(level) + TOP_R * orbScale(level) // orb rests on the pole top
+    // Level is a Double so a level-up can ease between integer levels (see tweenedLevel).
+    private fun orbScale(level: Double) = 0.5 + (level.coerceIn(1.0, 8.0) - 1.0) / 7.0 * 0.8 // orb radius
+    private fun poleScale(level: Double) = PHI.pow((level.coerceIn(1.0, 8.0) - 1.0) / 7.0) // pole height: 1 → φ
+    private fun poleHeight(level: Double) = POLE_H * poleScale(level)
+    private fun orbCenterZ(level: Double) = poleHeight(level) + TOP_R * orbScale(level) // orb rests on the pole top
+
+    /** Per-portal rendered level, eased toward the real level each sync so a level-up tweens smoothly. */
+    private fun tweenedLevel(id: String, target: Int): Double {
+        val cur = displayedLevel[id]
+        val next = if (cur == null) target.toDouble() else cur + (target - cur) * LEVEL_TWEEN_RATE
+        displayedLevel[id] = next
+        return next
+    }
 
     private fun addPortal(portal: Portal) {
         val id = "portal:${portal.id}"
         val baseColor = portal.owner?.faction?.color ?: NEUTRAL_COLOR
         val color = if (selected == id) HIGHLIGHT_COLOR else baseColor
-        val level = portal.getLevel().toInt()
+        val level = tweenedLevel(id, portal.getLevel().toInt()) // eases on level-up
         val parts = buildPortal(portalsGroup, sceneX(portal.location), sceneY(portal.location), level, color, id)
         // Grow the glass orb in over its first moments (the pole/gasket appear immediately).
         val g = Spawns.appear(id, PORTAL_GROW_S)
@@ -568,7 +580,7 @@ object Scene3D {
      * touch the glass, and a round glass orb on top (bigger with [level]). [id] tags it for picking
      * (null = demo). Returns [orb, gasket] so the demo can drop them when the portal shatters.
      */
-    private fun buildPortal(parent: dynamic, x: Double, y: Double, level: Int, color: String, id: String?): Array<dynamic> {
+    private fun buildPortal(parent: dynamic, x: Double, y: Double, level: Double, color: String, id: String?): Array<dynamic> {
         val poleH = poleHeight(level)
         val s = orbScale(level)
         val pole = Three.Mesh(poleGeo, Materials.metal())
@@ -596,7 +608,7 @@ object Scene3D {
         val grp = showcaseGroup ?: return
         if (showcaseMesh != null) grp.remove(showcaseMesh)
         val group = Three.Group()
-        val parts = buildPortal(group, sceneX(location), sceneY(location), level, color, null)
+        val parts = buildPortal(group, sceneX(location), sceneY(location), level.toDouble(), color, null)
         grp.add(group)
         showcaseMesh = group
         showcaseOrb = parts[0]
@@ -640,8 +652,8 @@ object Scene3D {
 
     /** A link is a thin glass pipe between the two portals' orbs (à la qlippostasis tubing). */
     private fun addLink(link: Link) {
-        val z0 = orbCenterZ(link.origin.getLevel().toInt())
-        val z1 = orbCenterZ(link.destination.getLevel().toInt())
+        val z0 = orbCenterZ(link.origin.getLevel().toInt().toDouble())
+        val z1 = orbCenterZ(link.destination.getLevel().toInt().toDouble())
         val tube = Three.Mesh(linkGeo, Materials.glass(link.creator.faction.color))
         val a = doubleArrayOf(sceneX(link.origin.location), sceneY(link.origin.location), z0)
         val b = doubleArrayOf(sceneX(link.destination.location), sceneY(link.destination.location), z1)
@@ -695,10 +707,11 @@ object Scene3D {
                 FieldFx.dissolve(rec.cx, rec.cy, rec.cz, rec.rel, rec.color)
                 SoundUtil.playFieldDownSound()
             }
+            displayedLevel.remove(id) // forget removed portals' level tween
         }
     }
 
-    private fun orbPos(portal: Portal): DoubleArray = doubleArrayOf(sceneX(portal.location), sceneY(portal.location), orbCenterZ(portal.getLevel().toInt()))
+    private fun orbPos(portal: Portal): DoubleArray = doubleArrayOf(sceneX(portal.location), sceneY(portal.location), orbCenterZ(portal.getLevel().toInt().toDouble()))
 
     /** Stable id for a field, independent of which corner is "origin" (its three portals, sorted). */
     private fun fieldId(field: Field): String = listOf(field.origin.id, field.primaryAnchor.id, field.secondaryAnchor.id).sorted().joinToString("|", "field:")
