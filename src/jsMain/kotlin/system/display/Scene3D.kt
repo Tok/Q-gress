@@ -192,7 +192,12 @@ object Scene3D {
             val dt = if (lastFrameMs <= 0.0) 0.016 else ((nowMs - lastFrameMs) / 1000.0).coerceIn(0.0, 0.1)
             lastFrameMs = nowMs
             if (activeShards.isNotEmpty()) updateShards(dt)
-            if (XmpBurst.hasActive()) XmpBurst.update(dt)
+            if (XmpBurst.hasActive()) {
+                val invProj = Three.Matrix4().copy(cam.projectionMatrix).invert()
+                val canvas = map.getCanvas()
+                XmpBurst.setView(invProj, canvas.width as Double, canvas.height as Double)
+                XmpBurst.update(dt)
+            }
         } else {
             lastFrameMs = 0.0
         }
