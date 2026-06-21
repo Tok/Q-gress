@@ -19,6 +19,13 @@ external object Three {
         var projectionMatrix: Matrix4
     }
 
+    class PerspectiveCamera(
+        fov: dynamic = definedExternally,
+        aspect: dynamic = definedExternally,
+        near: dynamic = definedExternally,
+        far: dynamic = definedExternally,
+    )
+
     class WebGLRenderer(params: dynamic) {
         var autoClear: Boolean
         fun resetState()
@@ -52,14 +59,17 @@ external object Three {
 
     class DirectionalLight(color: dynamic, intensity: dynamic = definedExternally)
     class AmbientLight(color: dynamic, intensity: dynamic = definedExternally)
+    class PointLight(color: dynamic, intensity: dynamic = definedExternally, distance: dynamic = definedExternally)
 
     class Group
     class Mesh(geometry: dynamic, material: dynamic)
     class Sprite(material: dynamic)
     class Line(geometry: dynamic, material: dynamic)
+    class Float32BufferAttribute(array: dynamic, itemSize: dynamic)
 
     val NearestFilter: Int
     val AdditiveBlending: Int
+    val DoubleSide: Int
     val NormalBlending: Int
     val EquirectangularReflectionMapping: Int
 

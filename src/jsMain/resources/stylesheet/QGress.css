@@ -295,9 +295,11 @@ html, body {
     letter-spacing: 14px;
     line-height: 1;
     color: #ffffff;
-    text-shadow: 0 0 16px rgba(3, 220, 3, 0.45), 0 0 34px rgba(0, 136, 255, 0.35);
+    /* faction-neutral: white / off-tint grayscale glow only (no green/blue tint on the wordmark). */
+    text-shadow: 0 0 16px rgba(255, 255, 255, 0.5), 0 0 38px rgba(210, 210, 210, 0.28);
 }
 .onboardTitle {
+    font-family: "Coda", monospace; /* subtitle in Coda — different font from the Chakra Petch brand */
     font-size: 40px;
     letter-spacing: 5px;
     margin-bottom: 8px;

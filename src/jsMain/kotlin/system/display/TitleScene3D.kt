@@ -80,7 +80,7 @@ object TitleScene3D {
 
         scene = Three.Scene()
         scene.add(Three.AmbientLight("#1a1f1a", 1.0))
-        camera = Three.asDynamic().PerspectiveCamera(55.0, 1.0, 0.1, 240.0)
+        camera = Three.PerspectiveCamera(55.0, 1.0, 0.1, 240.0)
         camera.position.set(0.0, 0.0, CAM_Z)
         resize()
 
@@ -159,7 +159,7 @@ object TitleScene3D {
         val arr = Float32Array(verts.size)
         for (i in verts.indices) arr[i] = verts[i].toFloat()
         val geo = Three.BufferGeometry()
-        geo.asDynamic().setAttribute("position", Three.asDynamic().Float32BufferAttribute(arr, 3))
+        geo.asDynamic().setAttribute("position", Three.Float32BufferAttribute(arr, 3))
 
         val matParams: dynamic = js("({})")
         matParams.color = color
@@ -167,12 +167,12 @@ object TitleScene3D {
         matParams.opacity = 1.0
         matParams.blending = Three.AdditiveBlending
         matParams.depthWrite = false
-        matParams.side = Three.asDynamic().DoubleSide
+        matParams.side = Three.DoubleSide
         val mat = Three.MeshBasicMaterial(matParams)
 
         val container = Three.Group()
         container.asDynamic().add(Three.Mesh(geo, mat))
-        val flash = Three.asDynamic().PointLight(color, FLASH_ENERGY, FLASH_RANGE)
+        val flash: dynamic = Three.PointLight(color, FLASH_ENERGY, FLASH_RANGE)
         flash.position.set(end[0], end[1], end[2])
         container.asDynamic().add(flash)
         scene.add(container)
