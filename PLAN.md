@@ -239,11 +239,14 @@ the vessel itself stays grayscale).
   scaled to the orb's level (the pole is metal, so only the orb shatters). Verified L1/L8 in demo.
 - [x] **`#demo/portal` scene** (L1–L8 orb size + faction tint) — plus demos now render on a **gray
   backdrop** (satellite hidden, checkbox to toggle) and sit **zoomed in** (`DEMO_ZOOM`).
-- [ ] **Glass shader follow-ups:** **double-shell** thick-wall + true SSR refraction; a **brighter
-  link variant** (the orb glass is very transparent, so thin pipes read faint) + optional concentric
-  inner tube; **camera-tracking rim** (the fresnel currently uses a fixed view dir — MapLibre 5.24
-  has no `getFreeCameraOptions`, so reconstruct the eye from the projection matrix if wanted).
-  (Grow-on-spawn + level-up animation are **done** — see the lifecycle bullet.)
+- [ ] **Glass shader follow-ups:** **double-shell** thick-wall + true SSR refraction (the one piece
+  left here). **Camera-tracking rim** and the **brighter link variant + inner core tube** are now
+  **done** (commit `c92f176`): `Scene3D.feedCameraEye` recovers the camera eye in sim-space (null
+  vector of the sim→clip matrix's x/y/w rows — MapLibre 5.24 has no `getFreeCameraOptions`) and
+  feeds a shared `GlassShader` `uEye` uniform, so the fresnel uses the true per-fragment view dir;
+  links use a brighter glass variant (`uBright`/`Materials.linkGlass`) wrapping an additive
+  `Materials.linkCore` filament (`coreGeo`). (Grow-on-spawn + level-up animation also **done** — see
+  the lifecycle bullet.)
 - [ ] **GLB compaction + shard reuse (needs Blender).** Decimate `shattered_flask.glb` /
   `glass_shards.glb` (fewer pieces, lower poly) for our scale; reuse shard **panels** to build the
   open umbrella cap at high levels (cap reads as fitted glass shards). Glass look stays
@@ -252,8 +255,9 @@ the vessel itself stays grayscale).
 - [x] **Links → 3D glass pipes.** The 2D `Line` links are now thin **glass cylinders**
   (`linkGeo` + `orientTube`: a unit Y-cylinder placed at the midpoint, Y-scaled to length, Y
   rotated to the direction via `Quaternion.setFromUnitVectors`) spanning the two portals' **orb
-  centres** (`orbCenterZ`), on the shared `GlassShader` (faction-tinted). _Follow-up:_ may want a
-  brighter link variant (the orb glass is very transparent) + an optional concentric inner tube.
+  centres** (`orbCenterZ`), on the shared `GlassShader` (faction-tinted). _Done (`c92f176`):_ a
+  **brighter link variant** (`Materials.linkGlass`) + an **additive plasma-core** inner tube
+  (`Materials.linkCore`/`coreGeo`), so pipes read strongly despite the near-transparent orb glass.
 - [x] **Fields → plasma (visual).** Control fields are now an animated **plasma `ShaderMaterial`**
   (`PlasmaShader`): a faction-tinted energy sheet rippling via summed sine waves, with one shared
   `uTime` advanced each frame from `Scene3D.render`. Triangles now sit at the three portals' orb
