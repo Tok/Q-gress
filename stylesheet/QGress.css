@@ -1,0 +1,1058 @@
+/* Chakra Petch (SIL Open Font License 1.1) — see fonts/OFL.txt. Self-hosted,
+   bold (700) latin subset. Replaces the shareware Amarillo USAF. A techno / sci-fi-HUD
+   face (fits the science-vs-luddite theme, not a military one). Declared as normal
+   weight so the family resolves to this single cut everywhere (the app CSS doesn't
+   manage font weights). */
+@font-face {
+    font-family: 'Chakra Petch';
+    font-style: normal;
+    font-weight: normal;
+    src: local('Chakra Petch'), url('../fonts/chakrapetch-700-latin.woff2') format('woff2');
+}
+
+.amarillo {
+    font-family: 'Chakra Petch';
+}
+
+@font-face {
+    font-family: 'Coda';
+    font-style: normal;
+    font-weight: normal;
+    src: local('Coda'), url('../fonts/Coda.ttf.woff') format('woff');
+}
+
+.coda {
+    font-family: 'Coda';
+}
+
+/* Faction colors — single source of truth, reuse via var(--enl-color) etc. */
+:root {
+    --enl-color: #03dc03; /* ENL / frogs (green) */
+    --res-color: #0088ff; /* RES / smurfs (blue) */
+}
+
+* {
+    margin: 0 auto;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background: #000000;
+}
+.container {
+    position: relative;
+}
+.map {
+    pointer-events: none;
+    display: block;
+    position: relative;
+    height: 100%;
+    z-index: 5;
+}
+.initialMap {
+    /* The live, visible map (hosts the 3D custom layer) — receives all navigation gestures. */
+    pointer-events: auto;
+    display: block;
+    position: relative;
+    height: 100%;
+    z-index: 8;
+}
+.mapboxgl-map {
+    font-family: "Coda";
+}
+.shadowMap {
+    pointer-events: none;
+    display: block;
+    position: relative;
+    height: 100%;
+    z-index: 2;
+}
+.invisible {
+    visibility: hidden;
+    display: none;
+}
+/* Top-agents leaderboard table (UI Stage 3: canvas→DOM). */
+.topAgents {
+    pointer-events: none;
+    color: #ffffff;
+    background: rgba(0, 0, 0, 0.45);
+    padding: 4px 8px;
+    border-radius: 3px;
+}
+.taTable {
+    border-collapse: collapse;
+    table-layout: fixed;
+    font-family: "Coda", monospace;
+    font-size: 11px;
+}
+.taHeadCell {
+    color: #cfd6d2;
+    font-weight: bold;
+    padding: 0 6px 3px;
+    text-align: right;
+}
+.taRow td {
+    padding: 1px 6px;
+    text-align: right;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.taName, .taCell {
+    text-align: left;
+}
+.taInv {
+    text-align: right;
+}
+/* Fixed column widths so the table layout never shifts with content. */
+.taTable th:nth-child(1), .taTable td:nth-child(1) { width: 22px; }
+.taTable th:nth-child(2), .taTable td:nth-child(2) { width: 52px; }
+.taTable th:nth-child(3), .taTable td:nth-child(3) { width: 44px; }
+.taTable th:nth-child(4), .taTable td:nth-child(4) { width: 112px; }
+.taTable th:nth-child(5), .taTable td:nth-child(5),
+.taTable th:nth-child(6), .taTable td:nth-child(6),
+.taTable th:nth-child(7), .taTable td:nth-child(7) { width: 58px; }
+.taTable th:nth-child(8), .taTable td:nth-child(8) { width: 42px; }
+.taTable th:nth-child(9), .taTable td:nth-child(9) { width: 30px; }
+.taTable th:nth-child(10), .taTable td:nth-child(10) { width: 84px; }
+.taTable th:nth-child(11), .taTable td:nth-child(11) { width: 132px; }
+.taInvBars {
+    display: inline-flex;
+    align-items: flex-end;
+    height: 11px;
+    gap: 1px;
+    margin-left: 3px;
+    vertical-align: bottom;
+}
+.taInvBar {
+    width: 2px;
+}
+/* HUD layout columns — group the panels instead of scattering them to the corners. All
+   display-only — never intercept map gestures. */
+#hudLeft, #hudRight {
+    position: fixed;
+    top: 108px; /* just below the top control bar */
+    z-index: 60;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+#hudLeft {
+    left: 14px;
+    align-items: flex-start;
+}
+#hudRight {
+    right: 14px;
+    align-items: flex-end;
+}
+#hudBottom {
+    position: fixed;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 60;
+    pointer-events: none;
+}
+.statsMuPanel, .historyPanel, .statsComPanel {
+    font-family: "Coda", monospace;
+    color: #ffffff;
+    text-shadow: 0 0 3px #000, 0 0 3px #000;
+}
+.statsMuPanel {
+    background: rgba(0, 0, 0, 0.45);
+    padding: 6px 10px 7px;
+    border-radius: 3px;
+}
+.statsMuRow {
+    display: flex;
+    align-items: center;
+    height: 24px;
+}
+.statsMuTrack {
+    width: 150px;
+    height: 15px;
+    border: 2px solid currentColor;
+    margin-right: 8px;
+}
+.statsMuBar {
+    height: 100%;
+    width: 0;
+    opacity: 0.35;
+}
+.statsMuLabel {
+    font-family: "Chakra Petch", sans-serif;
+    font-size: 20px;
+}
+.statsTickRow {
+    margin-top: 4px;
+    font-size: 12px;
+    color: #ffffff;
+}
+.statsTickRow .statsTime { margin-right: 10px; }
+
+/* Right-side history dashboard (HistoryPanel): per metric — live ENL/RES value + faction sparkline. */
+.historyPanel {
+    width: 228px;
+    background: rgba(0, 0, 0, 0.45);
+    padding: 6px 8px 4px;
+    border-radius: 3px;
+}
+.historyRow {
+    margin-bottom: 5px;
+}
+.historyHead {
+    display: flex;
+    align-items: baseline;
+    font-size: 12px;
+}
+.historyTitle {
+    flex: 1;
+    color: #cfd6d2;
+}
+.historyVal {
+    width: 40px;
+    text-align: right;
+    font-weight: bold;
+}
+.historyChart {
+    height: 42px;
+    margin-top: 1px;
+}
+
+/* Action log: a titled section, below the history dashboard in the right column. */
+.statsComPanel {
+    max-height: 210px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    background: rgba(0, 0, 0, 0.45);
+    padding: 5px 8px 6px;
+    border-radius: 3px;
+}
+.statsComTitle {
+    font-family: "Chakra Petch", sans-serif;
+    font-size: 12px;
+    letter-spacing: 2px;
+    color: #9aa6a0;
+    margin-bottom: 3px;
+    pointer-events: auto; /* clickable to collapse/expand inside the click-through column */
+    cursor: pointer;
+}
+.statsComLines {
+    width: 420px; /* roomier log */
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: flex-end;
+    text-align: right;
+    overflow: hidden;
+}
+.statsComCollapsed .statsComLines {
+    display: none;
+}
+.statsComLine {
+    font-size: 11px;
+    line-height: 1.45;
+    white-space: nowrap;
+}
+/* Pre-load onboarding screens (faction → location); see util/ui/Onboarding. */
+.onboardScreen {
+    position: fixed;
+    inset: 0;
+    z-index: 9998;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    background: radial-gradient(ellipse at center, #0c1410 0%, #000000 100%);
+    color: #ffffff;
+    font-family: "Chakra Petch", sans-serif;
+}
+.onboardTitle {
+    font-size: 40px;
+    letter-spacing: 5px;
+    margin-bottom: 8px;
+}
+.onboardRow {
+    display: flex;
+    gap: 28px;
+}
+.onboardRow .popupButton {
+    width: 150px;
+    height: 80px;
+    font-size: 34px;
+    cursor: pointer;
+}
+.onboardMap {
+    position: relative;
+    width: 380px;
+    height: 380px;
+}
+/* In the onboarding location screen the inset is in-flow + larger (overrides the fixed in-game style). */
+.onboardMap .miniMap {
+    position: absolute;
+    left: 0;
+    top: 0;
+    transform: none;
+    width: 380px;
+    height: 380px;
+    pointer-events: auto;
+}
+.onboardHint {
+    font-family: "Coda", monospace;
+    font-size: 12px;
+    color: #9aa6a0;
+    max-width: 380px;
+    text-align: center;
+}
+.onboardMap .miniMapToggle {
+    position: absolute;
+    left: auto;
+    right: 6px;
+    bottom: 6px;
+    top: auto;
+    transform: none;
+}
+.onboardStart {
+    font-size: 22px;
+    padding: 14px 36px;
+    min-width: 240px; /* fixed, roomy hit-area — the label shouldn't crowd the edges */
+    cursor: pointer;
+}
+.onboardPreset {
+    font-family: "Coda", monospace;
+    font-size: 15px;
+    padding: 6px 18px;
+    cursor: pointer;
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: 3px;
+}
+.onboardActive {
+    background: rgba(255, 255, 255, 0.85);
+    color: #000000;
+}
+.onboardField {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+.onboardFieldLabel {
+    font-family: "Coda", monospace;
+    font-size: 12px;
+    color: #9aa6a0;
+}
+.onboardInput {
+    width: 90px;
+    font-size: 16px;
+    padding: 4px 6px;
+    text-align: center;
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: 3px;
+}
+.onboardCheck {
+    font-family: "Coda", monospace;
+    font-size: 13px;
+    color: #d8d8d8;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.onboardWarn {
+    font-family: "Coda", monospace;
+    font-size: 12px;
+    color: #d8d8d8;
+    font-style: italic;
+    max-width: 420px;
+    text-align: center;
+}
+/* Full-screen staged loading overlay (shown from the first frame; see util/ui/LoadingOverlay). */
+.loadingOverlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(ellipse at center, #0c1410 0%, #000000 100%);
+    color: #ffffff;
+    font-family: "Chakra Petch", sans-serif;
+    transition: opacity 0.6s ease;
+}
+.loadingOverlayDone {
+    opacity: 0;
+    pointer-events: none;
+}
+/* World-build stage: drop the opaque backdrop so the spawning world shows behind the progress. */
+.loadingOverlayReveal {
+    background: rgba(0, 0, 0, 0.35);
+}
+.loadingPanel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 26px 48px 30px;
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.62);
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(3px);
+}
+.loadingTitle {
+    font-size: 54px;
+    letter-spacing: 6px;
+    margin-bottom: 18px;
+    text-shadow: 0 0 18px rgba(60, 255, 120, 0.5);
+}
+.loadingStatus {
+    font-family: "Coda", monospace;
+    font-size: 15px;
+    color: #b8c4bc;
+    margin-bottom: 14px;
+    min-height: 18px;
+}
+.loadingTrack {
+    width: 340px;
+    height: 8px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.12);
+    overflow: hidden;
+}
+.loadingFill {
+    height: 100%;
+    width: 4%;
+    border-radius: 4px;
+    background: linear-gradient(90deg, #2e8b57, #5cff8d);
+    transition: width 0.5s ease;
+    background-size: 200% 100%;
+    animation: loadingShimmer 1.1s linear infinite;
+}
+/* Smaller sub-process bar beneath the overall bar (portals, people, …). */
+.loadingSubTrack {
+    width: 260px;
+    height: 5px;
+    margin-top: 7px;
+}
+.loadingSubTrack .loadingFill {
+    transition: width 0.25s ease;
+}
+.loadingDetail {
+    font-family: "Coda", monospace;
+    font-size: 12px;
+    color: #9aa6a0;
+    margin-top: 10px;
+    min-height: 16px;
+}
+@keyframes loadingShimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+/* Overview globe inset (MiniMap) — circular, fixed bottom-left, passive (no gestures). */
+.miniMap {
+    position: fixed;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 168px;
+    height: 168px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 0 12px rgba(0, 0, 0, 0.6);
+    z-index: 120;
+    pointer-events: none;
+}
+.miniMapCanvas {
+    width: 100%;
+    height: 100%;
+}
+.miniMapPin {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 10px;
+    height: 10px;
+    margin: -5px 0 0 -5px;
+    border-radius: 50%;
+    background: #ffffff;
+    box-shadow: 0 0 6px 2px rgba(0, 0, 0, 0.85);
+    z-index: 121;
+    pointer-events: none;
+}
+.miniMapToggle {
+    position: fixed;
+    left: 192px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 122;
+    pointer-events: auto;
+    cursor: pointer;
+    font-family: "Coda", monospace;
+    font-size: 12px;
+    padding: 3px 7px;
+    color: #ffffff;
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: 3px;
+}
+.mapboxgl-ctrl-top-right {
+    visibility: hidden;
+    display: none;
+}
+.top {
+    top: -100%;
+}
+.unclickable {
+    pointer-events: none;
+}
+.controls {
+    position: relative;
+    display: inline-block;
+    z-index: 100;
+    padding-right: 5px;
+    height: 100px;
+    width: 100%;
+}
+.non {
+    background: #ffffff;
+}
+.enl {
+    background: var(--enl-color);
+}
+.res {
+    background: var(--res-color);
+}
+.enlLabel {
+    color: var(--enl-color) !important;
+}
+.resLabel {
+    color: var(--res-color) !important;
+}
+.enlSlider {}
+.enlSlider::-moz-range-thumb {
+    background: var(--enl-color) !important;
+}
+.enlSlider::-webkit-slider-thumb {
+    background: var(--enl-color) !important;
+}
+.resSlider {}
+.resSlider::-moz-range-thumb {
+    background: var(--res-color) !important;
+}
+.resSlider::-webkit-slider-thumb {
+    background: var(--res-color) !important;
+}
+.button {
+    height: 21px;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    margin-right: 5px;
+    margin-left: 5px;
+    font-family: "Coda", "Lucida Console";
+}
+.buttonDiv {
+    height: 100px;
+    width: 100%;
+    display: flex;
+    align-items: flex-start; /* hug the top edge, not vertically centred in the 100px band */
+    justify-content: space-between;
+}
+/* Top-bar clusters: left group hugs the left edge, right group the right edge. */
+.toolbarGroup {
+    display: flex;
+    align-items: center;
+}
+.select {
+    height: 21px;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    margin-right: 5px;
+    margin-left: 5px;
+    font-family: "Coda", "Lucida Console";
+}
+.slider {
+    -webkit-appearance: none;
+    border-radius: 5px;
+    background: #d3d3d3;
+    outline: none;
+    opacity: 0.7;
+    -webkit-transition: .2s;
+    transition: opacity .2s;
+    padding-left: 0;
+    padding-right: 0;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    margin-right: 5px;
+    margin-left: 5px;
+}
+.slider:hover {
+    opacity: 1;
+}
+.checkbox {
+    margin-top: 5px;
+    margin-bottom: 5px;
+    margin-right: 5px;
+    margin-left: 5px;
+    font-family: "Coda", "Lucida Console";
+}
+.label {
+    margin-top: 8px;
+    margin-bottom: 8px;
+    color: #ffffff;
+    text-shadow: -1px 0px black, 0px 1px black, 1px 0px black, 0px -1px black;
+}
+.qTitle {
+    font-family: "Chakra Petch";
+    margin-top: 2px;
+    margin-bottom: 2px;
+    margin-left: 5px;
+    margin-right: 5px;
+}
+.qSlider {
+    height: 8px;
+    width: 89px;
+}
+.q-actions {
+}
+.q-destinations {
+}
+.qSlider:hover {
+    opacity: 1;
+}
+.qSlider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 13px;
+    height: 13px;
+    border-radius: 62%;
+    background: #777777;
+    cursor: pointer;
+}
+.qSliderLabel {
+    font-size: 13px;
+    height: 13px;
+    width: 12px;
+    text-align: right;
+    display: inline-block;
+    color: #ffffff;
+    text-shadow: -1px 0px black, 0px 1px black, 1px 0px black, 0px -1px black;
+}
+.qSliderTextLabel {
+    font-family: "Coda";
+    font-size: 13px;
+    height: 13px;
+    margin-left: 5px;
+    margin-right: 5px;
+    color: #ffffff;
+    text-shadow: -1px 0px black, 0px 1px black, 1px 0px black, 0px -1px black;
+}
+.qValues {
+    font-size: 13px;
+    padding-bottom: 2px;
+    pointer-events: auto; /* the tuning sliders are interactive inside the (click-through) HUD column */
+}
+/* Right intel column order: Destinations sliders on top, then the dashboard, then the LOG. */
+#right-sliders { order: 0; }
+.historyPanel { order: 1; }
+.statsComPanel { order: 2; }
+.floatLeft {
+    float: left;
+}
+.floatRight {
+    float: right;
+}
+#locationSelect {
+    width: 233px;
+}
+.mapboxgl-ctrl-bottom-left,
+.mapboxgl-ctrl-bottom-right {
+    z-index: 999 !important;
+}
+/* Required tile attribution: collapsed to a small ⓘ (compact) + dimmed so it's unobtrusive;
+   full opacity on hover/expand. (MapLibre 5 uses the maplibregl- prefix.) */
+.maplibregl-ctrl-attrib, .mapboxgl-ctrl-attrib {
+    font-size: 10px;
+    opacity: 0.5;
+}
+.maplibregl-ctrl-attrib:hover, .mapboxgl-ctrl-attrib:hover {
+    opacity: 1;
+}
+.popup {
+    display: block;
+    width: 377px;
+    position: relative;
+    margin: 0 auto;
+    top: 190px;
+    border-radius: 5px;
+    border: 1px solid black;
+    z-index: 9999;
+    background-color: #ffffffaa;
+    padding: 5px;
+}
+
+.popupButton {
+    width: 50%;
+    font-size: 34px;
+    border-radius: 3px;
+    border: 1px solid black;
+    padding-left: 55px;
+    padding-right: 55px;
+}
+
+.topButton {
+    margin: 5px;
+    width: 89px;
+    font-size: 21px;
+    border-radius: 3px;
+    border: 1px solid black;
+    padding: 5px;
+}
+
+.topDrop {
+    margin: 5px;
+    width: 233px;
+    font-size: 13px;
+    border-radius: 3px;
+    border: 1px solid black;
+    padding: 5px;
+}
+
+.volumeSlider {
+    width: 80px;
+    vertical-align: middle;
+    accent-color: #cccccc; /* grayscale track, not the OS/faction blue */
+}
+/* White knob (not faction-coloured like the tuning sliders). */
+.volumeSlider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    background: #ffffff;
+    cursor: pointer;
+}
+.volumeSlider::-moz-range-thumb {
+    width: 13px;
+    height: 13px;
+    border: none;
+    border-radius: 50%;
+    background: #ffffff;
+    cursor: pointer;
+}
+
+/* Loaded-location name (replaces the old preset dropdown). */
+.topLocation {
+    flex: 1; /* stretch across the middle of the top bar */
+    min-width: 0; /* allow shrinking so the ellipsis works in a flex item */
+    margin: 12px 14px 0;
+    font-size: 18px;
+    color: #f0f0f0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Game menu (New Game / Reset) popped from the Menu button. */
+.menuSpan {
+    position: relative;
+    display: inline-block;
+}
+
+.gameMenu {
+    position: absolute;
+    top: 100%;
+    left: 5px;
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    background: rgba(18, 18, 22, 0.96);
+    border: 1px solid black;
+    border-radius: 3px;
+}
+
+.menuItem {
+    width: 120px;
+    margin: 4px;
+    font-size: 16px;
+    border-radius: 3px;
+    border: 1px solid black;
+    padding: 5px;
+    cursor: pointer;
+}
+
+/* Overlay toggles (Terrain / Vectors) shown as rows inside the menu dropdown. */
+.gameMenu .menuCheck {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 110px;
+    margin: 4px;
+    padding: 5px;
+    border: 1px solid black;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.06);
+    cursor: pointer;
+}
+.gameMenu .menuCheck .label {
+    margin: 0;
+    font-size: 15px;
+}
+/* Slider row (e.g. building opacity) — sizes to content so the label + slider fit. */
+.gameMenu .menuSliderRow {
+    width: auto;
+}
+.menuSlider {
+    width: 84px;
+    margin: 0;
+}
+.menuVersion {
+    font-size: 10px;
+    color: #888888;
+    padding: 5px 5px 1px;
+    text-align: center;
+}
+
+/* On-screen controls legend (bottom-left). */
+.controlsInfo {
+    position: fixed;
+    left: 10px;
+    bottom: 10px;
+    width: 22px;
+    height: 22px;
+    line-height: 22px;
+    text-align: center;
+    border-radius: 50%;
+    background: #000000aa;
+    color: #ffffff;
+    border: 1px solid #888888;
+    font-size: 14px;
+    cursor: pointer;
+    z-index: 151;
+    pointer-events: auto;
+}
+.controlsLegend {
+    position: fixed;
+    left: 10px;
+    bottom: 40px;
+    background: #000000cc;
+    color: #ffffff;
+    border: 1px solid #666666;
+    border-radius: 5px;
+    padding: 6px 9px;
+    font-size: 12px;
+    line-height: 1.5;
+    z-index: 150;
+    pointer-events: none;
+}
+
+/* Desktop-only / unsupported-device notice (full-screen). */
+.notice {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #000000;
+    color: #ffffff;
+    z-index: 10000;
+}
+.noticeBox {
+    max-width: 420px;
+    text-align: center;
+    font-size: 18px;
+    line-height: 1.5;
+    padding: 20px;
+}
+.noticeTitle {
+    font-size: 34px;
+    margin-bottom: 12px;
+}
+
+/* Selected-entity inspector panel (screen-fixed DOM overlay). */
+.inspector {
+    position: fixed;
+    top: 110px;
+    right: 10px;
+    width: 210px;
+    background: #000000cc;
+    color: #ffffff;
+    border: 1px solid #888888;
+    border-radius: 5px;
+    padding: 8px 10px;
+    font-family: "Coda", "Lucida Console";
+    font-size: 13px;
+    z-index: 200;
+}
+.inspectorTitle {
+    font-family: "Chakra Petch";
+    font-size: 16px;
+}
+.inspectorName {
+    font-size: 14px;
+    margin-bottom: 6px;
+}
+.inspectorRow {
+    margin: 2px 0;
+}
+.inspectorClose {
+    float: right;
+    cursor: pointer;
+    background: none;
+    border: none;
+    color: #ffffff;
+    font-size: 18px;
+    line-height: 1;
+}
+.inspectorRemove {
+    margin-top: 8px;
+    width: 100%;
+    padding: 5px;
+    font-family: "Chakra Petch";
+    font-size: 14px;
+    background: #333333;
+    color: #ffffff;
+    border: 1px solid #888888;
+    border-radius: 3px;
+    cursor: pointer;
+}
+.inspectorRemove:hover {
+    background: #555555;
+}
+
+/* /demo harness: full-screen menu + per-scene control panel (grayscale). */
+.demoMenu {
+    position: fixed;
+    inset: 0;
+    background: #000000;
+    color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+}
+.demoMenu .demoPanelTitle {
+    font-size: 30px;
+}
+.demoLink {
+    font-size: 22px;
+    color: #ffffff;
+    text-decoration: none;
+    margin: 6px;
+    padding: 10px 30px;
+    border: 1px solid #888888;
+    border-radius: 5px;
+    background: #222222;
+}
+.demoLink:hover {
+    background: #444444;
+}
+.demoBack {
+    color: #aaaaaa;
+    margin-top: 20px;
+    text-decoration: none;
+    font-size: 14px;
+}
+.demoPanel {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    width: 188px;
+    display: flex;
+    flex-direction: column;
+    background: #000000cc;
+    color: #ffffff;
+    border: 1px solid #888888;
+    border-radius: 5px;
+    padding: 10px;
+    z-index: 200;
+}
+.demoPanelTitle {
+    font-size: 18px;
+    margin-bottom: 6px;
+}
+/* Full-width section label + instructional line inside the demo panel. */
+.demoLabel {
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #9aa6a0;
+    margin: 8px 0 2px;
+}
+.demoHint {
+    font-size: 11px;
+    line-height: 1.35;
+    color: #b8c4bc;
+    margin-bottom: 4px;
+}
+/* Horizontal wrapping group (the L1-8 / X1-8 selectors + faction/action rows). */
+.demoRow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin: 2px 0;
+}
+.demoRow .demoButton {
+    margin: 0;
+    flex: 1 1 auto;
+}
+/* Compact square-ish selector buttons (L1-8, X1-8). */
+.demoMini {
+    min-width: 34px;
+    flex: 0 0 auto;
+    padding: 6px 0;
+    text-align: center;
+}
+.demoButton {
+    margin: 3px 0;
+    padding: 6px;
+    font-family: "Coda", "Lucida Console";
+    background: #333333;
+    color: #ffffff;
+    border: 1px solid #888888;
+    border-radius: 3px;
+    cursor: pointer;
+}
+.demoButton:hover {
+    background: #555555;
+}
+.demoButton.enl {
+    border-color: var(--enl-color);
+}
+.demoButton.res {
+    border-color: var(--res-color);
+}
+/* Selected level in the XMP demo (grayscale highlight — no new hues). */
+.demoButton.demoSel {
+    background: #dddddd;
+    color: #111111;
+    border-color: #ffffff;
+}
+
+.topLabel {
+    cursor: default;
+    margin-top: 8px;
+    margin-bottom: 8px;
+    color: #ffffff;
+    text-shadow: -1px 1px black, -1px 1px black, 1px -1px black, 1px -1px black;
+}
+
+.loadLabel {
+    cursor: default;
+}
+
+.quickstartDiv {
+    font-size: 13px;
+}
