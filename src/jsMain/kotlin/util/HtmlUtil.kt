@@ -119,6 +119,8 @@ object HtmlUtil {
         }
         pauseButton.addClass("non", "amarillo")
         leftGroup.append(pauseButton)
+        // Recenter top-down over the play area (find your way back after panning/rotating away).
+        leftGroup.append(createButton("homeButton", "topButton amarillo", "Home") { MapUtil.goHome() })
         leftGroup.append(createLocationLabel()) // names the actual loaded location (set by setLoadedLocation)
 
         // Right group, far right: base-map view dropdown + volume.

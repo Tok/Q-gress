@@ -201,6 +201,20 @@ object MapUtil {
         map?.panBy(offset, opts)
     }
 
+    /**
+     * "Home": fly the camera back over the play area, framed and **top-down** (pitch 0, bearing 0) —
+     * so a player who has panned/rotated away can instantly find the action again. Centers on the
+     * grid anchor at the framed display zoom.
+     */
+    fun goHome() {
+        val center = anchorCenter ?: return
+        val opts: dynamic = js("({ pitch: 0.0, bearing: 0.0, duration: 900 })")
+        opts.center = center
+        opts.zoom = displayZoom()
+        initMap?.asDynamic()?.flyTo(opts)
+        map?.asDynamic()?.flyTo(opts)
+    }
+
     /** Register the 3D scene (three.js custom layer) on the base map, anchored at the grid view. */
     fun enable3D() {
         val targetMap = initMap ?: return
