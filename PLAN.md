@@ -43,6 +43,23 @@ the AI layer lands, the slider sim is the substrate we keep hardening.
 - [ ] **Initial roster "roll"** — light flavour, not a gacha loop; ties to the icebox rarity tiers.
 - [ ] **`?debug` dev tooling** — timing measurements + console logging to profile the long loads.
 
+## Gameplay mechanics (planned)
+- [ ] **Glyph hacking** — a skill-based alternative to a normal hack: **~3× the rewards**, but it
+  **takes longer**, **requires skill**, and has a **chance to fail** (no / reduced reward on a miss).
+  The agent's glyph skill (+ maybe portal level) sets the success odds + duration. The stronger
+  collar animation (ENL cw / RES ccw, faster/wider/longer) + glassy sound already land
+  (`HackFx`/`SoundUtil`); this is the reward/skill/timing model behind it. Lives in
+  `Glypher`/`Portal.tryGlyph` + a glyph skill on `agent/Skills`; expose it as a high-risk/high-reward
+  QAction the AI weighs (ties into Phase 6 — the net/LLM should learn when glyphing is worth it).
+- [ ] **Portal mods (heat-sinks + others)** — deployable items that slot into a portal and modify it:
+  - **Heat-sink** — reduces the hack cooldown (hack again sooner).
+  - **Multi-hack** — more hacks before the cooldown kicks in.
+  - **Shield** — defense; the visual is already stubbed (3D Stage 2) but needs `Portal.deployMods` to
+    actually store deployed mods (currently a stub — no state to draw).
+  - **Force amp / turret / link amp** — combat + range modifiers (later).
+  Needs a mod item type + real `Portal.deployMods` storage + a deploy-mod action + mod/shield
+  visualization. Pairs with the colony-management items in the icebox.
+
 ## Phase 6 — AI-vs-AI (the Q-gress payoff)
 
 **Decided:** build **both** AI drivers on **one** shared substrate, so any faction can be Human /
