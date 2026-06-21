@@ -77,7 +77,7 @@ object Scene3D {
     private const val SHARD_GROUP = 2 // collision group: shards collide with the ground/pole only…
     private const val SHARD_MASK = 1 // …not each other (their box colliders all sit at the orb centre)
     private const val SHARD_MASS = 1.0
-    private const val GRAVITY = 9.8 // m/s²
+    private const val GRAVITY = 20.0 // ~2× real g — shards drop with weight (true 9.8 reads sluggish at this scale)
     const val CUSTOM_LAYER_ID = "qgress-3d" // MapLibre layer id for the three.js scene
 
     // Currently selected entity, as "portal:<id>" / "agent:<name>" (see pick()).
