@@ -632,7 +632,7 @@ data class Portal(
                 mutableMapOf<Pos, Int>() to mutableMapOf()
             }
             return Portal(
-                Util.generatePortalName(),
+                PortalNames.nameFor(location) ?: Util.generatePortalName(),
                 location,
                 heatMap,
                 vectorField,

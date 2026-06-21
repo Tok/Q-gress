@@ -352,6 +352,7 @@ object MapUtil {
         val imageData: ImageData = World.createStreetImage(rawBuf, width, height)
         World.shadowStreetMap = imageData
         val grid = createGrid(imageData, width, height)
+        shadowMap?.let { PortalNames.build(it) } // query POI/street names while the tiles are loaded
         document.getElementById(SHADOW_MAP)?.addClass(INVISIBLE)
         captureAnchor()
         callback(grid)

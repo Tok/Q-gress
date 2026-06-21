@@ -250,13 +250,15 @@ the vessel itself stays grayscale).
   rebuild lacks: a **persistent per-entity animation layer** (track create/destroy events, tween
   over time). Build that once and drive both, with synthesized **sounds** (field-up hum/whoosh,
   field-down collapse, portal grow chime) in `SoundUtil`.
-- [ ] **Portal names from map data (replace the random gibberish).** OpenFreeMap serves the
-  **OpenMapTiles** schema, which has a **`poi` layer** (name + class: monument, artwork, fountain,
-  memorial, place_of_worship, artwork… — i.e. real Ingress-portal-like POIs) plus
-  **`transportation_name`** / `place` for streets/areas. At portal creation,
-  `map.queryRenderedFeatures` (or query the vector source) near the portal lng/lat → prefer a
-  named POI, else nearest **street name** ("…, <Street>"), else fall back to the generator.
-  **Spike first (~30 min):** confirm those layers exist & carry `name` at zoom 18 in OpenFreeMap.
+- [x] **Portal names from map data (replace the random gibberish).** `util/PortalNames`: at grid
+  time it `querySourceFeatures`-queries the shadow map's `openmaptiles` source for the `poi` and
+  `transportation_name` source-layers (works even though the shadow style doesn't render them).
+  `Portal.create` takes the nearest named POI (≤90 px), else nearest street (≤140 px), else the
+  generator. Spike confirmed the data on OpenFreeMap: **~1100 POIs + ~300 streets** at zoom 18 for
+  the default location. Lng/lat → sim `Pos` via `Scene3D.lngLatToSimPos`, projected lazily (Scene3D
+  must be anchored first); all defensive (any failure → generator). _Follow-ups:_ a portal sitting
+  right on a POI could adopt its `class` (fountain/monument…); gate the diagnostic log behind
+  `?debug`.
 
 **Blender needed?** Only for GLB compaction + authoring the shard/umbrella panels. The glass
 shader, the lathe-based mushroom growth, the pipes, the plasma fields, and the naming are all

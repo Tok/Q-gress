@@ -34,6 +34,7 @@ external object MapLibre {
         fun project(lngLat: dynamic): dynamic
         fun unproject(point: dynamic): dynamic
         fun getCenter(): dynamic
+        fun querySourceFeatures(sourceId: String, parameters: dynamic = definedExternally): dynamic
         fun isMoving(): Boolean
         fun loaded(): Boolean
         fun addLayer(config: dynamic, beforeId: dynamic = definedExternally)
