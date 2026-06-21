@@ -63,6 +63,7 @@ object World {
     var shadowStreetMap: ImageData? = null
 
     lateinit var grid: Grid
+    var walkability = 0.0 // fraction of on-screen cells that are passable (set at grid build)
 
     fun passableCells(): Grid = grid.filter { it.value.isPassable }
     private fun wellPassableCells(): Grid = grid.filter { it.value.isPassableInAllDirections() }

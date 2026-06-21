@@ -431,9 +431,14 @@ object MapUtil {
 
         (0..Config.shadowBlurCount).forEach { _ -> tempCan.blur() }
         tempCtx.drawImage(unscaledCan, 0, 0, w, h)
-        return (-OFFSCREEN_CELL_ROWS until (w + OFFSCREEN_CELL_ROWS)).flatMap { x ->
+        val rawGrid: Grid = (-OFFSCREEN_CELL_ROWS until (w + OFFSCREEN_CELL_ROWS)).flatMap { x ->
             nextRow(tempCtx, h, x)
         }.toMap()
+        // No closed-off areas: carve corridors so every passable island reaches the outside.
+        val grid = GridConnectivity.connectIslands(rawGrid)
+        World.walkability = GridConnectivity.walkability(grid, w, h)
+        console.log("grid built: walkability ${(World.walkability * 100).toInt()}% (${GridConnectivity.components(rawGrid).size} islands connected)")
+        return grid
     }
 
     // Layer switching: #initialMap holds the satellite style, #map the street style.
