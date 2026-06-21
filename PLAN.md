@@ -239,14 +239,17 @@ the vessel itself stays grayscale).
   scaled to the orb's level (the pole is metal, so only the orb shatters). Verified L1/L8 in demo.
 - [x] **`#demo/portal` scene** (L1–L8 orb size + faction tint) — plus demos now render on a **gray
   backdrop** (satellite hidden, checkbox to toggle) and sit **zoomed in** (`DEMO_ZOOM`).
-- [ ] **Glass shader follow-ups:** **double-shell** thick-wall + true SSR refraction (the one piece
-  left here). **Camera-tracking rim** and the **brighter link variant + inner core tube** are now
-  **done** (commit `c92f176`): `Scene3D.feedCameraEye` recovers the camera eye in sim-space (null
-  vector of the sim→clip matrix's x/y/w rows — MapLibre 5.24 has no `getFreeCameraOptions`) and
-  feeds a shared `GlassShader` `uEye` uniform, so the fresnel uses the true per-fragment view dir;
-  links use a brighter glass variant (`uBright`/`Materials.linkGlass`) wrapping an additive
-  `Materials.linkCore` filament (`coreGeo`). (Grow-on-spawn + level-up animation also **done** — see
-  the lifecycle bullet.)
+- [x] **Glass shader follow-ups — done** (true SSR refraction is the only deferred piece, and it's
+  **out of scope**: the MapLibre custom layer doesn't expose the opaque pass as a texture, which SSR
+  needs). Shipped: **double-shell thick-wall** orbs (`6bcc9b6`) — a concentric inner glass shell
+  (`INNER_SHELL_FRAC`, child of the orb so it inherits the level scale + grow-in) gives an outer +
+  inner rim, reading as a thick blown-glass vessel; **camera-tracking rim** + **brighter link variant
+  + plasma-core tube** (`c92f176`): `GlassShader.updateEye` recovers the camera eye in sim-space (null
+  vector of the sim→clip matrix's x/y/w rows — MapLibre 5.24 has no `getFreeCameraOptions`) feeding a
+  shared `uEye` uniform so the fresnel uses the true per-fragment view dir; links use a brighter glass
+  variant (`uBright`/`Materials.linkGlass`) wrapping an additive `Materials.linkCore` filament
+  (`coreGeo`). Shatter shards now also share the orb glass shader (`eb2169f`, with a `uFade` fade-out).
+  (Grow-on-spawn + level-up animation also **done** — see the lifecycle bullet.)
 - [ ] **GLB compaction + shard reuse (needs Blender).** Decimate `shattered_flask.glb` /
   `glass_shards.glb` (fewer pieces, lower poly) for our scale; reuse shard **panels** to build the
   open umbrella cap at high levels (cap reads as fitted glass shards). Glass look stays
