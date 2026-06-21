@@ -131,10 +131,13 @@ data class Portal(
 
     fun findLinkableForKeys(linker: Agent): List<Portal> {
         val keyset = linker.inventory.findUniqueKeys() ?: return emptyList()
-        val allLinks = World.allPortals.flatMap { it.links }.filter { Link.isNotExisting(it) }.toSet()
+        // No crossing links: the new line must not intersect any EXISTING link. (Previously filtered
+        // through Link.isNotExisting, which is always false for already-placed links → a no-op; the
+        // real check was only in Linker. Now enforced here too.)
+        val existingLines = World.allLines()
         val nonIntersecting: List<Portal> = keyset.map { it.portal }.filter { destination ->
             val line = Line(location, destination.location)
-            allLinks.filter { it.getLine().doesIntersect(line) }.isEmpty()
+            existingLines.none { it.doesIntersect(line) }
         }
         return nonIntersecting.filter { it.isLinkable(linker) }
     }
