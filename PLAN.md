@@ -254,11 +254,17 @@ the vessel itself stays grayscale).
   variant (`uBright`/`Materials.linkGlass`) wrapping an additive `Materials.linkCore` filament
   (`coreGeo`). Shatter shards now also share the orb glass shader (`eb2169f`, with a `uFade` fade-out).
   (Grow-on-spawn + level-up animation also **done** — see the lifecycle bullet.)
-- [ ] **GLB compaction + shard reuse (needs Blender).** Decimate `shattered_flask.glb` /
-  `glass_shards.glb` (fewer pieces, lower poly) for our scale; reuse shard **panels** to build the
-  open umbrella cap at high levels (cap reads as fitted glass shards). Glass look stays
-  shader-driven (no bake). *This is the one piece that genuinely needs Blender.* **Commit the
-  raw `.blend` source files under `/assets/blender/`** (not just the exported `.glb` in `models/`).
+- [x] **GLB compaction** (`95dda03`, Blender MCP): `shattered_flask.glb` **2.43 MB → 657 KB (27%)**.
+  Stripped the per-vertex UVMap (the `GlassShader` is fully procedural — no textures), dropped
+  materials, and welded the UV/normal-split verts (65,772 → 15,047) with smooth normals. **All 12
+  shatter variants + chunk counts preserved**; node names still `<variant>_chunkN` so it's a drop-in
+  for `ShardAssets.parseVariants` (re-import verified). Editable source committed at
+  `assets/blender/shattered_flask.blend` (per the source-in-repo rule). `glass_shards.glb` left as-is
+  (38 KB, currently unused).
+- [ ] **Shard-panel reuse → umbrella cap (Blender + code).** Reuse shard **panels** to build an open
+  umbrella cap at high portal levels (cap reads as fitted glass shards). Unimplemented; the cap-build
+  logic would live in `Scene3D.buildPortal`/`buildResonators` gated on level. Glass look stays
+  shader-driven (no bake).
 - [x] **Links → 3D glass pipes.** The 2D `Line` links are now thin **glass cylinders**
   (`linkGeo` + `orientTube`: a unit Y-cylinder placed at the midpoint, Y-scaled to length, Y
   rotated to the direction via `Quaternion.setFromUnitVectors`) spanning the two portals' **orb
