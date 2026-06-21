@@ -469,6 +469,12 @@ html, body {
 .demoButton.res {
     border-color: var(--res-color);
 }
+/* Selected level in the XMP demo (grayscale highlight — no new hues). */
+.demoButton.demoSel {
+    background: #dddddd;
+    color: #111111;
+    border-color: #ffffff;
+}
 
 .topLabel {
     cursor: default;

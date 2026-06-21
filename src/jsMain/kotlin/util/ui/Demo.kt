@@ -31,9 +31,11 @@ object Demo {
 
     private var portalColor = Faction.ENL.color
     private var demoLevel = 1
+    private var xmpLevelSel = 1
+    private var xmpButtons: List<HTMLButtonElement> = emptyList()
 
-    /** Scenes that should NOT spawn the default central game portal (they manage their own meshes). */
-    fun ownsPortal(scene: String): Boolean = scene == "portal"
+    /** The XMP level the user has selected (the xmp demo detonates this on click). */
+    fun xmpLevel(): Int = xmpLevelSel
 
     /** The demo route for a location hash, or null for the normal game. Accepts #demo and #/demo. */
     fun route(hash: String): String? = when (hash.removePrefix("#").removePrefix("/").removeSuffix("/")) {
@@ -58,7 +60,7 @@ object Demo {
         panel.addClass("demoPanel", "coda")
         when (scene) {
             "portal" -> buildPortalControls(panel, center)
-            "xmp" -> buildXmpControls(panel, center)
+            "xmp" -> buildXmpControls(panel)
         }
         panel.append(satelliteToggle()) // gray backdrop by default; opt in to satellite
         panel.append(link("#demo", "≡ Menu", "demoBack"))
@@ -109,16 +111,17 @@ object Demo {
         Scene3D.showcasePortal(center, demoLevel, portalColor)
     }
 
-    private fun buildXmpControls(panel: HTMLDivElement, center: Pos) {
-        panel.append(titleEl("XMP Effects"))
-        for (level in 1..8) {
-            panel.append(
-                button("L$level", "demoButton") {
-                    SoundUtil.enableAudio()
-                    Scene3D.playXmpBurst(center, level)
-                },
-            )
-        }
+    private fun buildXmpControls(panel: HTMLDivElement) {
+        panel.append(titleEl("XMP — click map to detonate"))
+        val btns = (1..8).map { level -> button("L$level", "demoButton") { selectXmp(level) } }
+        btns.forEach { panel.append(it) }
+        xmpButtons = btns
+        selectXmp(xmpLevelSel) // highlight the current selection
+    }
+
+    private fun selectXmp(level: Int) {
+        xmpLevelSel = level
+        xmpButtons.forEachIndexed { i, b -> b.className = if (i + 1 == level) "demoButton demoSel" else "demoButton" }
     }
 
     private fun titleEl(text: String): HTMLDivElement {

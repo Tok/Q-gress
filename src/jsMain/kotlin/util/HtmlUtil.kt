@@ -337,7 +337,7 @@ object HtmlUtil {
         }
     }
 
-    // Minimal bootstrap for a demo scene: the 3D scene + one central portal, no game.
+    // Minimal bootstrap for a demo scene: just the 3D scene (each scene manages its own meshes).
     private fun loadDemoScene(scene: String) {
         World.userFaction = Faction.ENL
         World.resetAllCanvas()
@@ -347,8 +347,12 @@ object HtmlUtil {
             World.isReady = true
             Navigation.setup()
             MapUtil.enable3D()
-            if (!Demo.ownsPortal(scene)) {
-                document.defaultView?.setTimeout({ World.allPortals.add(Portal.create(center)) }, 0)
+            if (scene == "xmp") { // click anywhere → detonate an XMP at the selected level
+                MapUtil.bindClick(fun(event: dynamic) {
+                    SoundUtil.enableAudio()
+                    val pos = MapUtil.eventToSimPos(event)
+                    if (pos != null) Scene3D.playXmpBurst(pos, Demo.xmpLevel())
+                })
             }
             intervalID = document.defaultView?.setInterval({ demoTick() }, Time.minTickInterval) ?: 0
             Demo.showControls(scene, center)

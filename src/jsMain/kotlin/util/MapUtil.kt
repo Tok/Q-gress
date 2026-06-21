@@ -217,6 +217,11 @@ object MapUtil {
         m.onEvent("mousemove", onMove)
     }
 
+    /** Wire just a map click (demo scenes); MapLibre distinguishes a click from a nav drag. */
+    fun bindClick(onClick: (dynamic) -> Unit) {
+        initMap?.onEvent("click", onClick)
+    }
+
     /** Ground sim position under a MapLibre mouse event (uses its lng/lat — pitch/zoom safe). */
     fun eventToSimPos(event: dynamic): Pos? {
         val lngLat = event.lngLat ?: return null
