@@ -10,7 +10,6 @@ import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLLabelElement
 import system.display.Scene3D
 import util.MapUtil
-import util.SoundUtil
 import util.data.Pos
 
 /**
@@ -33,9 +32,14 @@ object Demo {
     private var demoLevel = 1
     private var xmpLevelSel = 1
     private var xmpButtons: List<HTMLButtonElement> = emptyList()
+    private var portalButtons: List<HTMLButtonElement> = emptyList()
 
     /** The XMP level the user has selected (the xmp demo detonates this on click). */
     fun xmpLevel(): Int = xmpLevelSel
+
+    /** The level + colour the portal demo places on LMB (HtmlUtil wires the map clicks). */
+    fun portalLevel(): Int = demoLevel
+    fun portalColorValue(): String = portalColor
 
     /** The demo route for a location hash, or null for the normal game. Accepts #demo and #/demo. */
     fun route(hash: String): String? = when (hash.removePrefix("#").removePrefix("/").removeSuffix("/")) {
@@ -67,13 +71,14 @@ object Demo {
         document.body?.append(panel)
     }
 
-    /** A "Satellite" checkbox (off by default) — demos render over a gray backdrop unless ticked. */
+    /** A "Satellite" checkbox (on by default) — untick to render over a gray backdrop instead. */
     private fun satelliteToggle(): HTMLLabelElement {
         val label = document.createElement("label") as HTMLLabelElement
         label.addClass("demoToggle", "coda")
         val check = document.createElement("input") as HTMLInputElement
         check.type = "checkbox"
-        check.checked = false
+        check.checked = true
+        MapUtil.setDemoSatellite(true) // satellite on by default
         check.onchange = {
             MapUtil.setDemoSatellite(check.checked)
             null
@@ -84,31 +89,20 @@ object Demo {
     }
 
     private fun buildPortalControls(panel: HTMLDivElement, center: Pos) {
-        panel.append(titleEl("Portal Level"))
-        for (level in 1..8) {
-            panel.append(
-                button("L$level", "demoButton") {
-                    demoLevel = level
-                    Scene3D.showcasePortal(center, level, portalColor)
-                },
-            )
-        }
-        panel.append(
-            button("Shatter", "demoButton") {
-                SoundUtil.enableAudio()
-                Scene3D.shatterShowcase(center, portalColor)
-                SoundUtil.playGlassShatterSound(center, 0.4, 0.9)
-            },
-        )
-        panel.append(button("ENL", "demoButton enl") { setPortalColor(center, Faction.ENL.color) })
-        panel.append(button("RES", "demoButton res") { setPortalColor(center, Faction.RES.color) })
-        panel.append(button("Neutral", "demoButton") { setPortalColor(center, NEUTRAL) })
-        Scene3D.showcasePortal(center, demoLevel, portalColor)
+        panel.append(titleEl("Portal — LMB place · RMB shatter"))
+        val lvlButtons = (1..8).map { level -> button("L$level", "demoButton") { selectPortalLevel(level) } }
+        lvlButtons.forEach { panel.append(it) }
+        portalButtons = lvlButtons
+        selectPortalLevel(demoLevel) // highlight the current selection
+        panel.append(button("ENL", "demoButton enl") { portalColor = Faction.ENL.color })
+        panel.append(button("RES", "demoButton res") { portalColor = Faction.RES.color })
+        panel.append(button("Neutral", "demoButton") { portalColor = NEUTRAL })
+        Scene3D.placeShowcase(center, demoLevel, portalColor) // a starter portal in the middle
     }
 
-    private fun setPortalColor(center: Pos, color: String) {
-        portalColor = color
-        Scene3D.showcasePortal(center, demoLevel, portalColor)
+    private fun selectPortalLevel(level: Int) {
+        demoLevel = level
+        portalButtons.forEachIndexed { i, b -> b.className = if (i + 1 == level) "demoButton demoSel" else "demoButton" }
     }
 
     private fun buildXmpControls(panel: HTMLDivElement) {

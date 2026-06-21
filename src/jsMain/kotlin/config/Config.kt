@@ -24,9 +24,10 @@ object Config {
     const val recruitmentBaseChance = 0.05 // success chance at an empty roster; scales →0 at the cap
 
     var startPortals = 5 // initial portal count (chosen at onboarding — the "portal density")
-    fun startFrogs() = if (HtmlUtil.isQuickstart()) 8 else minFrogs
-    fun startSmurfs() = if (HtmlUtil.isQuickstart()) 8 else minSmurfs
-    fun initialAp() = if (HtmlUtil.isQuickstart()) 2000000 else 0
+    var quickStart = false // onboarding option: start with a full roster + AP so the early game moves
+    fun startFrogs() = if (quickStart) 8 else minFrogs
+    fun startSmurfs() = if (quickStart) 8 else minSmurfs
+    fun initialAp() = if (quickStart) 2000000 else 0
 
     private const val maxNonFaction = 300
     fun maxFor(faction: Faction? = null) = when (faction) {

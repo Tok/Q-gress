@@ -46,7 +46,7 @@ object HtmlUtil {
     fun isRunningInBrowser() = jsTypeOf(document) != "undefined"
     fun isNotRunningInBrowser() = !isRunningInBrowser()
     fun isLocal() = isRunningInBrowser() && document.location?.href?.contains("localhost") ?: false
-    fun isQuickstart() = isRunningInBrowser() && ((document.getElementById("quickstart") as? HTMLInputElement)?.checked ?: false)
+    fun isQuickstart() = Config.quickStart
 
     private fun tick() {
         if (!World.isReady) {
@@ -156,9 +156,10 @@ object HtmlUtil {
     private fun runOnboarding() {
         Onboarding.showFaction { f ->
             chooseUserFaction(f)
-            Onboarding.showMapSize(Config.startPortals) { w, h, portals ->
+            Onboarding.showMapSize(Config.startPortals) { w, h, portals, quick ->
                 Sim.setSize(w, h) // size first, so the location screen's play-area box is the real size
                 Config.startPortals = portals
+                Config.quickStart = quick
                 Onboarding.showLocation { lng, lat, _ -> initWorld(centerJson(lng, lat)) }
             }
         }
@@ -308,6 +309,21 @@ object HtmlUtil {
                     val pos = MapUtil.eventToSimPos(event)
                     if (pos != null) Scene3D.playXmpBurst(pos, Demo.xmpLevel())
                 })
+            }
+            if (scene == "portal") { // LMB places a portal at the selected level, RMB shatters the nearest
+                MapUtil.bindPortalDemo(
+                    fun(event: dynamic) {
+                        val pos = MapUtil.eventToSimPos(event) ?: return
+                        SoundUtil.enableAudio()
+                        Scene3D.placeShowcase(pos, Demo.portalLevel(), Demo.portalColorValue())
+                        SoundUtil.playPortalCreationSound(pos)
+                    },
+                    fun(event: dynamic) {
+                        val pos = MapUtil.eventToSimPos(event) ?: return
+                        Scene3D.removeShowcaseNear(pos)
+                        SoundUtil.playGlassShatterSound(pos, 0.4, 0.9)
+                    },
+                )
             }
             intervalID = document.defaultView?.setInterval({ demoTick() }, Time.minTickInterval) ?: 0
             Demo.showControls(scene, center)

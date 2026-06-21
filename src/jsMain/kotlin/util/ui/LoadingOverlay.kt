@@ -58,11 +58,15 @@ object LoadingOverlay {
         subTrack.appendChild(subFill)
         val detail = document.createElement("div") as HTMLElement
         detail.className = "loadingDetail"
-        overlay.appendChild(title)
-        overlay.appendChild(status)
-        overlay.appendChild(track)
-        overlay.appendChild(subTrack)
-        overlay.appendChild(detail)
+        // Glass pane behind the text + bars so they stay readable once the backdrop goes translucent.
+        val panel = document.createElement("div") as HTMLElement
+        panel.className = "loadingPanel"
+        panel.appendChild(title)
+        panel.appendChild(status)
+        panel.appendChild(track)
+        panel.appendChild(subTrack)
+        panel.appendChild(detail)
+        overlay.appendChild(panel)
         body.appendChild(overlay)
         statusEl = status
         detailEl = detail

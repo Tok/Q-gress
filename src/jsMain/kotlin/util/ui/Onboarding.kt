@@ -134,8 +134,8 @@ object Onboarding {
         )
     }
 
-    /** Step 3 — map size (width/height, with presets) + portal density. [onStart] gets w, h, portals. */
-    fun showMapSize(defaultPortals: Int, onStart: (Int, Int, Int) -> Unit) {
+    /** Step 2 — map size + portal density + quick-start. [onStart] gets w, h, portals, quickStart. */
+    fun showMapSize(defaultPortals: Int, onStart: (Int, Int, Int, Boolean) -> Unit) {
         val screen = screen("MAP SIZE & PORTALS")
         val widthInput = numberInput(Sim.width)
         val heightInput = numberInput(Sim.height)
@@ -158,6 +158,14 @@ object Onboarding {
         fields.appendChild(labeledInput("Portals", portalsInput))
         screen.appendChild(fields)
 
+        val quickCheck = document.createElement("input") as HTMLInputElement
+        quickCheck.type = "checkbox"
+        quickCheck.addClass("checkbox")
+        val quickLabel = div("onboardCheck")
+        quickLabel.appendChild(quickCheck)
+        quickLabel.appendChild(document.createTextNode(" Quick start (full roster + AP for a fast early game)"))
+        screen.appendChild(quickLabel)
+
         val warn = div("onboardWarn")
         warn.textContent = "Larger maps take longer to generate and use more processing whenever portals spawn."
         screen.appendChild(warn)
@@ -168,6 +176,7 @@ object Onboarding {
                     widthInput.value.toIntOrNull() ?: Sim.width,
                     heightInput.value.toIntOrNull() ?: Sim.height,
                     portalsInput.value.toIntOrNull() ?: defaultPortals,
+                    quickCheck.checked,
                 )
             },
         )

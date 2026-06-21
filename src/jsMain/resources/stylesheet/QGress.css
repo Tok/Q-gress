@@ -108,19 +108,22 @@ html, body {
 }
 .taTable {
     border-collapse: collapse;
+    table-layout: fixed;
     font-family: "Coda", monospace;
     font-size: 11px;
 }
 .taHeadCell {
     color: #cfd6d2;
     font-weight: bold;
-    padding: 0 5px 2px;
+    padding: 0 6px 3px;
     text-align: right;
 }
 .taRow td {
-    padding: 0 5px;
+    padding: 1px 6px;
     text-align: right;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 .taName, .taCell {
     text-align: left;
@@ -128,6 +131,18 @@ html, body {
 .taInv {
     text-align: right;
 }
+/* Fixed column widths so the table layout never shifts with content. */
+.taTable th:nth-child(1), .taTable td:nth-child(1) { width: 22px; }
+.taTable th:nth-child(2), .taTable td:nth-child(2) { width: 52px; }
+.taTable th:nth-child(3), .taTable td:nth-child(3) { width: 44px; }
+.taTable th:nth-child(4), .taTable td:nth-child(4) { width: 112px; }
+.taTable th:nth-child(5), .taTable td:nth-child(5),
+.taTable th:nth-child(6), .taTable td:nth-child(6),
+.taTable th:nth-child(7), .taTable td:nth-child(7) { width: 58px; }
+.taTable th:nth-child(8), .taTable td:nth-child(8) { width: 42px; }
+.taTable th:nth-child(9), .taTable td:nth-child(9) { width: 30px; }
+.taTable th:nth-child(10), .taTable td:nth-child(10) { width: 84px; }
+.taTable th:nth-child(11), .taTable td:nth-child(11) { width: 132px; }
 .taInvBars {
     display: inline-flex;
     align-items: flex-end;
@@ -324,6 +339,14 @@ html, body {
     border: 1px solid rgba(255, 255, 255, 0.4);
     border-radius: 3px;
 }
+.onboardCheck {
+    font-family: "Coda", monospace;
+    font-size: 13px;
+    color: #d8d8d8;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
 .onboardWarn {
     font-family: "Coda", monospace;
     font-size: 12px;
@@ -353,6 +376,16 @@ html, body {
 /* World-build stage: drop the opaque backdrop so the spawning world shows behind the progress. */
 .loadingOverlayReveal {
     background: rgba(0, 0, 0, 0.35);
+}
+.loadingPanel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 26px 48px 30px;
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.62);
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(3px);
 }
 .loadingTitle {
     font-size: 54px;
@@ -666,11 +699,28 @@ html, body {
 }
 
 /* On-screen controls legend (bottom-left). */
-.controlsLegend {
+.controlsInfo {
     position: fixed;
     left: 10px;
     bottom: 10px;
+    width: 22px;
+    height: 22px;
+    line-height: 22px;
+    text-align: center;
+    border-radius: 50%;
     background: #000000aa;
+    color: #ffffff;
+    border: 1px solid #888888;
+    font-size: 14px;
+    cursor: pointer;
+    z-index: 151;
+    pointer-events: auto;
+}
+.controlsLegend {
+    position: fixed;
+    left: 10px;
+    bottom: 40px;
+    background: #000000cc;
     color: #ffffff;
     border: 1px solid #666666;
     border-radius: 5px;

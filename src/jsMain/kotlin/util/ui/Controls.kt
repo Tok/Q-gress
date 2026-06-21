@@ -31,15 +31,21 @@ object Controls {
         document.body?.append(div)
     }
 
+    /** A small "?" button toggles a controls legend popup (hidden by default so it can't cover the HUD). */
     fun addLegend() {
-        val div = document.createElement("div") as HTMLDivElement
-        div.id = "controlsLegend"
-        div.addClass("controlsLegend", "coda")
-        div.innerHTML =
+        val legend = document.createElement("div") as HTMLDivElement
+        legend.id = "controlsLegend"
+        legend.addClass("controlsLegend", "coda", "invisible")
+        legend.innerHTML =
             "<b>Controls</b><br>" +
             "Left-drag: pan &middot; Right-drag: rotate + tilt<br>" +
             "Wheel: zoom &middot; WASD/Q-E/R-F: move/rotate/pitch<br>" +
             "Click portal: select &middot; Click ground: build"
-        document.body?.append(div)
+        val info = document.createElement("div") as HTMLDivElement
+        info.addClass("controlsInfo", "coda")
+        info.innerHTML = "?"
+        info.onclick = { legend.classList.toggle("invisible") }
+        document.body?.append(legend)
+        document.body?.append(info)
     }
 }

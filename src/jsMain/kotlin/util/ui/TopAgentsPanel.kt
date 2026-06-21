@@ -3,14 +3,17 @@ package util.ui
 import World
 import config.Config
 import items.deployable.DeployableItem
+import items.level.LevelColor
+import items.types.ShieldType
 import kotlinx.browser.document
 import org.w3c.dom.HTMLElement
 
 /**
  * Top-agents leaderboard as a DOM table (UI Stage 3, last canvas HUD widget → DOM), replacing the
  * canvas `TopAgentsDisplay`. Columns: #, XM, AP, Agent (faction colour), XMPs/Resos/Cubes/Shields
- * (count + a compact per-level bar strip in **grayscale** — level encodes lightness, not a new hue),
- * Keys, Action, Portal. The body is rebuilt each frame from the AP-sorted top agents.
+ * (count + a per-level bar strip in the same rarity/level colours the old HUD used), Keys, Action,
+ * Portal. Fixed column widths (table-layout: fixed). The body is rebuilt each frame from the
+ * AP-sorted top agents.
  */
 object TopAgentsPanel {
     private const val ROWS = Config.topAgentsMessageLimit
@@ -32,10 +35,10 @@ object TopAgentsPanel {
             row.appendChild(cell(agent.xm.toString(), "taNum"))
             row.appendChild(cell(agent.ap.toString(), "taNum"))
             row.appendChild(cell(agent.name, "taName").also { it.style.color = agent.faction.color })
-            row.appendChild(invCell(agent.inventory.findXmps(), MAX_DEPLOY_LEVEL))
-            row.appendChild(invCell(agent.inventory.findResonators(), MAX_DEPLOY_LEVEL))
-            row.appendChild(invCell(agent.inventory.findPowerCubes(), MAX_DEPLOY_LEVEL))
-            row.appendChild(invCell(agent.inventory.findShields(), MAX_SHIELD_LEVEL))
+            row.appendChild(invCell(agent.inventory.findXmps(), MAX_DEPLOY_LEVEL, ::deployColor))
+            row.appendChild(invCell(agent.inventory.findResonators(), MAX_DEPLOY_LEVEL, ::deployColor))
+            row.appendChild(invCell(agent.inventory.findPowerCubes(), MAX_DEPLOY_LEVEL, ::deployColor))
+            row.appendChild(invCell(agent.inventory.findShields(), MAX_SHIELD_LEVEL, ShieldType::getColorForLevel))
             row.appendChild(cell(agent.inventory.keyCount().toString(), "taNum"))
             row.appendChild(cell(agent.action.item.text, "taCell"))
             row.appendChild(cell(agent.actionPortal.name, "taCell"))
@@ -43,8 +46,10 @@ object TopAgentsPanel {
         }
     }
 
-    /** A count + a per-level grayscale bar strip (lightness = level, height = count). */
-    private fun invCell(items: List<DeployableItem>, maxLevel: Int): HTMLElement {
+    private fun deployColor(level: Int): String = LevelColor.map[level] ?: "#ffffff"
+
+    /** A count + a per-level bar strip (height = count, colour = level via [colorFor]). */
+    private fun invCell(items: List<DeployableItem>, maxLevel: Int, colorFor: (Int) -> String): HTMLElement {
         val td = el("td", "taInv")
         val count = el("span", "taInvCount")
         count.textContent = items.size.toString()
@@ -57,7 +62,7 @@ object TopAgentsPanel {
                 val c = byLevel[lvl] ?: 0
                 val bar = el("span", "taInvBar")
                 bar.style.height = "${(c.toDouble() / maxCount * BAR_MAX_PX).toInt()}px"
-                if (c > 0) bar.style.background = "hsl(0, 0%, ${25 + lvl * (60 / maxLevel)}%)"
+                if (c > 0) bar.style.background = colorFor(lvl)
                 bars.appendChild(bar)
             }
             td.appendChild(bars)

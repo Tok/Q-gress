@@ -224,6 +224,16 @@ object MapUtil {
         initMap?.onEvent("click", onClick)
     }
 
+    /** Portal demo: LMB places, RMB removes (suppressing the browser context menu). */
+    fun bindPortalDemo(onPlace: (dynamic) -> Unit, onRemove: (dynamic) -> Unit) {
+        val m = initMap ?: return
+        m.onEvent("click", onPlace)
+        m.onEvent("contextmenu") { event ->
+            event.preventDefault()
+            onRemove(event)
+        }
+    }
+
     /** Ground sim position under a MapLibre mouse event (uses its lng/lat — pitch/zoom safe). */
     fun eventToSimPos(event: dynamic): Pos? {
         val lngLat = event.lngLat ?: return null

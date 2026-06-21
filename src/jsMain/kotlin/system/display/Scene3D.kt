@@ -115,11 +115,9 @@ object Scene3D {
     private var flaskVariants: List<List<dynamic>> = emptyList()
     private var flaskScale = 1.0 // scale a flask variant to ≈ the portal top sphere
     private var shardsGroup: dynamic = null // transient shatter fragments (not cleared by sync)
-    private var showcaseGroup: dynamic = null // demo-scene portal preview (not cleared by sync)
-    private var showcaseMesh: dynamic = null
-    private var showcaseOrb: dynamic = null // the preview's glass orb (removed when shattered)
-    private var showcaseGasket: dynamic = null // the preview's static gasket (drops when shattered)
-    private var showcaseLevel = 1
+    private var showcaseGroup: dynamic = null // demo-scene placed portals (not cleared by sync)
+    private class Showcase(val group: dynamic, val pos: Pos, val level: Int, val color: String)
+    private val showcases = mutableListOf<Showcase>()
     private var physicsWorld: Cannon.World? = null // cannon-es world for the shards
     private val tempBodies = mutableListOf<Cannon.Body>() // static pole colliders, live only during a shatter
     private var shatterRot = doubleArrayOf(0.0, 0.0, 0.0) // per-shatter random orientation of the shards
@@ -450,7 +448,7 @@ object Scene3D {
         // Glass shards fade via the GlassShader uFade uniform.
         activeShards.add(
             Shard(mesh, mat, body, 0.0, SHARD_LIFE_MIN + Util.random() * (SHARD_LIFE_MAX - SHARD_LIFE_MIN)) { f ->
-                mat.asDynamic().uniforms.uFade.value = f
+                mat.uniforms.uFade.value = f // mat is already dynamic — no .asDynamic()
             },
         )
     }
@@ -634,29 +632,21 @@ object Scene3D {
         return arrayOf(orb, gasket)
     }
 
-    /** Demo only (#demo/portal): show a single portal at [level] in a sync-immune group. */
-    fun showcasePortal(location: Pos, level: Int, color: String) {
+    /** Demo only (#demo/portal): place a portal at [location]/[level] in a sync-immune group (LMB). */
+    fun placeShowcase(location: Pos, level: Int, color: String) {
         val grp = showcaseGroup ?: return
-        if (showcaseMesh != null) grp.remove(showcaseMesh)
         val group = Three.Group()
-        val parts = buildPortal(group, sceneX(location), sceneY(location), level.toDouble(), color, null)
+        buildPortal(group, sceneX(location), sceneY(location), level.toDouble(), color, null)
         grp.add(group)
-        showcaseMesh = group
-        showcaseOrb = parts[0]
-        showcaseGasket = parts[1]
-        showcaseLevel = level
+        showcases.add(Showcase(group, location, level, color))
     }
 
-    /** Demo only: shatter the preview portal — its orb vanishes, the gasket drops, the pole stays. */
-    fun shatterShowcase(location: Pos, color: String) {
-        val g = showcaseMesh
-        if (g != null) {
-            if (showcaseOrb != null) g.remove(showcaseOrb)
-            if (showcaseGasket != null) g.remove(showcaseGasket)
-        }
-        showcaseOrb = null
-        showcaseGasket = null
-        shatterPortal(location, color, showcaseLevel)
+    /** Demo only (RMB): shatter + remove the placed portal nearest [location] (shards fly, gasket drops). */
+    fun removeShowcaseNear(location: Pos) {
+        val target = showcases.minByOrNull { it.pos.distanceTo(location) } ?: return
+        showcaseGroup?.remove(target.group)
+        showcases.remove(target)
+        shatterPortal(target.pos, target.color, target.level)
     }
 
     private fun addAgent(agent: Agent) {
