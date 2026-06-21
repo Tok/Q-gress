@@ -71,7 +71,7 @@ object Scene3D {
     private const val RESO_RING_R = POLE_R * 0.42 // grommet ring radius
     private const val RESO_RING_TUBE = POLE_R * 0.13
     private const val RESO_ROD_R = POLE_R * 0.26
-    private const val RESO_RADIUS_FRAC = 1.15 // slot distance from the pole axis (× POLE_R)
+    private const val RESO_RADIUS_FRAC = 1.7 // slot distance from pole axis (× POLE_R) — spread so slots read distinct top-down
     private const val RESO_COLLAR_FRAC = 0.78 // collar height as a fraction of the pole height
     private const val RESO_ROD_LEN_FRAC = 0.22 // rod length as a fraction of the pole height
     private const val NEUTRAL_COLOR = "#bbbbbb"
@@ -113,7 +113,7 @@ object Scene3D {
     private var flaskVariants: List<List<dynamic>> = emptyList()
     private var flaskScale = 1.0 // scale a flask variant to ≈ the portal top sphere
     private var showcaseGroup: dynamic = null // demo-scene placed portals (not cleared by sync)
-    private class Showcase(val group: dynamic, val resoGroup: dynamic, val pos: Pos, var level: Int, val color: String, var hackAge: Double)
+    private class Showcase(val group: dynamic, val parts: Array<dynamic>, val pos: Pos, var level: Int, val color: String, var hackAge: Double, var growAge: Double)
     private val showcases = mutableListOf<Showcase>()
     private var selectedShowcase: Showcase? = null // demo: the portal the action buttons act on
     private var demoCursor: dynamic = null // demo: ground ring under the mouse (place vs select)
@@ -206,7 +206,7 @@ object Scene3D {
             val dt = if (lastFrameMs <= 0.0) 0.016 else ((nowMs - lastFrameMs) / 1000.0).coerceIn(0.0, 0.1)
             lastFrameMs = nowMs
             if (ShatterFx.hasActive()) ShatterFx.update(dt)
-            if (showcasesHacking()) updateShowcaseHacks(dt)
+            if (showcasesAnimating()) updateShowcases(dt)
             if (HackFx.hasActive()) HackFx.update()
             if (FieldFx.hasActive()) FieldFx.update(dt)
             if (XmpBurst.hasActive()) {
@@ -223,7 +223,7 @@ object Scene3D {
         map.triggerRepaint()
     }
 
-    private fun hasActiveEffects() = ShatterFx.hasActive() || showcasesHacking() || HackFx.hasActive() || XmpBurst.hasActive() || FieldFx.hasActive()
+    private fun hasActiveEffects() = ShatterFx.hasActive() || showcasesAnimating() || HackFx.hasActive() || XmpBurst.hasActive() || FieldFx.hasActive()
 
     /** Rebuild the 3D objects from world state. Called once per simulation tick. */
     fun sync() {
@@ -533,8 +533,9 @@ object Scene3D {
         val group = Three.Group()
         val resos = Octant.values().associateWith { level } // demo: show a full set at the placed level
         val parts = buildPortal(group, location, level.toDouble(), color, null, resos)
+        applyBuildGrow(level.toDouble(), 0.0, parts) // start collapsed; grows in via updateShowcases
         grp.add(group)
-        val sc = Showcase(group, parts[3], location, level, color, 0.0)
+        val sc = Showcase(group, parts, location, level, color, 0.0, 0.0)
         showcases.add(sc)
         selectedShowcase = sc
     }
@@ -602,16 +603,20 @@ object Scene3D {
         grp.add(core)
     }
 
-    private fun updateShowcaseHacks(dt: Double) {
+    private fun updateShowcases(dt: Double) {
         showcases.forEach { sc ->
-            if (sc.hackAge > 0.0) {
+            if (sc.growAge < PORTAL_GROW_S) { // build-in: pole rises + orb grows from the ground
+                sc.growAge += dt
+                applyBuildGrow(sc.level.toDouble(), (sc.growAge / PORTAL_GROW_S).coerceIn(0.0, 1.0), sc.parts)
+            }
+            if (sc.hackAge > 0.0) { // hack: collar spins + rods centrifuge (same as live portals)
                 sc.hackAge = (sc.hackAge - dt).coerceAtLeast(0.0)
-                HackFx.spin(sc.resoGroup, HackFx.SPIN_S - sc.hackAge) // same spin+centrifuge as live portals
+                HackFx.spin(sc.parts[3], HackFx.SPIN_S - sc.hackAge)
             }
         }
     }
 
-    private fun showcasesHacking() = showcases.any { it.hackAge > 0.0 }
+    private fun showcasesAnimating() = showcases.any { it.growAge < PORTAL_GROW_S || it.hackAge > 0.0 }
 
     private fun addAgent(agent: Agent) {
         val x = sceneX(agent.pos)
