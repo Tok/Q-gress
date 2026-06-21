@@ -88,9 +88,14 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
   building world, faction-tinted, translucent at build to reveal the spawning world.
 
 ## Audio
-- Camera-aware **stereo panning** (`Scene3D.audioPan`, projected through the live camera); per-event
-  sounds (portal create, field up/down, shatter, XMP, checkpoint/cycle, marble "tok" NPC drop);
-  **volume slider** + master gain, audio resumes on first gesture.
+- **True 3D positional audio** (`ba82492`): every positional sound routes through a `PannerNode` at
+  its sim-space metre position, with an `AudioListener` driven by the live camera each frame
+  (`Scene3D.render` → `SoundUtil.updateListener`; eye from `GlassShader.eye()`, forward/up by
+  unprojecting the inverse projection). Distance attenuation + front/back + elevation that track
+  rotate/pitch/zoom (HRTF, inverse distance model). Replaced the screen-projected stereo pan.
+- Per-event sounds (portal create/remove, field up/down, shatter, XMP, hack/glyph/deploy/link,
+  checkpoint/cycle, marble "tok" NPC drop); non-positional events (checkpoint/cycle/fail) stay
+  center-panned. **Volume slider** + master gain; audio resumes on first gesture.
 
 ## Settled decisions
 - **Modernize Kotlin/JS in place** (not a TS rewrite; not KMP) — keep the ~7k lines of tested logic.
