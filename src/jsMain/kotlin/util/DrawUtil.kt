@@ -9,14 +9,13 @@ import extension.Ctx
 import extension.clear
 import org.w3c.dom.*
 import system.display.Scene3D
-import system.display.ui.ActionLimitsDisplay
-import system.display.ui.table.TopAgentsDisplay
 import util.data.Circle
 import util.data.Line
 import util.data.Pos
 import util.ui.CycleChart
 import util.ui.Inspector
 import util.ui.StatsPanel
+import util.ui.TopAgentsPanel
 import kotlin.math.PI
 
 object DrawUtil {
@@ -56,17 +55,13 @@ object DrawUtil {
 
     fun redrawUserInterface(firstMu: Int, secondMu: Int, factions: Pair<Faction, Faction>) {
         clearUserInterface()
-        // MindUnits + entity counts + tick + Com + the Cycle MU graph (uPlot) are now DOM panels
-        // (UI Stage 3, canvas→DOM). The TopAgents table is the last canvas widget pending migration.
+        // The whole HUD is now DOM (UI Stage 3, canvas→DOM): MindUnits + counts + tick + Com
+        // (StatsPanel), the MU graph (CycleChart/uPlot), and the top-agents table (TopAgentsPanel).
+        // ActionLimitsDisplay is retired — the 3D PlayAreaMask dims the out-of-bounds area.
         StatsPanel.update(firstMu, secondMu, factions)
         CycleChart.update()
         if (Styles.isDrawTopAgents) {
-            TopAgentsDisplay.draw()
-        }
-        if (Config.isHighlighActionLimit) {
-            ActionLimitsDisplay.draw()
-        } else {
-            ActionLimitsDisplay.drawTop()
+            TopAgentsPanel.update()
         }
     }
 

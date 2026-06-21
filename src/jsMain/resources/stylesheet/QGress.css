@@ -94,6 +94,51 @@ html, body {
     visibility: hidden;
     display: none;
 }
+/* Top-agents leaderboard table (UI Stage 3: canvas→DOM). */
+.topAgents {
+    position: fixed;
+    left: 200px;
+    bottom: 22px;
+    z-index: 60;
+    pointer-events: none;
+    color: #ffffff;
+    background: rgba(0, 0, 0, 0.45);
+    padding: 4px 8px;
+    border-radius: 3px;
+}
+.taTable {
+    border-collapse: collapse;
+    font-family: "Coda", monospace;
+    font-size: 11px;
+}
+.taHeadCell {
+    color: #cfd6d2;
+    font-weight: bold;
+    padding: 0 5px 2px;
+    text-align: right;
+}
+.taRow td {
+    padding: 0 5px;
+    text-align: right;
+    white-space: nowrap;
+}
+.taName, .taCell {
+    text-align: left;
+}
+.taInv {
+    text-align: right;
+}
+.taInvBars {
+    display: inline-flex;
+    align-items: flex-end;
+    height: 11px;
+    gap: 1px;
+    margin-left: 3px;
+    vertical-align: bottom;
+}
+.taInvBar {
+    width: 2px;
+}
 /* DOM stats HUD (UI Stage 3: canvas→DOM). All display-only — never intercept map gestures. */
 .statsMuPanel, .statsCountsPanel, .statsComPanel {
     position: fixed;

@@ -24,7 +24,6 @@ import portal.Portal
 import portal.XmMap
 import system.Cycle
 import system.display.Scene3D
-import system.display.ui.ActionLimitsDisplay
 import util.data.GeoCoords
 import util.data.Line
 import util.data.Pos
@@ -330,7 +329,6 @@ object HtmlUtil {
         World.noiseMap = ImprovedNoise.generateEdgeMap(w, h)
         World.noiseImage = World.createNoiseImage(World.noiseMap, w, h, noiseAlpha)
         World.resetAllCanvas()
-        ActionLimitsDisplay.drawTop()
         MapUtil.loadMaps(center, callback = onMapload())
     }
 
