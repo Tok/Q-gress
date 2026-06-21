@@ -809,6 +809,14 @@ html, body {
     margin: 0;
     font-size: 15px;
 }
+/* Slider row (e.g. building opacity) — sizes to content so the label + slider fit. */
+.gameMenu .menuSliderRow {
+    width: auto;
+}
+.menuSlider {
+    width: 84px;
+    margin: 0;
+}
 
 /* On-screen controls legend (bottom-left). */
 .controlsInfo {

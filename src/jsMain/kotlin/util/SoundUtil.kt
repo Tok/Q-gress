@@ -268,7 +268,7 @@ object SoundUtil {
         osc.frequency.exponentialRampToValueAtTime(300.0, n + dur) // ease off
         val gainNode = audioCtx.createGain()
         gainNode.gain.setValueAtTime(EPS, n)
-        gainNode.gain.linearRampToValueAtTime(0.05, n + 0.04)
+        gainNode.gain.linearRampToValueAtTime(0.16, n + 0.04)
         gainNode.gain.exponentialRampToValueAtTime(EPS, n + dur)
         osc.connect(gainNode)
         gainNode.connect(panner)
@@ -294,7 +294,7 @@ object SoundUtil {
         lowpass.frequency.setValueAtTime(1300.0, n)
         val gainNode = audioCtx.createGain()
         gainNode.gain.setValueAtTime(EPS, n)
-        gainNode.gain.linearRampToValueAtTime(0.08, n + 0.05)
+        gainNode.gain.linearRampToValueAtTime(0.24, n + 0.05)
         gainNode.gain.exponentialRampToValueAtTime(EPS, n + dur)
         osc.connect(lowpass)
         lowpass.connect(gainNode)
@@ -311,7 +311,7 @@ object SoundUtil {
         val ringGain = audioCtx.createGain()
         ringGain.gain.setValueAtTime(EPS, n) // silent until the chime onset at rt
         ringGain.gain.setValueAtTime(EPS, rt)
-        ringGain.gain.linearRampToValueAtTime(0.05, rt + 0.05)
+        ringGain.gain.linearRampToValueAtTime(0.13, rt + 0.05)
         ringGain.gain.exponentialRampToValueAtTime(EPS, n + dur + 0.25)
         ring.connect(ringGain)
         ringGain.connect(panner)

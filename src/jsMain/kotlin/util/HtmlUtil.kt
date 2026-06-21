@@ -587,6 +587,8 @@ object HtmlUtil {
         // Overlay toggles live in the menu now (no longer always-visible in the top bar).
         menu.append(createMenuCheckbox("passabilityToggle", "Terrain") { PassabilityOverlay.setVisible(it) })
         menu.append(createMenuCheckbox("vectorFieldToggle", "Vectors") { VectorFieldOverlay.setVisible(it) })
+        // Fade the 3D buildings when crowded areas hide the action.
+        menu.append(createMenuSlider("Buildings", 0.9) { MapUtil.setBuildingOpacity(it) })
         val button = createButton("menuButton", "topButton amarillo", "Menu") {
             menu.classList.toggle("invisible")
         }
@@ -599,6 +601,29 @@ object HtmlUtil {
     private fun createMenuCheckbox(id: String, labelText: String, onChange: (Boolean) -> Unit): HTMLSpanElement {
         val span = createCheckbox(id, labelText, onChange)
         span.addClass("menuCheck")
+        return span
+    }
+
+    /** A labelled 0..1 slider row inside the game menu dropdown (e.g. building opacity). */
+    private fun createMenuSlider(labelText: String, initial: Double, onInput: (Double) -> Unit): HTMLSpanElement {
+        val span = document.createElement("span") as HTMLSpanElement
+        span.addClass("menuCheck", "menuSliderRow")
+        val label = document.createElement("span") as HTMLSpanElement
+        label.addClass("label")
+        label.innerHTML = labelText
+        val slider = document.createElement("input") as HTMLInputElement
+        slider.type = "range"
+        slider.min = "0.0"
+        slider.max = "1.0"
+        slider.step = "0.05"
+        slider.value = initial.toString()
+        slider.addClass("slider", "menuSlider")
+        slider.oninput = {
+            onInput(slider.valueAsNumber)
+            null
+        }
+        span.append(label)
+        span.append(slider)
         return span
     }
 

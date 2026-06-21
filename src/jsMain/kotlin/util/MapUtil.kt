@@ -496,4 +496,9 @@ object MapUtil {
     fun setGrayscale(on: Boolean) {
         initMap?.setPaintProperty("satellite", "raster-saturation", if (on) -1.0 else 0.0)
     }
+
+    /** Fade the 3D buildings (0 = invisible … 1 = solid) so crowded areas don't hide the action. */
+    fun setBuildingOpacity(opacity: Double) {
+        initMap?.setPaintProperty("3d-buildings", "fill-extrusion-opacity", opacity)
+    }
 }
