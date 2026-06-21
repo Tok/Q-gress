@@ -49,6 +49,8 @@ object Scene3D {
     // faction-coloured with an action indicator floating just above the head.
     private const val HEAD_R = 0.45
     private const val HEAD_Z = 1.6
+    private const val NPC_DROP_S = 0.8 // seconds for an NPC to fall in from the sky on first appearance
+    private const val NPC_DROP_HEIGHT = 70.0 // metres an NPC drops from
     private const val INDICATOR_Z = 2.7
     private const val INDICATOR_SIZE = 1.6
     private const val POLE_R = 2.0
@@ -664,7 +666,12 @@ object Scene3D {
 
     private fun addNpc(npc: NonFaction) {
         val sphere = Three.Mesh(headGeo, Materials.solid(NEUTRAL_COLOR))
-        place(sphere.asDynamic(), sceneX(npc.pos), sceneY(npc.pos), HEAD_Z)
+        // Marble drop-in: on first appearance the NPC falls from the sky (accelerating, 1−f²) to head
+        // height. Per-NPC start height (by id) so a crowd reads as scattered marbles, not a flat sheet.
+        val f = Spawns.appearRaw("npc:${npc.id}", NPC_DROP_S)
+        val h = NPC_DROP_HEIGHT * (0.55 + 0.45 * ((npc.id * 37) % 100) / 100.0)
+        val z = HEAD_Z + h * (1.0 - f * f)
+        place(sphere.asDynamic(), sceneX(npc.pos), sceneY(npc.pos), z)
         npcsGroup.add(sphere)
     }
 

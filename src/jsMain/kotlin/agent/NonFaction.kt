@@ -1,17 +1,13 @@
 package agent
 
 import World
-import config.Colors
 import config.Config
 import config.Dim
 import config.Time
-import extension.Canvas
-import extension.Ctx
 import extension.Grid
 import extension.VectorField
 import portal.Portal
 import util.*
-import util.data.Circle
 import util.data.Complex
 import util.data.Pos
 import util.ui.LoadingOverlay
@@ -23,6 +19,7 @@ data class NonFaction(
     var destination: Pos,
     var vectors: VectorField,
     var busyUntil: Int,
+    val id: Int = nextId(), // stable per-NPC id for the 3D spawn (marble drop) animation
 ) {
     private val swarmTendency = 0.02
     private val swarmChance = swarmTendency - (swarmTendency * 0.5 * size.offset)
@@ -108,8 +105,6 @@ data class NonFaction(
         this.destination = randomTarget.location
     }
 
-    fun draw(ctx: Ctx) = ctx.drawImage(NonFaction.image(size), pos.x, pos.y)
-
     companion object {
         private val OFFSCREEN_DISTANCE = Pos.res * (MapUtil.OFFSCREEN_CELL_ROWS / 2)
         private val DESTINATIONS = listOf(
@@ -155,23 +150,12 @@ data class NonFaction(
 
         private fun findFarPortal(pos: Pos) = World.allPortals.sortedByDescending { pos.distanceTo(it.location) }.first()
 
-        private val images = mapOf(-1 to drawTemplate(-1), 0 to drawTemplate(0), 1 to drawTemplate(1))
         private val MIN_WAIT = Time.secondsToTicks(5)
         private val MAX_WAIT = Time.secondsToTicks(45)
         private fun createWaitTime() = Util.randomInt(MIN_WAIT, MAX_WAIT)
-        private fun image(size: AgentSize): Canvas = images.get(size.offset) ?: drawTemplate(0)
-        private fun drawTemplate(sizeOffset: Int): Canvas {
-            val lineWidth = 2
-            val r = Dim.agentRadius.toInt() + sizeOffset
-            val w = r * 2 + (2 * lineWidth)
-            val h = w
-            return HtmlUtil.preRender(w, h, fun(ctx: Ctx) {
-                val fill = Colors.npcColor
-                val stroke = Colors.black
-                val circle = Circle(Pos(r + lineWidth, r + lineWidth), r.toDouble())
-                DrawUtil.drawCircle(ctx, circle, stroke, lineWidth.toDouble(), fill)
-            })
-        }
+
+        private var seq = 0
+        private fun nextId() = seq++
 
         fun findNearestTo(pos: Pos) = World.allNonFaction.minByOrNull {
             it.pos.distanceTo(pos)
@@ -190,8 +174,7 @@ data class NonFaction(
                 NonFaction(position, speed, size, portal.location, portal.vectors, World.tick)
             }
             SoundUtil.playNpcCreationSound(newNonFaction)
-            DrawUtil.drawNonFaction(newNonFaction)
-            return newNonFaction
+            return newNonFaction // rendered in 3D by Scene3D.sync(); no 2D draw (it'd just flash then clear)
         }
     }
 }

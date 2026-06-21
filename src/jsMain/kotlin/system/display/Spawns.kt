@@ -19,12 +19,14 @@ object Spawns {
     }
 
     /** Eased 0→1 "grown in" factor for [id] over [durationS] seconds since first seen (with overshoot). */
-    fun appear(id: String, durationS: Double): Double {
+    fun appear(id: String, durationS: Double): Double = easeOutBack(appearRaw(id, durationS))
+
+    /** Raw (un-eased) linear 0→1 progress for [id] over [durationS]s — for custom curves (e.g. a fall). */
+    fun appearRaw(id: String, durationS: Double): Double {
         present.add(id)
         val now = nowMs()
         val t = firstSeen.getOrPut(id) { now }
-        val f = (((now - t) / 1000.0) / durationS).coerceIn(0.0, 1.0)
-        return easeOutBack(f)
+        return (((now - t) / 1000.0) / durationS).coerceIn(0.0, 1.0)
     }
 
     /** Forget ids not seen this sync; returns the ids that were present last sync but vanished. */

@@ -2,7 +2,6 @@ package util
 
 import World
 import agent.Faction
-import agent.NonFaction
 import config.*
 import extension.Canvas
 import extension.Ctx
@@ -49,8 +48,6 @@ object DrawUtil {
         }
     }
 
-    fun drawNonFaction(nonFaction: NonFaction) = nonFaction.draw(World.ctx())
-    fun drawAllNonFaction(ctx: Ctx) = World.allNonFaction.forEach { it.draw(ctx) }
     fun drawAllPortals(ctx: Ctx) = World.allPortals.forEach { it.drawCenter(ctx) }
 
     fun redrawUserInterface(firstMu: Int, secondMu: Int, factions: Pair<Faction, Faction>) {
