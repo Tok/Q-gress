@@ -94,14 +94,44 @@ object SoundUtil {
         if (isMuted()) return
         val pan = pos.x / Sim.width
         val amp = 0.5 + level * 0.06
-        val dur = 0.35 + level * 0.02
-        val osc = createExponentialRampOscillator(OscillatorType.SINE, 180.0 + level * 8.0, 40.0, dur)
+        // Deep boom: a sine sweeping well down, with a longer decay.
+        val dur = 0.5 + level * 0.04
+        val osc = createExponentialRampOscillator(OscillatorType.SINE, 120.0 + level * 6.0, 26.0, dur)
         val gainNode = audioCtx.createGain()
         val n = now()
         gainNode.gain.setValueAtTime(amp, n)
         gainNode.gain.exponentialRampToValueAtTime(EPS, n + dur)
         connectVoice(osc, createStaticPan(pan), gainNode, n + dur)
-        playNoiseCrack(pan, amp * 0.6, 0.2 + level * 0.04)
+        // Low-passed noise "blast" (a rumble that whoomphs down), not the bright hi-hat-like crack.
+        playNoiseBlast(pan, amp * 0.9, 0.45 + level * 0.05)
+    }
+
+    private fun playNoiseBlast(pan: Double, amplitude: Double, dur: Double) {
+        val sr = audioCtx.sampleRate
+        val tau = dur * 0.4
+        val len = (dur * sr).toInt().coerceAtLeast(1)
+        val buffer = audioCtx.createBuffer(1, len, sr)
+        val data = buffer.getChannelData(0)
+        var i = 0
+        while (i < len) {
+            data[i] = ((Util.random() * 2.0 - 1.0) * exp(-(i.toDouble() / sr) / tau)).toFloat()
+            i++
+        }
+        val source = audioCtx.createBufferSource()
+        source.buffer = buffer
+        val lowpass = audioCtx.createBiquadFilter()
+        lowpass.type = "lowpass"
+        val n = now()
+        lowpass.frequency.setValueAtTime(700.0, n)
+        lowpass.frequency.exponentialRampToValueAtTime(110.0, n + dur) // brightness falls → a rumble
+        val gainNode = createStaticGain(amplitude)
+        val panNode = createStaticPan(pan)
+        source.connect(lowpass)
+        lowpass.connect(gainNode)
+        gainNode.connect(panNode)
+        panNode.connect(masterGain)
+        source.start()
+        source.stop(n + dur)
     }
 
     private fun playNoiseCrack(pan: Double, amplitude: Double, heaviness: Double) {

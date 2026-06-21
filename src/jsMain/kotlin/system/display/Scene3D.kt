@@ -334,7 +334,7 @@ object Scene3D {
         shatterRot = doubleArrayOf(Util.random() * 2.0 * PI, Util.random() * 2.0 * PI, Util.random() * 2.0 * PI)
         if (flaskVariants.isNotEmpty()) {
             val variant = flaskVariants[(Util.random() * flaskVariants.size).toInt()]
-            variant.forEach { holder -> spawnShard(holder, doubleArrayOf(x, y, orbCenterZ(level)), flaskScale * s, color, 4.0) }
+            variant.forEach { holder -> spawnShard(holder, doubleArrayOf(x, y, orbCenterZ(level)), flaskScale * s, color, 2.0) }
         }
         addPoleObstacle(world, x, y, poleH)
         spawnGasket(world, x, y, poleH)
@@ -394,8 +394,8 @@ object Scene3D {
         val body = Cannon.Body(opts)
         body.asDynamic().quaternion.setFromEuler(shatterRot[0], shatterRot[1], shatterRot[2]) // random per-shatter
         val a = Util.random() * 2.0 * PI
-        val r = burstH * (0.04 + Util.random() * 0.12) // barely any outward push
-        val up = burstH * Util.random() * 0.15 // a tiny pop; gravity does the rest — they mostly drop
+        val r = burstH * (0.02 + Util.random() * 0.06) // almost no outward push
+        val up = burstH * Util.random() * 0.08 // the faintest pop; gravity takes over — they just drop
         body.asDynamic().velocity.set(cos(a) * r, sin(a) * r, up)
         body.asDynamic().angularVelocity.set(randSpin(), randSpin(), randSpin())
         world.addBody(body)
