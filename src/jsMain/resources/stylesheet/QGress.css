@@ -546,6 +546,15 @@ html, body {
 }
 .buttonDiv {
     height: 100px;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+/* Top-bar clusters: left group hugs the left edge, right group the right edge. */
+.toolbarGroup {
+    display: flex;
+    align-items: center;
 }
 .select {
     height: 21px;
@@ -693,16 +702,6 @@ html, body {
     vertical-align: middle;
 }
 
-.topSearch {
-    margin: 5px;
-    width: 160px;
-    height: 21px;
-    font-size: 13px;
-    border-radius: 3px;
-    border: 1px solid black;
-    padding: 5px;
-}
-
 /* Loaded-location name (replaces the old preset dropdown). */
 .topLocation {
     margin: 5px 8px;
@@ -742,6 +741,24 @@ html, body {
     border: 1px solid black;
     padding: 5px;
     cursor: pointer;
+}
+
+/* Overlay toggles (Terrain / Vectors) shown as rows inside the menu dropdown. */
+.gameMenu .menuCheck {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 110px;
+    margin: 4px;
+    padding: 5px;
+    border: 1px solid black;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.06);
+    cursor: pointer;
+}
+.gameMenu .menuCheck .label {
+    margin: 0;
+    font-size: 15px;
 }
 
 /* On-screen controls legend (bottom-left). */

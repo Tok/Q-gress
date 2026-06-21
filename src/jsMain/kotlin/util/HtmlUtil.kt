@@ -18,7 +18,6 @@ import kotlinx.browser.window
 import kotlinx.dom.addClass
 import org.w3c.dom.*
 import org.w3c.dom.events.Event
-import org.w3c.dom.events.KeyboardEvent
 import org.w3c.dom.url.URL
 import portal.Portal
 import portal.XmMap
@@ -36,9 +35,6 @@ import util.ui.LayerView
 import util.ui.LoadingOverlay
 import util.ui.Onboarding
 import kotlin.js.Json
-
-@Suppress("UnusedParameter") // external JS global; param describes the contract
-external fun encodeURIComponent(uri: String): String
 
 object HtmlUtil {
     private var intervalID = 0
@@ -114,19 +110,27 @@ object HtmlUtil {
         val controlDiv = createControlDiv()
         val buttonDiv = document.createElement("div") as HTMLDivElement
         buttonDiv.addClass("buttonDiv")
-        val pauseButton = createButton(PAUSE_BUTTON_ID, "topButton", "Stop") {
+
+        // Left group, far left: Menu (also holds the Terrain/Vectors overlay toggles), Pause/Resume,
+        // and the loaded-location name.
+        val leftGroup = document.createElement("div") as HTMLDivElement
+        leftGroup.addClass("toolbarGroup")
+        leftGroup.append(createMenuSpan()) // New Game / Reset + overlay toggles
+        val pauseButton = createButton(PAUSE_BUTTON_ID, "topButton", "Pause") {
             intervalID = pauseHandler(intervalID) { tick() }
         }
         pauseButton.addClass("non", "amarillo")
-        buttonDiv.append(pauseButton)
+        leftGroup.append(pauseButton)
+        leftGroup.append(createLocationLabel()) // names the actual loaded location (set by setLoadedLocation)
 
-        buttonDiv.append(createLocationLabel()) // names the actual loaded location (set by setLoadedLocation)
-        buttonDiv.append(createMenuSpan()) // New Game / Reset
-        buttonDiv.append(createSearchSpan())
-        buttonDiv.append(createVolumeSpan())
-        buttonDiv.append(LayerView.createDropdown())
-        buttonDiv.append(createCheckbox("passabilityToggle", "Terrain") { PassabilityOverlay.setVisible(it) })
-        buttonDiv.append(createCheckbox("vectorFieldToggle", "Vectors") { VectorFieldOverlay.setVisible(it) })
+        // Right group, far right: base-map view dropdown + volume.
+        val rightGroup = document.createElement("div") as HTMLDivElement
+        rightGroup.addClass("toolbarGroup")
+        rightGroup.append(LayerView.createDropdown())
+        rightGroup.append(createVolumeSpan())
+
+        buttonDiv.append(leftGroup)
+        buttonDiv.append(rightGroup)
         controlDiv.append(buttonDiv)
 
         rootDiv.append(controlDiv)
@@ -400,11 +404,11 @@ object HtmlUtil {
     private fun pauseHandler(intervalID: Int, tickFunction: () -> Unit): Int {
         val pauseButton = document.getElementById(PAUSE_BUTTON_ID) as HTMLButtonElement
         return if (intervalID != -1) {
-            pauseButton.innerText = "Start"
+            pauseButton.innerText = "Resume"
             document.defaultView?.clearInterval(intervalID)
             -1
         } else {
-            pauseButton.innerText = "Stop"
+            pauseButton.innerText = "Pause"
             document.defaultView?.setInterval({ tickFunction() }, Time.minTickInterval) ?: 0
         }
     }
@@ -614,11 +618,21 @@ object HtmlUtil {
         menu.addClass("gameMenu", "invisible")
         menu.append(createButton("menuNewGame", "menuItem amarillo", "New Game") { doNewGame() })
         menu.append(createButton("menuReset", "menuItem amarillo", "Reset") { doReset() })
+        // Overlay toggles live in the menu now (no longer always-visible in the top bar).
+        menu.append(createMenuCheckbox("passabilityToggle", "Terrain") { PassabilityOverlay.setVisible(it) })
+        menu.append(createMenuCheckbox("vectorFieldToggle", "Vectors") { VectorFieldOverlay.setVisible(it) })
         val button = createButton("menuButton", "topButton amarillo", "Menu") {
             menu.classList.toggle("invisible")
         }
         span.append(button)
         span.append(menu)
+        return span
+    }
+
+    /** A [createCheckbox] styled as a row inside the game menu dropdown. */
+    private fun createMenuCheckbox(id: String, labelText: String, onChange: (Boolean) -> Unit): HTMLSpanElement {
+        val span = createCheckbox(id, labelText, onChange)
+        span.addClass("menuCheck")
         return span
     }
 
@@ -649,48 +663,6 @@ object HtmlUtil {
     /** Reset: reload onto the current location (deep link) → a fresh world at the same place. */
     private fun doReset() {
         navigateToLocation(currentLng, currentLat, currentLocationName)
-    }
-
-    private const val LOCATION_SEARCH_ID = "locationSearch"
-
-    // Free-form "play your hometown" search: geocode any place/address via the
-    // keyless Nominatim (OpenStreetMap) service, then recenter through the same
-    // URL flow the preset dropdown uses.
-    private fun createSearchSpan(): HTMLSpanElement {
-        val span = document.createElement("span") as HTMLSpanElement
-        val input = document.createElement("input") as HTMLInputElement
-        input.id = LOCATION_SEARCH_ID
-        input.type = "text"
-        input.placeholder = "play a place…"
-        input.addClass("topSearch", "coda")
-        input.addEventListener("keydown", { event ->
-            if ((event as KeyboardEvent).key == "Enter") handleLocationSearch(input.value)
-        })
-        val button = createButton("locationSearchButton", "topButton", "Go") {
-            handleLocationSearch(input.value)
-        }
-        span.append(input)
-        span.append(button)
-        return span
-    }
-
-    private fun handleLocationSearch(query: String) {
-        val trimmed = query.trim()
-        if (trimmed.isEmpty()) return
-        val url = "https://nominatim.openstreetmap.org/search?format=json&limit=1&q=" + encodeURIComponent(trimmed)
-        val request: dynamic = window.asDynamic().fetch(url)
-        request.then { response: dynamic -> response.json() }
-            .then { results: dynamic ->
-                if (results.length > 0) {
-                    val first = results[0]
-                    val lng = (first.lon as String).toDouble()
-                    val lat = (first.lat as String).toDouble()
-                    navigateToLocation(lng, lat, trimmed)
-                } else {
-                    window.alert("No location found for \"$trimmed\".")
-                }
-            }
-            .catch { error: dynamic -> console.error("Geocoding failed:", error) }
     }
 
     private fun navigateToLocation(lng: Double, lat: Double, name: String) {
