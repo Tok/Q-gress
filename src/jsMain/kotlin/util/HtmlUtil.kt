@@ -24,8 +24,6 @@ import portal.Portal
 import portal.XmMap
 import system.Cycle
 import system.display.Scene3D
-import system.display.loading.Loading
-import system.display.loading.LoadingText
 import system.display.ui.ActionLimitsDisplay
 import util.data.GeoCoords
 import util.data.Line
@@ -498,12 +496,18 @@ object HtmlUtil {
     fun getContext2D(canvas: Canvas): Ctx = canvas.getContext("2d") as Ctx
 
     private fun createPortals(callback: () -> Unit) {
+        val total = Config.startPortals
         fun createPortal(callback: () -> Unit, count: Int) {
             document.defaultView?.setTimeout(fun() {
                 if (count > 0) {
                     val newPortal = Portal.createRandom()
-                    Loading.draw()
-                    LoadingText.draw("Creating Portal ${newPortal.name}")
+                    LoadingOverlay.building(
+                        LoadingOverlay.PCT_WORLD,
+                        LoadingOverlay.PCT_PEOPLE,
+                        total - count + 1,
+                        total,
+                        "Creating portal ${newPortal.name}",
+                    )
                     World.allPortals.add(newPortal)
                     // Render the spawning world behind the (now translucent) loading screen: the new
                     // portal grows in and its colour-coded flow vectors show.
@@ -516,24 +520,20 @@ object HtmlUtil {
                 }
             }, 0)
         }
-        LoadingText.draw("Creating Portals..")
+        LoadingOverlay.detail("Creating portals…")
         World.allPortals.clear()
-        createPortal(callback, Config.startPortals)
+        createPortal(callback, total)
     }
 
     private fun createAgents(callback: () -> Unit) {
         World.allAgents.clear()
-        LoadingText.draw("Creating Frogs..")
+        LoadingOverlay.detail("Creating agents…")
         (1..Config.startFrogs()).forEach {
             World.allAgents.add(Agent.createFrog(World.grid))
         }
-
-        LoadingText.draw("Creating Smurfs..")
         (1..Config.startSmurfs()).forEach {
             World.allAgents.add(Agent.createSmurf(World.grid))
         }
-
-        LoadingText.draw("Creating Non-Faction..")
         World.allNonFaction.clear()
         World.createNonFaction(callback, Config.maxFor())
     }
@@ -554,7 +554,7 @@ object HtmlUtil {
         MapUtil.enable3D()
         LoadingOverlay.stage(LoadingOverlay.PCT_WORLD, "Building world…")
         createAgentsAndPortals {
-            LoadingText.draw("Ready.")
+            LoadingOverlay.detail("Ready.")
             DrawUtil.clearBackground()
             // Clear the during-build vector preview so the game starts with nothing selected.
             Scene3D.selected = null

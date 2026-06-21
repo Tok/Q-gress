@@ -12,11 +12,10 @@ import org.khronos.webgl.Uint8Array
 import org.khronos.webgl.get
 import org.w3c.dom.ImageData
 import portal.Portal
-import system.display.loading.Loading
-import system.display.loading.LoadingText
 import util.HtmlUtil
 import util.Util
 import util.data.Pos
+import util.ui.LoadingOverlay
 import kotlin.math.sqrt
 
 object World {
@@ -152,8 +151,8 @@ object World {
     fun createNonFaction(callback: () -> Unit, count: Int) {
         document.defaultView?.setTimeout(fun() {
             if (count > 0) {
-                LoadingText.draw("Creating Non-Faction $count")
-                Loading.draw()
+                val total = Config.maxFor()
+                LoadingOverlay.building(LoadingOverlay.PCT_PEOPLE, 100, total - count + 1, total, "Creating people")
                 val newNonFaction = NonFaction.create(World.grid)
                 World.allNonFaction.add(newNonFaction)
                 createNonFaction(callback, count - 1)

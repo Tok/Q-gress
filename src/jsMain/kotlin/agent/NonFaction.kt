@@ -10,11 +10,11 @@ import extension.Ctx
 import extension.Grid
 import extension.VectorField
 import portal.Portal
-import system.display.loading.Loading
 import util.*
 import util.data.Circle
 import util.data.Complex
 import util.data.Pos
+import util.ui.LoadingOverlay
 
 data class NonFaction(
     var pos: Pos,
@@ -146,7 +146,7 @@ data class NonFaction(
                 maybeField
             } else {
                 val newField = PathUtil.calculateVectorField(PathUtil.generateHeatMap(destination), destination)
-                Loading.draw()
+                LoadingOverlay.detail("Preparing routes…")
                 SoundUtil.playOffScreenLocationCreationSound()
                 fields[destination] = newField
                 newField

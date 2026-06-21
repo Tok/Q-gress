@@ -19,12 +19,15 @@ object LoadingOverlay {
     const val PCT_STREET = 22
     const val PCT_SHADOW = 38
     const val PCT_GRID = 60
-    const val PCT_WORLD = 78
+    const val PCT_WORLD = 78 // portals begin
+    const val PCT_PEOPLE = 92 // agents/NPCs begin
 
     private const val OVERLAY_ID = "loadingOverlay"
     private const val DEFAULT_ACCENT = "#ffffff"
     private var statusEl: HTMLElement? = null
-    private var fillEl: HTMLElement? = null
+    private var detailEl: HTMLElement? = null
+    private var fillEl: HTMLElement? = null // overall progress (large bar)
+    private var subFillEl: HTMLElement? = null // current sub-process (small bar)
     private var titleEl: HTMLElement? = null
     private var accent = DEFAULT_ACCENT
 
@@ -47,14 +50,49 @@ object LoadingOverlay {
         fill.className = "loadingFill"
         fill.style.width = "4%"
         track.appendChild(fill)
+        val subTrack = document.createElement("div") as HTMLElement
+        subTrack.className = "loadingTrack loadingSubTrack"
+        val subFill = document.createElement("div") as HTMLElement
+        subFill.className = "loadingFill"
+        subFill.style.width = "0%"
+        subTrack.appendChild(subFill)
+        val detail = document.createElement("div") as HTMLElement
+        detail.className = "loadingDetail"
         overlay.appendChild(title)
         overlay.appendChild(status)
         overlay.appendChild(track)
+        overlay.appendChild(subTrack)
+        overlay.appendChild(detail)
         body.appendChild(overlay)
         statusEl = status
+        detailEl = detail
         fillEl = fill
+        subFillEl = subFill
         titleEl = title
         applyAccent()
+    }
+
+    /** Sub-status line for what's being created right now, e.g. "Creating portal X  (3/21)". */
+    fun detail(text: String) {
+        detailEl?.textContent = text
+    }
+
+    /**
+     * Build-phase progress: the **overall** bar advances across a [from]→[to] band while the **sub**
+     * bar tracks the current sub-process ([done]/[total]), with a [label] detail line — replaces the
+     * old canvas VectorBar/NpcBar + LoadingText.
+     */
+    fun building(from: Int, to: Int, done: Int, total: Int, label: String) {
+        val frac = if (total <= 0) 1.0 else (done.toDouble() / total).coerceIn(0.0, 1.0)
+        statusEl?.textContent = "Building world…"
+        fillEl?.style?.width = "${(from + (to - from) * frac).toInt()}%"
+        subFillEl?.style?.width = "${(frac * 100).toInt()}%"
+        detail("$label  ($done/$total)")
+        reveal()
+    }
+
+    private fun reveal() {
+        (document.getElementById(OVERLAY_ID) as? HTMLElement)?.className = "loadingOverlay loadingOverlayReveal"
     }
 
     /** Tint the overlay with the chosen faction colour (call once a faction is picked). */
@@ -68,14 +106,13 @@ object LoadingOverlay {
         fillEl?.style?.background = "linear-gradient(90deg, ${accent}66, $accent)"
     }
 
-    /** Advance to a labelled [text] step at [percent] (0..100) fill. */
+    /** Advance the overall bar to a labelled [text] step at [percent] (0..100); resets the sub bar. */
     fun stage(percent: Int, text: String) {
         statusEl?.textContent = text
         fillEl?.style?.width = "${percent.coerceIn(0, 100)}%"
+        subFillEl?.style?.width = "0%"
         // At the world-build stage, reveal the scene behind so the spawning portals + flow vectors show.
-        if (percent >= PCT_WORLD) {
-            (document.getElementById(OVERLAY_ID) as? HTMLElement)?.className = "loadingOverlay loadingOverlayReveal"
-        }
+        if (percent >= PCT_WORLD) reveal()
     }
 
     /** Fill to 100% and fade the overlay out, then remove it. */
@@ -84,7 +121,9 @@ object LoadingOverlay {
         val overlay = document.getElementById(OVERLAY_ID) as? HTMLElement ?: return
         overlay.className = "loadingOverlay loadingOverlayDone"
         statusEl = null
+        detailEl = null
         fillEl = null
+        subFillEl = null
         titleEl = null
         // Remove after the CSS fade so it stops intercepting nothing (it's already pointer-events:none).
         window.setTimeout({ overlay.remove() }, FADE_MS)

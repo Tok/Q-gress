@@ -276,6 +276,22 @@ html, body {
     background-size: 200% 100%;
     animation: loadingShimmer 1.1s linear infinite;
 }
+/* Smaller sub-process bar beneath the overall bar (portals, people, …). */
+.loadingSubTrack {
+    width: 260px;
+    height: 5px;
+    margin-top: 7px;
+}
+.loadingSubTrack .loadingFill {
+    transition: width 0.25s ease;
+}
+.loadingDetail {
+    font-family: "Coda", monospace;
+    font-size: 12px;
+    color: #9aa6a0;
+    margin-top: 10px;
+    min-height: 16px;
+}
 @keyframes loadingShimmer {
     0% { background-position: 200% 0; }
     100% { background-position: -200% 0; }
