@@ -1,11 +1,6 @@
 package system
 
-import config.Colors
 import config.Config
-import config.Dim
-import extension.Ctx
-import util.DrawUtil
-import util.data.Pos
 
 object Com {
     private val messages: MutableList<String> = mutableListOf()
@@ -20,15 +15,6 @@ object Com {
         }
     }
 
-    fun draw(ctx: Ctx) {
-        val messages = messages.toList()
-        val xPos = Dim.width - Dim.comRightOffset
-        val yFixOffset = Dim.height - Dim.comBottomOffset
-        val yOffset = (Dim.comFontSize * 3 / 2)
-        val reversed = messages.reversed()
-        reversed.forEachIndexed { index, text ->
-            val pos = Pos(xPos, yFixOffset - (yOffset * index))
-            DrawUtil.strokeText(ctx, pos, text, Colors.white, Dim.comFontSize, DrawUtil.CODA, 1.5)
-        }
-    }
+    /** Snapshot of the current messages (oldest→newest), for the DOM Com panel. */
+    fun currentMessages(): List<String> = messages.toList()
 }

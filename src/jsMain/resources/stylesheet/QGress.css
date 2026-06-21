@@ -94,6 +94,81 @@ html, body {
     visibility: hidden;
     display: none;
 }
+/* DOM stats HUD (UI Stage 3: canvas→DOM). All display-only — never intercept map gestures. */
+.statsMuPanel, .statsCountsPanel, .statsComPanel {
+    position: fixed;
+    z-index: 60;
+    pointer-events: none;
+    font-family: "Coda", monospace;
+    color: #ffffff;
+    text-shadow: 0 0 3px #000, 0 0 3px #000;
+}
+.statsMuPanel {
+    left: 14px;
+    bottom: 40px;
+}
+.statsMuRow {
+    display: flex;
+    align-items: center;
+    height: 24px;
+}
+.statsMuTrack {
+    width: 150px;
+    height: 15px;
+    border: 2px solid currentColor;
+    margin-right: 8px;
+}
+.statsMuBar {
+    height: 100%;
+    width: 0;
+    opacity: 0.35;
+}
+.statsMuLabel {
+    font-family: "AmarilloUSAF", sans-serif;
+    font-size: 20px;
+}
+.statsTickRow {
+    margin-top: 4px;
+    font-size: 12px;
+    color: #ffffff;
+}
+.statsTickRow .statsTime { margin-right: 10px; }
+.statsCountsPanel {
+    top: 40px;
+    right: 14px;
+    display: flex;
+    gap: 6px;
+    text-align: right;
+}
+.statsCol {
+    display: flex;
+    flex-direction: column;
+    min-width: 48px;
+    font-size: 13px;
+}
+.statsHead {
+    color: #ffffff;
+    font-weight: bold;
+    margin-bottom: 2px;
+}
+.statsTotal { color: #ffffff; }
+.statsComPanel {
+    right: 14px;
+    bottom: 30px;
+    width: 320px;
+    max-height: 200px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: flex-end;
+    text-align: right;
+}
+.statsComLine {
+    font-size: 11px;
+    line-height: 1.45;
+    white-space: nowrap;
+}
 /* Full-screen staged loading overlay (shown from the first frame; see util/ui/LoadingOverlay). */
 .loadingOverlay {
     position: fixed;
