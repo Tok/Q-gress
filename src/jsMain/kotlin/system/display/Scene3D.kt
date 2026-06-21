@@ -78,6 +78,7 @@ object Scene3D {
     private const val VECTOR_CONE_R = 1.1 // flow-arrow cone radius (metres)
     private const val VECTOR_CONE_H = 3.6 // flow-arrow cone length (metres)
     private const val MARKER_R = 10.0 // build-preview marker radius (metres)
+    private const val SHOWCASE_SELECT_R = 55.0 // demo: click within this (sim px) selects a portal / min place gap
     private const val BORDER_COLOR = "#ffffff" // playable-area boundary (white — no non-faction hues)
     private const val BORDER_Z = 0.3
     private const val OUTSIDE_DIM = 0.4 // opacity of the dark mask greying out everything beyond the border
@@ -116,6 +117,8 @@ object Scene3D {
     private var showcaseGroup: dynamic = null // demo-scene placed portals (not cleared by sync)
     private class Showcase(val group: dynamic, val resoGroup: dynamic, val pos: Pos, var level: Int, val color: String, var hackAge: Double)
     private val showcases = mutableListOf<Showcase>()
+    private var selectedShowcase: Showcase? = null // demo: the portal the action buttons act on
+    private var demoCursor: dynamic = null // demo: ground ring under the mouse (place vs select)
     private var lastFrameMs = 0.0 // for per-frame effect dt
 
     /** Last-known shape of a control field (centroid + 3 centroid-relative vertices), for its dissolve. */
@@ -545,48 +548,82 @@ object Scene3D {
         parts[3].position.z = poleH * gg * RESO_COLLAR_FRAC
     }
 
-    /** Demo only (#demo/portal): place a portal at [location]/[level] in a sync-immune group (LMB). */
+    private fun activeShowcase() = selectedShowcase ?: showcases.lastOrNull()
+
+    private fun showcaseNear(location: Pos): Showcase? = showcases.minByOrNull { it.pos.distanceTo(location) }?.takeIf { it.pos.distanceTo(location) < SHOWCASE_SELECT_R }
+
+    /** Demo LMB: select the portal under the cursor, or place a new one if the spot is clear (so two
+     *  portals can't be stacked and existing ones can be picked, not replaced). Returns true if it
+     *  placed a new portal (the caller plays the create sound). */
+    fun clickShowcase(location: Pos, level: Int, color: String): Boolean {
+        val near = showcaseNear(location)
+        if (near != null) {
+            selectedShowcase = near
+            return false
+        }
+        placeShowcase(location, level, color)
+        return true
+    }
+
+    /** Place a portal at [location]/[level] in the sync-immune demo group, and select it. */
     fun placeShowcase(location: Pos, level: Int, color: String) {
         val grp = showcaseGroup ?: return
         val group = Three.Group()
         val resos = Octant.values().associateWith { level } // demo: show a full set at the placed level
         val parts = buildPortal(group, location, level.toDouble(), color, null, resos)
         grp.add(group)
-        showcases.add(Showcase(group, parts[3], location, level, color, 0.0))
+        val sc = Showcase(group, parts[3], location, level, color, 0.0)
+        showcases.add(sc)
+        selectedShowcase = sc
     }
 
-    /** Demo only (RMB in build mode): shatter + remove the placed portal nearest [location]. */
+    /** Demo RMB: shatter + remove the placed portal nearest [location]. */
     fun removeShowcaseNear(location: Pos) {
         val target = showcases.minByOrNull { it.pos.distanceTo(location) } ?: return
         showcaseGroup?.remove(target.group)
         showcases.remove(target)
+        if (target === selectedShowcase) selectedShowcase = null
         val resos = Octant.values().associateWith { target.level } // demo shows a full set → all fall
         shatterPortal(target.pos, target.color, target.level, resos)
     }
 
-    /** Demo: spin the nearest portal's resonator collar (the "hack" animation). */
-    fun hackShowcaseNear(location: Pos) {
-        showcases.minByOrNull { it.pos.distanceTo(location) }?.let { it.hackAge = HackFx.SPIN_S }
-    }
-
-    /** Demo (Hack button): spin the most recently placed portal's resonator collar. */
+    /** Demo (Hack button): spin the active (selected, else last) portal's resonator collar. */
     fun hackLastShowcase() {
-        showcases.lastOrNull()?.let { it.hackAge = HackFx.SPIN_S }
+        activeShowcase()?.let { it.hackAge = HackFx.SPIN_S }
     }
 
-    /** Demo (XMP button): fire an XMP burst at the most recently placed portal, at burster [level]. */
+    /** Demo (XMP button): fire an XMP burst at the active portal, at burster [level]. */
     fun xmpAtLastShowcase(level: Int) {
-        showcases.lastOrNull()?.let { playXmpBurst(it.pos, level) }
+        activeShowcase()?.let { playXmpBurst(it.pos, level) }
     }
 
-    /** Demo (Upgrade/Downgrade): re-place the last portal at level±[delta] (grows in at the new size). */
+    /** Demo (Upgrade/Downgrade): re-place the active portal at level±[delta] (grows in at the new size). */
     fun stepLastShowcaseLevel(delta: Int) {
-        val target = showcases.lastOrNull() ?: return
+        val target = activeShowcase() ?: return
         val newLevel = (target.level + delta).coerceIn(1, 8)
         if (newLevel == target.level) return
         showcaseGroup?.remove(target.group)
         showcases.remove(target)
-        placeShowcase(target.pos, newLevel, target.color)
+        placeShowcase(target.pos, newLevel, target.color) // re-places + re-selects
+    }
+
+    /** Demo: move the ground cursor ring to [location] (null hides it); colour shows select vs place. */
+    fun updateDemoCursor(location: Pos?) {
+        val grp = showcaseGroup ?: return
+        val cursor = demoCursor ?: run {
+            val r = SHOWCASE_SELECT_R * metersPerPixel
+            Three.Mesh(Three.RingGeometry(r * 0.82, r, 28), markerMaterial(NEUTRAL_COLOR)).also {
+                demoCursor = it
+                grp.add(it)
+            }
+        }
+        if (location == null) {
+            cursor.visible = false
+            return
+        }
+        cursor.visible = true
+        cursor.asDynamic().position.set(sceneX(location), sceneY(location), OVERLAY_Z)
+        cursor.asDynamic().material.color.set(if (showcaseNear(location) != null) HIGHLIGHT_COLOR else NEUTRAL_COLOR)
     }
 
     /** Demo (Link): glass-pipe the two most recently placed portals' orbs. */

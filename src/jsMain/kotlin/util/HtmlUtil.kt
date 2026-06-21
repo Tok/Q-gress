@@ -311,20 +311,25 @@ object HtmlUtil {
             World.isReady = true
             Navigation.setup()
             MapUtil.enable3D()
-            // Unified sandbox: LMB places a portal at the selected level/colour, RMB shatters the
-            // nearest. All other animations (hack, XMP, upgrade/downgrade, link) are panel buttons.
+            // Unified sandbox: LMB selects the portal under the cursor (a ground ring previews
+            // place vs select) or places a new one if the spot is clear; RMB shatters the nearest.
+            // All other animations (hack, XMP, upgrade/downgrade, link) are panel buttons.
             MapUtil.bindPortalDemo(
                 fun(event: dynamic) {
                     val pos = MapUtil.eventToSimPos(event) ?: return
                     SoundUtil.enableAudio()
-                    Scene3D.placeShowcase(pos, Demo.portalLevel(), Demo.portalColorValue())
-                    SoundUtil.playPortalCreationSound(pos)
+                    if (Scene3D.clickShowcase(pos, Demo.portalLevel(), Demo.portalColorValue())) {
+                        SoundUtil.playPortalCreationSound(pos)
+                    }
                 },
                 fun(event: dynamic) {
                     val pos = MapUtil.eventToSimPos(event) ?: return
                     SoundUtil.enableAudio()
                     Scene3D.removeShowcaseNear(pos)
                     SoundUtil.playGlassShatterSound(pos, 0.4, 0.9)
+                },
+                fun(event: dynamic) {
+                    Scene3D.updateDemoCursor(MapUtil.eventToSimPos(event))
                 },
             )
             intervalID = document.defaultView?.setInterval({ demoTick() }, Time.minTickInterval) ?: 0

@@ -19,9 +19,10 @@ object Attacker : ConditionalAction {
         val xmps = xmpsForAttack(agent.inventory)
         doAttack(agent, xmps)
         agent.inventory.consumeXmps(xmps)
-        // 3D XMP burst at the target portal (the attack sound comes from the Queues path).
+        // 3D XMP burst at the AGENT's position (you walk up to the portal and detonate where you
+        // stand — XMPs aren't aimed). The attack sound comes from the Queues path.
         if (xmps.isNotEmpty()) {
-            Scene3D.playXmpBurst(agent.actionPortal.location, xmps.maxOf { it.level.level }, sound = false)
+            Scene3D.playXmpBurst(agent.pos, xmps.maxOf { it.level.level }, sound = false)
         }
         Queues.registerAttack(agent, xmps, i)
         val isDoItAgain = xmps.isNotEmpty() && Util.random() <= 1 / Constants.phi
