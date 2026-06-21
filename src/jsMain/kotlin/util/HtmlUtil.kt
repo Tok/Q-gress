@@ -35,6 +35,7 @@ import util.ui.Demo
 import util.ui.Inspector
 import util.ui.LayerView
 import util.ui.LoadingOverlay
+import util.ui.Onboarding
 import kotlin.js.Json
 
 @Suppress("UnusedParameter") // external JS global; param describes the contract
@@ -48,7 +49,7 @@ object HtmlUtil {
     fun isRunningInBrowser() = jsTypeOf(document) != "undefined"
     fun isNotRunningInBrowser() = !isRunningInBrowser()
     fun isLocal() = isRunningInBrowser() && document.location?.href?.contains("localhost") ?: false
-    fun isQuickstart() = isRunningInBrowser() && (document.getElementById("quickstart") as HTMLInputElement).checked
+    fun isQuickstart() = isRunningInBrowser() && ((document.getElementById("quickstart") as? HTMLInputElement)?.checked ?: false)
 
     private fun tick() {
         if (!World.isReady) {
@@ -87,9 +88,6 @@ object HtmlUtil {
         }
         val rootDiv = document.getElementById("root") as HTMLDivElement
         rootDiv.addClass("container")
-
-        // Staged loading overlay, up from the first frame (the world build runs ~2 min on Big).
-        LoadingOverlay.show()
 
         // Prepare all canvas..
         World.can = createCanvas("mainCanvas")
@@ -134,64 +132,32 @@ object HtmlUtil {
 
         Controls.addLegend()
 
-        val popupId = "popup"
-        rootDiv.append(createPopup(popupId))
-
-        val maybeFaction = getFactionFromUrl()
-        if (maybeFaction != null) {
-            chooseUserFaction(maybeFaction)
-        } else {
-            if (isLocal()) {
-                chooseUserFaction(Faction.random())
-            }
-        }
-
-        initWorld()
+        startOnboardingOrWorld()
     }
 
-    private fun createPopup(id: String): HTMLDivElement {
-        fun createButton(faction: Faction): HTMLButtonElement {
-            val button = document.createElement("button") as HTMLButtonElement
-            button.id = faction.abbr.lowercase() + "Button"
-            button.addClass(faction.abbr.lowercase(), "popupButton", "amarillo")
-            button.innerText = faction.abbr.uppercase()
-            button.onclick = {
-                chooseUserFaction(faction)
+    /**
+     * Gate the world load behind the onboarding order: faction → location → load. Each step
+     * navigates with URL params so the choices survive the reload; once both are present (or a
+     * `?local=true` auto-start) the world loads. Demo scenes returned earlier, before this.
+     */
+    private fun startOnboardingOrWorld() {
+        val faction = getFactionFromUrl()
+        val hasLocation = getLngLatFromUrl() != null
+        when {
+            isAutoStartFromUrl() -> {
+                chooseUserFaction(faction ?: Faction.random())
+                initWorld()
             }
-            return button
+            faction == null -> Onboarding.showFaction { navigateToFaction(it) }
+            !hasLocation -> {
+                chooseUserFaction(faction)
+                Onboarding.showLocation { navigateToLocation(it.lng, it.lat, it.displayName) }
+            }
+            else -> {
+                chooseUserFaction(faction)
+                initWorld()
+            }
         }
-
-        val popupDiv = document.createElement("div") as HTMLDivElement
-        popupDiv.id = id
-        popupDiv.addClass("popup")
-
-        val popupButtonDiv = document.createElement("div") as HTMLDivElement
-
-        val enlButton = createButton(Faction.ENL)
-        val resButton = createButton(Faction.RES)
-
-        val quickstartDiv = document.createElement("div") as HTMLDivElement
-        quickstartDiv.addClass("quickstartDiv")
-        val quickstartCheck = document.createElement("input") as HTMLInputElement
-        quickstartCheck.id = "quickstart"
-        quickstartCheck.type = "checkbox"
-        quickstartCheck.checked = isQuickstartFromUrl()
-        quickstartCheck.addClass("checkbox")
-        quickstartCheck.disabled = true // FIXME
-        val quickstartLabel = document.createElement("span") as HTMLSpanElement
-        quickstartLabel.addClass("coda", "loadLabel")
-        quickstartLabel.id = "quickstartLabel"
-        quickstartLabel.innerHTML = "Quick Start"
-        quickstartLabel.onclick = { quickstartCheck.click() }
-
-        popupButtonDiv.append(enlButton)
-        popupButtonDiv.append(resButton)
-        quickstartDiv.append(quickstartCheck)
-        quickstartDiv.append(quickstartLabel)
-
-        popupDiv.append(popupButtonDiv)
-        popupDiv.append(quickstartDiv)
-        return popupDiv
     }
 
     private fun createCheckbox(id: String, labelText: String, onChange: (Boolean) -> Unit): HTMLSpanElement {
@@ -345,6 +311,8 @@ object HtmlUtil {
     }
 
     private fun initWorld() {
+        // Staged loading overlay, up before the first tile request (the world build runs ~2 min on Big).
+        LoadingOverlay.show()
         val noiseAlpha = 0.8
         val w = Dim.width
         val h = Dim.height
@@ -364,9 +332,17 @@ object HtmlUtil {
     }
 
     private fun closePopup() {
-        val popup = document.getElementById("popup") as HTMLDivElement
-        popup.addClass("invisible")
+        (document.getElementById("popup") as? HTMLDivElement)?.addClass("invisible")
     }
+
+    /** Step 1 of onboarding: persist the chosen faction in the URL and reload into step 2. */
+    private fun navigateToFaction(faction: Faction) {
+        val location = document.location
+        val base = (location?.origin ?: "") + (location?.pathname ?: "/")
+        document.location?.href = "$base?faction=${faction.abbr}"
+    }
+
+    private fun isAutoStartFromUrl() = url().searchParams.get("local")?.toBoolean() ?: false
 
     private fun createQSliders(fact: Faction) {
         val actionSliderDiv = createSliderDiv("left-sliders", QActions.values(), "floatLeft", "Actions", fact)
@@ -705,8 +681,6 @@ object HtmlUtil {
     }
 
     private fun getFactionFromUrl() = Faction.fromString(url().searchParams.get("faction"))
-
-    private fun isQuickstartFromUrl() = url().searchParams.get("quickstart")?.toBoolean() ?: false
 
     private fun addParameters(
         url: String,

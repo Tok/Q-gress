@@ -30,10 +30,12 @@ object MiniMap {
     private var toggleBtn: HTMLElement? = null
     private var globe = true
 
-    /** Build the inset and sync it to [mainMap]'s centre. No-op if already created. */
-    fun create(mainMap: MapLibre.Map) {
+    /**
+     * Build the globe inset inside [parent], centred at [lng]/[lat] — a standalone location preview
+     * for the onboarding location screen (recenter with [setCenter]). No-op if already created.
+     */
+    fun create(parent: HTMLElement, lng: Double, lat: Double) {
         if (mini != null) return
-        val body = document.body ?: return
 
         // Outer wrapper carries our fixed/circular styling; the map mounts in an inner div so
         // MapLibre's own `maplibregl-map { position: relative }` lands there, not on the wrapper
@@ -47,14 +49,14 @@ object MiniMap {
         val pin = document.createElement("div") as HTMLElement
         pin.className = "miniMapPin"
         wrapper.appendChild(pin)
-        body.appendChild(wrapper)
+        parent.appendChild(wrapper)
 
         val opts: dynamic = js("({})")
         opts.container = inner
         opts.style = JSON.parse<Json>(STYLE)
-        opts.interactive = false // passive overview — never grabs gestures
+        opts.interactive = false // passive preview — never grabs gestures
         opts.attributionControl = false
-        opts.center = mainMap.getCenter()
+        opts.center = arrayOf(lng, lat)
         opts.zoom = MINI_ZOOM
         val m = MapLibre.Map(opts)
         m.on("load") { applyProjection() }
@@ -64,10 +66,13 @@ object MiniMap {
         btn.className = "miniMapToggle"
         btn.textContent = "FLAT"
         btn.asDynamic().onclick = { toggle() }
-        body.appendChild(btn)
+        wrapper.appendChild(btn)
         toggleBtn = btn
+    }
 
-        mainMap.on("move") { mini?.setCenter(mainMap.getCenter()) } // keep the location centred
+    /** Recenter the preview globe (e.g. when the user picks a different location). */
+    fun setCenter(lng: Double, lat: Double) {
+        mini?.setCenter(arrayOf(lng, lat))
     }
 
     private fun toggle() {
