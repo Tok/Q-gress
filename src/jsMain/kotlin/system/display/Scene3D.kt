@@ -117,6 +117,8 @@ object Scene3D {
         var hackGlyph: Boolean = false // the active hack is a (stronger) glyph hack
     }
     private val showcases = mutableListOf<Showcase>()
+    private class DemoLink(val a: Showcase, val b: Showcase, val tube: dynamic, val core: dynamic)
+    private val demoLinks = mutableListOf<DemoLink>() // demo link pipes, so they can't outlive their portals
     private var selectedShowcase: Showcase? = null // demo: the portal the action buttons act on
     private var demoCursor: dynamic = null // demo: ground ring under the mouse (place vs select)
     private var lastFrameMs = 0.0 // for per-frame effect dt
@@ -417,7 +419,7 @@ object Scene3D {
 
     private fun addPortal(portal: Portal) {
         val id = "portal:${portal.id}"
-        detectPortalChange(id, portal) // upgrade / downgrade / neutralize sounds on state change
+        PortalChangeSound.check(id, portal) // upgrade / downgrade / neutralize sounds on state change
         val baseColor = portal.owner?.faction?.color ?: NEUTRAL_COLOR
         val color = if (selected == id) HIGHLIGHT_COLOR else baseColor
         val level = tweenedLevel(id, portal.getLevel().toInt()) // eases on level-up
@@ -427,24 +429,6 @@ object Scene3D {
         // Build-in: the pole rises and the orb grows from the ground over the first moments.
         val g = Spawns.appear(id, PORTAL_GROW_S)
         if (g < 1.0) applyBuildGrow(level, g, parts)
-    }
-
-    private val prevPortalLevel = mutableMapOf<String, Int>()
-    private val prevPortalOwned = mutableMapOf<String, Boolean>()
-
-    /** Compare [portal] to the previous sync and play the upgrade / downgrade / neutralize sound. */
-    private fun detectPortalChange(id: String, portal: Portal) {
-        val lvl = portal.getLevel().toInt()
-        prevPortalLevel[id]?.let { prev ->
-            when {
-                lvl > prev -> SoundUtil.playUpgradeSound(portal.location)
-                lvl < prev && portal.owner != null -> SoundUtil.playDowngradeSound(portal.location)
-            }
-        }
-        prevPortalLevel[id] = lvl
-        val owned = portal.owner != null
-        if (prevPortalOwned[id] == true && !owned) SoundUtil.playNeutralizeSound(portal.location)
-        prevPortalOwned[id] = owned
     }
 
     /**
@@ -581,6 +565,7 @@ object Scene3D {
         val target = showcases.minByOrNull { it.pos.distanceTo(location) } ?: return
         showcaseGroup?.remove(target.group)
         showcases.remove(target)
+        dropDemoLinksFor(target)
         if (target === selectedShowcase) selectedShowcase = null
         val resos = Octant.values().associateWith { target.level } // demo shows a full set → all fall
         shatterPortal(target.pos, target.color, target.level, resos)
@@ -608,6 +593,7 @@ object Scene3D {
         val up = newLevel > target.level
         showcaseGroup?.remove(target.group)
         showcases.remove(target)
+        dropDemoLinksFor(target) // the old showcase object is gone — drop its link pipes
         placeShowcase(pos, newLevel, target.color) // re-places + re-selects
         if (up) SoundUtil.playUpgradeSound(pos) else SoundUtil.playDowngradeSound(pos)
     }
@@ -645,6 +631,16 @@ object Scene3D {
         val core = Three.Mesh(coreGeo, Materials.linkCore(a.color))
         orientTube(core.asDynamic(), pa, pb)
         grp.add(core)
+        demoLinks.add(DemoLink(a, b, tube, core)) // tracked so it's removed if either portal goes
+    }
+
+    /** Demo: remove any link pipes touching [sc] — no link may dangle without both end portals. */
+    private fun dropDemoLinksFor(sc: Showcase) {
+        demoLinks.filter { it.a === sc || it.b === sc }.forEach {
+            showcaseGroup?.remove(it.tube)
+            showcaseGroup?.remove(it.core)
+        }
+        demoLinks.removeAll { it.a === sc || it.b === sc }
     }
 
     private fun updateShowcases(dt: Double) {
@@ -707,10 +703,8 @@ object Scene3D {
      */
     private fun addLink(link: Link) {
         val color = link.creator.faction.color
-        val z0 = orbCenterZ(link.origin.getLevel().toInt().toDouble())
-        val z1 = orbCenterZ(link.destination.getLevel().toInt().toDouble())
-        val a = doubleArrayOf(sceneX(link.origin.location), sceneY(link.origin.location), z0)
-        val b = doubleArrayOf(sceneX(link.destination.location), sceneY(link.destination.location), z1)
+        val a = orbPos(link.origin) // both ends ride the tweened orb height
+        val b = orbPos(link.destination)
         val tube = Three.Mesh(linkGeo, Materials.linkGlass(color))
         orientTube(tube.asDynamic(), a, b)
         linksGroup.add(tube)
@@ -769,7 +763,12 @@ object Scene3D {
         }
     }
 
-    private fun orbPos(portal: Portal): DoubleArray = doubleArrayOf(sceneX(portal.location), sceneY(portal.location), orbCenterZ(portal.getLevel().toInt().toDouble()))
+    // Use the eased/displayed level (not the raw level) so links + fields ride the orb as it tweens
+    // up/down on a level change, instead of snapping to the final height while the orb is mid-tween.
+    // (addPortal updates displayedLevel before addField/addLink run in sync, so this reads fresh.)
+    private fun displayedOrbLevel(portal: Portal): Double = displayedLevel["portal:${portal.id}"] ?: portal.getLevel().toInt().toDouble()
+
+    private fun orbPos(portal: Portal): DoubleArray = doubleArrayOf(sceneX(portal.location), sceneY(portal.location), orbCenterZ(displayedOrbLevel(portal)))
 
     /** Stable id for a field, independent of which corner is "origin" (its three portals, sorted). */
     private fun fieldId(field: Field): String = listOf(field.origin.id, field.primaryAnchor.id, field.secondaryAnchor.id).sorted().joinToString("|", "field:")
