@@ -1,7 +1,6 @@
 # Q-Gress (3D)
 
 [![CI](https://github.com/Tok/Q-gress/actions/workflows/ci.yml/badge.svg)](https://github.com/Tok/Q-gress/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/Tok/Q-gress/graph/badge.svg)](https://codecov.io/gh/Tok/Q-gress)
 [![desktop only](https://img.shields.io/badge/platform-desktop%20only-informational)](#desktop-only)
 [![Kotlin/JS](https://img.shields.io/badge/Kotlin%2FJS-2.4-7F52FF)](https://kotlinlang.org/docs/js-overview.html)
 
@@ -11,9 +10,7 @@ control fields over a **real-world map**. It's a *simulation, not a playable map
 faction's AI behaviour with sliders and watch the two sides play themselves out. **No real
 Ingress/portal data is used** — everything is generated.
 
-> **▶ Live: <https://tok.github.io/Q-gress/>** &nbsp;·&nbsp; **Effects sandbox:
-> <https://tok.github.io/Q-gress/#demo>** &nbsp;·&nbsp; the original 2D build is
-> [archived](#the-original-2d-version).
+<h2 align="center"><a href="https://tok.github.io/Q-gress/">▶&nbsp; Play Q-Gress live</a></h2>
 
 The longer-term direction (the project is named for **Q-learning**) is in [`PLAN.md`](PLAN.md).
 
@@ -34,6 +31,9 @@ instead. Use **Chrome / Brave / Edge** on a desktop with a mouse.
 - A DOM HUD: a live MU "covered area" scoreboard, a per-metric **history dashboard**, an action log.
 - **Play any location** (geocoded) and **shareable links** that reproduce a world from
   `lng/lat/size/seed` (the RNG is seedable).
+
+See the shatter / XMP / hack effects in isolation in the
+**[effects sandbox](https://tok.github.io/Q-gress/#demo)** (`/#demo`).
 
 ## Build, test & run
 
