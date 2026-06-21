@@ -4,27 +4,24 @@ import agent.Agent
 import config.Constants
 import config.Dim
 import items.deployable.DeployableItem
-import items.deployable.Resonator
 import items.level.XmpLevel
 import util.Util
-import util.data.Damage
 import kotlin.math.max
 import kotlin.math.min
 
 data class XmpBurster(val owner: Agent, val level: XmpLevel) : DeployableItem {
     private fun calcBaseDamage(isCritical: Boolean) = if (isCritical) level.damage * CRIT_DAMAGE_MULTIPLIER else level.damage
-    fun dealDamage(agent: Agent): List<Damage> {
-        val resosInRange: List<Resonator> = agent.findResosInAttackRange(level)
-        return resosInRange.map { reso ->
+
+    /** Apply this burst's damage to every resonator in range (distance- and crit-scaled). */
+    fun dealDamage(agent: Agent) {
+        agent.findResosInAttackRange(level).forEach { reso ->
             val position = requireNotNull(reso.position) { "resonator in attack range without a position" }
-            val distanceToAgent: Double = position.distanceTo(agent.pos)
-            val fixedDist = distanceToAgent * Dim.pixelToMFactor
+            val fixedDist = position.distanceTo(agent.pos) * Dim.pixelToMFactor
             val distanceRatio = max(0.0, min(1.0, 1.0 - (fixedDist / level.rangeM)))
             val isCloseEnough = distanceRatio < (Constants.phi - 1)
             val isCritical = isCloseEnough && Util.random() <= CRIT_RATE
             val damageValue: Int = (calcBaseDamage(isCritical) * distanceRatio * GLOBAL_DAMAGE_MULTIPLIER).toInt()
             reso.takeDamage(agent, damageValue)
-            Damage(damageValue, position, isCritical)
         }
     }
 
