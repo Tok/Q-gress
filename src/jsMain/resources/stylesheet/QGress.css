@@ -211,8 +211,8 @@ html, body {
 }
 .onboardMap {
     position: relative;
-    width: 260px;
-    height: 260px;
+    width: 380px;
+    height: 380px;
 }
 /* In the onboarding location screen the inset is in-flow + larger (overrides the fixed in-game style). */
 .onboardMap .miniMap {
@@ -220,8 +220,16 @@ html, body {
     left: 0;
     top: 0;
     transform: none;
-    width: 260px;
-    height: 260px;
+    width: 380px;
+    height: 380px;
+    pointer-events: auto;
+}
+.onboardHint {
+    font-family: "Coda", monospace;
+    font-size: 12px;
+    color: #9aa6a0;
+    max-width: 380px;
+    text-align: center;
 }
 .onboardMap .miniMapToggle {
     position: absolute;

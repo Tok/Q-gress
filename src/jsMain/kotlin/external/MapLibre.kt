@@ -38,6 +38,8 @@ external object MapLibre {
         fun querySourceFeatures(sourceId: String, parameters: dynamic = definedExternally): dynamic
         fun isMoving(): Boolean
         fun loaded(): Boolean
+        fun addSource(id: String, source: dynamic)
+        fun getSource(id: String): dynamic // GeoJSONSource has .setData(geojson)
         fun addLayer(config: dynamic, beforeId: dynamic = definedExternally)
         fun getCanvas(): dynamic
         fun triggerRepaint()

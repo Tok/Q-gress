@@ -36,7 +36,7 @@ object Onboarding {
     }
 
     /** Step 2 — pick a location (preset list + globe preview). [onStart] receives the chosen place. */
-    fun showLocation(onStart: (Location) -> Unit) {
+    fun showLocation(onStart: (Double, Double, String) -> Unit) {
         val screen = screen("CHOOSE A LOCATION")
         val select = document.createElement("select") as HTMLSelectElement
         select.addClass("topDrop", "amarillo")
@@ -55,11 +55,20 @@ object Onboarding {
         val mapHolder = div("onboardMap")
         screen.appendChild(mapHolder)
 
-        val start = document.createElement("button") as HTMLButtonElement
-        start.addClass("topButton", "amarillo", "onboardStart")
-        start.textContent = "Start"
-        start.onclick = { onStart(Location.valueOf(select.value)) }
-        screen.appendChild(start)
+        val hint = div("onboardHint")
+        hint.textContent = "Pan/zoom the globe to position the white play-area box, then confirm."
+        screen.appendChild(hint)
+
+        val confirm = document.createElement("button") as HTMLButtonElement
+        confirm.addClass("topButton", "amarillo", "onboardStart")
+        confirm.textContent = "Confirm location"
+        confirm.onclick = {
+            val center = MiniMap.confirmCenter()
+            if (center != null) {
+                onStart(center.first, center.second, Location.valueOf(select.value).displayName)
+            }
+        }
+        screen.appendChild(confirm)
 
         document.body?.appendChild(screen)
         MiniMap.create(mapHolder, Location.DEFAULT.lng, Location.DEFAULT.lat)

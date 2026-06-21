@@ -149,7 +149,7 @@ object HtmlUtil {
             faction == null -> Onboarding.showFaction { navigateToFaction(it) }
             !hasLocation -> {
                 chooseUserFaction(faction)
-                Onboarding.showLocation { navigateToLocation(it.lng, it.lat, it.displayName) }
+                Onboarding.showLocation { lng, lat, name -> navigateToLocation(lng, lat, name) }
             }
             else -> {
                 chooseUserFaction(faction)
