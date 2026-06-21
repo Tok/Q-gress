@@ -30,6 +30,9 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
   zoom, unrestricted; NavigationControl block). Optional WASD / Q-E / R-F keys (`Navigation`).
 - **Mini-globe inset** (`util/ui/MiniMap`) — circular synced overview with a FLAT/GLOBE toggle.
 - **Home button** — recenter top-down over the play area (pitch 0) to find the action again.
+- **Shareable links** — URLs carry lng/lat/name + size (w/h) + **seed**; a Menu "Copy link" copies a
+  link reproducing the exact world. Backed by a **seedable mulberry32 RNG** (`Util.random`, the sole
+  randomness source) so the same seed → the same world.
 
 ## 3D rendering & the glass visual overhaul
 - **Foundation**: three.js custom layer camera-synced to the MapLibre matrix (`system/display/

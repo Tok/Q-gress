@@ -74,8 +74,10 @@ stays the action substrate (the net/LLM only re-tunes the 18 sliders at checkpoi
 - [ ] **`Observation` (pure)** — `observe(world, faction): DoubleArray`, fixed normalized feature
   vector (MU + Δ, per-faction counts, tick fraction, avg agent XM/level, …). The NN/LLM input.
 - [ ] **`SliderVector` (pure)** — 18 named slots ↔ `QActions`+`QDestinations`; encode/decode + clamp.
-- [ ] **Injectable seedable RNG** — replace inline `Math.random()` in `Util.random()` with a
-  threaded seedable `Rng`. Exit: human play byte-identical; **same seed → identical match** (test).
+- [x] **Seedable RNG (done)** — `Util.random()` is now a seedable **mulberry32** (it was the sole
+  randomness source), so the same seed reproduces a world. Already powers **shareable links**
+  (lng/lat/name + size + seed → the exact world; "Copy link" in the Menu); the AI match harness (6.1)
+  builds on it. _Remaining for 6.0: the `FactionPolicy` API + `Observation`/`SliderVector`._
 
 **6.1 — Substrate II: headless match harness** _(the training engine; pays off the functional-core split)_
 - [ ] **`SimRunner`** — `runMatch(gridFixture, policyEnl, policyRes, seed, maxTicks): MatchResult`,
