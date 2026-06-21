@@ -2,6 +2,7 @@ package system
 
 import World
 import agent.Agent
+import agent.Faction
 import agent.action.ActionItem
 import config.Config
 import config.Dim
@@ -25,7 +26,13 @@ enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>) {
                     .forEach { it.updateLastPos() }
             }
             if (isNewCheckpoint(tick)) {
-                val cp = Checkpoint(enlMu, resMu, isNewCycle(tick))
+                val cp = Checkpoint(
+                    enlMu, resMu, isNewCycle(tick),
+                    World.countPortals(Faction.ENL), World.countPortals(Faction.RES),
+                    World.countLinks(Faction.ENL), World.countLinks(Faction.RES),
+                    World.countFields(Faction.ENL), World.countFields(Faction.RES),
+                    World.countAgents(Faction.ENL), World.countAgents(Faction.RES),
+                )
                 val limit = numberOfCheckpoints - 1
                 val old = INSTANCE.checkpoints.toList().sortedBy { tick }.takeLast(limit)
                 INSTANCE.checkpoints.clear()

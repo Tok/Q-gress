@@ -11,7 +11,7 @@ import system.display.Scene3D
 import util.data.Circle
 import util.data.Line
 import util.data.Pos
-import util.ui.CycleChart
+import util.ui.HistoryPanel
 import util.ui.Inspector
 import util.ui.StatsPanel
 import util.ui.TopAgentsPanel
@@ -49,11 +49,11 @@ object DrawUtil {
 
     fun redrawUserInterface(firstMu: Int, secondMu: Int, factions: Pair<Faction, Faction>) {
         clearUserInterface()
-        // The whole HUD is now DOM (UI Stage 3, canvas→DOM): MindUnits + counts + tick + Com
-        // (StatsPanel), the MU graph (CycleChart/uPlot), and the top-agents table (TopAgentsPanel).
-        // ActionLimitsDisplay is retired — the 3D PlayAreaMask dims the out-of-bounds area.
+        // The whole HUD is DOM: MindUnits + tick + Com log (StatsPanel), the per-metric history
+        // dashboard (HistoryPanel/uPlot — MU + Portals/Links/Fields/Agents over time, with live
+        // values), and the top-agents table (TopAgentsPanel).
         StatsPanel.update(firstMu, secondMu, factions)
-        CycleChart.update()
+        HistoryPanel.update()
         if (Styles.isDrawTopAgents) {
             TopAgentsPanel.update()
         }

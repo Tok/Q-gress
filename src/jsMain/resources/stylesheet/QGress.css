@@ -159,8 +159,8 @@ html, body {
 .taInvBar {
     width: 2px;
 }
-/* DOM stats HUD (UI Stage 3: canvas→DOM). All display-only — never intercept map gestures. */
-.statsMuPanel, .statsCountsPanel, .statsComPanel {
+/* DOM stats HUD. All display-only — never intercept map gestures. */
+.statsMuPanel, .historyPanel, .statsComPanel {
     position: fixed;
     z-index: 60;
     pointer-events: none;
@@ -198,47 +198,66 @@ html, body {
     color: #ffffff;
 }
 .statsTickRow .statsTime { margin-right: 10px; }
-.statsCountsPanel {
-    top: 320px;
+
+/* Right-side history dashboard (HistoryPanel): per metric — live ENL/RES value + faction sparkline. */
+.historyPanel {
+    top: 250px;
     right: 14px;
-    display: flex;
-    gap: 6px;
-    text-align: right;
-}
-/* MU time-series chart (uPlot), right edge below the destination sliders. */
-.cycleChart {
-    position: fixed;
-    top: 200px;
-    right: 14px;
-    z-index: 60;
-    pointer-events: none;
+    width: 228px;
     background: rgba(0, 0, 0, 0.45);
-    padding: 4px;
+    padding: 6px 8px 4px;
     border-radius: 3px;
 }
-.statsCol {
+.historyRow {
+    margin-bottom: 5px;
+}
+.historyHead {
     display: flex;
-    flex-direction: column;
-    min-width: 48px;
-    font-size: 13px;
+    align-items: baseline;
+    font-size: 12px;
 }
-.statsHead {
-    color: #ffffff;
+.historyTitle {
+    flex: 1;
+    color: #cfd6d2;
+}
+.historyVal {
+    width: 40px;
+    text-align: right;
     font-weight: bold;
-    margin-bottom: 2px;
 }
-.statsTotal { color: #ffffff; }
+.historyChart {
+    height: 42px;
+    margin-top: 1px;
+}
+
+/* Action log (bottom-right): a titled log section. */
 .statsComPanel {
     right: 14px;
     bottom: 30px;
     width: 320px;
-    max-height: 200px;
+    max-height: 210px;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    background: rgba(0, 0, 0, 0.45);
+    padding: 5px 8px 6px;
+    border-radius: 3px;
+}
+.statsComTitle {
+    font-family: "Chakra Petch", sans-serif;
+    font-size: 12px;
+    letter-spacing: 2px;
+    color: #9aa6a0;
+    margin-bottom: 3px;
+}
+.statsComLines {
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
     align-items: flex-end;
     text-align: right;
+    overflow: hidden;
 }
 .statsComLine {
     font-size: 11px;
