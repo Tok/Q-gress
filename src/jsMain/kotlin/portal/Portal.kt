@@ -422,9 +422,10 @@ data class Portal(
         // Capture before destroy() clears owner/resonators.
         val shardColor = owner?.faction?.color ?: "#bbbbbb"
         val level = getLevel().value
+        val resoLevels = resoMap().mapValues { it.value.getLevel() } // capture before destroy clears the slots
         val heaviness = (0.1 + level * 0.06).coerceAtMost(0.7)
         destroy()
-        Scene3D.shatterPortal(location, shardColor, level) // glass shards fall onto the terrain
+        Scene3D.shatterPortal(location, shardColor, level, resoLevels) // glass shards + resonators fall
         SoundUtil.playGlassShatterSound(location, heaviness, 0.8)
         World.allAgents.forEach { agent ->
             val portalKeys: List<PortalKey>? = agent.inventory.findKeys().filter { key -> key.portal == this }.toList()

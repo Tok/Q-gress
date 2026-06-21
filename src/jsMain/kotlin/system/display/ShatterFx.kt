@@ -125,6 +125,44 @@ object ShatterFx {
         )
     }
 
+    /**
+     * A resonator rod ([geo] = the unit Y-cylinder) dropping out of a shattered portal: starts
+     * upright at the slot ([x], [y], [z]), then tumbles and fades. Builds its OWN material (the shared
+     * [Materials.resonator] cache would fade live portals' rods if we mutated its opacity).
+     */
+    @Suppress("LongParameterList") // position + size + colour for one falling rod
+    fun spawnFallingRod(geo: dynamic, x: Double, y: Double, z: Double, radius: Double, length: Double, color: String) {
+        val w = world ?: return
+        val p: dynamic = js("({})")
+        p.color = color
+        p.emissive = color
+        p.emissiveIntensity = 0.35
+        p.metalness = 0.3
+        p.roughness = 0.5
+        p.transparent = true
+        p.opacity = 1.0
+        val mat = Three.MeshStandardMaterial(p)
+        val mesh = Three.Mesh(geo, mat)
+        mesh.asDynamic().scale.set(1.0, length, 1.0) // unit Y-cylinder → rod length
+        val opts: dynamic = js("({})")
+        opts.mass = SHARD_MASS
+        opts.position = Cannon.Vec3(x, y, z)
+        opts.shape = Cannon.Box(Cannon.Vec3(radius, length / 2.0, radius)) // length along local Y
+        opts.linearDamping = 0.05
+        opts.angularDamping = 0.25
+        opts.collisionFilterGroup = SHARD_GROUP // rods rest on the ground, ignore each other/shards
+        opts.collisionFilterMask = SHARD_MASK
+        val body = Cannon.Body(opts)
+        body.asDynamic().quaternion.setFromEuler(PI / 2, 0.0, 0.0) // upright like in the slot
+        body.asDynamic().velocity.set((Util.random() - 0.5) * 4.0, (Util.random() - 0.5) * 4.0, Util.random() * 2.0)
+        body.asDynamic().angularVelocity.set(randSpin(), randSpin(), randSpin())
+        w.addBody(body)
+        group.add(mesh)
+        activeShards.add(
+            Shard(mesh, mat, body, 0.0, SHARD_LIFE_MIN + Util.random() * (SHARD_LIFE_MAX - SHARD_LIFE_MIN)) { f -> mat.asDynamic().opacity = f },
+        )
+    }
+
     private fun spawnShard(world: Cannon.World, holder: dynamic, pos: DoubleArray, scale: Double, color: String) {
         val mat = GlassShader.material(color, SHARD_BRIGHT)
         val mesh = Three.Mesh(holder.geo, mat)

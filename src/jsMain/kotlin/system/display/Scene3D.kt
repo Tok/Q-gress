@@ -318,14 +318,33 @@ object Scene3D {
 
     /**
      * Shatter a removed portal (from Portal.remove / the demo RMB): glass shards fly, the gasket
-     * drops, the metal pole sinks. The physics live in [ShatterFx]; we just hand it the geometry.
+     * drops, the metal pole sinks, and each filled resonator rod ([resos] = octant→level) falls out
+     * of its slot. The physics live in [ShatterFx]; we just hand it the geometry + positions.
      */
-    fun shatterPortal(location: Pos, color: String, level: Int) {
+    fun shatterPortal(location: Pos, color: String, level: Int, resos: Map<Octant, Int> = emptyMap()) {
         val lv = level.toDouble()
         ShatterFx.shatter(
             sceneX(location), sceneY(location), poleHeight(lv), poleScale(lv), orbCenterZ(lv), orbScale(lv),
             color, flaskVariants, flaskScale, poleGeo, gasketGeo,
         )
+        dropResonators(location, lv, resos)
+    }
+
+    /** Drop each filled resonator rod from its collar slot when the portal shatters. */
+    private fun dropResonators(location: Pos, level: Double, resos: Map<Octant, Int>) {
+        if (resos.isEmpty()) return
+        val poleH = poleHeight(level)
+        val collarZ = poleH * RESO_COLLAR_FRAC
+        val rodLen = poleH * RESO_ROD_LEN_FRAC
+        val ringR = POLE_R * RESO_RADIUS_FRAC
+        val x = sceneX(location)
+        val y = sceneY(location)
+        Octant.values().forEachIndexed { i, octant ->
+            val lvl = resos[octant] ?: return@forEachIndexed
+            val ang = i * PI / 4.0
+            val color = LevelColor.map[lvl] ?: "#ffffff"
+            ShatterFx.spawnFallingRod(resoRodGeo, x + ringR * cos(ang), y + ringR * sin(ang), collarZ + rodLen / 2.0, RESO_ROD_R, rodLen, color)
+        }
     }
 
     /** Fire an XMP detonation at a location, scaled by burster [level] (1..8). See [XmpBurst]. */
@@ -556,7 +575,8 @@ object Scene3D {
         val target = showcases.minByOrNull { it.pos.distanceTo(location) } ?: return
         showcaseGroup?.remove(target.group)
         showcases.remove(target)
-        shatterPortal(target.pos, target.color, target.level)
+        val resos = Octant.values().associateWith { target.level } // demo shows a full set → all fall
+        shatterPortal(target.pos, target.color, target.level, resos)
     }
 
     /** Demo (RMB in effect mode): spin the nearest portal's resonator collar (the "hack" animation). */
