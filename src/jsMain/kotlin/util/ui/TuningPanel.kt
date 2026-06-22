@@ -60,13 +60,13 @@ object TuningPanel {
 
     private fun buildRow(qValue: QValue): HTMLElement {
         val row = el("div", "tuneRow")
-        // Force the 3-column grid inline (icon+label | slider/bar | value) so nothing can collapse it to
-        // a centering layout — that's what was centering the label box despite its own left-align.
+        // 4-column grid: a fixed icon column (so every row's icon lines up in a column, regardless of
+        // how the name text aligns) | name | slider/bar | value. Inline so nothing can collapse it.
         val rst = row.asDynamic().style
         rst.display = "grid"
-        rst.gridTemplateColumns = "1fr 92px 34px"
+        rst.gridTemplateColumns = "16px 1fr 92px 34px"
         rst.alignItems = "center"
-        rst.columnGap = "8px"
+        rst.columnGap = "6px"
         val userInput = slider(qValue, userFaction)
         val enemyInput = slider(qValue, userFaction.enemy()).also { it.classList.add("invisible") }
         val valueLabel = el("span", "qSliderLabel").also { it.textContent = display(userInput.value) }
@@ -81,6 +81,7 @@ object TuningPanel {
         control.appendChild(userInput)
         control.appendChild(enemyInput) // hidden value store
         control.appendChild(bar)
+        row.appendChild(iconCell(qValue))
         row.appendChild(textLabel(qValue))
         row.appendChild(control)
         row.appendChild(valueLabel)
@@ -88,28 +89,18 @@ object TuningPanel {
         return row
     }
 
-    private fun textLabel(qValue: QValue): HTMLElement {
-        val text = el("span", "qSliderTextLabel")
-        // Inline styles (beat any stylesheet rule) — left-pack the icon + name so the row's content
-        // starts at the column's left edge. Plain CSS wasn't winning the cascade for this element.
-        val st = text.asDynamic().style
-        st.display = "flex"
-        st.alignItems = "center"
-        st.justifyContent = "flex-start"
-        st.gap = "4px"
-        st.justifySelf = "start"
-        st.textAlign = "left"
-        val icon = qValue.icon
-        if (icon != null) {
+    // The action icon in its own fixed 16px column → icons line up in a column across all rows.
+    private fun iconCell(qValue: QValue): HTMLElement {
+        val cell = el("span", "qSliderIcon")
+        qValue.icon?.let {
             val img = document.createElement("img") as HTMLImageElement
-            img.src = icon.toDataURL()
-            text.appendChild(img)
-            text.appendChild(document.createTextNode(" " + qValue.description))
-        } else {
-            text.textContent = qValue.description
+            img.src = it.toDataURL()
+            cell.appendChild(img)
         }
-        return text
+        return cell
     }
+
+    private fun textLabel(qValue: QValue): HTMLElement = el("span", "qSliderTextLabel").also { it.textContent = qValue.description }
 
     private fun slider(qValue: QValue, faction: Faction): HTMLInputElement {
         val s = document.createElement("input") as HTMLInputElement

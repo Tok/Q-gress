@@ -801,23 +801,24 @@ html, body {
     color: #ffffff;
     text-shadow: -1px 0px black, 0px 1px black, 1px 0px black, 0px -1px black;
 }
-/* Left-justify the icon + name (mirrors the value label's text-align:right, which works). */
 .qSliderTextLabel {
     font-family: "Coda";
     font-size: 13px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    text-align: left;
-    justify-self: start; /* shrink-wrap to content at the cell's left edge */
     color: #ffffff;
     text-shadow: -1px 0px black, 0px 1px black, 1px 0px black, 0px -1px black;
 }
-/* The action icon in a tuning row — a supersampled canvas shown small so it stays crisp on HiDPI. */
-.qSliderTextLabel img {
+/* The action icon in its own fixed column — a supersampled canvas shown small so it stays crisp on HiDPI. */
+.qSliderIcon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.qSliderIcon img {
     width: 14px;
     height: 14px;
-    vertical-align: middle;
     image-rendering: -webkit-optimize-contrast;
 }
 /* The merged tuning list (TUNE tab): one flat list — Actions, a divider, then Destinations. */
