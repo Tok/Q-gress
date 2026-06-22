@@ -75,9 +75,17 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
 ## Gameplay, balance & map playability
 - **Balance (Phase 5)**: recruiting now **costs XM** + has **diminishing returns** near the cap, so
   recruit-rush is no longer a free snowball. Fixed a recruiting CME (`World.pendingAgents` buffer).
-- **Map playability** (23 tests): `GridConnectivity` carves corridors so no area is sealed off;
-  `World.walkability` gate blocks mostly-water maps; `LocationTest` guards all presets; per-terrain
-  movement penalties (landcover-graded shadow style → `PathUtil` flow magnitude) + Terrain overlay.
+- **Map playability**: `GridConnectivity` carves corridors so no area is sealed off — and the gameplay
+  carver (`connectIslands(grid, w, h)`) now also joins **on-screen** regions to each other directly, so
+  two areas that both touch the off-screen ring no longer connect only via a long map-edge detour (the
+  cause of agents wandering/looking stuck). `World.walkability` gate blocks mostly-water maps;
+  `LocationTest` guards all presets; per-terrain movement penalties (landcover-graded shadow style →
+  `PathUtil` flow magnitude) + Terrain overlay.
+- **`?debug` diagnostics** (off by default, `util.Debug`, disabled in Node): grid-build connectivity
+  self-check log (islands / on-screen islands / walkability, warns when unhealthy); **stuck/loop
+  detection** (`StuckTracker`) that flags non-progressing agents/NPCs with a 3D marker + a HUD count;
+  **`?debug=capture`** sweeps every preset and downloads a `GridFixture` snapshot file, which
+  `PresetConnectivityTest` audits offline in Node (single component + on-screen-connected + walkable).
 - **Non-blocking flow fields** (`PathUtil.computeFieldAsync`): the per-portal heat-map BFS + vector
   field are now `suspend` and yield (`delay(0)`) per wavefront layer / every ~2000 cells / between
   smooth passes, computed on a `MainScope` and written back into `Portal.vectors` (and the offscreen

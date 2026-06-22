@@ -58,7 +58,12 @@ the AI layer lands, the slider sim is the substrate we keep hardening.
   surface the free-form search on the onboarding screen (it only exists in-game now).
 - [ ] Real **per-stage load %** (especially flow-field computation).
 - [ ] **Initial roster "roll"** — light flavour, not a gacha loop; ties to the icebox rarity tiers.
-- [ ] **`?debug` dev tooling** — timing measurements + console logging to profile the long loads.
+- [ ] **`?debug` dev tooling** — _started_: `?debug` now adds a grid connectivity self-check log,
+  stuck/loop agent detection (3D marker + HUD count), and `?debug=capture` (preset fixture export).
+  _Remaining_: timing measurements + console logging to profile the long loads.
+  _Handoff:_ run `?debug=capture` once in-browser, drop the downloaded `PresetFixtures.kt` into
+  `src/jsTest/kotlin/util/`, and commit — that flips `PresetConnectivityTest` from a synthetic-only
+  harness into a real per-preset audit gate (currently ships with an empty placeholder).
 
 ## Gameplay mechanics (planned)
 - [ ] **Glyph hacking** — a skill-based alternative to a normal hack: **~3× the rewards**, but it
