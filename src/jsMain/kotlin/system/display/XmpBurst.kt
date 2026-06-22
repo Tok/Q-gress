@@ -17,6 +17,7 @@ object XmpBurst {
     private const val LIFE_BASE = 1.4 // longer life so the mushroom rises + dissolves gradually
     private const val LIFE_PER_LEVEL = 0.1
     private const val RING_Z = 0.28 // ground shockwave height
+    private const val RING_TUBE = 0.045 // donut tube radius ÷ ring radius (thin shockwave ring)
     private const val BOX_SCALE = 1.15 // bounding box edge ÷ maxR (must contain the risen mushroom)
     private const val BOX_Z = 0.55 // box centre height ÷ maxR (raised — the cap climbs)
 
@@ -31,7 +32,19 @@ object XmpBurst {
     private class Burst(val meshes: Array<dynamic>, val uni: dynamic, val geom: DoubleArray, var age: Double)
 
     private val boxGeo: dynamic by lazy { Three.BoxGeometry(1.0, 1.0, 1.0) }
-    private val ringQuadGeo: dynamic by lazy { Three.PlaneGeometry(2.0, 2.0) }
+    private val ringGeo: dynamic by lazy { Three.TorusGeometry(1.0, RING_TUBE, 8, 56) } // unit donut, scaled to radius
+
+    // A fresh additive donut material per burst (its colour + opacity animate independently).
+    private fun ringMaterial(): dynamic {
+        val p: dynamic = js("({})")
+        p.color = "#19bfff"
+        p.transparent = true
+        p.opacity = 1.0
+        p.depthTest = false
+        p.depthWrite = false
+        p.blending = Three.AdditiveBlending
+        return Three.MeshBasicMaterial(p)
+    }
 
     fun register(scene: dynamic) {
         group = Three.Group()
@@ -67,9 +80,9 @@ object XmpBurst {
         box.asDynamic().scale.set(bs, bs, bs)
         box.asDynamic().position.set(cx, cy, baseZ + maxR * BOX_Z)
         box.asDynamic().renderOrder = 2
-        val ring = Three.Mesh(ringQuadGeo, XmpShaders.material(XmpShaders.UV_VERT, XmpShaders.RING_FRAG, uni))
+        val ring = Three.Mesh(ringGeo, ringMaterial()) // a 3D donut sitting on the terrain at the blast
         ring.asDynamic().position.set(cx, cy, baseZ + RING_Z)
-        ring.asDynamic().scale.set(maxR, maxR, 1.0)
+        ring.asDynamic().scale.set(0.1, 0.1, 0.1)
         ring.asDynamic().renderOrder = 1
         grp.add(box)
         grp.add(ring)
@@ -92,6 +105,12 @@ object XmpBurst {
             // Anchor the sphere bottom at the ground (centre = baseZ + radius) so the BASE stays on the
             // terrain; the mushroom rises *within* the volume via the shader's cap + stem, not by lifting off.
             b.uni.uCenter.value.z = b.geom[4] + r
+            // Ground shockwave donut: expands to maxR, fades out, cyan → magenta (matches the old ring).
+            val rr = maxR * (1.0 - (1.0 - f) * (1.0 - f))
+            b.meshes[1].scale.set(rr, rr, rr)
+            val mat = b.meshes[1].material
+            mat.color.setRGB(0.1 + 0.9 * f, 0.75 - 0.65 * f, 1.0 - 0.3 * f)
+            mat.opacity = (1.0 - f).coerceIn(0.0, 1.0)
             if (b.age >= life) {
                 for (m in b.meshes) {
                     grp.remove(m)
