@@ -14,7 +14,7 @@ object Glypher : ConditionalAction {
     override fun performAction(agent: Agent): Agent {
         agent.action.start(actionItem)
         val glyphResult = agent.actionPortal.tryGlyph(agent)
-        SoundUtil.playGlyphingSound(agent.actionPortal.location)
+        SoundUtil.playGlyphingSound(agent.actionPortal.location, agent.actionPortal.getLevel().toInt())
         // Glyph hacking gets the stronger collar animation (faster, wider, longer).
         HackFx.record("portal:${agent.actionPortal.id}", agent.faction, glyph = true)
         val newStuff: List<QgressItem>? = glyphResult.items

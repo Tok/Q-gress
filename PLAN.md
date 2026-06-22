@@ -32,11 +32,6 @@ the AI layer lands, the slider sim is the substrate we keep hardening.
 - [x] **Ship to GitHub** — done (live at `tok.github.io/Q-gress/`; 2D at `/2D/`; CI deploys `main`).
 
 ## 3D / rendering
-- [ ] **Rework the synthetic XMP explosion sound.** The fireball *visuals* were upgraded (pyroclastic
-  surface displacement + octave-rotated noise + gradient/key-light shading — see FEATURES), but the
-  procedural detonation **sound** (`SoundUtil.playXmpSound`) still reads thin/synthetic. Give it body:
-  a low-end thump on impact + a turbulent crackle tail that decays with the fireball, scaled by burster
-  level. Pairs with the title-screen demo's audio bed.
 - [ ] **Explosion shader tuning pass (optional).** The new fireball exposes GLSL consts in
   `XmpShaders.VOLUME_FRAG` (`NOISE_FREQ`, `DISPLACE`, `DENSITY_GAIN`, `STEPS`) + the rise/grow curve in
   `XmpBurst.update`. If it reads too dense/sparse or too small once seen live, these are the knobs;

@@ -123,6 +123,14 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
 - Per-event sounds (portal create/remove, field up/down, shatter, XMP, hack/glyph/deploy/link,
   checkpoint/cycle, marble "tok" NPC drop); non-positional events (checkpoint/cycle/fail) stay
   center-panned. **Volume slider** + master gain; audio resumes on first gesture.
+- **Shared 8-note scale** (`SoundUtil.noteFor`, C2 natural-minor octave): the 8 portal/XMP levels map
+  to 8 notes with **level 8 = the lowest**, so a portal's level is audible across every level-keyed
+  sound — XMP boom + volley blips, hack/glyph whirs (+ glyph chime), and upgrade/downgrade notes — and
+  the sim plays in one key.
+- **Layered XMP explosion** (`SoundUtil.playXmpExplosion`): on top of the kept synthetic boom + noise
+  blast, a detonation snap + chest-punch sub at the note + a long lowpassed rumble tail whose
+  brightness and amplitude decay over the fireball's life — so the sound rises and dissolves with the
+  mini-nuke mushroom animation.
 
 ## Settled decisions
 - **Modernize Kotlin/JS in place** (not a TS rewrite; not KMP) — keep the ~7k lines of tested logic.

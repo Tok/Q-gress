@@ -626,7 +626,7 @@ object Scene3D {
         showcases.remove(target)
         dropDemoLinksFor(target) // the old showcase object is gone — drop its link pipes
         placeShowcase(pos, newLevel, target.color) // re-places + re-selects
-        if (up) SoundUtil.playUpgradeSound(pos) else SoundUtil.playDowngradeSound(pos)
+        if (up) SoundUtil.playUpgradeSound(pos, newLevel) else SoundUtil.playDowngradeSound(pos, newLevel)
     }
 
     /** Demo: move the ground cursor ring to [location] (null hides it); colour shows select vs place. */

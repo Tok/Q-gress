@@ -22,6 +22,7 @@ import system.display.Scene3D
 import util.data.Pos
 import kotlin.math.PI
 import kotlin.math.exp
+import kotlin.math.pow
 import kotlin.math.sin
 import kotlin.math.sqrt
 import kotlin.math.tanh
@@ -29,6 +30,18 @@ import kotlin.math.tanh
 object SoundUtil {
     const val DEFAULT_VOLUME = 1.0
     private const val EPS = 0.0001 // exponentialRamp can't target 0
+
+    // Shared 8-note scale for the 8 portal/XMP levels — LEVEL 8 IS THE LOWEST note. A natural-minor
+    // octave (C2 root); XMP, hack, glyph and the level-change sounds all pitch to it (octave-shifted as
+    // needed) so the whole sim plays in one key and a portal's level is audible across every sound.
+    private val SCALE_SEMITONES = intArrayOf(0, 2, 3, 5, 7, 8, 10, 12)
+    private const val SCALE_ROOT_HZ = 65.41 // C2 — the lowest note (level 8)
+
+    /** Frequency (Hz) of [level]'s note on the shared scale (level 8 = root); [octaveUp] transposes it. */
+    fun noteFor(level: Int, octaveUp: Int = 0): Double {
+        val semis = SCALE_SEMITONES[8 - level.coerceIn(1, 8)] + octaveUp * 12
+        return SCALE_ROOT_HZ * 2.0.pow(semis / 12.0)
+    }
 
     // 3D-audio tuning (sim-space is real metres). The play area is hundreds of metres across, so a
     // small reference distance + gentle rolloff makes near/far audibly differ at gameplay zoom while
@@ -167,13 +180,18 @@ object SoundUtil {
         source.stop(now() + duration)
     }
 
-    /** XMP burst: a low sine "boom" sweeping down + a high-passed noise "fwoom", sized by level (1..8). */
+    /**
+     * XMP burst: the existing synthetic boom (now pitched to the scale note — level 8 lowest) + noise
+     * blast, with a layered "proper" explosion on top tuned to the mushroom animation (see
+     * [playXmpExplosion]). Used by the demo + title; the in-game volley uses the lighter overload below.
+     */
     fun playXmpSound(pos: Pos, level: Int) {
         if (isMuted()) return
         val amp = 0.5 + level * 0.06
-        // Deep boom: a sine sweeping well down, with a longer decay.
+        val note = noteFor(level) // 65–131 Hz; level 8 is the lowest
+        // (1) Synthetic boom: a sine at the scale note sweeping down, with a longer decay.
         val dur = 0.5 + level * 0.04
-        val osc = createExponentialRampOscillator(OscillatorType.SINE, 120.0 + level * 6.0, 26.0, dur)
+        val osc = createExponentialRampOscillator(OscillatorType.SINE, note, note * 0.4, dur)
         val gainNode = audioCtx.createGain()
         val n = now()
         gainNode.gain.setValueAtTime(amp, n)
@@ -181,6 +199,52 @@ object SoundUtil {
         connectVoice(osc, createPanner(pos), gainNode, n + dur)
         // Low-passed noise "blast" (a rumble that whoomphs down), not the bright hi-hat-like crack.
         playNoiseBlast(pos, amp * 0.9, 0.45 + level * 0.05)
+        // (2) Proper explosion on top, tuned to the fireball's life (≈ XmpBurst LIFE_BASE + level·0.1).
+        playXmpExplosion(pos, amp, note, 1.4 + level * 0.1)
+    }
+
+    /**
+     * Layered detonation that rides the mushroom animation: an initial broadband crack (the snap), a
+     * chest-punch sub at the note, and a long lowpassed rumble tail whose brightness falls + amplitude
+     * decays over [life] (the smoke cooling + dissipating), so the sound rises and fades with the visual.
+     */
+    private fun playXmpExplosion(pos: Pos, amplitude: Double, note: Double, life: Double) {
+        val n = now()
+        playNoiseCrack(pos, amplitude * 1.1, 0.5) // (a) detonation snap
+        // (b) sub thump at the note, dropping an octave, quick decay
+        val sub = createExponentialRampOscillator(OscillatorType.SINE, note, note * 0.5, 0.4)
+        val subGain = audioCtx.createGain()
+        subGain.gain.setValueAtTime(amplitude * 1.2, n)
+        subGain.gain.exponentialRampToValueAtTime(EPS, n + 0.4)
+        connectVoice(sub, createPanner(pos), subGain, n + 0.4)
+        // (c) long rumble tail — fast attack, brightness + level fall over the fireball's life
+        val sr = audioCtx.sampleRate
+        val len = (life * sr).toInt().coerceAtLeast(1)
+        val buffer = audioCtx.createBuffer(1, len, sr)
+        val data = buffer.getChannelData(0)
+        var i = 0
+        while (i < len) {
+            data[i] = (Util.random() * 2.0 - 1.0).toFloat()
+            i++
+        }
+        val source = audioCtx.createBufferSource()
+        source.buffer = buffer
+        val lowpass = audioCtx.createBiquadFilter()
+        lowpass.type = "lowpass"
+        lowpass.frequency.setValueAtTime(1500.0, n)
+        lowpass.frequency.exponentialRampToValueAtTime(70.0, n + life) // bright blast → deep cooling rumble
+        val rumbleGain = audioCtx.createGain()
+        rumbleGain.gain.setValueAtTime(EPS, n)
+        rumbleGain.gain.exponentialRampToValueAtTime(amplitude * 1.3, n + 0.03) // fast attack
+        rumbleGain.gain.exponentialRampToValueAtTime(amplitude * 0.35, n + life * 0.4)
+        rumbleGain.gain.exponentialRampToValueAtTime(EPS, n + life) // long smoke tail
+        val panNode = createPanner(pos)
+        source.connect(lowpass)
+        lowpass.connect(rumbleGain)
+        rumbleGain.connect(panNode)
+        panNode.connect(masterGain)
+        source.start()
+        source.stop(n + life)
     }
 
     private fun playNoiseBlast(pos: Pos, amplitude: Double, dur: Double) {
@@ -301,17 +365,19 @@ object SoundUtil {
         playSound(oscNode, createPanner(npc.pos), 0.22, duration)
     }
 
-    /** Hack: a short centrifuge whir that spins up then eases off — matches the collar animation. */
-    fun playHackingSound(pos: Pos) {
+    /** Hack: a short centrifuge whir that spins up then eases off — matches the collar animation.
+     *  Pitched to the portal [level] on the shared scale (level 8 lowest). */
+    fun playHackingSound(pos: Pos, level: Int) {
         if (isMuted()) return
         val dur = 0.5
         val n = now()
         val panner = createPanner(pos)
+        val base = noteFor(level, octaveUp = 2) // whir fundamental, on-scale (≈262–523 Hz)
         val osc = audioCtx.createOscillator()
         osc.type = OscillatorType.TRIANGLE
-        osc.frequency.setValueAtTime(180.0, n)
-        osc.frequency.exponentialRampToValueAtTime(560.0, n + dur * 0.5) // spin up
-        osc.frequency.exponentialRampToValueAtTime(300.0, n + dur) // ease off
+        osc.frequency.setValueAtTime(base, n)
+        osc.frequency.exponentialRampToValueAtTime(base * 3.0, n + dur * 0.5) // spin up
+        osc.frequency.exponentialRampToValueAtTime(base * 1.6, n + dur) // ease off
         val gainNode = audioCtx.createGain()
         gainNode.gain.setValueAtTime(EPS, n)
         gainNode.gain.linearRampToValueAtTime(0.16, n + 0.04)
@@ -323,18 +389,20 @@ object SoundUtil {
         osc.stop(n + dur)
     }
 
-    /** Glyph hack: a deeper, longer whir + a glassy resonant chime — reads as stronger than a hack. */
-    fun playGlyphingSound(pos: Pos) {
+    /** Glyph hack: a deeper, longer whir + a glassy resonant chime — reads as stronger than a hack.
+     *  Pitched to the portal [level] on the shared scale (level 8 lowest). */
+    fun playGlyphingSound(pos: Pos, level: Int) {
         if (isMuted()) return
         val dur = 0.95
         val n = now()
         val panner = createPanner(pos)
+        val base = noteFor(level, octaveUp = 2) // deeper on-scale whir
         // Deeper centrifuge whir (sawtooth softened through a lowpass).
         val osc = audioCtx.createOscillator()
         osc.type = OscillatorType.SAW
-        osc.frequency.setValueAtTime(150.0, n)
-        osc.frequency.exponentialRampToValueAtTime(680.0, n + dur * 0.55)
-        osc.frequency.exponentialRampToValueAtTime(280.0, n + dur)
+        osc.frequency.setValueAtTime(base * 0.85, n) // a touch below the hack — reads heavier
+        osc.frequency.exponentialRampToValueAtTime(base * 3.6, n + dur * 0.55)
+        osc.frequency.exponentialRampToValueAtTime(base * 1.5, n + dur)
         val lowpass = audioCtx.createBiquadFilter()
         lowpass.type = "lowpass"
         lowpass.frequency.setValueAtTime(1300.0, n)
@@ -352,8 +420,9 @@ object SoundUtil {
         val ring = audioCtx.createOscillator()
         ring.type = OscillatorType.SINE
         val rt = n + dur * 0.45
-        ring.frequency.setValueAtTime(1040.0, rt)
-        ring.frequency.exponentialRampToValueAtTime(1640.0, n + dur)
+        val chime = noteFor(level, octaveUp = 4) // bright on-scale flourish
+        ring.frequency.setValueAtTime(chime, rt)
+        ring.frequency.exponentialRampToValueAtTime(chime * 1.5, n + dur)
         val ringGain = audioCtx.createGain()
         ringGain.gain.setValueAtTime(EPS, n) // silent until the chime onset at rt
         ringGain.gain.setValueAtTime(EPS, rt)
@@ -365,19 +434,21 @@ object SoundUtil {
         ring.stop(n + dur + 0.25)
     }
 
-    /** Portal gained a level: a quick rising note. */
-    fun playUpgradeSound(pos: Pos) {
+    /** Portal gained a level: a quick note rising up to the NEW [level]'s note on the shared scale. */
+    fun playUpgradeSound(pos: Pos, level: Int) {
         if (isMuted()) return
         val dur = 0.18
-        val osc = createExponentialRampOscillator(OscillatorType.SINE, 520.0, 880.0, dur)
+        val target = noteFor(level, octaveUp = 3)
+        val osc = createExponentialRampOscillator(OscillatorType.SINE, target * 0.67, target, dur)
         playSound(osc, createPanner(pos), 0.08, dur)
     }
 
-    /** Portal lost a level: a quick falling note. */
-    fun playDowngradeSound(pos: Pos) {
+    /** Portal lost a level: a quick note falling down to the NEW [level]'s note on the shared scale. */
+    fun playDowngradeSound(pos: Pos, level: Int) {
         if (isMuted()) return
         val dur = 0.2
-        val osc = createExponentialRampOscillator(OscillatorType.SINE, 520.0, 300.0, dur)
+        val target = noteFor(level, octaveUp = 3)
+        val osc = createExponentialRampOscillator(OscillatorType.SINE, target * 1.5, target, dur)
         playSound(osc, createPanner(pos), 0.08, dur)
     }
 
@@ -395,7 +466,7 @@ object SoundUtil {
 
     fun playXmpSound(level: XmpLevel, pos: Pos) {
         if (isMuted()) return
-        val freq = 160.0 - (level.level * 5)
+        val freq = noteFor(level.level, octaveUp = 3) // on-scale volley blip (level 8 lowest)
         val osc = createStaticOscillator(OscillatorType.SQUARE, freq)
         val gain = (0.04 + (level.level * 0.006))
         val duration = 0.005 + (0.001 * level.level)

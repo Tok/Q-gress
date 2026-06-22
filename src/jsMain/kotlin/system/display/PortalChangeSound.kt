@@ -16,8 +16,8 @@ object PortalChangeSound {
         val lvl = portal.getLevel().toInt()
         prevLevel[id]?.let { prev ->
             when {
-                lvl > prev -> SoundUtil.playUpgradeSound(portal.location)
-                lvl < prev && portal.owner != null -> SoundUtil.playDowngradeSound(portal.location)
+                lvl > prev -> SoundUtil.playUpgradeSound(portal.location, lvl)
+                lvl < prev && portal.owner != null -> SoundUtil.playDowngradeSound(portal.location, lvl)
             }
         }
         prevLevel[id] = lvl

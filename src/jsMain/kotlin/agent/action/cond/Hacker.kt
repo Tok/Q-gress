@@ -14,7 +14,7 @@ object Hacker : ConditionalAction {
     override fun performAction(agent: Agent): Agent {
         agent.action.start(actionItem)
         val hackResult = agent.actionPortal.tryHack(agent)
-        SoundUtil.playHackingSound(agent.actionPortal.location)
+        SoundUtil.playHackingSound(agent.actionPortal.location, agent.actionPortal.getLevel().toInt())
         // ENL spins clockwise, RES counter-clockwise; a plain hack (not a glyph).
         HackFx.record("portal:${agent.actionPortal.id}", agent.faction, glyph = false)
         val newStuff: List<QgressItem>? = hackResult.items
