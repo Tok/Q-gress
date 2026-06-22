@@ -14,7 +14,6 @@ import util.data.Pos
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.ln
-import kotlin.math.pow
 import kotlin.math.sin
 import kotlin.math.sqrt
 
@@ -38,14 +37,14 @@ object TitleScene3D {
     private const val WHITE = "#ffffff"
 
     private const val PORTAL_COUNT = 5
-    private const val PORTALS_ENABLED = false // temporarily off — proportions/look need work; bolts still fire
+    private const val PORTALS_ENABLED = true // on: synced to in-game proportions (gasket + double-shell orb)
 
     // Game proportions (Scene3D), built at game scale then shrunk by TITLE_SCALE to fit the stage —
     // so the title portals read exactly like the in-game ones (tall pole, smaller orb, reso collar).
     private const val POLE_R = 2.0
     private const val POLE_H = 22.5 // pole height at L1; ×poleScale(level)
     private const val TOP_R = 7.0 // orb radius; ×orbScale(level)
-    private const val PHI = 1.618 // pole grows by φ across the 8 levels
+    private const val INNER_SHELL_FRAC = 0.89 // inner glass shell radius (× orb) — gives the orb wall thickness
     private const val RESO_RADIUS_FRAC = 1.7 // reso slot distance from the pole axis (× POLE_R)
     private const val RESO_COLLAR_FRAC = 0.78 // collar height as a fraction of pole height
     private const val RESO_ROD_LEN_FRAC = 0.22 // rod length as a fraction of pole height
@@ -77,6 +76,7 @@ object TitleScene3D {
         val orb: dynamic,
         var orbMat: dynamic, // swapped to a new faction glass on capture
         val pole: dynamic,
+        val gasket: dynamic, // rubber donut at the pole top (rides up with the pole as the level grows)
         val resoGroup: dynamic,
         val pos: DoubleArray, // base (x, y, z) on the stage
     ) {
@@ -102,6 +102,7 @@ object TitleScene3D {
     private var poleGeo: dynamic = null
     private var orbGeo: dynamic = null
     private var rodGeo: dynamic = null
+    private var gasketGeo: dynamic = null
 
     private var running = false
     private var lastMs = 0.0
@@ -154,6 +155,7 @@ object TitleScene3D {
             poleGeo = Three.CylinderGeometry(POLE_R, POLE_R, 1.0, 12) // unit-tall, scaled to pole height
             orbGeo = Three.SphereGeometry(TOP_R, 20, 16) // radius TOP_R, scaled by orbScale(level)
             rodGeo = Three.CylinderGeometry(RESO_ROD_R, RESO_ROD_R, 1.0, 8) // unit, scaled to rod length
+            gasketGeo = Three.TorusGeometry(POLE_R * 1.15, POLE_R * 0.4, 10, 20) // rubber donut at the pole top
             if (PORTALS_ENABLED) buildPortals() // off for now → spawnBolt falls back to sky bolts
             // neutral listener so the (3D-panned) game sounds we reuse pan by portal x and stay audible
             SoundUtil.updateListener(doubleArrayOf(0.0, 0.0, 0.0), doubleArrayOf(0.0, 0.0, -1.0), doubleArrayOf(0.0, 1.0, 0.0))
@@ -202,13 +204,19 @@ object TitleScene3D {
                 val pole = Three.Mesh(poleGeo, Materials.metal()) // chrome + envMap (visible without scene lights)
                 val orbMat = Materials.glass(color) // the game's GlassShader — real glass, not plastic
                 val orb = Three.Mesh(orbGeo, orbMat)
+                val inner = Three.Mesh(orbGeo, orbMat) // double-shell: a concentric inner surface = glass wall thickness
+                inner.asDynamic().scale.set(INNER_SHELL_FRAC, INNER_SHELL_FRAC, INNER_SHELL_FRAC)
+                orb.asDynamic().add(inner) // child of the orb → inherits its per-level scale + position
+                val gasket = Three.Mesh(gasketGeo, Materials.rubber()) // black rubber ring under the orb
+                gasket.asDynamic().rotation.x = PI / 2 // lie flat (ring around the up axis) in this Y-up scene
                 val resoGroup = Three.Group()
                 group.asDynamic().add(pole)
+                group.asDynamic().add(gasket)
                 group.asDynamic().add(orb)
                 group.asDynamic().add(resoGroup)
                 scene.add(group)
 
-                val p = Portal(group, orb, orbMat, pole, resoGroup, pos)
+                val p = Portal(group, orb, orbMat, pole, gasket, resoGroup, pos)
                 p.color = color
                 randomLoadout(p)
                 p.level = derivedLevel(p)
@@ -237,8 +245,9 @@ object TitleScene3D {
     // Portal level = average of the 8 slots (empty = 0), like the game; clamped so a sparse portal still reads.
     private fun derivedLevel(p: Portal) = (p.resoLevels.sum() / 8.0).coerceIn(1.0, 8.0)
 
-    private fun poleScale(level: Double) = PHI.pow((level.coerceIn(1.0, 8.0) - 1.0) / 7.0)
-    private fun orbScale(level: Double) = 0.5 + (level.coerceIn(1.0, 8.0) - 1.0) / 7.0 * 0.8
+    // Match the in-game growth (Scene3D): generous per-level so levels read clearly. Pole 1.0→2.2×, orb 0.45→1.6.
+    private fun poleScale(level: Double) = 1.0 + (level.coerceIn(1.0, 8.0) - 1.0) / 7.0 * 1.2
+    private fun orbScale(level: Double) = 0.45 + (level.coerceIn(1.0, 8.0) - 1.0) / 7.0 * 1.15
 
     // Pose the pole + orb + reso rods for the portal's (eased) level — built at GAME scale; the group's
     // TITLE_SCALE shrinks the whole thing to fit the stage, so the proportions match the in-game portal.
@@ -246,6 +255,7 @@ object TitleScene3D {
         val poleH = POLE_H * poleScale(p.level)
         p.pole.asDynamic().scale.set(1.0, poleH, 1.0)
         p.pole.asDynamic().position.set(0.0, poleH / 2.0, 0.0)
+        p.gasket.asDynamic().position.set(0.0, poleH, 0.0) // rides the pole top
         val os = orbScale(p.level) * (1.0 + p.flash * 0.3) // flash = a brief scale pop
         p.orb.asDynamic().scale.set(os, os, os)
         p.orb.asDynamic().position.set(0.0, poleH + TOP_R * orbScale(p.level), 0.0)
