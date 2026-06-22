@@ -4,6 +4,8 @@ import agent.Agent
 import agent.action.ActionItem
 import items.QgressItem
 import system.display.HackFx
+import system.display.Scene3D
+import util.HtmlUtil
 import util.SoundUtil
 
 object Hacker : ConditionalAction {
@@ -20,6 +22,9 @@ object Hacker : ConditionalAction {
         val newStuff: List<QgressItem>? = hackResult.items
         if (newStuff != null) {
             agent.inventory.items.addAll(newStuff)
+            if (newStuff.isNotEmpty() && HtmlUtil.isRunningInBrowser()) {
+                Scene3D.rewardFx(agent.actionPortal.location, agent.actionPortal.getLevel().toInt(), agent.pos, newStuff.size)
+            }
         }
         return agent
     }

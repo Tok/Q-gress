@@ -369,6 +369,14 @@ object Scene3D {
         XmFx.spawn(doubleArrayOf(sceneX(from), sceneY(from), XM_Z), doubleArrayOf(sceneX(to), sceneY(to), HEAD_Z))
     }
 
+    /** Hack/glyph loot: [count] motes drop from the portal's orb top down to the hacking agent. */
+    fun rewardFx(portalLocation: Pos, level: Int, to: Pos, count: Int) {
+        scene ?: return
+        val top = doubleArrayOf(sceneX(portalLocation), sceneY(portalLocation), orbCenterZ(level.coerceAtLeast(1).toDouble()))
+        val dst = doubleArrayOf(sceneX(to), sceneY(to), HEAD_Z)
+        repeat(count.coerceAtMost(8)) { XmFx.spawn(top, dst) }
+    }
+
     /** Drop the deployed mods out of the orb when a portal is neutralized / removed. */
     fun dropMods(location: Pos, level: Int, mods: List<Mod>) {
         if (mods.isEmpty()) return

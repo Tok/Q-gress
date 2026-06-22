@@ -33,7 +33,7 @@ object HistoryPanel {
     )
 
     private val metrics = listOf(
-        Metric("Covered area", { World.calcTotalMu(Faction.ENL) }, { World.calcTotalMu(Faction.RES) }, { it.enlMu }, { it.resMu }),
+        Metric("MU", { World.calcTotalMu(Faction.ENL) }, { World.calcTotalMu(Faction.RES) }, { it.enlMu }, { it.resMu }),
         Metric("Portals", { World.countPortals(Faction.ENL) }, { World.countPortals(Faction.RES) }, { it.enlPortals }, { it.resPortals }),
         Metric("Links", { World.countLinks(Faction.ENL) }, { World.countLinks(Faction.RES) }, { it.enlLinks }, { it.resLinks }),
         Metric("Fields", { World.countFields(Faction.ENL) }, { World.countFields(Faction.RES) }, { it.enlFields }, { it.resFields }),
