@@ -13,7 +13,6 @@ import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLOptionElement
 import org.w3c.dom.HTMLSelectElement
-import system.display.TitleScene3D
 import util.SoundUtil
 
 /**
@@ -29,6 +28,7 @@ object Onboarding {
         document.getElementById(SCREEN_ID)?.remove()
         val screen = div("onboardScreen")
         screen.id = SCREEN_ID
+        screen.addClass("titleScreen") // transparent vignette → the real Scene3D demo shows behind it
         val brand = div("titleBrand") // the big Q-GRESS wordmark — first thing a player sees
         brand.textContent = "Q-GRESS"
         screen.appendChild(brand)
@@ -43,7 +43,7 @@ object Onboarding {
             btn.addClass(f.abbr.lowercase(), "popupButton", "displayFont")
             btn.textContent = f.abbr
             btn.onclick = {
-                TitleScene3D.stop() // tear down the thunderbolt scene before the next step
+                TitleSim.stop() // stop the auto-driver; the scene is wiped by the onboarding reload
                 onPick(f)
             }
             row.appendChild(btn)
@@ -52,7 +52,7 @@ object Onboarding {
         screen.appendChild(cta)
         screen.appendChild(createTitleVolume()) // an annoyed player can turn it down right away
         document.body?.appendChild(screen)
-        TitleScene3D.start(screen) // randomized thunderbolts behind the title
+        TitleSim.start() // the real Scene3D demo (portals hacking/XMPing/linking) behind the menu
     }
 
     /** A small volume slider shown on the title screen (the storm starts loud). */

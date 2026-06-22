@@ -362,6 +362,11 @@ html, body {
     color: #ffffff;
     font-family: "Chakra Petch", sans-serif;
 }
+/* Faction step: transparent vignette so the real Scene3D demo (TitleSim) shows behind the menu;
+   the dark edges keep the wordmark + buttons readable over the bright map. */
+.onboardScreen.titleScreen {
+    background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 28%, rgba(0, 0, 0, 0.6) 100%);
+}
 /* Standalone three.js thunderbolt scene behind the title content (above the gradient). */
 .titleCanvas {
     position: absolute;
