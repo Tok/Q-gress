@@ -43,6 +43,9 @@ html, body {
     padding: 0;
     overflow: hidden;
     background: #000000;
+    /* Global default font = Coda (the data/body face); display elements opt into Chakra Petch via
+       .displayFont. Always end stacks in a generic so we never fall back to an arbitrary system font. */
+    font-family: "Coda", monospace;
 }
 .container {
     position: relative;
