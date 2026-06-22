@@ -36,7 +36,10 @@ object PlayAreaMask {
         p.transparent = true
         p.opacity = 0.22 // a touch more solid so the thicker 3D wall reads as a boundary, not a film
         p.depthWrite = false
-        p.side = 2 // DoubleSide
+        // FrontSide (backface cull): the extruded ring is double-sided otherwise, so from inside the
+        // arena you'd see each arc's near + far faces overlapping → an inside-out look. Cull backfaces
+        // so each arc shows only the surface facing the camera.
+        p.side = 0 // FrontSide
         return Three.MeshBasicMaterial(p)
     }
 
