@@ -6,22 +6,28 @@ import kotlin.math.PI
 import kotlin.math.atan2
 
 /**
- * The flow-field arrows for the **newest** portal — cones coloured by flow direction (hue),
- * subsampled. No toggle: a portal calls [flash] when it's created and the field shows for ~a second
- * (during gameplay) or until the next portal flashes (during world generation, when they chain).
- * Split out of [Scene3D] (size limit). [register] once, [flash] on portal creation, [sync] each tick.
+ * The flow-field arrows for a freshly-created portal — cones coloured by flow direction (hue),
+ * subsampled. No toggle: a portal calls [flash] when its field is ready and the field shows briefly.
+ *
+ * Fields are now computed asynchronously (PathUtil.computeFieldAsync), so during world generation
+ * many land in a rapid burst. A FIFO [queue] replays them as a paced sweep (each shown for at least
+ * [MIN_SHOW_MS] before the next), and the last one lingers + fades out. Driven every frame by
+ * [Scene3D.render] (a continuous loop), not the per-tick sync, so the sweep keeps animating through
+ * the whole load. Split out of [Scene3D] (size limit). [register] once, [flash] on field-ready, [sync] per frame.
  */
 object VectorFieldOverlay {
     private const val STRIDE = 2 // subsample the flow field every Nth cell
     private const val CONE_R = 1.1
     private const val CONE_H = 3.6
     private const val Z = 0.2 // just above the ground
-    private const val FLASH_MS = 1200.0 // how long a new portal's field stays up
+    private const val FLASH_MS = 1200.0 // how long the last field lingers before fading out
     private const val FADE_MS = 450.0 // fade the arrows out over the final stretch (smooth, not abrupt)
+    private const val MIN_SHOW_MS = 110.0 // min time each field stays up before the queue advances to the next
 
     private var group: dynamic = null
-    private var flashedId: String? = null
-    private var flashEnd = 0.0
+    private val queue = ArrayDeque<String>() // portal ids whose fields are ready, awaiting their turn in the sweep
+    private var currentId: String? = null
+    private var shownAt = 0.0
     private var builtKey: String? = null
     private val coneGeo: dynamic by lazy { Three.ConeGeometry(CONE_R, CONE_H, 6) }
     private val matCache = mutableMapOf<String, dynamic>()
@@ -30,29 +36,33 @@ object VectorFieldOverlay {
         group = Three.Group().also { scene.add(it) }
     }
 
-    /** Briefly show [portalId]'s flow field (auto-hides after ~a second; replaced by the next portal). */
+    /** Queue [portalId]'s (now-ready) flow field for the sweep; it shows briefly when its turn comes. */
     fun flash(portalId: String) {
-        flashedId = portalId
-        flashEnd = now() + FLASH_MS
+        if (currentId != portalId && queue.lastOrNull() != portalId) queue.addLast(portalId)
     }
 
-    /** Rebuild on a new portal, fade out over the final stretch, then clear once the flash expires. */
+    /** Advance the sweep (after [MIN_SHOW_MS]), rebuild on change, fade out once the queue is drained. */
     fun sync() {
         val g = group ?: return
-        val id = flashedId
-        val remaining = flashEnd - now()
-        if (id != null && remaining > 0.0) {
-            if (id != builtKey) {
-                g.clear()
-                build(g, id)
-                builtKey = id
-            }
-            val alpha = (remaining / FADE_MS).coerceIn(0.0, 1.0)
-            matCache.values.forEach { it.opacity = alpha } // only the current field's cones are mounted
-        } else if (builtKey != null) {
+        val age = now() - shownAt
+        if ((currentId == null || age >= MIN_SHOW_MS) && queue.isNotEmpty()) {
+            currentId = queue.removeFirst()
+            shownAt = now()
             g.clear()
-            builtKey = null
+            build(g, currentId)
+            builtKey = currentId
         }
+        if (currentId == null) return
+        val shownFor = now() - shownAt
+        if (queue.isEmpty() && shownFor >= FLASH_MS) { // nothing more queued and the last one expired → clear
+            g.clear()
+            currentId = null
+            builtKey = null
+            return
+        }
+        // Full opacity through the sweep; only the lingering last field fades over the final stretch.
+        val alpha = ((FLASH_MS - shownFor) / FADE_MS).coerceIn(0.0, 1.0)
+        matCache.values.forEach { it.opacity = alpha } // only the current field's cones are mounted
     }
 
     private fun now() = js("performance.now()") as Double

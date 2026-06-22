@@ -228,6 +228,7 @@ object Scene3D {
         } else {
             lastFrameMs = 0.0
         }
+        VectorFieldOverlay.sync() // paced flow-field sweep; driven here (continuous loop) so it animates through world-gen too
         activeRenderer.resetState()
         activeRenderer.render(activeScene, cam)
         map.triggerRepaint()
@@ -254,7 +255,6 @@ object Scene3D {
         clear(indicatorsGroup)
         World.allAgents.forEach { addAgent(it) }
         teardownGone(Spawns.endSync())
-        VectorFieldOverlay.sync() // flow-field arrows flash briefly on each new portal
     }
 
     // Mark the playable area: a white outline plus a dark mask greying out everything beyond it.

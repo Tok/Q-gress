@@ -500,8 +500,8 @@ object HtmlUtil {
                     )
                     World.allPortals.add(newPortal)
                     // Render the spawning world behind the (now translucent) loading screen: the new
-                    // portal grows in. (No flow-vector preview — the field is done the moment it's
-                    // computed and we move straight on, so showing it adds nothing.)
+                    // portal grows in. Its flow field is computed async and, once ready, joins the
+                    // paced VectorFieldOverlay sweep (driven by Scene3D.render, the continuous loop).
                     Scene3D.sync()
                     createPortal(callback, count - 1)
                 } else {
