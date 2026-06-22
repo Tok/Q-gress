@@ -5,6 +5,9 @@ import config.Config
 import extension.Grid
 import extension.GridMap
 import extension.VectorField
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import util.data.Complex
 import util.data.Pos
 import kotlin.math.max
@@ -13,6 +16,7 @@ object PathUtil {
     const val MIN_HEAT = 35
     const val MAX_HEAT = 100
     private const val MIN_SPEED_FACTOR = 0.45 // slowest terrain still moves at 45% (so agents never stall)
+    private const val YIELD_EVERY_CELLS = 2000 // cooperative yield cadence while filling the vector field
 
     private fun calcPosCost(pos: Pos, heat: Int) = heat + (World.grid[pos]?.movementPenalty ?: MAX_HEAT)
 
@@ -43,7 +47,9 @@ object PathUtil {
         return layer to hasMaybeMore
     }
 
-    fun generateHeatMap(goal: Pos): GridMap {
+    // suspend: yields (delay(0) → setTimeout → macrotask, so the browser can render) after every
+    // wavefront layer, turning this full-grid BFS from a ~1s thread freeze into a background fill.
+    suspend fun generateHeatMap(goal: Pos): GridMap {
         val passable = World.passableCells()
         var heat = 0
         var maxHeat = 0
@@ -56,11 +62,21 @@ object PathUtil {
             maxHeat = max(maxHeat, layerMax)
             val overCount = heat - maxHeat
             val hasMore = hasMaybeMore || overCount < MAX_HEAT
+            delay(0) // yield each wavefront layer
             if (!hasMore) {
                 break
             }
         }
         return map
+    }
+
+    // Launch the full heat-map + vector-field computation off the synchronous path. It runs on the
+    // JS event loop yielding between chunks, then hands the finished field back via [onReady].
+    fun computeFieldAsync(destination: Pos, onReady: (VectorField) -> Unit) {
+        MainScope().launch {
+            val heatMap = generateHeatMap(destination)
+            onReady(calculateVectorField(heatMap, destination))
+        }
     }
 
     private fun createVec(heatMap: GridMap, maxHeat: Int, destination: Pos, pos: Pos): Complex {
@@ -80,19 +96,23 @@ object PathUtil {
         }
     }
 
-    fun calculateVectorField(heatMap: GridMap, destination: Pos): VectorField {
+    suspend fun calculateVectorField(heatMap: GridMap, destination: Pos): VectorField {
         val maxHeat = heatMap.values.max()
-        val fields = World.grid.map {
-            val raw = createVec(heatMap, maxHeat, destination, it.key)
+        val fields = mutableMapOf<Pos, Complex>()
+        var processed = 0
+        World.grid.forEach { (pos, cell) ->
+            val raw = createVec(heatMap, maxHeat, destination, pos)
             // Flow magnitude scales with terrain: agents move slower over rough ground (forest >
             // grass > concrete), not just route around it. MIN_HEAT cell → full speed, high penalty → slow.
-            val speedFactor = (MIN_HEAT.toDouble() / it.value.movementPenalty).coerceIn(MIN_SPEED_FACTOR, 1.0)
-            it.key to raw.copyWithNewMagnitude(speedFactor)
-        }.toMap()
-        return smooth(fields, Config.vectorSmoothCount).toMap()
+            val speedFactor = (MIN_HEAT.toDouble() / cell.movementPenalty).coerceIn(MIN_SPEED_FACTOR, 1.0)
+            fields[pos] = raw.copyWithNewMagnitude(speedFactor)
+            if (++processed % YIELD_EVERY_CELLS == 0) delay(0) // yield every ~2000 cells
+        }
+        return smooth(fields, Config.vectorSmoothCount)
     }
 
-    private fun smooth(vectors: VectorField, count: Int): VectorField = if (count > 0) {
+    private suspend fun smooth(vectors: VectorField, count: Int): VectorField = if (count > 0) {
+        delay(0) // yield between smooth passes
         smooth(smoothVectorMap(vectors), count - 1)
     } else {
         vectors

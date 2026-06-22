@@ -7,8 +7,17 @@ import items.level.PortalLevel
 import portal.Portal
 import util.Util
 import util.data.Complex
+import util.data.Pos
 
 object MovementUtil {
+    // Flow-field cells read empty while the field computes async (see PathUtil.computeFieldAsync).
+    // Until it lands, head straight for the destination at unit magnitude so the agent keeps moving
+    // (never stalls on Complex.ZERO → stuck → never re-targets) and re-samples the real field later.
+    fun headingTo(from: Pos, to: Pos): Complex {
+        val raw = Complex(to.x - from.x, to.y - from.y)
+        return if (raw == Complex.ZERO) Complex.ZERO else raw.copyWithNewMagnitude(1.0)
+    }
+
     fun findUncapturedPortals() = World.allPortals.filter { it.isUncaptured() }
     fun hasUncapturedPortals() = findUncapturedPortals().isNotEmpty()
     fun findEnemyPortals(agent: Agent): List<Portal> = World.allPortals.filter { it.isEnemyOf(agent) }

@@ -63,7 +63,7 @@ data class NonFaction(
                     Complex(pos.x, pos.y)
                 }
             } else {
-                vectors[pos.toShadow()] ?: Complex.ZERO
+                vectors[pos.toShadow()] ?: MovementUtil.headingTo(pos, destination)
             }
             velocity = MovementUtil.move(velocity, force, speed)
             this.pos = Pos(pos.x + velocity.re, pos.y + velocity.im)
@@ -133,19 +133,27 @@ data class NonFaction(
         }
 
         private val fields = mutableMapOf<Pos, VectorField>()
+        private val pending = mutableSetOf<Pos>() // destinations whose field is computing async
         fun offscreenCount(): Int = fields.count()
         fun offscreenTotal(): Int = OFFSCREEN.count()
+
+        // Returns the cached field, or empty-now + an async fill on a miss. Callers snapshot the
+        // empty map and fall back to a straight-line heading (see act()) until the field lands; they
+        // re-fetch the ready field when they next change destination. [pending] dedupes the launch.
         fun getOrCreateVectorField(destination: Pos): VectorField {
             val maybeField = fields[destination]
-            return if (maybeField != null && maybeField.isNotEmpty()) {
-                maybeField
-            } else {
-                val newField = PathUtil.calculateVectorField(PathUtil.generateHeatMap(destination), destination)
-                LoadingOverlay.detail("Preparing routes…")
-                SoundUtil.playOffScreenLocationCreationSound()
-                fields[destination] = newField
-                newField
+            if (maybeField != null && maybeField.isNotEmpty()) {
+                return maybeField
             }
+            if (pending.add(destination)) {
+                PathUtil.computeFieldAsync(destination) { field ->
+                    fields[destination] = field
+                    pending.remove(destination)
+                    LoadingOverlay.detail("Preparing routes…")
+                    SoundUtil.playOffScreenLocationCreationSound()
+                }
+            }
+            return emptyMap()
         }
 
         private fun findFarPortal(pos: Pos) = World.allPortals.sortedByDescending { pos.distanceTo(it.location) }.first()

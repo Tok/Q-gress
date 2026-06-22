@@ -30,7 +30,7 @@ data class Portal(
     val name: String,
     val location: Pos,
     val heatMap: GridMap,
-    val vectors: VectorField,
+    var vectors: VectorField, // filled asynchronously after creation (PathUtil.computeFieldAsync)
     val slots: Slots,
     val links: MutableSet<Link>,
     val fields: MutableSet<Field>,
@@ -485,26 +485,29 @@ data class Portal(
 
         const val MAX_HACKS = 4 // TODO implement multihacks
         private fun clipLevel(level: Int): Int = max(1, min(level, 8))
+
+        // Non-blocking: the portal is built with an empty flow field, then PathUtil.computeFieldAsync
+        // fills portal.vectors off-thread (heatMap stays empty — it's never read externally). Agents
+        // fall back to a straight-line heading while vectors is empty (Agent.moveCloserToDestinationPortal).
         fun create(location: Pos): Portal {
             val slots: Slots = Octant.values().map { it to ResonatorSlot.create() }.toMap().toMutableMap()
-            val (heatMap, vectorField) = if (HtmlUtil.isRunningInBrowser()) {
-                val heatMap = PathUtil.generateHeatMap(location)
-                SoundUtil.playPortalCreationSound(location)
-                heatMap to PathUtil.calculateVectorField(heatMap, location)
-            } else {
-                mutableMapOf<Pos, Int>() to mutableMapOf()
-            }
             val portal = Portal(
                 PortalNames.nameFor(location) ?: Util.generatePortalName(),
                 location,
-                heatMap,
-                vectorField,
+                emptyMap(),
+                emptyMap(),
                 slots,
                 mutableSetOf(),
                 mutableSetOf(),
                 null,
             )
-            if (HtmlUtil.isRunningInBrowser()) VectorFieldOverlay.flash("portal:${portal.id}")
+            if (HtmlUtil.isRunningInBrowser()) {
+                SoundUtil.playPortalCreationSound(location)
+                PathUtil.computeFieldAsync(location) { field ->
+                    portal.vectors = field
+                    VectorFieldOverlay.flash("portal:${portal.id}")
+                }
+            }
             return portal
         }
 

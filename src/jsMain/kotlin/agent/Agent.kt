@@ -122,7 +122,7 @@ data class Agent(
             action.end()
             return this
         }
-        val force = actionPortal.vectors[pos.toShadow()] ?: Complex.ZERO
+        val force = actionPortal.vectors[pos.toShadow()] ?: MovementUtil.headingTo(pos, actionPortal.location)
         velocity = MovementUtil.move(velocity, force, skills.speed)
         return this.copy(pos = Pos((pos.x + velocity.re).toInt(), (pos.y + velocity.im).toInt()))
     }

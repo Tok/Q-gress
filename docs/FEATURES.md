@@ -78,6 +78,12 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
 - **Map playability** (23 tests): `GridConnectivity` carves corridors so no area is sealed off;
   `World.walkability` gate blocks mostly-water maps; `LocationTest` guards all presets; per-terrain
   movement penalties (landcover-graded shadow style → `PathUtil` flow magnitude) + Terrain overlay.
+- **Non-blocking flow fields** (`PathUtil.computeFieldAsync`): the per-portal heat-map BFS + vector
+  field are now `suspend` and yield (`delay(0)`) per wavefront layer / every ~2000 cells / between
+  smooth passes, computed on a `MainScope` and written back into `Portal.vectors` (and the offscreen
+  field cache) when ready — so creating a portal/field no longer freezes the JS thread ~1s. Agents
+  fall back to a straight-line heading while a field is still empty (so they keep moving + re-sample
+  the real field once it lands) instead of stalling on `Complex.ZERO`.
 - **Link/field integrity** (`LinkFieldIntegrityTest`): fixed `Portal.findLinkableForKeys` no-crossing
   filter; no dangling links/fields on portal destroy/neutralise.
 - Removed the dead attack/damage telegraph/queue system (`Attacks`/`Display`/`Damage`/`Queues`);
