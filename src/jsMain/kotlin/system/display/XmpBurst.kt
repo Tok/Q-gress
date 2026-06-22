@@ -14,11 +14,11 @@ import util.Util
  */
 object XmpBurst {
     private const val RANGE_SCALE = 0.5 // XmpLevel.rangeM → scene-metre blast radius
-    private const val LIFE_BASE = 0.9
-    private const val LIFE_PER_LEVEL = 0.06
+    private const val LIFE_BASE = 1.4 // longer life so the mushroom rises + dissolves gradually
+    private const val LIFE_PER_LEVEL = 0.1
     private const val RING_Z = 0.28 // ground shockwave height
-    private const val BOX_SCALE = 0.95 // bounding box edge ÷ maxR (must contain the risen fireball)
-    private const val BOX_Z = 0.45 // box centre height ÷ maxR
+    private const val BOX_SCALE = 1.15 // bounding box edge ÷ maxR (must contain the risen mushroom)
+    private const val BOX_Z = 0.55 // box centre height ÷ maxR (raised — the cap climbs)
 
     private var group: dynamic = null
     private val active = mutableListOf<Burst>()
@@ -87,8 +87,8 @@ object XmpBurst {
             val f = (b.age / life).coerceIn(0.0, 1.0)
             b.uni.uProgress.value = f
             b.uni.uTime.value = b.age
-            b.uni.uCenter.value.z = maxR * (0.08 + 0.27 * f) // rises ~half as high as the old cap
-            b.uni.uRadius.value = maxR * (0.12 + 0.2 * (1.0 - (1.0 - f) * (1.0 - f))) // grows to ~0.32 maxR
+            b.uni.uCenter.value.z = maxR * (0.05 + 0.55 * f) // mushroom climbs steadily
+            b.uni.uRadius.value = maxR * (0.03 + 0.34 * (1.0 - (1.0 - f) * (1.0 - f))) // tiny pop → fast expand
             if (b.age >= life) {
                 for (m in b.meshes) {
                     grp.remove(m)
