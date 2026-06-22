@@ -164,6 +164,11 @@ dominates" validation is iterative (playtest, or a future headless strategy-comp
 6.1). Self-play fitness shaping is the AI-era lever.
 
 ## Under consideration (icebox)
+- **Weather simulation (gameplay + atmosphere).** Simulate weather at the location — **rain**, fog,
+  snow, day/night — as both a visual layer (particles / sky + fog tint, building on the new MapLibre
+  sky) and a **gameplay modifier**: e.g. rain makes agent **resolve/battery deplete quicker**, fog cuts
+  hack/attack range, snow slows movement. Could be random per-game, seasonal, or pulled from a real
+  weather API for the chosen location. Pairs with the colony-management battery/accu idea below.
 - **Colony-management / roster (gameplay expansion).** Per-entity attributes (endurance/speed/agility/
   radius, building on `agent/Skills`+`AgentSize`); **rarity-tiered agents** (randomised attributes but
   **no gambling UX** — the player *manages* composition, not a gacha loop); **items** (skateboards,
