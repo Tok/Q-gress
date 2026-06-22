@@ -145,7 +145,7 @@ object TitleScene3D {
         scene.add(Three.AmbientLight("#6a6f6a", 1.6)) // bright enough that the metal poles read, not black
         camera = Three.PerspectiveCamera(55.0, 1.0, 0.1, 240.0)
         camera.position.set(0.0, 1.5, CAM_Z)
-        camera.asDynamic().lookAt(0.0, STAGE_TOP + 5.0, 0.0) // aim down at the portals on the stage
+        camera.lookAt(0.0, STAGE_TOP + 5.0, 0.0) // aim down at the portals (camera is already dynamic)
         resize()
 
         // Core scene is up — start the loop unconditionally so bolts ALWAYS render.
