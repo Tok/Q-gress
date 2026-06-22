@@ -762,6 +762,12 @@ object Scene3D {
                 ring.asDynamic().position.set(0.0, 0.0, -rodLen) // rod bottom, in pivot-local space
                 pivot.asDynamic().add(ring)
                 group.asDynamic().add(pivot)
+                // A second black o-ring at the reso's TOP joint. It's part of the collar group (not the
+                // swinging pivot), so it stays put on a hack and stays with the pole when the portal
+                // shatters (only the base grommet + rod tumble out).
+                val topRing = Three.Mesh(resoRingGeo, Materials.rubber())
+                topRing.asDynamic().position.set(ox, oy, rodLen)
+                group.asDynamic().add(topRing)
             } else {
                 // Empty slot: a bare grommet sits flat on the collar (nothing to swing).
                 val ring = Three.Mesh(resoRingGeo, Materials.rubber())
