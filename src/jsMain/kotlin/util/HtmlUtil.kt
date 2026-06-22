@@ -160,6 +160,11 @@ object HtmlUtil {
      * directly (e.g. the in-game location dropdown's reload). Demo scenes returned earlier, before this.
      */
     private fun startOnboardingOrWorld() {
+        if (Debug.mode == "capture") { // ?debug=capture: sweep presets → download fixtures, no world
+            LoadingOverlay.show()
+            GridCapture.sweep()
+            return
+        }
         val faction = getFactionFromUrl()
         val urlCenter = getLngLatFromUrl()
         when {

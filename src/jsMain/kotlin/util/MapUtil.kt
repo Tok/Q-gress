@@ -476,6 +476,7 @@ object MapUtil {
         World.walkability = GridConnectivity.walkability(grid, w, h)
         console.log("grid built: walkability ${(World.walkability * 100).toInt()}% (${GridConnectivity.components(rawGrid).size} islands connected)")
         if (Debug.enabled) logConnectivity(rawGrid, grid, w, h)
+        if (Debug.mode == "capture") GridCapture.onGridBuilt(rawGrid, w, h) // raw passability snapshot for fixtures
         return grid
     }
 
