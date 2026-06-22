@@ -9,20 +9,19 @@ import portal.XmMap
 import system.Com
 
 /**
- * DOM HUD for the always-on stats: the **MU bars** ("covered area", bottom-left), the **time/tick**
- * row, and the **action log** (bottom-right). Per-faction entity counts moved to [HistoryPanel]
- * (live values + history); the MU time-series likewise lives there now.
+ * DOM HUD for the always-on stats. The **scoreboard** (bottom-left) is a fixed-width grid: per faction
+ * a tag + a proportional MU bar + the value, so the two faction rows line up in columns and never
+ * reflow; a footer row shows time / tick / stray-XM. The **action log** is a collapsible section in
+ * the right "intel" column. Per-faction entity counts + the MU time-series live in [HistoryPanel].
  *
- * [update] is called once per frame from [util.DrawUtil.redrawUserInterface]; it builds the DOM
- * lazily on first call and then just writes text/width, so per-frame cost is a handful of property
- * sets. The Com list is only rebuilt when its contents actually change.
+ * [update] is called once per frame from [util.DrawUtil.redrawUserInterface]; it builds the DOM lazily
+ * on first call and then just writes text/width. The Com list is only rebuilt when its contents change.
  */
 object StatsPanel {
-    private const val MU_BAR_MAX_PX = 150.0 // full-faction MU bar width
-
     private var built = false
     private val muBars = arrayOfNulls<HTMLElement>(2)
-    private val muLabels = arrayOfNulls<HTMLElement>(2)
+    private val muValues = arrayOfNulls<HTMLElement>(2)
+    private val muTags = arrayOfNulls<HTMLElement>(2)
     private var timeEl: HTMLElement? = null
     private var tickEl: HTMLElement? = null
     private var xmEl: HTMLElement? = null
@@ -33,30 +32,32 @@ object StatsPanel {
     fun update(firstMu: Int, secondMu: Int, factions: Pair<Faction, Faction>) {
         build()
         val (f1, f2) = factions
-        updateMindUnits(firstMu, secondMu, f1, f2)
-        timeEl?.textContent = Time.ticksToTimestamp(World.tick)
-        tickEl?.textContent = "Tick: ${World.tick}"
-        xmEl?.textContent = "Stray XM: ${XmMap.all().values.sumOf { it.xm }}"
-        // Per-faction entity counts moved to the history dashboard (HistoryPanel — live values + trend).
-        updateCom()
-    }
-
-    private fun updateMindUnits(firstMu: Int, secondMu: Int, f1: Faction, f2: Faction) {
         val total = (firstMu + secondMu).coerceAtLeast(1)
         applyMuRow(0, f1, firstMu, firstMu.toDouble() / total)
         applyMuRow(1, f2, secondMu, secondMu.toDouble() / total)
+        timeEl?.textContent = Time.ticksToTimestamp(World.tick)
+        tickEl?.textContent = "Tick ${World.tick}"
+        xmEl?.textContent = "XM ${compact(XmMap.all().values.sumOf { it.xm })}"
+        updateCom()
     }
 
     private fun applyMuRow(row: Int, faction: Faction, mu: Int, fraction: Double) {
+        muTags[row]?.let {
+            it.textContent = faction.abbr
+            it.style.color = faction.color
+        }
         muBars[row]?.let {
-            it.style.width = "${(fraction * MU_BAR_MAX_PX)}px"
+            it.style.width = "${(fraction * 100.0)}%"
             it.style.background = faction.color
         }
-        muLabels[row]?.let {
-            it.textContent = "${faction.abbr} ${mu}M"
+        muValues[row]?.let {
+            it.textContent = "${compact(mu)} MU"
             it.style.color = faction.color
         }
     }
+
+    /** Compact large counts so the fixed-width value column never reflows: 1234 → "1.2k". */
+    private fun compact(n: Int): String = if (n >= 1000) "${(n / 100) / 10.0}k" else n.toString()
 
     private fun updateCom() {
         val panel = comPanel ?: return
@@ -77,27 +78,25 @@ object StatsPanel {
         if (document.body == null) return
         built = true
 
-        val muPanel = el("statsMuPanel")
+        val panel = el("scorePanel") // fixed bottom-left (see CSS)
         repeat(2) { row ->
-            val r = el("statsMuRow")
-            val track = el("statsMuTrack")
-            val bar = el("statsMuBar")
+            val r = el("scoreRow")
+            val tag = el("scoreTag").also { muTags[row] = it }
+            val track = el("scoreTrack")
+            val bar = el("scoreBar").also { muBars[row] = it }
             track.appendChild(bar)
-            muBars[row] = bar
-            val label = el("statsMuLabel")
-            muLabels[row] = label
+            val value = el("scoreValue").also { muValues[row] = it }
+            r.appendChild(tag)
             r.appendChild(track)
-            r.appendChild(label)
-            muPanel.appendChild(r)
+            r.appendChild(value)
+            panel.appendChild(r)
         }
-        val tickRow = el("statsTickRow")
-        timeEl = el("statsTime").also { tickRow.appendChild(it) }
-        tickEl = el("statsTick").also { tickRow.appendChild(it) }
-        muPanel.appendChild(tickRow)
-        val xmRow = el("statsTickRow")
-        xmEl = el("statsXm").also { xmRow.appendChild(it) }
-        muPanel.appendChild(xmRow)
-        Hud.left().appendChild(muPanel) // scoreboard column
+        val footer = el("scoreFooter")
+        timeEl = el("scoreTime").also { footer.appendChild(it) }
+        tickEl = el("scoreTick").also { footer.appendChild(it) }
+        xmEl = el("scoreXm").also { footer.appendChild(it) }
+        panel.appendChild(footer)
+        document.body?.appendChild(panel)
 
         // Action log: a titled, collapsible section in the right "intel" column (starts collapsed).
         val comWrap = el("statsComPanel")

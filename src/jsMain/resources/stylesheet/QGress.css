@@ -158,47 +158,68 @@ html, body {
     z-index: 60;
     pointer-events: none;
 }
-.statsMuPanel, .historyPanel, .statsComPanel {
+.historyPanel, .statsComPanel {
     font-family: "Coda", monospace;
     color: #ffffff;
     text-shadow: 0 0 3px #000, 0 0 3px #000;
 }
-.statsMuPanel {
-    width: 260px; /* fixed: MU/XM digits no longer reflow the pane width */
+/* Scoreboard — fixed-width grid, bottom-left. Tags / bars / values line up in columns; no reflow. */
+.scorePanel {
+    position: fixed;
+    left: 14px;
+    bottom: 16px;
+    z-index: 60;
+    width: 250px;
     box-sizing: border-box;
-    background: rgba(0, 0, 0, 0.45);
-    padding: 6px 10px 7px;
-    border-radius: 3px;
-    order: 1; /* below the tuning sliders */
+    padding: 8px 12px 9px;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 4px;
+    font-family: "Coda", monospace;
+    color: #ffffff;
+    text-shadow: 0 0 3px #000, 0 0 3px #000;
+    pointer-events: none;
 }
-.statsMuRow {
-    display: flex;
+.scoreRow {
+    display: grid;
+    grid-template-columns: 40px 1fr 62px; /* tag | bar | value — both rows share these columns */
     align-items: center;
-    height: 24px;
+    column-gap: 9px;
+    height: 26px;
 }
-.statsMuTrack {
-    width: 150px;
-    height: 15px;
-    border: 2px solid currentColor;
-    margin-right: 8px;
-    box-sizing: border-box; /* both faction bars share an identical box → same left edge */
-    flex: none;
+.scoreTag {
+    font-family: "Chakra Petch", sans-serif;
+    font-weight: 700;
+    font-size: 17px;
+    letter-spacing: 1px;
 }
-.statsMuBar {
+.scoreTrack {
+    height: 13px;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: 2px;
+    overflow: hidden;
+}
+.scoreBar {
     height: 100%;
     width: 0;
-    opacity: 0.35;
+    opacity: 0.55;
+    transition: width 0.3s;
 }
-.statsMuLabel {
-    font-family: "Chakra Petch", sans-serif;
-    font-size: 20px;
+.scoreValue {
+    font-size: 14px;
+    text-align: right;
+    white-space: nowrap;
 }
-.statsTickRow {
-    margin-top: 4px;
-    font-size: 12px;
-    color: #ffffff;
+.scoreFooter {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 6px;
+    padding-top: 5px;
+    border-top: 1px solid rgba(255, 255, 255, 0.16);
+    font-size: 13px;
+    color: #cdd5d0;
+    white-space: nowrap;
 }
-.statsTickRow .statsTime { margin-right: 10px; }
 
 /* Right-side history dashboard (HistoryPanel): per metric — live ENL/RES value + faction sparkline. */
 .historyPanel {
