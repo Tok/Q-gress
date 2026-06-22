@@ -185,7 +185,7 @@ object Demo {
 
     private fun titleEl(text: String): HTMLDivElement {
         val div = document.createElement("div") as HTMLDivElement
-        div.addClass("demoPanelTitle", "amarillo")
+        div.addClass("demoPanelTitle", "displayFont")
         div.innerHTML = text
         return div
     }

@@ -140,9 +140,9 @@ object HtmlUtil {
         leftGroup.addClass("toolbarGroup")
         leftGroup.append(createMenuSpan()) // New Game / Reset + overlay toggles
         // Recenter top-down over the play area (find your way back after panning/rotating away).
-        leftGroup.append(createButton("homeButton", "topButton amarillo", "Home") { MapUtil.goHome() })
+        leftGroup.append(createButton("homeButton", "topButton displayFont", "Home") { MapUtil.goHome() })
         val pauseButton = createButton(PAUSE_BUTTON_ID, "topButton", "Pause") { togglePause() }
-        pauseButton.addClass("non", "amarillo")
+        pauseButton.addClass("non", "displayFont")
         leftGroup.append(pauseButton)
         bindSpacebarPause() // Space toggles pause/resume too
 
@@ -562,7 +562,7 @@ object HtmlUtil {
     private fun createLocationLabel(): HTMLSpanElement {
         val span = document.createElement("span") as HTMLSpanElement
         span.id = LOCATION_LABEL_ID
-        span.addClass("topLocation", "amarillo")
+        span.addClass("topLocation", "displayFont")
         span.textContent = currentLocationName
         return span
     }
@@ -573,10 +573,10 @@ object HtmlUtil {
         span.addClass("menuSpan")
         val menu = document.createElement("div") as HTMLDivElement
         menu.addClass("gameMenu", "invisible")
-        menu.append(createButton("menuNewGame", "menuItem amarillo", "New Game") { doNewGame() })
-        menu.append(createButton("menuReset", "menuItem amarillo", "Reset") { doReset() })
-        menu.append(createButton("menuShare", "menuItem amarillo", "Copy link") { copyShareLink() })
-        menu.append(createButton("menuDropRates", "menuItem amarillo", "Drop rates") { toggleDropRates() })
+        menu.append(createButton("menuNewGame", "menuItem displayFont", "New Game") { doNewGame() })
+        menu.append(createButton("menuReset", "menuItem displayFont", "Reset") { doReset() })
+        menu.append(createButton("menuShare", "menuItem displayFont", "Copy link") { copyShareLink() })
+        menu.append(createButton("menuDropRates", "menuItem displayFont", "Drop rates") { toggleDropRates() })
         // Overlay toggle lives in the menu now (no longer always-visible in the top bar). Vectors are
         // no longer toggled — they flash automatically for ~a second when a portal is created.
         menu.append(createMenuCheckbox("passabilityToggle", "Terrain") { PassabilityOverlay.setVisible(it) })
@@ -603,7 +603,7 @@ object HtmlUtil {
         version.addClass("menuVersion")
         version.textContent = BuildInfo.LABEL
         menu.append(version)
-        val button = createButton("menuButton", "topButton amarillo", "Menu") {
+        val button = createButton("menuButton", "topButton displayFont", "Menu") {
             menu.classList.toggle("invisible")
         }
         span.append(button)
@@ -683,7 +683,7 @@ object HtmlUtil {
         hint.addClass("onboardHint")
         hint.textContent = "“$currentLocationName” is only ${(World.walkability * 100).toInt()}% walkable — mostly water or blocked. Pick another location."
         screen.append(hint)
-        screen.append(createButton("gateNewGame", "topButton amarillo onboardStart", "Choose another location") { doNewGame() })
+        screen.append(createButton("gateNewGame", "topButton displayFont onboardStart", "Choose another location") { doNewGame() })
         document.body?.append(screen)
     }
 

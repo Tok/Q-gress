@@ -25,7 +25,7 @@ object Controls {
         div.addClass("notice", "coda")
         div.innerHTML =
             "<div class=\"noticeBox\">" +
-            "<div class=\"noticeTitle amarillo\">Q-Gress</div>" +
+            "<div class=\"noticeTitle displayFont\">Q-Gress</div>" +
             "Desktop only — please open this on a desktop browser with a mouse and WebGL." +
             "</div>"
         document.body?.append(div)

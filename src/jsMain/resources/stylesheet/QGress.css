@@ -10,7 +10,8 @@
     src: local('Chakra Petch'), url('../fonts/chakrapetch-700-latin.woff2') format('woff2');
 }
 
-.amarillo {
+/* The HUD/display face — font-agnostic class name so swapping the font is a one-line change here. */
+.displayFont {
     font-family: 'Chakra Petch';
 }
 

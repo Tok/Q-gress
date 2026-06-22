@@ -40,7 +40,7 @@ object Onboarding {
         val row = div("onboardRow")
         listOf(Faction.ENL, Faction.RES).forEach { f ->
             val btn = document.createElement("button") as HTMLButtonElement
-            btn.addClass(f.abbr.lowercase(), "popupButton", "amarillo")
+            btn.addClass(f.abbr.lowercase(), "popupButton", "displayFont")
             btn.textContent = f.abbr
             btn.onclick = {
                 TitleScene3D.stop() // tear down the thunderbolt scene before the next step
@@ -86,7 +86,7 @@ object Onboarding {
         var currentName = ""
 
         val select = document.createElement("select") as HTMLSelectElement
-        select.addClass("topDrop", "amarillo", "invisible") // shown only in Select mode
+        select.addClass("topDrop", "displayFont", "invisible") // shown only in Select mode
         Location.values().forEach { loc ->
             val opt = document.createElement("option") as HTMLOptionElement
             opt.text = loc.displayName
@@ -141,7 +141,7 @@ object Onboarding {
         screen.appendChild(hint)
 
         screen.appendChild(
-            button("Confirm location", "topButton amarillo onboardStart") {
+            button("Confirm location", "topButton displayFont onboardStart") {
                 MiniMap.confirmCenter()?.let { onStart(it.first, it.second, currentName) }
             },
         )
@@ -216,7 +216,7 @@ object Onboarding {
         screen.appendChild(warn)
 
         screen.appendChild(
-            button("Start", "topButton amarillo onboardStart") {
+            button("Start", "topButton displayFont onboardStart") {
                 Sim.roundField = roundCheck.checked
                 val w = widthInput.value.toIntOrNull() ?: Sim.width
                 val h = heightInput.value.toIntOrNull() ?: Sim.height
