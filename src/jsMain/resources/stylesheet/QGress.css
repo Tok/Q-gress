@@ -178,12 +178,14 @@ html, body {
     pointer-events: auto;
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 16px;
     padding: 5px 14px;
     background: rgba(0, 0, 0, 0.5);
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 5px;
     font-family: "Coda", monospace;
+    font-variant-numeric: tabular-nums; /* equal-width digits — no jitter as values change */
     color: #ffffff;
     text-shadow: 0 0 3px #000, 0 0 3px #000;
 }
@@ -224,6 +226,19 @@ html, body {
     font-size: 13px;
     color: #cdd5d0;
     white-space: nowrap;
+}
+/* Fixed-width fields so the centered strip's overall width never changes as the values tick. */
+.scoreTime {
+    width: 64px;
+    text-align: center;
+}
+.scoreTick {
+    width: 84px;
+    text-align: center;
+}
+.scoreXm {
+    width: 76px;
+    text-align: center;
 }
 /* Full-width tabbed + collapsible footer (EVENT LOG / AGENTS). */
 .footer {
