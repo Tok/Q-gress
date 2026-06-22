@@ -8,6 +8,7 @@ import kotlin.js.Json
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.pow
+import kotlin.math.sin
 
 /**
  * Interactive location picker for the onboarding location screen: a MapLibre globe the player can
@@ -104,15 +105,31 @@ object MiniMap {
         source.setData(areaBox(c.lng as Double, c.lat as Double))
     }
 
-    /** A GeoJSON rectangle of the sim's play area (metres → degrees) centred at [lng]/[lat]. */
+    /** A GeoJSON outline of the sim's play area (metres → degrees) centred at [lng]/[lat] — a
+     *  rectangle, or a circle when the round field is selected (so the confirm screen matches). */
     private fun areaBox(lng: Double, lat: Double): dynamic {
         val mpp = METERS_PER_PIXEL_Z0 * cos(lat * PI / 180.0) / 2.0.pow(ANCHOR_ZOOM)
-        val dLat = (Sim.height / 2.0 * mpp) / METERS_PER_DEG_LAT
-        val dLng = (Sim.width / 2.0 * mpp) / (METERS_PER_DEG_LAT * cos(lat * PI / 180.0))
-        val ring = "[[${lng - dLng},${lat - dLat}],[${lng + dLng},${lat - dLat}]," +
-            "[${lng + dLng},${lat + dLat}],[${lng - dLng},${lat + dLat}],[${lng - dLng},${lat - dLat}]]"
+        val degLng = METERS_PER_DEG_LAT * cos(lat * PI / 180.0)
+        val ring = if (Sim.roundField) {
+            val rLat = Sim.fieldRadius() * mpp / METERS_PER_DEG_LAT
+            val rLng = Sim.fieldRadius() * mpp / degLng
+            val sb = StringBuilder()
+            for (i in 0..CIRCLE_SEGMENTS) {
+                val t = i.toDouble() / CIRCLE_SEGMENTS * 2.0 * PI
+                if (i > 0) sb.append(",")
+                sb.append("[${lng + rLng * cos(t)},${lat + rLat * sin(t)}]")
+            }
+            "[$sb]"
+        } else {
+            val dLat = (Sim.height / 2.0 * mpp) / METERS_PER_DEG_LAT
+            val dLng = (Sim.width / 2.0 * mpp) / degLng
+            "[[${lng - dLng},${lat - dLat}],[${lng + dLng},${lat - dLat}]," +
+                "[${lng + dLng},${lat + dLat}],[${lng - dLng},${lat + dLat}],[${lng - dLng},${lat - dLat}]]"
+        }
         return JSON.parse<Json>("""{"type":"Feature","geometry":{"type":"Polygon","coordinates":[$ring]}}""")
     }
+
+    private const val CIRCLE_SEGMENTS = 48
 
     private fun toggle() {
         globe = !globe

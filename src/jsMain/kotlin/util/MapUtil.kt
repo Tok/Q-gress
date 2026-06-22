@@ -476,6 +476,12 @@ object MapUtil {
         // visible map regardless of the display's pixel ratio.
         val w = Sim.width / Pos.res
         val h = Sim.height / Pos.res
+        // Round field: cells outside the inscribed circle are impassable, so flow fields / walkability /
+        // movement all stay inside the circle (a real circular arena, not just a masked overlay).
+        val cx = w / 2.0
+        val cy = h / 2.0
+        val rSq = (minOf(w, h) / 2.0).let { it * it }
+        fun inField(x: Int, y: Int) = !Sim.roundField || ((x - cx) * (x - cx) + (y - cy) * (y - cy) <= rSq)
         fun isOffScreen(pos: Pos) = pos.x < 0 || pos.y < 0 || pos.x >= w || pos.y >= h
         fun nextRow(tempCtx: Ctx, h: Int, x: Int): List<Pair<Pos, Cell>> = (-OFFSCREEN_CELL_ROWS until (h + OFFSCREEN_CELL_ROWS)).map { y ->
             val pos = Pos(x, y)
@@ -486,7 +492,7 @@ object MapUtil {
             } else {
                 val scaledPixel = tempCtx.getImageData(x, y, 1, 1).data[0]
                 val passabilityOffset = 32
-                val isPassable = scaledPixel > passabilityOffset
+                val isPassable = scaledPixel > passabilityOffset && inField(x, y)
                 val penalty =
                     PathUtil.MIN_HEAT + ((255 - scaledPixel) * (PathUtil.MAX_HEAT - PathUtil.MIN_HEAT) / 255)
                 pos to Cell(pos, isPassable, penalty)

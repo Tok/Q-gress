@@ -301,10 +301,11 @@ object Scene3D {
         val hx = sceneX(Pos(Sim.width, 0)) // play-area half-extents (scene metres); sceneY flips sim-y → +hy is the top edge
         val hy = sceneY(Pos(0, 0))
         if (Sim.roundField) {
-            PlayAreaMask.buildRound(group, hx, hy, BORDER_Z - 0.05, OUTSIDE_DIM, WALL_HEIGHT)
+            val r = minOf(hx, hy) // true circle = the smaller half-extent (matches the grid mask)
+            PlayAreaMask.buildRound(group, r, r, BORDER_Z - 0.05, OUTSIDE_DIM, WALL_HEIGHT)
             val pts = (0..ELLIPSE_SEGMENTS).map {
                 val t = it.toDouble() / ELLIPSE_SEGMENTS * 2.0 * PI
-                Three.Vector3(hx * cos(t), hy * sin(t), BORDER_Z)
+                Three.Vector3(r * cos(t), r * sin(t), BORDER_Z)
             }.toTypedArray()
             group.add(Three.Line(Three.BufferGeometry().setFromPoints(pts), lineMaterial(BORDER_COLOR)))
             return
