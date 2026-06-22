@@ -26,6 +26,10 @@ object GlassShader {
     /** Brightness multiplier for the dedicated link variant (orb glass is near-transparent). */
     const val LINK_BRIGHT = 2.6
 
+    /** Brightness multiplier for a selected portal's orb — keeps the faction hue, just glows brighter
+     *  (so selection reads as "lit up", not as the neutral grayscale a white tint used to give). */
+    const val SELECT_BRIGHT = 2.0
+
     // Camera eye in sim-space, shared by every glass material and refreshed per frame by updateEye().
     private val eyeUniform: dynamic = js("({ value: { x: 0.0, y: 0.0, z: 1.0e6 } })")
 

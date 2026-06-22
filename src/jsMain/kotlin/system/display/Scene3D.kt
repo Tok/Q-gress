@@ -11,6 +11,8 @@ import external.GLTFLoader
 import external.MapLibre
 import external.Three
 import items.level.LevelColor
+import kotlinx.browser.document
+import org.w3c.dom.HTMLCanvasElement
 import portal.Field
 import portal.Link
 import portal.Octant
@@ -61,6 +63,10 @@ object Scene3D {
     private const val NPC_DROP_HEIGHT = 70.0 // metres an NPC drops from
     private const val INDICATOR_Z = 2.7
     private const val INDICATOR_SIZE = 1.6
+    private const val LABEL_W = 22.0 // portal name/level billboard width (scene metres)
+    private const val LABEL_GAP = 4.0 // gap above the orb top before the label
+    private const val LABEL_CANVAS_W = 256 // label texture resolution (kept crisp; faction-neutral white)
+    private const val LABEL_CANVAS_H = 96
     private const val POLE_R = 2.0
     private const val LINK_R = 0.7 // glass-pipe link radius (metres)
     private const val CORE_R_FRAC = 0.3 // bright inner-filament radius as a fraction of LINK_R
@@ -90,6 +96,8 @@ object Scene3D {
     private const val BORDER_Z = 0.3
     private const val OUTSIDE_DIM = 0.4 // opacity of the dark mask greying out everything beyond the border
     private const val OUTSIDE_FAR = 12.0 // how far past the play area the dim mask extends (× the half-extent)
+    private const val WALL_HEIGHT = 16.0 // upright play-area boundary wall height (scene metres)
+    private const val WALL_THICK = 1.0 // boundary wall thickness (scene metres)
     const val CUSTOM_LAYER_ID = "qgress-3d" // MapLibre layer id for the three.js scene
 
     // Currently selected entity, as "portal:<id>" / "agent:<name>" (see pick()).
@@ -265,6 +273,7 @@ object Scene3D {
         val hx = sceneX(Pos(Sim.width, 0)) // play-area half-extents (scene metres); sceneY flips sim-y → +hy is the top edge
         val hy = sceneY(Pos(0, 0))
         PlayAreaMask.build(group, hx, hy, OUTSIDE_FAR * maxOf(hx, hy), BORDER_Z - 0.05, OUTSIDE_DIM)
+        PlayAreaMask.buildWalls(group, hx, hy, WALL_HEIGHT, WALL_THICK, 0.0)
         val corners = arrayOf(Pos(0, 0), Pos(Sim.width, 0), Pos(Sim.width, Sim.height), Pos(0, Sim.height), Pos(0, 0))
         val points = corners.map { Three.Vector3(sceneX(it), sceneY(it), BORDER_Z) }.toTypedArray()
         group.add(Three.Line(Three.BufferGeometry().setFromPoints(points), lineMaterial(BORDER_COLOR)))
@@ -436,9 +445,11 @@ object Scene3D {
             SoundUtil.playGlassShatterSound(portal.location, CAPTURE_SHATTER_WEIGHT)
         }
         val reform = CaptureFx.reformFactor(id)
-        val color = if (selected == id) HIGHLIGHT_COLOR else baseColor
         val resos = portal.resoMap().mapValues { it.value.getLevel() } // octant → reso level (real-time)
-        val parts = buildPortal(portalsGroup, portal.location, level, color, id, resos)
+        // Selection keeps the faction hue but lights the orb brighter (no neutral-looking white tint);
+        // buildPortal derives that from id == selected.
+        val parts = buildPortal(portalsGroup, portal.location, level, baseColor, id, resos)
+        addPortalLabel(portal, level)
         HackFx.bind(id, parts[3]) // spin the collar if this portal is being hacked
         // Build-in: the pole rises and the orb grows from the ground; [reform] re-pops the orb only.
         val g = Spawns.appear(id, PORTAL_GROW_S)
@@ -466,19 +477,21 @@ object Scene3D {
         val y = sceneY(location)
         val poleH = poleHeight(level)
         val s = orbScale(level)
+        // Selection lights the orb brighter (faction hue kept). Demo portals (id == null) never highlight.
+        val glassMat = if (id != null && id == selected) Materials.glassBright(color) else Materials.glass(color)
         val pole = Three.Mesh(poleGeo, Materials.metal())
         pole.asDynamic().rotation.x = PI / 2 // Y-axis cylinder → vertical (Z up)
         pole.asDynamic().scale.set(1.0, poleScale(level), 1.0) // grow height (local Y) only
         place(pole.asDynamic(), x, y, poleH / 2)
         val gasket = Three.Mesh(gasketGeo, Materials.rubber()) // torus in XY → flat ring around the pole top
         place(gasket.asDynamic(), x, y, poleH)
-        val orb = Three.Mesh(topGeo, Materials.glass(color))
+        val orb = Three.Mesh(topGeo, glassMat)
         place(orb.asDynamic(), x, y, orbCenterZ(level))
         orb.asDynamic().scale.set(s, s, s)
         // Double-shell: a concentric inner glass surface gives the orb real wall thickness — its
         // rim sits inside the outer rim, so the orb reads as a thick blown-glass vessel, not a film.
         // (Child of the orb, so it inherits the per-level scale + the grow-in tween for free.)
-        val inner = Three.Mesh(topGeo, Materials.glass(color))
+        val inner = Three.Mesh(topGeo, glassMat)
         inner.asDynamic().scale.set(INNER_SHELL_FRAC, INNER_SHELL_FRAC, INNER_SHELL_FRAC)
         orb.asDynamic().add(inner)
         id?.let {
@@ -815,5 +828,47 @@ object Scene3D {
         p.depthTest = false
         p.transparent = true
         Three.SpriteMaterial(p)
+    }
+
+    /** A camera-facing name + level billboard floating just above the portal's orb (cleared each sync). */
+    private fun addPortalLabel(portal: Portal, level: Double) {
+        val z = orbCenterZ(level) + TOP_R * orbScale(level) + LABEL_GAP
+        val sprite = Three.Sprite(portalLabelMaterial(portal.name, portal.getLevel().toInt()))
+        sprite.asDynamic().position.set(sceneX(portal.location), sceneY(portal.location), z)
+        sprite.asDynamic().scale.set(LABEL_W, LABEL_W * LABEL_CANVAS_H / LABEL_CANVAS_W, 1.0)
+        indicatorsGroup.add(sprite)
+    }
+
+    // Name + level label material, cached by (name, level) so the canvas/texture is drawn once.
+    private fun portalLabelMaterial(name: String, level: Int): dynamic = spriteCache.getOrPut("plabel:$name|$level") {
+        val p: dynamic = js("({})")
+        p.map = Three.CanvasTexture(drawPortalLabel(name, level))
+        p.depthTest = false
+        p.transparent = true
+        Three.SpriteMaterial(p)
+    }
+
+    // White, dark-outlined text on a transparent canvas (label is neutral UI — no faction hue).
+    private fun drawPortalLabel(name: String, level: Int): HTMLCanvasElement {
+        val canvas = document.createElement("canvas") as HTMLCanvasElement
+        canvas.width = LABEL_CANVAS_W
+        canvas.height = LABEL_CANVAS_H
+        val ctx = canvas.getContext("2d").asDynamic()
+        ctx.textAlign = "center"
+        ctx.textBaseline = "middle"
+        ctx.lineJoin = "round"
+        val cx = LABEL_CANVAS_W / 2.0
+        val shown = if (name.length > 18) name.take(17) + "…" else name
+        fun line(text: String, y: Double, px: Int, fill: String) {
+            ctx.font = "600 ${px}px 'Chakra Petch', sans-serif"
+            ctx.lineWidth = 5.0
+            ctx.strokeStyle = "rgba(0, 0, 0, 0.85)"
+            ctx.strokeText(text, cx, y)
+            ctx.fillStyle = fill
+            ctx.fillText(text, cx, y)
+        }
+        line(shown, 30.0, 28, "#ffffff")
+        line("L$level", 72.0, 34, "#e8e8e8")
+        return canvas
     }
 }

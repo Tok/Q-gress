@@ -9,6 +9,35 @@ import external.Three
  */
 object PlayAreaMask {
     private var material: dynamic = null
+    private var wallMat: dynamic = null
+
+    /**
+     * Add four upright, semi-transparent white walls along the play-area edges (so the boundary reads
+     * as a physical arena, not just a ground line). Thin boxes: no rotation, dimensions are explicit.
+     */
+    fun buildWalls(group: dynamic, hx: Double, hy: Double, height: Double, thickness: Double, z0: Double) {
+        if (wallMat == null) wallMat = buildWallMaterial()
+        val mat = wallMat
+        fun wall(w: Double, d: Double, cx: Double, cy: Double) {
+            val mesh = Three.Mesh(Three.BoxGeometry(w, d, height), mat)
+            mesh.asDynamic().position.set(cx, cy, z0 + height / 2.0)
+            group.add(mesh)
+        }
+        wall(2.0 * hx + thickness, thickness, 0.0, hy) // north
+        wall(2.0 * hx + thickness, thickness, 0.0, -hy) // south
+        wall(thickness, 2.0 * hy, hx, 0.0) // east
+        wall(thickness, 2.0 * hy, -hx, 0.0) // west
+    }
+
+    private fun buildWallMaterial(): dynamic {
+        val p: dynamic = js("({})")
+        p.color = "#ffffff"
+        p.transparent = true
+        p.opacity = 0.1 // faint glass pane — visible boundary without blocking the view
+        p.depthWrite = false
+        p.side = 2 // DoubleSide
+        return Three.MeshBasicMaterial(p)
+    }
 
     /** Add the four masking quads to [group], framing the play area of half-extents [hx]×[hy] (scene m). */
     fun build(group: dynamic, hx: Double, hy: Double, far: Double, z: Double, dim: Double) {

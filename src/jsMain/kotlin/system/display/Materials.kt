@@ -40,6 +40,9 @@ object Materials {
     /** Brighter glass variant for the thin link tubes (the orb glass reads too faint at pipe radius). */
     fun linkGlass(color: String): dynamic = cache.getOrPut("lg$color") { GlassShader.material(color, GlassShader.LINK_BRIGHT) }
 
+    /** Selected-portal orb: the faction-tinted glass lit brighter (selection highlight — no hue change). */
+    fun glassBright(color: String): dynamic = cache.getOrPut("pgs$color") { GlassShader.material(color, GlassShader.SELECT_BRIGHT) }
+
     /** Additive emissive filament running down the centre of a link tube — the "plasma core". */
     fun linkCore(color: String): dynamic = cache.getOrPut("lc$color") {
         val p: dynamic = js("({})")
