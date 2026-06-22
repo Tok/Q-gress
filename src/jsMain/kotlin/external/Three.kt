@@ -129,6 +129,7 @@ external object Three {
 
     class MeshBasicMaterial(params: dynamic)
     class MeshStandardMaterial(params: dynamic)
+    class MeshPhysicalMaterial(params: dynamic) // adds transmission/clearcoat → real glass
     class ShaderMaterial(params: dynamic)
     class LineBasicMaterial(params: dynamic)
     class SpriteMaterial(params: dynamic)

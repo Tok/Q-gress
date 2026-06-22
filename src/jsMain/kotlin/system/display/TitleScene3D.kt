@@ -241,13 +241,16 @@ object TitleScene3D {
     private fun titleGlass(color: String): dynamic {
         val p: dynamic = js("({})")
         p.color = color
-        p.emissive = color
-        p.emissiveIntensity = 0.55
         p.metalness = 0.0
-        p.roughness = 0.25
+        p.roughness = 0.08
+        p.transmission = 0.9 // refract → real glass (uses scene.environment for reflections)
+        p.thickness = 3.0
+        p.ior = 1.45
         p.transparent = true
-        p.opacity = 0.78
-        return Three.MeshStandardMaterial(p)
+        p.emissive = color // a subtle inner faction glow so it reads even against the dark sky
+        p.emissiveIntensity = 0.3
+        p.envMapIntensity = 1.2
+        return Three.MeshPhysicalMaterial(p)
     }
 
     private fun buildPortals() {
@@ -313,18 +316,19 @@ object TitleScene3D {
     // TITLE_SCALE shrinks the whole thing to fit the stage, so the proportions match the in-game portal.
     private fun applyPortal(p: Portal) {
         val poleH = POLE_H * poleScale(p.level)
-        p.pole.asDynamic().scale.set(1.0, poleH, 1.0)
-        p.pole.asDynamic().position.set(0.0, poleH / 2.0, 0.0)
-        p.gasket.asDynamic().position.set(0.0, poleH, 0.0) // rides the pole top
+        // p.pole/gasket/orb/resoGroup are stored as `dynamic` → access directly (no .asDynamic()).
+        p.pole.scale.set(1.0, poleH, 1.0)
+        p.pole.position.set(0.0, poleH / 2.0, 0.0)
+        p.gasket.position.set(0.0, poleH, 0.0) // rides the pole top
         val os = orbScale(p.level) * (1.0 + p.flash * 0.3) // flash = a brief scale pop
-        p.orb.asDynamic().scale.set(os, os, os)
-        p.orb.asDynamic().position.set(0.0, poleH + TOP_R * orbScale(p.level), 0.0)
+        p.orb.scale.set(os, os, os)
+        p.orb.position.set(0.0, poleH + TOP_R * orbScale(p.level), 0.0)
         rebuildResos(p, poleH)
     }
 
     private fun rebuildResos(p: Portal, poleH: Double) {
-        val g = p.resoGroup
-        g.asDynamic().clear()
+        val g = p.resoGroup // dynamic
+        g.clear()
         val collarY = poleH * RESO_COLLAR_FRAC
         val rodLen = poleH * RESO_ROD_LEN_FRAC
         val ringR = POLE_R * RESO_RADIUS_FRAC
@@ -335,7 +339,7 @@ object TitleScene3D {
             val rod = Three.Mesh(rodGeo, Materials.resonator(LevelColor.map[lvl] ?: "#ffffff"))
             rod.asDynamic().scale.set(1.0, rodLen, 1.0)
             rod.asDynamic().position.set(ringR * cos(ang), collarY, ringR * sin(ang))
-            g.asDynamic().add(rod)
+            g.add(rod)
         }
     }
 
@@ -429,7 +433,7 @@ object TitleScene3D {
             e.age += dt
             val f = (e.age / XMP_LIFE).coerceIn(0.0, 1.0)
             val r = XMP_MAX_R * (1.0 - (1.0 - f) * (1.0 - f)) // ease-out expansion
-            e.mesh.asDynamic().scale.set(r, r, r)
+            e.mesh.scale.set(r, r, r) // e.mesh is dynamic
             e.mat.opacity = (1.0 - f) * 0.7
             if (f >= 1.0) {
                 scene.remove(e.mesh)
@@ -447,7 +451,7 @@ object TitleScene3D {
             else -> NEUTRAL_COLOR
         }
         p.orbMat = titleGlass(p.color) // re-skin the orb to the new faction's glass
-        p.orb.asDynamic().material = p.orbMat
+        p.orb.material = p.orbMat // p.orb is dynamic
         randomLoadout(p) // a captured portal gets a fresh reso loadout
         p.flash = 1.0 // scale pop
         applyPortal(p)
