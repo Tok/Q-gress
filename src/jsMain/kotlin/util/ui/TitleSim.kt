@@ -26,7 +26,7 @@ object TitleSim {
     private const val N = 5
     private const val TICK_MS = 850
     private const val MAX_LEVEL = 8
-    private const val RING_FRAC = 0.55 // portals on a ring at this fraction of the field radius
+    private const val RING_FRAC = 0.7 // portals on a ring at this fraction of the field radius (fill the frame)
     private const val SHATTER_REBUILD_MS = 1700 // let the shards fall before a captured portal rebuilds
     private val colors = listOf(Faction.ENL.color, Faction.RES.color, "#cfcfcf")
 

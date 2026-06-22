@@ -187,6 +187,7 @@ object MapUtil {
     // Framed so the chosen play-area size fits; read at call time since the size is picked at onboarding.
     private fun displayZoomForSize() = (ZOOM - log2(Sim.scale)).roundToInt()
     private const val DEMO_ZOOM = 19 // demos frame one central object, so sit closer than the game
+    private const val TITLE_ZOOM_BOOST = 2 // title sits this much closer than the whole-play-area framing
     private var demoMode = false
     private fun displayZoom() = if (demoMode) DEMO_ZOOM else displayZoomForSize()
     private const val DEFAULT_PITCH = 50.0 // tilt the visible maps so the 3D scene reads as 3D
@@ -298,7 +299,7 @@ object MapUtil {
         applyTerrain(m) // DEM relief (the demo style now carries the terrain source)
         Scene3D.onTerrainChanged() // sample heights so the portals sit on the terrain
         m.setPitch(DEFAULT_PITCH) // tilt so the relief + 3D portals read
-        m.setZoom(displayZoomForSize()) // zoom out from the close demo framing → all portals in view
+        m.setZoom(displayZoomForSize() + TITLE_ZOOM_BOOST) // closer than the whole-area framing (portals sit centrally)
         startBuildCinematic() // slow bearing spin — the camera orbits the arena
     }
 

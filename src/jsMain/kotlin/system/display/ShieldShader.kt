@@ -14,7 +14,7 @@ import external.Three
  */
 object ShieldShader {
     private const val RIM_POWER = 2.2
-    private const val HEX_SCALE = 7.0
+    private const val HEX_SCALE = 2.5 // hex cells per radian of arc (lon/lat space → equilateral hexes)
 
     private val timeUniform: dynamic = js("({ value: 0.0 })")
     private val eyeUniform: dynamic = js("({ value: { x: 0.0, y: 0.0, z: 1.0e6 } })")
@@ -46,7 +46,7 @@ object ShieldShader {
             " vec3 V = normalize(uEye - vWorldPos);\n" +
             " float fres = pow(1.0 - abs(dot(normalize(vNormal), V)), ${RIM_POWER.glsl()});\n" +
             " vec3 p = normalize(vModelPos);\n" +
-            " vec2 uv = vec2(atan(p.y, p.x) * 0.1591, p.z);\n" + // sphere → (longitude, height)
+            " vec2 uv = vec2(atan(p.y, p.x), asin(clamp(p.z, -1.0, 1.0)));\n" + // sphere → (lon, lat) radians: equal arc length → equilateral hexes
             " float h = hexGrid(uv * ${HEX_SCALE.glsl()} + vec2(uTime * 0.04, 0.0));\n" +
             " float line = smoothstep(0.05, 0.0, h);\n" + // crisp cell edge
             " float halo = smoothstep(0.20, 0.0, h);\n" + // soft glow around it (fake single-pass bloom)
