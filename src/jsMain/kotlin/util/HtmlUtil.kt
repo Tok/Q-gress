@@ -209,16 +209,16 @@ object HtmlUtil {
                 Config.maxNonFaction = npc
                 Config.quickStart = quick
                 Onboarding.showLocation { lng, lat, name ->
-                    setLoadedLocation(lng, lat, name)
-                    initWorld(centerJson(lng, lat))
+                    // Reload into the game via the deep-link URL (carries faction/size/portals/npc/
+                    // round/quick). This cleanly wipes the real-Scene3D title running behind onboarding,
+                    // reusing the game's proven reload-based load path.
+                    navigateToLocation(lng, lat, name)
                 }
             }
         }
     }
 
     private fun centerOrDefault(): Json = getLngLatFromUrl()?.toJson() ?: Location.DEFAULT.toJSON()
-
-    private fun centerJson(lng: Double, lat: Double): Json = JSON.parse("[$lng,$lat]")
 
     private fun createCheckbox(id: String, labelText: String, onChange: (Boolean) -> Unit): HTMLSpanElement {
         val span = document.createElement("span") as HTMLSpanElement
@@ -343,6 +343,7 @@ object HtmlUtil {
         url().searchParams.get("portals")?.toIntOrNull()?.let { Config.startPortals = it }
         url().searchParams.get("npc")?.toIntOrNull()?.let { Config.maxNonFaction = it }
         url().searchParams.get("quickstart")?.toBoolean()?.let { Config.quickStart = it }
+        url().searchParams.get("round")?.toBoolean()?.let { Sim.roundField = it }
         Util.seed(getSeedFromUrl() ?: Util.freshSeed())
         Onboarding.close() // dismiss the onboarding screen (it loads without a reload)
         // Staged loading overlay, up before the first tile request (the world build runs ~2 min on Big).
@@ -747,7 +748,7 @@ object HtmlUtil {
         val seedPart = if (seed != null) "&seed=$seed" else ""
         return "$base?faction=$fact&lng=$lng&lat=$lat&name=${encodeURIComponent(name)}" +
             "&w=${Sim.width}&h=${Sim.height}&portals=${Config.startPortals}&npc=${Config.maxNonFaction}" +
-            "&quickstart=${isQuickstart()}$seedPart"
+            "&round=${Sim.roundField}&quickstart=${isQuickstart()}$seedPart"
     }
 
     /** Copy the shareable link to the clipboard (with brief in-menu feedback). */
