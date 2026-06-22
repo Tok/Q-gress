@@ -80,8 +80,10 @@ object ActionSelector {
     private fun actionsForEnemyPortals(agent: Agent): List<Pair<Double, () -> Agent>> {
         val basicValues = actionsForPortals(agent)
         val attackQ = if (Attacker.isActionPossible(agent)) q(agent.faction, QActions.ATTACK) else -1.0
+        val virusQ = if (Refactorer.isActionPossible(agent)) q(agent.faction, QActions.VIRUS) else -1.0
         return basicValues + listOf(
             attackQ to { agent.attackPortal(true) },
+            virusQ to { Refactorer.performAction(agent) },
         )
     }
 }

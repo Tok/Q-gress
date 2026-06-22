@@ -25,7 +25,8 @@ data class ActionItem(val text: String, val durationSeconds: Int, val qName: Str
         val DEPLOY = ActionItem("deploying", 15, "Deploy")
         val CAPTURE = ActionItem("capturing", 15, "Capture")
         val LINK = ActionItem("linking", 30, "Link")
-        fun values() = listOf(MOVE, WAIT, RECHARGE, RECRUIT, EXPLORE, RECYCLE, HACK, GLYPH, ATTACK, DEPLOY, CAPTURE, LINK)
+        val VIRUS = ActionItem("refactoring", 15, "Virus")
+        fun values() = listOf(MOVE, WAIT, RECHARGE, RECRUIT, EXPLORE, RECYCLE, HACK, GLYPH, ATTACK, DEPLOY, CAPTURE, LINK, VIRUS)
 
         private val enlImages = if (HtmlUtil.isRunningInBrowser()) {
             values().map { it to drawTemplate(it, Faction.ENL) }.toMap()
@@ -118,6 +119,10 @@ data class ActionItem(val text: String, val durationSeconds: Int, val qName: Str
                 RECYCLE -> {
                     line(ctx, Line(Pos(off, off), Pos(w - off, h - off)))
                     circ(ctx, Circle(pos, rr - 2.0))
+                }
+                VIRUS -> {
+                    circ(ctx, Circle(pos, rr - 4.0))
+                    line(ctx, Line(Pos(off, off), Pos(w - off, h - off)))
                 }
                 WAIT -> Unit
             }

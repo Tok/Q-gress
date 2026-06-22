@@ -176,6 +176,43 @@ object ShatterFx {
         )
     }
 
+    /**
+     * A slot-mod mesh ([geo] = dodeca / pentagon / cube) tumbling out of a shattered or neutralized
+     * portal: starts at the orb centre ([x], [y], [z]) at [scale], with a small box collider ([half]),
+     * then tumbles + fades. Builds its own emissive material (rarity [color]) so it can fade alone.
+     */
+    @Suppress("LongParameterList") // position + size + colour for one falling mod
+    fun spawnFallingChunk(geo: dynamic, x: Double, y: Double, z: Double, scale: Double, half: Double, color: String) {
+        val w = world ?: return
+        val p: dynamic = js("({})")
+        p.color = color
+        p.emissive = color
+        p.emissiveIntensity = 0.35
+        p.metalness = 0.3
+        p.roughness = 0.5
+        p.transparent = true
+        p.opacity = 1.0
+        val mat = Three.MeshStandardMaterial(p)
+        val mesh = Three.Mesh(geo, mat)
+        mesh.asDynamic().scale.set(scale, scale, scale)
+        val opts: dynamic = js("({})")
+        opts.mass = SHARD_MASS
+        opts.position = Cannon.Vec3(x, y, z)
+        opts.shape = Cannon.Box(Cannon.Vec3(half, half, half))
+        opts.linearDamping = 0.05
+        opts.angularDamping = 0.25
+        opts.collisionFilterGroup = SHARD_GROUP
+        opts.collisionFilterMask = SHARD_MASK
+        val body = Cannon.Body(opts)
+        body.asDynamic().velocity.set((Util.random() - 0.5) * 4.0, (Util.random() - 0.5) * 4.0, Util.random() * 2.0)
+        body.asDynamic().angularVelocity.set(randSpin(), randSpin(), randSpin())
+        w.addBody(body)
+        group.add(mesh)
+        activeShards.add(
+            Shard(mesh, mat, body, 0.0, SHARD_LIFE_MIN + Util.random() * (SHARD_LIFE_MAX - SHARD_LIFE_MIN)) { f -> mat.asDynamic().opacity = f },
+        )
+    }
+
     private fun spawnShard(world: Cannon.World, holder: dynamic, pos: DoubleArray, scale: Double, color: String) {
         val mat = GlassShader.material(color, SHARD_BRIGHT)
         val mesh = Three.Mesh(holder.geo, mat)

@@ -27,12 +27,14 @@ object QActions {
 
     // at enemy portals
     val ATTACK = QValue("attack", 1.0, "attack portals", ActionItem.getHiResIcon(ActionItem.ATTACK))
+    val VIRUS = QValue("virus", 1.0, "use virus", ActionItem.getHiResIcon(ActionItem.VIRUS))
 
     fun values() = listOf(
         MOVE_ELSEWHERE,
         EXPLORE,
         RECRUIT,
         ATTACK,
+        VIRUS,
         LINK,
         DEPLOY,
         CAPTURE,

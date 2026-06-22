@@ -529,6 +529,7 @@ object HtmlUtil {
         menu.append(createButton("menuNewGame", "menuItem amarillo", "New Game") { doNewGame() })
         menu.append(createButton("menuReset", "menuItem amarillo", "Reset") { doReset() })
         menu.append(createButton("menuShare", "menuItem amarillo", "Copy link") { copyShareLink() })
+        menu.append(createButton("menuDropRates", "menuItem amarillo", "Drop rates") { toggleDropRates() })
         // Overlay toggle lives in the menu now (no longer always-visible in the top bar). Vectors are
         // no longer toggled — they flash automatically for ~a second when a portal is created.
         menu.append(createMenuCheckbox("passabilityToggle", "Terrain") { PassabilityOverlay.setVisible(it) })
@@ -549,6 +550,34 @@ object HtmlUtil {
         span.append(button)
         span.append(menu)
         return span
+    }
+
+    /** Toggle a small panel listing the live (tunable) drop rates — transparency for the player. */
+    private fun toggleDropRates() {
+        (document.getElementById("dropRatesPanel") as? HTMLDivElement)?.let {
+            it.remove()
+            return
+        }
+        val panel = document.createElement("div") as HTMLDivElement
+        panel.id = "dropRatesPanel"
+        panel.addClass("dropRatesPanel")
+        panel.innerHTML = dropRatesHtml()
+        document.body?.appendChild(panel)
+    }
+
+    private fun dropRatesHtml(): String {
+        val sb = StringBuilder("<div class=\"dropRatesTitle\">Drop rates · per hack roll</div>")
+        sb.append(rateRow("Portal key", DropRates.keyChance))
+        DropRates.shieldChance.forEach { (t, c) -> sb.append(rateRow("Shield ${t.abbr}", c)) }
+        DropRates.heatSinkChance.forEach { (t, c) -> sb.append(rateRow("Heat sink ${t.abbr}", c)) }
+        DropRates.virusChance.forEach { (t, c) -> sb.append(rateRow("Virus ${t.abbr}", c)) }
+        sb.append("<div class=\"dropRatesNote\">Resonators / XMP / Power Cubes roll by tier — see docs/MECHANICS.md. Link amps are inactive (never drop).</div>")
+        return sb.toString()
+    }
+
+    private fun rateRow(label: String, chance: Double): String {
+        val pct = (chance * 1000).toInt() / 10.0
+        return "<div class=\"dropRatesRow\">$label<span>$pct%</span></div>"
     }
 
     /** A [createCheckbox] styled as a row inside the game menu dropdown. */

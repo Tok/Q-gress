@@ -62,6 +62,7 @@ object Inspector {
             row("Level", portal.getLevel().value.toString()) +
             row("Health", "${portal.calcHealth()}%") +
             row("Resonators", "${portal.filledSlots().count()}/8") +
+            row("Shields", "${portal.modCount()}/4") +
             row("Links", portal.links.count().toString()) +
             row("Fields", portal.fields.count().toString())
     }
@@ -72,6 +73,7 @@ object Inspector {
         row("Level", agent.getLevel().toString()) +
         row("AP", agent.ap.toString()) +
         row("XM", agent.xm.toString()) +
+        row("Keys", agent.inventory.findKeys().count().toString()) +
         row("Action", agent.action.item.text) +
         row("Target", agent.actionPortal.name)
 

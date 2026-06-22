@@ -82,16 +82,16 @@ the AI layer lands, the slider sim is the substrate we keep hardening.
   (`HackFx`/`SoundUtil`); this is the reward/skill/timing model behind it. Lives in
   `Glypher`/`Portal.tryGlyph` + a glyph skill on `agent/Skills`; expose it as a high-risk/high-reward
   QAction the AI weighs (ties into Phase 6 — the net/LLM should learn when glyphing is worth it).
-- [ ] **Portal mods (heat-sinks + others)** — deployable items that slot into a portal and modify it:
-  - **Heat-sink** — reduces the portal hack cooldown (Common/Rare/V.Rare ≈ ×0.8/×0.5/×0.3; with
-    several, the rarest applies fully and each next is halved) + an instant cooldown/burnout reset for
-    the deploying agent on attach. (Confirmed against current Ingress.)
-  - **Multi-hack** — more hacks before the cooldown kicks in.
-  - **Shield** — defense; the visual is already stubbed (3D Stage 2) but needs `Portal.deployMods` to
-    actually store deployed mods (currently a stub — no state to draw).
-  - **Force amp / turret / link amp** — combat + range modifiers (later).
-  Needs a mod item type + real `Portal.deployMods` storage + a deploy-mod action + mod/shield
-  visualization. Pairs with the colony-management items in the icebox.
+- [x] **Portal mods (shields / heat sinks / link amps)** — DONE: 4 real mod slots
+  (`Portal.mods`), generic `Mod` model + rarity, deploy-one-per-action, drop on hack, fall on
+  loss, and 3D viz (dodeca / pentagon / cube + shield bubble). **Shields** mitigate XMP damage;
+  **heat sinks** cut the hack cooldown (rarest-full-then-halved); **link amps** are inactive.
+  **Viruses** (ADA/JARVIS) flip a portal via the `Refactorer` action. Drop rates centralized in
+  `config/DropRates` (Menu → Drop rates; `docs/MECHANICS.md`).
+  - [ ] *Follow-ups*: heat-sink **instant cooldown/burnout reset** for the deploying agent on attach;
+    **multi-hack** mod; **activate link amps** (range/outbound-link/SBUL); the **Ultra Strike** weapon +
+    targeted mod-stripping honouring shield `stickiness`; a **3D key** model; a per-game **drop-rate
+    tuning UI** (the `DropRates` data is already centralized).
 - [ ] **Portal retaliation ("thunderbolts").** Portals **defend when attacked**: a tesla-coil-style
   **bolt flash** arcs from the portal to the attacker on hit (like Ingress's portal-attack feedback),
   with a **thunderbolt sound**. Model TBD — pure VFX/audio first, then optional retaliation damage

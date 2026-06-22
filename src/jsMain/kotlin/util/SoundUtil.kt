@@ -1,6 +1,7 @@
 package util
 
 import World
+import agent.Faction
 import agent.NonFaction
 import config.Config
 import config.Constants
@@ -488,6 +489,32 @@ object SoundUtil {
         gainNode.gain.exponentialRampToValueAtTime(EPS, n + dur) // quick bell decay
         connectVoice(osc, createPanner(pos), gainNode, n + dur)
     }
+
+    /** A metallic "clunk" when a mod (shield / heat sink) is slotted into a portal. */
+    fun playModDeploySound(pos: Pos, level: Int) {
+        if (isMuted()) return
+        val osc = createStaticOscillator(OscillatorType.SQUARE, noteFor(level, octaveUp = 2))
+        val gainNode = audioCtx.createGain()
+        val n = now()
+        val dur = 0.16
+        gainNode.gain.setValueAtTime(0.10, n)
+        gainNode.gain.exponentialRampToValueAtTime(EPS, n + dur)
+        connectVoice(osc, createPanner(pos), gainNode, n + dur)
+    }
+
+    /** A glitchy faction-pitched sweep when a virus (ADA / JARVIS) flips a portal. */
+    fun playVirusSound(pos: Pos, faction: Faction) {
+        if (isMuted()) return
+        val base = if (faction == Faction.ENL) 180.0 else 140.0
+        val osc = createLinearRampOscillator(OscillatorType.SQUARE, base, base * 4.0, VIRUS_DUR)
+        val gainNode = audioCtx.createGain()
+        val n = now()
+        gainNode.gain.setValueAtTime(0.14, n)
+        gainNode.gain.exponentialRampToValueAtTime(EPS, n + VIRUS_DUR)
+        connectVoice(osc, createPanner(pos), gainNode, n + VIRUS_DUR)
+    }
+
+    private const val VIRUS_DUR = 0.5
 
     fun playDeploySound(pos: Pos, distanceToPortal: Int) {
         if (isMuted()) return

@@ -102,6 +102,7 @@ external object Three {
         height: dynamic,
         radialSegments: dynamic = definedExternally,
     )
+    class DodecahedronGeometry(radius: dynamic = definedExternally)
     class BufferGeometry {
         fun setFromPoints(points: dynamic): BufferGeometry
     }

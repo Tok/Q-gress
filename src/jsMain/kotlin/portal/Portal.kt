@@ -3,12 +3,14 @@ package portal
 import World
 import agent.Agent
 import agent.action.ActionItem
+import config.DropRates
 import config.Time
 import extension.*
 import items.PowerCube
 import items.QgressItem
 import items.XmpBurster
-import items.deployable.DeployableItem
+import items.deployable.HeatSink
+import items.deployable.Mod
 import items.deployable.Resonator
 import items.deployable.Shield
 import items.deployable.Virus
@@ -16,6 +18,7 @@ import items.level.PortalLevel
 import items.level.PowerCubeLevel
 import items.level.ResonatorLevel
 import items.level.XmpLevel
+import items.types.HeatSinkType
 import items.types.ShieldType
 import items.types.VirusType
 import system.Com
@@ -35,6 +38,7 @@ data class Portal(
     val links: MutableSet<Link>,
     val fields: MutableSet<Field>,
     var owner: Agent?,
+    val mods: MutableMap<ModSlot, Mod> = mutableMapOf(), // up to 4 mod slots (shields / heat sinks / link amps)
 ) {
     private val lastHacks: MutableMap<String, MutableList<Int>> = mutableMapOf()
     val id: String = "P-" + location.x + ":" + location.y + "-" + name
@@ -86,12 +90,57 @@ data class Portal(
     fun filledSlots() = slots.map { it.value }.filterNot { it.resonator == null }
     fun resoMap() = slots.mapNotNull { (octant, slot) -> slot.resonator?.let { octant to it } }.toMap()
 
-    private fun calculateLinkMitigation(): Int {
-        val maxMitigation = 95
-        // TODO shields...
+    private fun linkMitigation(): Int {
         val incoming = findIncomingFrom()
         val totalLinkCount = incoming.count() + links.count()
-        return min(maxMitigation, round(400.0 / 9.0 * atan(totalLinkCount / E)).toInt())
+        return round(400.0 / 9.0 * atan(totalLinkCount / E)).toInt()
+    }
+
+    private fun modMitigation(): Int = mods.values.filterIsInstance<Shield>().sumOf { it.type.mitigation }
+
+    /** Total incoming-damage reduction (links + deployed shields), capped at 95% (Ingress rule). */
+    fun totalMitigation(): Int = min(MAX_MITIGATION, linkMitigation() + modMitigation())
+
+    /** Hack-cooldown multiplier from deployed heat sinks: rarest applies full, each subsequent halved. */
+    fun cooldownFactor(): Double {
+        val reductions = mods.values.filterIsInstance<HeatSink>()
+            .map { it.type.cooldownReduction / 100.0 }
+            .sortedDescending()
+        var total = 0.0
+        var weight = 1.0
+        reductions.forEach {
+            total += it * weight
+            weight *= 0.5
+        }
+        return (1.0 - total).coerceIn(MIN_COOLDOWN_FACTOR, 1.0)
+    }
+
+    fun hasFreeModSlot(): Boolean = mods.size < ModSlot.values().size
+    fun modCount(): Int = mods.size
+
+    /** Slot a mod (shield / heat sink) into the first free mod slot (charges XM, awards AP, consumes). */
+    fun deployMod(deployer: Agent, mod: Mod) {
+        val free = ModSlot.values().firstOrNull { !mods.containsKey(it) } ?: return
+        mods[free] = mod
+        deployer.removeXm(modCost(mod))
+        deployer.addAp(MOD_DEPLOY_AP)
+        deployer.inventory.items.remove(mod)
+        Com.addMessage("$deployer deployed a ${mod.abbr} on $this.")
+    }
+
+    private fun modCost(mod: Mod): Int = when (mod) {
+        is Shield -> mod.type.deployCostXm
+        is HeatSink -> mod.type.deployCostXm
+        else -> 0
+    }
+
+    /** Virus flip (ADA / JARVIS): take the portal for [agent]'s faction — reassign resonators, drop mods. */
+    fun refactor(agent: Agent) {
+        owner = agent
+        slots.values.filter { it.resonator != null }.forEach { it.owner = agent }
+        mods.clear()
+        agent.addAp(VIRUS_AP)
+        Com.addMessage("$agent refactored $this to ${agent.faction}.")
     }
 
     private fun findStrongestReso(): Resonator? {
@@ -202,6 +251,7 @@ data class Portal(
         newStuff.addAll(obtainResos(hacker, level))
         newStuff.addAll(obtainXmps(hacker, level))
         newStuff.addAll(obtainShields(hacker))
+        newStuff.addAll(obtainHeatSinks(hacker))
         newStuff.addAll(obtainVirus(hacker))
         newStuff.addAll(obtainPowerCubes(level, hacker))
         newStuff.add(PortalKey.tryHack(this, hacker))
@@ -242,8 +292,18 @@ data class Portal(
     private fun obtainShields(hacker: Agent): List<QgressItem> {
         val stuff = mutableListOf<QgressItem>()
         ShieldType.values().forEach {
-            if (Util.random() < it.chance) {
+            if (Util.random() < DropRates.shieldChance.getValue(it)) {
                 stuff.add(Shield(it, hacker))
+            }
+        }
+        return stuff
+    }
+
+    private fun obtainHeatSinks(hacker: Agent): List<QgressItem> {
+        val stuff = mutableListOf<QgressItem>()
+        HeatSinkType.values().forEach {
+            if (Util.random() < DropRates.heatSinkChance.getValue(it)) {
+                stuff.add(HeatSink(it, hacker))
             }
         }
         return stuff
@@ -263,7 +323,7 @@ data class Portal(
     private fun obtainVirus(hacker: Agent): List<QgressItem> {
         val stuff = mutableListOf<QgressItem>()
         VirusType.values().forEach {
-            while (Util.random() < (1 / it.roll)) {
+            if (Util.random() < DropRates.virusChance.getValue(it)) {
                 stuff.add(Virus(it, hacker))
             }
         }
@@ -277,7 +337,8 @@ data class Portal(
             agentsLastHacks.sort()
             val lastHack = agentsLastHacks.last()
             val ticksSinceLastHack: Int = tickNr - lastHack
-            val timeDiff = Time.secondsToTicks(Cooldown.FIVE.seconds) - ticksSinceLastHack
+            val baseCooldownS = (Cooldown.FIVE.seconds * cooldownFactor()).toInt() // heat sinks shorten it
+            val timeDiff = Time.secondsToTicks(baseCooldownS) - ticksSinceLastHack
             val cooldown = Cooldown.valueOf(Time.ticksToSeconds(timeDiff))
             if (cooldown == Cooldown.NONE && !readOnly) {
                 agentsLastHacks.add(tickNr)
@@ -314,21 +375,6 @@ data class Portal(
             } else {
                 burn(agentsLastHacks, World.tick)
             }
-        }
-    }
-
-    fun deployMods(deployer: Agent, @Suppress("UNUSED_PARAMETER") mods: Map<Octant, DeployableItem>) {
-        val isCommon = true // TODO implement
-        val isRare = false
-        val isVeryRare = false
-        if (isCommon) {
-            deployer.removeXm(400)
-        }
-        if (isRare) {
-            deployer.removeXm(800)
-        }
-        if (isVeryRare) {
-            deployer.removeXm(1000)
         }
     }
 
@@ -404,9 +450,15 @@ data class Portal(
     }
 
     fun destroy(destroyer: Agent? = null) {
+        val droppedMods = mods.values.toList()
+        val lvl = getLevel().value
         owner = null
         slots.forEach {
             it.value.clear()
+        }
+        mods.clear()
+        if (droppedMods.isNotEmpty() && HtmlUtil.isRunningInBrowser()) {
+            Scene3D.dropMods(location, lvl, droppedMods) // mods tumble out when the portal goes down
         }
         destroyAllLinksAndFields(destroyer)
         World.allAgents.forEach { agent ->
@@ -436,7 +488,12 @@ data class Portal(
     }
 
     fun removeReso(octant: Octant, destroyer: Agent?) {
+        val lvl = getLevel().value
+        val resoLevel = slots[octant]?.resonator?.getLevel()
         this.slots[octant]?.clear()
+        if (resoLevel != null && HtmlUtil.isRunningInBrowser()) {
+            Scene3D.dropResonator(location, lvl, octant.ordinal, resoLevel) // the destroyed rod falls out
+        }
         val leftResos = numberOfResosLeft()
         when {
             leftResos <= 0 -> destroy(destroyer)
@@ -484,6 +541,10 @@ data class Portal(
         }
 
         const val MAX_HACKS = 4 // TODO implement multihacks
+        private const val MAX_MITIGATION = 95 // damage-reduction cap (Ingress rule)
+        private const val MOD_DEPLOY_AP = 125
+        private const val MIN_COOLDOWN_FACTOR = 0.05 // heat sinks can't reduce cooldown below 5%
+        private const val VIRUS_AP = 1000 // AP for flipping a portal with a virus
         private fun clipLevel(level: Int): Int = max(1, min(level, 8))
 
         // Non-blocking: the portal is built with an empty flow field, then PathUtil.computeFieldAsync

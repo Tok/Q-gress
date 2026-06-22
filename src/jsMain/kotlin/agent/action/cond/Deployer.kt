@@ -4,7 +4,10 @@ import agent.Agent
 import agent.Inventory
 import agent.action.ActionItem
 import config.Dim
+import items.deployable.HeatSink
+import items.deployable.Mod
 import items.deployable.Resonator
+import items.deployable.Shield
 import items.level.ResonatorLevel
 import portal.Octant
 import portal.Portal
@@ -17,52 +20,53 @@ object Deployer : ConditionalAction {
     override val actionItem = ActionItem.DEPLOY
 
     override fun isActionPossible(agent: Agent): Boolean {
-        if (!isActionPortalFriendly(agent)) {
-            return false
-        }
-        if (!areMoreResosAllowed(agent)) {
-            return false
-        }
+        if (!isActionPortalFriendly(agent)) return false
+        return canDeployAnyReso(agent) || canDeployMod(agent)
+    }
+
+    private fun canDeployAnyReso(agent: Agent): Boolean {
+        if (!areMoreResosAllowed(agent)) return false
         val inventoryResos = inventoryResos(agent.inventory)
-        if (inventoryResos.isEmpty()) {
-            return false
-        }
-
-        val highestInventoryReso: Int =
-            inventoryResos.sortedBy { it.level.level }.first().level.level
-        val slots = agent.actionPortal.slots
-        val canDeployMore = slots.asIterable().map { (_, slot) ->
-            val slotResoLevel = slot.resonator?.level?.level ?: 0
-            val isNewHigher = highestInventoryReso > slotResoLevel
-            val sameLevelCount = slots.count { it.value.resonator?.level?.level == slotResoLevel }
-            val canDeployMoreOfSameLevel = sameLevelCount < slot.resonator?.level?.deployablePerPlayer ?: 9
-            isNewHigher && canDeployMoreOfSameLevel
-        }.contains(true)
-        if (!canDeployMore) {
-            return false
-        }
-
+        if (inventoryResos.isEmpty()) return false
         val ownedInPortal = ownedInPortal(agent)
         return inventoryResos.toSet().any { canDeployReso(it, ownedInPortal, agent) }
     }
 
+    // The best deployable mod the agent carries (shields before heat sinks; link amps are inactive).
+    private fun deployableMod(agent: Agent): Mod? = agent.inventory.items
+        .filterIsInstance<Mod>()
+        .filter { it is Shield || it is HeatSink }
+        .minByOrNull { if (it is Shield) 0 else 1 }
+
+    private fun canDeployMod(agent: Agent): Boolean = agent.actionPortal.isFriendlyTo(agent) && agent.actionPortal.hasFreeModSlot() && deployableMod(agent) != null
+
     override fun performAction(agent: Agent): Agent {
-        deployOne(agent)
+        // One thing per action: a resonator if one fits, else a mod into a free slot.
+        if (!deployOneReso(agent)) deployOneMod(agent)
         return agent
     }
 
-    // One resonator per action — agents fill a portal slot-by-slot (each placement dings + animates).
-    private fun deployOne(agent: Agent) {
+    // Deploy the single best resonator (highest level, empty slots first); false if none fits.
+    private fun deployOneReso(agent: Agent): Boolean {
         val ownedInPortal = ownedInPortal(agent)
         val target = inventoryResos(agent.inventory).firstNotNullOfOrNull { reso ->
             // highest level first
             deployTargetFor(agent, ownedInPortal, reso)?.let { reso to it }
-        }
-        if (target == null) {
+        } ?: return false
+        actuallyDeployOne(agent, target.second, target.first)
+        return true
+    }
+
+    private fun deployOneMod(agent: Agent) {
+        val mod = deployableMod(agent)
+        if (mod == null || !canDeployMod(agent)) {
             console.warn("Deployment failed..")
-        } else {
-            actuallyDeployOne(agent, target.second, target.first)
+            return
         }
+        val portal = agent.actionPortal
+        portal.deployMod(agent, mod)
+        SoundUtil.playModDeploySound(portal.location, mod.getLevel().coerceAtLeast(1))
+        agent.action.start(ActionItem.DEPLOY)
     }
 
     // The octant a resonator should fill (empty slots first), or null if it can't be deployed here.

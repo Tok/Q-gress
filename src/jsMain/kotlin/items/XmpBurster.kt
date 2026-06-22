@@ -20,8 +20,9 @@ data class XmpBurster(val owner: Agent, val level: XmpLevel) : DeployableItem {
             val distanceRatio = max(0.0, min(1.0, 1.0 - (fixedDist / level.rangeM)))
             val isCloseEnough = distanceRatio < (Constants.phi - 1)
             val isCritical = isCloseEnough && Util.random() <= CRIT_RATE
-            val damageValue: Int = (calcBaseDamage(isCritical) * distanceRatio * GLOBAL_DAMAGE_MULTIPLIER).toInt()
-            reso.takeDamage(agent, damageValue)
+            val raw: Int = (calcBaseDamage(isCritical) * distanceRatio * GLOBAL_DAMAGE_MULTIPLIER).toInt()
+            val mitigation = reso.portal?.totalMitigation() ?: 0 // shields + links reduce incoming damage
+            reso.takeDamage(agent, raw * (100 - mitigation) / 100)
         }
     }
 

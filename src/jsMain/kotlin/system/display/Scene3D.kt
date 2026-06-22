@@ -10,6 +10,9 @@ import config.Sim
 import external.GLTFLoader
 import external.MapLibre
 import external.Three
+import items.deployable.Mod
+import items.deployable.ModType
+import items.deployable.Shield
 import items.level.LevelColor
 import kotlinx.browser.document
 import org.w3c.dom.HTMLCanvasElement
@@ -88,6 +91,16 @@ object Scene3D {
     private const val RESO_COLLAR_FRAC = 0.78 // collar height as a fraction of the pole height
     private const val RESO_ROD_LEN_FRAC = 0.22 // rod length as a fraction of the pole height
     private const val NEUTRAL_COLOR = "#bbbbbb"
+    private const val MOD_R_FRAC = 0.16 // chrome mod radius (× orb radius)
+    private const val MOD_RING_FRAC = 0.42 // tetrahedron vertex distance from orb centre (× orb radius)
+
+    // Unit regular-tetrahedron vertices (magnitude √3); the 4 mod slots sit at these inside the orb.
+    private val TETRA = arrayOf(
+        doubleArrayOf(1.0, 1.0, 1.0),
+        doubleArrayOf(1.0, -1.0, -1.0),
+        doubleArrayOf(-1.0, 1.0, -1.0),
+        doubleArrayOf(-1.0, -1.0, 1.0),
+    )
     private const val HIGHLIGHT_COLOR = "#f0f0f0" // selection: off-tint grayscale (no new hues)
     private const val OVERLAY_Z = 0.2 // passability quad just above ground
     private const val MARKER_R = 10.0 // build-preview marker radius (metres)
@@ -149,6 +162,10 @@ object Scene3D {
     private val xmGeo: dynamic by lazy { Three.SphereGeometry(XM_R, 8, 8) } // stray-XM mote
     private val poleGeo: dynamic by lazy { Three.CylinderGeometry(POLE_R, POLE_R, POLE_H, 12) } // metal pole
     private val topGeo: dynamic by lazy { Three.SphereGeometry(TOP_R, 20, 16) } // glass orb (scaled per level)
+    private val dodecaGeo: dynamic by lazy { Three.DodecahedronGeometry(TOP_R * MOD_R_FRAC) } // shield mod
+    private val pentaGeo: dynamic by lazy { Three.CylinderGeometry(TOP_R * MOD_R_FRAC, TOP_R * MOD_R_FRAC, TOP_R * MOD_R_FRAC * 0.55, 5) } // heat-sink radiator
+    private val cubeGeo: dynamic by lazy { Three.BoxGeometry(TOP_R * MOD_R_FRAC * 1.1, TOP_R * MOD_R_FRAC * 1.1, TOP_R * MOD_R_FRAC * 1.1) } // link amp
+    private val shieldGeo: dynamic by lazy { Three.SphereGeometry(TOP_R * PHI, 24, 18) } // shield bubble at φ× the orb
     private val gasketGeo: dynamic by lazy { Three.TorusGeometry(POLE_R * 1.15, POLE_R * 0.4, 10, 20) } // rubber donut
     private val linkGeo: dynamic by lazy { Three.CylinderGeometry(LINK_R, LINK_R, 1.0, 8) } // unit glass tube (scaled to length)
     private val coreGeo: dynamic by lazy { Three.CylinderGeometry(LINK_R * CORE_R_FRAC, LINK_R * CORE_R_FRAC, 1.0, 6) } // bright filament inside the tube
@@ -327,6 +344,34 @@ object Scene3D {
         }
     }
 
+    /** Drop a single resonator rod from its slot — used as each reso is destroyed during an attack. */
+    fun dropResonator(location: Pos, level: Int, octantIndex: Int, resoLevel: Int) {
+        val poleH = poleHeight(level.toDouble())
+        val rodLen = poleH * RESO_ROD_LEN_FRAC
+        val ringR = POLE_R * RESO_RADIUS_FRAC
+        val ang = octantIndex * PI / 4.0
+        ShatterFx.spawnFallingRod(
+            resoRodGeo,
+            sceneX(location) + ringR * cos(ang),
+            sceneY(location) + ringR * sin(ang),
+            poleH * RESO_COLLAR_FRAC + rodLen / 2.0,
+            RESO_ROD_R,
+            rodLen,
+            LevelColor.map[resoLevel] ?: "#ffffff",
+        )
+    }
+
+    /** Drop the deployed mods out of the orb when a portal is neutralized / removed. */
+    fun dropMods(location: Pos, level: Int, mods: List<Mod>) {
+        if (mods.isEmpty()) return
+        val lv = level.toDouble()
+        val s = orbScale(lv)
+        val half = TOP_R * MOD_R_FRAC * s
+        mods.forEach { mod ->
+            ShatterFx.spawnFallingChunk(modGeoFor(mod.modType()), sceneX(location), sceneY(location), orbCenterZ(lv), s, half, mod.rarity.color)
+        }
+    }
+
     /**
      * Fire an XMP detonation at a location, scaled by burster [level] (1..8). See [XmpBurst].
      * [sound] = false when the caller already plays the attack sound (the game's Queues path).
@@ -452,6 +497,7 @@ object Scene3D {
         // buildPortal derives that from id == selected.
         val parts = buildPortal(portalsGroup, portal.location, level, baseColor, id, resos)
         addPortalLabel(portal, level)
+        buildMods(parts[0], portal) // chrome mods + shield bubble inside/around the orb (if shielded)
         HackFx.bind(id, parts[3]) // spin the collar if this portal is being hacked
         // Build-in: the pole rises and the orb grows from the ground; [reform] re-pops the orb only.
         val g = Spawns.appear(id, PORTAL_GROW_S)
@@ -550,6 +596,34 @@ object Scene3D {
         group.asDynamic().position.set(x, y, poleH * RESO_COLLAR_FRAC)
         parent.add(group)
         return group
+    }
+
+    /**
+     * Deployed shields: chrome mods in a tetrahedron inside the orb + a sci-fi shield bubble at φ× the
+     * orb radius. Added as children of the [orb] so they inherit its per-level scale + grow-in tween.
+     */
+    private fun buildMods(orb: dynamic, portal: Portal) {
+        val mods = portal.mods.values.toList()
+        if (mods.isEmpty()) return
+        val r = TOP_R * MOD_RING_FRAC / sqrt(3.0) // normalize the √3-magnitude tetra verts to the ring radius
+        mods.forEachIndexed { i, mod ->
+            val v = TETRA[i % TETRA.size]
+            val mesh = Three.Mesh(modGeoFor(mod.modType()), Materials.resonator(mod.rarity.color))
+            mesh.asDynamic().position.set(v[0] * r, v[1] * r, v[2] * r)
+            if (mod.modType() == ModType.LINK_AMP) mesh.asDynamic().rotation.set(0.62, 0.62, 0.0) // cube on its diagonal
+            orb.asDynamic().add(mesh)
+        }
+        if (mods.any { it is Shield }) { // the energy bubble reads "shielded"
+            val color = portal.owner?.faction?.color ?: NEUTRAL_COLOR
+            val bubble = Three.Mesh(shieldGeo, ShieldShader.material(color, portal.totalMitigation() / 100.0))
+            orb.asDynamic().add(bubble)
+        }
+    }
+
+    private fun modGeoFor(type: ModType): dynamic = when (type) {
+        ModType.SHIELD -> dodecaGeo
+        ModType.HEAT_SINK -> pentaGeo
+        ModType.LINK_AMP -> cubeGeo
     }
 
     /** Rise the pole + grow the orb from the ground for the build-in animation ([g] = 0→1). */
