@@ -20,6 +20,11 @@ object PortalNames {
     private const val POI_RADIUS = 90.0 // sim px: how close a POI must be to lend its name
     private const val STREET_RADIUS = 140.0
 
+    // The loaded tiles carry thousands of named features; we only ever name a few hundred portals, so
+    // keep just the nearest-to-centre ones (the rest are off-screen anyway). Caps the per-portal scan too.
+    private const val POI_LIMIT = 150
+    private const val STREET_LIMIT = 80
+
     private val rawPois = mutableListOf<Triple<Double, Double, String>>() // lng, lat, name
     private val rawStreets = mutableListOf<Triple<Double, Double, String>>()
     private var pois: List<Pair<Pos, String>>? = null // projected lazily
@@ -33,12 +38,15 @@ object PortalNames {
         pois = null
         streets = null
         try { // never let a query hiccup break world init — just fall back to the generator
-            collect(shadowMap, "poi", rawPois)
-            collect(shadowMap, "transportation_name", rawStreets)
+            val center = shadowMap.getCenter()
+            val cx = center.lng as Double
+            val cy = center.lat as Double
+            collect(shadowMap, "poi", rawPois, cx, cy, POI_LIMIT)
+            collect(shadowMap, "transportation_name", rawStreets, cx, cy, STREET_LIMIT)
         } catch (e: Throwable) {
             console.log("PortalNames: query failed ($e)")
         }
-        console.log("PortalNames: ${rawPois.size} POIs, ${rawStreets.size} streets from map data")
+        console.log("PortalNames: ${rawPois.size} POIs, ${rawStreets.size} streets (nearest to centre) from map data")
     }
 
     /** The name for a portal at [location], or null if nothing named is near enough. */
@@ -57,22 +65,33 @@ object PortalNames {
         null // Scene3D not anchored yet → fall back to the generator (and retry on the next portal)
     }
 
-    private fun collect(map: MapLibre.Map, sourceLayer: String, out: MutableList<Triple<Double, Double, String>>) {
+    private fun collect(
+        map: MapLibre.Map,
+        sourceLayer: String,
+        out: MutableList<Triple<Double, Double, String>>,
+        cx: Double,
+        cy: Double,
+        limit: Int,
+    ) {
         val params: dynamic = js("({})")
         params.sourceLayer = sourceLayer
         val feats = map.querySourceFeatures("openmaptiles", params) ?: return
         val n = feats.length.unsafeCast<Int>()
         var i = 0
         val seen = mutableSetOf<String>()
+        val all = mutableListOf<Triple<Double, Double, String>>()
         while (i < n) {
             val f = feats[i]
             i++
             val name = featureName(f)
             val ll = if (name != null) featureLngLat(f) else null
             if (name != null && ll != null && seen.add(name)) {
-                out.add(Triple(ll[0], ll[1], name)) // dedup repeats across tiles
+                all.add(Triple(ll[0], ll[1], name)) // dedup repeats across tiles
             }
         }
+        // Keep only the nearest-to-centre features (lng/lat squared distance — fine over one play area).
+        all.sortBy { (lng, lat, _) -> (lng - cx) * (lng - cx) + (lat - cy) * (lat - cy) }
+        out.addAll(all.take(limit))
     }
 
     private fun featureName(f: dynamic): String? {
