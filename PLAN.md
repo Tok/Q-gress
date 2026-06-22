@@ -14,15 +14,23 @@ can play any side; any two brains can be matched. **Desktop-only**; mobile is bl
 the AI layer lands, the slider sim is the substrate we keep hardening.
 
 ## Near-term queue
-- [ ] **CRITICAL — non-blocking portal creation.** `Portal.create` runs `PathUtil.generateHeatMap`
-  (full-grid BFS wavefront) + `calculateVectorField` (full-grid map + recursive smooth) **synchronously**
-  → each new portal freezes the single JS thread ~1s (stutters gameplay; serializes world-gen).
-  **Plan (recommended): cooperative coroutine yielding** — add `kotlinx-coroutines-core`; make the
-  heat-map/vector calc `suspend` and `yield()` every N wavefront layers / smoothing chunks so the event
-  loop renders between chunks; `Portal.create` becomes suspend (or returns a portal whose field fills
-  in async) and callers (`createPortals`, `Explorer`) launch it. Agents must tolerate a not-yet-ready
-  field (fallback heading) for the frames until it lands. _Alternative: a Web Worker_ (true parallelism
-  but needs grid serialization + a worker build) — heavier; revisit if yielding isn't enough.
+- [ ] **CRITICAL — non-blocking portal creation (coroutine yielding; design verified, ready to build).**
+  `PathUtil.generateHeatMap` (full-grid BFS) + `calculateVectorField` (full-grid map + recursive smooth)
+  run **synchronously** → each new field freezes the single JS thread ~1s. **`kotlinx-coroutines-core`
+  1.10.1 added + verified to compile on Kotlin 2.4.** Implementation:
+  - Make both `suspend`; `delay(0)` (NOT `yield()` — delay→setTimeout→macrotask lets the browser
+    render) every wavefront layer (heat map) and every ~2000 cells + between smooth passes (field).
+  - `PathUtil.computeFieldAsync(location) { field -> … }` launches on a `MainScope()` and calls back.
+  - **Two call sites**, both → return-empty-now + async-fill:
+    - `Portal.create`: build with empty vectors (`Portal.vectors` `val`→`var`; `heatMap` is never read
+      externally — pass `emptyMap()`), then `computeFieldAsync { portal.vectors = it }`.
+    - `NonFaction.getOrCreateVectorField` (a `fields[destination]` cache): on miss, launch once (dedupe
+      via a `pending` set), return `emptyMap()` now, fill the cache in the callback.
+  - **Gotcha:** `Agent.kt:125` already falls back to `Complex.ZERO`, BUT a NonFaction that snapshots an
+    empty field gets ZERO force → never reaches its destination → never re-targets → **stuck**. Fix:
+    when an agent's field cell is empty, fall back to a **straight-line heading toward the destination**
+    (not ZERO) so it keeps moving + eventually re-fetches the now-ready field. Test agent motion live.
+  _Alternative: a Web Worker_ (true parallelism, but needs grid serialization + a worker build)._
 - [x] **Ship to GitHub** — done (live at `tok.github.io/Q-gress/`; 2D at `/2D/`; CI deploys `main`).
 
 ## 3D / rendering

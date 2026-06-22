@@ -130,6 +130,8 @@ kotlin {
             dependencies {
                 // kotlin.browser.* / kotlin.dom.* moved here after Kotlin 1.4
                 implementation("org.jetbrains.kotlinx:kotlinx-browser:0.5.0")
+                // Cooperative async for the heat-map / vector-field calc (non-blocking portal creation).
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.1")
                 // three.js is bundled via webpack (was a UMD CDN <script>); npm/ESM unlocks GLTFLoader.
                 implementation(npm("three", "0.160.0"))
                 // cannon-es: rigid-body physics for the glass shards (tumble + settle).
