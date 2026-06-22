@@ -6,6 +6,7 @@ import util.Util
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
+import kotlin.math.sqrt
 
 /**
  * The physics shatter: glass shards (cannon-es rigid bodies reusing the flask GLB), the falling
@@ -25,6 +26,31 @@ object ShatterFx {
     private const val GRAVITY = 20.0 // ~2× real g — shards drop with weight
     private const val POLE_SINK_S = 1.4 // seconds for the metal pole to sink away
     private const val POLE_R = 2.0 // for the gasket collider box
+
+    private const val BLAST_WINDOW = 0.6 // s after a blast that shatter pieces still get pushed away
+    private const val BLAST_SPEED = 18.0 // m/s outward push (energy comes from the XMP's direction)
+    private var blastX = 0.0
+    private var blastY = 0.0
+    private var blastTime = -1.0
+
+    /** Record an XMP detonation at scene-metre [x], [y]; nearby shatter pieces spawned next fly away from it. */
+    fun recordBlast(x: Double, y: Double) {
+        blastX = x
+        blastY = y
+        blastTime = now()
+    }
+
+    /** Outward velocity (vx, vy, vz) pushing a piece at [x], [y] away from a recent blast (else zero). */
+    private fun blastPush(x: Double, y: Double): DoubleArray {
+        if (blastTime < 0.0 || (now() - blastTime) / 1000.0 > BLAST_WINDOW) return doubleArrayOf(0.0, 0.0, 0.0)
+        val dx = x - blastX
+        val dy = y - blastY
+        val d = sqrt(dx * dx + dy * dy)
+        if (d < 0.001) return doubleArrayOf(0.0, 0.0, 0.0)
+        return doubleArrayOf(dx / d * BLAST_SPEED, dy / d * BLAST_SPEED, BLAST_SPEED * 0.45) // away + a bit up
+    }
+
+    private fun now() = js("performance.now()") as Double
 
     private var world: Cannon.World? = null
     private var group: dynamic = null // shards + sinking poles (not cleared by sync)
@@ -129,7 +155,7 @@ object ShatterFx {
         opts.linearDamping = 0.05
         opts.angularDamping = 0.3
         val body = Cannon.Body(opts)
-        body.asDynamic().velocity.set((Util.random() - 0.5) * 3.0, (Util.random() - 0.5) * 3.0, -1.0)
+        body.asDynamic().velocity.set((Util.random() - 0.5) * 3.0 + blastPush(x, y)[0], (Util.random() - 0.5) * 3.0 + blastPush(x, y)[1], -1.0 + blastPush(x, y)[2])
         body.asDynamic().angularVelocity.set(randSpin() * 0.4, randSpin() * 0.4, randSpin() * 0.4)
         world.addBody(body)
         group.add(mesh)
@@ -167,7 +193,7 @@ object ShatterFx {
         opts.collisionFilterMask = SHARD_MASK
         val body = Cannon.Body(opts)
         body.asDynamic().quaternion.setFromEuler(PI / 2, 0.0, 0.0) // upright like in the slot
-        body.asDynamic().velocity.set((Util.random() - 0.5) * 4.0, (Util.random() - 0.5) * 4.0, Util.random() * 2.0)
+        body.asDynamic().velocity.set((Util.random() - 0.5) * 4.0 + blastPush(x, y)[0], (Util.random() - 0.5) * 4.0 + blastPush(x, y)[1], Util.random() * 2.0 + blastPush(x, y)[2])
         body.asDynamic().angularVelocity.set(randSpin(), randSpin(), randSpin())
         w.addBody(body)
         group.add(mesh)
@@ -204,7 +230,7 @@ object ShatterFx {
         opts.collisionFilterGroup = SHARD_GROUP
         opts.collisionFilterMask = SHARD_MASK
         val body = Cannon.Body(opts)
-        body.asDynamic().velocity.set((Util.random() - 0.5) * 4.0, (Util.random() - 0.5) * 4.0, Util.random() * 2.0)
+        body.asDynamic().velocity.set((Util.random() - 0.5) * 4.0 + blastPush(x, y)[0], (Util.random() - 0.5) * 4.0 + blastPush(x, y)[1], Util.random() * 2.0 + blastPush(x, y)[2])
         body.asDynamic().angularVelocity.set(randSpin(), randSpin(), randSpin())
         w.addBody(body)
         group.add(mesh)
@@ -238,7 +264,7 @@ object ShatterFx {
         val a = Util.random() * 2.0 * PI
         val r = 0.02 + Util.random() * 0.06 // almost no outward push
         val up = Util.random() * 0.08 // the faintest pop; gravity takes over
-        body.asDynamic().velocity.set(cos(a) * r, sin(a) * r, up)
+        body.asDynamic().velocity.set(cos(a) * r + blastPush(pos[0], pos[1])[0], sin(a) * r + blastPush(pos[0], pos[1])[1], up + blastPush(pos[0], pos[1])[2])
         body.asDynamic().angularVelocity.set(randSpin(), randSpin(), randSpin())
         world.addBody(body)
         group.add(mesh)

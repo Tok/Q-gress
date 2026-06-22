@@ -18,10 +18,10 @@ object Attacker : ConditionalAction {
         doAttack(agent, xmps)
         agent.inventory.consumeXmps(xmps)
         if (xmps.isNotEmpty()) {
-            xmps.forEach { it.dealDamage(agent) } // apply resonator damage (was the now-removed Queues path)
-            // 3D XMP burst at the AGENT's position (you detonate where you stand) — now with the full
-            // scaled boom + layered explosion (one per volley, at the largest XMP), not the old blips.
+            // Detonate FIRST (records the blast origin) so the resonators/mods it destroys fly away from
+            // it, then apply the damage that shatters them.
             Scene3D.playXmpBurst(agent.pos, xmps.maxOf { it.level.level }, sound = true)
+            xmps.forEach { it.dealDamage(agent) } // apply resonator damage (was the now-removed Queues path)
         }
         val isDoItAgain = xmps.isNotEmpty() && Util.random() <= 1 / Constants.phi
         return if (isDoItAgain) performAction(agent) else agent

@@ -429,6 +429,7 @@ object Scene3D {
     fun playXmpBurst(location: Pos, level: Int, sound: Boolean = true) {
         scene ?: return
         XmpBurst.play(sceneX(location), sceneY(location), groundZ(location), level) // sit on the terrain
+        ShatterFx.recordBlast(sceneX(location), sceneY(location)) // shatter pieces fly away from here
         if (sound) SoundUtil.playXmpSound(location, level)
     }
 
