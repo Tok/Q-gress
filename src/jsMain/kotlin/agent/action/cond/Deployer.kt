@@ -65,7 +65,8 @@ object Deployer : ConditionalAction {
         }
         val portal = agent.actionPortal
         portal.deployMod(agent, mod)
-        SoundUtil.playModDeploySound(portal.location, mod.getLevel().coerceAtLeast(1))
+        val lvl = mod.getLevel().coerceAtLeast(1)
+        if (mod is Shield) SoundUtil.playShieldDeploySound(portal.location, lvl) else SoundUtil.playModDeploySound(portal.location, lvl)
         agent.action.start(ActionItem.DEPLOY)
     }
 

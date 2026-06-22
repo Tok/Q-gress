@@ -502,6 +502,31 @@ object SoundUtil {
         connectVoice(osc, createPanner(pos), gainNode, n + dur)
     }
 
+    /** A bright shimmering "shing" as a shield powers up on the portal. */
+    fun playShieldDeploySound(pos: Pos, level: Int) {
+        if (isMuted()) return
+        val base = noteFor(level, octaveUp = 3)
+        val osc = createLinearRampOscillator(OscillatorType.TRIANGLE, base, base * 1.5, 0.35) // rises into place
+        val gainNode = audioCtx.createGain()
+        val n = now()
+        gainNode.gain.setValueAtTime(EPS, n)
+        gainNode.gain.exponentialRampToValueAtTime(0.13, n + 0.02)
+        gainNode.gain.exponentialRampToValueAtTime(EPS, n + 0.4) // gentle ring-out
+        connectVoice(osc, createPanner(pos), gainNode, n + 0.4)
+    }
+
+    /** A descending "power-down" as a shield collapses / is stripped off. */
+    fun playShieldRemoveSound(pos: Pos, level: Int) {
+        if (isMuted()) return
+        val base = noteFor(level, octaveUp = 3)
+        val osc = createLinearRampOscillator(OscillatorType.TRIANGLE, base * 1.5, base * 0.5, 0.35) // falls away
+        val gainNode = audioCtx.createGain()
+        val n = now()
+        gainNode.gain.setValueAtTime(0.12, n)
+        gainNode.gain.exponentialRampToValueAtTime(EPS, n + 0.35)
+        connectVoice(osc, createPanner(pos), gainNode, n + 0.35)
+    }
+
     /** A glitchy faction-pitched sweep when a virus (ADA / JARVIS) flips a portal. */
     fun playVirusSound(pos: Pos, faction: Faction) {
         if (isMuted()) return

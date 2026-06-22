@@ -134,10 +134,12 @@ data class Portal(
 
     /** Virus flip (ADA / JARVIS): take the portal for [agent]'s faction — reassign resonators, drop mods. */
     fun refactor(agent: Agent) {
+        val strippedShield = mods.values.filterIsInstance<Shield>().firstOrNull()
         owner = agent
         slots.values.filter { it.resonator != null }.forEach { it.owner = agent }
         mods.clear()
         agent.addAp(VIRUS_AP)
+        if (strippedShield != null && HtmlUtil.isRunningInBrowser()) SoundUtil.playShieldRemoveSound(location, strippedShield.getLevel())
         Com.addMessage("$agent refactored $this to ${agent.faction}.")
     }
 
@@ -458,6 +460,7 @@ data class Portal(
         mods.clear()
         if (droppedMods.isNotEmpty() && HtmlUtil.isRunningInBrowser()) {
             Scene3D.dropMods(location, lvl, droppedMods) // mods tumble out when the portal goes down
+            droppedMods.filterIsInstance<Shield>().firstOrNull()?.let { SoundUtil.playShieldRemoveSound(location, it.getLevel()) }
         }
         destroyAllLinksAndFields(destroyer)
         World.allAgents.forEach { agent ->
