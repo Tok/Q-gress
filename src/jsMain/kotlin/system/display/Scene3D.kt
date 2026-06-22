@@ -254,7 +254,7 @@ object Scene3D {
         clear(indicatorsGroup)
         World.allAgents.forEach { addAgent(it) }
         teardownGone(Spawns.endSync())
-        VectorFieldOverlay.sync(selected) // the selected portal's flow-field debug arrows
+        VectorFieldOverlay.sync() // flow-field arrows flash briefly on each new portal
     }
 
     // Mark the playable area: a white outline plus a dark mask greying out everything beyond it.

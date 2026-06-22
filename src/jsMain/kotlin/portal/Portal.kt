@@ -20,6 +20,7 @@ import items.types.ShieldType
 import items.types.VirusType
 import system.Com
 import system.display.Scene3D
+import system.display.VectorFieldOverlay
 import util.*
 import util.data.Line
 import util.data.Pos
@@ -493,7 +494,7 @@ data class Portal(
             } else {
                 mutableMapOf<Pos, Int>() to mutableMapOf()
             }
-            return Portal(
+            val portal = Portal(
                 PortalNames.nameFor(location) ?: Util.generatePortalName(),
                 location,
                 heatMap,
@@ -503,6 +504,8 @@ data class Portal(
                 mutableSetOf(),
                 null,
             )
+            if (HtmlUtil.isRunningInBrowser()) VectorFieldOverlay.flash("portal:${portal.id}")
+            return portal
         }
 
         private const val SPREAD_CANDIDATES = 8

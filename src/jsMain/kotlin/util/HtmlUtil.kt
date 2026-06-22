@@ -23,7 +23,6 @@ import portal.XmMap
 import system.Cycle
 import system.display.PassabilityOverlay
 import system.display.Scene3D
-import system.display.VectorFieldOverlay
 import util.data.GeoCoords
 import util.data.Line
 import util.data.Pos
@@ -551,9 +550,8 @@ object HtmlUtil {
         LoadingOverlay.stage(LoadingOverlay.PCT_WORLD, "Building world…")
         createAgentsAndPortals {
             LoadingOverlay.detail("Ready.")
-            // Clear the during-build vector preview so the game starts with nothing selected.
+            // Start the game with nothing selected (the vector field flashes itself on new portals).
             Scene3D.selected = null
-            VectorFieldOverlay.setVisible(false)
             if (World.userFaction == null) {
                 chooseUserFaction(Faction.random())
             }
@@ -592,9 +590,9 @@ object HtmlUtil {
         menu.append(createButton("menuNewGame", "menuItem amarillo", "New Game") { doNewGame() })
         menu.append(createButton("menuReset", "menuItem amarillo", "Reset") { doReset() })
         menu.append(createButton("menuShare", "menuItem amarillo", "Copy link") { copyShareLink() })
-        // Overlay toggles live in the menu now (no longer always-visible in the top bar).
+        // Overlay toggle lives in the menu now (no longer always-visible in the top bar). Vectors are
+        // no longer toggled — they flash automatically for ~a second when a portal is created.
         menu.append(createMenuCheckbox("passabilityToggle", "Terrain") { PassabilityOverlay.setVisible(it) })
-        menu.append(createMenuCheckbox("vectorFieldToggle", "Vectors") { VectorFieldOverlay.setVisible(it) })
         // Fade the 3D buildings when crowded areas hide the action.
         menu.append(createMenuSlider("Buildings", 0.9) { MapUtil.setBuildingOpacity(it) })
         // Build version footer (timestamp + git-sha), so any deployed build is identifiable.

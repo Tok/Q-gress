@@ -6,18 +6,22 @@ import kotlin.math.PI
 import kotlin.math.atan2
 
 /**
- * Debug overlay: the selected portal's flow-field arrows — cones coloured by flow direction (hue),
- * subsampled. Split out of [Scene3D] (size limit). Rebuilt only when the selection or visibility
- * changes (the field is static per portal). [register] once, [setVisible] to toggle, [sync] each tick.
+ * The flow-field arrows for the **newest** portal — cones coloured by flow direction (hue),
+ * subsampled. No toggle: a portal calls [flash] when it's created and the field shows for ~a second
+ * (during gameplay) or until the next portal flashes (during world generation, when they chain).
+ * Split out of [Scene3D] (size limit). [register] once, [flash] on portal creation, [sync] each tick.
  */
 object VectorFieldOverlay {
     private const val STRIDE = 2 // subsample the flow field every Nth cell
     private const val CONE_R = 1.1
     private const val CONE_H = 3.6
     private const val Z = 0.2 // just above the ground
+    private const val FLASH_MS = 1200.0 // how long a new portal's field stays up
+    private const val FADE_MS = 450.0 // fade the arrows out over the final stretch (smooth, not abrupt)
 
     private var group: dynamic = null
-    private var visible = false
+    private var flashedId: String? = null
+    private var flashEnd = 0.0
     private var builtKey: String? = null
     private val coneGeo: dynamic by lazy { Three.ConeGeometry(CONE_R, CONE_H, 6) }
     private val matCache = mutableMapOf<String, dynamic>()
@@ -26,25 +30,32 @@ object VectorFieldOverlay {
         group = Three.Group().also { scene.add(it) }
     }
 
-    fun setVisible(show: Boolean) {
-        visible = show
+    /** Briefly show [portalId]'s flow field (auto-hides after ~a second; replaced by the next portal). */
+    fun flash(portalId: String) {
+        flashedId = portalId
+        flashEnd = now() + FLASH_MS
     }
 
-    /** Rebuild the arrows only when the [selected] entity or visibility changed. */
-    fun sync(selected: String?) {
+    /** Rebuild on a new portal, fade out over the final stretch, then clear once the flash expires. */
+    fun sync() {
         val g = group ?: return
-        when {
-            visible && selected != builtKey -> {
+        val id = flashedId
+        val remaining = flashEnd - now()
+        if (id != null && remaining > 0.0) {
+            if (id != builtKey) {
                 g.clear()
-                build(g, selected)
-                builtKey = selected
+                build(g, id)
+                builtKey = id
             }
-            !visible && builtKey != null -> {
-                g.clear()
-                builtKey = null
-            }
+            val alpha = (remaining / FADE_MS).coerceIn(0.0, 1.0)
+            matCache.values.forEach { it.opacity = alpha } // only the current field's cones are mounted
+        } else if (builtKey != null) {
+            g.clear()
+            builtKey = null
         }
     }
+
+    private fun now() = js("performance.now()") as Double
 
     private fun build(g: dynamic, selected: String?) {
         val id = selected ?: return
@@ -71,6 +82,7 @@ object VectorFieldOverlay {
         return matCache.getOrPut("v$bucket") {
             val p: dynamic = js("({})")
             p.color = "hsl(${bucket * 15}, 90%, 55%)"
+            p.transparent = true // so the field can fade out
             Three.MeshBasicMaterial(p)
         }
     }

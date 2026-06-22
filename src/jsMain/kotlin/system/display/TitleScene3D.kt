@@ -66,7 +66,7 @@ object TitleScene3D {
     private class Portal(
         val group: dynamic,
         val orb: dynamic,
-        val orbMat: dynamic,
+        var orbMat: dynamic, // swapped to a new faction glass on capture
         val pole: dynamic,
         val resoGroup: dynamic,
         val pos: DoubleArray, // base (x, y, z) on the stage
@@ -93,7 +93,6 @@ object TitleScene3D {
     private var poleGeo: dynamic = null
     private var orbGeo: dynamic = null
     private var rodGeo: dynamic = null
-    private var metalMat: dynamic = null
 
     private var running = false
     private var lastMs = 0.0
@@ -146,7 +145,6 @@ object TitleScene3D {
             poleGeo = Three.CylinderGeometry(POLE_R, POLE_R, 1.0, 10) // unit-tall, scaled per level
             orbGeo = Three.SphereGeometry(ORB_R, 18, 14)
             rodGeo = Three.CylinderGeometry(RESO_ROD_R, RESO_ROD_R, 1.0, 6)
-            metalMat = standardMat("#9a9a9a", "#000000", 0.85, 0.45)
             buildPortals()
             // neutral listener so the (3D-panned) game sounds we reuse pan by portal x and stay audible
             SoundUtil.updateListener(doubleArrayOf(0.0, 0.0, 0.0), doubleArrayOf(0.0, 0.0, -1.0), doubleArrayOf(0.0, 1.0, 0.0))
@@ -191,8 +189,8 @@ object TitleScene3D {
                 val group = Three.Group()
                 group.asDynamic().position.set(pos[0], pos[1], pos[2])
 
-                val pole = Three.Mesh(poleGeo, metalMat)
-                val orbMat = standardMat(color, color, 0.25, 0.3, 0.95) // strong emissive so every orb glows
+                val pole = Three.Mesh(poleGeo, Materials.metal()) // chrome + envMap (visible without scene lights)
+                val orbMat = Materials.glass(color) // the game's GlassShader — real glass, not plastic
                 val orb = Three.Mesh(orbGeo, orbMat)
                 val resoGroup = Three.Group()
                 group.asDynamic().add(pole)
@@ -224,7 +222,7 @@ object TitleScene3D {
         val poleH = POLE_H1 + (p.level - 1.0) * POLE_PER_LEVEL
         p.pole.asDynamic().scale.set(1.0, poleH, 1.0)
         p.pole.asDynamic().position.set(0.0, poleH / 2.0, 0.0)
-        val s = 0.6 + (p.level - 1.0) / 7.0 * 0.7
+        val s = (0.6 + (p.level - 1.0) / 7.0 * 0.7) * (1.0 + p.flash * 0.3) // flash = a brief scale pop
         p.orb.asDynamic().scale.set(s, s, s)
         p.orb.asDynamic().position.set(0.0, poleH + ORB_R * s, 0.0)
         rebuildResos(p, poleH)
@@ -236,7 +234,7 @@ object TitleScene3D {
         val rodLen = 1.4
         for (i in 0 until p.resos.coerceIn(0, 8)) {
             val ang = i * PI / 4.0
-            val rod = Three.Mesh(rodGeo, standardMat(p.color, p.color, 0.25, 0.4, 0.5))
+            val rod = Three.Mesh(rodGeo, Materials.resonator(p.color))
             rod.asDynamic().scale.set(1.0, rodLen, 1.0)
             rod.asDynamic().position.set(RESO_RING * cos(ang), poleH * 0.74, RESO_RING * sin(ang))
             g.asDynamic().add(rod)
@@ -275,7 +273,7 @@ object TitleScene3D {
             }
             if (p.flash > 0.0) {
                 p.flash = (p.flash - FLASH_DECAY * dt).coerceAtLeast(0.0)
-                p.orbMat.emissiveIntensity = 0.4 + p.flash * 2.4
+                dirty = true // the flash is a scale pop applied in applyPortal
             }
             if (dirty) applyPortal(p)
         }
@@ -310,9 +308,9 @@ object TitleScene3D {
             1 -> RES_COLOR
             else -> NEUTRAL_COLOR
         }
-        p.orbMat.color.set(p.color)
-        p.orbMat.emissive.set(p.color)
-        p.flash = 1.0 // emissive pop
+        p.orbMat = Materials.glass(p.color) // re-skin the orb to the new faction's glass
+        p.orb.asDynamic().material = p.orbMat
+        p.flash = 1.0 // scale pop
         applyPortal(p) // reso rods take the new colour
         SoundUtil.playGlassShatterSound(titlePos(p), 0.22) // the orb re-skins
         emitBolt(orbWorld(p), upFrom(p), p.color) // a discharge on capture
@@ -521,16 +519,6 @@ object TitleScene3D {
     }
 
     // --- three.js material helpers ---
-    private fun standardMat(color: String, emissive: String, rough: Double, metal: Double, emissiveIntensity: Double = 0.0): dynamic {
-        val p: dynamic = js("({})")
-        p.color = color
-        p.emissive = emissive
-        p.emissiveIntensity = emissiveIntensity
-        p.roughness = rough
-        p.metalness = metal
-        return Three.MeshStandardMaterial(p)
-    }
-
     private fun basicAdditive(color: String, opacity: Double): dynamic {
         val p: dynamic = js("({})")
         p.color = color
