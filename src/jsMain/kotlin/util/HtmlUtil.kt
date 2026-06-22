@@ -486,6 +486,7 @@ object HtmlUtil {
         // Registering first means portals actually adopt their real map names (else all fall back to
         // the random generator).
         MapUtil.enable3D()
+        MapUtil.startBuildCinematic() // gentle orbit while portals + people spawn
         LoadingOverlay.stage(LoadingOverlay.PCT_WORLD, "Building world…")
         createAgentsAndPortals {
             LoadingOverlay.detail("Ready.")
@@ -501,6 +502,7 @@ object HtmlUtil {
             Navigation.setup()
             MapUtil.bindInteractions(::onMapClick, ::onMapMove)
             LoadingOverlay.done()
+            MapUtil.stopBuildCinematicAndHome() // settle to the Home view (top-down over the play area)
             if (coloredMap) MapUtil.fadeInColor() else MapUtil.setColored(false) // colour eases in post-build
         }
     }

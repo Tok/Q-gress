@@ -219,6 +219,28 @@ object MapUtil {
         map?.asDynamic()?.flyTo(opts)
     }
 
+    private const val BUILD_SPIN_DEG = 0.12 // gentle bearing orbit during world build (~7°/s)
+    private var cinematicActive = false
+
+    /** A slow orbit around the play area while the world builds (close — portal placements stay visible). */
+    fun startBuildCinematic() {
+        if (cinematicActive) return
+        cinematicActive = true
+        window.requestAnimationFrame { spinBuild() }
+    }
+
+    private fun spinBuild() {
+        if (!cinematicActive) return
+        initMap?.let { it.setBearing(it.getBearing() + BUILD_SPIN_DEG) }
+        window.requestAnimationFrame { spinBuild() }
+    }
+
+    /** Stop the build orbit and settle to the Home view (top-down over the play area). */
+    fun stopBuildCinematicAndHome() {
+        cinematicActive = false
+        goHome()
+    }
+
     /** Register the 3D scene (three.js custom layer) on the base map, anchored at the grid view. */
     fun enable3D() {
         val targetMap = initMap ?: return
