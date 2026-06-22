@@ -103,6 +103,23 @@ the AI layer lands, the slider sim is the substrate we keep hardening.
   demo** (below). **Reference the `qlippostasis` project** for the thunderbolt visuals + sounds (the
   glass-shatter sound was already ported from there).
 
+## Grand game — multiple locations & a living field (planned, big)
+A core-gameplay direction beyond a single static arena:
+- [ ] **Movable / expandable play field.** The playable area can **grow** or **shift** over a game
+  (the circle/rect isn't fixed at onboarding) — captured territory or objectives push the boundary.
+  The grid + flow-field + border + overlays already key off `Sim.fieldRadius()` / `isInPlayArea`, so
+  the field is the natural seam to make dynamic (re-mask + re-sample on change).
+- [ ] **Multiple linked locations (a campaign / "grand game").** Q-Gress runs at **several real-world
+  locations at once**: **one focused sim** the player actually watches at full fidelity, plus the
+  **off-site locations simulated in a simplified/abstract form** (aggregate MU/portal counts, cheap
+  tick, no 3D) to keep cost bounded. Locations connect (shared roster, cross-site links/objectives).
+- [ ] **Roster management across sites.** The player maintains an **agent roster of ~16–32** spread
+  over the locations, allocating/moving them between the focused sim and the simplified off-sites —
+  a meta layer on top of the per-faction sliders. Ties into Phase 6 (the AI driver should reason at
+  both the local-tactical and the roster/strategic level).
+  - *Open questions:* what the simplified off-site model is (pure stats vs a coarse grid), how
+    travel/relocation between sites works (time/cost), and how cross-site links/fields score.
+
 ## Spectacular title / faction screen (planned)
 - [ ] The **CHOOSE YOUR FACTION** screen is the first thing a player sees — make it a showpiece:
   the big **Q-GRESS** wordmark (done), centred ENL/RES buttons (done), then a **randomized 3D physics
