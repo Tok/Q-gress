@@ -534,9 +534,13 @@ object Scene3D {
                 val px = i.toDouble() / (HEIGHT_N - 1) * Sim.width
                 val py = j.toDouble() / (HEIGHT_N - 1) * Sim.height
                 val ll = simPosToLngLat(Pos(px.toInt(), py.toInt()))
+                // Null past the DEM source maxzoom (z15) or before tiles load — keep the last good
+                // sample rather than zeroing it (which would sink objects to sea level on a re-sample).
                 val e = map.asDynamic().queryTerrainElevation(arrayOf(ll[0], ll[1])) as? Double
-                if (e != null) any = true
-                heights[j * HEIGHT_N + i] = e ?: 0.0
+                if (e != null) {
+                    any = true
+                    heights[j * HEIGHT_N + i] = e
+                }
             }
         }
         if (any) heightsReady = true
