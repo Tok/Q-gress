@@ -30,6 +30,7 @@ import kotlin.math.tanh
 object SoundUtil {
     const val DEFAULT_VOLUME = 1.0
     private const val EPS = 0.0001 // exponentialRamp can't target 0
+    private const val SHATTER_MIX = 0.8 // glass-shatter loudness vs the rest of the mix
 
     // Shared 8-note scale for the 8 portal/XMP levels — LEVEL 8 IS THE LOWEST note. A natural-minor
     // octave (C2 root); XMP, hack, glyph and the level-change sounds all pitch to it (octave-shifted as
@@ -132,9 +133,10 @@ object SoundUtil {
      */
     fun playGlassShatterSound(pos: Pos, heaviness: Double = 0.3, amplitude: Double = 0.7) {
         if (isMuted()) return
-        playNoiseCrack(pos, amplitude, heaviness)
-        playThud(pos, amplitude, heaviness)
-        repeat((9 + heaviness * 17).toInt()) { playTinkle(pos, amplitude) }
+        val amp = amplitude * SHATTER_MIX // dialed back to sit under the XMP explosion in the mix
+        playNoiseCrack(pos, amp, heaviness)
+        playThud(pos, amp, heaviness)
+        repeat((9 + heaviness * 17).toInt()) { playTinkle(pos, amp) }
     }
 
     /**
