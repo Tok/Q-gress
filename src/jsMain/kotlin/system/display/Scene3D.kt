@@ -238,6 +238,7 @@ object Scene3D {
         XmpBurst.register(newScene)
         FieldFx.register(newScene)
         ShatterFx.register(newScene)
+        BoltFx.register(newScene)
         XmFx.register(newScene)
         showcaseGroup = Three.Group()
         newScene.add(showcaseGroup)
@@ -275,6 +276,7 @@ object Scene3D {
         PlasmaShader.setTime(animClockMs / 1000.0) // animate control fields (on the scaled clock)
         if (hasActiveEffects()) {
             if (ShatterFx.hasActive()) ShatterFx.update(dt)
+            if (BoltFx.hasActive()) BoltFx.update(dt)
             if (showcasesAnimating()) updateShowcases(dt)
             if (HackFx.hasActive()) HackFx.update()
             if (DeployFx.hasActive()) DeployFx.update()
@@ -296,7 +298,7 @@ object Scene3D {
         map.triggerRepaint()
     }
 
-    private fun hasActiveEffects() = ShatterFx.hasActive() || showcasesAnimating() || HackFx.hasActive() || DeployFx.hasActive() || XmFx.hasActive() || XmpBurst.hasActive() || FieldFx.hasActive()
+    private fun hasActiveEffects() = ShatterFx.hasActive() || showcasesAnimating() || HackFx.hasActive() || DeployFx.hasActive() || XmFx.hasActive() || XmpBurst.hasActive() || FieldFx.hasActive() || BoltFx.hasActive()
 
     /** Rebuild the 3D objects from world state. Called once per simulation tick. */
     fun sync() {
@@ -424,6 +426,15 @@ object Scene3D {
             rodLen,
             LevelColor.map[resoLevel] ?: "#ffffff",
         )
+    }
+
+    /** Portal defense: a retaliation bolt arcs from the portal orb ([from]/[fromLevel]) to the attacker
+     *  ([to], at head height), coloured by the owning faction. */
+    fun fireBolt(from: Pos, fromLevel: Int, to: Pos, color: String) {
+        scene ?: return
+        val start = doubleArrayOf(sceneX(from), sceneY(from), groundZ(from) + orbCenterZ(fromLevel.coerceAtLeast(1).toDouble()))
+        val end = doubleArrayOf(sceneX(to), sceneY(to), groundZ(to) + HEAD_Z)
+        BoltFx.fire(start, end, color)
     }
 
     /** A collected stray-XM mote flies from [from] (the heap) to [to] (the agent) before vanishing. */

@@ -4,6 +4,7 @@ import World
 import agent.Agent
 import agent.action.ActionItem
 import config.DropRates
+import config.Sim
 import config.Time
 import extension.*
 import items.PowerCube
@@ -450,6 +451,19 @@ data class Portal(
         fields.clear()
     }
 
+    /** Portal defense: an ENEMY portal zaps the [agent] with a retaliation bolt + XM damage (friendly /
+     *  neutral portals do nothing). Higher level + shields zap harder. */
+    fun retaliate(agent: Agent) {
+        val defender = owner ?: return
+        if (defender.faction == agent.faction) return
+        val level = getLevel().value
+        agent.removeXm(ZAP_BASE_XM * level + ZAP_SHIELD_XM * totalMitigation())
+        if (HtmlUtil.isRunningInBrowser()) {
+            Scene3D.fireBolt(location, level, agent.pos, defender.faction.color)
+            SoundUtil.playThunderSound((agent.pos.x / Sim.width * 2.0 - 1.0).coerceIn(-1.0, 1.0))
+        }
+    }
+
     fun destroy(destroyer: Agent? = null) {
         val droppedMods = mods.values.toList()
         val lvl = getLevel().value
@@ -544,6 +558,8 @@ data class Portal(
 
         const val MAX_HACKS = 4 // TODO implement multihacks
         private const val MAX_MITIGATION = 95 // damage-reduction cap (Ingress rule)
+        private const val ZAP_BASE_XM = 15 // retaliation XM damage per portal level
+        private const val ZAP_SHIELD_XM = 1 // extra retaliation XM per point of mitigation (shields zap harder)
         private const val MOD_DEPLOY_AP = 125
         private const val MIN_COOLDOWN_FACTOR = 0.05 // heat sinks can't reduce cooldown below 5%
         private const val VIRUS_AP = 1000 // AP for flipping a portal with a virus

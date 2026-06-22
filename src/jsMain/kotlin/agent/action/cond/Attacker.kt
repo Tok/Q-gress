@@ -22,6 +22,7 @@ object Attacker : ConditionalAction {
             // it, then apply the damage that shatters them.
             Scene3D.playXmpBurst(agent.pos, xmps.maxOf { it.level.level }, sound = true)
             xmps.forEach { it.dealDamage(agent) } // apply resonator damage (was the now-removed Queues path)
+            agent.actionPortal.retaliate(agent) // the attacked portal zaps back (no-op on friendly/neutral)
         }
         val isDoItAgain = xmps.isNotEmpty() && Util.random() <= 1 / Constants.phi
         return if (isDoItAgain) performAction(agent) else agent

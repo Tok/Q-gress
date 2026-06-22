@@ -26,6 +26,7 @@ object Hacker : ConditionalAction {
                 Scene3D.rewardFx(agent.actionPortal.location, agent.actionPortal.getLevel().toInt(), agent.pos, newStuff.size)
             }
         }
+        agent.actionPortal.retaliate(agent) // an enemy portal zaps the intruder (no-op on friendly/neutral)
         return agent
     }
 }
