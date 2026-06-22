@@ -77,11 +77,9 @@ html, body {
 }
 /* Top-agents leaderboard table (UI Stage 3: canvas→DOM). */
 .topAgents {
-    pointer-events: none;
+    width: 100%;
+    box-sizing: border-box;
     color: #ffffff;
-    background: rgba(0, 0, 0, 0.45);
-    padding: 4px 8px;
-    border-radius: 3px;
 }
 .taTable {
     border-collapse: collapse;
@@ -131,16 +129,18 @@ html, body {
 .taInvBar {
     width: 2px;
 }
-/* HUD layout columns — group the panels instead of scattering them to the corners. All
-   display-only — never intercept map gestures. */
+/* HUD containers — fixed + click-through; only their children opt back into pointer events so the
+   map keeps its drag/zoom. Controls on the left, the intel column on the right, a scoreboard strip
+   centered up top, and a full-width tabbed footer at the bottom. */
 #hudLeft, #hudRight {
     position: fixed;
-    top: 108px; /* just below the top control bar */
+    top: 108px;
     z-index: 60;
     pointer-events: none;
     display: flex;
     flex-direction: column;
     gap: 10px;
+    max-height: calc(100vh - 230px);
 }
 #hudLeft {
     left: 14px;
@@ -150,50 +150,59 @@ html, body {
     right: 14px;
     align-items: flex-end;
 }
-#hudBottom {
+#hudTop {
     position: fixed;
-    bottom: 16px;
+    top: 52px; /* just below the top control bar */
     left: 50%;
     transform: translateX(-50%);
     z-index: 60;
     pointer-events: none;
+    display: flex;
+    justify-content: center;
 }
-.historyPanel, .statsComPanel {
-    font-family: "Coda", monospace;
-    color: #ffffff;
-    text-shadow: 0 0 3px #000, 0 0 3px #000;
-}
-/* Scoreboard — fixed-width grid, bottom-left. Tags / bars / values line up in columns; no reflow. */
-.scorePanel {
-    position: fixed;
-    left: 14px;
-    bottom: 16px;
-    z-index: 60;
-    width: 250px;
-    box-sizing: border-box;
-    padding: 8px 12px 9px;
+/* Player controls (the merged tuning list) — own glass frame now they live on the left. */
+.tuneList {
+    pointer-events: auto;
     background: rgba(0, 0, 0, 0.5);
-    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 5px;
+    padding: 8px 10px;
+}
+.historyPanel {
     font-family: "Coda", monospace;
     color: #ffffff;
     text-shadow: 0 0 3px #000, 0 0 3px #000;
-    pointer-events: none;
+}
+/* Scoreboard — a slim horizontal strip: ENL / RES bars + time / tick / stray-XM, side by side. */
+.scorePanel {
+    pointer-events: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 5px 14px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 5px;
+    font-family: "Coda", monospace;
+    font-variant-numeric: tabular-nums; /* equal-width digits — no jitter as values change */
+    color: #ffffff;
+    text-shadow: 0 0 3px #000, 0 0 3px #000;
 }
 .scoreRow {
     display: grid;
-    grid-template-columns: 40px 1fr 62px; /* tag | bar | value — both rows share these columns */
+    grid-template-columns: 34px 92px 58px; /* tag | bar | value */
     align-items: center;
-    column-gap: 9px;
-    height: 26px;
+    column-gap: 8px;
 }
 .scoreTag {
     font-family: "Chakra Petch", sans-serif;
     font-weight: 700;
-    font-size: 17px;
+    font-size: 16px;
     letter-spacing: 1px;
 }
 .scoreTrack {
-    height: 13px;
+    height: 12px;
     border: 1px solid rgba(255, 255, 255, 0.4);
     border-radius: 2px;
     overflow: hidden;
@@ -205,28 +214,99 @@ html, body {
     transition: width 0.3s;
 }
 .scoreValue {
-    font-size: 14px;
+    font-size: 13px;
     text-align: right;
     white-space: nowrap;
 }
 .scoreFooter {
     display: flex;
-    justify-content: space-between;
-    gap: 10px;
-    margin-top: 6px;
-    padding-top: 5px;
-    border-top: 1px solid rgba(255, 255, 255, 0.16);
+    gap: 12px;
+    padding-left: 14px;
+    border-left: 1px solid rgba(255, 255, 255, 0.16);
     font-size: 13px;
     color: #cdd5d0;
     white-space: nowrap;
 }
-
-/* Right-side history dashboard (HistoryPanel): per metric — live ENL/RES value + faction sparkline. */
-.historyPanel {
-    width: 228px;
-    background: rgba(0, 0, 0, 0.45);
-    padding: 6px 8px 4px;
+/* Fixed-width fields so the centered strip's overall width never changes as the values tick. */
+/* Left-aligned + fixed width so the label stays put and only the value extends into the reserved box. */
+.scoreTime {
+    width: 64px;
+    text-align: left;
+}
+.scoreTick {
+    width: 84px;
+    text-align: left;
+}
+.scoreXm {
+    width: 76px;
+    text-align: left;
+}
+/* Full-width tabbed + collapsible footer (EVENT LOG / AGENTS). */
+.footer {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 60;
+    pointer-events: auto;
+    background: rgba(0, 0, 0, 0.55);
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    font-family: "Coda", monospace;
+    color: #ffffff;
+}
+.footerHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 3px 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.footerTabs {
+    display: flex;
+    gap: 4px;
+}
+.footerTab {
+    font-family: "Chakra Petch", sans-serif;
+    font-size: 11px;
+    letter-spacing: 1px;
+    padding: 3px 10px;
+    background: rgba(255, 255, 255, 0.06);
+    color: #9aa6a0;
+    border: 1px solid transparent;
     border-radius: 3px;
+    cursor: pointer;
+}
+.footerTab:hover {
+    color: #ffffff;
+}
+.footerTab.active {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.16);
+    border-color: rgba(255, 255, 255, 0.25);
+}
+.footerChevron {
+    background: none;
+    border: none;
+    color: #cfd6d2;
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+}
+.footerBody {
+    max-height: 200px;
+    overflow: auto;
+    padding: 6px 12px;
+}
+
+/* History dashboard (HistoryPanel) — right intel column: per metric, live ENL/RES value + sparkline. */
+.historyPanel {
+    order: 0; /* stays fixed at the top of the right column; the inspector sits below it */
+    pointer-events: auto;
+    box-sizing: border-box;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 5px;
+    padding: 6px 8px 4px;
 }
 .historyRow {
     margin-bottom: 5px;
@@ -250,37 +330,14 @@ html, body {
     margin-top: 1px;
 }
 
-/* Action log: a titled section, below the history dashboard in the right column. */
-.statsComPanel {
-    max-height: 210px;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    background: rgba(0, 0, 0, 0.45);
-    padding: 5px 8px 6px;
-    border-radius: 3px;
-}
-.statsComTitle {
-    font-family: "Chakra Petch", sans-serif;
-    font-size: 12px;
-    letter-spacing: 2px;
-    color: #9aa6a0;
-    margin-bottom: 3px;
-    pointer-events: auto; /* clickable to collapse/expand inside the click-through column */
-    cursor: pointer;
-}
+/* Action log lines — live in the footer's EVENT LOG tab (the footer owns the label + collapse). */
 .statsComLines {
-    width: 420px; /* roomier log */
+    width: 100%;
     display: flex;
     flex-direction: column;
-    justify-content: flex-end;
-    align-items: flex-end;
-    text-align: right;
+    align-items: flex-start;
+    text-align: left;
     overflow: hidden;
-}
-.statsComCollapsed .statsComLines {
-    display: none;
 }
 .statsComLine {
     font-size: 11px;
@@ -723,11 +780,7 @@ html, body {
 }
 .qSlider {
     height: 8px;
-    width: 89px;
-}
-.q-actions {
-}
-.q-destinations {
+    width: 92px;
 }
 .qSlider:hover {
     opacity: 1;
@@ -743,40 +796,62 @@ html, body {
 }
 .qSliderLabel {
     font-size: 13px;
-    height: 13px;
-    width: 12px;
     text-align: right;
-    display: inline-block;
     color: #ffffff;
     text-shadow: -1px 0px black, 0px 1px black, 1px 0px black, 0px -1px black;
 }
 .qSliderTextLabel {
     font-family: "Coda";
     font-size: 13px;
-    height: 13px;
-    margin-left: 5px;
-    margin-right: 5px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     color: #ffffff;
     text-shadow: -1px 0px black, 0px 1px black, 1px 0px black, 0px -1px black;
 }
-.qValues {
+/* The action icon in a tuning row — a supersampled canvas shown small so it stays crisp on HiDPI. */
+.qSliderTextLabel img {
+    width: 14px;
+    height: 14px;
+    vertical-align: middle;
+    image-rendering: -webkit-optimize-contrast;
+}
+/* The merged tuning list (TUNE tab): one flat list — Actions, a divider, then Destinations. */
+.tuneList {
+    width: 100%;
+    box-sizing: border-box;
     font-size: 13px;
-    padding: 5px 10px 6px;
-    background: rgba(0, 0, 0, 0.45); /* glass pane behind the sliders, separating them from the panels */
-    border-radius: 3px;
-    pointer-events: auto; /* the tuning sliders are interactive inside the (click-through) HUD column */
 }
-/* Sliders sit at the TOP of both columns (above the scoreboard / dashboard). */
-#left-sliders { order: 0; }
-/* Right intel column order: Destinations sliders on top, then the dashboard, then the LOG. */
-#right-sliders { order: 0; }
-.historyPanel { order: 1; }
-.statsComPanel { order: 2; }
-.floatLeft {
-    float: left;
+.tuneRow {
+    display: grid;
+    grid-template-columns: 1fr 92px 34px; /* icon+label | slider/bar | value — aligned across rows */
+    align-items: center;
+    column-gap: 8px;
+    height: 22px;
 }
-.floatRight {
-    float: right;
+.tuneControl {
+    height: 12px;
+}
+.tuneDivider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.16);
+    margin: 6px 0;
+}
+.tuneHidden {
+    display: none;
+}
+/* Read-only mode: a 0–1 progress bar replaces the slider (agent-vs-agent matches). */
+.qBar {
+    width: 92px;
+    height: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 2px;
+    overflow: hidden;
+}
+.qBarFill {
+    height: 100%;
+    width: 0;
+    background: #9aa6a0;
 }
 #locationSelect {
     width: 233px;
@@ -986,20 +1061,19 @@ html, body {
     margin-bottom: 12px;
 }
 
-/* Selected-entity inspector panel (screen-fixed DOM overlay). */
+/* Selected-entity inspector — a contextual panel in the right intel column (below history). */
 .inspector {
-    position: fixed;
-    top: 110px;
-    right: 10px;
+    order: 1; /* always below the history dashboard, which stays fixed in place */
+    pointer-events: auto;
+    box-sizing: border-box;
     width: 210px;
-    background: #000000cc;
+    background: rgba(0, 0, 0, 0.5);
     color: #ffffff;
-    border: 1px solid #888888;
+    border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 5px;
     padding: 8px 10px;
     font-family: "Coda", "Lucida Console";
     font-size: 13px;
-    z-index: 200;
 }
 .inspectorTitle {
     font-family: "Chakra Petch";
@@ -1020,21 +1094,6 @@ html, body {
     color: #ffffff;
     font-size: 18px;
     line-height: 1;
-}
-.inspectorRemove {
-    margin-top: 8px;
-    width: 100%;
-    padding: 5px;
-    font-family: "Chakra Petch";
-    font-size: 14px;
-    background: #333333;
-    color: #ffffff;
-    border: 1px solid #888888;
-    border-radius: 3px;
-    cursor: pointer;
-}
-.inspectorRemove:hover {
-    background: #555555;
 }
 
 /* /demo harness: full-screen menu + per-scene control panel (grayscale). */
@@ -1084,10 +1143,18 @@ html, body {
     border-radius: 5px;
     padding: 10px;
     z-index: 200;
+    max-height: calc(100vh - 20px);
+    overflow-y: auto; /* the audio demo has many buttons — scroll rather than overflow the screen */
 }
 .demoPanelTitle {
     font-size: 18px;
     margin-bottom: 6px;
+}
+.demoHeading {
+    font-family: "Chakra Petch", sans-serif;
+    letter-spacing: 2px;
+    font-size: 16px;
+    margin-bottom: 8px;
 }
 /* Full-width section label + instructional line inside the demo panel. */
 .demoLabel {
@@ -1161,4 +1228,40 @@ html, body {
 
 .quickstartDiv {
     font-size: 13px;
+}
+/* Drop-rate transparency panel (Menu → Drop rates) — a small floating list of the live DropRates. */
+.dropRatesPanel {
+    position: fixed;
+    top: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 300;
+    min-width: 260px;
+    max-height: 70vh;
+    overflow: auto;
+    padding: 10px 14px;
+    background: rgba(0, 0, 0, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 6px;
+    color: #ffffff;
+    font-family: "Coda", monospace;
+    font-size: 13px;
+}
+.dropRatesTitle {
+    font-family: "Chakra Petch", sans-serif;
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+    color: #cfd6d2;
+}
+.dropRatesRow {
+    display: flex;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 2px 0;
+}
+.dropRatesNote {
+    margin-top: 8px;
+    color: #9aa6a0;
+    font-size: 11px;
+    max-width: 280px;
 }
