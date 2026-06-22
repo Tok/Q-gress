@@ -132,7 +132,7 @@ html, body {
 /* HUD containers — fixed + click-through; only their children opt back into pointer events so the
    map keeps its drag/zoom. Controls on the left, the intel column on the right, a scoreboard strip
    centered up top, and a full-width tabbed footer at the bottom. */
-.hudLeft, .hudRight {
+#hudLeft, #hudRight {
     position: fixed;
     top: 108px;
     z-index: 60;
@@ -142,15 +142,15 @@ html, body {
     gap: 10px;
     max-height: calc(100vh - 230px);
 }
-.hudLeft {
+#hudLeft {
     left: 14px;
     align-items: flex-start;
 }
-.hudRight {
+#hudRight {
     right: 14px;
     align-items: flex-end;
 }
-.hudTop {
+#hudTop {
     position: fixed;
     top: 52px; /* just below the top control bar */
     left: 50%;
