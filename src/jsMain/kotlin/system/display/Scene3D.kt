@@ -278,6 +278,10 @@ object Scene3D {
         }
         VectorFieldOverlay.sync() // paced flow-field sweep; driven here (continuous loop) so it animates through world-gen too
         activeRenderer.resetState()
+        // Clear the depth buffer the map layers wrote, so portals/agents/links draw over buildings +
+        // terrain (visible through them) — the consistent version of the XMP/indicator depthTest=false.
+        // The scene still self-occludes correctly (its own depth is written fresh from here).
+        activeRenderer.clearDepth()
         activeRenderer.render(activeScene, cam)
         map.triggerRepaint()
     }

@@ -29,6 +29,7 @@ external object Three {
     class WebGLRenderer(params: dynamic) {
         var autoClear: Boolean
         fun resetState()
+        fun clearDepth() // wipe the depth buffer so the 3D scene draws over the map's own layers
         fun render(scene: Scene, camera: Camera)
         fun dispose()
     }
