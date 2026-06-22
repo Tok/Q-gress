@@ -61,8 +61,8 @@ object Scene3D {
     private const val XM_Z = 1.2 // stray-XM floats just above the ground
     private const val NPC_DROP_S = 0.8 // seconds for an NPC to fall in from the sky on first appearance
     private const val NPC_DROP_HEIGHT = 70.0 // metres an NPC drops from
-    private const val INDICATOR_Z = 2.7
-    private const val INDICATOR_SIZE = 1.6
+    private const val INDICATOR_Z = 5.0 // raised to clear the head now the indicator is ~3× bigger
+    private const val INDICATOR_SIZE = 4.8 // action label above an agent (was 1.6 — barely visible)
     private const val LABEL_W = 22.0 // portal name/level billboard width (scene metres)
     private const val LABEL_GAP = 4.0 // gap above the orb top before the label
     private const val LABEL_CANVAS_W = 256 // label texture resolution (kept crisp; faction-neutral white)
