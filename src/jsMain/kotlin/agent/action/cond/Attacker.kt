@@ -6,12 +6,10 @@ import agent.action.ActionItem
 import config.Constants
 import items.XmpBurster
 import system.display.Scene3D
-import util.SoundUtil
 import util.Util
 
 object Attacker : ConditionalAction {
     override val actionItem = ActionItem.ATTACK
-    private const val SOUND_LIMIT = 4 // cap the simultaneous burst sounds in one volley
 
     override fun isActionPossible(agent: Agent) = agent.inventory.findXmps().count() >= attackXmps
 
@@ -21,9 +19,9 @@ object Attacker : ConditionalAction {
         agent.inventory.consumeXmps(xmps)
         if (xmps.isNotEmpty()) {
             xmps.forEach { it.dealDamage(agent) } // apply resonator damage (was the now-removed Queues path)
-            xmps.take(SOUND_LIMIT).forEach { SoundUtil.playXmpSound(it.level, agent.pos) }
-            // 3D XMP burst at the AGENT's position — you walk up and detonate where you stand (not aimed).
-            Scene3D.playXmpBurst(agent.pos, xmps.maxOf { it.level.level }, sound = false)
+            // 3D XMP burst at the AGENT's position (you detonate where you stand) — now with the full
+            // scaled boom + layered explosion (one per volley, at the largest XMP), not the old blips.
+            Scene3D.playXmpBurst(agent.pos, xmps.maxOf { it.level.level }, sound = true)
         }
         val isDoItAgain = xmps.isNotEmpty() && Util.random() <= 1 / Constants.phi
         return if (isDoItAgain) performAction(agent) else agent
