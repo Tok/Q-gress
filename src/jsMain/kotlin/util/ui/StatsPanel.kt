@@ -96,9 +96,9 @@ object StatsPanel {
         tickEl = el("scoreTick").also { footer.appendChild(it) }
         xmEl = el("scoreXm").also { footer.appendChild(it) }
         panel.appendChild(footer)
-        document.body?.appendChild(panel)
+        Dock.now().appendChild(panel)
 
-        // Action log: a titled, collapsible section in the right "intel" column (starts collapsed).
+        // Action log: a titled, collapsible section in the NOW tab (under the scoreboard + leaderboard).
         val comWrap = el("statsComPanel")
         val comTitle = el("statsComTitle")
         comTitle.textContent = "LOG ▾" // expanded by default
@@ -109,7 +109,7 @@ object StatsPanel {
         }
         comWrap.appendChild(comTitle)
         comPanel = el("statsComLines").also { comWrap.appendChild(it) }
-        Hud.right().appendChild(comWrap)
+        Dock.now().appendChild(comWrap)
     }
 
     private fun el(cls: String): HTMLElement {

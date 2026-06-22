@@ -77,11 +77,13 @@ html, body {
 }
 /* Top-agents leaderboard table (UI Stage 3: canvas→DOM). */
 .topAgents {
-    pointer-events: none;
+    order: 1;
+    width: 100%;
+    box-sizing: border-box;
     color: #ffffff;
-    background: rgba(0, 0, 0, 0.45);
-    padding: 4px 8px;
-    border-radius: 3px;
+    overflow-x: auto; /* the dense table is wider than the dock — scroll it rather than reflow */
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    padding-top: 6px;
 }
 .taTable {
     border-collapse: collapse;
@@ -131,53 +133,82 @@ html, body {
 .taInvBar {
     width: 2px;
 }
-/* HUD layout columns — group the panels instead of scattering them to the corners. All
-   display-only — never intercept map gestures. */
-#hudLeft, #hudRight {
+/* The unified HUD dock — one right-docked panel with NOW / HISTORY / TUNE tabs. It's the only
+   pointer-interactive part of the HUD; everything else stays click-through for map gestures. */
+.dock {
     position: fixed;
     top: 108px; /* just below the top control bar */
+    right: 14px;
+    width: 330px;
+    max-height: calc(100vh - 130px);
     z-index: 60;
-    pointer-events: none;
     display: flex;
     flex-direction: column;
+    pointer-events: auto;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 5px;
+    color: #ffffff;
+    font-family: "Coda", monospace;
+}
+.dockHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+.dockTitle {
+    font-family: "Chakra Petch", sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: 3px;
+    color: #ffffff;
+}
+.dockTabs {
+    display: flex;
+    gap: 4px;
+}
+.dockTab {
+    font-family: "Chakra Petch", sans-serif;
+    font-size: 11px;
+    letter-spacing: 1px;
+    padding: 3px 8px;
+    background: rgba(255, 255, 255, 0.06);
+    color: #9aa6a0;
+    border: 1px solid transparent;
+    border-radius: 3px;
+    cursor: pointer;
+}
+.dockTab:hover {
+    color: #ffffff;
+}
+.dockTab.active {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.16);
+    border-color: rgba(255, 255, 255, 0.25);
+}
+/* A tab body — flex column so child panels order/stack predictably (set display:flex when active). */
+.dockBody {
+    flex-direction: column;
     gap: 10px;
-}
-#hudLeft {
-    left: 14px;
-    align-items: flex-start;
-}
-#hudRight {
-    right: 14px;
-    align-items: flex-end;
-}
-#hudBottom {
-    position: fixed;
-    bottom: 16px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 60;
-    pointer-events: none;
+    padding: 10px;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 .historyPanel, .statsComPanel {
     font-family: "Coda", monospace;
     color: #ffffff;
     text-shadow: 0 0 3px #000, 0 0 3px #000;
 }
-/* Scoreboard — fixed-width grid, bottom-left. Tags / bars / values line up in columns; no reflow. */
+/* Scoreboard — a fixed-column grid inside the NOW tab. Tags / bars / values line up; no reflow. */
 .scorePanel {
-    position: fixed;
-    left: 14px;
-    bottom: 16px;
-    z-index: 60;
-    width: 250px;
+    order: 0;
+    width: 100%;
     box-sizing: border-box;
-    padding: 8px 12px 9px;
-    background: rgba(0, 0, 0, 0.5);
-    border-radius: 4px;
     font-family: "Coda", monospace;
     color: #ffffff;
     text-shadow: 0 0 3px #000, 0 0 3px #000;
-    pointer-events: none;
 }
 .scoreRow {
     display: grid;
@@ -221,12 +252,10 @@ html, body {
     white-space: nowrap;
 }
 
-/* Right-side history dashboard (HistoryPanel): per metric — live ENL/RES value + faction sparkline. */
+/* History dashboard (HistoryPanel) — HISTORY tab: per metric, live ENL/RES value + faction sparkline. */
 .historyPanel {
-    width: 228px;
-    background: rgba(0, 0, 0, 0.45);
-    padding: 6px 8px 4px;
-    border-radius: 3px;
+    width: 100%;
+    box-sizing: border-box;
 }
 .historyRow {
     margin-bottom: 5px;
@@ -250,16 +279,18 @@ html, body {
     margin-top: 1px;
 }
 
-/* Action log: a titled section, below the history dashboard in the right column. */
+/* Action log: a titled, collapsible section at the bottom of the NOW tab. */
 .statsComPanel {
+    order: 2;
+    width: 100%;
+    box-sizing: border-box;
     max-height: 210px;
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    align-items: flex-end;
-    background: rgba(0, 0, 0, 0.45);
-    padding: 5px 8px 6px;
-    border-radius: 3px;
+    align-items: flex-start;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    padding-top: 6px;
 }
 .statsComTitle {
     font-family: "Chakra Petch", sans-serif;
@@ -271,12 +302,12 @@ html, body {
     cursor: pointer;
 }
 .statsComLines {
-    width: 420px; /* roomier log */
+    width: 100%;
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
-    align-items: flex-end;
-    text-align: right;
+    align-items: flex-start;
+    text-align: left;
     overflow: hidden;
 }
 .statsComCollapsed .statsComLines {
@@ -724,10 +755,7 @@ html, body {
 .qSlider {
     height: 8px;
     width: 89px;
-}
-.q-actions {
-}
-.q-destinations {
+    flex: none;
 }
 .qSlider:hover {
     opacity: 1;
@@ -743,40 +771,60 @@ html, body {
 }
 .qSliderLabel {
     font-size: 13px;
-    height: 13px;
-    width: 12px;
+    width: 26px;
     text-align: right;
-    display: inline-block;
+    flex: none;
     color: #ffffff;
     text-shadow: -1px 0px black, 0px 1px black, 1px 0px black, 0px -1px black;
 }
 .qSliderTextLabel {
     font-family: "Coda";
     font-size: 13px;
-    height: 13px;
-    margin-left: 5px;
-    margin-right: 5px;
+    margin-left: 6px;
+    white-space: nowrap;
     color: #ffffff;
     text-shadow: -1px 0px black, 0px 1px black, 1px 0px black, 0px -1px black;
 }
-.qValues {
+/* The action icon in a tuning row — a supersampled canvas shown small so it stays crisp on HiDPI. */
+.qSliderTextLabel img {
+    width: 14px;
+    height: 14px;
+    vertical-align: middle;
+    image-rendering: -webkit-optimize-contrast;
+}
+/* The merged tuning list (TUNE tab): one flat list — Actions, a divider, then Destinations. */
+.tuneList {
+    width: 100%;
+    box-sizing: border-box;
     font-size: 13px;
-    padding: 5px 10px 6px;
-    background: rgba(0, 0, 0, 0.45); /* glass pane behind the sliders, separating them from the panels */
-    border-radius: 3px;
-    pointer-events: auto; /* the tuning sliders are interactive inside the (click-through) HUD column */
 }
-/* Sliders sit at the TOP of both columns (above the scoreboard / dashboard). */
-#left-sliders { order: 0; }
-/* Right intel column order: Destinations sliders on top, then the dashboard, then the LOG. */
-#right-sliders { order: 0; }
-.historyPanel { order: 1; }
-.statsComPanel { order: 2; }
-.floatLeft {
-    float: left;
+.tuneRow {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    height: 22px;
 }
-.floatRight {
-    float: right;
+.tuneDivider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.16);
+    margin: 6px 0;
+}
+.tuneHidden {
+    display: none;
+}
+/* Read-only mode: a 0–1 progress bar replaces the slider (agent-vs-agent matches). */
+.qBar {
+    width: 89px;
+    height: 8px;
+    flex: none;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 2px;
+    overflow: hidden;
+}
+.qBarFill {
+    height: 100%;
+    width: 0;
+    background: #9aa6a0;
 }
 #locationSelect {
     width: 233px;
@@ -986,15 +1034,15 @@ html, body {
     margin-bottom: 12px;
 }
 
-/* Selected-entity inspector panel (screen-fixed DOM overlay). */
+/* Selected-entity inspector — a contextual panel (top-left, clear of the dock), unified glass frame. */
 .inspector {
     position: fixed;
     top: 110px;
-    right: 10px;
+    left: 14px;
     width: 210px;
-    background: #000000cc;
+    background: rgba(0, 0, 0, 0.5);
     color: #ffffff;
-    border: 1px solid #888888;
+    border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 5px;
     padding: 8px 10px;
     font-family: "Coda", "Lucida Console";
@@ -1020,21 +1068,6 @@ html, body {
     color: #ffffff;
     font-size: 18px;
     line-height: 1;
-}
-.inspectorRemove {
-    margin-top: 8px;
-    width: 100%;
-    padding: 5px;
-    font-family: "Chakra Petch";
-    font-size: 14px;
-    background: #333333;
-    color: #ffffff;
-    border: 1px solid #888888;
-    border-radius: 3px;
-    cursor: pointer;
-}
-.inspectorRemove:hover {
-    background: #555555;
 }
 
 /* /demo harness: full-screen menu + per-scene control panel (grayscale). */

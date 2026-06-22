@@ -87,7 +87,7 @@ object TopAgentsPanel {
         val newBody = el("tbody", "")
         table.appendChild(newBody)
         container.appendChild(table)
-        Hud.bottom().appendChild(container) // centered bottom strip
+        Dock.now().appendChild(container) // NOW tab (between the scoreboard and the LOG)
         tbody = newBody
     }
 

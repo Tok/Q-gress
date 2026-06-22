@@ -19,7 +19,6 @@ import system.display.Scene3D
 object Inspector {
     private const val PANEL_ID = "inspector"
     private const val CONTENT_ID = "inspectorContent"
-    private const val REMOVE_ID = "inspectorRemove"
     private const val NEUTRAL = "#bbbbbb"
 
     private var selectedId: String? = null
@@ -34,7 +33,6 @@ object Inspector {
         val id = selectedId
         if (id == null) {
             panel().addClass("invisible")
-            removeButton().addClass("invisible")
             return
         }
         val html = when {
@@ -47,18 +45,6 @@ object Inspector {
             return
         }
         content().innerHTML = html
-        // The "Remove" button shatters + deletes the selected portal (portals only).
-        val portalId = if (id.startsWith("portal:")) id.removePrefix("portal:") else null
-        val btn = removeButton()
-        if (portalId != null) {
-            btn.onclick = {
-                findPortal(portalId)?.remove()
-                select(null)
-            }
-            btn.removeClass("invisible")
-        } else {
-            btn.addClass("invisible")
-        }
         panel().removeClass("invisible")
     }
 
@@ -94,11 +80,6 @@ object Inspector {
         return document.getElementById(CONTENT_ID) as HTMLElement
     }
 
-    private fun removeButton(): HTMLElement {
-        panel()
-        return document.getElementById(REMOVE_ID) as HTMLElement
-    }
-
     private fun panel(): HTMLElement {
         (document.getElementById(PANEL_ID) as? HTMLElement)?.let { return it }
         val div = document.createElement("div") as HTMLDivElement
@@ -110,13 +91,8 @@ object Inspector {
         close.onclick = { select(null) }
         val contentDiv = document.createElement("div") as HTMLDivElement
         contentDiv.id = CONTENT_ID
-        val remove = document.createElement("button") as HTMLButtonElement
-        remove.id = REMOVE_ID
-        remove.addClass("inspectorRemove", "invisible")
-        remove.innerHTML = "Remove"
         div.append(close)
         div.append(contentDiv)
-        div.append(remove)
         document.body?.append(div)
         return div
     }

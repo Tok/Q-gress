@@ -48,14 +48,18 @@ the AI layer lands, the slider sim is the substrate we keep hardening.
   pairs with the colony-management attributes (icebox).
 
 ## UI
+- [x] **Unified tabbed dock** — the scattered corner panes are consolidated into one right-docked
+  panel with NOW / HISTORY / TUNE tabs (`util/ui/Dock`); the two slider panes are merged into one flat
+  tuning list (`util/ui/TuningPanel`) with a **read-only 0–1 progress-bar mode** (`?readonly` / Menu
+  "Lock tuning"). Manual portal place/delete removed from the real game (demo keeps it).
 - [ ] **Stage 2** — **Schematic** base view (reuse `SHADOW_STYLE`) + more toggleable info overlays
   (e.g. movement-penalty heatmap) alongside the existing Terrain/Vectors toggles.
-- [ ] **Stage 4** — tuning-slider panel redesign (both factions, presets); ties into Phase 6.4
-  (per-faction driver selection + AI-driven sliders animating read-only).
+- [ ] **Stage 4** — tuning-slider polish: per-faction presets, and **wire the read-only bar mode to
+  the AI driver** (Phase 6.4) so AI-driven sliders animate live — `TuningPanel.refresh()` is the hook;
+  it reads the inputs each frame, the driver just needs to write them at checkpoint cadence.
 - [ ] **Stage 5 — a proper, polished UI (the end-state goal).** A cohesive visual theme + layout pass
-  over the whole HUD / onboarding / menus (not the incremental panels we have now): consistent
-  typography, spacing, panels and states; the tuning-slider panel (Stage 4) folded in; responsive to
-  window size. This is the "real UI" we want in the end.
+  over the whole HUD / onboarding / menus building on the dock: consistent typography, spacing, panels
+  and states; responsive to window size. This is the "real UI" we want in the end.
 
 ## Onboarding (Phase 7 leftovers)
 - [ ] **Location selection**: Home / nearest city via Geolocation; a curated preset list; Random;

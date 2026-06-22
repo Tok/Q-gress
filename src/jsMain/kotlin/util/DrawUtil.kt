@@ -13,6 +13,7 @@ import util.ui.HistoryPanel
 import util.ui.Inspector
 import util.ui.StatsPanel
 import util.ui.TopAgentsPanel
+import util.ui.TuningPanel
 import kotlin.math.PI
 
 object DrawUtil {
@@ -31,6 +32,7 @@ object DrawUtil {
         // values), and the top-agents table (TopAgentsPanel).
         StatsPanel.update(firstMu, secondMu, factions)
         HistoryPanel.update()
+        TuningPanel.refresh() // keep the read-only bars in sync (no-op in interactive mode)
         if (Styles.isDrawTopAgents) {
             TopAgentsPanel.update()
         }

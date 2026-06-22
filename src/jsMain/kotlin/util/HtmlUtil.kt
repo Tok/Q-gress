@@ -5,9 +5,6 @@ import agent.Agent
 import agent.Faction
 import agent.StuckTracker
 import agent.action.ActionItem
-import agent.qvalue.QActions
-import agent.qvalue.QDestinations
-import agent.qvalue.QValue
 import config.*
 import config.Location
 import config.Sim
@@ -30,11 +27,11 @@ import util.data.Line
 import util.data.Pos
 import util.ui.Controls
 import util.ui.Demo
-import util.ui.Hud
 import util.ui.Inspector
 import util.ui.LayerView
 import util.ui.LoadingOverlay
 import util.ui.Onboarding
+import util.ui.TuningPanel
 import kotlin.js.Json
 
 @Suppress("UnusedParameter") // external JS global; param describes the contract
@@ -250,72 +247,6 @@ object HtmlUtil {
         return div
     }
 
-    private fun createSliderDiv(
-        id: String,
-        qValues: List<QValue>,
-        className: String,
-        labelText: String,
-        userFaction: Faction,
-    ): HTMLDivElement {
-        val qDiv = document.createElement("div") as HTMLDivElement
-        qDiv.id = id
-        qDiv.addClass("qValues", className)
-        qDiv.addClass("q-" + labelText.lowercase())
-        val destinationsLabel = document.createElement("div") as HTMLDivElement
-        destinationsLabel.addClass("label", "qTitle")
-        destinationsLabel.innerHTML = labelText
-        qDiv.append(destinationsLabel)
-        qValues.forEach { qValue ->
-            val sliderDiv = document.createElement("div") as HTMLDivElement
-            val facts = listOf(userFaction, userFaction.enemy())
-            facts.forEach { faction ->
-                val slider = document.createElement("input") as HTMLInputElement
-                slider.id = qValue.sliderId + faction.nickName
-                slider.type = "range"
-                slider.min = "0.00"
-                slider.max = "1.00"
-                slider.step = "0.01"
-                slider.value = "0.10"
-                slider.addClass("slider", "qSlider", faction.abbr.lowercase() + "Slider")
-                val sliderValue = document.createElement("span") as HTMLSpanElement
-                sliderValue.addClass("qSliderLabel", faction.abbr.lowercase() + "Label")
-                if (faction != userFaction) {
-                    slider.addClass("invisible")
-                    sliderValue.addClass("invisible")
-                } else {
-                    slider.oninput = {
-                        sliderValue.innerHTML = qDisplay(slider.value)
-                        null
-                    }
-                }
-                sliderValue.innerHTML = qDisplay(slider.value)
-                sliderDiv.append(slider)
-                sliderDiv.append(sliderValue)
-            }
-            val qSliderLabel = document.createElement("span") as HTMLSpanElement
-            qSliderLabel.addClass("qSliderTextLabel")
-            if (qValue.icon != null) {
-                val sliderImg = document.createElement("img") as HTMLImageElement
-                sliderImg.src = qValue.icon.toDataURL()
-                qSliderLabel.innerHTML = sliderImg.outerHTML + " " + qValue.description
-            } else {
-                qSliderLabel.innerHTML = qValue.description
-            }
-            sliderDiv.append(qSliderLabel)
-            qDiv.append(sliderDiv)
-        }
-        return qDiv
-    }
-
-    private fun qDisplay(qValue: String): String {
-        val fixed = qValue.padEnd(4, '0')
-        return when (fixed) {
-            "0000" -> "0.00"
-            "1000" -> "1.00"
-            else -> fixed
-        }
-    }
-
     // Minimal bootstrap for the unified sandbox demo scene: just the 3D scene + the sandbox controls.
     private fun loadDemoScene() {
         World.userFaction = Faction.ENL
@@ -377,14 +308,13 @@ object HtmlUtil {
     private fun isAutoStartFromUrl() = url().searchParams.get("local")?.toBoolean() ?: false
 
     private fun createQSliders(fact: Faction) {
-        // The tuning sliders are part of the HUD columns now — Actions atop the left scoreboard
-        // column, Destinations atop the right intel column — instead of floating over the panels.
-        val actionSliderDiv = createSliderDiv("left-sliders", QActions.values(), "floatLeft", "Actions", fact)
-        val destinationSliderDiv =
-            createSliderDiv("right-sliders", QDestinations.values(), "floatRight", "Destinations", fact)
-        Hud.left().appendChild(actionSliderDiv)
-        Hud.right().appendChild(destinationSliderDiv)
+        // One merged tuning list in the dock's TUNE tab (Actions, a divider, then Destinations),
+        // instead of the two separate floating slider panes.
+        TuningPanel.build(fact, isReadOnlyFromUrl())
     }
+
+    /** `?readonly=true` → ship the tuning sliders as read-only 0–1 bars (agent-vs-agent preview). */
+    private fun isReadOnlyFromUrl() = url().searchParams.get("readonly")?.toBoolean() ?: false
 
     private fun chooseUserFaction(fact: Faction) {
         SoundUtil.enableAudio() // first user gesture → resume audio (autoplay policy)
@@ -436,34 +366,23 @@ object HtmlUtil {
         SoundUtil.enableAudio() // first user gesture → resume audio (autoplay policy)
         // Ground point under the cursor; MapLibre fires "click" only for a click, not after a drag.
         val pos = MapUtil.eventToSimPos(event) ?: return
-        when {
-            // Click on/near a portal → select it for the inspector.
-            pos.hasClosePortalForClick() -> Inspector.select("portal:" + pos.findClosestPortal().id)
-            // Click empty buildable ground → build a portal there; deselect.
-            pos.isBuildable() -> {
-                Inspector.select(null)
-                if (World.countPortals() < Config.maxPortals) {
-                    document.defaultView?.setTimeout(World.allPortals.add(Portal.create(pos)), 0)
-                } else {
-                    SoundUtil.playFailSound()
-                }
-            }
-            else -> Inspector.select(null)
+        // Portals are *discovered*, not placed by the player: a click only selects the portal under
+        // the cursor (or deselects). Manual placement/removal lives only in the /#demo sandbox.
+        if (pos.hasClosePortalForClick()) {
+            Inspector.select("portal:" + pos.findClosestPortal().id)
+        } else {
+            Inspector.select(null)
         }
     }
 
     private fun onMapMove(event: dynamic) {
+        // Hover affordance only — highlight the portal under the cursor (nothing is buildable now).
         val pos = MapUtil.eventToSimPos(event)
-        if (pos == null) {
+        if (pos != null && pos.hasClosePortalForClick()) {
+            Scene3D.setBuildMarker(pos, "portal")
+        } else {
             Scene3D.setBuildMarker(null, "")
-            return
         }
-        val state = when {
-            pos.hasClosePortalForClick() -> "portal"
-            pos.isBuildable() -> "build"
-            else -> "blocked"
-        }
-        Scene3D.setBuildMarker(pos, state)
     }
 
     private fun maybeWidth(id: String) = document.getElementById(id)?.clientWidth
@@ -613,6 +532,10 @@ object HtmlUtil {
         // Overlay toggle lives in the menu now (no longer always-visible in the top bar). Vectors are
         // no longer toggled — they flash automatically for ~a second when a portal is created.
         menu.append(createMenuCheckbox("passabilityToggle", "Terrain") { PassabilityOverlay.setVisible(it) })
+        // Preview the read-only tuning mode (sliders → 0–1 bars) used for agent-vs-agent matches.
+        val lock = createMenuCheckbox("tuneLockToggle", "Lock tuning") { TuningPanel.setMode(it) }
+        (lock.firstChild as? HTMLInputElement)?.checked = isReadOnlyFromUrl()
+        menu.append(lock)
         // Fade the 3D buildings when crowded areas hide the action.
         menu.append(createMenuSlider("Buildings", 0.9) { MapUtil.setBuildingOpacity(it) })
         // Build version footer (timestamp + git-sha), so any deployed build is identifiable.

@@ -72,8 +72,22 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
   action **LOG**), **history dashboard** `HistoryPanel` (per-metric uPlot sparklines — MU + Portals
   + Links + Fields + Agents over time, with live ENL/RES values; `Checkpoint` snapshots all of them),
   `TopAgentsPanel` leaderboard, `Inspector` (selected entity), `Controls` legend + desktop-only gate.
-- **Top toolbar** reorganized: Menu far-left (with Terrain/Vectors overlay toggles inside it),
-  Pause/Resume, Home; View dropdown + Volume far-right.
+- **Unified tabbed dock** (`util/ui/Dock`): the scattered corner panes are consolidated into one
+  right-docked panel with **NOW / HISTORY / TUNE** tabs (one view at a time) — NOW holds the
+  scoreboard + leaderboard + LOG, HISTORY the sparklines, TUNE the sliders. It's the only
+  pointer-interactive HUD surface (rest stays click-through for map gestures). The `Inspector` stays a
+  separate contextual panel (top-left, clear of the dock), unified to the same glass frame.
+- **Merged tuning panel** (`util/ui/TuningPanel`): the two slider panes (Actions + Destinations) are
+  now one flat list (Actions, a divider, then Destinations). The DOM `<input>` per (q-value × faction)
+  is still the value store `ActionSelector.q` reads. A **read-only mode** (`?readonly=true` or the
+  Menu "Lock tuning" toggle) swaps the sliders for 0–1 progress bars that mirror the values
+  (`refresh()` re-syncs them) — the hook for future agent-vs-agent matches where the player can't tune.
+  Action icons render from the **hi-res** (supersampled) canvas + shown small via CSS, so they're crisp.
+- **Portals are discovered, not placed**: manual portal **placement** and **deletion** are removed
+  from the real game (the map click only selects/deselects; the Inspector has no Remove button). The
+  `/#demo` sandbox keeps LMB-place / RMB-shatter for showcasing.
+- **Top toolbar** reorganized: Menu far-left (with Terrain/Vectors overlay toggles + Lock-tuning
+  inside it), Pause/Resume, Home; View dropdown + Volume far-right.
 - Map visuals: grayscale-terrain default + Colored/Street views (`LayerView`), white play-area
   border + upright **semi-transparent white boundary walls** + dimmed out-of-bounds (`PlayAreaMask`),
   so the arena reads as a physical box. Rule: faction colours for faction things only.
