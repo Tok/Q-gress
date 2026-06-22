@@ -48,8 +48,8 @@ object XmpBurst {
         gRes.value.y = height
     }
 
-    /** Fire a detonation at scene-metre [cx], [cy], scaled by burster [level] (1..8). */
-    fun play(cx: Double, cy: Double, level: Int) {
+    /** Fire a detonation at scene-metre [cx], [cy] on a ground at [baseZ], scaled by burster [level] (1..8). */
+    fun play(cx: Double, cy: Double, baseZ: Double, level: Int) {
         val grp = group ?: return
         val rangeM = XmpLevel.values().find { it.level == level }?.rangeM ?: XmpLevel.ONE.rangeM
         val maxR = rangeM * RANGE_SCALE
@@ -65,15 +65,15 @@ object XmpBurst {
         val box = Three.Mesh(boxGeo, XmpShaders.volumeMaterial(uni))
         val bs = maxR * BOX_SCALE
         box.asDynamic().scale.set(bs, bs, bs)
-        box.asDynamic().position.set(cx, cy, maxR * BOX_Z)
+        box.asDynamic().position.set(cx, cy, baseZ + maxR * BOX_Z)
         box.asDynamic().renderOrder = 2
         val ring = Three.Mesh(ringQuadGeo, XmpShaders.material(XmpShaders.UV_VERT, XmpShaders.RING_FRAG, uni))
-        ring.asDynamic().position.set(cx, cy, RING_Z)
+        ring.asDynamic().position.set(cx, cy, baseZ + RING_Z)
         ring.asDynamic().scale.set(maxR, maxR, 1.0)
         ring.asDynamic().renderOrder = 1
         grp.add(box)
         grp.add(ring)
-        active.add(Burst(arrayOf(box, ring), uni, doubleArrayOf(cx, cy, maxR, LIFE_BASE + level * LIFE_PER_LEVEL), 0.0))
+        active.add(Burst(arrayOf(box, ring), uni, doubleArrayOf(cx, cy, maxR, LIFE_BASE + level * LIFE_PER_LEVEL, baseZ), 0.0))
     }
 
     fun update(dt: Double) {
@@ -89,9 +89,9 @@ object XmpBurst {
             b.uni.uTime.value = b.age
             val r = maxR * (0.03 + 0.34 * (1.0 - (1.0 - f) * (1.0 - f))) // tiny pop → fast expand
             b.uni.uRadius.value = r
-            // Anchor the sphere bottom at the ground (centre = radius) so the BASE stays at terrain level;
-            // the mushroom rises *within* the volume via the shader's cap height + stem, not by lifting off.
-            b.uni.uCenter.value.z = r
+            // Anchor the sphere bottom at the ground (centre = baseZ + radius) so the BASE stays on the
+            // terrain; the mushroom rises *within* the volume via the shader's cap + stem, not by lifting off.
+            b.uni.uCenter.value.z = b.geom[4] + r
             if (b.age >= life) {
                 for (m in b.meshes) {
                     grp.remove(m)

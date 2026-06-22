@@ -412,7 +412,7 @@ object Scene3D {
      */
     fun playXmpBurst(location: Pos, level: Int, sound: Boolean = true) {
         scene ?: return
-        XmpBurst.play(sceneX(location), sceneY(location), level)
+        XmpBurst.play(sceneX(location), sceneY(location), groundZ(location), level) // sit on the terrain
         if (sound) SoundUtil.playXmpSound(location, level)
     }
 
