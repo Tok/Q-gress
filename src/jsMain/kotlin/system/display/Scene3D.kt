@@ -611,12 +611,12 @@ object Scene3D {
             val mesh = Three.Mesh(modGeoFor(mod.modType()), Materials.resonator(mod.rarity.color))
             mesh.asDynamic().position.set(v[0] * r, v[1] * r, v[2] * r)
             if (mod.modType() == ModType.LINK_AMP) mesh.asDynamic().rotation.set(0.62, 0.62, 0.0) // cube on its diagonal
-            orb.asDynamic().add(mesh)
+            orb.add(mesh) // orb is already dynamic (no .asDynamic())
         }
         if (mods.any { it is Shield }) { // the energy bubble reads "shielded"
             val color = portal.owner?.faction?.color ?: NEUTRAL_COLOR
             val bubble = Three.Mesh(shieldGeo, ShieldShader.material(color, portal.totalMitigation() / 100.0))
-            orb.asDynamic().add(bubble)
+            orb.add(bubble)
         }
     }
 
