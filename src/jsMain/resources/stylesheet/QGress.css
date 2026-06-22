@@ -801,21 +801,15 @@ html, body {
     color: #ffffff;
     text-shadow: -1px 0px black, 0px 1px black, 1px 0px black, 0px -1px black;
 }
-/* Left-pack the icon + name so every row's icon starts at the same x (column-aligned). The
-   `.tuneRow >` prefix raises specificity so nothing centers it. */
-.tuneRow > .qSliderTextLabel {
+/* Left-justify the icon + name (mirrors the value label's text-align:right, which works). */
+.qSliderTextLabel {
     font-family: "Coda";
     font-size: 13px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    justify-self: stretch;
-    gap: 4px;
-    min-width: 0;
     text-align: left;
+    justify-self: start; /* shrink-wrap to content at the cell's left edge */
     color: #ffffff;
     text-shadow: -1px 0px black, 0px 1px black, 1px 0px black, 0px -1px black;
 }
