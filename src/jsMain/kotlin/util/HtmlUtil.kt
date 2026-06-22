@@ -339,6 +339,10 @@ object HtmlUtil {
         // Size + seed from a shared link (if present) → reproduce the exact world; else a fresh seed
         // (captured for sharing). Set before generation, since Util.random is the sole RNG source.
         getSizeFromUrl()?.let { Sim.setSize(it.first, it.second) }
+        // Apply the rest of the onboarding settings if present in the URL (deep link / reload handoff).
+        url().searchParams.get("portals")?.toIntOrNull()?.let { Config.startPortals = it }
+        url().searchParams.get("npc")?.toIntOrNull()?.let { Config.maxNonFaction = it }
+        url().searchParams.get("quickstart")?.toBoolean()?.let { Config.quickStart = it }
         Util.seed(getSeedFromUrl() ?: Util.freshSeed())
         Onboarding.close() // dismiss the onboarding screen (it loads without a reload)
         // Staged loading overlay, up before the first tile request (the world build runs ~2 min on Big).
@@ -742,7 +746,8 @@ object HtmlUtil {
         val fact = World.userFaction?.abbr ?: ""
         val seedPart = if (seed != null) "&seed=$seed" else ""
         return "$base?faction=$fact&lng=$lng&lat=$lat&name=${encodeURIComponent(name)}" +
-            "&w=${Sim.width}&h=${Sim.height}&quickstart=${isQuickstart()}$seedPart"
+            "&w=${Sim.width}&h=${Sim.height}&portals=${Config.startPortals}&npc=${Config.maxNonFaction}" +
+            "&quickstart=${isQuickstart()}$seedPart"
     }
 
     /** Copy the shareable link to the clipboard (with brief in-menu feedback). */
