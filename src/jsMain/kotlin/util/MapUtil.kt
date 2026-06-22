@@ -187,7 +187,8 @@ object MapUtil {
     // Framed so the chosen play-area size fits; read at call time since the size is picked at onboarding.
     private fun displayZoomForSize() = (ZOOM - log2(Sim.scale)).roundToInt()
     private const val DEMO_ZOOM = 19 // demos frame one central object, so sit closer than the game
-    private const val TITLE_ZOOM_BOOST = 0 // frame the whole (small) play area — portals are spread across it now
+    private const val TITLE_ZOOM_BOOST = 1 // a touch closer than the whole-area framing
+    private const val TITLE_PITCH = 42.0 // less tilt than in-game → the action sits nearer screen centre, not the lower half
     private var demoMode = false
     private fun displayZoom() = if (demoMode) DEMO_ZOOM else displayZoomForSize()
     private const val DEFAULT_PITCH = 50.0 // tilt the visible maps so the 3D scene reads as 3D
@@ -309,7 +310,7 @@ object MapUtil {
         m.setPitch(0.0)
         val fly: dynamic = js("({})")
         fly.zoom = titleZoom()
-        fly.pitch = DEFAULT_PITCH
+        fly.pitch = TITLE_PITCH
         fly.duration = TITLE_FLYIN_MS
         m.asDynamic().flyTo(fly) // … swoop down into the location
         fadeInColor(TITLE_COLOR_FADE_MS)
@@ -331,7 +332,7 @@ object MapUtil {
         val opts: dynamic = js("({})")
         opts.center = anchorCenter // hold the centre on the action area → portals stay framed
         opts.bearing = (m.getBearing() as Double) + turn
-        opts.pitch = 38.0 + Util.random() * 30.0 // 38–68°
+        opts.pitch = TITLE_PITCH - 8.0 + Util.random() * 16.0 // gentle tilt variation around TITLE_PITCH
         opts.zoom = titleZoom() + (Util.random() * 2.0 - 1.0) // ±1 around the framing zoom
         opts.duration = TITLE_LEG_MS
         m.asDynamic().easeTo(opts)

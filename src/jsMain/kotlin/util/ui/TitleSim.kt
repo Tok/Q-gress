@@ -8,13 +8,20 @@ import config.Location
 import config.Sim
 import config.Time
 import extension.Grid
+import items.PowerCube
+import items.XmpBurster
+import items.deployable.Resonator
+import items.deployable.Shield
+import items.types.ShieldType
 import kotlinx.browser.window
 import portal.Portal
+import portal.PortalKey
 import portal.XmMap
 import system.display.Scene3D
 import system.display.VectorFieldOverlay
 import util.MapUtil
 import util.SoundUtil
+import util.Util
 
 /**
  * The faction-screen backdrop is a **real, small game sim** — a handful of portals, a 3-v-3 agent
@@ -27,7 +34,10 @@ object TitleSim {
     private const val TITLE_PORTALS = 8
     private const val TITLE_FROGS = 3
     private const val TITLE_SMURFS = 3
-    private const val TITLE_NPCS = 40
+    private const val TITLE_NPCS = 30
+    private const val TITLE_XMPS = 60 // ≥ Attacker's threshold so the agents actually fire
+    private const val TITLE_RESOS = 24
+    private const val TITLE_CUBES = 10
 
     private var interval = 0
     private var started = false
@@ -62,12 +72,29 @@ object TitleSim {
         World.allPortals.clear()
         repeat(TITLE_PORTALS) { World.allPortals.add(Portal.createRandom()) }
         World.allAgents.clear()
-        repeat(TITLE_FROGS) { World.allAgents.add(Agent.createFrog(World.grid)) }
-        repeat(TITLE_SMURFS) { World.allAgents.add(Agent.createSmurf(World.grid)) }
+        val frogs = List(TITLE_FROGS) { Agent.createFrog(World.grid) }
+        val smurfs = List(TITLE_SMURFS) { Agent.createSmurf(World.grid) }
+        frogs.forEach { World.allAgents.add(it) }
+        smurfs.forEach { World.allAgents.add(it) }
+        equip(frogs) // the first frog gets a shield
+        equip(smurfs) // the first smurf gets a shield
         World.allNonFaction.clear()
         World.createNonFaction({}, TITLE_NPCS) // paced serial drop-in (renders each as it lands)
         Scene3D.sync()
         interval = window.setInterval({ tick() }, Time.minTickInterval)
+    }
+
+    // Give title agents a lively loadout: varied XMPs (so attacks differ), resos + cubes to build,
+    // a key to every portal (so they link + field), and one shield per faction.
+    private fun equip(agents: List<Agent>) {
+        agents.forEachIndexed { i, a ->
+            val inv = a.inventory
+            repeat(TITLE_XMPS) { inv.addItem(XmpBurster.create(a, 3 + Util.randomInt(0, 5))) } // levels 3–8
+            repeat(TITLE_RESOS) { inv.addItem(Resonator.create(a, 5 + Util.randomInt(0, 3))) }
+            repeat(TITLE_CUBES) { inv.addItem(PowerCube.create(a, 6)) }
+            World.allPortals.forEach { p -> inv.addItem(PortalKey(p, a)) }
+            if (i == 0) inv.addItem(Shield(ShieldType.VERY_RARE, a))
+        }
     }
 
     // The game's tick, minus the HUD: agents + NPCs act, then re-render the scene from world state.
