@@ -145,6 +145,7 @@ object TitleScene3D {
         scene.add(Three.AmbientLight("#6a6f6a", 1.6)) // bright enough that the metal poles read, not black
         camera = Three.PerspectiveCamera(55.0, 1.0, 0.1, 240.0)
         camera.position.set(0.0, 1.5, CAM_Z)
+        camera.asDynamic().lookAt(0.0, STAGE_TOP + 5.0, 0.0) // aim down at the portals on the stage
         resize()
 
         // Core scene is up — start the loop unconditionally so bolts ALWAYS render.
@@ -165,13 +166,13 @@ object TitleScene3D {
             val rim = Three.DirectionalLight("#b6c0d8", 1.1) // cool back-rim so poles separate from the dark
             rim.asDynamic().position.set(-12.0, -2.0, 12.0)
             scene.add(rim)
-            addSky() // gradient backdrop (also gives the chrome poles something to reflect)
-            addStage() // a concrete slab the portals stand on
             poleGeo = Three.CylinderGeometry(POLE_R, POLE_R, 1.0, 12) // unit-tall, scaled to pole height
             orbGeo = Three.SphereGeometry(TOP_R, 20, 16) // radius TOP_R, scaled by orbScale(level)
             rodGeo = Three.CylinderGeometry(RESO_ROD_R, RESO_ROD_R, 1.0, 8) // unit, scaled to rod length
             gasketGeo = Three.TorusGeometry(POLE_R * 1.15, POLE_R * 0.4, 10, 20) // rubber donut at the pole top
-            if (PORTALS_ENABLED) buildPortals() // off for now → spawnBolt falls back to sky bolts
+            if (PORTALS_ENABLED) buildPortals() // portals first (priority); sky/stage below can't break them
+            addSky() // gradient backdrop (also gives the chrome poles something to reflect)
+            addStage() // a concrete slab the portals stand on
             // neutral listener so the (3D-panned) game sounds we reuse pan by portal x and stay audible
             SoundUtil.updateListener(doubleArrayOf(0.0, 0.0, 0.0), doubleArrayOf(0.0, 0.0, -1.0), doubleArrayOf(0.0, 1.0, 0.0))
         } catch (e: Throwable) {
@@ -220,8 +221,8 @@ object TitleScene3D {
         ctx.fillRect(0, 0, 8, 256)
         val tex = Three.CanvasTexture(c)
         tex.asDynamic().mapping = Three.EquirectangularReflectionMapping
-        scene.asDynamic().background = tex
-        scene.asDynamic().environment = tex
+        scene.background = tex // `scene` is already dynamic — no .asDynamic()
+        scene.environment = tex
     }
 
     // A matte concrete slab the portals stand on (top at STAGE_TOP).
