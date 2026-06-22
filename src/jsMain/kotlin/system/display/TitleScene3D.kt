@@ -2,6 +2,7 @@ package system.display
 
 import config.Sim
 import external.Three
+import items.level.LevelColor
 import kotlinx.browser.document
 import kotlinx.browser.window
 import org.khronos.webgl.Float32Array
@@ -13,6 +14,7 @@ import util.data.Pos
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.ln
+import kotlin.math.pow
 import kotlin.math.sin
 import kotlin.math.sqrt
 
@@ -36,14 +38,20 @@ object TitleScene3D {
     private const val WHITE = "#ffffff"
 
     private const val PORTAL_COUNT = 5
-    private const val POLE_R = 0.34
-    private const val POLE_H1 = 4.2 // pole height at L1
-    private const val POLE_PER_LEVEL = 0.55
-    private const val ORB_R = 1.7
-    private const val RESO_RING = 0.9
-    private const val RESO_ROD_R = 0.22
+
+    // Game proportions (Scene3D), built at game scale then shrunk by TITLE_SCALE to fit the stage —
+    // so the title portals read exactly like the in-game ones (tall pole, smaller orb, reso collar).
+    private const val POLE_R = 2.0
+    private const val POLE_H = 22.5 // pole height at L1; ×poleScale(level)
+    private const val TOP_R = 7.0 // orb radius; ×orbScale(level)
+    private const val PHI = 1.618 // pole grows by φ across the 8 levels
+    private const val RESO_RADIUS_FRAC = 1.7 // reso slot distance from the pole axis (× POLE_R)
+    private const val RESO_COLLAR_FRAC = 0.78 // collar height as a fraction of pole height
+    private const val RESO_ROD_LEN_FRAC = 0.22 // rod length as a fraction of pole height
+    private const val RESO_ROD_R = POLE_R * 0.26
+    private const val TITLE_SCALE = 0.22 // game-scale portal → title stage
     private const val LEVEL_LERP = 3.0 // per-second ease toward the target level
-    private const val FLASH_DECAY = 3.5 // capture-pop emissive flash decay (per second)
+    private const val FLASH_DECAY = 3.5 // capture scale-pop decay (per second)
 
     private const val BOLT_SEGS = 7
     private const val BOLT_JITTER = 0.16
@@ -72,10 +80,10 @@ object TitleScene3D {
         val pos: DoubleArray, // base (x, y, z) on the stage
     ) {
         var color: String = "#cfcfcf"
-        var level: Double = 1.0 // shown level (eased)
+        val resoLevels = IntArray(8) // per-slot reso level (0 = empty); the portal level derives from these
+        var level: Double = 1.0 // eased toward the derived level
         var targetLevel: Double = 1.0
-        var resos: Int = 0
-        var flash: Double = 0.0 // capture pop 1→0
+        var flash: Double = 0.0 // capture scale-pop 1→0
     }
 
     private class Timed(val obj: dynamic, val mat: dynamic, val baseOpacity: Double, var age: Double, val life: Double)
@@ -142,9 +150,9 @@ object TitleScene3D {
             val rim = Three.DirectionalLight("#b6c0d8", 1.1) // cool back-rim so poles separate from the dark
             rim.asDynamic().position.set(-12.0, -2.0, 12.0)
             scene.add(rim)
-            poleGeo = Three.CylinderGeometry(POLE_R, POLE_R, 1.0, 10) // unit-tall, scaled per level
-            orbGeo = Three.SphereGeometry(ORB_R, 18, 14)
-            rodGeo = Three.CylinderGeometry(RESO_ROD_R, RESO_ROD_R, 1.0, 6)
+            poleGeo = Three.CylinderGeometry(POLE_R, POLE_R, 1.0, 12) // unit-tall, scaled to pole height
+            orbGeo = Three.SphereGeometry(TOP_R, 20, 16) // radius TOP_R, scaled by orbScale(level)
+            rodGeo = Three.CylinderGeometry(RESO_ROD_R, RESO_ROD_R, 1.0, 8) // unit, scaled to rod length
             buildPortals()
             // neutral listener so the (3D-panned) game sounds we reuse pan by portal x and stay audible
             SoundUtil.updateListener(doubleArrayOf(0.0, 0.0, 0.0), doubleArrayOf(0.0, 0.0, -1.0), doubleArrayOf(0.0, 1.0, 0.0))
@@ -184,10 +192,11 @@ object TitleScene3D {
         for (i in 0 until PORTAL_COUNT) {
             try {
                 val x = -span + 2.0 * span * (i.toDouble() / (PORTAL_COUNT - 1))
-                val pos = doubleArrayOf(x, rand(-6.5, -4.5), rand(-3.0, 3.0))
+                val pos = doubleArrayOf(x, rand(-7.5, -6.5), rand(-3.0, 3.0))
                 val color = startColor(i)
                 val group = Three.Group()
                 group.asDynamic().position.set(pos[0], pos[1], pos[2])
+                group.asDynamic().scale.set(TITLE_SCALE, TITLE_SCALE, TITLE_SCALE) // game-scale → stage
 
                 val pole = Three.Mesh(poleGeo, Materials.metal()) // chrome + envMap (visible without scene lights)
                 val orbMat = Materials.glass(color) // the game's GlassShader — real glass, not plastic
@@ -200,9 +209,8 @@ object TitleScene3D {
 
                 val p = Portal(group, orb, orbMat, pole, resoGroup, pos)
                 p.color = color
-                p.level = rand(3.0, 6.0) // start substantial, then ease to the target
-                p.targetLevel = rand(1.0, 8.0)
-                p.resos = (Util.random() * 9).toInt()
+                randomLoadout(p)
+                p.level = derivedLevel(p)
                 applyPortal(p)
                 portals.add(p)
             } catch (e: Throwable) {
@@ -217,26 +225,45 @@ object TitleScene3D {
         else -> NEUTRAL_COLOR
     }
 
-    // Position the pole + orb + reso rods for the portal's current (eased) level + reso count.
+    // Fill a random subset of the 8 reso slots so portals start populated (level derives from these).
+    private fun randomLoadout(p: Portal) {
+        for (s in 0 until 8) {
+            p.resoLevels[s] = if (Util.random() < 0.7) 1 + (Util.random() * 8).toInt() else 0
+        }
+        p.targetLevel = derivedLevel(p)
+    }
+
+    // Portal level = average of the 8 slots (empty = 0), like the game; clamped so a sparse portal still reads.
+    private fun derivedLevel(p: Portal) = (p.resoLevels.sum() / 8.0).coerceIn(1.0, 8.0)
+
+    private fun poleScale(level: Double) = PHI.pow((level.coerceIn(1.0, 8.0) - 1.0) / 7.0)
+    private fun orbScale(level: Double) = 0.5 + (level.coerceIn(1.0, 8.0) - 1.0) / 7.0 * 0.8
+
+    // Pose the pole + orb + reso rods for the portal's (eased) level — built at GAME scale; the group's
+    // TITLE_SCALE shrinks the whole thing to fit the stage, so the proportions match the in-game portal.
     private fun applyPortal(p: Portal) {
-        val poleH = POLE_H1 + (p.level - 1.0) * POLE_PER_LEVEL
+        val poleH = POLE_H * poleScale(p.level)
         p.pole.asDynamic().scale.set(1.0, poleH, 1.0)
         p.pole.asDynamic().position.set(0.0, poleH / 2.0, 0.0)
-        val s = (0.6 + (p.level - 1.0) / 7.0 * 0.7) * (1.0 + p.flash * 0.3) // flash = a brief scale pop
-        p.orb.asDynamic().scale.set(s, s, s)
-        p.orb.asDynamic().position.set(0.0, poleH + ORB_R * s, 0.0)
+        val os = orbScale(p.level) * (1.0 + p.flash * 0.3) // flash = a brief scale pop
+        p.orb.asDynamic().scale.set(os, os, os)
+        p.orb.asDynamic().position.set(0.0, poleH + TOP_R * orbScale(p.level), 0.0)
         rebuildResos(p, poleH)
     }
 
     private fun rebuildResos(p: Portal, poleH: Double) {
         val g = p.resoGroup
-        g.asDynamic().clear() // Object3D.clear() — drop all rods (avoids a dynamic length cast)
-        val rodLen = 1.4
-        for (i in 0 until p.resos.coerceIn(0, 8)) {
+        g.asDynamic().clear()
+        val collarY = poleH * RESO_COLLAR_FRAC
+        val rodLen = poleH * RESO_ROD_LEN_FRAC
+        val ringR = POLE_R * RESO_RADIUS_FRAC
+        for (i in 0 until 8) {
+            val lvl = p.resoLevels[i]
+            if (lvl <= 0) continue // empty slot
             val ang = i * PI / 4.0
-            val rod = Three.Mesh(rodGeo, Materials.resonator(p.color))
+            val rod = Three.Mesh(rodGeo, Materials.resonator(LevelColor.map[lvl] ?: "#ffffff"))
             rod.asDynamic().scale.set(1.0, rodLen, 1.0)
-            rod.asDynamic().position.set(RESO_RING * cos(ang), poleH * 0.74, RESO_RING * sin(ang))
+            rod.asDynamic().position.set(ringR * cos(ang), collarY, ringR * sin(ang))
             g.asDynamic().add(rod)
         }
     }
@@ -279,25 +306,38 @@ object TitleScene3D {
         }
     }
 
-    // A random, automatic portal event: capture (flip faction), level up/down, reso change, link, or field.
+    // A random, automatic portal event: capture (flip faction), deploy/destroy a resonator (which
+    // raises/lowers the level), link, or field.
     private fun portalEvent() {
         if (portals.isEmpty()) return
         val p = portals[(Util.random() * portals.size).toInt()]
         when ((Util.random() * 5).toInt()) {
             0 -> capture(p)
-            1 -> {
-                val nl = rand(1.0, 8.0)
-                if (nl > p.level) SoundUtil.playUpgradeSound(titlePos(p)) else SoundUtil.playDowngradeSound(titlePos(p))
-                p.targetLevel = nl
-            }
-            2 -> {
-                p.resos = (Util.random() * 9).toInt()
-                applyPortal(p)
-                SoundUtil.playHackingSound(titlePos(p))
-            }
+            1 -> deployReso(p)
+            2 -> destroyReso(p)
             3 -> makeLink(p)
             else -> makeField()
         }
+    }
+
+    // Deploy/upgrade a resonator → portal level rises with its loadout.
+    private fun deployReso(p: Portal) {
+        val slot = (Util.random() * 8).toInt()
+        p.resoLevels[slot] = (p.resoLevels[slot] + 1 + (Util.random() * 2).toInt()).coerceIn(1, 8)
+        p.targetLevel = derivedLevel(p)
+        applyPortal(p)
+        SoundUtil.playDeploySound(titlePos(p), 4)
+    }
+
+    // An XMP knocks a resonator out → portal level drops; the portal retaliates with a bolt.
+    private fun destroyReso(p: Portal) {
+        val filled = (0 until 8).filter { p.resoLevels[it] > 0 }
+        if (filled.isEmpty()) return
+        p.resoLevels[filled[(Util.random() * filled.size).toInt()]] = 0
+        p.targetLevel = derivedLevel(p)
+        applyPortal(p)
+        SoundUtil.playXmpSound(titlePos(p), 4)
+        emitBolt(orbWorld(p), upFrom(p), p.color)
     }
 
     private fun titlePos(p: Portal) = Pos(Sim.width / 2.0 + p.pos[0], Sim.height / 2.0)
@@ -310,8 +350,9 @@ object TitleScene3D {
         }
         p.orbMat = Materials.glass(p.color) // re-skin the orb to the new faction's glass
         p.orb.asDynamic().material = p.orbMat
+        randomLoadout(p) // a captured portal gets a fresh reso loadout
         p.flash = 1.0 // scale pop
-        applyPortal(p) // reso rods take the new colour
+        applyPortal(p)
         SoundUtil.playGlassShatterSound(titlePos(p), 0.22) // the orb re-skins
         emitBolt(orbWorld(p), upFrom(p), p.color) // a discharge on capture
     }
@@ -433,9 +474,9 @@ object TitleScene3D {
 
     // World position of a portal's orb centre (its group is at pos; orb rides the pole top).
     private fun orbWorld(p: Portal): DoubleArray {
-        val poleH = POLE_H1 + (p.level - 1.0) * POLE_PER_LEVEL
-        val s = 0.6 + (p.level - 1.0) / 7.0 * 0.7
-        return doubleArrayOf(p.pos[0], p.pos[1] + poleH + ORB_R * s, p.pos[2])
+        val poleH = POLE_H * poleScale(p.level)
+        val orbY = (poleH + TOP_R * orbScale(p.level)) * TITLE_SCALE // group-local height → world (scaled)
+        return doubleArrayOf(p.pos[0], p.pos[1] + orbY, p.pos[2])
     }
 
     private fun upFrom(p: Portal): DoubleArray {

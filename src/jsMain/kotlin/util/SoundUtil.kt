@@ -153,12 +153,12 @@ object SoundUtil {
             var filtered = blp2
             if (t > 0.01 && Util.random() < 0.04) filtered += Util.random() * 1.2 - 0.6 // occasional crackle
             val shaped = tanh(filtered * env * 0.8 * 5.0)
-            data[i] = (shaped * 0.6).coerceIn(-1.0, 1.0).toFloat()
+            data[i] = (shaped * 0.92).coerceIn(-1.0, 1.0).toFloat()
             i++
         }
         val source = audioCtx.createBufferSource()
         source.buffer = buffer
-        val gainNode = createStaticGain(0.5)
+        val gainNode = createStaticGain(1.0) // bolts are loud — basically max
         val panNode = createStaticPan(pan.coerceIn(-1.0, 1.0))
         source.connect(gainNode)
         gainNode.connect(panNode)
