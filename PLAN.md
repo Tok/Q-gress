@@ -14,9 +14,16 @@ can play any side; any two brains can be matched. **Desktop-only**; mobile is bl
 the AI layer lands, the slider sim is the substrate we keep hardening.
 
 ## Near-term queue
-- [ ] **Ship to GitHub** — the first push in ~7 years: push `develop`, archive the 2D source, wire CI
-  + GitHub Pages deploy (3D at `/3D/`), revoke the old 2D Mapbox token. Full plan + the manual GitHub
-  steps are in [`docs/RELEASE.md`](docs/RELEASE.md).
+- [ ] **CRITICAL — non-blocking portal creation.** `Portal.create` runs `PathUtil.generateHeatMap`
+  (full-grid BFS wavefront) + `calculateVectorField` (full-grid map + recursive smooth) **synchronously**
+  → each new portal freezes the single JS thread ~1s (stutters gameplay; serializes world-gen).
+  **Plan (recommended): cooperative coroutine yielding** — add `kotlinx-coroutines-core`; make the
+  heat-map/vector calc `suspend` and `yield()` every N wavefront layers / smoothing chunks so the event
+  loop renders between chunks; `Portal.create` becomes suspend (or returns a portal whose field fills
+  in async) and callers (`createPortals`, `Explorer`) launch it. Agents must tolerate a not-yet-ready
+  field (fallback heading) for the frames until it lands. _Alternative: a Web Worker_ (true parallelism
+  but needs grid serialization + a worker build) — heavier; revisit if yielding isn't enough.
+- [x] **Ship to GitHub** — done (live at `tok.github.io/Q-gress/`; 2D at `/2D/`; CI deploys `main`).
 
 ## 3D / rendering
 - [ ] **Animate the world build (buildings inflate)** — during world creation, make the 3D buildings
