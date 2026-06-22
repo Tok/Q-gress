@@ -14,6 +14,7 @@ import items.deployable.Resonator
 import items.level.XmpLevel
 import portal.Portal
 import portal.XmMap
+import system.display.Scene3D
 import util.HtmlUtil
 import util.Util
 import util.data.*
@@ -146,6 +147,7 @@ data class Agent(
             if (xm < xmCapacity()) {
                 addXm(heap.value.xm)
                 heap.value.collect()
+                if (HtmlUtil.isRunningInBrowser()) Scene3D.collectXmFx(heap.key, pos) // mote flies to the agent
             }
         }
     }

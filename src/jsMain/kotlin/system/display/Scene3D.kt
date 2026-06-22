@@ -213,6 +213,7 @@ object Scene3D {
         XmpBurst.register(newScene)
         FieldFx.register(newScene)
         ShatterFx.register(newScene)
+        XmFx.register(newScene)
         showcaseGroup = Three.Group()
         newScene.add(showcaseGroup)
         scene = newScene
@@ -247,6 +248,7 @@ object Scene3D {
             if (showcasesAnimating()) updateShowcases(dt)
             if (HackFx.hasActive()) HackFx.update()
             if (DeployFx.hasActive()) DeployFx.update()
+            if (XmFx.hasActive()) XmFx.update()
             if (FieldFx.hasActive()) FieldFx.update(dt)
             if (XmpBurst.hasActive()) {
                 val canvas = map.getCanvas()
@@ -262,7 +264,7 @@ object Scene3D {
         map.triggerRepaint()
     }
 
-    private fun hasActiveEffects() = ShatterFx.hasActive() || showcasesAnimating() || HackFx.hasActive() || DeployFx.hasActive() || XmpBurst.hasActive() || FieldFx.hasActive()
+    private fun hasActiveEffects() = ShatterFx.hasActive() || showcasesAnimating() || HackFx.hasActive() || DeployFx.hasActive() || XmFx.hasActive() || XmpBurst.hasActive() || FieldFx.hasActive()
 
     /** Rebuild the 3D objects from world state. Called once per simulation tick. */
     fun sync() {
@@ -359,6 +361,12 @@ object Scene3D {
             rodLen,
             LevelColor.map[resoLevel] ?: "#ffffff",
         )
+    }
+
+    /** A collected stray-XM mote flies from [from] (the heap) to [to] (the agent) before vanishing. */
+    fun collectXmFx(from: Pos, to: Pos) {
+        scene ?: return
+        XmFx.spawn(doubleArrayOf(sceneX(from), sceneY(from), XM_Z), doubleArrayOf(sceneX(to), sceneY(to), HEAD_Z))
     }
 
     /** Drop the deployed mods out of the orb when a portal is neutralized / removed. */
