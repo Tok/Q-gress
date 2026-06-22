@@ -3,7 +3,6 @@ package agent
 import World
 import config.Config
 import config.Dim
-import config.Sim
 import config.Time
 import extension.Grid
 import extension.VectorField
@@ -84,8 +83,8 @@ data class NonFaction(
         this.busyUntil = World.tick + createWaitTime()
     }
 
-    private fun moveElsewhere() = if (!Sim.roundField && !pos.isOffScreen() && Util.random() < 0.96) {
-        moveToRandomOffscreenDestination() // off-map roaming — only on rectangular maps (would leave the circle)
+    private fun moveElsewhere() = if (!pos.isOffScreen() && Util.random() < 0.96) {
+        moveToRandomOffscreenDestination() // ambient NPCs roam off-map (in/out of the play area) for life
     } else if (Util.random() < 0.7) {
         moveToFarPortal()
     } else {

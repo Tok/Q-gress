@@ -513,11 +513,13 @@ object MapUtil {
         val cx = w / 2.0
         val cy = h / 2.0
         val rSq = (minOf(w, h) / 2.0).let { it * it }
-        // Mask everything outside the circle — including the off-screen ring — so flow fields don't leak
-        // into the rectangular border (the NPC off-map routes are disabled for round; see NonFaction).
+        // Mask on-screen cells outside the circle (keeps agents/portals/flow in the round arena). The
+        // off-screen ring stays passable so ambient NPCs can roam in and out of the map; the overlays
+        // clip the display to the play area, so off-area flow never shows anyway.
         return grid.mapValues { (pos, cell) ->
+            val onScreen = pos.x >= 0 && pos.y >= 0 && pos.x < w && pos.y < h
             val outside = (pos.x - cx) * (pos.x - cx) + (pos.y - cy) * (pos.y - cy) > rSq
-            if (outside && cell.isPassable) Cell(pos, false, cell.movementPenalty) else cell
+            if (onScreen && outside && cell.isPassable) Cell(pos, false, cell.movementPenalty) else cell
         }
     }
 
