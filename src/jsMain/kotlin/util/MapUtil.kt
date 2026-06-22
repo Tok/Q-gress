@@ -40,6 +40,10 @@ object MapUtil {
     private const val SKY_HORIZON_COLOR = "#bfe0f5" // pale cyan at the horizon
     private const val SKY_FOG_COLOR = "#dfeefb" // soft haze where the ground meets the sky
 
+    // Cap the satellite source at its globally-available native zoom; past this MapLibre upscales the
+    // last good tiles (a little blurry) instead of showing "map data not yet available" placeholders.
+    private const val SATELLITE_MAX_NATIVE_ZOOM = 19
+
     private val SATELLITE_STYLE = """{
         "version": 8,
         "glyphs": "https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf",
@@ -48,6 +52,7 @@ object MapUtil {
                 "type": "raster",
                 "tiles": ["$ESRI_IMAGERY_TILES"],
                 "tileSize": 256,
+                "maxzoom": $SATELLITE_MAX_NATIVE_ZOOM,
                 "attribution": "Imagery © Esri, Maxar, Earthstar Geographics"
             },
             "$TERRAIN_SOURCE": {

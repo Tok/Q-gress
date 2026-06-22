@@ -1,6 +1,7 @@
 package system.display
 
 import World
+import config.Sim
 import external.Three
 import kotlin.math.PI
 import kotlin.math.atan2
@@ -77,6 +78,8 @@ object VectorFieldOverlay {
             val mag = vec.magnitude
             if (gx % STRIDE != 0 || gy % STRIDE != 0 || mag == 0.0) return@forEach
             val pixel = pos.fromShadow()
+            if (!Sim.isInPlayArea(pixel.x, pixel.y)) return@forEach // only show arrows inside the play area
+
             val angle = atan2(-vec.im / mag, vec.re / mag) // sim y is down → scene y is up
             val cone = Three.Mesh(coneGeo, hueMaterial(angle))
             cone.asDynamic().position.set(Scene3D.sceneX(pixel), Scene3D.sceneY(pixel), Scene3D.groundZ(pixel) + Z)

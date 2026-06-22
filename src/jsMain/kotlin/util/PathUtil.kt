@@ -2,6 +2,7 @@ package util
 
 import World
 import config.Config
+import config.Sim
 import extension.Grid
 import extension.GridMap
 import extension.VectorField
@@ -87,12 +88,14 @@ object PathUtil {
         val lr = left - right
         val ud = up - down
         val isBlocked = lr == 0 && ud == 0
-        return if (!isBlocked) {
-            Complex(lr, ud)
+        if (!isBlocked) return Complex(lr, ud)
+        // Blocked/unreached cell: outside the play area, point at the playfield centre (a tidy default
+        // for the brief flow-field flash); inside, fall back toward the destination.
+        val sim = pos.fromShadow()
+        return if (!Sim.isInPlayArea(sim.x, sim.y)) {
+            Complex(Sim.width / 2.0 - sim.x, Sim.height / 2.0 - sim.y)
         } else {
-            val xDiff = destination.x - pos.x
-            val yDiff = destination.y - pos.y
-            Complex(xDiff, yDiff)
+            Complex(destination.x - pos.x, destination.y - pos.y)
         }
     }
 

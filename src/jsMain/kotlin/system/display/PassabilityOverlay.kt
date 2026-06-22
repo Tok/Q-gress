@@ -40,7 +40,10 @@ object PassabilityOverlay {
         World.grid.forEach { (pos, cell) ->
             val gx = pos.x.toInt()
             val gy = pos.y.toInt()
-            if (gx in 0 until cols && gy in 0 until rows) {
+            val pixel = pos.fromShadow()
+            // Only paint cells inside the play area (clips to the circle when round). Outside cells stay
+            // transparent — their passability is still in World.grid for routing, just not displayed.
+            if (gx in 0 until cols && gy in 0 until rows && Sim.isInPlayArea(pixel.x, pixel.y)) {
                 ctx.fillStyle = cell.overlayColor()
                 ctx.fillRect(gx, gy, 1, 1)
             }
