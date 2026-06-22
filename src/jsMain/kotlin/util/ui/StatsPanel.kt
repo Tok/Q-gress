@@ -96,20 +96,10 @@ object StatsPanel {
         tickEl = el("scoreTick").also { footer.appendChild(it) }
         xmEl = el("scoreXm").also { footer.appendChild(it) }
         panel.appendChild(footer)
-        Dock.now().appendChild(panel)
+        Hud.top().appendChild(panel)
 
-        // Action log: a titled, collapsible section in the NOW tab (under the scoreboard + leaderboard).
-        val comWrap = el("statsComPanel")
-        val comTitle = el("statsComTitle")
-        comTitle.textContent = "LOG ▾" // expanded by default
-        comTitle.onclick = {
-            val collapsed = comWrap.classList.toggle("statsComCollapsed")
-            comTitle.textContent = if (collapsed) "LOG ▸" else "LOG ▾"
-            null
-        }
-        comWrap.appendChild(comTitle)
-        comPanel = el("statsComLines").also { comWrap.appendChild(it) }
-        Dock.now().appendChild(comWrap)
+        // Action log lines — the bottom footer's EVENT LOG tab provides the label + collapse chevron.
+        comPanel = el("statsComLines").also { Footer.tab("log").appendChild(it) }
     }
 
     private fun el(cls: String): HTMLElement {

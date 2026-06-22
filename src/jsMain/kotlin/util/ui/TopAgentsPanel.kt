@@ -87,7 +87,7 @@ object TopAgentsPanel {
         val newBody = el("tbody", "")
         table.appendChild(newBody)
         container.appendChild(table)
-        Dock.now().appendChild(container) // NOW tab (between the scoreboard and the LOG)
+        Footer.tab("agents").appendChild(container) // AGENTS footer tab (full width)
         tbody = newBody
     }
 

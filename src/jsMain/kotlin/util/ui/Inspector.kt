@@ -93,7 +93,7 @@ object Inspector {
         contentDiv.id = CONTENT_ID
         div.append(close)
         div.append(contentDiv)
-        document.body?.append(div)
+        Hud.right().append(div) // intel column, below the history dashboard (contextual)
         return div
     }
 }

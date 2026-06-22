@@ -90,7 +90,7 @@ object HistoryPanel {
             container.appendChild(row)
             plots[i] = makePlot(chart)
         }
-        Dock.history().appendChild(container) // HISTORY tab
+        Hud.right().appendChild(container) // intel column (right)
         built = true
         return true
     }

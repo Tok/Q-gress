@@ -43,7 +43,7 @@ object TuningPanel {
         QActions.values().forEach { list.appendChild(buildRow(it)) }
         list.appendChild(el("div", "tuneDivider"))
         QDestinations.values().forEach { list.appendChild(buildRow(it)) }
-        Dock.tune().appendChild(list)
+        Hud.left().appendChild(list)
         applyMode()
     }
 
