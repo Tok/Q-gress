@@ -115,6 +115,7 @@ external object Three {
         )
     }
     class ShapeGeometry(shapes: dynamic)
+    class ExtrudeGeometry(shapes: dynamic, options: dynamic = definedExternally)
     class ConeGeometry(
         radius: dynamic,
         height: dynamic,

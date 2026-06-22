@@ -34,7 +34,7 @@ object PlayAreaMask {
         val p: dynamic = js("({})")
         p.color = "#ffffff"
         p.transparent = true
-        p.opacity = 0.1 // faint glass pane — visible boundary without blocking the view
+        p.opacity = 0.22 // a touch more solid so the thicker 3D wall reads as a boundary, not a film
         p.depthWrite = false
         p.side = 2 // DoubleSide
         return Three.MeshBasicMaterial(p)
@@ -62,7 +62,8 @@ object PlayAreaMask {
         p.transparent = true
         p.opacity = dim
         p.depthWrite = false
-        p.depthTest = false // a flat mask sits under the 3D terrain — draw on top to dim out-of-bounds
+        // depthTest ON: the flat mask reads as a sea-level disc through the terrain if forced on top,
+        // so let the terrain occlude it (it dims the low/flat out-of-bounds; the wall marks the edge).
         p.side = 2 // DoubleSide
         return Three.MeshBasicMaterial(p)
     }
@@ -87,14 +88,22 @@ object PlayAreaMask {
         group.add(mask)
     }
 
-    /** An open elliptical wall standing from [base] up by [height] (spans the terrain range). */
+    /** A solid annular wall (real thickness, extruded vertically) standing from [base] up by [height]. */
     fun buildRoundWall(group: dynamic, hx: Double, hy: Double, base: Double, height: Double) {
         if (wallMat == null) wallMat = buildWallMaterial()
-        val cyl = Three.CylinderGeometry(1.0, 1.0, height, 64, 1, true) // unit open tube (axis = local Y)
-        val mesh = Three.Mesh(cyl, wallMat)
-        mesh.asDynamic().scale.set(hx, 1.0, hy) // local X/Z → ellipse radii; Y stays the wall height
-        mesh.asDynamic().rotation.x = PI / 2 // stand the tube up (Y → world Z)
-        mesh.asDynamic().position.set(0.0, 0.0, base + height / 2.0)
+        val thick = minOf(hx, hy) * WALL_THICK_FRAC
+        val shape = Three.Shape()
+        shape.asDynamic().absellipse(0.0, 0.0, hx, hy, 0.0, 2.0 * PI) // outer wall
+        val hole = Three.Path()
+        hole.asDynamic().absellipse(0.0, 0.0, hx - thick, hy - thick, 0.0, 2.0 * PI) // inner face → thickness
+        shape.asDynamic().holes.push(hole)
+        val opts: dynamic = js("({ bevelEnabled: false })")
+        opts.depth = height
+        opts.curveSegments = 64
+        val mesh = Three.Mesh(Three.ExtrudeGeometry(shape, opts), wallMat)
+        mesh.asDynamic().position.set(0.0, 0.0, base) // extrudes +Z from the terrain base
         group.add(mesh)
     }
+
+    private const val WALL_THICK_FRAC = 0.03 // round-wall thickness as a fraction of the radius
 }

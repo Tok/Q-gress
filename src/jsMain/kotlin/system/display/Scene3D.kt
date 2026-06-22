@@ -113,7 +113,7 @@ object Scene3D {
     private const val OUTSIDE_DIM = 0.4 // opacity of the dark mask greying out everything beyond the border
     private const val OUTSIDE_FAR = 12.0 // how far past the play area the dim mask extends (× the half-extent)
     private const val WALL_HEIGHT = 16.0 // upright play-area boundary wall height (scene metres)
-    private const val WALL_THICK = 1.0 // boundary wall thickness (scene metres)
+    private const val WALL_THICK = 4.0 // boundary wall thickness (scene metres) — a wall with depth, not a film
     private const val ELLIPSE_SEGMENTS = 72 // round-field boundary outline resolution
     private const val HEIGHT_N = 33 // terrain elevation grid resolution (N×N samples over the play area)
     const val CUSTOM_LAYER_ID = "qgress-3d" // MapLibre layer id for the three.js scene

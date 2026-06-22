@@ -469,6 +469,19 @@ object MapUtil {
 
     const val OFFSCREEN_CELL_ROWS = 10
 
+    /** Round field: force on-screen cells outside the inscribed circle impassable (a true circular arena). */
+    private fun maskToCircle(grid: Grid, w: Int, h: Int): Grid {
+        if (!Sim.roundField) return grid
+        val cx = w / 2.0
+        val cy = h / 2.0
+        val rSq = (minOf(w, h) / 2.0).let { it * it }
+        return grid.mapValues { (pos, cell) ->
+            val onScreen = pos.x >= 0 && pos.y >= 0 && pos.x < w && pos.y < h
+            val outside = (pos.x - cx) * (pos.x - cx) + (pos.y - cy) * (pos.y - cy) > rSq
+            if (onScreen && outside && cell.isPassable) Cell(pos, false, cell.movementPenalty) else cell
+        }
+    }
+
     private fun createGrid(imageData: ImageData, width: Int, height: Int): Grid {
         // Grid resolution follows the game canvas (CSS pixels), not the raw
         // WebGL readback (which is window × devicePixelRatio). The full readback
@@ -476,12 +489,6 @@ object MapUtil {
         // visible map regardless of the display's pixel ratio.
         val w = Sim.width / Pos.res
         val h = Sim.height / Pos.res
-        // Round field: cells outside the inscribed circle are impassable, so flow fields / walkability /
-        // movement all stay inside the circle (a real circular arena, not just a masked overlay).
-        val cx = w / 2.0
-        val cy = h / 2.0
-        val rSq = (minOf(w, h) / 2.0).let { it * it }
-        fun inField(x: Int, y: Int) = !Sim.roundField || ((x - cx) * (x - cx) + (y - cy) * (y - cy) <= rSq)
         fun isOffScreen(pos: Pos) = pos.x < 0 || pos.y < 0 || pos.x >= w || pos.y >= h
         fun nextRow(tempCtx: Ctx, h: Int, x: Int): List<Pair<Pos, Cell>> = (-OFFSCREEN_CELL_ROWS until (h + OFFSCREEN_CELL_ROWS)).map { y ->
             val pos = Pos(x, y)
@@ -492,7 +499,7 @@ object MapUtil {
             } else {
                 val scaledPixel = tempCtx.getImageData(x, y, 1, 1).data[0]
                 val passabilityOffset = 32
-                val isPassable = scaledPixel > passabilityOffset && inField(x, y)
+                val isPassable = scaledPixel > passabilityOffset
                 val penalty =
                     PathUtil.MIN_HEAT + ((255 - scaledPixel) * (PathUtil.MAX_HEAT - PathUtil.MIN_HEAT) / 255)
                 pos to Cell(pos, isPassable, penalty)
@@ -517,7 +524,9 @@ object MapUtil {
         }.toMap()
         // No closed-off areas + on-screen routes: seal pockets to the outside AND join on-screen
         // regions directly (else agents detour around the map edge between them and look stuck).
-        val grid = GridConnectivity.connectIslands(rawGrid, w, h)
+        // Mask the round field AFTER connectivity (the carver would otherwise re-open the corners it
+        // carries corridors through) so flow fields / walkability / movement truly stay in the circle.
+        val grid = maskToCircle(GridConnectivity.connectIslands(rawGrid, w, h), w, h)
         World.walkability = GridConnectivity.walkability(grid, w, h)
         console.log("grid built: walkability ${(World.walkability * 100).toInt()}% (${GridConnectivity.components(rawGrid).size} islands connected)")
         if (Debug.enabled) logConnectivity(rawGrid, grid, w, h)
