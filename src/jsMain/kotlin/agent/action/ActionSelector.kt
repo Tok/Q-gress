@@ -22,9 +22,12 @@ object ActionSelector {
 
     fun q(faction: Faction, value: QValue): Double {
         val id = value.id + "Slider" + faction.nickName
-        val slider = window.document.getElementById(id) as HTMLInputElement
-        return slider.valueAsNumber * value.weight
+        // No tuning UI (the title sim / headless runs) → fall back to the slider's default weighting.
+        val slider = window.document.getElementById(id) as? HTMLInputElement
+        return (slider?.valueAsNumber ?: DEFAULT_Q) * value.weight
     }
+
+    private const val DEFAULT_Q = 0.1 // matches the tuning sliders' default value
 
     private fun default(agent: Agent) = { agent.doNothing() }
     private fun doAnywhereAction(agent: Agent): Agent = Util.select(actionsForAnywhere(agent), default(agent)).invoke()

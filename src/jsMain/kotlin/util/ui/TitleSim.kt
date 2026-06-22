@@ -1,38 +1,35 @@
 package util.ui
 
 import World
+import agent.Agent
 import agent.Faction
+import config.Config
 import config.Location
 import config.Sim
+import config.Time
 import extension.Grid
 import kotlinx.browser.window
+import portal.Portal
+import portal.XmMap
 import system.display.Scene3D
 import util.MapUtil
 import util.SoundUtil
-import util.Util
-import util.data.Pos
-import kotlin.math.PI
-import kotlin.math.cos
-import kotlin.math.sin
 
 /**
- * The faction-screen backdrop is the **real** game renderer: a tiny demo `Scene3D` with a few portals
- * auto-hacking / XMPing / linking / leveling / capturing, so the title looks exactly like in-game (it
- * reuses the showcase API — no parallel rendering). 3D terrain, zoomed out to frame all portals, a
- * slow orbiting camera, no play-area border. Runs behind the (transparent) faction menu and is wiped
- * by the reload when onboarding finishes (the game has no in-place teardown; see HtmlUtil's handoff).
+ * The faction-screen backdrop is a **real, small game sim** — a handful of portals, a 3-v-3 agent
+ * roster, and a few dozen NPCs, all driven by the actual tick loop / AI on a real grid. So the title
+ * is literally the game running behind the menu (same rendering, pathing, captures, links, fields,
+ * XMPs — no parallel code). Built small + at a fixed location so it spins up fast; wiped by the reload
+ * when a faction is picked (the game has no in-place teardown; see HtmlUtil's reload handoff).
  */
 object TitleSim {
-    private const val N = 5
-    private const val TICK_MS = 850
-    private const val MAX_LEVEL = 8
-    private const val RING_FRAC = 0.7 // portals on a ring at this fraction of the field radius (fill the frame)
-    private const val SHATTER_REBUILD_MS = 1700 // let the shards fall before a captured portal rebuilds
-    private val colors = listOf(Faction.ENL.color, Faction.RES.color, "#cfcfcf")
+    private const val TITLE_PORTALS = 8
+    private const val TITLE_FROGS = 3
+    private const val TITLE_SMURFS = 3
+    private const val TITLE_NPCS = 40
 
     private var interval = 0
     private var started = false
-    private val positions = mutableListOf<Pos>()
 
     fun start() {
         if (started) return
@@ -40,68 +37,47 @@ object TitleSim {
         World.userFaction = Faction.ENL
         Scene3D.showBorder = false // no boundary wall/mask on the title
         window.addEventListener("pointerdown", { SoundUtil.enableAudio() }) // autoplay: unlock on first gesture
-        MapUtil.loadMaps(Location.DEFAULT.toJSON(), demo = true, callback = fun(grid: Grid) {
+        Sim.setSize(Sim.presetWidth(Sim.SMALL_SCALE), Sim.presetHeight(Sim.SMALL_SCALE)) // small → fast to build
+        Sim.roundField = false // border is hidden anyway; skip the circle mask
+        Config.startPortals = TITLE_PORTALS
+        MapUtil.loadMaps(Location.DEFAULT.toJSON(), demo = false, callback = fun(grid: Grid) {
             World.grid = grid
             World.isReady = true
             MapUtil.enable3D()
-            MapUtil.setDemoSatellite(true) // satellite backdrop (game-like) without the heavy grid readback
-            MapUtil.startTitleCinematic() // 3D terrain + zoom out + orbit
-            placePortals()
-            interval = window.setInterval({ tick() }, TICK_MS)
+            MapUtil.startTitleCinematic() // 3D terrain + zoom to frame the arena + slow orbit
+            buildWorld()
         })
     }
 
-    /** Stop the auto-driver (the scene itself is torn down by the onboarding reload). */
+    /** Stop the tick + camera drift (the scene itself is torn down by the onboarding reload). */
     fun stop() {
         if (interval != 0) window.clearInterval(interval)
         interval = 0
+        MapUtil.stopTitleOrbit()
     }
 
-    private fun placePortals() {
-        positions.clear()
-        val cx = Sim.width / 2.0
-        val cy = Sim.height / 2.0
-        val r = Sim.fieldRadius() * RING_FRAC
-        for (i in 0 until N) {
-            val ang = i * 2.0 * PI / N
-            val pos = Pos((cx + r * cos(ang)).toInt(), (cy + r * sin(ang)).toInt())
-            positions.add(pos)
-            Scene3D.placeShowcase(pos, randomLevel(), randomColor())
-        }
+    private fun buildWorld() {
+        World.allPortals.clear()
+        repeat(TITLE_PORTALS) { World.allPortals.add(Portal.createRandom()) }
+        World.allAgents.clear()
+        repeat(TITLE_FROGS) { World.allAgents.add(Agent.createFrog(World.grid)) }
+        repeat(TITLE_SMURFS) { World.allAgents.add(Agent.createSmurf(World.grid)) }
+        World.allNonFaction.clear()
+        World.createNonFaction({}, TITLE_NPCS) // paced serial drop-in (renders each as it lands)
+        Scene3D.sync()
+        interval = window.setInterval({ tick() }, Time.minTickInterval)
     }
 
+    // The game's tick, minus the HUD: agents + NPCs act, then re-render the scene from world state.
     private fun tick() {
-        if (positions.isEmpty()) return
-        val pos = positions[Util.randomInt(0, positions.size - 1)]
-        Scene3D.clickShowcase(pos, randomLevel(), randomColor()) // select the portal at this slot
-        val lvl = randomLevel()
-        when (Util.randomInt(0, 5)) {
-            0, 1 -> hack(pos, lvl)
-            2 -> Scene3D.xmpActiveShowcase(lvl) // plays its own XMP sound
-            3 -> Scene3D.stepLastShowcaseLevel(if (Util.randomBool()) 1 else -1) // plays its own up/down sound
-            4 -> Scene3D.linkLastShowcases()
-            else -> capture(pos)
-        }
+        if (!World.isReady) return
+        val next = World.allAgents.toList().map { it.act() }.toSet()
+        XmMap.updateStrayXm()
+        World.allAgents.clear()
+        World.allAgents.addAll(next)
+        World.flushPendingAgents()
+        World.allNonFaction.forEach { it.act() }
+        window.requestAnimationFrame { Scene3D.sync() }
+        World.tick++
     }
-
-    private fun hack(pos: Pos, level: Int) {
-        val glyph = Util.randomBool()
-        Scene3D.hackActiveShowcase(glyph)
-        if (glyph) SoundUtil.playGlyphingSound(pos, level) else SoundUtil.playHackingSound(pos, level)
-    }
-
-    // Capture: shatter the portal, then rebuild after a beat so the shards have time to fall.
-    private fun capture(pos: Pos) {
-        positions.remove(pos) // don't act on this slot while it's mid-shatter
-        Scene3D.removeShowcaseNear(pos)
-        SoundUtil.playGlassShatterSound(pos, 0.4, 0.8)
-        window.setTimeout({
-            Scene3D.placeShowcase(pos, randomLevel(), randomColor())
-            SoundUtil.playPortalCreationSound(pos)
-            positions.add(pos)
-        }, SHATTER_REBUILD_MS)
-    }
-
-    private fun randomLevel() = 1 + Util.randomInt(0, MAX_LEVEL - 1)
-    private fun randomColor() = colors[Util.randomInt(0, colors.size - 1)]
 }

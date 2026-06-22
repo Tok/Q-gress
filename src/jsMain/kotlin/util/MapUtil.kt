@@ -187,7 +187,7 @@ object MapUtil {
     // Framed so the chosen play-area size fits; read at call time since the size is picked at onboarding.
     private fun displayZoomForSize() = (ZOOM - log2(Sim.scale)).roundToInt()
     private const val DEMO_ZOOM = 19 // demos frame one central object, so sit closer than the game
-    private const val TITLE_ZOOM_BOOST = 2 // title sits this much closer than the whole-play-area framing
+    private const val TITLE_ZOOM_BOOST = 0 // frame the whole (small) play area — portals are spread across it now
     private var demoMode = false
     private fun displayZoom() = if (demoMode) DEMO_ZOOM else displayZoomForSize()
     private const val DEFAULT_PITCH = 50.0 // tilt the visible maps so the 3D scene reads as 3D
@@ -293,14 +293,57 @@ object MapUtil {
         goHome()
     }
 
-    /** Title scene: 3D terrain on, zoomed out to frame the whole play area, slow orbiting camera. */
+    private const val TITLE_FLYIN_MS = 2600.0 // dramatic swoop-in to the title location
+    private const val TITLE_FLYIN_ZOOM_OUT = 4 // start this many zoom levels above the framing zoom
+    private const val TITLE_COLOR_FADE_MS = 6000.0 // grayscale → colour over ~6s on the title (vs 30s in-game)
+    private const val TITLE_LEG_MS = 5200.0 // duration of each randomized camera flight leg
+    private const val TITLE_PAN_DEG = 0.0018 // how far each leg drifts the camera centre (degrees)
+    private var titleOrbitActive = false
+
+    /** Title scene: 3D terrain, a dramatic fly-in to the location, fast colour fade, then a flowing
+     *  randomized camera (chained eased legs through random bearing/pitch/zoom — a spline-ish drift). */
     fun startTitleCinematic() {
         val m = initMap ?: return
         applyTerrain(m) // DEM relief (the demo style now carries the terrain source)
         Scene3D.onTerrainChanged() // sample heights so the portals sit on the terrain
-        m.setPitch(DEFAULT_PITCH) // tilt so the relief + 3D portals read
-        m.setZoom(displayZoomForSize() + TITLE_ZOOM_BOOST) // closer than the whole-area framing (portals sit centrally)
-        startBuildCinematic() // slow bearing spin — the camera orbits the arena
+        m.setZoom(titleZoom() - TITLE_FLYIN_ZOOM_OUT) // start high + top-down …
+        m.setPitch(0.0)
+        val fly: dynamic = js("({})")
+        fly.zoom = titleZoom()
+        fly.pitch = DEFAULT_PITCH
+        fly.duration = TITLE_FLYIN_MS
+        m.asDynamic().flyTo(fly) // … swoop down into the location
+        fadeInColor(TITLE_COLOR_FADE_MS)
+        startBuildInflate() // the city rises while we fly in
+        titleOrbitActive = true
+        window.setTimeout({ titleOrbitLeg() }, TITLE_FLYIN_MS.toInt()) // drift once the swoop settles
+    }
+
+    private fun titleZoom() = displayZoomForSize() + TITLE_ZOOM_BOOST
+
+    // One randomized flight leg: ease the camera to a new centre over the area + yaw/pitch/zoom, then
+    // chain another → a flowing Unreal-title-style flythrough. (MapLibre has no camera roll; yaw =
+    // bearing, pitch = tilt, plus the centre drift give the sense of banking flight.)
+    private fun titleOrbitLeg() {
+        if (!titleOrbitActive) return
+        val m = initMap ?: return
+        val c = anchorCenter ?: return
+        val turn = (50.0 + Util.random() * 130.0) * (if (Util.randomBool()) 1.0 else -1.0)
+        val opts: dynamic = js("({})")
+        opts.center = arrayOf(
+            (c.lng as Double) + (Util.random() * 2.0 - 1.0) * TITLE_PAN_DEG,
+            (c.lat as Double) + (Util.random() * 2.0 - 1.0) * TITLE_PAN_DEG,
+        )
+        opts.bearing = (m.getBearing() as Double) + turn
+        opts.pitch = 38.0 + Util.random() * 30.0 // 38–68°
+        opts.zoom = titleZoom() + (Util.random() * 2.0 - 1.0) // ±1 around the framing zoom
+        opts.duration = TITLE_LEG_MS
+        m.asDynamic().easeTo(opts)
+        window.setTimeout({ titleOrbitLeg() }, TITLE_LEG_MS.toInt())
+    }
+
+    fun stopTitleOrbit() {
+        titleOrbitActive = false
     }
 
     /** Register the 3D scene (three.js custom layer) on the base map, anchored at the grid view. */
@@ -664,6 +707,7 @@ object MapUtil {
     private const val COLOR_FADE_MS = 30000.0 // colour eases in over 30 s after world-gen completes
     private var fadeActive = false
     private var fadeStart = 0.0
+    private var fadeDurationMs = COLOR_FADE_MS
 
     /** Instantly set colour vs grayscale (the Menu toggle); cancels any in-progress fade. */
     fun setColored(on: Boolean) {
@@ -671,8 +715,9 @@ object MapUtil {
         setRasterSaturation(if (on) 0.0 else -1.0)
     }
 
-    /** Ease the terrain from grayscale → full colour over [COLOR_FADE_MS] (call once world-gen is done). */
-    fun fadeInColor() {
+    /** Ease the terrain from grayscale → full colour over [durationMs] (call once world-gen is done). */
+    fun fadeInColor(durationMs: Double = COLOR_FADE_MS) {
+        fadeDurationMs = durationMs
         fadeStart = window.asDynamic().performance.now() as Double
         fadeActive = true
         window.requestAnimationFrame { stepFade(it) }
@@ -681,7 +726,7 @@ object MapUtil {
     private fun stepFade(@Suppress("UNUSED_PARAMETER") t: Double) {
         if (!fadeActive) return
         val now = window.asDynamic().performance.now() as Double
-        val p = ((now - fadeStart) / COLOR_FADE_MS).coerceIn(0.0, 1.0)
+        val p = ((now - fadeStart) / fadeDurationMs).coerceIn(0.0, 1.0)
         setRasterSaturation(-1.0 + p) // -1 (gray) → 0 (full colour)
         if (p < 1.0) window.requestAnimationFrame { stepFade(it) } else fadeActive = false
     }

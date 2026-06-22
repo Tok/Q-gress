@@ -30,7 +30,7 @@ object Materials {
         p.metalness = 0.95
         p.roughness = 0.12
         p.envMap = envTex
-        p.envMapIntensity = 1.4
+        p.envMapIntensity = 2.0 // brighter reflection so the chrome reads silver, not black
         Three.MeshStandardMaterial(p)
     }
 
@@ -91,9 +91,9 @@ object Materials {
         canvas.height = 64
         val ctx = canvas.getContext("2d").asDynamic()
         val grad = ctx.createLinearGradient(0.0, 0.0, 0.0, 64.0)
-        grad.addColorStop(0.0, "#f4f6fb") // sky
-        grad.addColorStop(0.55, "#9aa0aa")
-        grad.addColorStop(1.0, "#2a2c30") // ground
+        grad.addColorStop(0.0, "#ffffff") // bright sky → the chrome catches a highlight
+        grad.addColorStop(0.5, "#c4cad2")
+        grad.addColorStop(1.0, "#5c616a") // lighter ground (was near-black, so the poles read black)
         ctx.fillStyle = grad
         ctx.fillRect(0.0, 0.0, 8.0, 64.0)
         val tex = Three.CanvasTexture(canvas)
