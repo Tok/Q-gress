@@ -91,6 +91,7 @@ object Scene3D {
     // colour-coded rod (the resonator) when filled.
     private const val RESO_RING_R = POLE_R * 0.42 // grommet ring radius
     private const val RESO_RING_TUBE = POLE_R * 0.13
+    private const val GROMMET_COLOR = "#0a0a0a" // black rubber grommet (matches the gasket) when it falls
     private const val RESO_ROD_R = POLE_R * 0.26
     private const val RESO_RADIUS_FRAC = 1.7 // slot distance from pole axis (× POLE_R) — spread so slots read distinct top-down
     private const val RESO_COLLAR_FRAC = 0.78 // collar height as a fraction of the pole height
@@ -382,9 +383,9 @@ object Scene3D {
         dropResonators(location, lv, resos)
     }
 
-    /** Drop each filled resonator rod from its collar slot when the portal shatters. */
+    /** Drop the resonator parts when the portal shatters: every slot's rubber grommet o-ring + the
+     *  colour-coded rod in each filled slot, each as a brief rigid body (like the glass shards). */
     private fun dropResonators(location: Pos, level: Double, resos: Map<Octant, Int>) {
-        if (resos.isEmpty()) return
         val poleH = poleHeight(level)
         val collarZ = groundZ(location) + poleH * RESO_COLLAR_FRAC
         val rodLen = poleH * RESO_ROD_LEN_FRAC
@@ -392,10 +393,13 @@ object Scene3D {
         val x = sceneX(location)
         val y = sceneY(location)
         Octant.values().forEachIndexed { i, octant ->
-            val lvl = resos[octant] ?: return@forEachIndexed
             val ang = i * PI / 4.0
-            val color = LevelColor.map[lvl] ?: "#ffffff"
-            ShatterFx.spawnFallingRod(resoRodGeo, x + ringR * cos(ang), y + ringR * sin(ang), collarZ + rodLen / 2.0, RESO_ROD_R, rodLen, color)
+            val rx = x + ringR * cos(ang)
+            val ry = y + ringR * sin(ang)
+            ShatterFx.spawnFallingChunk(resoRingGeo, rx, ry, collarZ, 1.0, RESO_RING_R + RESO_RING_TUBE, GROMMET_COLOR)
+            resos[octant]?.let { lvl ->
+                ShatterFx.spawnFallingRod(resoRodGeo, rx, ry, collarZ + rodLen / 2.0, RESO_ROD_R, rodLen, LevelColor.map[lvl] ?: "#ffffff")
+            }
         }
     }
 
