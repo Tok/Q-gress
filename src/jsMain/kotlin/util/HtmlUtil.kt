@@ -181,9 +181,10 @@ object HtmlUtil {
     private fun runOnboarding() {
         Onboarding.showFaction { f ->
             chooseUserFaction(f)
-            Onboarding.showMapSize(Config.startPortals) { w, h, portals, quick ->
+            Onboarding.showMapSize(Config.startPortals) { w, h, portals, npc, quick ->
                 Sim.setSize(w, h) // size first, so the location screen's play-area box is the real size
                 Config.startPortals = portals
+                Config.maxNonFaction = npc
                 Config.quickStart = quick
                 Onboarding.showLocation { lng, lat, name ->
                     setLoadedLocation(lng, lat, name)

@@ -29,7 +29,7 @@ object Config {
     fun startSmurfs() = if (quickStart) 8 else minSmurfs
     fun initialAp() = if (quickStart) 2000000 else 0
 
-    private const val maxNonFaction = 300
+    var maxNonFaction = 500 // NPC count (chosen at onboarding); scales with map size
     fun maxFor(faction: Faction? = null) = when (faction) {
         Faction.ENL -> maxFrogs
         Faction.RES -> maxSmurfs

@@ -13,6 +13,7 @@ import org.khronos.webgl.Uint8Array
 import org.khronos.webgl.get
 import org.w3c.dom.ImageData
 import portal.Portal
+import system.display.Scene3D
 import util.HtmlUtil
 import util.Util
 import util.data.Pos
@@ -124,6 +125,7 @@ object World {
                 LoadingOverlay.building(LoadingOverlay.PCT_PEOPLE, 100, total - count + 1, total, "Creating people")
                 val newNonFaction = NonFaction.create(World.grid)
                 World.allNonFaction.add(newNonFaction)
+                if (HtmlUtil.isRunningInBrowser()) Scene3D.sync() // render each NPC as created → serial drop-in
                 createNonFaction(callback, count - 1)
             } else {
                 callback()
