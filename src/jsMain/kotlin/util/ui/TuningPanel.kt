@@ -83,6 +83,15 @@ object TuningPanel {
 
     private fun textLabel(qValue: QValue): HTMLElement {
         val text = el("span", "qSliderTextLabel")
+        // Inline styles (beat any stylesheet rule) — left-pack the icon + name so the row's content
+        // starts at the column's left edge. Plain CSS wasn't winning the cascade for this element.
+        val st = text.asDynamic().style
+        st.display = "flex"
+        st.alignItems = "center"
+        st.justifyContent = "flex-start"
+        st.gap = "4px"
+        st.justifySelf = "start"
+        st.textAlign = "left"
         val icon = qValue.icon
         if (icon != null) {
             val img = document.createElement("img") as HTMLImageElement
