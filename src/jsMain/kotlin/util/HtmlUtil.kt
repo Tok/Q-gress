@@ -28,7 +28,6 @@ import util.data.Pos
 import util.ui.Controls
 import util.ui.Demo
 import util.ui.Inspector
-import util.ui.LayerView
 import util.ui.LoadingOverlay
 import util.ui.Onboarding
 import util.ui.TuningPanel
@@ -39,6 +38,7 @@ external fun encodeURIComponent(uri: String): String
 
 object HtmlUtil {
     private var intervalID = 0
+    private var coloredMap = true // terrain colour on (eases in after world-gen); Menu toggle flips it
     private const val PAUSE_BUTTON_ID = "pauseButton"
     private const val LOCATION_LABEL_ID = "locationLabel"
     private const val MIN_WALKABILITY = 0.12 // below this the area is mostly water/blocked → unplayable
@@ -136,7 +136,6 @@ object HtmlUtil {
         val rightGroup = document.createElement("div") as HTMLDivElement
         rightGroup.addClass("toolbarGroup")
         rightGroup.append(createVolumeSpan())
-        rightGroup.append(LayerView.createDropdown())
 
         // The loaded-location name stretches across the middle (flex-grows between the two groups).
         buttonDiv.append(leftGroup)
@@ -497,10 +496,11 @@ object HtmlUtil {
             createQSliders(World.userFactionOrThrow())
             resetInterval()
             World.isReady = true
-            LayerView.apply()
+            MapUtil.showSatellite() // terrain stays grayscale (set at map-load) until the fade below
             Navigation.setup()
             MapUtil.bindInteractions(::onMapClick, ::onMapMove)
             LoadingOverlay.done()
+            if (coloredMap) MapUtil.fadeInColor() else MapUtil.setColored(false) // colour eases in post-build
         }
     }
 
@@ -533,6 +533,14 @@ object HtmlUtil {
         // Overlay toggle lives in the menu now (no longer always-visible in the top bar). Vectors are
         // no longer toggled — they flash automatically for ~a second when a portal is created.
         menu.append(createMenuCheckbox("passabilityToggle", "Terrain") { PassabilityOverlay.setVisible(it) })
+        // Colored map vs grayscale satellite (replaces the old View dropdown). Default coloured; the
+        // colour eases in over 30 s after world-gen, so this toggle is also the manual override.
+        val colored = createMenuCheckbox("coloredMapToggle", "Colored map") {
+            coloredMap = it
+            MapUtil.setColored(it)
+        }
+        (colored.firstChild as? HTMLInputElement)?.checked = coloredMap
+        menu.append(colored)
         // Preview the read-only tuning mode (sliders → 0–1 bars) used for agent-vs-agent matches.
         val lock = createMenuCheckbox("tuneLockToggle", "Lock tuning") { TuningPanel.setMode(it) }
         (lock.firstChild as? HTMLInputElement)?.checked = isReadOnlyFromUrl()

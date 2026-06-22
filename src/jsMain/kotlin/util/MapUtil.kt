@@ -7,6 +7,7 @@ import config.Styles
 import extension.*
 import external.MapLibre
 import kotlinx.browser.document
+import kotlinx.browser.window
 import kotlinx.dom.addClass
 import kotlinx.dom.removeClass
 import org.khronos.webgl.Uint8Array
@@ -300,6 +301,7 @@ object MapUtil {
             if (!demoMode && Styles.use3DBuildings) { // demos use the bare gray style, no buildings
                 targetMap.addLayer(buildingLayerConfig())
             }
+            if (!demoMode) targetMap.setPaintProperty("satellite", "raster-saturation", -1.0) // grayscale during world-gen
         }
         val existing = initMap
         if (existing == null) {
@@ -512,10 +514,38 @@ object MapUtil {
 
     /**
      * Desaturate the satellite raster (terrain only — the 3D portals/agents render in a separate
-     * custom layer and stay coloured). Grayscale is the default view; "Colored" turns it off.
+     * custom layer and stay coloured). Grayscale is the build-time default; colour fades in once the
+     * world is built ([fadeInColor]). The Menu "Colored map" toggle flips it instantly ([setColored]).
      */
-    fun setGrayscale(on: Boolean) {
-        initMap?.setPaintProperty("satellite", "raster-saturation", if (on) -1.0 else 0.0)
+    fun setGrayscale(on: Boolean) = setRasterSaturation(if (on) -1.0 else 0.0)
+
+    private fun setRasterSaturation(sat: Double) {
+        initMap?.setPaintProperty("satellite", "raster-saturation", sat)
+    }
+
+    private const val COLOR_FADE_MS = 30000.0 // colour eases in over 30 s after world-gen completes
+    private var fadeActive = false
+    private var fadeStart = 0.0
+
+    /** Instantly set colour vs grayscale (the Menu toggle); cancels any in-progress fade. */
+    fun setColored(on: Boolean) {
+        fadeActive = false
+        setRasterSaturation(if (on) 0.0 else -1.0)
+    }
+
+    /** Ease the terrain from grayscale → full colour over [COLOR_FADE_MS] (call once world-gen is done). */
+    fun fadeInColor() {
+        fadeStart = window.asDynamic().performance.now() as Double
+        fadeActive = true
+        window.requestAnimationFrame { stepFade(it) }
+    }
+
+    private fun stepFade(@Suppress("UNUSED_PARAMETER") t: Double) {
+        if (!fadeActive) return
+        val now = window.asDynamic().performance.now() as Double
+        val p = ((now - fadeStart) / COLOR_FADE_MS).coerceIn(0.0, 1.0)
+        setRasterSaturation(-1.0 + p) // -1 (gray) → 0 (full colour)
+        if (p < 1.0) window.requestAnimationFrame { stepFade(it) } else fadeActive = false
     }
 
     /** Fade the 3D buildings (0 = invisible … 1 = solid) so crowded areas don't hide the action. */
