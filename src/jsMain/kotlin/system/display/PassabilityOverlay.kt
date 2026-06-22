@@ -52,6 +52,7 @@ object PassabilityOverlay {
         matParams.map = texture
         matParams.transparent = true
         matParams.depthWrite = false
+        matParams.depthTest = false // a flat quad sits under the 3D terrain — draw it on top instead
         val mesh = Three.Mesh(
             Three.PlaneGeometry(Sim.width * Scene3D.metersPerPixel, Sim.height * Scene3D.metersPerPixel),
             Three.MeshBasicMaterial(matParams),

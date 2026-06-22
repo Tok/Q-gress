@@ -300,21 +300,37 @@ object Scene3D {
         val group = borderGroup ?: return
         val hx = sceneX(Pos(Sim.width, 0)) // play-area half-extents (scene metres); sceneY flips sim-y → +hy is the top edge
         val hy = sceneY(Pos(0, 0))
+        val (gMin, gMax) = groundZRange()
+        val wallH = (gMax - gMin) + WALL_HEIGHT // span the terrain range so the wall clears it everywhere
         if (Sim.roundField) {
             val r = minOf(hx, hy) // true circle = the smaller half-extent (matches the grid mask)
-            PlayAreaMask.buildRound(group, r, r, BORDER_Z - 0.05, OUTSIDE_DIM, WALL_HEIGHT)
+            PlayAreaMask.buildRoundMask(group, r, r, BORDER_Z - 0.05, OUTSIDE_DIM)
+            PlayAreaMask.buildRoundWall(group, r, r, gMin, wallH)
+            val rad = Sim.fieldRadius()
             val pts = (0..ELLIPSE_SEGMENTS).map {
                 val t = it.toDouble() / ELLIPSE_SEGMENTS * 2.0 * PI
-                Three.Vector3(r * cos(t), r * sin(t), BORDER_Z)
+                val sp = Pos((Sim.width / 2.0 + rad * cos(t)).toInt(), (Sim.height / 2.0 + rad * sin(t)).toInt())
+                Three.Vector3(sceneX(sp), sceneY(sp), groundZ(sp) + BORDER_Z) // outline follows the terrain edge
             }.toTypedArray()
             group.add(Three.Line(Three.BufferGeometry().setFromPoints(pts), lineMaterial(BORDER_COLOR)))
             return
         }
         PlayAreaMask.build(group, hx, hy, OUTSIDE_FAR * maxOf(hx, hy), BORDER_Z - 0.05, OUTSIDE_DIM)
-        PlayAreaMask.buildWalls(group, hx, hy, WALL_HEIGHT, WALL_THICK, 0.0)
+        PlayAreaMask.buildWalls(group, hx, hy, wallH, WALL_THICK, gMin)
         val corners = arrayOf(Pos(0, 0), Pos(Sim.width, 0), Pos(Sim.width, Sim.height), Pos(0, Sim.height), Pos(0, 0))
-        val points = corners.map { Three.Vector3(sceneX(it), sceneY(it), BORDER_Z) }.toTypedArray()
+        val points = corners.map { Three.Vector3(sceneX(it), sceneY(it), groundZ(it) + BORDER_Z) }.toTypedArray()
         group.add(Three.Line(Three.BufferGeometry().setFromPoints(points), lineMaterial(BORDER_COLOR)))
+    }
+
+    private fun groundZRange(): Pair<Double, Double> {
+        if (!heightsReady) return 0.0 to 0.0
+        var mn = heights[0]
+        var mx = heights[0]
+        for (h in heights) {
+            if (h < mn) mn = h
+            if (h > mx) mx = h
+        }
+        return mn to mx
     }
 
     // Load the glass-orb fracture GLB once (async). shattered_flask = sphere shell-shard variants
@@ -475,11 +491,23 @@ object Scene3D {
     private val heights = DoubleArray(HEIGHT_N * HEIGHT_N)
     private var heightsReady = false
 
-    /** Re-sample the elevation grid (on terrain toggle / world build). Retries cover async DEM tile load. */
+    /** Re-sample the elevation grid + rebuild the border on it (on terrain toggle / build). Retries cover DEM load. */
     fun onTerrainChanged() {
         sampleHeights()
-        window.setTimeout({ sampleHeights() }, 1500)
-        window.setTimeout({ sampleHeights() }, 4000)
+        rebuildBorder()
+        window.setTimeout({ resampleTerrain() }, 1500)
+        window.setTimeout({ resampleTerrain() }, 4000)
+    }
+
+    private fun resampleTerrain() {
+        sampleHeights()
+        rebuildBorder()
+    }
+
+    private fun rebuildBorder() {
+        val g = borderGroup ?: return
+        clear(g)
+        buildBorder()
     }
 
     private fun sampleHeights() {

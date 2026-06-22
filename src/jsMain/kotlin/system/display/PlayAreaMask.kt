@@ -62,17 +62,15 @@ object PlayAreaMask {
         p.transparent = true
         p.opacity = dim
         p.depthWrite = false
+        p.depthTest = false // a flat mask sits under the 3D terrain — draw on top to dim out-of-bounds
         p.side = 2 // DoubleSide
         return Three.MeshBasicMaterial(p)
     }
 
-    /**
-     * Round arena: a dark annulus (a big square with an elliptical hole) dims everything outside the
-     * inscribed ellipse [hx]×[hy], and an open elliptical wall stands at its edge.
-     */
     private const val MASK_FAR = 12.0 // how far past the play area the dim mask extends (× the half-extent)
 
-    fun buildRound(group: dynamic, hx: Double, hy: Double, z: Double, dim: Double, height: Double) {
+    /** Round arena dim mask: a dark annulus (a big square with a circular hole of radius [hx]×[hy]). */
+    fun buildRoundMask(group: dynamic, hx: Double, hy: Double, z: Double, dim: Double) {
         if (material == null) material = buildMaterial(dim)
         val far = MASK_FAR * maxOf(hx, hy)
         val shape = Three.Shape()
@@ -87,16 +85,16 @@ object PlayAreaMask {
         val mask = Three.Mesh(Three.ShapeGeometry(shape), material)
         mask.asDynamic().position.set(0.0, 0.0, z)
         group.add(mask)
-        buildRoundWall(group, hx, hy, height)
     }
 
-    private fun buildRoundWall(group: dynamic, hx: Double, hy: Double, height: Double) {
+    /** An open elliptical wall standing from [base] up by [height] (spans the terrain range). */
+    fun buildRoundWall(group: dynamic, hx: Double, hy: Double, base: Double, height: Double) {
         if (wallMat == null) wallMat = buildWallMaterial()
         val cyl = Three.CylinderGeometry(1.0, 1.0, height, 64, 1, true) // unit open tube (axis = local Y)
         val mesh = Three.Mesh(cyl, wallMat)
         mesh.asDynamic().scale.set(hx, 1.0, hy) // local X/Z → ellipse radii; Y stays the wall height
         mesh.asDynamic().rotation.x = PI / 2 // stand the tube up (Y → world Z)
-        mesh.asDynamic().position.set(0.0, 0.0, height / 2.0)
+        mesh.asDynamic().position.set(0.0, 0.0, base + height / 2.0)
         group.add(mesh)
     }
 }

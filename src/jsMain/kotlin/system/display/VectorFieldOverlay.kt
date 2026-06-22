@@ -79,7 +79,7 @@ object VectorFieldOverlay {
             val pixel = pos.fromShadow()
             val angle = atan2(-vec.im / mag, vec.re / mag) // sim y is down → scene y is up
             val cone = Three.Mesh(coneGeo, hueMaterial(angle))
-            cone.asDynamic().position.set(Scene3D.sceneX(pixel), Scene3D.sceneY(pixel), Z)
+            cone.asDynamic().position.set(Scene3D.sceneX(pixel), Scene3D.sceneY(pixel), Scene3D.groundZ(pixel) + Z)
             cone.asDynamic().rotation.z = angle - PI / 2 // cone apex (+Y) → flow direction
             g.add(cone)
         }
@@ -93,6 +93,7 @@ object VectorFieldOverlay {
             val p: dynamic = js("({})")
             p.color = "hsl(${bucket * 15}, 90%, 55%)"
             p.transparent = true // so the field can fade out
+            p.depthTest = false // visible over the 3D terrain
             Three.MeshBasicMaterial(p)
         }
     }
