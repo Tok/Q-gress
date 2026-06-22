@@ -43,6 +43,9 @@ html, body {
     padding: 0;
     overflow: hidden;
     background: #000000;
+    /* Global default font = Coda (the data/body face); display elements opt into Chakra Petch via
+       .displayFont. Always end stacks in a generic so we never fall back to an arbitrary system font. */
+    font-family: "Coda", monospace;
 }
 .container {
     position: relative;
@@ -359,6 +362,35 @@ html, body {
     color: #ffffff;
     font-family: "Chakra Petch", sans-serif;
 }
+/* Faction step: transparent vignette so the real Scene3D demo (TitleSim) shows behind the menu;
+   the dark edges keep the wordmark + buttons readable over the bright map. */
+.onboardScreen.titleScreen {
+    background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 28%, rgba(0, 0, 0, 0.6) 100%);
+}
+/* Thin "source on GitHub" link pinned to the bottom of the title screen. */
+.titleGithub {
+    position: fixed;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: "Coda", monospace;
+    font-size: 12px;
+    letter-spacing: 1px;
+    text-decoration: none;
+    color: rgba(230, 235, 232, 0.6);
+    pointer-events: auto;
+    transition: color 0.15s;
+}
+.titleGithub:hover {
+    color: #ffffff;
+}
+.titleGithub svg {
+    display: block;
+}
 /* Standalone three.js thunderbolt scene behind the title content (above the gradient). */
 .titleCanvas {
     position: absolute;
@@ -388,9 +420,9 @@ html, body {
     gap: 28px;
 }
 .onboardRow .popupButton {
-    width: 160px;
-    height: 84px;
-    font-size: 34px;
+    width: 88px;
+    height: 42px;
+    font-size: 18px;
     cursor: pointer;
     /* Override the generic .popupButton 55px side padding (it was off-centering the ENL/RES label). */
     padding: 0;
@@ -409,17 +441,17 @@ html, body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 20px;
-    padding: 26px 40px 32px;
+    gap: 10px;
+    padding: 12px 18px 14px;
     background: rgba(8, 12, 10, 0.55);
     border: 1px solid rgba(255, 255, 255, 0.16);
-    border-radius: 8px;
+    border-radius: 6px;
     backdrop-filter: blur(3px);
 }
 .factionCtaLabel {
     font-family: "Coda", monospace; /* not the brand font, not all-caps — a calm prompt */
-    font-size: 26px;
-    letter-spacing: 3px;
+    font-size: 14px;
+    letter-spacing: 2px;
     color: #e6ebe8;
 }
 /* Volume on the title screen (top-right) — the storm starts loud. */
@@ -810,11 +842,15 @@ html, body {
     color: #ffffff;
     text-shadow: -1px 0px black, 0px 1px black, 1px 0px black, 0px -1px black;
 }
-/* The action icon in a tuning row — a supersampled canvas shown small so it stays crisp on HiDPI. */
-.qSliderTextLabel img {
+/* The action icon in its own fixed column — a supersampled canvas shown small so it stays crisp on HiDPI. */
+.qSliderIcon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.qSliderIcon img {
     width: 14px;
     height: 14px;
-    vertical-align: middle;
     image-rendering: -webkit-optimize-contrast;
 }
 /* The merged tuning list (TUNE tab): one flat list — Actions, a divider, then Destinations. */
@@ -910,13 +946,15 @@ html, body {
     padding: 5px;
 }
 
-.volumeSlider {
+.volumeSlider,
+.speedSlider {
     width: 80px;
     vertical-align: middle;
     accent-color: #cccccc; /* grayscale track, not the OS/faction blue */
 }
 /* White knob (not faction-coloured like the tuning sliders). */
-.volumeSlider::-webkit-slider-thumb {
+.volumeSlider::-webkit-slider-thumb,
+.speedSlider::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
     width: 13px;
@@ -925,7 +963,8 @@ html, body {
     background: #ffffff;
     cursor: pointer;
 }
-.volumeSlider::-moz-range-thumb {
+.volumeSlider::-moz-range-thumb,
+.speedSlider::-moz-range-thumb {
     width: 13px;
     height: 13px;
     border: none;
@@ -1265,4 +1304,47 @@ html, body {
     color: #9aa6a0;
     font-size: 11px;
     max-width: 280px;
+}
+
+/* Keyboard-shortcuts popup: a full-screen backdrop (click anywhere closes) + a centered card. */
+.shortcutsBackdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 400;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.45);
+    cursor: pointer;
+}
+.shortcutsPanel {
+    min-width: 300px;
+    padding: 14px 18px;
+    background: rgba(0, 0, 0, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 8px;
+    color: #ffffff;
+    font-family: "Coda", monospace;
+    font-size: 14px;
+}
+.shortcutsTitle {
+    font-family: "Chakra Petch", sans-serif;
+    letter-spacing: 2px;
+    margin-bottom: 10px;
+    color: #cfd6d2;
+}
+.shortcutsRow {
+    display: flex;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 3px 0;
+}
+.shortcutsKey {
+    color: #8fd0ff;
+    font-weight: bold;
+}
+.shortcutsNote {
+    margin-top: 10px;
+    color: #9aa6a0;
+    font-size: 11px;
 }
