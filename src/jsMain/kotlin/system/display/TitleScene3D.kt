@@ -72,7 +72,7 @@ object TitleScene3D {
 
     private const val CAM_Z = 34.0
 
-    private const val STAGE_TOP = -7.0 // the portals stand on a concrete stage at this y
+    private const val STAGE_TOP = -3.0 // the portals stand on a concrete stage at this y (raised to fit the title fonts)
     private const val STAGE_W = 46.0
     private const val STAGE_D = 22.0
     private const val STAGE_THICK = 4.0
