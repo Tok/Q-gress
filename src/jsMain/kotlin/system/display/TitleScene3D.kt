@@ -38,6 +38,7 @@ object TitleScene3D {
     private const val WHITE = "#ffffff"
 
     private const val PORTAL_COUNT = 5
+    private const val PORTALS_ENABLED = false // temporarily off — proportions/look need work; bolts still fire
 
     // Game proportions (Scene3D), built at game scale then shrunk by TITLE_SCALE to fit the stage —
     // so the title portals read exactly like the in-game ones (tall pole, smaller orb, reso collar).
@@ -153,7 +154,7 @@ object TitleScene3D {
             poleGeo = Three.CylinderGeometry(POLE_R, POLE_R, 1.0, 12) // unit-tall, scaled to pole height
             orbGeo = Three.SphereGeometry(TOP_R, 20, 16) // radius TOP_R, scaled by orbScale(level)
             rodGeo = Three.CylinderGeometry(RESO_ROD_R, RESO_ROD_R, 1.0, 8) // unit, scaled to rod length
-            buildPortals()
+            if (PORTALS_ENABLED) buildPortals() // off for now → spawnBolt falls back to sky bolts
             // neutral listener so the (3D-panned) game sounds we reuse pan by portal x and stay audible
             SoundUtil.updateListener(doubleArrayOf(0.0, 0.0, 0.0), doubleArrayOf(0.0, 0.0, -1.0), doubleArrayOf(0.0, 1.0, 0.0))
         } catch (e: Throwable) {

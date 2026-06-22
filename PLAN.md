@@ -14,6 +14,11 @@ can play any side; any two brains can be matched. **Desktop-only**; mobile is bl
 the AI layer lands, the slider sim is the substrate we keep hardening.
 
 ## Near-term queue
+- [ ] **Re-enable + fix the title-screen portals.** Temporarily **disabled**
+  (`TitleScene3D.PORTALS_ENABLED = false`) — the thunderbolts still fire (sky-bolt fallback), but the
+  portals' look wasn't right. They're built at the game's proportions × `TITLE_SCALE` with the level
+  derived from 8 reso slots (chrome pole + GlassShader orb + reso rods), but the orb/pole sizing, reso
+  collar layout, camera framing and lighting need a visual pass before turning the flag back on.
 - [ ] **CRITICAL — non-blocking portal creation (coroutine yielding; design verified, ready to build).**
   `PathUtil.generateHeatMap` (full-grid BFS) + `calculateVectorField` (full-grid map + recursive smooth)
   run **synchronously** → each new field freezes the single JS thread ~1s. **`kotlinx-coroutines-core`
