@@ -232,6 +232,13 @@ object MapUtil {
         map?.asDynamic()?.flyTo(opts)
     }
 
+    /** Zoom the live map by [delta] levels with a short ease (keyboard zoom: PageUp/PageDown). */
+    fun zoomBy(delta: Double) {
+        val m = map ?: return
+        val opts: dynamic = js("({ duration: 220 })")
+        m.asDynamic().zoomTo(m.getZoom() + delta, opts)
+    }
+
     private const val BUILD_SPIN_DEG = 0.12 // gentle bearing orbit during world build (~7°/s)
     private var cinematicActive = false
 

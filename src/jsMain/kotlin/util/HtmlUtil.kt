@@ -44,6 +44,7 @@ object HtmlUtil {
     private const val PAUSE_BUTTON_ID = "pauseButton"
     private const val LOCATION_LABEL_ID = "locationLabel"
     private const val MIN_WALKABILITY = 0.12 // below this the area is mostly water/blocked → unplayable
+    private const val KEYBOARD_ZOOM_STEP = 0.6 // zoom levels per PageUp/PageDown press
 
     // The actually-loaded location (set by setLoadedLocation) — named in the top bar, and the target
     // a Reset reloads onto.
@@ -144,7 +145,7 @@ object HtmlUtil {
         val pauseButton = createButton(PAUSE_BUTTON_ID, "topButton", "Pause") { togglePause() }
         pauseButton.addClass("non", "displayFont")
         leftGroup.append(pauseButton)
-        bindSpacebarPause() // Space toggles pause/resume too
+        bindKeyboardShortcuts() // Space = pause, Home = recenter, PageUp/Down = zoom
 
         // Right group, far right: volume + base-map view dropdown.
         val rightGroup = document.createElement("div") as HTMLDivElement
@@ -353,21 +354,29 @@ object HtmlUtil {
 
     private fun isTypingTarget(target: dynamic) = target is HTMLInputElement || target is HTMLTextAreaElement || target is HTMLSelectElement
 
-    /** Keyboard shortcuts: Space toggles pause/resume, Home recenters over the play area. */
-    private fun bindSpacebarPause() {
+    /** Keyboard shortcuts: Space = pause/resume, Home = recenter, PageUp/PageDown = zoom in/out. */
+    private fun bindKeyboardShortcuts() {
         if (shortcutsBound) return
         shortcutsBound = true
         document.addEventListener("keydown", { e ->
             val ev = e as KeyboardEvent
-            if (ev.repeat || isTypingTarget(ev.target)) return@addEventListener
+            if (isTypingTarget(ev.target)) return@addEventListener
             when (ev.code) {
-                "Space" -> {
+                "Space" -> if (!ev.repeat) {
                     ev.preventDefault() // don't scroll the page
                     togglePause()
                 }
-                "Home" -> {
+                "Home" -> if (!ev.repeat) {
                     ev.preventDefault()
                     MapUtil.goHome()
+                }
+                "PageUp" -> { // repeat allowed → hold to keep zooming
+                    ev.preventDefault()
+                    MapUtil.zoomBy(KEYBOARD_ZOOM_STEP)
+                }
+                "PageDown" -> {
+                    ev.preventDefault()
+                    MapUtil.zoomBy(-KEYBOARD_ZOOM_STEP)
                 }
             }
         })
