@@ -32,6 +32,11 @@ object MapUtil {
     private const val ESRI_IMAGERY_TILES =
         "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
 
+    // Keyless DEM: AWS "Terrain Tiles" (Mapzen terrarium PNG encoding), CORS-enabled, no token.
+    private const val TERRAIN_DEM_TILES = "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"
+    private const val TERRAIN_SOURCE = "terrain"
+    private const val TERRAIN_EXAGGERATION = 1.3 // height boost; tune for relief vs realism
+
     private val SATELLITE_STYLE = """{
         "version": 8,
         "glyphs": "https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf",
@@ -41,6 +46,14 @@ object MapUtil {
                 "tiles": ["$ESRI_IMAGERY_TILES"],
                 "tileSize": 256,
                 "attribution": "Imagery © Esri, Maxar, Earthstar Geographics"
+            },
+            "$TERRAIN_SOURCE": {
+                "type": "raster-dem",
+                "encoding": "terrarium",
+                "tiles": ["$TERRAIN_DEM_TILES"],
+                "tileSize": 256,
+                "maxzoom": 15,
+                "attribution": "Elevation © Mapzen, AWS Terrain Tiles"
             },
             "openmaptiles": { "type": "vector", "url": "$OPENMAPTILES_URL" }
         },
@@ -324,6 +337,7 @@ object MapUtil {
                 targetMap.addLayer(buildingLayerConfig())
             }
             if (!demoMode) targetMap.setPaintProperty("satellite", "raster-saturation", -1.0) // grayscale during world-gen
+            if (!demoMode) applyTerrain(targetMap) // 3D relief from the DEM source
         }
         val existing = initMap
         if (existing == null) {
@@ -543,6 +557,27 @@ object MapUtil {
 
     private fun setRasterSaturation(sat: Double) {
         initMap?.setPaintProperty("satellite", "raster-saturation", sat)
+    }
+
+    private var terrainEnabled = true
+
+    /** Drape the satellite over the DEM (3D relief). [on] false flattens back to today's map. */
+    private fun applyTerrain(map: MapLibre.Map) {
+        val opts: dynamic = if (terrainEnabled) js("({})") else null
+        if (opts != null) {
+            opts.source = TERRAIN_SOURCE
+            opts.exaggeration = TERRAIN_EXAGGERATION
+        }
+        map.asDynamic().setTerrain(opts)
+    }
+
+    fun isTerrainEnabled() = terrainEnabled
+
+    /** Menu toggle: turn the 3D relief on/off (and re-sample the height grid that objects sit on). */
+    fun setTerrainEnabled(on: Boolean) {
+        terrainEnabled = on
+        initMap?.let { applyTerrain(it) }
+        Scene3D.onTerrainChanged()
     }
 
     private const val COLOR_FADE_MS = 30000.0 // colour eases in over 30 s after world-gen completes

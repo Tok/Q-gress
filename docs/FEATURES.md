@@ -86,6 +86,13 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
 - **Portals are discovered, not placed**: manual portal **placement** and **deletion** are removed
   from the real game (the map click only selects/deselects; the Inspector has no Remove button). The
   `/#demo` sandbox keeps LMB-place / RMB-shatter for showcasing.
+- **3D terrain (DEM heights)**: the map is no longer flat — a keyless **terrarium DEM** source (AWS
+  open Terrain Tiles) drives MapLibre `setTerrain`, so the satellite drapes over real elevation. Game
+  objects **sit on the terrain**: `Scene3D` samples a coarse elevation grid (`groundZ`, bilinear, via
+  `simPosToLngLat` + `queryTerrainElevation`) and offsets every ground-anchored z (portals, agents,
+  NPCs, stray XM, links/fields, labels, the deploy/loot/pickup FX). Menu **"3D terrain"** toggle
+  (default on); degrades to flat if the DEM is unavailable. (The cannon-es shatter ground stays flat —
+  a known approximation.)
 - **Top toolbar** reorganized: Menu far-left (with Terrain/Vectors overlay toggles + Lock-tuning
   inside it), Pause/Resume, Home; View dropdown + Volume far-right.
 - Map visuals: grayscale-terrain default + Colored/Street views (`LayerView`), white play-area

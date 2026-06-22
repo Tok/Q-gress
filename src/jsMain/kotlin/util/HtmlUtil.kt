@@ -515,6 +515,7 @@ object HtmlUtil {
             LoadingOverlay.done()
             MapUtil.stopBuildCinematicAndHome() // settle to the Home view (top-down over the play area)
             if (coloredMap) MapUtil.fadeInColor() else MapUtil.setColored(false) // colour eases in post-build
+            Scene3D.onTerrainChanged() // sample the DEM height grid (objects sit on the terrain)
         }
     }
 
@@ -555,6 +556,10 @@ object HtmlUtil {
         }
         (colored.firstChild as? HTMLInputElement)?.checked = coloredMap
         menu.append(colored)
+        // 3D terrain (DEM relief) on/off.
+        val terrain = createMenuCheckbox("terrainToggle", "3D terrain") { MapUtil.setTerrainEnabled(it) }
+        (terrain.firstChild as? HTMLInputElement)?.checked = MapUtil.isTerrainEnabled()
+        menu.append(terrain)
         // Preview the read-only tuning mode (sliders → 0–1 bars) used for agent-vs-agent matches.
         val lock = createMenuCheckbox("tuneLockToggle", "Lock tuning") { TuningPanel.setMode(it) }
         (lock.firstChild as? HTMLInputElement)?.checked = isReadOnlyFromUrl()

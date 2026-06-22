@@ -15,6 +15,7 @@ import items.deployable.ModType
 import items.deployable.Shield
 import items.level.LevelColor
 import kotlinx.browser.document
+import kotlinx.browser.window
 import org.w3c.dom.HTMLCanvasElement
 import portal.Field
 import portal.Link
@@ -26,9 +27,11 @@ import util.Debug
 import util.SoundUtil
 import util.data.Pos
 import kotlin.math.PI
+import kotlin.math.atan
 import kotlin.math.cos
 import kotlin.math.pow
 import kotlin.math.sin
+import kotlin.math.sinh
 import kotlin.math.sqrt
 
 /**
@@ -112,6 +115,7 @@ object Scene3D {
     private const val WALL_HEIGHT = 16.0 // upright play-area boundary wall height (scene metres)
     private const val WALL_THICK = 1.0 // boundary wall thickness (scene metres)
     private const val ELLIPSE_SEGMENTS = 72 // round-field boundary outline resolution
+    private const val HEIGHT_N = 33 // terrain elevation grid resolution (N×N samples over the play area)
     const val CUSTOM_LAYER_ID = "qgress-3d" // MapLibre layer id for the three.js scene
 
     // Currently selected entity, as "portal:<id>" / "agent:<name>" (see pick()).
@@ -123,6 +127,7 @@ object Scene3D {
 
     private var originMerc: dynamic = null
     private var metersScale = 1.0 // mercator units per metre at the origin
+    private var terrainMap: MapLibre.Map? = null // for DEM elevation sampling
 
     var metersPerPixel = 1.0
         private set
@@ -176,6 +181,7 @@ object Scene3D {
     private val spriteCache = mutableMapOf<String, dynamic>()
 
     fun register(map: MapLibre.Map, originLng: Double, originLat: Double, anchorZoom: Double) {
+        terrainMap = map
         originMerc = MapLibre.asDynamic().MercatorCoordinate.fromLngLat(arrayOf(originLng, originLat), 0.0)
         metersScale = originMerc.meterInMercatorCoordinateUnits() as Double
         metersPerPixel = METERS_PER_PIXEL_Z0 * cos(originLat * PI / 180.0) / 2.0.pow(anchorZoom)
@@ -343,7 +349,7 @@ object Scene3D {
     private fun dropResonators(location: Pos, level: Double, resos: Map<Octant, Int>) {
         if (resos.isEmpty()) return
         val poleH = poleHeight(level)
-        val collarZ = poleH * RESO_COLLAR_FRAC
+        val collarZ = groundZ(location) + poleH * RESO_COLLAR_FRAC
         val rodLen = poleH * RESO_ROD_LEN_FRAC
         val ringR = POLE_R * RESO_RADIUS_FRAC
         val x = sceneX(location)
@@ -366,7 +372,7 @@ object Scene3D {
             resoRodGeo,
             sceneX(location) + ringR * cos(ang),
             sceneY(location) + ringR * sin(ang),
-            poleH * RESO_COLLAR_FRAC + rodLen / 2.0,
+            groundZ(location) + poleH * RESO_COLLAR_FRAC + rodLen / 2.0,
             RESO_ROD_R,
             rodLen,
             LevelColor.map[resoLevel] ?: "#ffffff",
@@ -376,14 +382,14 @@ object Scene3D {
     /** A collected stray-XM mote flies from [from] (the heap) to [to] (the agent) before vanishing. */
     fun collectXmFx(from: Pos, to: Pos) {
         scene ?: return
-        XmFx.spawn(doubleArrayOf(sceneX(from), sceneY(from), XM_Z), doubleArrayOf(sceneX(to), sceneY(to), HEAD_Z))
+        XmFx.spawn(doubleArrayOf(sceneX(from), sceneY(from), groundZ(from) + XM_Z), doubleArrayOf(sceneX(to), sceneY(to), groundZ(to) + HEAD_Z))
     }
 
     /** Hack/glyph loot: [count] motes drop from the portal's orb top down to the hacking agent. */
     fun rewardFx(portalLocation: Pos, level: Int, to: Pos, count: Int) {
         scene ?: return
-        val top = doubleArrayOf(sceneX(portalLocation), sceneY(portalLocation), orbCenterZ(level.coerceAtLeast(1).toDouble()))
-        val dst = doubleArrayOf(sceneX(to), sceneY(to), HEAD_Z)
+        val top = doubleArrayOf(sceneX(portalLocation), sceneY(portalLocation), groundZ(portalLocation) + orbCenterZ(level.coerceAtLeast(1).toDouble()))
+        val dst = doubleArrayOf(sceneX(to), sceneY(to), groundZ(to) + HEAD_Z)
         repeat(count.coerceAtMost(8)) { XmFx.spawn(top, dst) }
     }
 
@@ -393,8 +399,9 @@ object Scene3D {
         val lv = level.toDouble()
         val s = orbScale(lv)
         val half = TOP_R * MOD_R_FRAC * s
+        val gz = groundZ(location)
         mods.forEach { mod ->
-            ShatterFx.spawnFallingChunk(modGeoFor(mod.modType()), sceneX(location), sceneY(location), orbCenterZ(lv), s, half, mod.rarity.color)
+            ShatterFx.spawnFallingChunk(modGeoFor(mod.modType()), sceneX(location), sceneY(location), gz + orbCenterZ(lv), s, half, mod.rarity.color)
         }
     }
 
@@ -456,6 +463,56 @@ object Scene3D {
     internal fun sceneX(pos: Pos) = (pos.x - Sim.width / 2.0) * metersPerPixel
     internal fun sceneY(pos: Pos) = -(pos.y - Sim.height / 2.0) * metersPerPixel
 
+    /** Inverse of [lngLatToSimPos]: a sim Pos → ground [lng, lat] (web-mercator unproject). */
+    private fun simPosToLngLat(pos: Pos): DoubleArray {
+        val mx = (originMerc.x as Double) + sceneX(pos) * metersScale
+        val my = (originMerc.y as Double) - sceneY(pos) * metersScale // sceneY flips sim-y → undo it
+        return doubleArrayOf(mx * 360.0 - 180.0, atan(sinh(PI * (1.0 - 2.0 * my))) * 180.0 / PI)
+    }
+
+    // --- Terrain heights: a coarse elevation grid sampled from the DEM; objects sit on it. ---
+    private val heights = DoubleArray(HEIGHT_N * HEIGHT_N)
+    private var heightsReady = false
+
+    /** Re-sample the elevation grid (on terrain toggle / world build). Retries cover async DEM tile load. */
+    fun onTerrainChanged() {
+        sampleHeights()
+        window.setTimeout({ sampleHeights() }, 1500)
+        window.setTimeout({ sampleHeights() }, 4000)
+    }
+
+    private fun sampleHeights() {
+        val map = terrainMap ?: return
+        var any = false
+        for (j in 0 until HEIGHT_N) {
+            for (i in 0 until HEIGHT_N) {
+                val px = i.toDouble() / (HEIGHT_N - 1) * Sim.width
+                val py = j.toDouble() / (HEIGHT_N - 1) * Sim.height
+                val ll = simPosToLngLat(Pos(px.toInt(), py.toInt()))
+                val e = map.asDynamic().queryTerrainElevation(arrayOf(ll[0], ll[1])) as? Double
+                if (e != null) any = true
+                heights[j * HEIGHT_N + i] = e ?: 0.0
+            }
+        }
+        if (any) heightsReady = true
+    }
+
+    /** Terrain elevation (scene metres) under a sim [pos]; 0 until the DEM has sampled (flat fallback). */
+    fun groundZ(pos: Pos): Double {
+        if (!heightsReady) return 0.0
+        val gx = (pos.x / Sim.width * (HEIGHT_N - 1)).coerceIn(0.0, (HEIGHT_N - 1).toDouble())
+        val gy = (pos.y / Sim.height * (HEIGHT_N - 1)).coerceIn(0.0, (HEIGHT_N - 1).toDouble())
+        val i0 = gx.toInt().coerceAtMost(HEIGHT_N - 2)
+        val j0 = gy.toInt().coerceAtMost(HEIGHT_N - 2)
+        val fx = gx - i0
+        val fy = gy - j0
+        val h00 = heights[j0 * HEIGHT_N + i0]
+        val h10 = heights[j0 * HEIGHT_N + i0 + 1]
+        val h01 = heights[(j0 + 1) * HEIGHT_N + i0]
+        val h11 = heights[(j0 + 1) * HEIGHT_N + i0 + 1]
+        return (h00 * (1 - fx) + h10 * fx) * (1 - fy) + (h01 * (1 - fx) + h11 * fx) * fy
+    }
+
     /**
      * Drive the Web Audio listener from the live camera each frame: position = the recovered eye,
      * orientation = the view forward + screen-up, all in sim-space metres (the same space the
@@ -511,6 +568,7 @@ object Scene3D {
         PortalChangeSound.check(id, portal) // upgrade / downgrade / neutralize sounds on state change
         val baseColor = portal.owner?.faction?.color ?: NEUTRAL_COLOR
         val level = tweenedLevel(id, portal.getLevel().toInt()) // eases on level-up
+        val gz = groundZ(portal.location) // terrain height under this portal
         // Colour change → the OLD orb shatters in place, the new one pops back in (reform factor).
         // A *neutral* orb never shatters (no resonators = nothing there): only a captured (faction-
         // coloured) orb breaks, so capturing a neutral portal grows the faction orb in with no white
@@ -518,7 +576,7 @@ object Scene3D {
         CaptureFx.check(id, baseColor) { old ->
             if (old == NEUTRAL_COLOR) return@check
             val lv = displayedLevel[id] ?: level
-            ShatterFx.shatterOrb(sceneX(portal.location), sceneY(portal.location), orbCenterZ(lv), orbScale(lv), old, flaskVariants, flaskScale)
+            ShatterFx.shatterOrb(sceneX(portal.location), sceneY(portal.location), gz + orbCenterZ(lv), orbScale(lv), old, flaskVariants, flaskScale)
             SoundUtil.playGlassShatterSound(portal.location, CAPTURE_SHATTER_WEIGHT)
         }
         val reform = CaptureFx.reformFactor(id)
@@ -532,9 +590,9 @@ object Scene3D {
         // Build-in: the pole rises and the orb grows from the ground; [reform] re-pops the orb only.
         val g = Spawns.appear(id, PORTAL_GROW_S)
         if (g < 1.0) {
-            applyBuildGrow(level, g, parts, reform)
+            applyBuildGrow(level, g, parts, reform, gz)
         } else if (reform < 1.0) {
-            applyBuildGrow(level, 1.0, parts, reform) // orb pops back in after a capture
+            applyBuildGrow(level, 1.0, parts, reform, gz) // orb pops back in after a capture
         }
     }
 
@@ -553,6 +611,7 @@ object Scene3D {
     ): Array<dynamic> {
         val x = sceneX(location)
         val y = sceneY(location)
+        val gz = groundZ(location) // sit the whole portal on the terrain
         val poleH = poleHeight(level)
         val s = orbScale(level)
         // Selection lights the orb brighter (faction hue kept). Demo portals (id == null) never highlight.
@@ -560,11 +619,11 @@ object Scene3D {
         val pole = Three.Mesh(poleGeo, Materials.metal())
         pole.asDynamic().rotation.x = PI / 2 // Y-axis cylinder → vertical (Z up)
         pole.asDynamic().scale.set(1.0, poleScale(level), 1.0) // grow height (local Y) only
-        place(pole.asDynamic(), x, y, poleH / 2)
+        place(pole.asDynamic(), x, y, gz + poleH / 2)
         val gasket = Three.Mesh(gasketGeo, Materials.rubber()) // torus in XY → flat ring around the pole top
-        place(gasket.asDynamic(), x, y, poleH)
+        place(gasket.asDynamic(), x, y, gz + poleH)
         val orb = Three.Mesh(topGeo, glassMat)
-        place(orb.asDynamic(), x, y, orbCenterZ(level))
+        place(orb.asDynamic(), x, y, gz + orbCenterZ(level))
         orb.asDynamic().scale.set(s, s, s)
         // Double-shell: a concentric inner glass surface gives the orb real wall thickness — its
         // rim sits inside the outer rim, so the orb reads as a thick blown-glass vessel, not a film.
@@ -580,12 +639,15 @@ object Scene3D {
         parent.add(pole)
         parent.add(gasket)
         parent.add(orb)
-        val resoGroup = buildResonators(parent, x, y, level, resos, id)
+        val resoGroup = buildResonators(parent, location, level, resos, id)
         return arrayOf(orb, gasket, pole, resoGroup)
     }
 
     /** 8 rubber slot-rings around the pole collar; a colour-coded rod stands in each filled slot. */
-    private fun buildResonators(parent: dynamic, x: Double, y: Double, level: Double, resos: Map<Octant, Int>, id: String? = null): dynamic {
+    private fun buildResonators(parent: dynamic, location: Pos, level: Double, resos: Map<Octant, Int>, id: String? = null): dynamic {
+        val x = sceneX(location)
+        val y = sceneY(location)
+        val gz = groundZ(location)
         val group = Three.Group()
         val poleH = poleHeight(level)
         val rodLen = poleH * RESO_ROD_LEN_FRAC
@@ -631,7 +693,7 @@ object Scene3D {
                 group.asDynamic().add(ring)
             }
         }
-        group.asDynamic().position.set(x, y, poleH * RESO_COLLAR_FRAC)
+        group.asDynamic().position.set(x, y, gz + poleH * RESO_COLLAR_FRAC)
         parent.add(group)
         return group
     }
@@ -665,17 +727,17 @@ object Scene3D {
     }
 
     /** Rise the pole + grow the orb from the ground for the build-in animation ([g] = 0→1). */
-    private fun applyBuildGrow(level: Double, g: Double, parts: Array<dynamic>, reform: Double = 1.0) {
+    private fun applyBuildGrow(level: Double, g: Double, parts: Array<dynamic>, reform: Double = 1.0, gz: Double = 0.0) {
         val gg = g.coerceAtLeast(0.0)
         val poleH = poleHeight(level)
         val s = orbScale(level) * gg * reform
         parts[2].scale.set(1.0, poleScale(level) * gg, 1.0) // pole
-        parts[2].position.z = poleH * gg / 2.0
-        parts[1].position.z = poleH * gg // gasket
+        parts[2].position.z = gz + poleH * gg / 2.0
+        parts[1].position.z = gz + poleH * gg // gasket
         parts[0].scale.set(s, s, s) // orb
-        parts[0].position.z = poleH * gg + TOP_R * s
+        parts[0].position.z = gz + poleH * gg + TOP_R * s
         parts[3].scale.set(gg, gg, gg) // resonators grow in with the collar
-        parts[3].position.z = poleH * gg * RESO_COLLAR_FRAC
+        parts[3].position.z = gz + poleH * gg * RESO_COLLAR_FRAC
     }
 
     private fun activeShowcase() = selectedShowcase ?: showcases.lastOrNull()
@@ -811,36 +873,38 @@ object Scene3D {
     private fun addAgent(agent: Agent) {
         val x = sceneX(agent.pos)
         val y = sceneY(agent.pos)
+        val gz = groundZ(agent.pos) // walk on the terrain
         val id = "agent:${agent.name}"
         val color = if (selected == id) HIGHLIGHT_COLOR else agent.faction.color
         val sphere = Three.Mesh(headGeo, Materials.solid(color))
-        place(sphere.asDynamic(), x, y, HEAD_Z)
+        place(sphere.asDynamic(), x, y, gz + HEAD_Z)
         tag(sphere.asDynamic(), id)
         agentsGroup.add(sphere)
         // Action indicator: a camera-facing billboard just above the head.
         val sprite = Three.Sprite(indicatorMaterial(agent.action.item, agent.faction))
-        sprite.asDynamic().position.set(x, y, INDICATOR_Z)
+        sprite.asDynamic().position.set(x, y, gz + INDICATOR_Z)
         sprite.asDynamic().scale.set(INDICATOR_SIZE, INDICATOR_SIZE, 1.0)
         indicatorsGroup.add(sprite)
-        if (Debug.enabled && StuckTracker.isStuck(agent.key())) addStuckMarker(x, y)
+        if (Debug.enabled && StuckTracker.isStuck(agent.key())) addStuckMarker(x, y, gz)
     }
 
     // ?debug: a vivid marker floating over an entity flagged as stuck/looping (see StuckTracker).
     private val stuckGeo: dynamic by lazy { Three.SphereGeometry(2.2, 8, 8) }
-    private fun addStuckMarker(x: Double, y: Double) {
+    private fun addStuckMarker(x: Double, y: Double, gz: Double = 0.0) {
         val marker = Three.Mesh(stuckGeo, Materials.solid("#ff2d2d"))
-        place(marker.asDynamic(), x, y, INDICATOR_Z + 3.5)
+        place(marker.asDynamic(), x, y, gz + INDICATOR_Z + 3.5)
         indicatorsGroup.add(marker)
     }
 
     private fun addNpc(npc: NonFaction) {
         val sphere = Three.Mesh(headGeo, Materials.solid(NEUTRAL_COLOR))
-        if (Debug.enabled && StuckTracker.isStuck("npc:${npc.id}")) addStuckMarker(sceneX(npc.pos), sceneY(npc.pos))
+        val gz = groundZ(npc.pos)
+        if (Debug.enabled && StuckTracker.isStuck("npc:${npc.id}")) addStuckMarker(sceneX(npc.pos), sceneY(npc.pos), gz)
         // Marble drop-in: on first appearance the NPC falls from the sky (accelerating, 1−f²) to head
         // height. Per-NPC start height (by id) so a crowd reads as scattered marbles, not a flat sheet.
         val f = Spawns.appearRaw("npc:${npc.id}", NPC_DROP_S)
         val h = NPC_DROP_HEIGHT * (0.55 + 0.45 * ((npc.id * 37) % 100) / 100.0)
-        val z = HEAD_Z + h * (1.0 - f * f)
+        val z = gz + HEAD_Z + h * (1.0 - f * f)
         place(sphere.asDynamic(), sceneX(npc.pos), sceneY(npc.pos), z)
         npcsGroup.add(sphere)
     }
@@ -850,7 +914,7 @@ object Scene3D {
         val mote = Three.Mesh(xmGeo, Materials.xmGlow())
         val s = 0.85 + (heap.xm / 300.0).coerceIn(0.0, 1.0) * 0.5 // bigger heaps glow a touch larger
         mote.asDynamic().scale.set(s, s, s)
-        place(mote.asDynamic(), sceneX(pos), sceneY(pos), XM_Z)
+        place(mote.asDynamic(), sceneX(pos), sceneY(pos), groundZ(pos) + XM_Z)
         xmGroup.add(mote)
     }
 
@@ -927,7 +991,7 @@ object Scene3D {
     // (addPortal updates displayedLevel before addField/addLink run in sync, so this reads fresh.)
     private fun displayedOrbLevel(portal: Portal): Double = displayedLevel["portal:${portal.id}"] ?: portal.getLevel().toInt().toDouble()
 
-    private fun orbPos(portal: Portal): DoubleArray = doubleArrayOf(sceneX(portal.location), sceneY(portal.location), orbCenterZ(displayedOrbLevel(portal)))
+    private fun orbPos(portal: Portal): DoubleArray = doubleArrayOf(sceneX(portal.location), sceneY(portal.location), groundZ(portal.location) + orbCenterZ(displayedOrbLevel(portal)))
 
     /** Stable id for a field, independent of which corner is "origin" (its three portals, sorted). */
     private fun fieldId(field: Field): String = listOf(field.origin.id, field.primaryAnchor.id, field.secondaryAnchor.id).sorted().joinToString("|", "field:")
@@ -949,7 +1013,7 @@ object Scene3D {
 
     /** A camera-facing name + level billboard floating just above the portal's orb (cleared each sync). */
     private fun addPortalLabel(portal: Portal, level: Double) {
-        val z = orbCenterZ(level) + TOP_R * orbScale(level) + LABEL_GAP
+        val z = groundZ(portal.location) + orbCenterZ(level) + TOP_R * orbScale(level) + LABEL_GAP
         val sprite = Three.Sprite(portalLabelMaterial(portal.name, portal.getLevel().toInt()))
         sprite.asDynamic().position.set(sceneX(portal.location), sceneY(portal.location), z)
         sprite.asDynamic().scale.set(LABEL_W, LABEL_W * LABEL_CANVAS_H / LABEL_CANVAS_W, 1.0)

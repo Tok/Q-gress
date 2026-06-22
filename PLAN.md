@@ -32,6 +32,10 @@ the AI layer lands, the slider sim is the substrate we keep hardening.
 - [x] **Ship to GitHub** — done (live at `tok.github.io/Q-gress/`; 2D at `/2D/`; CI deploys `main`).
 
 ## 3D / rendering
+- [x] **3D terrain (DEM heights)** — DONE: keyless terrarium DEM + `setTerrain`; objects sit on a
+  sampled elevation grid (`Scene3D.groundZ`). Follow-ups: terrain-aware **shatter ground** (cannon
+  plane is still flat z=0 → shards/pole sink to sea level on high ground); maybe exaggeration in the
+  Menu; resample the height grid on big map pans if the play area ever moves.
 - [ ] **Explosion shader tuning pass (optional).** The new fireball exposes GLSL consts in
   `XmpShaders.VOLUME_FRAG` (`NOISE_FREQ`, `DISPLACE`, `DENSITY_GAIN`, `STEPS`) + the rise/grow curve in
   `XmpBurst.update`. If it reads too dense/sparse or too small once seen live, these are the knobs;
