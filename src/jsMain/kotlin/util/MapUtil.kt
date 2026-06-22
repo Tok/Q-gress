@@ -296,8 +296,7 @@ object MapUtil {
     private const val TITLE_FLYIN_MS = 2600.0 // dramatic swoop-in to the title location
     private const val TITLE_FLYIN_ZOOM_OUT = 4 // start this many zoom levels above the framing zoom
     private const val TITLE_COLOR_FADE_MS = 6000.0 // grayscale → colour over ~6s on the title (vs 30s in-game)
-    private const val TITLE_LEG_MS = 5200.0 // duration of each randomized camera flight leg
-    private const val TITLE_PAN_DEG = 0.0018 // how far each leg drifts the camera centre (degrees)
+    private const val TITLE_LEG_MS = 10400.0 // duration of each randomized camera leg (slow, ~half speed)
     private var titleOrbitActive = false
 
     /** Title scene: 3D terrain, a dramatic fly-in to the location, fast colour fade, then a flowing
@@ -321,19 +320,16 @@ object MapUtil {
 
     private fun titleZoom() = displayZoomForSize() + TITLE_ZOOM_BOOST
 
-    // One randomized flight leg: ease the camera to a new centre over the area + yaw/pitch/zoom, then
-    // chain another → a flowing Unreal-title-style flythrough. (MapLibre has no camera roll; yaw =
-    // bearing, pitch = tilt, plus the centre drift give the sense of banking flight.)
+    // One randomized camera leg: keep the centre on the action (so portals stay in view) and ease to a
+    // new yaw/pitch/zoom, then chain another → a flowing orbit around the arena. (MapLibre has no camera
+    // roll; yaw = bearing, pitch = tilt. To also fly the camera *position* while facing centre we'd need
+    // FreeCamera — a follow-up.)
     private fun titleOrbitLeg() {
         if (!titleOrbitActive) return
         val m = initMap ?: return
-        val c = anchorCenter ?: return
         val turn = (50.0 + Util.random() * 130.0) * (if (Util.randomBool()) 1.0 else -1.0)
         val opts: dynamic = js("({})")
-        opts.center = arrayOf(
-            (c.lng as Double) + (Util.random() * 2.0 - 1.0) * TITLE_PAN_DEG,
-            (c.lat as Double) + (Util.random() * 2.0 - 1.0) * TITLE_PAN_DEG,
-        )
+        opts.center = anchorCenter // hold the centre on the action area → portals stay framed
         opts.bearing = (m.getBearing() as Double) + turn
         opts.pitch = 38.0 + Util.random() * 30.0 // 38–68°
         opts.zoom = titleZoom() + (Util.random() * 2.0 - 1.0) // ±1 around the framing zoom

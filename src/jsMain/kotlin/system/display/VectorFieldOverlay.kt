@@ -38,8 +38,12 @@ object VectorFieldOverlay {
         group = Three.Group().also { scene.add(it) }
     }
 
+    /** Off for the title scene — no flow-field flashes there. */
+    var flashEnabled = true
+
     /** Queue [portalId]'s (now-ready) flow field for the sweep; it shows briefly when its turn comes. */
     fun flash(portalId: String) {
+        if (!flashEnabled) return
         if (currentId != portalId && queue.lastOrNull() != portalId) queue.addLast(portalId)
     }
 

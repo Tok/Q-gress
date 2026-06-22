@@ -12,6 +12,7 @@ import kotlinx.browser.window
 import portal.Portal
 import portal.XmMap
 import system.display.Scene3D
+import system.display.VectorFieldOverlay
 import util.MapUtil
 import util.SoundUtil
 
@@ -38,7 +39,8 @@ object TitleSim {
         Scene3D.showBorder = false // no boundary wall/mask on the title
         window.addEventListener("pointerdown", { SoundUtil.enableAudio() }) // autoplay: unlock on first gesture
         Sim.setSize(Sim.presetWidth(Sim.SMALL_SCALE), Sim.presetHeight(Sim.SMALL_SCALE)) // small → fast to build
-        Sim.roundField = false // border is hidden anyway; skip the circle mask
+        Sim.roundField = true // a centered round arena → portals cluster around the centre (border stays hidden)
+        VectorFieldOverlay.flashEnabled = false // no flow-field flashes on the title
         Config.startPortals = TITLE_PORTALS
         MapUtil.loadMaps(Location.DEFAULT.toJSON(), demo = false, callback = fun(grid: Grid) {
             World.grid = grid
