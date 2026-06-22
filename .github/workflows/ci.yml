@@ -13,10 +13,10 @@ jobs:
     name: Lint + complexity + tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "21"
@@ -28,14 +28,9 @@ jobs:
       - name: Quality gate (ktlint + detekt + jsNodeTest)
         run: ./gradlew --no-configuration-cache --console=plain ktlintCheck detekt jsNodeTest
 
-      # Best-effort: real Kotlin/JS line-coverage needs the functional-core split (Kover is JVM-only;
-      # see PLAN.md). This wires the integration so it lights up once coverage reports exist.
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          fail_ci_if_error: false
-        continue-on-error: true
+      # Codecov upload is parked until real Kotlin/JS line-coverage exists (Kover is JVM-only — needs
+      # the functional-core split; see PLAN.md). Re-add codecov/codecov-action here once a coverage
+      # report is produced; the CODECOV_TOKEN secret is already set.
 
   deploy:
     name: Deploy 3D to GitHub Pages (root)
@@ -43,10 +38,10 @@ jobs:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "21"
@@ -56,6 +51,11 @@ jobs:
 
       - name: Build production bundle
         run: ./gradlew --no-configuration-cache --console=plain jsBrowserDistribution
+
+      # Stamp the deployed build's short-sha so the running app can detect a newer deploy (no-store
+      # fetch) and offer a reload — matches config.BuildInfo.GIT_SHA (git rev-parse --short).
+      - name: Stamp build version
+        run: git rev-parse --short HEAD > build/dist/js/productionExecutable/version.txt
 
       # Publish the 3D bundle to the gh-pages root. keep_files leaves an optional archived 2D site at
       # /2D/ untouched (if you choose to seed one — see docs/RELEASE.md).
