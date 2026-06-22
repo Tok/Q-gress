@@ -13,6 +13,7 @@ import util.Util
 import util.data.Pos
 import kotlin.math.PI
 import kotlin.math.cos
+import kotlin.math.floor
 import kotlin.math.ln
 import kotlin.math.sin
 import kotlin.math.sqrt
@@ -75,9 +76,11 @@ object TitleScene3D {
     private const val STAGE_W = 46.0
     private const val STAGE_D = 22.0
     private const val STAGE_THICK = 4.0
-    private const val SKY_TOP = "#0a1430" // deep night-blue overhead
-    private const val SKY_MID = "#1b3a6b" // horizon glow
-    private const val SKY_BOTTOM = "#05060a" // dark ground haze
+
+    // Off-tint grayscale sky (NOT blue — blue is RES-coded). Very low saturation, neutral.
+    private const val SKY_TOP = "#23242a" // dark neutral gray overhead
+    private const val SKY_MID = "#565a62" // lighter gray at the horizon
+    private const val SKY_BOTTOM = "#101114" // near-black gray ground haze
 
     private class Portal(
         val group: dynamic,
@@ -207,22 +210,83 @@ object TitleScene3D {
         cam.updateProjectionMatrix()
     }
 
-    // A vertical gradient sky as the scene background (and reflection env for the chrome poles).
+    // An off-tint grayscale gradient sky with procedural (fbm value-noise) clouds, used as the scene
+    // background + reflection environment.
     private fun addSky() {
+        val w = 256
+        val h = 128
         val c = document.createElement("canvas") as HTMLCanvasElement
-        c.width = 8
-        c.height = 256
+        c.width = w
+        c.height = h
         val ctx = c.getContext("2d").asDynamic()
-        val grad = ctx.createLinearGradient(0.0, 0.0, 0.0, 256.0)
+        val grad = ctx.createLinearGradient(0.0, 0.0, 0.0, h.toDouble())
         grad.addColorStop(0.0, SKY_TOP)
-        grad.addColorStop(0.55, SKY_MID)
+        grad.addColorStop(0.5, SKY_MID)
         grad.addColorStop(1.0, SKY_BOTTOM)
         ctx.fillStyle = grad
-        ctx.fillRect(0, 0, 8, 256)
+        ctx.fillRect(0, 0, w, h)
+        paintClouds(ctx, w, h)
         val tex = Three.CanvasTexture(c)
         tex.asDynamic().mapping = Three.EquirectangularReflectionMapping
         scene.background = tex // `scene` is already dynamic — no .asDynamic()
         scene.environment = tex
+    }
+
+    // Grey procedural clouds: blend a light grey over the gradient by fbm density, fading toward the ground.
+    private fun paintClouds(ctx: dynamic, w: Int, h: Int) {
+        val img = ctx.getImageData(0, 0, w, h)
+        val data = img.data
+        for (y in 0 until h) {
+            val band = 1.0 - y.toDouble() / h // 1 at top → 0 at bottom
+            val skyMask = ((band - 0.2) / 0.8).coerceIn(0.0, 1.0) // clouds live up high, gone by the horizon
+            if (skyMask <= 0.0) continue
+            for (x in 0 until w) {
+                val cloud = smoothstep(0.5, 0.78, fbm(x / 26.0, y / 20.0)) * skyMask
+                if (cloud <= 0.0) continue
+                val idx = (y * w + x) * 4
+                val inv = 1.0 - cloud
+                data[idx] = data[idx] * inv + 206.0 * cloud
+                data[idx + 1] = data[idx + 1] * inv + 208.0 * cloud
+                data[idx + 2] = data[idx + 2] * inv + 213.0 * cloud
+            }
+        }
+        ctx.putImageData(img, 0, 0)
+    }
+
+    private fun smoothstep(e0: Double, e1: Double, x: Double): Double {
+        val t = ((x - e0) / (e1 - e0)).coerceIn(0.0, 1.0)
+        return t * t * (3.0 - 2.0 * t)
+    }
+
+    private fun noiseHash(xi: Int, yi: Int): Double {
+        var n = xi * 374761393 + yi * 668265263
+        n = (n xor (n shr 13)) * 1274126177
+        n = n xor (n shr 16)
+        return (n and 0x7fffffff).toDouble() / 0x7fffffff.toDouble()
+    }
+
+    private fun valueNoise(x: Double, y: Double): Double {
+        val xi = floor(x).toInt()
+        val yi = floor(y).toInt()
+        val xf = x - xi
+        val yf = y - yi
+        val u = xf * xf * (3.0 - 2.0 * xf)
+        val v = yf * yf * (3.0 - 2.0 * yf)
+        val top = noiseHash(xi, yi) + (noiseHash(xi + 1, yi) - noiseHash(xi, yi)) * u
+        val bot = noiseHash(xi, yi + 1) + (noiseHash(xi + 1, yi + 1) - noiseHash(xi, yi + 1)) * u
+        return top + (bot - top) * v
+    }
+
+    private fun fbm(x: Double, y: Double): Double {
+        var sum = 0.0
+        var amp = 0.5
+        var freq = 1.0
+        repeat(4) {
+            sum += amp * valueNoise(x * freq, y * freq)
+            freq *= 2.0
+            amp *= 0.5
+        }
+        return sum
     }
 
     // A matte concrete slab the portals stand on (top at STAGE_TOP).
