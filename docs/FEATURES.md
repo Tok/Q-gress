@@ -41,13 +41,21 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
   - `GlassShader` (Fresnel rim + emission + vnoise smudges, double-shell thick walls,
     camera-tracking rim via `updateEye`).
   - Portals = **metal pole + rubber gasket + glass orb** (φ-scaled by level L1→L8), **grow-on-spawn**
-    + **level-up tween**.
+    + **level-up tween**. **Selection** keeps the faction hue and just lights the orb brighter
+    (`GlassShader.SELECT_BRIGHT`) — no more neutral-looking white tint. A faction-neutral **name + level
+    billboard** floats above each portal's orb (cached `CanvasTexture` sprite, Chakra Petch).
   - **Resonators** — 8 colour-coded rods in rubber slot-rings, real-time from `resoMap()`, grow
     with the pole, **fall on shatter** (cannon-es physics rods), **hack spin + top-jointed
     centrifuge** (`HackFx`); shatter physics in `ShatterFx` (pole sinks, shards fall).
   - **Links → glass pipes** (`linkGeo`/`orientTube`, brighter variant + additive plasma core).
   - **Fields → plasma** sheets (`PlasmaShader`, animated; fill-in + dissolve + collapse sound).
-  - **XMP** — volumetric raymarched fireball (`XmpShaders`/`XmpBurst`), detonates at the agent.
+  - **XMP** — volumetric raymarched **mini-nuke** (`XmpShaders`/`XmpBurst`), detonates at the agent.
+    The field morphs from an initial fireball into a **rising mushroom** — a torus cap (the rising
+    donut / vortex ring) that climbs + spreads, plus a stem — carved into pyroclastic billows by
+    rotation-decorrelated fbm displacement (no smooth-sphere look, no grid streaks). The hot core stays
+    emissive while cool smoke is gradient-lit + translucent (warm, not a black blob); it starts tiny and
+    fast-expands, then **dissolves gradually** (cooling colour + thinning alpha — a smoke tail). Plus a
+    flat neon ground shockwave ring.
   - **Stray XM** rendered as glowing additive motes (`Materials.xmGlow`).
   - **Lifecycle registry** `Spawns` (per-entity first-seen, survives the sync rebuild) drives
     spawn/teardown animations; `FieldFx` dissolves.
@@ -55,8 +63,9 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
 - **GLB compaction** (`95dda03`, Blender): `shattered_flask.glb` 2.43 MB → **657 KB** (strip unused
   UVs/materials, weld verts, smooth normals; all 12 shatter variants preserved). Editable source at
   `assets/blender/shattered_flask.blend`.
-- **Demo sandbox** (`/#demo`): Build/Effects mode toggle (place/remove · XMP/hack), Upgrade/
-  Downgrade/Link, grow-in animations, gray backdrop toggle.
+- **Demo sandbox** (`/#demo`): place/select/remove portals, Upgrade/Downgrade/Link/Hack/Glyph,
+  grow-in animations, gray backdrop toggle. **XMP** fires at the selected portal via the X1–8 buttons,
+  or — with the **"Fire XMP on click"** toggle on — detonates at the map click point (chosen X-level).
 
 ## UI / HUD (canvas → DOM)
 - The **entire HUD is DOM** and themeable. `StatsPanel` (MU "covered area" bars + time/tick +
@@ -66,7 +75,8 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
 - **Top toolbar** reorganized: Menu far-left (with Terrain/Vectors overlay toggles inside it),
   Pause/Resume, Home; View dropdown + Volume far-right.
 - Map visuals: grayscale-terrain default + Colored/Street views (`LayerView`), white play-area
-  border + dimmed out-of-bounds (`PlayAreaMask`). Rule: faction colours for faction things only.
+  border + upright **semi-transparent white boundary walls** + dimmed out-of-bounds (`PlayAreaMask`),
+  so the arena reads as a physical box. Rule: faction colours for faction things only.
 - **Dead 2D canvas layer removed** — `mainCanvas`/`uiCanvas` + the `#canvasLayer` div gone (world is
   the 3D layer, HUD is DOM); `bgCan` kept only as a detached `ImageData` factory for the grid.
 - **Font**: shareware Amarillo USAF → **Chakra Petch** (SIL OFL 1.1, self-hosted), techno/sci-fi-HUD

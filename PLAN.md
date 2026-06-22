@@ -32,6 +32,15 @@ the AI layer lands, the slider sim is the substrate we keep hardening.
 - [x] **Ship to GitHub** — done (live at `tok.github.io/Q-gress/`; 2D at `/2D/`; CI deploys `main`).
 
 ## 3D / rendering
+- [ ] **Rework the synthetic XMP explosion sound.** The fireball *visuals* were upgraded (pyroclastic
+  surface displacement + octave-rotated noise + gradient/key-light shading — see FEATURES), but the
+  procedural detonation **sound** (`SoundUtil.playXmpSound`) still reads thin/synthetic. Give it body:
+  a low-end thump on impact + a turbulent crackle tail that decays with the fireball, scaled by burster
+  level. Pairs with the title-screen demo's audio bed.
+- [ ] **Explosion shader tuning pass (optional).** The new fireball exposes GLSL consts in
+  `XmpShaders.VOLUME_FRAG` (`NOISE_FREQ`, `DISPLACE`, `DENSITY_GAIN`, `STEPS`) + the rise/grow curve in
+  `XmpBurst.update`. If it reads too dense/sparse or too small once seen live, these are the knobs;
+  consider promoting them to uniforms if frequent tuning is wanted.
 - [ ] **Animate the world build (buildings inflate)** — during world creation, make the 3D buildings
   rise out of the ground (lerp their extrusion height / position up, or start vertically flattened and
   "pump" into shape) so the city inflates into place as the world loads, instead of popping in. Pairs
@@ -61,9 +70,10 @@ the AI layer lands, the slider sim is the substrate we keep hardening.
 - [ ] **`?debug` dev tooling** — _started_: `?debug` now adds a grid connectivity self-check log,
   stuck/loop agent detection (3D marker + HUD count), and `?debug=capture` (preset fixture export).
   _Remaining_: timing measurements + console logging to profile the long loads.
-  _Handoff:_ run `?debug=capture` once in-browser, drop the downloaded `PresetFixtures.kt` into
-  `src/jsTest/kotlin/util/`, and commit — that flips `PresetConnectivityTest` from a synthetic-only
-  harness into a real per-preset audit gate (currently ships with an empty placeholder).
+  _Handoff (medium priority):_ run `?debug=capture` once in-browser, drop the downloaded
+  `PresetFixtures.kt` into `src/jsTest/kotlin/util/`, and commit — that flips `PresetConnectivityTest`
+  from a synthetic-only harness into a real per-preset audit gate (currently ships with an empty
+  placeholder). The user will do this capture pass later.
 
 ## Gameplay mechanics (planned)
 - [ ] **Glyph hacking** — a skill-based alternative to a normal hack: **~3× the rewards**, but it
