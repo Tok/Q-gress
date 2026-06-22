@@ -54,6 +54,25 @@ class DeployerTest {
         }
     }
 
+    // Regression: once a level's global same-level count hits deployablePerPlayer, Portal.deploy
+    // refuses it — so the deploy gate must too, or the agent retries forever (the deploy-loop bug).
+    @Test
+    fun globalSameLevelCapOffersNoDeploy() = with(Factory) {
+        val a = frog()
+        val b = frog() // same faction → b may deploy on a's portal
+        a.addAp(2_000_000)
+        b.addAp(2_000_000) // high level so an L5 is deployable
+        val portal = portal()
+        a.actionPortal = portal
+        b.actionPortal = portal
+        // Two L5 resonators is the global cap (ResonatorLevel.FIVE.deployablePerPlayer = 2).
+        portal.deploy(a, mapOf(Octant.N to resonator(a, 5)), Dim.maxDeploymentRange.toInt())
+        portal.deploy(a, mapOf(Octant.S to resonator(a, 5)), Dim.maxDeploymentRange.toInt())
+        assertEquals(2, portal.filledSlots().count { it.resonator?.level == ResonatorLevel.FIVE })
+        b.inventory.items.add(resonator(b, 5)) // b only carries an L5 — but the L5 cap is reached
+        assertFalse(Deployer.isActionPossible(b), "same-level cap reached → no deploy offered (was an infinite loop)")
+    }
+
     @Test
     fun resoLevelDeployment() = with(Factory) {
         Faction.values().forEach { faction ->

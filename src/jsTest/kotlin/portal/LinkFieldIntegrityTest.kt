@@ -2,6 +2,9 @@ package portal
 
 import Factory
 import World
+import agent.Agent
+import config.Dim
+import items.deployable.Resonator
 import util.data.Line
 import util.data.Pos
 import kotlin.test.BeforeTest
@@ -32,6 +35,32 @@ class LinkFieldIntegrityTest {
     private fun link(a: Portal, b: Portal): Link = requireNotNull(Link.create(a, b, Factory.linker())).also { a.links.add(it) }
 
     private fun field(o: Portal, p1: Portal, p2: Portal): Field = requireNotNull(Field.create(o, p1, p2, Factory.owner())).also { o.fields.add(it) }
+
+    private fun deployFull(p: Portal, agent: Agent) = Octant.values().forEach { p.deploy(agent, mapOf(it to Resonator.create(agent, 1)), Dim.maxDeploymentRange.toInt()) }
+
+    // --- the no-crossing rule at the API level (findLinkableForKeys), not just the geometry ---
+
+    @Test
+    fun crossingDestinationIsNotLinkable() {
+        val linker = Factory.frog()
+        val origin = portalAt(0, 0)
+        val dest = portalAt(100, 100)
+        deployFull(dest, linker) // owned by the linker's faction + fully deployed → otherwise linkable
+        linker.inventory.items.add(PortalKey(dest, linker)) // a key to the destination
+        // An existing link that crosses the origin→dest diagonal:
+        link(portalAt(0, 100), portalAt(100, 0))
+        assertTrue(origin.findLinkableForKeys(linker).isEmpty(), "a destination whose link would cross is not linkable")
+    }
+
+    @Test
+    fun nonCrossingDestinationIsLinkable() {
+        val linker = Factory.frog()
+        val origin = portalAt(0, 0)
+        val dest = portalAt(100, 100)
+        deployFull(dest, linker)
+        linker.inventory.items.add(PortalKey(dest, linker))
+        assertEquals(listOf(dest), origin.findLinkableForKeys(linker), "with no crossing, the keyed destination is linkable")
+    }
 
     // --- no-crossing geometry (the rule backing findLinkableForKeys / Linker) ---
 
