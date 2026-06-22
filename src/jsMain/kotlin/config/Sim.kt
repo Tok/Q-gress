@@ -20,8 +20,8 @@ object Sim {
     var height = (Dim.height * NORMAL_SCALE).toInt()
         private set
 
-    /** Round play field (inscribed circle) instead of the rectangle — chosen at onboarding. */
-    var roundField = false
+    /** Round play field (inscribed circle) instead of the rectangle — chosen at onboarding (default on). */
+    var roundField = true
 
     /** Field radius in sim units (the inscribed circle = the smaller half-extent). */
     fun fieldRadius(): Double = minOf(width, height) / 2.0

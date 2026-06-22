@@ -218,9 +218,14 @@ object Onboarding {
         screen.appendChild(
             button("Start", "topButton amarillo onboardStart") {
                 Sim.roundField = roundCheck.checked
+                val w = widthInput.value.toIntOrNull() ?: Sim.width
+                val h = heightInput.value.toIntOrNull() ?: Sim.height
+                // Round → square the map so the inscribed circle is large (≈ doubles the radius vs a
+                // wide rectangle) and the round arena actually fills the space.
+                val side = maxOf(w, h)
                 onStart(
-                    widthInput.value.toIntOrNull() ?: Sim.width,
-                    heightInput.value.toIntOrNull() ?: Sim.height,
+                    if (roundCheck.checked) side else w,
+                    if (roundCheck.checked) side else h,
                     portalsInput.value.toIntOrNull() ?: defaultPortals,
                     npcInput.value.toIntOrNull() ?: Config.maxFor(),
                     quickCheck.checked,

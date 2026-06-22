@@ -475,10 +475,11 @@ object MapUtil {
         val cx = w / 2.0
         val cy = h / 2.0
         val rSq = (minOf(w, h) / 2.0).let { it * it }
+        // Mask everything outside the circle — including the off-screen ring — so flow fields don't leak
+        // into the rectangular border (the NPC off-map routes are disabled for round; see NonFaction).
         return grid.mapValues { (pos, cell) ->
-            val onScreen = pos.x >= 0 && pos.y >= 0 && pos.x < w && pos.y < h
             val outside = (pos.x - cx) * (pos.x - cx) + (pos.y - cy) * (pos.y - cy) > rSq
-            if (onScreen && outside && cell.isPassable) Cell(pos, false, cell.movementPenalty) else cell
+            if (outside && cell.isPassable) Cell(pos, false, cell.movementPenalty) else cell
         }
     }
 
