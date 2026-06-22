@@ -71,6 +71,14 @@ object TitleScene3D {
 
     private const val CAM_Z = 34.0
 
+    private const val STAGE_TOP = -7.0 // the portals stand on a concrete stage at this y
+    private const val STAGE_W = 46.0
+    private const val STAGE_D = 22.0
+    private const val STAGE_THICK = 4.0
+    private const val SKY_TOP = "#0a1430" // deep night-blue overhead
+    private const val SKY_MID = "#1b3a6b" // horizon glow
+    private const val SKY_BOTTOM = "#05060a" // dark ground haze
+
     private class Portal(
         val group: dynamic,
         val orb: dynamic,
@@ -152,6 +160,8 @@ object TitleScene3D {
             val rim = Three.DirectionalLight("#b6c0d8", 1.1) // cool back-rim so poles separate from the dark
             rim.asDynamic().position.set(-12.0, -2.0, 12.0)
             scene.add(rim)
+            addSky() // gradient backdrop (also gives the chrome poles something to reflect)
+            addStage() // a concrete slab the portals stand on
             poleGeo = Three.CylinderGeometry(POLE_R, POLE_R, 1.0, 12) // unit-tall, scaled to pole height
             orbGeo = Three.SphereGeometry(TOP_R, 20, 16) // radius TOP_R, scaled by orbScale(level)
             rodGeo = Three.CylinderGeometry(RESO_ROD_R, RESO_ROD_R, 1.0, 8) // unit, scaled to rod length
@@ -190,19 +200,62 @@ object TitleScene3D {
         cam.updateProjectionMatrix()
     }
 
+    // A vertical gradient sky as the scene background (and reflection env for the chrome poles).
+    private fun addSky() {
+        val c = document.createElement("canvas") as HTMLCanvasElement
+        c.width = 8
+        c.height = 256
+        val ctx = c.getContext("2d").asDynamic()
+        val grad = ctx.createLinearGradient(0.0, 0.0, 0.0, 256.0)
+        grad.addColorStop(0.0, SKY_TOP)
+        grad.addColorStop(0.55, SKY_MID)
+        grad.addColorStop(1.0, SKY_BOTTOM)
+        ctx.fillStyle = grad
+        ctx.fillRect(0, 0, 8, 256)
+        val tex = Three.CanvasTexture(c)
+        tex.asDynamic().mapping = Three.EquirectangularReflectionMapping
+        scene.asDynamic().background = tex
+        scene.asDynamic().environment = tex
+    }
+
+    // A matte concrete slab the portals stand on (top at STAGE_TOP).
+    private fun addStage() {
+        val p: dynamic = js("({})")
+        p.color = "#6b6b6b"
+        p.metalness = 0.0
+        p.roughness = 0.95
+        val slab = Three.Mesh(Three.BoxGeometry(STAGE_W, STAGE_THICK, STAGE_D), Three.MeshStandardMaterial(p))
+        slab.asDynamic().position.set(0.0, STAGE_TOP - STAGE_THICK / 2.0, 0.0)
+        scene.add(slab)
+    }
+
+    // A lit, faction-tinted glassy orb (the game's GlassShader needs a per-frame camera eye that only
+    // Scene3D supplies — in this standalone scene it renders black, so use a simple emissive material).
+    private fun titleGlass(color: String): dynamic {
+        val p: dynamic = js("({})")
+        p.color = color
+        p.emissive = color
+        p.emissiveIntensity = 0.55
+        p.metalness = 0.0
+        p.roughness = 0.25
+        p.transparent = true
+        p.opacity = 0.78
+        return Three.MeshStandardMaterial(p)
+    }
+
     private fun buildPortals() {
         val span = 17.0
         for (i in 0 until PORTAL_COUNT) {
             try {
                 val x = -span + 2.0 * span * (i.toDouble() / (PORTAL_COUNT - 1))
-                val pos = doubleArrayOf(x, rand(-7.5, -6.5), rand(-3.0, 3.0))
+                val pos = doubleArrayOf(x, STAGE_TOP, rand(-4.0, 4.0)) // stand on the concrete stage
                 val color = startColor(i)
                 val group = Three.Group()
                 group.asDynamic().position.set(pos[0], pos[1], pos[2])
                 group.asDynamic().scale.set(TITLE_SCALE, TITLE_SCALE, TITLE_SCALE) // game-scale → stage
 
                 val pole = Three.Mesh(poleGeo, Materials.metal()) // chrome + envMap (visible without scene lights)
-                val orbMat = Materials.glass(color) // the game's GlassShader — real glass, not plastic
+                val orbMat = titleGlass(color) // lit emissive glass (GlassShader renders black without Scene3D)
                 val orb = Three.Mesh(orbGeo, orbMat)
                 val inner = Three.Mesh(orbGeo, orbMat) // double-shell: a concentric inner surface = glass wall thickness
                 inner.asDynamic().scale.set(INNER_SHELL_FRAC, INNER_SHELL_FRAC, INNER_SHELL_FRAC)
@@ -359,7 +412,7 @@ object TitleScene3D {
             1 -> RES_COLOR
             else -> NEUTRAL_COLOR
         }
-        p.orbMat = Materials.glass(p.color) // re-skin the orb to the new faction's glass
+        p.orbMat = titleGlass(p.color) // re-skin the orb to the new faction's glass
         p.orb.asDynamic().material = p.orbMat
         randomLoadout(p) // a captured portal gets a fresh reso loadout
         p.flash = 1.0 // scale pop
