@@ -69,6 +69,7 @@ object Scene3D {
     private const val NPC_DROP_HEIGHT = 70.0 // metres an NPC drops from
     private const val INDICATOR_Z = 5.0 // raised to clear the head now the indicator is ~3× bigger
     private const val INDICATOR_SIZE = 4.8 // action label above an agent (was 1.6 — barely visible)
+    private const val INDICATOR_THICK = 1.2 // action-coin thickness (the extruded "wheel" depth)
     private const val LABEL_W = 22.0 // portal name/level billboard width (scene metres)
     private const val LABEL_GAP = 4.0 // gap above the orb top before the label
     private const val LABEL_CANVAS_W = 256 // label texture resolution (kept crisp; faction-neutral white)
@@ -184,6 +185,10 @@ object Scene3D {
     private val linkGeo: dynamic by lazy { Three.CylinderGeometry(LINK_R, LINK_R, 1.0, 8) } // unit glass tube (scaled to length)
     private val coreGeo: dynamic by lazy { Three.CylinderGeometry(LINK_R * CORE_R_FRAC, LINK_R * CORE_R_FRAC, 1.0, 6) } // bright filament inside the tube
     private val resoRingGeo: dynamic by lazy { Three.TorusGeometry(RESO_RING_R, RESO_RING_TUBE, 8, 14) } // rubber slot grommet
+    private val indicatorGeo: dynamic by lazy {
+        // action coin: a short cylinder (icon on the round faces)
+        Three.CylinderGeometry(INDICATOR_SIZE / 2.0, INDICATOR_SIZE / 2.0, INDICATOR_THICK, 28)
+    }
     private val resoRodGeo: dynamic by lazy { Three.CylinderGeometry(RESO_ROD_R, RESO_ROD_R, 1.0, 8) } // unit rod, scaled to length
     private val materialCache = mutableMapOf<String, dynamic>()
     private val spriteCache = mutableMapOf<String, dynamic>()
@@ -942,11 +947,11 @@ object Scene3D {
         place(sphere.asDynamic(), x, y, gz + HEAD_Z)
         tag(sphere.asDynamic(), id)
         agentsGroup.add(sphere)
-        // Action indicator: a camera-facing billboard just above the head.
-        val sprite = Three.Sprite(indicatorMaterial(agent.action.item, agent.faction))
-        sprite.asDynamic().position.set(x, y, gz + INDICATOR_Z)
-        sprite.asDynamic().scale.set(INDICATOR_SIZE, INDICATOR_SIZE, 1.0)
-        indicatorsGroup.add(sprite)
+        // Action indicator: a 3D coin/wheel (icon on the round faces) hovering above the head.
+        val coin = Three.Mesh(indicatorGeo, indicatorMaterial(agent.action.item, agent.faction))
+        coin.asDynamic().rotation.x = PI / 2 // stand the cylinder's faces up (axis → world Z)
+        place(coin.asDynamic(), x, y, gz + INDICATOR_Z)
+        indicatorsGroup.add(coin)
         if (Debug.enabled && StuckTracker.isStuck(agent.key())) addStuckMarker(x, y, gz)
     }
 
@@ -1064,13 +1069,18 @@ object Scene3D {
         Three.LineBasicMaterial(p)
     }
 
-    private fun indicatorMaterial(item: ActionItem, faction: Faction): dynamic = spriteCache.getOrPut(item.text + faction.abbr) {
-        val texture = Three.CanvasTexture(ActionItem.getHiResIcon(item, faction)) // hi-res → crisp when scaled up
-        val p: dynamic = js("({})")
-        p.map = texture
-        p.depthTest = false
-        p.transparent = true
-        Three.SpriteMaterial(p)
+    // Coin materials [side, top-cap, bottom-cap]: the icon on the round faces, faction colour on the rim.
+    private fun indicatorMaterial(item: ActionItem, faction: Faction): dynamic = spriteCache.getOrPut("coin:" + item.text + faction.abbr) {
+        val capParams: dynamic = js("({})")
+        capParams.map = Three.CanvasTexture(ActionItem.getHiResIcon(item, faction)) // hi-res → crisp
+        capParams.depthTest = false
+        capParams.transparent = true
+        val cap = Three.MeshBasicMaterial(capParams)
+        val rimParams: dynamic = js("({})")
+        rimParams.color = faction.color
+        rimParams.depthTest = false
+        val rim = Three.MeshBasicMaterial(rimParams)
+        arrayOf(rim, cap, cap) // CylinderGeometry groups: 0 = side, 1 = top, 2 = bottom
     }
 
     /** A camera-facing name + level billboard floating just above the portal's orb (cleared each sync). */
