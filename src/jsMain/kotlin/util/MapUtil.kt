@@ -475,7 +475,26 @@ object MapUtil {
         val grid = GridConnectivity.connectIslands(rawGrid)
         World.walkability = GridConnectivity.walkability(grid, w, h)
         console.log("grid built: walkability ${(World.walkability * 100).toInt()}% (${GridConnectivity.components(rawGrid).size} islands connected)")
+        if (Debug.enabled) logConnectivity(rawGrid, grid, w, h)
         return grid
+    }
+
+    // ?debug connectivity self-check: how walkable + how connected the built grid is. on-screen islands
+    // > 1 means playable regions only reach each other via the off-screen ring → detour/wander hazard.
+    private fun logConnectivity(rawGrid: Grid, grid: Grid, w: Int, h: Int) {
+        val before = GridConnectivity.report(rawGrid, w, h)
+        val after = GridConnectivity.report(grid, w, h)
+        console.log(
+            "[debug] connectivity — islands ${before.islands}→${after.islands}, " +
+                "on-screen islands ${before.onScreenIslands}→${after.onScreenIslands}, " +
+                "walkability ${(after.walkability * 100).toInt()}%",
+        )
+        if (!after.isHealthy) {
+            console.warn(
+                "[debug] UNHEALTHY grid: ${after.onScreenIslands} on-screen regions only reach each other " +
+                    "via the off-screen ring — agents/NPCs may path the long way around and look stuck.",
+            )
+        }
     }
 
     // Layer switching: #initialMap holds the satellite style, #map the street style.

@@ -23,12 +23,12 @@ object GridConnectivity {
         Pos(p.x, p.y - 1.0),
     )
 
-    /** All 4-connected components of passable cells, each as the list of its cell positions. */
-    fun components(grid: Grid): List<List<Pos>> {
+    /** 4-connected components of the passable cells matching [include], each as its list of positions. */
+    private fun componentsWhere(grid: Grid, include: (Pos) -> Boolean): List<List<Pos>> {
         val seen = HashSet<Pos>()
         val comps = mutableListOf<List<Pos>>()
         grid.forEach { (start, cell) ->
-            if (!cell.isPassable || start in seen) return@forEach
+            if (!cell.isPassable || !include(start) || start in seen) return@forEach
             val comp = mutableListOf<Pos>()
             val queue = ArrayDeque<Pos>()
             queue.add(start)
@@ -37,7 +37,7 @@ object GridConnectivity {
                 val cur = queue.removeFirst()
                 comp.add(cur)
                 neighbours(cur).forEach { n ->
-                    if (n !in seen && grid[n]?.isPassable == true) {
+                    if (n !in seen && include(n) && grid[n]?.isPassable == true) {
                         seen.add(n)
                         queue.add(n)
                     }
@@ -47,6 +47,34 @@ object GridConnectivity {
         }
         return comps
     }
+
+    /** All 4-connected components of passable cells, each as the list of its cell positions. */
+    fun components(grid: Grid): List<List<Pos>> = componentsWhere(grid) { true }
+
+    private fun isOnScreen(p: Pos, w: Int, h: Int) = p.x >= 0 && p.y >= 0 && p.x < w && p.y < h
+
+    /**
+     * Components of passable cells **restricted to the on-screen area** [0,w)×[0,h) (the off-screen
+     * border ring is excluded). More than one means some playable regions are reachable from each
+     * other only by detouring through the off-screen ring — agents/NPCs then path the long way
+     * around the map edge, which reads as aimless wandering even though the grid is "connected".
+     */
+    fun onScreenComponents(grid: Grid, w: Int, h: Int): List<List<Pos>> = componentsWhere(grid) { isOnScreen(it, w, h) }
+
+    /**
+     * Connectivity health of a (carved) grid. [islands] should be 1 after [connectIslands];
+     * [onScreenIslands] > 1 flags the off-screen-detour hazard (see [onScreenComponents]).
+     */
+    data class ConnectivityReport(val islands: Int, val onScreenIslands: Int, val walkability: Double) {
+        val isHealthy get() = islands <= 1 && onScreenIslands <= 1
+    }
+
+    /** Summarize a grid's connectivity. Run on the post-[connectIslands] grid for the live diagnostic. */
+    fun report(grid: Grid, w: Int, h: Int) = ConnectivityReport(
+        islands = components(grid).size,
+        onScreenIslands = onScreenComponents(grid, w, h).size,
+        walkability = walkability(grid, w, h),
+    )
 
     /** Fraction (0..1) of the on-screen cells in [0,w)×[0,h) that are passable (excludes the ring). */
     fun walkability(grid: Grid, w: Int, h: Int): Double {

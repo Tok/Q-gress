@@ -32,6 +32,10 @@ data class NonFaction(
     private fun distanceToPortal(portal: Portal): Double = pos.distanceTo(portal.location)
     private fun isAtDestination(): Boolean = distanceToDestination() < Dim.maxDeploymentRange // Constants.phi
     private fun isBusy(tick: Int): Boolean = tick <= busyUntil
+
+    // ?debug stuck detection feeds only entities actively trying to travel (see StuckTracker).
+    fun isStuckCandidate(tick: Int) = !isBusy(tick) && !isAtDestination()
+
     fun act() {
         if (isBusy(World.tick)) {
             if (Util.random() < 0.001) { // stop waiting and go somewhere random

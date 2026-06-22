@@ -8,6 +8,7 @@ import system.display.Scene3D
 import util.data.Circle
 import util.data.Line
 import util.data.Pos
+import util.ui.DebugHud
 import util.ui.HistoryPanel
 import util.ui.Inspector
 import util.ui.StatsPanel
@@ -33,6 +34,7 @@ object DrawUtil {
         if (Styles.isDrawTopAgents) {
             TopAgentsPanel.update()
         }
+        DebugHud.update() // no-op unless ?debug
     }
 
     fun strokeText(

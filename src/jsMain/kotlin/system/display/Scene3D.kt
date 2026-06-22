@@ -4,6 +4,7 @@ import World
 import agent.Agent
 import agent.Faction
 import agent.NonFaction
+import agent.StuckTracker
 import agent.action.ActionItem
 import config.Sim
 import external.GLTFLoader
@@ -16,6 +17,7 @@ import portal.Octant
 import portal.Portal
 import portal.XmHeap
 import portal.XmMap
+import util.Debug
 import util.SoundUtil
 import util.data.Pos
 import kotlin.math.PI
@@ -690,10 +692,20 @@ object Scene3D {
         sprite.asDynamic().position.set(x, y, INDICATOR_Z)
         sprite.asDynamic().scale.set(INDICATOR_SIZE, INDICATOR_SIZE, 1.0)
         indicatorsGroup.add(sprite)
+        if (Debug.enabled && StuckTracker.isStuck(agent.key())) addStuckMarker(x, y)
+    }
+
+    // ?debug: a vivid marker floating over an entity flagged as stuck/looping (see StuckTracker).
+    private val stuckGeo: dynamic by lazy { Three.SphereGeometry(2.2, 8, 8) }
+    private fun addStuckMarker(x: Double, y: Double) {
+        val marker = Three.Mesh(stuckGeo, Materials.solid("#ff2d2d"))
+        place(marker.asDynamic(), x, y, INDICATOR_Z + 3.5)
+        indicatorsGroup.add(marker)
     }
 
     private fun addNpc(npc: NonFaction) {
         val sphere = Three.Mesh(headGeo, Materials.solid(NEUTRAL_COLOR))
+        if (Debug.enabled && StuckTracker.isStuck("npc:${npc.id}")) addStuckMarker(sceneX(npc.pos), sceneY(npc.pos))
         // Marble drop-in: on first appearance the NPC falls from the sky (accelerating, 1−f²) to head
         // height. Per-NPC start height (by id) so a crowd reads as scattered marbles, not a flat sheet.
         val f = Spawns.appearRaw("npc:${npc.id}", NPC_DROP_S)

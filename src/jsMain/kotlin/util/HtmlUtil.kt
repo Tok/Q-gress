@@ -3,6 +3,8 @@ package util
 import World
 import agent.Agent
 import agent.Faction
+import agent.StuckTracker
+import agent.action.ActionItem
 import agent.qvalue.QActions
 import agent.qvalue.QDestinations
 import agent.qvalue.QValue
@@ -70,6 +72,7 @@ object HtmlUtil {
         World.flushPendingAgents()
 
         World.allNonFaction.forEach { it.act() }
+        if (Debug.enabled) sampleStuck()
         window.requestAnimationFrame {
             DrawUtil.redraw()
             val userFaction = World.userFactionOrThrow()
@@ -82,6 +85,13 @@ object HtmlUtil {
             DrawUtil.redrawUserInterface(firstMu, secondMu, factions)
             World.tick++
         }
+    }
+
+    // ?debug: feed StuckTracker only the entities actively trying to travel this tick.
+    private fun sampleStuck() {
+        val agents = World.allAgents.filter { it.action.item == ActionItem.MOVE }.map { it.key() to it.pos }
+        val npcs = World.allNonFaction.filter { it.isStuckCandidate(World.tick) }.map { "npc:${it.id}" to it.pos }
+        StuckTracker.sample(agents + npcs)
     }
 
     fun load() {
@@ -516,6 +526,7 @@ object HtmlUtil {
 
     private fun createAgents(callback: () -> Unit) {
         World.allAgents.clear()
+        StuckTracker.reset() // fresh world → drop stale stuck-history (?debug)
         LoadingOverlay.detail("Creating agents…")
         (1..Config.startFrogs()).forEach {
             World.allAgents.add(Agent.createFrog(World.grid))
