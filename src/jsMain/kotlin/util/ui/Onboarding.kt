@@ -208,14 +208,8 @@ object Onboarding {
         fields.appendChild(labeledInput("People", npcInput))
         screen.appendChild(fields)
 
-        val quickCheck = document.createElement("input") as HTMLInputElement
-        quickCheck.type = "checkbox"
-        quickCheck.checked = true // quick start on by default — the early game moves right away
-        quickCheck.addClass("checkbox")
-        val quickLabel = div("onboardCheck")
-        quickLabel.appendChild(quickCheck)
-        quickLabel.appendChild(document.createTextNode(" Quick start (full roster + AP for a fast early game)"))
-        screen.appendChild(quickLabel)
+        val quickCheck = checkRow(screen, " Quick start (full roster + AP for a fast early game)", true)
+        val roundCheck = checkRow(screen, " Round field (play inside an inscribed ellipse)", Sim.roundField)
 
         val warn = div("onboardWarn")
         warn.textContent = "Larger maps take longer to generate and use more processing whenever portals spawn."
@@ -223,6 +217,7 @@ object Onboarding {
 
         screen.appendChild(
             button("Start", "topButton amarillo onboardStart") {
+                Sim.roundField = roundCheck.checked
                 onStart(
                     widthInput.value.toIntOrNull() ?: Sim.width,
                     heightInput.value.toIntOrNull() ?: Sim.height,
@@ -258,6 +253,18 @@ object Onboarding {
         wrap.appendChild(l)
         wrap.appendChild(input)
         return wrap
+    }
+
+    private fun checkRow(screen: HTMLElement, label: String, checked: Boolean): HTMLInputElement {
+        val check = document.createElement("input") as HTMLInputElement
+        check.type = "checkbox"
+        check.checked = checked
+        check.addClass("checkbox")
+        val row = div("onboardCheck")
+        row.appendChild(check)
+        row.appendChild(document.createTextNode(label))
+        screen.appendChild(row)
+        return check
     }
 
     /** Remove the current onboarding screen (the last step loads the world without a reload). */

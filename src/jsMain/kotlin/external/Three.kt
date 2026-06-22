@@ -96,7 +96,25 @@ external object Three {
         radiusBottom: dynamic,
         height: dynamic,
         radialSegments: dynamic = definedExternally,
+        heightSegments: dynamic = definedExternally,
+        openEnded: dynamic = definedExternally,
     )
+    class Shape {
+        fun moveTo(x: dynamic, y: dynamic)
+        fun lineTo(x: dynamic, y: dynamic)
+        val holes: dynamic
+    }
+    class Path {
+        fun absellipse(
+            aX: dynamic,
+            aY: dynamic,
+            xRadius: dynamic,
+            yRadius: dynamic,
+            startAngle: dynamic,
+            endAngle: dynamic,
+        )
+    }
+    class ShapeGeometry(shapes: dynamic)
     class ConeGeometry(
         radius: dynamic,
         height: dynamic,

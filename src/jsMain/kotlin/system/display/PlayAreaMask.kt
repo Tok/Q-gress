@@ -1,11 +1,12 @@
 package system.display
 
 import external.Three
+import kotlin.math.PI
 
 /**
- * The dark translucent frame that greys out everything beyond the playable rectangle (so the
- * out-of-bounds map reads as inactive). Four quads around the play area — split out of [Scene3D]
- * to keep that class under the size limit.
+ * The dark translucent frame that greys out everything beyond the playable area (so the out-of-bounds
+ * map reads as inactive) + the upright boundary walls. Rectangular by default; a [buildRound] variant
+ * draws an inscribed-ellipse arena (an annulus mask + an open elliptical wall). Split out of [Scene3D].
  */
 object PlayAreaMask {
     private var material: dynamic = null
@@ -63,5 +64,39 @@ object PlayAreaMask {
         p.depthWrite = false
         p.side = 2 // DoubleSide
         return Three.MeshBasicMaterial(p)
+    }
+
+    /**
+     * Round arena: a dark annulus (a big square with an elliptical hole) dims everything outside the
+     * inscribed ellipse [hx]×[hy], and an open elliptical wall stands at its edge.
+     */
+    private const val MASK_FAR = 12.0 // how far past the play area the dim mask extends (× the half-extent)
+
+    fun buildRound(group: dynamic, hx: Double, hy: Double, z: Double, dim: Double, height: Double) {
+        if (material == null) material = buildMaterial(dim)
+        val far = MASK_FAR * maxOf(hx, hy)
+        val shape = Three.Shape()
+        shape.asDynamic().moveTo(-far, -far)
+        shape.asDynamic().lineTo(far, -far)
+        shape.asDynamic().lineTo(far, far)
+        shape.asDynamic().lineTo(-far, far)
+        shape.asDynamic().lineTo(-far, -far)
+        val hole = Three.Path()
+        hole.asDynamic().absellipse(0.0, 0.0, hx, hy, 0.0, 2.0 * PI)
+        shape.asDynamic().holes.push(hole)
+        val mask = Three.Mesh(Three.ShapeGeometry(shape), material)
+        mask.asDynamic().position.set(0.0, 0.0, z)
+        group.add(mask)
+        buildRoundWall(group, hx, hy, height)
+    }
+
+    private fun buildRoundWall(group: dynamic, hx: Double, hy: Double, height: Double) {
+        if (wallMat == null) wallMat = buildWallMaterial()
+        val cyl = Three.CylinderGeometry(1.0, 1.0, height, 64, 1, true) // unit open tube (axis = local Y)
+        val mesh = Three.Mesh(cyl, wallMat)
+        mesh.asDynamic().scale.set(hx, 1.0, hy) // local X/Z → ellipse radii; Y stays the wall height
+        mesh.asDynamic().rotation.x = PI / 2 // stand the tube up (Y → world Z)
+        mesh.asDynamic().position.set(0.0, 0.0, height / 2.0)
+        group.add(mesh)
     }
 }

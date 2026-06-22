@@ -111,6 +111,7 @@ object Scene3D {
     private const val OUTSIDE_FAR = 12.0 // how far past the play area the dim mask extends (× the half-extent)
     private const val WALL_HEIGHT = 16.0 // upright play-area boundary wall height (scene metres)
     private const val WALL_THICK = 1.0 // boundary wall thickness (scene metres)
+    private const val ELLIPSE_SEGMENTS = 72 // round-field boundary outline resolution
     const val CUSTOM_LAYER_ID = "qgress-3d" // MapLibre layer id for the three.js scene
 
     // Currently selected entity, as "portal:<id>" / "agent:<name>" (see pick()).
@@ -293,6 +294,15 @@ object Scene3D {
         val group = borderGroup ?: return
         val hx = sceneX(Pos(Sim.width, 0)) // play-area half-extents (scene metres); sceneY flips sim-y → +hy is the top edge
         val hy = sceneY(Pos(0, 0))
+        if (Sim.roundField) {
+            PlayAreaMask.buildRound(group, hx, hy, BORDER_Z - 0.05, OUTSIDE_DIM, WALL_HEIGHT)
+            val pts = (0..ELLIPSE_SEGMENTS).map {
+                val t = it.toDouble() / ELLIPSE_SEGMENTS * 2.0 * PI
+                Three.Vector3(hx * cos(t), hy * sin(t), BORDER_Z)
+            }.toTypedArray()
+            group.add(Three.Line(Three.BufferGeometry().setFromPoints(pts), lineMaterial(BORDER_COLOR)))
+            return
+        }
         PlayAreaMask.build(group, hx, hy, OUTSIDE_FAR * maxOf(hx, hy), BORDER_Z - 0.05, OUTSIDE_DIM)
         PlayAreaMask.buildWalls(group, hx, hy, WALL_HEIGHT, WALL_THICK, 0.0)
         val corners = arrayOf(Pos(0, 0), Pos(Sim.width, 0), Pos(Sim.width, Sim.height), Pos(0, Sim.height), Pos(0, 0))

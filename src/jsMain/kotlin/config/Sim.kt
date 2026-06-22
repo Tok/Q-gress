@@ -20,6 +20,17 @@ object Sim {
     var height = (Dim.height * NORMAL_SCALE).toInt()
         private set
 
+    /** Round play field (inscribed ellipse) instead of the rectangle — chosen at onboarding. */
+    var roundField = false
+
+    /** Whether a point is inside the play field — always true for a rectangle; the inscribed ellipse when round. */
+    fun isInsideField(x: Double, y: Double): Boolean {
+        if (!roundField) return true
+        val dx = (x - width / 2.0) / (width / 2.0)
+        val dy = (y - height / 2.0) / (height / 2.0)
+        return dx * dx + dy * dy <= 1.0
+    }
+
     /** Effective scale vs the screen — drives the framed display zoom (MapUtil). */
     val scale: Double get() = maxOf(width.toDouble() / Dim.width, height.toDouble() / Dim.height)
 

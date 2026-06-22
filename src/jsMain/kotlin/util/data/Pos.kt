@@ -65,6 +65,7 @@ data class Pos(val x: Double, val y: Double) {
     fun isBuildable(): Boolean {
         val r = Dim.minDistancePortalToImpassable.toInt()
         return isPassable() &&
+            Sim.isInsideField(x, y) &&
             !hasClosePortal() &&
             World.grid[Pos(x - r, y).toShadow()]?.isPassable ?: false &&
             World.grid[Pos(x + r, y).toShadow()]?.isPassable ?: false &&
@@ -110,6 +111,7 @@ data class Pos(val x: Double, val y: Double) {
                     val p = it.key.fromShadow()
                     Pos(p.x + offset, p.y + offset)
                 }
+                .filter { Sim.isInsideField(it.x, it.y) } // round field → only spawn within the inscribed ellipse
         }
 
         fun createRandomForPortal(): Pos {
