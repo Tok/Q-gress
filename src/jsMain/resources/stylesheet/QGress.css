@@ -1139,10 +1139,18 @@ html, body {
     border-radius: 5px;
     padding: 10px;
     z-index: 200;
+    max-height: calc(100vh - 20px);
+    overflow-y: auto; /* the audio demo has many buttons — scroll rather than overflow the screen */
 }
 .demoPanelTitle {
     font-size: 18px;
     margin-bottom: 6px;
+}
+.demoHeading {
+    font-family: "Chakra Petch", sans-serif;
+    letter-spacing: 2px;
+    font-size: 16px;
+    margin-bottom: 8px;
 }
 /* Full-width section label + instructional line inside the demo panel. */
 .demoLabel {

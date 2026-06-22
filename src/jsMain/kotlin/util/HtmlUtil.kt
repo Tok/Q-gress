@@ -25,6 +25,7 @@ import system.display.Scene3D
 import util.data.GeoCoords
 import util.data.Line
 import util.data.Pos
+import util.ui.AudioDemo
 import util.ui.Controls
 import util.ui.Demo
 import util.ui.Inspector
@@ -108,10 +109,20 @@ object HtmlUtil {
         // /demo harness (hash-routed): a menu of effect demo scenes, separate from the game.
         // Reload on any hash change so switching game ⇄ demo (or between scenes) re-bootstraps.
         window.addEventListener("hashchange", { window.location.reload() })
-        val demoScene = Demo.route(window.location.hash)
-        if (demoScene != null) {
-            loadDemoScene()
-            return
+        when (Demo.route(window.location.hash)) {
+            Demo.Scene.MENU -> {
+                Demo.showMenu()
+                return
+            }
+            Demo.Scene.SANDBOX -> {
+                loadDemoScene()
+                return
+            }
+            Demo.Scene.AUDIO -> {
+                AudioDemo.show()
+                return
+            }
+            null -> Unit // not a demo route → load the game
         }
 
         // Map clicks/hover are wired to MapLibre after the map loads (see onMapload → bindInteractions).

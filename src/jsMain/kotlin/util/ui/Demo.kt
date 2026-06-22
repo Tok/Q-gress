@@ -18,7 +18,8 @@ import util.data.Pos
  * HtmlUtil.loadDemoScene). Add a scene by listing it in [SCENES] + handling it in [showControls].
  */
 object Demo {
-    const val SANDBOX = "sandbox"
+    enum class Scene { MENU, SANDBOX, AUDIO }
+
     private const val NEUTRAL = "#bbbbbb"
     private const val PANEL_ID = "demoPanel"
 
@@ -40,10 +41,27 @@ object Demo {
     fun xmpOnClick(): Boolean = xmpClickMode
     fun xmpLevel(): Int = xmpBlastLevel
 
-    /** One unified sandbox scene. #demo and #demo/portal both route to it (xmp folded in). */
-    fun route(hash: String): String? = when (hash.removePrefix("#").removePrefix("/").removeSuffix("/")) {
-        "demo", "demo/portal", "demo/sandbox" -> SANDBOX
+    /** Hash routing: `#demo` is the menu, `#demo/sandbox` the animation sandbox, `#audio` the sound demo. */
+    fun route(hash: String): Scene? = when (hash.removePrefix("#").removePrefix("/").removeSuffix("/")) {
+        "demo" -> Scene.MENU
+        "demo/portal", "demo/sandbox", "demo/animation" -> Scene.SANDBOX
+        "demo/audio", "audio" -> Scene.AUDIO
         else -> null
+    }
+
+    /** The demo menu (`#demo`): links to each demo scene. Hash links reload-route (see HtmlUtil.load). */
+    fun showMenu() {
+        val panel = document.createElement("div") as HTMLDivElement
+        panel.id = PANEL_ID
+        panel.addClass("demoPanel", "coda")
+        val heading = document.createElement("div") as HTMLDivElement
+        heading.addClass("demoHeading")
+        heading.innerHTML = "Q-GRESS · DEMOS"
+        panel.append(heading)
+        panel.append(link("#demo/sandbox", "Animation / portal sandbox", "demoButton"))
+        panel.append(link("#audio", "Audio — trigger all sounds", "demoButton"))
+        panel.append(link("#", "← Back to game", "demoBack"))
+        document.body?.append(panel)
     }
 
     fun showControls(center: Pos) {
