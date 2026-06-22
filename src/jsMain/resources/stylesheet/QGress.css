@@ -228,17 +228,18 @@ html, body {
     white-space: nowrap;
 }
 /* Fixed-width fields so the centered strip's overall width never changes as the values tick. */
+/* Left-aligned + fixed width so the label stays put and only the value extends into the reserved box. */
 .scoreTime {
     width: 64px;
-    text-align: center;
+    text-align: left;
 }
 .scoreTick {
     width: 84px;
-    text-align: center;
+    text-align: left;
 }
 .scoreXm {
     width: 76px;
-    text-align: center;
+    text-align: left;
 }
 /* Full-width tabbed + collapsible footer (EVENT LOG / AGENTS). */
 .footer {
@@ -299,6 +300,7 @@ html, body {
 
 /* History dashboard (HistoryPanel) — right intel column: per metric, live ENL/RES value + sparkline. */
 .historyPanel {
+    order: 0; /* stays fixed at the top of the right column; the inspector sits below it */
     pointer-events: auto;
     box-sizing: border-box;
     background: rgba(0, 0, 0, 0.5);
@@ -778,8 +780,7 @@ html, body {
 }
 .qSlider {
     height: 8px;
-    width: 89px;
-    flex: none;
+    width: 92px;
 }
 .qSlider:hover {
     opacity: 1;
@@ -795,16 +796,15 @@ html, body {
 }
 .qSliderLabel {
     font-size: 13px;
-    width: 26px;
     text-align: right;
-    flex: none;
     color: #ffffff;
     text-shadow: -1px 0px black, 0px 1px black, 1px 0px black, 0px -1px black;
 }
 .qSliderTextLabel {
     font-family: "Coda";
     font-size: 13px;
-    margin-left: 6px;
+    overflow: hidden;
+    text-overflow: ellipsis;
     white-space: nowrap;
     color: #ffffff;
     text-shadow: -1px 0px black, 0px 1px black, 1px 0px black, 0px -1px black;
@@ -823,10 +823,14 @@ html, body {
     font-size: 13px;
 }
 .tuneRow {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr 92px 34px; /* icon+label | slider/bar | value — aligned across rows */
     align-items: center;
-    gap: 4px;
+    column-gap: 8px;
     height: 22px;
+}
+.tuneControl {
+    height: 12px;
 }
 .tuneDivider {
     height: 1px;
@@ -838,9 +842,8 @@ html, body {
 }
 /* Read-only mode: a 0–1 progress bar replaces the slider (agent-vs-agent matches). */
 .qBar {
-    width: 89px;
+    width: 92px;
     height: 8px;
-    flex: none;
     border: 1px solid rgba(255, 255, 255, 0.35);
     border-radius: 2px;
     overflow: hidden;
@@ -1060,6 +1063,7 @@ html, body {
 
 /* Selected-entity inspector — a contextual panel in the right intel column (below history). */
 .inspector {
+    order: 1; /* always below the history dashboard, which stays fixed in place */
     pointer-events: auto;
     box-sizing: border-box;
     width: 210px;

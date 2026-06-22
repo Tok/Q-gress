@@ -10,9 +10,9 @@ import org.w3c.dom.HTMLElement
  * survives the panels building in any order.
  */
 object Footer {
-    private val tabs = listOf("EVENT LOG" to LOG_ID, "AGENTS" to AGENTS_ID)
+    private val tabs = listOf("AGENTS" to AGENTS_ID, "EVENT LOG" to LOG_ID)
     private var built = false
-    private var active = LOG_ID
+    private var active = AGENTS_ID
     private var collapsed = false
     private val tabButtons = mutableMapOf<String, HTMLElement>()
     private var body: HTMLElement? = null

@@ -69,11 +69,14 @@ object TuningPanel {
         }
         val bar = el("div", "qBar")
         val fill = el("div", "qBarFill").also { bar.appendChild(it) }
-        row.appendChild(userInput)
-        row.appendChild(enemyInput)
-        row.appendChild(valueLabel)
-        row.appendChild(bar)
+        // Fixed 3-column grid (icon+label | slider/bar | value) so icons + values line up in columns.
+        val control = el("div", "tuneControl")
+        control.appendChild(userInput)
+        control.appendChild(enemyInput) // hidden value store
+        control.appendChild(bar)
         row.appendChild(textLabel(qValue))
+        row.appendChild(control)
+        row.appendChild(valueLabel)
         rows.add(Row(userInput, valueLabel, bar, fill))
         return row
     }
