@@ -49,6 +49,7 @@ external object MapLibre {
         @JsName("on")
         fun onEvent(type: String, listener: (event: dynamic) -> Unit) // map events carry a payload (point/lngLat)
         fun once(type: String, listener: () -> Unit)
+        fun setSky(sky: dynamic) // MapLibre 5 atmospheric sky (horizon gradient + fog)
         fun setPaintProperty(layer: String, name: String, value: dynamic)
         fun setLayoutProperty(layer: String, name: String, value: dynamic)
         fun remove()

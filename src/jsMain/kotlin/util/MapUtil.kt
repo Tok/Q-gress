@@ -36,6 +36,9 @@ object MapUtil {
     private const val TERRAIN_DEM_TILES = "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"
     private const val TERRAIN_SOURCE = "terrain"
     private const val TERRAIN_EXAGGERATION = 1.3 // height boost; tune for relief vs realism
+    private const val SKY_COLOR = "#2a6cc9" // sky overhead (deep blue, slight cyan)
+    private const val SKY_HORIZON_COLOR = "#bfe0f5" // pale cyan at the horizon
+    private const val SKY_FOG_COLOR = "#dfeefb" // soft haze where the ground meets the sky
 
     private val SATELLITE_STYLE = """{
         "version": 8,
@@ -345,6 +348,7 @@ object MapUtil {
             }
             if (!demoMode) targetMap.setPaintProperty("satellite", "raster-saturation", -1.0) // grayscale during world-gen
             if (!demoMode) applyTerrain(targetMap) // 3D relief from the DEM source
+            if (!demoMode) applySky(targetMap) // atmospheric skybox above the horizon when pitched
         }
         val existing = initMap
         if (existing == null) {
@@ -585,6 +589,19 @@ object MapUtil {
     private var terrainEnabled = true
 
     /** Drape the satellite over the DEM (3D relief). [on] false flattens back to today's map. */
+    // A clean daytime sky with a cool sci-fi tint: deep blue overhead, pale cyan horizon, soft fog at
+    // ground level so the terrain melts into the haze rather than ending on a hard line.
+    private fun applySky(map: MapLibre.Map) {
+        val sky: dynamic = js("({})")
+        sky["sky-color"] = SKY_COLOR
+        sky["sky-horizon-blend"] = 0.6
+        sky["horizon-color"] = SKY_HORIZON_COLOR
+        sky["horizon-fog-blend"] = 0.5
+        sky["fog-color"] = SKY_FOG_COLOR
+        sky["fog-ground-blend"] = 0.4
+        map.setSky(sky)
+    }
+
     private fun applyTerrain(map: MapLibre.Map) {
         val opts: dynamic = if (terrainEnabled) js("({})") else null
         if (opts != null) {
