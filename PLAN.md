@@ -19,43 +19,25 @@ the AI layer lands, the slider sim is the substrate we keep hardening.
   portals' look wasn't right. They're built at the game's proportions × `TITLE_SCALE` with the level
   derived from 8 reso slots (chrome pole + GlassShader orb + reso rods), but the orb/pole sizing, reso
   collar layout, camera framing and lighting need a visual pass before turning the flag back on.
-- [x] **CRITICAL — non-blocking portal creation (coroutine yielding).** Done. `PathUtil.generateHeatMap`
-  + `calculateVectorField` (+ `smooth`) are now `suspend` and `delay(0)`-yield per wavefront layer /
-  every ~2000 cells / between smooth passes; `PathUtil.computeFieldAsync(location) { field -> … }`
-  runs the pair on a `MainScope()` and calls back. Both call sites return-empty-now + async-fill:
-  `Portal.create` (vectors `val`→`var`, `heatMap` passed `emptyMap()`) and
-  `NonFaction.getOrCreateVectorField` (dedupe via a `pending` set). Stuck-agent gotcha fixed via
-  `MovementUtil.headingTo(from, to)` — agents/NPCs head straight for the destination at unit magnitude
-  while a field cell is empty (Agent re-samples `actionPortal.vectors` each tick; NPCs re-snapshot on
-  re-target), instead of stalling on `Complex.ZERO`. _Pending: user's live agent-motion visual check._
-  _Alternative not taken: a Web Worker_ (true parallelism, but needs grid serialization + a worker build)._
-- [x] **Ship to GitHub** — done (live at `tok.github.io/Q-gress/`; 2D at `/2D/`; CI deploys `main`).
 
 ## 3D / rendering
-- [x] **3D terrain (DEM heights)** — DONE: keyless terrarium DEM + `setTerrain`; objects sit on a
-  sampled elevation grid (`Scene3D.groundZ`). Follow-ups: terrain-aware **shatter ground** (cannon
-  plane is still flat z=0 → shards/pole sink to sea level on high ground); maybe exaggeration in the
-  Menu; resample the height grid on big map pans if the play area ever moves.
+- [ ] **Terrain follow-ups** (DEM heights shipped). Terrain-aware **shatter ground** — the cannon-es
+  plane is still flat z=0, so shards/pole sink to sea level on high ground; maybe a Menu exaggeration
+  slider; resample the height grid if the play area ever moves (ties into the grand-game movable field).
 - [ ] **Explosion shader tuning pass (optional).** The new fireball exposes GLSL consts in
   `XmpShaders.VOLUME_FRAG` (`NOISE_FREQ`, `DISPLACE`, `DENSITY_GAIN`, `STEPS`) + the rise/grow curve in
   `XmpBurst.update`. If it reads too dense/sparse or too small once seen live, these are the knobs;
   consider promoting them to uniforms if frequent tuning is wanted.
-- [ ] **Animate the world build (buildings inflate)** — during world creation, make the 3D buildings
-  rise out of the ground (lerp their extrusion height / position up, or start vertically flattened and
-  "pump" into shape) so the city inflates into place as the world loads, instead of popping in. Pairs
-  with the existing staged loading overlay.
-- [ ] **Stage 2 leftovers** — **shield visualization** (needs `Portal.deployMods` to actually store
-  mods; today a stub); a richer field-up "whoosh".
+- [ ] **Stage 2 leftover** — a richer field-up "whoosh" when a control field forms.
 - [ ] **Stage 3 — pathfinding scalability** — drop the per-portal full-map flow field; multi-mode
   nav (flow fields near, cheap nav far); ambient NPCs; continuous toggleable field viz.
 - [ ] **Stage 4** — humanoid glTF models (ready: people are head-sized spheres at head height),
   pairs with the colony-management attributes (icebox).
 
 ## UI
-- [x] **Unified tabbed dock** — the scattered corner panes are consolidated into one right-docked
-  panel with NOW / HISTORY / TUNE tabs (`util/ui/Dock`); the two slider panes are merged into one flat
-  tuning list (`util/ui/TuningPanel`) with a **read-only 0–1 progress-bar mode** (`?readonly` / Menu
-  "Lock tuning"). Manual portal place/delete removed from the real game (demo keeps it).
+The HUD is shipped: tuning controls left (`util/ui/TuningPanel`, with a read-only 0–1 bar mode via
+`?readonly` / Menu "Lock tuning"), history right, scoreboard top, and a full-width tabbed/collapsible
+footer (`util/ui/Footer`: EVENT LOG / AGENTS). Remaining:
 - [ ] **Stage 2** — **Schematic** base view (reuse `SHADOW_STYLE`) + more toggleable info overlays
   (e.g. movement-penalty heatmap) alongside the existing Terrain/Vectors toggles.
 - [ ] **Stage 4** — tuning-slider polish: per-faction presets, and **wire the read-only bar mode to
@@ -86,16 +68,11 @@ the AI layer lands, the slider sim is the substrate we keep hardening.
   (`HackFx`/`SoundUtil`); this is the reward/skill/timing model behind it. Lives in
   `Glypher`/`Portal.tryGlyph` + a glyph skill on `agent/Skills`; expose it as a high-risk/high-reward
   QAction the AI weighs (ties into Phase 6 — the net/LLM should learn when glyphing is worth it).
-- [x] **Portal mods (shields / heat sinks / link amps)** — DONE: 4 real mod slots
-  (`Portal.mods`), generic `Mod` model + rarity, deploy-one-per-action, drop on hack, fall on
-  loss, and 3D viz (dodeca / pentagon / cube + shield bubble). **Shields** mitigate XMP damage;
-  **heat sinks** cut the hack cooldown (rarest-full-then-halved); **link amps** are inactive.
-  **Viruses** (ADA/JARVIS) flip a portal via the `Refactorer` action. Drop rates centralized in
-  `config/DropRates` (Menu → Drop rates; `docs/MECHANICS.md`).
-  - [ ] *Follow-ups*: heat-sink **instant cooldown/burnout reset** for the deploying agent on attach;
-    **multi-hack** mod; **activate link amps** (range/outbound-link/SBUL); the **Ultra Strike** weapon +
-    targeted mod-stripping honouring shield `stickiness`; a **3D key** model; a per-game **drop-rate
-    tuning UI** (the `DropRates` data is already centralized).
+- [ ] **Portal-mod follow-ups** (shields / heat sinks / viruses shipped; link amps inactive). Heat-sink
+  **instant cooldown/burnout reset** for the deploying agent on attach; **multi-hack** mod; **activate
+  link amps** (range/outbound-link/SBUL); the **Ultra Strike** weapon + targeted mod-stripping honouring
+  shield `stickiness`; a **3D key** model; a per-game **drop-rate tuning UI** (`DropRates` is already
+  centralized — Menu → Drop rates; `docs/MECHANICS.md`).
 - [ ] **Portal retaliation ("thunderbolts").** Portals **defend when attacked**: a tesla-coil-style
   **bolt flash** arcs from the portal to the attacker on hit (like Ingress's portal-attack feedback),
   with a **thunderbolt sound**. Model TBD — pure VFX/audio first, then optional retaliation damage
@@ -129,6 +106,7 @@ A core-gameplay direction beyond a single static arena:
   bed. The 3D part is a **standalone three.js scene** (not the MapLibre custom layer, which loads
   later) — likely shares portal geometry with `Scene3D` via a small extracted builder. Reference
   `qlippostasis` for the title thunderbolts + sound.
+
 ## Phase 6 — AI-vs-AI (the Q-gress payoff)
 
 **Decided:** build **both** AI drivers on **one** shared substrate, so any faction can be Human /
@@ -143,10 +121,8 @@ stays the action substrate (the net/LLM only re-tunes the 18 sliders at checkpoi
 - [ ] **`Observation` (pure)** — `observe(world, faction): DoubleArray`, fixed normalized feature
   vector (MU + Δ, per-faction counts, tick fraction, avg agent XM/level, …). The NN/LLM input.
 - [ ] **`SliderVector` (pure)** — 18 named slots ↔ `QActions`+`QDestinations`; encode/decode + clamp.
-- [x] **Seedable RNG (done)** — `Util.random()` is now a seedable **mulberry32** (it was the sole
-  randomness source), so the same seed reproduces a world. Already powers **shareable links**
-  (lng/lat/name + size + seed → the exact world; "Copy link" in the Menu); the AI match harness (6.1)
-  builds on it. _Remaining for 6.0: the `FactionPolicy` API + `Observation`/`SliderVector`._
+- Seedable RNG is **done** — `Util.random()` is a seedable mulberry32; same seed reproduces a world
+  (powers shareable "Copy link" + the 6.1 match harness). Remaining for 6.0: the three items above.
 
 **6.1 — Substrate II: headless match harness** _(the training engine; pays off the functional-core split)_
 - [ ] **`SimRunner`** — `runMatch(gridFixture, policyEnl, policyRes, seed, maxTicks): MatchResult`,
