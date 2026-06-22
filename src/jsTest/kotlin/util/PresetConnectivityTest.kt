@@ -14,45 +14,31 @@ class PresetConnectivityTest {
     private val minWalkability = 0.12 // matches the live HtmlUtil gate (mostly-water → unplayable)
 
     @Test
-    fun allPresetsAreSingleComponentAfterCarving() {
+    fun allPresetsFullyConnectedForGameplay() {
         if (PRESET_FIXTURES.isEmpty()) {
             println("[PresetConnectivityTest] no fixtures committed yet — run ?debug=capture")
             return
         }
         PRESET_FIXTURES.forEach { fx ->
-            val carved = GridConnectivity.connectIslands(fx.toGrid())
-            val r = GridConnectivity.report(carved, fx.w, fx.h)
-            assertEquals(1, r.islands, "${fx.preset}: connectIslands must leave a single 4-connected component")
+            // Use the gameplay carver (w/h overload): seals pockets AND joins on-screen regions.
+            val r = GridConnectivity.report(GridConnectivity.connectIslands(fx.toGrid(), fx.w, fx.h), fx.w, fx.h)
+            assertEquals(1, r.islands, "${fx.preset}: must leave a single 4-connected component")
+            assertEquals(1, r.onScreenIslands, "${fx.preset}: on-screen regions must all connect without an off-screen detour")
             assertTrue(r.walkability >= minWalkability, "${fx.preset}: walkability ${r.walkability} below the playable gate")
         }
     }
 
     @Test
-    fun reportOnScreenDetourPresets() {
-        // Informational (not yet a hard gate): presets whose on-screen regions only reach each other
-        // via the off-screen ring — connectIslands joins to the outside but doesn't link them directly.
-        // Drives the connectIslands improvement (PLAN); flip to a hard assert once that lands.
-        if (PRESET_FIXTURES.isEmpty()) return
-        val offenders = PRESET_FIXTURES.mapNotNull { fx ->
-            val carved = GridConnectivity.connectIslands(fx.toGrid())
-            val n = GridConnectivity.report(carved, fx.w, fx.h).onScreenIslands
-            if (n > 1) "${fx.preset} ($n)" else null
-        }
-        if (offenders.isNotEmpty()) {
-            println("[PresetConnectivityTest] off-screen-detour presets (on-screen islands): ${offenders.joinToString()}")
-        }
-    }
-
-    @Test
-    fun harnessFlagsOffScreenDetour() {
-        // On-screen [0,3)×[0,2) with a wall column at x=1 → two halves joined only via the off-screen
-        // ring. connectIslands is a no-op (already one component through the ring) but the on-screen
-        // split remains — exactly the hazard the audit must surface.
+    fun harnessFlagsAndCarverFixesOffScreenDetour() {
+        // On-screen [0,3)×[0,2) with a wall column at x=1 → two halves joined only via the off-screen ring.
         val onScreen = listOf(true, false, true, true, false, true) // rows (.#.)(.#.)
         val fx = GridFixture("SYNTH", 3, 2, 1, GridFixture.rleEncode(onScreen))
-        val carved = GridConnectivity.connectIslands(fx.toGrid())
-        val r = GridConnectivity.report(carved, fx.w, fx.h)
-        assertEquals(1, r.islands, "whole grid is one component via the ring")
-        assertEquals(2, r.onScreenIslands, "on-screen halves stay split — the detour hazard")
+        // Whole-grid carve alone: one component via the ring, but on-screen halves stay split (the hazard).
+        val ringOnly = GridConnectivity.report(GridConnectivity.connectIslands(fx.toGrid()), fx.w, fx.h)
+        assertEquals(1, ringOnly.islands)
+        assertEquals(2, ringOnly.onScreenIslands)
+        // Gameplay carve: on-screen halves are joined directly.
+        val gameplay = GridConnectivity.report(GridConnectivity.connectIslands(fx.toGrid(), fx.w, fx.h), fx.w, fx.h)
+        assertEquals(1, gameplay.onScreenIslands, "on-screen carve must join the split halves")
     }
 }

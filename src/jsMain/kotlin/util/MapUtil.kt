@@ -471,8 +471,9 @@ object MapUtil {
         val rawGrid: Grid = (-OFFSCREEN_CELL_ROWS until (w + OFFSCREEN_CELL_ROWS)).flatMap { x ->
             nextRow(tempCtx, h, x)
         }.toMap()
-        // No closed-off areas: carve corridors so every passable island reaches the outside.
-        val grid = GridConnectivity.connectIslands(rawGrid)
+        // No closed-off areas + on-screen routes: seal pockets to the outside AND join on-screen
+        // regions directly (else agents detour around the map edge between them and look stuck).
+        val grid = GridConnectivity.connectIslands(rawGrid, w, h)
         World.walkability = GridConnectivity.walkability(grid, w, h)
         console.log("grid built: walkability ${(World.walkability * 100).toInt()}% (${GridConnectivity.components(rawGrid).size} islands connected)")
         if (Debug.enabled) logConnectivity(rawGrid, grid, w, h)

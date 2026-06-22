@@ -93,10 +93,29 @@ object GridConnectivity {
     /**
      * Carve corridors so every passable island joins the largest component (the off-screen outside).
      * Returns a new grid; impassable cells along each shortest main→island path become passable
-     * ([CORRIDOR_PENALTY]). A no-op when the grid is already fully connected.
+     * ([CORRIDOR_PENALTY]). A no-op when the grid is already fully connected. (Whole-grid only — for
+     * the gameplay grid use the [w]/[h] overload, which also joins on-screen regions.)
      */
-    fun connectIslands(grid: Grid): Grid {
-        val comps = components(grid)
+    fun connectIslands(grid: Grid): Grid = connectComponents(grid, components(grid)) { true }
+
+    /**
+     * Full gameplay connectivity: first seal every enclosed pocket to the outside (whole-grid), then
+     * join the **on-screen** regions to each other directly. The first pass alone leaves regions that
+     * both touch the off-screen ring reachable only by detouring around the map edge ([onScreenComponents]
+     * > 1) — agents path the long way and look stuck. The second pass carves on-screen corridors between
+     * them, so afterwards every playable cell reaches every other without leaving the screen.
+     */
+    fun connectIslands(grid: Grid, w: Int, h: Int): Grid {
+        val sealed = connectComponents(grid, components(grid)) { true }
+        return connectComponents(sealed, onScreenComponents(sealed, w, h)) { isOnScreen(it, w, h) }
+    }
+
+    /**
+     * Carve shortest corridors joining each component in [comps] to the largest, flooding only through
+     * cells where [traversable] holds (so on-screen joins stay on-screen). Impassable cells on the
+     * chosen paths become passable ([CORRIDOR_PENALTY]). No-op for ≤1 component.
+     */
+    private fun connectComponents(grid: Grid, comps: List<List<Pos>>, traversable: (Pos) -> Boolean): Grid {
         if (comps.size <= 1) return grid
         val main = comps.maxByOrNull { it.size } ?: return grid
         val mainSet = HashSet(main)
@@ -107,13 +126,13 @@ object GridConnectivity {
         val result = grid.toMutableMap()
         val parent = HashMap<Pos, Pos>()
         val visited = HashSet(mainSet)
-        val queue = ArrayDeque(main) // flood outward from the whole outside region
+        val queue = ArrayDeque(main) // flood outward from the whole main region
         while (queue.isNotEmpty() && remaining.isNotEmpty()) {
             val cur = queue.removeFirst()
             val island = islandOf[cur]
             if (island != null && remaining.remove(island)) carvePath(result, parent, mainSet, cur)
             neighbours(cur).forEach { n ->
-                if (n in result && n !in visited) {
+                if (n in result && n !in visited && traversable(n)) {
                     visited.add(n)
                     parent[n] = cur
                     queue.add(n)

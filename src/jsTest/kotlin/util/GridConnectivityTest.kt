@@ -69,6 +69,22 @@ class GridConnectivityTest {
     }
 
     @Test
+    fun connectIslandsWithDimsJoinsOnScreenRegions() {
+        // On-screen = [0,3)×[0,2): a wall column at x=1 splits it; the halves touch only via the
+        // off-screen rows (y≥2). Whole-grid carve leaves them split on-screen; the w/h overload joins them.
+        val g = grid(
+            ".#.",
+            ".#.",
+            "...", // off-screen
+            "...", // off-screen
+        )
+        assertEquals(2, GridConnectivity.onScreenComponents(g, 3, 2).size, "split on-screen before")
+        val gameplay = GridConnectivity.connectIslands(g, 3, 2)
+        assertEquals(1, GridConnectivity.components(gameplay).size, "still one whole-grid component")
+        assertEquals(1, GridConnectivity.onScreenComponents(gameplay, 3, 2).size, "on-screen halves now joined")
+    }
+
+    @Test
     fun connectIslandsIsNoOpWhenAlreadyConnected() {
         val g = grid("..", "..")
         assertEquals(g, GridConnectivity.connectIslands(g))
