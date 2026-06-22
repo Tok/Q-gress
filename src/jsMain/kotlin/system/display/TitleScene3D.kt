@@ -97,6 +97,10 @@ object TitleScene3D {
 
     private class Timed(val obj: dynamic, val mat: dynamic, val baseOpacity: Double, var age: Double, val life: Double)
     private class Bolt(val container: dynamic, val mat: dynamic, val flash: dynamic, var age: Double)
+    private class Xmp(val mesh: dynamic, val mat: dynamic, var age: Double)
+
+    private const val XMP_LIFE = 0.5
+    private const val XMP_MAX_R = 13.0
 
     private var renderer: dynamic = null
     private var scene: dynamic = null
@@ -106,6 +110,7 @@ object TitleScene3D {
     private val portals = mutableListOf<Portal>()
     private val bolts = mutableListOf<Bolt>()
     private val timed = mutableListOf<Timed>() // links + fields that fade
+    private val xmps = mutableListOf<Xmp>() // expanding XMP burst spheres
 
     private var poleGeo: dynamic = null
     private var orbGeo: dynamic = null
@@ -182,6 +187,7 @@ object TitleScene3D {
         window.removeEventListener("pointerdown", unlockListener)
         bolts.clear()
         timed.clear()
+        xmps.clear()
         portals.clear()
         renderer?.dispose()
         renderer = null
@@ -351,6 +357,7 @@ object TitleScene3D {
         updatePortals(dt)
         updateBolts(dt)
         updateTimed(dt)
+        updateXmps(dt)
         renderer?.render(scene, camera)
         rafId = window.requestAnimationFrame { frame() }
     }
@@ -401,7 +408,33 @@ object TitleScene3D {
         p.targetLevel = derivedLevel(p)
         applyPortal(p)
         SoundUtil.playXmpSound(titlePos(p), 4)
+        spawnXmp(orbWorld(p), p.color)
         emitBolt(orbWorld(p), upFrom(p), p.color)
+    }
+
+    // An expanding additive sphere — the XMP burst flash at a portal.
+    private fun spawnXmp(at: DoubleArray, color: String) {
+        val mat = basicAdditive(color, 0.7)
+        val mesh = Three.Mesh(Three.SphereGeometry(1.0, 16, 12), mat)
+        mesh.asDynamic().position.set(at[0], at[1], at[2])
+        scene.add(mesh)
+        xmps.add(Xmp(mesh, mat, 0.0))
+    }
+
+    private fun updateXmps(dt: Double) {
+        val it = xmps.iterator()
+        while (it.hasNext()) {
+            val e = it.next()
+            e.age += dt
+            val f = (e.age / XMP_LIFE).coerceIn(0.0, 1.0)
+            val r = XMP_MAX_R * (1.0 - (1.0 - f) * (1.0 - f)) // ease-out expansion
+            e.mesh.asDynamic().scale.set(r, r, r)
+            e.mat.opacity = (1.0 - f) * 0.7
+            if (f >= 1.0) {
+                scene.remove(e.mesh)
+                it.remove()
+            }
+        }
     }
 
     private fun titlePos(p: Portal) = Pos(Sim.width / 2.0 + p.pos[0], Sim.height / 2.0)
