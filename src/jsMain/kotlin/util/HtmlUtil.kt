@@ -14,6 +14,7 @@ import extension.Grid
 import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.dom.addClass
+import kotlinx.dom.removeClass
 import org.w3c.dom.*
 import org.w3c.dom.events.Event
 import org.w3c.dom.url.URL
@@ -287,7 +288,7 @@ object HtmlUtil {
     private fun createControlDiv(): HTMLDivElement {
         val div = document.createElement("div") as HTMLDivElement
         div.id = "top-controls"
-        div.addClass("controls")
+        div.addClass("controls", "invisible") // hidden through title/onboarding/loading; shown when ready
         return div
     }
 
@@ -592,6 +593,7 @@ object HtmlUtil {
             createQSliders(World.userFactionOrThrow())
             resetInterval()
             World.isReady = true
+            document.getElementById("top-controls")?.removeClass("invisible") // reveal the toolbar now
             MapUtil.showSatellite() // terrain stays grayscale (set at map-load) until the fade below
             Navigation.setup()
             MapUtil.bindInteractions(::onMapClick, ::onMapMove)

@@ -3,6 +3,7 @@ package system.display
 import World
 import config.Sim
 import external.Three
+import util.SoundUtil
 import kotlin.math.PI
 import kotlin.math.atan2
 
@@ -52,6 +53,9 @@ object VectorFieldOverlay {
             g.clear()
             build(g, currentId)
             builtKey = currentId
+            // Paced audio through world-gen: a soft route-ready ping as each flow field lands (the long
+            // field-prep tail was silent — portal-creation sounds only cover the spawn burst).
+            if (!World.isReady) SoundUtil.playOffScreenLocationCreationSound()
         }
         if (currentId == null) return
         val shownFor = now() - shownAt
