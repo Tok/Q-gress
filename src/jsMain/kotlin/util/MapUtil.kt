@@ -255,7 +255,29 @@ object MapUtil {
         if (cinematicActive) return
         cinematicActive = true
         window.requestAnimationFrame { spinBuild() }
+        startBuildInflate() // the city rises out of the ground as the world loads
     }
+
+    private const val BUILD_INFLATE_MS = 2600.0 // how long the buildings take to rise to full height
+    private var inflateStart = 0.0
+
+    /** Animate the 3D buildings rising from the ground (height + base scale 0→1) while the world builds. */
+    private fun startBuildInflate() {
+        if (demoMode || !Styles.use3DBuildings) return
+        inflateStart = js("performance.now()") as Double
+        window.requestAnimationFrame { stepInflate() }
+    }
+
+    private fun stepInflate() {
+        val m = initMap ?: return
+        val t = (((js("performance.now()") as Double) - inflateStart) / BUILD_INFLATE_MS).coerceIn(0.0, 1.0)
+        val e = 1.0 - (1.0 - t) * (1.0 - t) * (1.0 - t) // easeOutCubic — fast rise, gentle settle
+        m.setPaintProperty("3d-buildings", "fill-extrusion-height", inflateExpr(e, "render_height", 8))
+        m.setPaintProperty("3d-buildings", "fill-extrusion-base", inflateExpr(e, "render_min_height", 0))
+        if (t < 1.0) window.requestAnimationFrame { stepInflate() }
+    }
+
+    private fun inflateExpr(factor: Double, prop: String, fallback: Int): Json = JSON.parse("""["*", $factor, ["coalesce", ["get", "$prop"], $fallback]]""")
 
     private fun spinBuild() {
         if (!cinematicActive) return
