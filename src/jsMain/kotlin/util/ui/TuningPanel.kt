@@ -60,6 +60,13 @@ object TuningPanel {
 
     private fun buildRow(qValue: QValue): HTMLElement {
         val row = el("div", "tuneRow")
+        // Force the 3-column grid inline (icon+label | slider/bar | value) so nothing can collapse it to
+        // a centering layout — that's what was centering the label box despite its own left-align.
+        val rst = row.asDynamic().style
+        rst.display = "grid"
+        rst.gridTemplateColumns = "1fr 92px 34px"
+        rst.alignItems = "center"
+        rst.columnGap = "8px"
         val userInput = slider(qValue, userFaction)
         val enemyInput = slider(qValue, userFaction.enemy()).also { it.classList.add("invisible") }
         val valueLabel = el("span", "qSliderLabel").also { it.textContent = display(userInput.value) }
