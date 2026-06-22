@@ -70,6 +70,7 @@ object Scene3D {
     private const val INDICATOR_Z = 5.0 // raised to clear the head now the indicator is ~3× bigger
     private const val INDICATOR_SIZE = 4.8 // action label above an agent (was 1.6 — barely visible)
     private const val INDICATOR_THICK = 1.2 // action-coin thickness (the extruded "wheel" depth)
+    private const val COIN_BODY_OPACITY = 0.5 // the coin body (rim + underside) is see-through; the top icon stays solid
     private const val LABEL_W = 22.0 // portal name/level billboard width (scene metres)
     private const val LABEL_GAP = 4.0 // gap above the orb top before the label
     private const val LABEL_CANVAS_W = 256 // label texture resolution (kept crisp; faction-neutral white)
@@ -1073,18 +1074,27 @@ object Scene3D {
         Three.LineBasicMaterial(p)
     }
 
-    // Coin materials [side, top-cap, bottom-cap]: the icon on the round faces, faction colour on the rim.
+    // Coin materials [side, top-cap, bottom-cap]: the top icon is fully opaque; the rim + underside are
+    // see-through (COIN_BODY_OPACITY) so the coin reads as a translucent token with a solid face.
     private fun indicatorMaterial(item: ActionItem, faction: Faction): dynamic = spriteCache.getOrPut("coin:" + item.text + faction.abbr) {
-        val capParams: dynamic = js("({})")
-        capParams.map = Three.CanvasTexture(ActionItem.getHiResIcon(item, faction)) // hi-res → crisp
-        capParams.depthTest = false
-        capParams.transparent = true
-        val cap = Three.MeshBasicMaterial(capParams)
+        val tex = Three.CanvasTexture(ActionItem.getHiResIcon(item, faction)) // hi-res → crisp
+        val top = coinFace(tex, 1.0)
+        val bottom = coinFace(tex, COIN_BODY_OPACITY)
         val rimParams: dynamic = js("({})")
         rimParams.color = faction.color
         rimParams.depthTest = false
-        val rim = Three.MeshBasicMaterial(rimParams)
-        arrayOf(rim, cap, cap) // CylinderGeometry groups: 0 = side, 1 = top, 2 = bottom
+        rimParams.transparent = true
+        rimParams.opacity = COIN_BODY_OPACITY
+        arrayOf(Three.MeshBasicMaterial(rimParams), top, bottom) // CylinderGeometry groups: 0 = side, 1 = top, 2 = bottom
+    }
+
+    private fun coinFace(tex: dynamic, opacity: Double): dynamic {
+        val p: dynamic = js("({})")
+        p.map = tex
+        p.depthTest = false
+        p.transparent = true
+        p.opacity = opacity
+        return Three.MeshBasicMaterial(p)
     }
 
     /** A camera-facing name + level billboard floating just above the portal's orb (cleared each sync). */
