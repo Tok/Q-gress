@@ -229,6 +229,7 @@ object Scene3D {
             if (ShatterFx.hasActive()) ShatterFx.update(dt)
             if (showcasesAnimating()) updateShowcases(dt)
             if (HackFx.hasActive()) HackFx.update()
+            if (DeployFx.hasActive()) DeployFx.update()
             if (FieldFx.hasActive()) FieldFx.update(dt)
             if (XmpBurst.hasActive()) {
                 val canvas = map.getCanvas()
@@ -244,13 +245,14 @@ object Scene3D {
         map.triggerRepaint()
     }
 
-    private fun hasActiveEffects() = ShatterFx.hasActive() || showcasesAnimating() || HackFx.hasActive() || XmpBurst.hasActive() || FieldFx.hasActive()
+    private fun hasActiveEffects() = ShatterFx.hasActive() || showcasesAnimating() || HackFx.hasActive() || DeployFx.hasActive() || XmpBurst.hasActive() || FieldFx.hasActive()
 
     /** Rebuild the 3D objects from world state. Called once per simulation tick. */
     fun sync() {
         scene ?: return
         Spawns.beginSync()
         HackFx.resetBindings() // re-bound below as each portal's reso group is rebuilt
+        DeployFx.resetBindings()
         clear(portalsGroup)
         World.allPortals.forEach { addPortal(it) }
         clear(fieldsGroup)
@@ -502,12 +504,12 @@ object Scene3D {
         parent.add(pole)
         parent.add(gasket)
         parent.add(orb)
-        val resoGroup = buildResonators(parent, x, y, level, resos)
+        val resoGroup = buildResonators(parent, x, y, level, resos, id)
         return arrayOf(orb, gasket, pole, resoGroup)
     }
 
     /** 8 rubber slot-rings around the pole collar; a colour-coded rod stands in each filled slot. */
-    private fun buildResonators(parent: dynamic, x: Double, y: Double, level: Double, resos: Map<Octant, Int>): dynamic {
+    private fun buildResonators(parent: dynamic, x: Double, y: Double, level: Double, resos: Map<Octant, Int>, id: String? = null): dynamic {
         val group = Three.Group()
         val poleH = poleHeight(level)
         val rodLen = poleH * RESO_ROD_LEN_FRAC
@@ -524,6 +526,9 @@ object Scene3D {
                 pivot.asDynamic().position.set(ox, oy, rodLen) // joint at the rod top
                 pivot.asDynamic().userData.isRodPivot = true
                 pivot.asDynamic().userData.baseAngle = ang
+                pivot.asDynamic().userData.targetX = ox // DeployFx slides the rod out to here on deploy
+                pivot.asDynamic().userData.targetY = oy
+                id?.let { DeployFx.bind(it, octant, pivot.asDynamic()) } // lerp it in if just deployed
                 val rod = Three.Mesh(resoRodGeo, Materials.resonator(LevelColor.map[lvl] ?: "#ffffff"))
                 rod.asDynamic().rotation.x = PI / 2 // unit Y-cylinder → vertical
                 rod.asDynamic().scale.set(1.0, rodLen, 1.0)

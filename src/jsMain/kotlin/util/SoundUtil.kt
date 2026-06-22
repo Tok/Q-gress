@@ -475,6 +475,20 @@ object SoundUtil {
         playSound(osc, createPanner(pos), gain, duration)
     }
 
+    /** A short bell-like "ding" as a single resonator drops into its slot (on the shared scale). */
+    fun playResoDeploySound(pos: Pos, level: Int) {
+        if (isMuted()) return
+        val freq = noteFor(level, octaveUp = 3) // bright + on-key (level 8 = lowest)
+        val osc = createStaticOscillator(OscillatorType.SINE, freq)
+        val gainNode = audioCtx.createGain()
+        val n = now()
+        val dur = 0.22
+        gainNode.gain.setValueAtTime(EPS, n)
+        gainNode.gain.exponentialRampToValueAtTime(0.16, n + 0.005) // fast attack → the "ding"
+        gainNode.gain.exponentialRampToValueAtTime(EPS, n + dur) // quick bell decay
+        connectVoice(osc, createPanner(pos), gainNode, n + dur)
+    }
+
     fun playDeploySound(pos: Pos, distanceToPortal: Int) {
         if (isMuted()) return
         val ratio = distanceToPortal / Dim.maxDeploymentRange
