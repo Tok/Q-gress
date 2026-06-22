@@ -76,14 +76,15 @@ object Scene3D {
     private const val POLE_R = 2.0
     private const val LINK_R = 0.7 // glass-pipe link radius (metres)
     private const val CORE_R_FRAC = 0.3 // bright inner-filament radius as a fraction of LINK_R
-    private const val PORTAL_GROW_S = 0.5 // seconds for a new portal's orb to grow in
+    private const val PORTAL_GROW_S = 0.7 // seconds for a new portal to inflate in (pole rises, orb pops)
+    private const val RESO_POP_DELAY = 0.3 // resonators start popping in once the pole is ~30% up
     private const val CAPTURE_SHATTER_WEIGHT = 0.22 // glass-shatter heaviness on capture (light — only the orb)
     private const val FIELD_FILL_S = 0.4 // seconds for a new control field to fill in
     private const val LEVEL_TWEEN_RATE = 0.18 // per-sync ease of the rendered level toward the real one
     private const val POLE_H = 22.5 // base pole height at L1; scales by φ per level
     private const val TOP_R = 7.0 // base orb radius
     private const val INNER_SHELL_FRAC = 0.89 // inner glass shell radius (× orb) — a thin wall (~2.5× thinner) matching the shards
-    private const val PHI = 1.618 // golden ratio — pole grows by φ across the 8 levels
+    private const val PHI = 1.618 // golden ratio — used for the shield bubble radius
 
     // Resonators: 8 rubber slot-rings around the pole collar (just below the gasket), each holding a
     // colour-coded rod (the resonator) when filled.
@@ -580,8 +581,9 @@ object Scene3D {
     }
 
     // Level is a Double so a level-up can ease between integer levels (see tweenedLevel).
-    private fun orbScale(level: Double) = 0.5 + (level.coerceIn(1.0, 8.0) - 1.0) / 7.0 * 0.8 // orb radius
-    private fun poleScale(level: Double) = PHI.pow((level.coerceIn(1.0, 8.0) - 1.0) / 7.0) // pole height: 1 → φ
+    // Generous per-level growth so the level difference reads clearly: orb 0.45→1.6, pole 1.0→2.2×.
+    private fun orbScale(level: Double) = 0.45 + (level.coerceIn(1.0, 8.0) - 1.0) / 7.0 * 1.15 // orb radius
+    private fun poleScale(level: Double) = 1.0 + (level.coerceIn(1.0, 8.0) - 1.0) / 7.0 * 1.2 // pole height: 1 → 2.2
     private fun poleHeight(level: Double) = POLE_H * poleScale(level)
     private fun orbCenterZ(level: Double) = poleHeight(level) + TOP_R * orbScale(level) // orb rests on the pole top
 
@@ -758,16 +760,28 @@ object Scene3D {
 
     /** Rise the pole + grow the orb from the ground for the build-in animation ([g] = 0→1). */
     private fun applyBuildGrow(level: Double, g: Double, parts: Array<dynamic>, reform: Double = 1.0, gz: Double = 0.0) {
-        val gg = g.coerceAtLeast(0.0)
+        val gg = g.coerceIn(0.0, 1.0)
+        val poleP = easeOutCubic(gg) // the pole shoots up and settles
+        val orbP = easeOutBack(gg) // the orb inflates past full size, then settles (juicy pop)
+        val resoP = easeOutBack(((gg - RESO_POP_DELAY) / (1.0 - RESO_POP_DELAY)).coerceIn(0.0, 1.0)) // pop in after the pole
         val poleH = poleHeight(level)
-        val s = orbScale(level) * gg * reform
-        parts[2].scale.set(1.0, poleScale(level) * gg, 1.0) // pole
-        parts[2].position.z = gz + poleH * gg / 2.0
-        parts[1].position.z = gz + poleH * gg // gasket
+        val s = orbScale(level) * orbP * easeOutBack(reform.coerceIn(0.0, 1.0)) // capture re-pop also overshoots
+        parts[2].scale.set(1.0, poleScale(level) * poleP, 1.0) // pole
+        parts[2].position.z = gz + poleH * poleP / 2.0
+        parts[1].position.z = gz + poleH * poleP // gasket
         parts[0].scale.set(s, s, s) // orb
-        parts[0].position.z = gz + poleH * gg + TOP_R * s
-        parts[3].scale.set(gg, gg, gg) // resonators grow in with the collar
-        parts[3].position.z = gz + poleH * gg * RESO_COLLAR_FRAC
+        parts[0].position.z = gz + poleH * poleP + TOP_R * s
+        parts[3].scale.set(resoP, resoP, resoP) // resonators grow in with the collar
+        parts[3].position.z = gz + poleH * poleP * RESO_COLLAR_FRAC
+    }
+
+    private fun easeOutCubic(t: Double) = 1.0 - (1.0 - t).pow(3)
+
+    // Back-ease: overshoots ~10% past 1.0 before settling — the classic "pop/inflate" feel.
+    private fun easeOutBack(t: Double): Double {
+        val c1 = 1.70158
+        val u = t - 1.0
+        return 1.0 + (c1 + 1.0) * u * u * u + c1 * u * u
     }
 
     private fun activeShowcase() = selectedShowcase ?: showcases.lastOrNull()

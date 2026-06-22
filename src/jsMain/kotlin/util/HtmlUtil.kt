@@ -16,6 +16,7 @@ import kotlinx.browser.window
 import kotlinx.dom.addClass
 import org.w3c.dom.*
 import org.w3c.dom.events.Event
+import org.w3c.dom.events.KeyboardEvent
 import org.w3c.dom.url.URL
 import portal.Portal
 import portal.XmMap
@@ -140,11 +141,10 @@ object HtmlUtil {
         leftGroup.append(createMenuSpan()) // New Game / Reset + overlay toggles
         // Recenter top-down over the play area (find your way back after panning/rotating away).
         leftGroup.append(createButton("homeButton", "topButton amarillo", "Home") { MapUtil.goHome() })
-        val pauseButton = createButton(PAUSE_BUTTON_ID, "topButton", "Pause") {
-            intervalID = pauseHandler(intervalID) { tick() }
-        }
+        val pauseButton = createButton(PAUSE_BUTTON_ID, "topButton", "Pause") { togglePause() }
         pauseButton.addClass("non", "amarillo")
         leftGroup.append(pauseButton)
+        bindSpacebarPause() // Space toggles pause/resume too
 
         // Right group, far right: volume + base-map view dropdown.
         val rightGroup = document.createElement("div") as HTMLDivElement
@@ -343,6 +343,34 @@ object HtmlUtil {
 
     private fun resetInterval() {
         intervalID = document.defaultView?.setInterval({ tick() }, Time.minTickInterval) ?: 0
+    }
+
+    private fun togglePause() {
+        intervalID = pauseHandler(intervalID) { tick() }
+    }
+
+    private var shortcutsBound = false
+
+    private fun isTypingTarget(target: dynamic) = target is HTMLInputElement || target is HTMLTextAreaElement || target is HTMLSelectElement
+
+    /** Keyboard shortcuts: Space toggles pause/resume, Home recenters over the play area. */
+    private fun bindSpacebarPause() {
+        if (shortcutsBound) return
+        shortcutsBound = true
+        document.addEventListener("keydown", { e ->
+            val ev = e as KeyboardEvent
+            if (ev.repeat || isTypingTarget(ev.target)) return@addEventListener
+            when (ev.code) {
+                "Space" -> {
+                    ev.preventDefault() // don't scroll the page
+                    togglePause()
+                }
+                "Home" -> {
+                    ev.preventDefault()
+                    MapUtil.goHome()
+                }
+            }
+        })
     }
 
     private fun pauseHandler(intervalID: Int, tickFunction: () -> Unit): Int {
