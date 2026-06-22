@@ -34,10 +34,19 @@ object Shortcuts {
     fun bind(handlers: Handlers) {
         if (bound) return
         bound = true
-        document.addEventListener("keydown", { e ->
-            val ev = e as KeyboardEvent
-            if (!isTyping(ev.target) && dispatch(ev, handlers)) ev.preventDefault()
-        })
+        // Capture phase + stopPropagation: intercept our keys (e.g. -/+) BEFORE MapLibre's own keyboard
+        // handler so it doesn't also zoom. Unhandled keys (arrows) fall through to MapLibre's native pan.
+        document.addEventListener(
+            "keydown",
+            { e ->
+                val ev = e as KeyboardEvent
+                if (!isTyping(ev.target) && dispatch(ev, handlers)) {
+                    ev.preventDefault()
+                    ev.stopPropagation()
+                }
+            },
+            true,
+        )
     }
 
     private fun isTyping(t: dynamic) = t is HTMLInputElement || t is HTMLTextAreaElement || t is HTMLSelectElement
