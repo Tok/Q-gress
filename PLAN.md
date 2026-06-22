@@ -68,6 +68,11 @@ footer (`util/ui/Footer`: EVENT LOG / AGENTS). Remaining:
   (`HackFx`/`SoundUtil`); this is the reward/skill/timing model behind it. Lives in
   `Glypher`/`Portal.tryGlyph` + a glyph skill on `agent/Skills`; expose it as a high-risk/high-reward
   QAction the AI weighs (ties into Phase 6 — the net/LLM should learn when glyphing is worth it).
+- [ ] **Aim skill (XMP / Ultra Strike accuracy)** — a per-agent skill on `agent/Skills`: a high-aim
+  agent detonates **closer to the portal centre** (max damage); a low-aim agent's blasts land **farther
+  off-centre**, so XMP/Ultra-Strike damage falls off with that miss distance. Models skill spread
+  across the roster + makes Ultra Strike (small radius) reward good aim. Feeds the damage calc + the
+  blast VFX origin; another lever for Phase 6 to learn around.
 - [ ] **Portal-mod follow-ups** (shields / heat sinks / viruses shipped; link amps inactive). Heat-sink
   **instant cooldown/burnout reset** for the deploying agent on attach; **multi-hack** mod; **activate
   link amps** (range/outbound-link/SBUL); the **Ultra Strike** weapon + targeted mod-stripping honouring
@@ -97,15 +102,22 @@ A core-gameplay direction beyond a single static arena:
   - *Open questions:* what the simplified off-site model is (pure stats vs a coarse grid), how
     travel/relocation between sites works (time/cost), and how cross-site links/fields score.
 
-## Spectacular title / faction screen (planned)
-- [ ] The **CHOOSE YOUR FACTION** screen is the first thing a player sees — make it a showpiece:
-  the big **Q-GRESS** wordmark (done), centred ENL/RES buttons (done), then a **randomized 3D physics
-  demo** behind it: ~3 portals running **non-scripted** random actions — hack/glyph spins, capture
-  shatter+regrow, full shatter+respawn (reusing **cannon-es** + `ShatterFx`/`HackFx`), XMP bursts, and
-  **thunderbolt** retaliation — plus drifting **particles** and a generative **ambient/thunder sound**
-  bed. The 3D part is a **standalone three.js scene** (not the MapLibre custom layer, which loads
-  later) — likely shares portal geometry with `Scene3D` via a small extracted builder. Reference
-  `qlippostasis` for the title thunderbolts + sound.
+## Title / faction screen
+The **CHOOSE YOUR FACTION** screen is a showpiece: the **Q-GRESS** wordmark + compact ENL/RES buttons
+over a **real `Scene3D` mini-sim** (`util/ui/TitleSim`) — a round arena with ~8 portals, a 3-v-3 agent
+roster (equipped: varied XMPs, resos/cubes, keys, a shield each side) and ~30 NPCs, driven by the
+actual tick loop / AI, with a dramatic fly-in + a slow center-facing orbiting camera, 3D terrain, fast
+colour fade, and a GitHub footer link. Wiped by the onboarding reload (HtmlUtil's reload handoff). It
+runs the same renderer/FX as the game (no parallel code). Remaining:
+- [ ] **Precompute the title world to cut load time.** Serialize the fixed title location's **grid +
+  portal positions + flow fields** (extend the `GridCapture` fixture pattern) and load them instead of
+  doing the live shadow-readback + async field compute — so the title sim is instant. Pairs with the
+  6.1 grid fixtures.
+- [ ] **FreeCamera flight path** (optional): fly the camera *position* over the terrain while
+  `lookAtPoint(centre)` keeps the action framed (today the cam orbits a fixed centre — MapLibre's
+  default camera can't decouple position from look-at without FreeCamera).
+- [ ] Drifting **particles** + a generative **ambient** bed; **thunderbolt retaliation** lands via the
+  game's portal-defense work (below), so the title inherits it for free.
 
 ## Phase 6 — AI-vs-AI (the Q-gress payoff)
 
