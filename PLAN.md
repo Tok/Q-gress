@@ -169,6 +169,11 @@ dominates" validation is iterative (playtest, or a future headless strategy-comp
   sky) and a **gameplay modifier**: e.g. rain makes agent **resolve/battery deplete quicker**, fog cuts
   hack/attack range, snow slows movement. Could be random per-game, seasonal, or pulled from a real
   weather API for the chosen location. Pairs with the colony-management battery/accu idea below.
+  - **A directional sun** (with the weather/time-of-day): a real key light so the chrome poles cast a
+    highlight + the terrain gets shading (today there's only ambient + a faint fixed sun → the chrome
+    reflects a static gradient env, not the scene). Together with a **render-to-cubemap / PMREM** of the
+    sky+terrain, the chrome/glass would reflect the *actual* skybox + terrain (currently approximated by
+    a static gradient env map in `Materials`). Sun direction drives time-of-day + shadow mood.
 - **Colony-management / roster (gameplay expansion).** Per-entity attributes (endurance/speed/agility/
   radius, building on `agent/Skills`+`AgentSize`); **rarity-tiered agents** (randomised attributes but
   **no gambling UX** — the player *manages* composition, not a gacha loop); **items** (skateboards,
