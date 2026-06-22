@@ -87,8 +87,11 @@ object XmpBurst {
             val f = (b.age / life).coerceIn(0.0, 1.0)
             b.uni.uProgress.value = f
             b.uni.uTime.value = b.age
-            b.uni.uCenter.value.z = maxR * (0.05 + 0.55 * f) // mushroom climbs steadily
-            b.uni.uRadius.value = maxR * (0.03 + 0.34 * (1.0 - (1.0 - f) * (1.0 - f))) // tiny pop → fast expand
+            val r = maxR * (0.03 + 0.34 * (1.0 - (1.0 - f) * (1.0 - f))) // tiny pop → fast expand
+            b.uni.uRadius.value = r
+            // Anchor the sphere bottom at the ground (centre = radius) so the BASE stays at terrain level;
+            // the mushroom rises *within* the volume via the shader's cap height + stem, not by lifting off.
+            b.uni.uCenter.value.z = r
             if (b.age >= life) {
                 for (m in b.meshes) {
                     grp.remove(m)
