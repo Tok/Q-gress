@@ -24,14 +24,21 @@ object Demo {
 
     private var portalColor = NEUTRAL // the demo has no faction preference — defaults to Neutral
     private var demoLevel = 8
+    private var xmpClickMode = false // when on, LMB detonates an XMP at the click point (vs place/select)
+    private var xmpBlastLevel = 8
     private var portalButtons: List<HTMLButtonElement> = emptyList()
     private var factionButtons: List<HTMLButtonElement> = emptyList()
+    private var xmpButtons: List<HTMLButtonElement> = emptyList()
     private val factionColors = listOf(Faction.ENL.color, Faction.RES.color, NEUTRAL)
     private val factionBaseClass = listOf("demoButton enl", "demoButton res", "demoButton")
 
     /** The selected portal level + colour the map uses when placing (LMB). */
     fun portalLevel(): Int = demoLevel
     fun portalColorValue(): String = portalColor
+
+    /** XMP-on-click mode + the blast level a map click detonates (see the demo LMB handler). */
+    fun xmpOnClick(): Boolean = xmpClickMode
+    fun xmpLevel(): Int = xmpBlastLevel
 
     /** One unified sandbox scene. #demo and #demo/portal both route to it (xmp folded in). */
     fun route(hash: String): String? = when (hash.removePrefix("#").removePrefix("/").removeSuffix("/")) {
@@ -97,9 +104,18 @@ object Demo {
             ),
         )
 
-        panel.append(labelEl("Fire XMP at selected"))
-        val xmpButtons = (1..8).map { level -> button("X$level", "demoButton demoMini") { Scene3D.xmpActiveShowcase(level) } }
-        panel.append(rowOf(xmpButtons))
+        panel.append(labelEl("XMP"))
+        panel.append(hintEl("Pick a blast level (fires at the selected portal). Toggle on to detonate at the click point instead."))
+        panel.append(xmpClickToggle())
+        val xmpRow = (1..8).map { level ->
+            button("X$level", "demoButton demoMini") {
+                selectXmpLevel(level)
+                Scene3D.xmpActiveShowcase(level)
+            }
+        }
+        panel.append(rowOf(xmpRow))
+        xmpButtons = xmpRow
+        selectXmpLevel(xmpBlastLevel)
 
         Scene3D.placeShowcase(center, demoLevel, portalColor) // a starter portal in the middle
     }
@@ -117,6 +133,29 @@ object Demo {
         portalButtons.forEachIndexed { i, b ->
             b.className = if (i + 1 == level) "demoButton demoMini demoSel" else "demoButton demoMini"
         }
+    }
+
+    private fun selectXmpLevel(level: Int) {
+        xmpBlastLevel = level
+        xmpButtons.forEachIndexed { i, b ->
+            b.className = if (i + 1 == level) "demoButton demoMini demoSel" else "demoButton demoMini"
+        }
+    }
+
+    /** A "Fire XMP on click" checkbox — when ticked, an LMB on the map detonates an XMP at that point. */
+    private fun xmpClickToggle(): HTMLLabelElement {
+        val label = document.createElement("label") as HTMLLabelElement
+        label.addClass("demoToggle", "coda")
+        val check = document.createElement("input") as HTMLInputElement
+        check.type = "checkbox"
+        check.checked = xmpClickMode
+        check.onchange = {
+            xmpClickMode = check.checked
+            null
+        }
+        label.append(check)
+        label.append(document.createTextNode(" Fire XMP on click"))
+        return label
     }
 
     private fun selectFaction(idx: Int) {

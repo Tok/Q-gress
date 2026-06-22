@@ -332,6 +332,10 @@ object HtmlUtil {
                 fun(event: dynamic) {
                     val pos = MapUtil.eventToSimPos(event) ?: return
                     SoundUtil.enableAudio()
+                    if (Demo.xmpOnClick()) {
+                        Scene3D.playXmpBurst(pos, Demo.xmpLevel()) // detonate at the click point (plays the XMP sound)
+                        return
+                    }
                     if (Scene3D.clickShowcase(pos, Demo.portalLevel(), Demo.portalColorValue())) {
                         SoundUtil.playPortalCreationSound(pos)
                     }
