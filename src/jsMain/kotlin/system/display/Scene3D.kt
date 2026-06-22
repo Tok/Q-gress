@@ -576,9 +576,17 @@ object Scene3D {
                 pivot.asDynamic().position.set(ox, oy, rodLen) // joint at the rod top
                 pivot.asDynamic().userData.isRodPivot = true
                 pivot.asDynamic().userData.baseAngle = ang
-                pivot.asDynamic().userData.targetX = ox // DeployFx slides the rod out to here on deploy
+                pivot.asDynamic().userData.targetX = ox
                 pivot.asDynamic().userData.targetY = oy
-                id?.let { DeployFx.bind(it, octant, pivot.asDynamic()) } // lerp it in if just deployed
+                // If just deployed, fly the rod in from the agent's position (DeployFx lerps + grows it).
+                val from = id?.let { DeployFx.fromOf(it, octant) }
+                if (id != null && from != null) {
+                    pivot.asDynamic().userData.flyStartX = sceneX(from) - x // agent pos in the reso group's frame
+                    pivot.asDynamic().userData.flyStartY = sceneY(from) - y
+                    pivot.asDynamic().userData.flyStartZ = -(poleH * RESO_COLLAR_FRAC) // ground level
+                    pivot.asDynamic().userData.targetZ = rodLen
+                    DeployFx.bind(id, octant, pivot.asDynamic())
+                }
                 val rod = Three.Mesh(resoRodGeo, Materials.resonator(LevelColor.map[lvl] ?: "#ffffff"))
                 rod.asDynamic().rotation.x = PI / 2 // unit Y-cylinder → vertical
                 rod.asDynamic().scale.set(1.0, rodLen, 1.0)

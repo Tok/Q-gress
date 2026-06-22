@@ -80,7 +80,7 @@ object Deployer : ConditionalAction {
         val distance = max(agent.distanceToPortal(portal), Dim.minDeploymentRange).toInt()
         portal.deploy(agent, mapOf(octant to reso), distance) // handles AP/XM + consumes the reso
         SoundUtil.playResoDeploySound(portal.location, reso.level.level)
-        DeployFx.record("portal:${portal.id}", octant)
+        DeployFx.record("portal:${portal.id}", octant, agent.pos) // fly the rod in from the agent
         agent.action.start(ActionItem.DEPLOY)
     }
 

@@ -1,29 +1,36 @@
 package system.display
 
 import portal.Octant
+import util.data.Pos
 
 /**
- * The "drop into place" animation for a freshly-deployed resonator. Agents deploy one resonator at a
- * time; each placement [record]s a (portal, octant) with a wall-clock start, and the just-deployed rod
- * **lerps** into its slot — growing from nearly nothing while sliding radially out from the pole to its
- * grommet. Like [HackFx], game portals are rebuilt every [Scene3D.sync], so we key by portal-id+octant
- * and drive from absolute time (the tween survives the rebuild); [bind] the current pivot each sync,
- * [update] each frame.
+ * The "fly into place" animation for a freshly-deployed resonator: it lerps **from the deploying
+ * agent's position, through the air, to its slot** in the portal, growing as it travels. Agents deploy
+ * one resonator at a time; each placement [record]s the (portal, octant) + the agent's start position
+ * with a wall-clock time. Like [HackFx], game portals are rebuilt every [Scene3D.sync], so we key by
+ * portal-id+octant and drive from absolute time (the tween survives the rebuild): [bind] the current
+ * rod pivot each sync (Scene3D stamps its start/target on `userData`), [update] each frame.
  */
 object DeployFx {
-    private const val DUR = 0.45 // seconds for a reso to settle into its slot
+    private const val DUR = 0.6 // seconds for a resonator to fly into its slot
 
-    private class Deploy(val start: Double)
+    private class Deploy(val start: Double, val from: Pos)
 
-    private val deploys = mutableMapOf<String, Deploy>() // "portal:<id>|<octant>" → start
+    private val deploys = mutableMapOf<String, Deploy>() // "portal:<id>|<octant>" → start time + agent pos
     private val pivots = mutableMapOf<String, dynamic>() // same key → current rod pivot (re-bound per sync)
 
-    /** Mark a resonator as just deployed at [id]'s [octant] (starts the drop-in tween). */
-    fun record(id: String, octant: Octant) {
-        deploys[key(id, octant)] = Deploy(now())
+    /** Mark a resonator as just deployed at [id]'s [octant], flying in from [from] (the agent's pos). */
+    fun record(id: String, octant: Octant, from: Pos) {
+        deploys[key(id, octant)] = Deploy(now(), from)
     }
 
     fun hasActive() = deploys.isNotEmpty()
+
+    /** The agent start position for an in-progress deploy at [id]'s [octant], or null if none/finished. */
+    fun fromOf(id: String, octant: Octant): Pos? {
+        val k = key(id, octant)
+        return if (elapsed(k) != null) deploys[k]?.from else null
+    }
 
     /** Drop the per-sync pivot bindings (call before re-adding portals, like HackFx). */
     fun resetBindings() = pivots.clear()
@@ -34,7 +41,7 @@ object DeployFx {
         if (elapsed(k) != null) pivots[k] = pivot
     }
 
-    /** Lerp every bound, still-animating rod into place; prune finished deploys. */
+    /** Fly every bound, still-animating rod from the agent to its slot (growing); prune finished. */
     fun update() {
         deploys.keys.filter { elapsed(it) == null }.toList().forEach {
             deploys.remove(it)
@@ -46,11 +53,16 @@ object DeployFx {
     private fun apply(pivot: dynamic, e: Double) {
         val t = (e / DUR).coerceIn(0.0, 1.0)
         val ease = 1.0 - (1.0 - t) * (1.0 - t) // easeOutQuad
-        val s = 0.12 + 0.88 * ease
+        // Start (agent pos) + target (slot) are stamped on userData by Scene3D in the reso group's frame.
+        val sx = pivot.userData.flyStartX as Double
+        val sy = pivot.userData.flyStartY as Double
+        val sz = pivot.userData.flyStartZ as Double
+        val tx = pivot.userData.targetX as Double
+        val ty = pivot.userData.targetY as Double
+        val tz = pivot.userData.targetZ as Double
+        pivot.position.set(sx + (tx - sx) * ease, sy + (ty - sy) * ease, sz + (tz - sz) * ease)
+        val s = 0.2 + 0.8 * ease // grows from small to full as it arrives
         pivot.scale.set(s, s, s)
-        // Slide from the pole axis (0,0) out to the rod's resting slot position (stamped in buildResonators).
-        pivot.position.x = (pivot.userData.targetX as Double) * ease
-        pivot.position.y = (pivot.userData.targetY as Double) * ease
     }
 
     private fun key(id: String, octant: Octant) = "$id|${octant.name}"
