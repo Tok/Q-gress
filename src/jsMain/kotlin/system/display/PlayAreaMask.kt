@@ -11,6 +11,7 @@ import kotlin.math.PI
 object PlayAreaMask {
     private var material: dynamic = null
     private var wallMat: dynamic = null
+    private var ringMat: dynamic = null
 
     /**
      * Add four upright, semi-transparent white walls along the play-area edges (so the boundary reads
@@ -106,6 +107,26 @@ object PlayAreaMask {
         val mesh = Three.Mesh(Three.ExtrudeGeometry(shape, opts), wallMat)
         mesh.asDynamic().position.set(0.0, 0.0, base) // extrudes +Z from the terrain base
         group.add(mesh)
+        // Explicit top + bottom rings close the inner/outer bands into a solid 3D object (the extrude's
+        // own caps can be backface-culled at our viewing angle, leaving the wall looking like two bands).
+        if (ringMat == null) ringMat = buildRingMaterial()
+        val r = minOf(hx, hy)
+        listOf(base, base + height).forEach { z ->
+            val ring = Three.Mesh(Three.RingGeometry(r - thick, r, 64), ringMat)
+            ring.asDynamic().scale.set(hx / r, hy / r, 1.0) // back to the ellipse aspect (1,1 for a circle)
+            ring.asDynamic().position.set(0.0, 0.0, z)
+            group.add(ring)
+        }
+    }
+
+    private fun buildRingMaterial(): dynamic {
+        val p: dynamic = js("({})")
+        p.color = "#ffffff"
+        p.transparent = true
+        p.opacity = 0.3 // the rim rings read a touch stronger than the wall bands
+        p.depthWrite = false
+        p.side = 2 // DoubleSide — the rim is seen from above and (rarely) below
+        return Three.MeshBasicMaterial(p)
     }
 
     private const val WALL_THICK_FRAC = 0.03 // round-wall thickness as a fraction of the radius
