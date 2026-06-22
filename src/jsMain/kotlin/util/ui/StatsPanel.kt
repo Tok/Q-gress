@@ -100,9 +100,8 @@ object StatsPanel {
 
         // Action log: a titled, collapsible section in the right "intel" column (starts collapsed).
         val comWrap = el("statsComPanel")
-        comWrap.classList.add("statsComCollapsed")
         val comTitle = el("statsComTitle")
-        comTitle.textContent = "LOG ▸"
+        comTitle.textContent = "LOG ▾" // expanded by default
         comTitle.onclick = {
             val collapsed = comWrap.classList.toggle("statsComCollapsed")
             comTitle.textContent = if (collapsed) "LOG ▸" else "LOG ▾"

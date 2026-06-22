@@ -27,7 +27,8 @@ import kotlin.math.sqrt
  * its own renderer + RAF loop with simple lit materials, torn down when a faction is picked. Lightning
  * + thunder ported from qlippostasis (`BuildBoltFractal` / Poisson timing / `ThunderSynth.TeslaBolt`).
  */
-@Suppress("TooManyFunctions", "LargeClass") // self-contained title scene: vec helpers + portals + bolts
+// TooGenericExceptionCaught: 3D setup is best-effort — any failure must degrade to bolts, not crash.
+@Suppress("TooManyFunctions", "LargeClass", "TooGenericExceptionCaught")
 object TitleScene3D {
     private const val ENL_COLOR = "#03dc03"
     private const val RES_COLOR = "#0088ff"
@@ -101,6 +102,7 @@ object TitleScene3D {
     private var rafId = 0
 
     private val resizeListener: (dynamic) -> Unit = { resize() }
+    private val unlockListener: (dynamic) -> Unit = { SoundUtil.enableAudio() } // first gesture → bolt thunder
 
     fun start(parent: org.w3c.dom.Element) {
         if (running) return
@@ -118,28 +120,39 @@ object TitleScene3D {
         renderer = r
 
         scene = Three.Scene()
-        scene.add(Three.AmbientLight("#2a2f2a", 1.0))
-        val key = Three.DirectionalLight(WHITE, 1.1)
-        key.asDynamic().position.set(6.0, 14.0, 20.0)
-        scene.add(key)
+        scene.add(Three.AmbientLight("#6a6f6a", 1.6)) // bright enough that the metal poles read, not black
         camera = Three.PerspectiveCamera(55.0, 1.0, 0.1, 240.0)
         camera.position.set(0.0, 1.5, CAM_Z)
         resize()
-        // neutral listener so the (3D-panned) game sounds we reuse pan by portal x and stay audible
-        SoundUtil.updateListener(doubleArrayOf(0.0, 0.0, 0.0), doubleArrayOf(0.0, 0.0, -1.0), doubleArrayOf(0.0, 1.0, 0.0))
 
-        poleGeo = Three.CylinderGeometry(POLE_R, POLE_R, 1.0, 10) // unit-tall, scaled per level
-        orbGeo = Three.SphereGeometry(ORB_R, 18, 14)
-        rodGeo = Three.CylinderGeometry(RESO_ROD_R, RESO_ROD_R, 1.0, 6)
-        metalMat = standardMat("#9a9a9a", "#000000", 0.85, 0.45)
-        buildPortals()
-
+        // Core scene is up — start the loop unconditionally so bolts ALWAYS render.
         running = true
         lastMs = now()
         nextStrike = 0.4
         nextEvent = 0.6
         window.addEventListener("resize", resizeListener)
+        window.addEventListener("pointerdown", unlockListener) // autoplay: unlock audio on first click
         rafId = window.requestAnimationFrame { frame() }
+
+        // Portals + key light + sound listener are best-effort: if any of this throws, the bolts keep
+        // running via the sky-bolt fallback in spawnBolt.
+        try {
+            val key = Three.DirectionalLight(WHITE, 2.2)
+            key.asDynamic().position.set(8.0, 16.0, 24.0)
+            scene.add(key)
+            val rim = Three.DirectionalLight("#b6c0d8", 1.1) // cool back-rim so poles separate from the dark
+            rim.asDynamic().position.set(-12.0, -2.0, 12.0)
+            scene.add(rim)
+            poleGeo = Three.CylinderGeometry(POLE_R, POLE_R, 1.0, 10) // unit-tall, scaled per level
+            orbGeo = Three.SphereGeometry(ORB_R, 18, 14)
+            rodGeo = Three.CylinderGeometry(RESO_ROD_R, RESO_ROD_R, 1.0, 6)
+            metalMat = standardMat("#9a9a9a", "#000000", 0.85, 0.45)
+            buildPortals()
+            // neutral listener so the (3D-panned) game sounds we reuse pan by portal x and stay audible
+            SoundUtil.updateListener(doubleArrayOf(0.0, 0.0, 0.0), doubleArrayOf(0.0, 0.0, -1.0), doubleArrayOf(0.0, 1.0, 0.0))
+        } catch (e: Throwable) {
+            console.error("TitleScene3D portal setup failed; bolts continue:", e)
+        }
     }
 
     fun stop() {
@@ -147,6 +160,7 @@ object TitleScene3D {
         running = false
         window.cancelAnimationFrame(rafId)
         window.removeEventListener("resize", resizeListener)
+        window.removeEventListener("pointerdown", unlockListener)
         bolts.clear()
         timed.clear()
         portals.clear()
@@ -170,27 +184,32 @@ object TitleScene3D {
     private fun buildPortals() {
         val span = 17.0
         for (i in 0 until PORTAL_COUNT) {
-            val x = -span + 2.0 * span * (i.toDouble() / (PORTAL_COUNT - 1))
-            val pos = doubleArrayOf(x, rand(-7.0, -5.0), rand(-3.0, 3.0))
-            val color = startColor(i)
-            val group = Three.Group()
-            group.asDynamic().position.set(pos[0], pos[1], pos[2])
+            try {
+                val x = -span + 2.0 * span * (i.toDouble() / (PORTAL_COUNT - 1))
+                val pos = doubleArrayOf(x, rand(-6.5, -4.5), rand(-3.0, 3.0))
+                val color = startColor(i)
+                val group = Three.Group()
+                group.asDynamic().position.set(pos[0], pos[1], pos[2])
 
-            val pole = Three.Mesh(poleGeo, metalMat)
-            val orbMat = standardMat(color, color, 0.2, 0.4, 0.7)
-            val orb = Three.Mesh(orbGeo, orbMat)
-            val resoGroup = Three.Group()
-            group.asDynamic().add(pole)
-            group.asDynamic().add(orb)
-            group.asDynamic().add(resoGroup)
-            scene.add(group)
+                val pole = Three.Mesh(poleGeo, metalMat)
+                val orbMat = standardMat(color, color, 0.25, 0.3, 0.95) // strong emissive so every orb glows
+                val orb = Three.Mesh(orbGeo, orbMat)
+                val resoGroup = Three.Group()
+                group.asDynamic().add(pole)
+                group.asDynamic().add(orb)
+                group.asDynamic().add(resoGroup)
+                scene.add(group)
 
-            val p = Portal(group, orb, orbMat, pole, resoGroup, pos)
-            p.color = color
-            p.targetLevel = rand(1.0, 6.0)
-            p.resos = (Util.random() * 9).toInt()
-            applyPortal(p)
-            portals.add(p)
+                val p = Portal(group, orb, orbMat, pole, resoGroup, pos)
+                p.color = color
+                p.level = rand(3.0, 6.0) // start substantial, then ease to the target
+                p.targetLevel = rand(1.0, 8.0)
+                p.resos = (Util.random() * 9).toInt()
+                applyPortal(p)
+                portals.add(p)
+            } catch (e: Throwable) {
+                console.error("TitleScene3D: portal $i failed:", e)
+            }
         }
     }
 
@@ -213,7 +232,7 @@ object TitleScene3D {
 
     private fun rebuildResos(p: Portal, poleH: Double) {
         val g = p.resoGroup
-        while ((g.children.length as Int) > 0) g.remove(g.children[0])
+        g.asDynamic().clear() // Object3D.clear() — drop all rods (avoids a dynamic length cast)
         val rodLen = 1.4
         for (i in 0 until p.resos.coerceIn(0, 8)) {
             val ang = i * PI / 4.0
@@ -353,7 +372,10 @@ object TitleScene3D {
     }
 
     private fun spawnBolt() {
-        if (portals.isEmpty()) return
+        if (portals.isEmpty()) {
+            spawnSkyBolt() // portal setup failed/empty — keep the storm alive with sky bolts
+            return
+        }
         val from = portals[(Util.random() * portals.size).toInt()]
         val a = orbWorld(from)
         // Retaliate at another portal, or discharge straight up into the storm.
@@ -368,6 +390,14 @@ object TitleScene3D {
     }
 
     private fun boltColor(portalColor: String): String = if (Util.random() < 0.25) WHITE else portalColor
+
+    // Fallback when there are no portals: a bolt arcing top→bottom across the storm.
+    private fun spawnSkyBolt() {
+        val sx = rand(-22.0, 22.0)
+        val a = doubleArrayOf(sx, rand(6.0, 16.0), rand(-4.0, 4.0))
+        val b = doubleArrayOf(sx + rand(-10.0, 10.0), rand(-16.0, -2.0), rand(-4.0, 4.0))
+        emitBolt(a, b, boltColor(if (Util.random() < 0.5) ENL_COLOR else RES_COLOR))
+    }
 
     private fun emitBolt(start: DoubleArray, end: DoubleArray, color: String) {
         val verts = ArrayList<Double>()
