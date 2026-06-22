@@ -107,17 +107,6 @@ object Util {
         return name + Util.select(values, "")
     }
 
-    fun generateAgentName(): String {
-        val name = generateName(3, 6)
-        if (name.length <= 4 && random() < 0.5) {
-            return name + random().toString().subSequence(2, 4)
-        }
-        if (random() < 0.2) {
-            return name + random().toString().subSequence(2, 3)
-        }
-        return name
-    }
-
     private fun generateName(minLength: Int, maxLength: Int): String {
         val length = minLength + randomInt(maxLength - minLength)
         val firstLetter = select(generateFirstSelection(), ' ')
