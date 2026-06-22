@@ -16,6 +16,7 @@ import portal.Portal
 import portal.XmMap
 import system.display.Scene3D
 import util.HtmlUtil
+import util.NameGen
 import util.Util
 import util.data.*
 import kotlin.math.max
@@ -295,7 +296,7 @@ data class Agent(
             val coords = Pos.createRandomPassable(grid)
             val actionPortal = initialActionPortal(coords)
             val agent = Agent(
-                faction, Util.generateAgentName(), coords, Skills.createRandom(),
+                faction, NameGen.handle(faction, HtmlUtil.locationName()), coords, Skills.createRandom(),
                 Inventory.empty(), Action.create(), actionPortal, actionPortal.location,
                 coords, ap, initialXm,
             )

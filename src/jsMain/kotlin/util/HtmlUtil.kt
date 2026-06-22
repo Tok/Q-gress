@@ -50,6 +50,9 @@ object HtmlUtil {
     private var currentLat = Location.DEFAULT.lat
     private var currentLocationName = Location.DEFAULT.displayName
 
+    /** The loaded place name (for flavouring generated content, e.g. agent handles). */
+    fun locationName() = currentLocationName
+
     fun isRunningInBrowser() = jsTypeOf(document) != "undefined"
     fun isNotRunningInBrowser() = !isRunningInBrowser()
     fun isLocal() = isRunningInBrowser() && document.location?.href?.contains("localhost") ?: false
@@ -466,6 +469,7 @@ object HtmlUtil {
     private fun createAgents(callback: () -> Unit) {
         World.allAgents.clear()
         StuckTracker.reset() // fresh world → drop stale stuck-history (?debug)
+        NameGen.reset() // fresh roster → fresh handle dedupe
         LoadingOverlay.detail("Creating agents…")
         (1..Config.startFrogs()).forEach {
             World.allAgents.add(Agent.createFrog(World.grid))
