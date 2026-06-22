@@ -157,6 +157,13 @@ object Scene3D {
     private var selectedShowcase: Showcase? = null // demo: the portal the action buttons act on
     private var demoCursor: dynamic = null // demo: ground ring under the mouse (place vs select)
     private var lastFrameMs = 0.0 // for per-frame effect dt
+    private var animClockMs = 0.0 // sim-scaled animation clock (advances by dt × animationSpeed each frame)
+
+    /** Simulation speed multiplier (set by the speed control); scales all visual animations. */
+    var animationSpeed = 1.0
+
+    /** The sim-scaled animation clock in ms — FX read this instead of wall-clock so they track sim speed. */
+    fun animMs() = animClockMs
 
     /** Last-known shape of a control field (centroid + 3 centroid-relative vertices), for its dissolve. */
     private class FieldRecord(val cx: Double, val cy: Double, val cz: Double, val rel: Array<DoubleArray>, val color: String)
@@ -247,11 +254,16 @@ object Scene3D {
         GlassShader.updateEye(cam.projectionMatrix) // camera-tracking glass rim (orbs + links)
         val invProj = Three.Matrix4().copy(cam.projectionMatrix).invert()
         updateAudioListener(invProj) // place the Web Audio listener at the live camera
-        PlasmaShader.setTime((js("performance.now()") as Double) / 1000.0) // animate control fields
+        // Advance the sim-scaled animation clock every frame (so plasma fields shimmer even when no
+        // transient FX run). dt + the clock are scaled by [animationSpeed] so every animation — hack
+        // spin, deploy/shatter, build-in, control-field shimmer — speeds up/slows with the sim speed.
+        val nowMs = js("performance.now()") as Double
+        val rawDt = if (lastFrameMs <= 0.0) 0.016 else ((nowMs - lastFrameMs) / 1000.0).coerceIn(0.0, 0.1)
+        lastFrameMs = nowMs
+        val dt = rawDt * animationSpeed
+        animClockMs += dt * 1000.0
+        PlasmaShader.setTime(animClockMs / 1000.0) // animate control fields (on the scaled clock)
         if (hasActiveEffects()) {
-            val nowMs = js("performance.now()") as Double
-            val dt = if (lastFrameMs <= 0.0) 0.016 else ((nowMs - lastFrameMs) / 1000.0).coerceIn(0.0, 0.1)
-            lastFrameMs = nowMs
             if (ShatterFx.hasActive()) ShatterFx.update(dt)
             if (showcasesAnimating()) updateShowcases(dt)
             if (HackFx.hasActive()) HackFx.update()
@@ -263,8 +275,6 @@ object Scene3D {
                 XmpBurst.setView(invProj, canvas.width as Double, canvas.height as Double)
                 XmpBurst.update(dt)
             }
-        } else {
-            lastFrameMs = 0.0
         }
         VectorFieldOverlay.sync() // paced flow-field sweep; driven here (continuous loop) so it animates through world-gen too
         activeRenderer.resetState()

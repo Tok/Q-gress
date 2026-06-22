@@ -73,5 +73,5 @@ object DeployFx {
         return if (e > DUR) null else e
     }
 
-    private fun now() = js("performance.now()") as Double
+    private fun now() = Scene3D.animMs() // sim-scaled clock so FX track sim speed
 }

@@ -411,9 +411,11 @@ object HtmlUtil {
     private var speedMult = 1.0
     private fun currentTickMs() = (Time.minTickInterval / speedMult).toInt().coerceAtLeast(1)
 
-    /** Set the sim speed multiplier; restarts the tick interval at the new rate (paused stays paused). */
+    /** Set the sim speed multiplier; restarts the tick interval (paused stays paused) and scales
+     *  animations. Walking/actions follow automatically — they run per tick, which now ticks faster. */
     private fun setSpeed(mult: Double) {
         speedMult = mult.coerceIn(MIN_SPEED, MAX_SPEED)
+        Scene3D.animationSpeed = speedMult // visual FX (hack spin, deploy, shatter, build-in) track the speed
         if (intervalID != -1) {
             document.defaultView?.clearInterval(intervalID)
             intervalID = document.defaultView?.setInterval({ tick() }, currentTickMs()) ?: 0

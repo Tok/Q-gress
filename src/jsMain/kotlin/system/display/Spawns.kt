@@ -44,5 +44,5 @@ object Spawns {
         return 1.0 + c3 * x * x * x + c1 * x * x
     }
 
-    private fun nowMs() = js("performance.now()") as Double
+    private fun nowMs() = Scene3D.animMs() // sim-scaled clock so the build-in tracks sim speed
 }

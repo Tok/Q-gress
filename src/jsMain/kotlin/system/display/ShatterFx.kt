@@ -50,7 +50,7 @@ object ShatterFx {
         return doubleArrayOf(dx / d * BLAST_SPEED, dy / d * BLAST_SPEED, BLAST_SPEED * 0.45) // away + a bit up
     }
 
-    private fun now() = js("performance.now()") as Double
+    private fun now() = Scene3D.animMs() // sim-scaled clock so FX track sim speed
 
     private var world: Cannon.World? = null
     private var group: dynamic = null // shards + sinking poles (not cleared by sync)
