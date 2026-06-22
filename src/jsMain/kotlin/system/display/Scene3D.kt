@@ -822,7 +822,7 @@ object Scene3D {
     }
 
     private fun indicatorMaterial(item: ActionItem, faction: Faction): dynamic = spriteCache.getOrPut(item.text + faction.abbr) {
-        val texture = Three.CanvasTexture(ActionItem.getIcon(item, faction))
+        val texture = Three.CanvasTexture(ActionItem.getHiResIcon(item, faction)) // hi-res → crisp when scaled up
         val p: dynamic = js("({})")
         p.map = texture
         p.depthTest = false
