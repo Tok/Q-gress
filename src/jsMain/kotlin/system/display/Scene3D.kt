@@ -485,8 +485,12 @@ object Scene3D {
         PortalChangeSound.check(id, portal) // upgrade / downgrade / neutralize sounds on state change
         val baseColor = portal.owner?.faction?.color ?: NEUTRAL_COLOR
         val level = tweenedLevel(id, portal.getLevel().toInt()) // eases on level-up
-        // Capture: the old-colour orb shatters in place and the new one pops back in (reform factor).
+        // Colour change → the OLD orb shatters in place, the new one pops back in (reform factor).
+        // A *neutral* orb never shatters (no resonators = nothing there): only a captured (faction-
+        // coloured) orb breaks, so capturing a neutral portal grows the faction orb in with no white
+        // glass. Neutralising a portal still shatters its coloured orb.
         CaptureFx.check(id, baseColor) { old ->
+            if (old == NEUTRAL_COLOR) return@check
             val lv = displayedLevel[id] ?: level
             ShatterFx.shatterOrb(sceneX(portal.location), sceneY(portal.location), orbCenterZ(lv), orbScale(lv), old, flaskVariants, flaskScale)
             SoundUtil.playGlassShatterSound(portal.location, CAPTURE_SHATTER_WEIGHT)
@@ -947,7 +951,7 @@ object Scene3D {
             ctx.fillText(text, cx, y)
         }
         line(shown, 30.0, 28, "#ffffff")
-        line("L$level", 72.0, 34, "#e8e8e8")
+        if (level > 0) line("L$level", 72.0, 34, "#e8e8e8") // neutral portals (no resos) have no level
         return canvas
     }
 }

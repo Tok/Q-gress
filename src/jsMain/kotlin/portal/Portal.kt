@@ -60,14 +60,12 @@ data class Portal(
         !isCoveredByField() &&
         isInside()
 
-    private fun calculateLevel() = if (owner == null) {
-        1
+    // Level comes from the deployed resonators only: a neutral portal (no resonators) has NO level (0)
+    // and can't be attacked/shattered; a captured portal is at least level 1.
+    private fun calculateLevel() = if (numberOfResosLeft() == 0) {
+        0
     } else {
-        clipLevel(
-            slots.values.map {
-                (it.resonator?.level?.level ?: 0)
-            }.sum() / 8,
-        )
+        clipLevel(slots.values.sumOf { it.resonator?.level?.level ?: 0 } / 8)
     }
 
     fun getLevel() = if (World.isReady) {
@@ -155,6 +153,7 @@ data class Portal(
     fun findStrongestResoPos(): Pos? = findStrongestReso()?.position
     fun calcHealth(): Int {
         val resos = getAllResos()
+        if (resos.isEmpty()) return 0 // neutral portal — no resonators
         val health = resos.map { it.calcHealthPercent() }.sum() / resos.count()
         return Util.clip(health, 0, 100)
     }
