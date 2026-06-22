@@ -147,6 +147,9 @@ object Scene3D {
     private var markerGroup: dynamic = null // build-preview marker
     private var borderGroup: dynamic = null // playable-area boundary outline
 
+    /** Draw the play-area boundary (wall + outline + dim mask). Off for the title scene. */
+    var showBorder = true
+
     // Glass-orb shatter fracture variants (loaded once from the GLB via ShardAssets).
     private var flaskVariants: List<List<dynamic>> = emptyList()
     private var flaskScale = 1.0 // scale a flask variant to ≈ the portal top sphere
@@ -320,6 +323,8 @@ object Scene3D {
     // Mark the playable area: a white outline plus a dark mask greying out everything beyond it.
     private fun buildBorder() {
         val group = borderGroup ?: return
+        clear(group)
+        if (!showBorder) return // title scene hides the play-area boundary
         val hx = sceneX(Pos(Sim.width, 0)) // play-area half-extents (scene metres); sceneY flips sim-y → +hy is the top edge
         val hy = sceneY(Pos(0, 0))
         val (gMin, gMax) = groundZRange()

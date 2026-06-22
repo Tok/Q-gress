@@ -76,7 +76,8 @@ object MapUtil {
         "version": 8,
         "glyphs": "https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf",
         "sources": {
-            "satellite": { "type": "raster", "tiles": ["$ESRI_IMAGERY_TILES"], "tileSize": 256 },
+            "satellite": { "type": "raster", "tiles": ["$ESRI_IMAGERY_TILES"], "tileSize": 256, "maxzoom": $SATELLITE_MAX_NATIVE_ZOOM },
+            "$TERRAIN_SOURCE": { "type": "raster-dem", "encoding": "terrarium", "tiles": ["$TERRAIN_DEM_TILES"], "tileSize": 256, "maxzoom": 15 },
             "openmaptiles": { "type": "vector", "url": "$OPENMAPTILES_URL" }
         },
         "layers": [
@@ -289,6 +290,16 @@ object MapUtil {
     fun stopBuildCinematicAndHome() {
         cinematicActive = false
         goHome()
+    }
+
+    /** Title scene: 3D terrain on, zoomed out to frame the whole play area, slow orbiting camera. */
+    fun startTitleCinematic() {
+        val m = initMap ?: return
+        applyTerrain(m) // DEM relief (the demo style now carries the terrain source)
+        Scene3D.onTerrainChanged() // sample heights so the portals sit on the terrain
+        m.setPitch(DEFAULT_PITCH) // tilt so the relief + 3D portals read
+        m.setZoom(displayZoomForSize()) // zoom out from the close demo framing → all portals in view
+        startBuildCinematic() // slow bearing spin — the camera orbits the arena
     }
 
     /** Register the 3D scene (three.js custom layer) on the base map, anchored at the grid view. */
