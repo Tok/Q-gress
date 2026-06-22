@@ -178,13 +178,20 @@ object Onboarding {
         val screen = screen("MAP SIZE & PORTALS")
         val widthInput = numberInput(Sim.width)
         val heightInput = numberInput(Sim.height)
+        val portalsInput = numberInput(defaultPortals)
 
         val presets = div("onboardRow")
-        listOf("Small" to Sim.SMALL_SCALE, "Normal" to Sim.NORMAL_SCALE, "Large" to Sim.LARGE_SCALE).forEach { (label, sc) ->
+        // Portal count scales with map size so bigger maps stay well-populated (Small 5 / Normal 8 / Large 13).
+        listOf(
+            Triple("Small", Sim.SMALL_SCALE, 5),
+            Triple("Normal", Sim.NORMAL_SCALE, 8),
+            Triple("Large", Sim.LARGE_SCALE, 13),
+        ).forEach { (label, sc, portals) ->
             presets.appendChild(
                 button(label, "onboardPreset") {
                     widthInput.value = Sim.presetWidth(sc).toString()
                     heightInput.value = Sim.presetHeight(sc).toString()
+                    portalsInput.value = portals.toString()
                 },
             )
         }
@@ -193,7 +200,6 @@ object Onboarding {
         val fields = div("onboardRow")
         fields.appendChild(labeledInput("Width", widthInput))
         fields.appendChild(labeledInput("Height", heightInput))
-        val portalsInput = numberInput(defaultPortals)
         fields.appendChild(labeledInput("Portals", portalsInput))
         screen.appendChild(fields)
 

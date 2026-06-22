@@ -56,14 +56,14 @@ data class Inventory(val items: MutableList<QgressItem> = mutableListOf()) {
         fun quickStart(agent: Agent): List<QgressItem> {
             val level = agent.getLevel()
             return listOf(
-                (1..20).map { XmpBurster.create(agent, level) },
-                (1..30).map { XmpBurster.create(agent, level - 1) },
-                (1..10).map { Resonator.create(agent, level) },
-                (1..10).map { Resonator.create(agent, level - 1) },
+                (1..40).map { XmpBurster.create(agent, level) },
+                (1..40).map { XmpBurster.create(agent, level - 1) },
+                (1..40).map { Resonator.create(agent, level) }, // plenty of top-level resos → full L8 portals right away
+                (1..20).map { Resonator.create(agent, level - 1) },
                 (1..20).map { Resonator.create(agent, level - 2) },
-                (1..30).map { Resonator.create(agent, level - 3) },
-                (1..20).map { PowerCube.create(agent, level) },
-                (1..10).map { PowerCube.create(agent, level - 1) },
+                (1..20).map { Resonator.create(agent, level - 3) },
+                (1..30).map { PowerCube.create(agent, level) },
+                (1..20).map { PowerCube.create(agent, level - 1) },
             ).flatten()
         }
     }

@@ -505,9 +505,26 @@ data class Portal(
             )
         }
 
+        private const val SPREAD_CANDIDATES = 8
+
+        // Best-candidate (Mitchell's) sampling: of several valid candidates, take the one farthest from
+        // existing portals, so portals spread to cover the sim space optimally (edges fill before the
+        // centre clusters). Each candidate already respects the min-distance gate (createRandomForPortal).
+        // Used for the initial spawns AND the Explore action.
         fun createRandom(): Portal {
-            val location = Pos.createRandomForPortal()
-            return create(location)
+            val existing = World.allPortals.map { it.location }
+            if (existing.isEmpty()) return create(Pos.createRandomForPortal())
+            var best = Pos.createRandomForPortal()
+            var bestDist = existing.minOf { it.distanceTo(best) }
+            repeat(SPREAD_CANDIDATES - 1) {
+                val candidate = Pos.createRandomForPortal()
+                val nearest = existing.minOf { it.distanceTo(candidate) }
+                if (nearest > bestDist) {
+                    bestDist = nearest
+                    best = candidate
+                }
+            }
+            return create(best)
         }
     }
 }

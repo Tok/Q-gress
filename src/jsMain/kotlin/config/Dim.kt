@@ -11,7 +11,7 @@ object Dim {
 
     val portalRadius = 8.0
     val portalLineWidth = 2
-    val minDistanceBetweenPortals = (2 * portalRadius) * 3
+    val minDistanceBetweenPortals = (2 * portalRadius) * 6 // ×2 vs before so orbs/poles can't visually clip
     val minDistancePortalToImpassable = portalRadius
     val resoRadius = 2.0
     val maxDeploymentRange = 34.0
