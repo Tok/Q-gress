@@ -807,6 +807,8 @@ html, body {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    text-align: left; /* left-justify so the row icons line up in a column */
+    justify-self: start;
     color: #ffffff;
     text-shadow: -1px 0px black, 0px 1px black, 1px 0px black, 0px -1px black;
 }
@@ -1268,4 +1270,47 @@ html, body {
     color: #9aa6a0;
     font-size: 11px;
     max-width: 280px;
+}
+
+/* Keyboard-shortcuts popup: a full-screen backdrop (click anywhere closes) + a centered card. */
+.shortcutsBackdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 400;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.45);
+    cursor: pointer;
+}
+.shortcutsPanel {
+    min-width: 300px;
+    padding: 14px 18px;
+    background: rgba(0, 0, 0, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 8px;
+    color: #ffffff;
+    font-family: "Coda", monospace;
+    font-size: 14px;
+}
+.shortcutsTitle {
+    font-family: "Chakra Petch", sans-serif;
+    letter-spacing: 2px;
+    margin-bottom: 10px;
+    color: #cfd6d2;
+}
+.shortcutsRow {
+    display: flex;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 3px 0;
+}
+.shortcutsKey {
+    color: #8fd0ff;
+    font-weight: bold;
+}
+.shortcutsNote {
+    margin-top: 10px;
+    color: #9aa6a0;
+    font-size: 11px;
 }

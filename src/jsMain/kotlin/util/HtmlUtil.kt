@@ -29,9 +29,11 @@ import util.ui.AudioDemo
 import util.ui.Controls
 import util.ui.Demo
 import util.ui.DropRatesPanel
+import util.ui.Footer
 import util.ui.Inspector
 import util.ui.LoadingOverlay
 import util.ui.Onboarding
+import util.ui.ShortcutsHelp
 import util.ui.TuningPanel
 import kotlin.js.Json
 
@@ -379,15 +381,21 @@ object HtmlUtil {
 
     private fun bindKeyboardShortcuts() = Shortcuts.bind(
         Shortcuts.Handlers(
-            pause = { togglePause() },
-            home = { MapUtil.goHome() },
+            command = { onShortcutCommand(it) },
             zoom = { MapUtil.zoomBy(it) },
             pan = { dx, dy -> MapUtil.panBy(dx, dy) },
+            buildingOpacity = { MapUtil.nudgeBuildingOpacity(it) },
             speedDelta = { setSpeed(speedMult + it) },
-            mute = { toggleMuteUi() },
-            close = { escClose() },
         ),
     )
+
+    private fun onShortcutCommand(c: Shortcuts.Command) = when (c) {
+        Shortcuts.Command.PAUSE -> togglePause()
+        Shortcuts.Command.HOME -> MapUtil.goHome()
+        Shortcuts.Command.CYCLE_TAB -> Footer.cycleTab()
+        Shortcuts.Command.MUTE -> toggleMuteUi()
+        Shortcuts.Command.CLOSE -> escClose()
+    }
 
     private fun toggleMuteUi() {
         val v = SoundUtil.toggleMute()
@@ -395,6 +403,7 @@ object HtmlUtil {
     }
 
     private fun escClose() {
+        ShortcutsHelp.close()
         DropRatesPanel.close()
         closePopup()
     }
@@ -617,6 +626,7 @@ object HtmlUtil {
         menu.append(createButton("menuReset", "menuItem displayFont", "Reset") { doReset() })
         menu.append(createButton("menuShare", "menuItem displayFont", "Copy link") { copyShareLink() })
         menu.append(createButton("menuDropRates", "menuItem displayFont", "Drop rates") { DropRatesPanel.toggle() })
+        menu.append(createButton("menuShortcuts", "menuItem displayFont", "Shortcuts") { ShortcutsHelp.show() })
         // Overlay toggle lives in the menu now (no longer always-visible in the top bar). Vectors are
         // no longer toggled — they flash automatically for ~a second when a portal is created.
         menu.append(createMenuCheckbox("passabilityToggle", "Terrain") { PassabilityOverlay.setVisible(it) })

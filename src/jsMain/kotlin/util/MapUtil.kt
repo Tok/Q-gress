@@ -652,6 +652,12 @@ object MapUtil {
 
     /** Fade the 3D buildings (0 = invisible … 1 = solid) so crowded areas don't hide the action. */
     fun setBuildingOpacity(opacity: Double) {
-        initMap?.setPaintProperty("3d-buildings", "fill-extrusion-opacity", opacity)
+        buildingOpacity = opacity.coerceIn(0.0, 1.0)
+        initMap?.setPaintProperty("3d-buildings", "fill-extrusion-opacity", buildingOpacity)
     }
+
+    private var buildingOpacity = 0.9
+
+    /** Nudge building transparency by [delta] (keyboard -/+); clamped to 0..1. */
+    fun nudgeBuildingOpacity(delta: Double) = setBuildingOpacity(buildingOpacity + delta)
 }

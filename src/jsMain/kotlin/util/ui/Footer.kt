@@ -65,6 +65,17 @@ object Footer {
         applyCollapsed()
     }
 
+    /** Cycle to the next footer tab (Tab key); expands the footer first if it was collapsed. */
+    fun cycleTab() {
+        build()
+        if (collapsed) {
+            collapsed = false
+            applyCollapsed()
+        }
+        val ids = tabs.map { it.second }
+        activate(ids[(ids.indexOf(active) + 1) % ids.size])
+    }
+
     private fun activate(bodyId: String) {
         active = bodyId
         tabs.forEach { (_, id) ->
