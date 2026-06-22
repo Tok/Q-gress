@@ -16,7 +16,6 @@ import kotlinx.browser.window
 import kotlinx.dom.addClass
 import org.w3c.dom.*
 import org.w3c.dom.events.Event
-import org.w3c.dom.events.KeyboardEvent
 import org.w3c.dom.url.URL
 import portal.Portal
 import portal.XmMap
@@ -29,6 +28,7 @@ import util.data.Pos
 import util.ui.AudioDemo
 import util.ui.Controls
 import util.ui.Demo
+import util.ui.DropRatesPanel
 import util.ui.Inspector
 import util.ui.LoadingOverlay
 import util.ui.Onboarding
@@ -44,7 +44,10 @@ object HtmlUtil {
     private const val PAUSE_BUTTON_ID = "pauseButton"
     private const val LOCATION_LABEL_ID = "locationLabel"
     private const val MIN_WALKABILITY = 0.12 // below this the area is mostly water/blocked → unplayable
-    private const val KEYBOARD_ZOOM_STEP = 0.6 // zoom levels per PageUp/PageDown press
+    private const val MIN_SPEED = 0.25
+    private const val MAX_SPEED = 4.0
+    private const val SPEED_STEP = 0.25 // per ,/. press and slider increment
+    private const val SPEED_SLIDER_ID = "speedSlider"
 
     // The actually-loaded location (set by setLoadedLocation) — named in the top bar, and the target
     // a Reset reloads onto.
@@ -145,7 +148,8 @@ object HtmlUtil {
         val pauseButton = createButton(PAUSE_BUTTON_ID, "topButton", "Pause") { togglePause() }
         pauseButton.addClass("non", "displayFont")
         leftGroup.append(pauseButton)
-        bindKeyboardShortcuts() // Space = pause, Home = recenter, PageUp/Down = zoom
+        leftGroup.append(createSpeedSpan()) // sim-speed slider (also ,/. keys)
+        bindKeyboardShortcuts() // Space=pause · Home=recenter · zoom/pan/speed/mute/Esc
 
         // Right group, far right: volume + base-map view dropdown.
         val rightGroup = document.createElement("div") as HTMLDivElement
@@ -255,6 +259,29 @@ object HtmlUtil {
         return span
     }
 
+    private fun createSpeedSpan(): HTMLSpanElement {
+        val span = document.createElement("span") as HTMLSpanElement
+        val label = document.createElement("span") as HTMLSpanElement
+        label.addClass("label", "topLabel")
+        label.id = "speedLabel"
+        label.innerHTML = "1.0×"
+        span.append(label)
+        val slider = document.createElement("input") as HTMLInputElement
+        slider.id = SPEED_SLIDER_ID
+        slider.type = "range"
+        slider.min = MIN_SPEED.toString()
+        slider.max = MAX_SPEED.toString()
+        slider.step = SPEED_STEP.toString()
+        slider.value = "1.0"
+        slider.addClass("slider", "speedSlider")
+        slider.oninput = {
+            setSpeed(slider.valueAsNumber)
+            null
+        }
+        span.append(slider)
+        return span
+    }
+
     private fun createControlDiv(): HTMLDivElement {
         val div = document.createElement("div") as HTMLDivElement
         div.id = "top-controls"
@@ -343,43 +370,47 @@ object HtmlUtil {
     }
 
     private fun resetInterval() {
-        intervalID = document.defaultView?.setInterval({ tick() }, Time.minTickInterval) ?: 0
+        intervalID = document.defaultView?.setInterval({ tick() }, currentTickMs()) ?: 0
     }
 
     private fun togglePause() {
         intervalID = pauseHandler(intervalID) { tick() }
     }
 
-    private var shortcutsBound = false
+    private fun bindKeyboardShortcuts() = Shortcuts.bind(
+        Shortcuts.Handlers(
+            pause = { togglePause() },
+            home = { MapUtil.goHome() },
+            zoom = { MapUtil.zoomBy(it) },
+            pan = { dx, dy -> MapUtil.panBy(dx, dy) },
+            speedDelta = { setSpeed(speedMult + it) },
+            mute = { toggleMuteUi() },
+            close = { escClose() },
+        ),
+    )
 
-    private fun isTypingTarget(target: dynamic) = target is HTMLInputElement || target is HTMLTextAreaElement || target is HTMLSelectElement
+    private fun toggleMuteUi() {
+        val v = SoundUtil.toggleMute()
+        (document.getElementById("volumeSlider") as? HTMLInputElement)?.value = v.toString()
+    }
 
-    /** Keyboard shortcuts: Space = pause/resume, Home = recenter, PageUp/PageDown = zoom in/out. */
-    private fun bindKeyboardShortcuts() {
-        if (shortcutsBound) return
-        shortcutsBound = true
-        document.addEventListener("keydown", { e ->
-            val ev = e as KeyboardEvent
-            if (isTypingTarget(ev.target)) return@addEventListener
-            when (ev.code) {
-                "Space" -> if (!ev.repeat) {
-                    ev.preventDefault() // don't scroll the page
-                    togglePause()
-                }
-                "Home" -> if (!ev.repeat) {
-                    ev.preventDefault()
-                    MapUtil.goHome()
-                }
-                "PageUp" -> { // repeat allowed → hold to keep zooming
-                    ev.preventDefault()
-                    MapUtil.zoomBy(KEYBOARD_ZOOM_STEP)
-                }
-                "PageDown" -> {
-                    ev.preventDefault()
-                    MapUtil.zoomBy(-KEYBOARD_ZOOM_STEP)
-                }
-            }
-        })
+    private fun escClose() {
+        DropRatesPanel.close()
+        closePopup()
+    }
+
+    private var speedMult = 1.0
+    private fun currentTickMs() = (Time.minTickInterval / speedMult).toInt().coerceAtLeast(1)
+
+    /** Set the sim speed multiplier; restarts the tick interval at the new rate (paused stays paused). */
+    private fun setSpeed(mult: Double) {
+        speedMult = mult.coerceIn(MIN_SPEED, MAX_SPEED)
+        if (intervalID != -1) {
+            document.defaultView?.clearInterval(intervalID)
+            intervalID = document.defaultView?.setInterval({ tick() }, currentTickMs()) ?: 0
+        }
+        (document.getElementById(SPEED_SLIDER_ID) as? HTMLInputElement)?.value = speedMult.toString()
+        (document.getElementById("speedLabel"))?.textContent = "$speedMult×"
     }
 
     private fun pauseHandler(intervalID: Int, tickFunction: () -> Unit): Int {
@@ -390,7 +421,7 @@ object HtmlUtil {
             -1
         } else {
             pauseButton.innerText = "Pause"
-            document.defaultView?.setInterval({ tickFunction() }, Time.minTickInterval) ?: 0
+            document.defaultView?.setInterval({ tickFunction() }, currentTickMs()) ?: 0
         }
     }
 
@@ -585,7 +616,7 @@ object HtmlUtil {
         menu.append(createButton("menuNewGame", "menuItem displayFont", "New Game") { doNewGame() })
         menu.append(createButton("menuReset", "menuItem displayFont", "Reset") { doReset() })
         menu.append(createButton("menuShare", "menuItem displayFont", "Copy link") { copyShareLink() })
-        menu.append(createButton("menuDropRates", "menuItem displayFont", "Drop rates") { toggleDropRates() })
+        menu.append(createButton("menuDropRates", "menuItem displayFont", "Drop rates") { DropRatesPanel.toggle() })
         // Overlay toggle lives in the menu now (no longer always-visible in the top bar). Vectors are
         // no longer toggled — they flash automatically for ~a second when a portal is created.
         menu.append(createMenuCheckbox("passabilityToggle", "Terrain") { PassabilityOverlay.setVisible(it) })
@@ -621,33 +652,6 @@ object HtmlUtil {
     }
 
     /** Toggle a small panel listing the live (tunable) drop rates — transparency for the player. */
-    private fun toggleDropRates() {
-        (document.getElementById("dropRatesPanel") as? HTMLDivElement)?.let {
-            it.remove()
-            return
-        }
-        val panel = document.createElement("div") as HTMLDivElement
-        panel.id = "dropRatesPanel"
-        panel.addClass("dropRatesPanel")
-        panel.innerHTML = dropRatesHtml()
-        document.body?.appendChild(panel)
-    }
-
-    private fun dropRatesHtml(): String {
-        val sb = StringBuilder("<div class=\"dropRatesTitle\">Drop rates · per hack roll</div>")
-        sb.append(rateRow("Portal key", DropRates.keyChance))
-        DropRates.shieldChance.forEach { (t, c) -> sb.append(rateRow("Shield ${t.abbr}", c)) }
-        DropRates.heatSinkChance.forEach { (t, c) -> sb.append(rateRow("Heat sink ${t.abbr}", c)) }
-        DropRates.virusChance.forEach { (t, c) -> sb.append(rateRow("Virus ${t.abbr}", c)) }
-        sb.append("<div class=\"dropRatesNote\">Resonators / XMP / Power Cubes roll by tier — see docs/MECHANICS.md. Link amps are inactive (never drop).</div>")
-        return sb.toString()
-    }
-
-    private fun rateRow(label: String, chance: Double): String {
-        val pct = (chance * 1000).toInt() / 10.0
-        return "<div class=\"dropRatesRow\">$label<span>$pct%</span></div>"
-    }
-
     /** A [createCheckbox] styled as a row inside the game menu dropdown. */
     private fun createMenuCheckbox(id: String, labelText: String, onChange: (Boolean) -> Unit): HTMLSpanElement {
         val span = createCheckbox(id, labelText, onChange)

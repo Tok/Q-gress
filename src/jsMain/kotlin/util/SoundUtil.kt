@@ -80,6 +80,20 @@ object SoundUtil {
     }
 
     private fun isMuted() = masterVolume <= 0.0
+    private var preMuteVolume = 0.0
+
+    /** Toggle mute, remembering the prior level. Returns the new volume (0 when muted). */
+    fun toggleMute(): Double {
+        if (isMuted()) {
+            setMasterVolume(if (preMuteVolume > 0.0) preMuteVolume else DEFAULT_VOLUME)
+        } else {
+            preMuteVolume = masterVolume
+            setMasterVolume(0.0)
+        }
+        return masterVolume
+    }
+
+    fun masterVolume() = masterVolume
 
     /**
      * Place the Web Audio listener at the camera (sim-space metres) — called every frame from

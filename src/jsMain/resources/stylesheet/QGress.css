@@ -910,13 +910,15 @@ html, body {
     padding: 5px;
 }
 
-.volumeSlider {
+.volumeSlider,
+.speedSlider {
     width: 80px;
     vertical-align: middle;
     accent-color: #cccccc; /* grayscale track, not the OS/faction blue */
 }
 /* White knob (not faction-coloured like the tuning sliders). */
-.volumeSlider::-webkit-slider-thumb {
+.volumeSlider::-webkit-slider-thumb,
+.speedSlider::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
     width: 13px;
@@ -925,7 +927,8 @@ html, body {
     background: #ffffff;
     cursor: pointer;
 }
-.volumeSlider::-moz-range-thumb {
+.volumeSlider::-moz-range-thumb,
+.speedSlider::-moz-range-thumb {
     width: 13px;
     height: 13px;
     border: none;
