@@ -95,20 +95,30 @@ data class Pos(val x: Double, val y: Double) {
             return Pos(x.toInt(), y.toInt())
         }
 
+        /**
+         * Valid portal-spawn cells (passable, inside the deploy margin, not too close to an existing
+         * portal) as offset world positions — ONE grid scan; callers sample from the result. (Calling
+         * this per candidate is what made best-candidate placement freeze world-gen.)
+         */
+        fun portalCandidates(): List<Pos> {
+            val offset = res / 2
+            return World.passableInActionArea()
+                .filterNot { it.key.fromShadow().x < Dim.maxDeploymentRange }
+                .filterNot { it.key.fromShadow().x > World.simW() - Dim.maxDeploymentRange }
+                .filterNot { it.key.fromShadow().hasClosePortal() }
+                .map {
+                    val p = it.key.fromShadow()
+                    Pos(p.x + offset, p.y + offset)
+                }
+        }
+
         fun createRandomForPortal(): Pos {
             if (HtmlUtil.isNotRunningInBrowser()) {
                 return Pos(Util.randomInt(Sim.width), Util.randomInt(Sim.height))
-            } else {
-                val grid = World.passableInActionArea()
-                    .filterNot { it.key.fromShadow().x < Dim.maxDeploymentRange }
-                    .filterNot { it.key.fromShadow().x > World.simW() - Dim.maxDeploymentRange }
-                    .filterNot { it.key.fromShadow().hasClosePortal() }
-                check(grid.isNotEmpty()) // map is blocked or there is no more space left.
-                val randomCell = Util.shuffle(grid.toList()).first()
-                val pos = randomCell.first.fromShadow()
-                val offset = res / 2
-                return Pos(pos.x + offset, pos.y + offset)
             }
+            val candidates = portalCandidates()
+            check(candidates.isNotEmpty()) // map is blocked or there is no more space left.
+            return candidates[(Util.random() * candidates.size).toInt()]
         }
 
         fun createRandomPassable(grid: Grid) = createRandomPassable(grid, 10)

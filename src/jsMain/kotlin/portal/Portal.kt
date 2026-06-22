@@ -515,12 +515,16 @@ data class Portal(
         // centre clusters). Each candidate already respects the min-distance gate (createRandomForPortal).
         // Used for the initial spawns AND the Explore action.
         fun createRandom(): Portal {
+            if (!HtmlUtil.isRunningInBrowser()) return create(Pos.createRandomForPortal())
+            val candidates = Pos.portalCandidates() // ONE grid scan; sample from it (cheap)
+            if (candidates.isEmpty()) return create(Pos.createRandomForPortal())
+            fun pick() = candidates[(Util.random() * candidates.size).toInt()]
             val existing = World.allPortals.map { it.location }
-            if (existing.isEmpty()) return create(Pos.createRandomForPortal())
-            var best = Pos.createRandomForPortal()
+            if (existing.isEmpty()) return create(pick())
+            var best = pick()
             var bestDist = existing.minOf { it.distanceTo(best) }
             repeat(SPREAD_CANDIDATES - 1) {
-                val candidate = Pos.createRandomForPortal()
+                val candidate = pick()
                 val nearest = existing.minOf { it.distanceTo(candidate) }
                 if (nearest > bestDist) {
                     bestDist = nearest
