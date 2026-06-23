@@ -26,6 +26,7 @@ object OwnBuildings {
     private val keys = mutableSetOf<String>() // synthetic per-building id → already meshed
     private val meshes = mutableListOf<dynamic>() // for the grow-in z-scale
     private var inflate = 1.0
+    private var sampled = false // one-time position diagnostic
 
     fun register(scene: Three.Scene) {
         group = Three.Group().also { scene.add(it) }
@@ -106,6 +107,15 @@ object OwnBuildings {
         val mesh = Three.Mesh(geo, mat)
         // The shape carries absolute scene XY; sit it on the terrain at the building's base.
         val centre = ringCentreSim(ring)
+        if (!sampled) { // one-time diagnostic: compare to where portals/the map sit (scene XY in metres from centre)
+            sampled = true
+            val s = Scene3D.lngLatToSceneXY(ring[0][0], ring[0][1])
+            console.log(
+                "OwnBuildings sample: lnglat=${ring[0][0]},${ring[0][1]} → sceneXY=${s[0]},${s[1]} z=${Scene3D.groundZ(
+                    centre,
+                ) + minH} depth=${opts.depth}",
+            )
+        }
         mesh.asDynamic().position.set(0.0, 0.0, Scene3D.groundZ(centre) + minH)
         mesh.asDynamic().scale.z = if (inflate < 0.001) 0.001 else inflate
         mesh.asDynamic().castShadow = true // ready for stage 2 (the sun)

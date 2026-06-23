@@ -354,12 +354,11 @@ object MapUtil {
     private var ownBuildingsSwapped = false
 
     private fun queryBuildings(md: dynamic): dynamic {
-        // queryRenderedFeatures = what's actually painted (full detail at the display zoom) — far more than
-        // querySourceFeatures (which only sees the coarse loaded source tiles). Needs the layer visible, so
-        // we query on idle BEFORE hiding it.
+        // querySourceFeatures (loaded vector tiles) returns far more than queryRenderedFeatures, which is
+        // unreliable for fill-extrusion in a top-down view (returned only a couple). Geometry is lng/lat.
         val opts: dynamic = js("({})")
-        opts.layers = arrayOf("3d-buildings")
-        return md.queryRenderedFeatures(opts)
+        opts.sourceLayer = "building"
+        return md.querySourceFeatures("openmaptiles", opts)
     }
 
     /**
