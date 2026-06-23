@@ -106,6 +106,7 @@ object Scene3D {
     private const val RESO_ROD_LEN_FRAC = 0.22 // rod length as a fraction of the pole height
     private const val NEUTRAL_COLOR = "#bbbbbb"
     private const val MOD_R_FRAC = 0.16 // chrome mod radius (× orb radius)
+    private const val MOD_SCALE = 1.2 // scale the mod solids up a touch (they read bland at base size)
     private const val MOD_RING_FRAC = 0.42 // tetrahedron vertex distance from orb centre (× orb radius)
 
     // Unit regular-tetrahedron vertices (magnitude √3); the 4 mod slots sit at these inside the orb.
@@ -195,13 +196,20 @@ object Scene3D {
     private val poleGeo: dynamic by lazy { Three.CylinderGeometry(POLE_R, POLE_R, POLE_H, 12) } // metal pole
     private val topGeo: dynamic by lazy { Three.SphereGeometry(TOP_R, 20, 16) } // glass orb (scaled per level)
     private val dodecaGeo: dynamic by lazy { Three.DodecahedronGeometry(TOP_R * MOD_R_FRAC) } // shield mod
+    private val modWireMat: dynamic by lazy {
+        // thin black wireframe over the mod solids so they read less bland
+        val p: dynamic = js("({})")
+        p.color = "#000000"
+        p.wireframe = true
+        Three.MeshBasicMaterial(p)
+    }
     private val pentaGeo: dynamic by lazy { Three.CylinderGeometry(TOP_R * MOD_R_FRAC, TOP_R * MOD_R_FRAC, TOP_R * MOD_R_FRAC * 0.55, 5) } // heat-sink radiator
     private val cubeGeo: dynamic by lazy { Three.BoxGeometry(TOP_R * MOD_R_FRAC * 1.1, TOP_R * MOD_R_FRAC * 1.1, TOP_R * MOD_R_FRAC * 1.1) } // link amp
     private val shieldGeo: dynamic by lazy { Three.SphereGeometry(TOP_R * PHI, 24, 18) } // shield bubble at φ× the orb
     private val gasketGeo: dynamic by lazy { Three.TorusGeometry(POLE_R * 1.15, POLE_R * 0.4, 10, 20) } // rubber donut
     private val linkGeo: dynamic by lazy { Three.CylinderGeometry(LINK_R, LINK_R, 1.0, 8) } // unit glass tube (scaled to length)
     private val coreGeo: dynamic by lazy { Three.CylinderGeometry(LINK_R * CORE_R_FRAC, LINK_R * CORE_R_FRAC, 1.0, 6) } // bright filament inside the tube
-    private val linkJointGeo: dynamic by lazy { Three.SphereGeometry(LINK_R, 12, 12) } // ball-joint that rounds each link end
+    private val linkJointGeo: dynamic by lazy { Three.SphereGeometry(LINK_R * 1.5, 12, 12) } // ball-joint, a bit fatter than the tube
     private val resoRingGeo: dynamic by lazy { Three.TorusGeometry(RESO_RING_R, RESO_RING_TUBE, 8, 14) } // rubber slot grommet
     private val indicatorGeo: dynamic by lazy {
         // action coin: a short cylinder (icon on the round faces)
@@ -809,9 +817,14 @@ object Scene3D {
         val r = TOP_R * MOD_RING_FRAC / sqrt(3.0) // normalize the √3-magnitude tetra verts to the ring radius
         mods.forEachIndexed { i, mod ->
             val v = TETRA[i % TETRA.size]
-            val mesh = Three.Mesh(modGeoFor(mod.modType()), Materials.resonator(mod.rarity.color))
+            val geo = modGeoFor(mod.modType())
+            val mesh = Three.Mesh(geo, Materials.resonator(mod.rarity.color))
             mesh.asDynamic().position.set(v[0] * r, v[1] * r, v[2] * r)
+            mesh.asDynamic().scale.set(MOD_SCALE, MOD_SCALE, MOD_SCALE) // a touch bigger so the mods read
             if (mod.modType() == ModType.LINK_AMP) mesh.asDynamic().rotation.set(0.62, 0.62, 0.0) // cube on its diagonal
+            val wire = Three.Mesh(geo, modWireMat) // thin black wireframe just outside the surface
+            wire.asDynamic().scale.set(1.04, 1.04, 1.04)
+            mesh.asDynamic().add(wire)
             orb.add(mesh) // orb is already dynamic (no .asDynamic())
         }
         if (mods.any { it is Shield }) { // the energy bubble reads "shielded"
