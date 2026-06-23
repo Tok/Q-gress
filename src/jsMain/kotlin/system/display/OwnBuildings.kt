@@ -27,31 +27,6 @@ object OwnBuildings {
     private val meshes = mutableListOf<dynamic>() // for the grow-in z-scale
     private var inflate = 1.0
     private var sampled = false // one-time position diagnostic
-    private var stashed: dynamic = null // building features captured from the full-zoom shadow map
-
-    /**
-     * Capture building footprints from [map]'s vector source at GRID time — the shadow map is built at
-     * full zoom over the whole play area, so this gets ALL of them (the framed display map only has a few
-     * coarse tiles loaded, which is why querying it returned a fraction). Stash now, mesh later.
-     */
-    fun capture(map: dynamic) {
-        val opts: dynamic = js("({})")
-        opts.sourceLayer = "building"
-        stashed = map.querySourceFeatures("openmaptiles", opts)
-        console.log("OwnBuildings: captured ${(stashed.length as? Int) ?: 0} building features from the shadow map")
-    }
-
-    /** Mesh the captured buildings (call once Scene3D is anchored + terrain heights are ready). */
-    fun buildStashed() {
-        val s = stashed
-        if (s != null) addFeatures(s)
-    }
-
-    /** The captured features — for seeding the debris colliders. */
-    fun stashedFeatures(): dynamic = stashed
-
-    /** Whether buildings have been captured off the shadow map yet (it loads them asynchronously). */
-    fun hasStash() = stashed != null
 
     fun register(scene: Three.Scene) {
         group = Three.Group().also { scene.add(it) }

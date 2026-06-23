@@ -350,33 +350,41 @@ object MapUtil {
         window.setTimeout({ autoCamLeg(gen) }, AUTOCAM_LEG_MS.toInt())
     }
 
+    private var ownBuildingsHooked = false
     private var ownBuildingsSwapped = false
-    private const val BUILD_TERRAIN_RETRIES = 40 // ~12 s max, waiting for terrain heights + the building stash
-    private const val BUILD_TERRAIN_RETRY_MS = 300
-    private const val SHADOW_CAPTURE_TIMEOUT_MS = 6000 // wait this long for the shadow map to finish loading buildings
 
     /**
-     * Mesh our OWN buildings from the footprints captured off the full-zoom shadow map at grid time (so
-     * ALL of them, not the framed display map's fraction) + seed the debris colliders, then make MapLibre's
-     * layer invisible (opacity 0 → ours take over). Only waits on the terrain heights (so buildings sit on
-     * the terrain, not z=0); no data wait — the footprints are already in memory.
+     * Mesh our OWN buildings from the DISPLAY map's building footprints (where the data the player can
+     * already see lives) + seed debris colliders, then make MapLibre's layer invisible (opacity 0 → ours
+     * take over, but the layer stays active so tiles keep streaming). Driven by the display map's `idle`:
+     * each idle meshes any newly-loaded buildings (dedup), so the set fills in as tiles arrive and on pan.
      */
-    fun buildBuildingColliders() = buildOwnBuildings(0)
-
-    private fun buildOwnBuildings(attempt: Int) {
-        if (demoMode || !Styles.use3DBuildings || ownBuildingsSwapped) return
+    fun buildBuildingColliders() {
+        if (demoMode || !Styles.use3DBuildings || ownBuildingsHooked) return
         val m = initMap ?: return
-        if ((!Scene3D.terrainReady() || !OwnBuildings.hasStash()) && attempt < BUILD_TERRAIN_RETRIES) {
-            window.setTimeout({ buildOwnBuildings(attempt + 1) }, BUILD_TERRAIN_RETRY_MS) // wait for terrain z + stash
-            return
-        }
-        ownBuildingsSwapped = true
-        OwnBuildings.buildStashed() // mesh every captured building
-        Scene3D.buildBuildingColliders(OwnBuildings.stashedFeatures()) // …and the falling-debris colliders
+        ownBuildingsHooked = true
+        m.asDynamic().on("idle", fun() {
+            ownBuildingsTick()
+        })
+        ownBuildingsTick()
+    }
+
+    private fun ownBuildingsTick() {
+        if (demoMode || !Styles.use3DBuildings || !Scene3D.terrainReady()) return // need terrain for correct z
+        val m = initMap ?: return
         val md = m.asDynamic()
-        // Make MapLibre's buildings invisible (opacity 0). Keeps the layer active vs visibility:none (which
-        // would stop tile loading), though we no longer depend on that since the footprints are captured.
-        if (md.getLayer("3d-buildings") != null) md.setPaintProperty("3d-buildings", "fill-extrusion-opacity", 0)
+        val opts: dynamic = js("({})")
+        opts.sourceLayer = "building"
+        val feats = md.querySourceFeatures("openmaptiles", opts)
+        if (((feats.length as? Int) ?: 0) == 0) return // tiles not in yet — a later idle will have them
+        OwnBuildings.addFeatures(feats) // accumulate (dedup by footprint)
+        if (!ownBuildingsSwapped) {
+            ownBuildingsSwapped = true
+            Scene3D.buildBuildingColliders(feats)
+            // opacity 0 (not visibility:none): the openmaptiles source is used only by this layer in the
+            // satellite style, so hiding it would stop tile loading and starve querySourceFeatures.
+            if (md.getLayer("3d-buildings") != null) md.setPaintProperty("3d-buildings", "fill-extrusion-opacity", 0)
+        }
     }
 
     /** Register the 3D scene (three.js custom layer) on the base map, anchored at the grid view. */
@@ -574,28 +582,10 @@ object MapUtil {
         if (!demoMode) LoadingOverlay.detail("Tracing roads, water & terrain…")
         val grid = createGrid(imageData, width, height)
         if (!demoMode) LoadingOverlay.detail("Walkable ground: ${(World.walkability * 100).toInt()}% · reading place names…")
-        shadowMap?.let { PortalNames.build(it) } // names: POIs are loaded by now (low-zoom layer)
-        // Buildings (source-layer minzoom 14) often aren't fully in yet — wait for the shadow map to go
-        // idle (all z14 tiles loaded) before capturing footprints, THEN tear it down. A timeout fallback
-        // ensures we never leak the map if idle doesn't fire.
-        captureBuildingsThenTeardown()
+        shadowMap?.let { PortalNames.build(it) } // query POI/street names while the tiles are loaded
+        teardownShadowMap() // grid + names are read — destroy the shadow map to free its WebGL context
         captureAnchor()
         callback(grid)
-    }
-
-    private var buildingsCaptured = false
-
-    private fun captureBuildingsThenTeardown() {
-        val sm = shadowMap ?: return
-        buildingsCaptured = false
-        fun grab() {
-            if (buildingsCaptured) return
-            buildingsCaptured = true
-            shadowMap?.let { OwnBuildings.capture(it.asDynamic()) } // all building footprints, fully loaded
-            teardownShadowMap()
-        }
-        sm.once("idle") { grab() }
-        window.setTimeout({ grab() }, SHADOW_CAPTURE_TIMEOUT_MS) // fallback: don't leak the shadow map
     }
 
     /**
