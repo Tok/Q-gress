@@ -83,4 +83,6 @@ old 2D may optionally still be served at `/2D/`. Its inlined Mapbox token should
 - *Ingress* and the concept of Ingress are © **Niantic, Inc.** Q-Gress scrapes **no** data from
   Ingress and there is no intention to use real portal data; all agents and portals are generated.
 - Map tiles © OpenStreetMap / OpenMapTiles / OpenFreeMap and Esri / Maxar / Earthstar (see the in-app
-  attribution). Title font **Chakra Petch** (SIL OFL 1.1).
+  attribution).
+- Fonts (self-hosted, **SIL Open Font License 1.1** — see `fonts/OFL.txt`): **Chakra Petch** (display /
+  wordmark) and **Coda** (body / data).
