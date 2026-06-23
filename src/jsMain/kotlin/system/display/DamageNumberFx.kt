@@ -7,6 +7,7 @@ import external.Three
 import util.SoundUtil
 import util.Util
 import util.data.Pos
+import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.atan2
 import kotlin.math.cos
@@ -188,7 +189,7 @@ object DamageNumberFx {
         val ax = num.origin[0] - eye[0]
         val ay = num.origin[1] - eye[1]
         val len = sqrt(ax * ax + ay * ay)
-        return if (len > 1e-6) atan2(-ax / len, ay / len) else 0.0
+        return if (len > 1e-6) atan2(-ax / len, ay / len) + PI else 0.0 // +π: base toward the camera, not away
     }
 
     private fun buildDigits(f: dynamic, text: String, fillMat: dynamic, wireMat: dynamic, g: dynamic): List<Digit> {
