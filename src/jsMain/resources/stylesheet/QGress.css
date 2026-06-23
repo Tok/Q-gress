@@ -953,27 +953,49 @@ html, body {
     padding: 5px;
 }
 
-/* Compact sim-speed buttons (Pause / ×1 / ×3 / Max) — narrower than .topButton, with an active state. */
+/* Compact sim-speed buttons (Pause / ×1 / ×3 / Max) — narrower than .topButton, with an active state.
+   Grouped as a seamless segmented control: one outer margin, no gaps, collapsed inner borders. */
 .speedControls {
     display: inline-flex;
     align-items: center;
+    margin: 5px;
 }
 .speedBtn {
     width: 60px;
     font-size: 15px;
     padding: 5px 4px;
+    margin: 0;
+    border-radius: 0;
+}
+.speedBtn:first-child {
+    border-radius: 3px 0 0 3px;
+}
+.speedBtn:last-child {
+    border-radius: 0 3px 3px 0;
+}
+.speedBtn:not(:first-child) {
+    border-left: none;
 }
 .speedBtn.active {
     background: #d4d4d4;
     box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.55);
 }
 
-/* Header checkbox (e.g. Auto cam) sitting inline next to the volume slider. */
-.topCheck {
+/* Auto cam toggle (icon-only, rightmost in the toolbar); .active when the drift is running. */
+.autoCamBtn {
+    width: auto;
+    padding: 5px 9px;
+    line-height: 0;
+}
+.autoCamBtn.active {
+    background: #d4d4d4;
+    box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.55);
+}
+/* A toolbar label that holds an icon instead of text (e.g. the Volume speaker). */
+.topIcon {
     display: inline-flex;
     align-items: center;
-    gap: 3px;
-    margin: 5px;
+    line-height: 0;
 }
 
 .volumeSlider,

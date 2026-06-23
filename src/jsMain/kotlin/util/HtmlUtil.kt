@@ -28,6 +28,7 @@ import util.ui.Controls
 import util.ui.Demo
 import util.ui.DropRatesPanel
 import util.ui.Footer
+import util.ui.Icons
 import util.ui.Inspector
 import util.ui.LoadingOverlay
 import util.ui.Onboarding
@@ -152,11 +153,14 @@ object HtmlUtil {
         leftGroup.append(createSpeedControls()) // Pause + ×1/×3/Max (Space toggles pause; -/+ keys nudge speed)
         bindKeyboardShortcuts() // Space=pause · Home=recenter · zoom/pan/speed/mute/Esc
 
-        // Right group, far right: Auto cam toggle + volume.
+        // Right group, far right: volume, then the Auto cam toggle (rightmost; on by default).
         val rightGroup = document.createElement("div") as HTMLDivElement
         rightGroup.addClass("toolbarGroup")
-        rightGroup.append(createCheckbox("autoCamToggle", "Auto cam") { MapUtil.setAutoCam(it) }.also { it.addClass("topCheck") })
         rightGroup.append(createVolumeSpan())
+        rightGroup.append(createAutoCamToggle())
+        // Keep the toggle's highlight in sync — incl. when a manual move snaps the drift (and toggle) out.
+        MapUtil.onAutoCamChanged = { on -> (document.getElementById("autoCamToggle") as? HTMLElement)?.let { if (on) it.addClass("active") else it.removeClass("active") } }
+        MapUtil.setAutoCam(true)
 
         // The loaded-location name stretches across the middle (flex-grows between the two groups).
         buttonDiv.append(leftGroup)
@@ -171,8 +175,8 @@ object HtmlUtil {
         loadLocations { startOnboardingOrWorld() } // fetch the editable location catalogue, then run onboarding
     }
 
-    // Fetch the externalized location catalogue (resources/locations.json) into [Locations], then [onReady].
-    // A missing/malformed file keeps the DEFAULT-only catalogue rather than blocking startup.
+    // Fetch the editable location catalogue (resources/locations.json) into [Locations], then [onReady];
+    // a missing/malformed file keeps the DEFAULT-only catalogue rather than blocking startup.
     private fun loadLocations(onReady: () -> Unit) {
         window.asDynamic().fetch("locations.json")
             .then { r: dynamic -> r.text() }
@@ -254,9 +258,10 @@ object HtmlUtil {
     private fun createVolumeSpan(): HTMLSpanElement {
         val span = document.createElement("span") as HTMLSpanElement
         val label = document.createElement("span") as HTMLSpanElement
-        label.addClass("label", "topLabel")
+        label.addClass("label", "topLabel", "topIcon")
         label.id = "soundLabel"
-        label.innerHTML = "Volume"
+        label.innerHTML = Icons.VOLUME
+        label.title = "Volume"
         span.append(label)
         val slider = document.createElement("input") as HTMLInputElement
         slider.id = "volumeSlider"
@@ -287,18 +292,24 @@ object HtmlUtil {
         return span
     }
 
+    /** The Auto cam toggle button (icon-only, rightmost). Snaps out when a manual move cancels the drift. */
+    private fun createAutoCamToggle(): HTMLButtonElement {
+        val btn = createButton("autoCamToggle", "topButton displayFont autoCamBtn", "") { MapUtil.setAutoCam(!MapUtil.isAutoCamOn()) }
+        btn.innerHTML = Icons.CAM
+        btn.title = "Auto cam"
+        return btn
+    }
+
     /** Pick a sim-speed preset; resumes first if currently paused (so a speed button always plays). */
     private fun selectSpeed(mult: Double) {
-        if (isPaused()) togglePause()
+        if (intervalID == -1) togglePause() // -1 == paused
         setSpeed(mult)
     }
 
-    private fun isPaused() = intervalID == -1
-
-    // Highlight the preset matching the live speed (none while paused).
+    // Highlight the preset matching the live speed (none while paused, i.e. intervalID == -1).
     private fun refreshSpeedButtons() {
         SPEED_PRESETS.forEach { (mult, _, id) ->
-            val active = !isPaused() && mult == speedMult
+            val active = intervalID != -1 && mult == speedMult
             (document.getElementById(id) as? HTMLElement)?.let { if (active) it.addClass("active") else it.removeClass("active") }
         }
     }

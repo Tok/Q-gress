@@ -213,16 +213,19 @@ object MapUtil {
     }
 
     fun rotateBy(degrees: Double) {
+        cancelAutoCamFromUser()
         initMap?.let { it.setBearing(it.getBearing() + degrees) }
         map?.let { it.setBearing(it.getBearing() + degrees) }
     }
 
     fun pitchBy(degrees: Double) {
+        cancelAutoCamFromUser()
         initMap?.let { it.setPitch((it.getPitch() + degrees).coerceIn(0.0, MAX_PITCH)) }
         map?.let { it.setPitch((it.getPitch() + degrees).coerceIn(0.0, MAX_PITCH)) }
     }
 
     fun panBy(dx: Double, dy: Double) {
+        cancelAutoCamFromUser()
         val opts: dynamic = js("({animate: false})")
         val offset = arrayOf(dx, dy)
         initMap?.panBy(offset, opts)
@@ -252,7 +255,7 @@ object MapUtil {
     }
 
     private const val BUILD_SPIN_DEG = 0.12 // gentle bearing orbit during world build (~7°/s)
-    private const val BUILD_CENTRE_LIFT_FRAC = 0.25 // raise the tilted play-area centre toward screen centre during build
+    private const val BUILD_CENTRE_LIFT_FRAC = 0.4 // raise the tilted play-area centre toward screen centre during build
     private var cinematicActive = false
 
     /** A slow orbit around the play area while the world builds (close — portal placements stay visible). */
@@ -306,6 +309,8 @@ object MapUtil {
     fun stopBuildCinematicAndHome() {
         cinematicActive = false
         goHome()
+        // Auto-cam is on by default: start the drift once Home's ~900ms flight has settled (map now exists).
+        if (autoCamActive) window.setTimeout({ autoCamLeg(autoCamGen) }, 1100)
     }
 
     private const val TITLE_FLYIN_MS = 5200.0 // dramatic swoop-in to the title location (slow)
@@ -362,24 +367,35 @@ object MapUtil {
     private const val AUTOCAM_ZOOM_LO = 0.4 // can pull a touch wider than the framed zoom…
     private const val AUTOCAM_ZOOM_HI = 1.2 // …or push a little closer in (still keeping the action in view)
     private var autoCamActive = false
+    private var autoCamGen = 0 // bumped on every on/off so a stale chained leg can't keep running
+
+    /** Notified whenever the auto-cam turns on/off — incl. when a manual move cancels it (UI syncs the toggle). */
+    var onAutoCamChanged: ((Boolean) -> Unit)? = null
 
     fun isAutoCamOn() = autoCamActive
 
-    /** Toggle the in-game auto-cam (the "Auto cam" menu checkbox). On → start the drift; off → it settles where it is. */
+    /** Toggle the in-game auto-cam. On → start the slow cinematic drift; off → it settles where it is. */
     fun setAutoCam(on: Boolean) {
         if (on == autoCamActive) return
         autoCamActive = on
+        autoCamGen++
         if (on) {
             cinematicActive = false // don't fight the build spin (if somehow still running)
-            autoCamLeg()
+            autoCamLeg(autoCamGen)
         }
+        onAutoCamChanged?.invoke(on)
     }
 
-    // One in-game auto-cam leg: like the title drift but slower and wider — hold the play-area centre
-    // framed, ease to a new yaw/pitch/zoom, then chain another. Wall-clock (setTimeout/easeTo), so the
-    // camera glides at the same pace regardless of sim speed. Drives both maps like goHome.
-    private fun autoCamLeg() {
-        if (!autoCamActive) return
+    // User grabbed the camera (pan/rotate/tilt) → drop the drift + snap the toggle out (zoom is exempt).
+    private fun cancelAutoCamFromUser() {
+        if (autoCamActive) setAutoCam(false)
+    }
+
+    // One in-game auto-cam leg: like the title drift but slower/wider — hold the play-area centre framed,
+    // ease to a new yaw/pitch/zoom, chain another. Wall-clock (setTimeout/easeTo) → sim-speed-independent;
+    // drives both maps like goHome; [gen] guards a stale chain (toggled off→on) outliving its turn.
+    private fun autoCamLeg(gen: Int) {
+        if (!autoCamActive || gen != autoCamGen) return
         val center = anchorCenter ?: return
         val ref = referenceMap() ?: return
         val turn = (50.0 + Util.random() * 130.0) * (if (Util.randomBool()) 1.0 else -1.0)
@@ -391,7 +407,7 @@ object MapUtil {
         opts.duration = AUTOCAM_LEG_MS
         initMap?.asDynamic()?.easeTo(opts)
         map?.asDynamic()?.easeTo(opts)
-        window.setTimeout({ autoCamLeg() }, AUTOCAM_LEG_MS.toInt())
+        window.setTimeout({ autoCamLeg(gen) }, AUTOCAM_LEG_MS.toInt())
     }
 
     /** Register the 3D scene (three.js custom layer) on the base map, anchored at the grid view. */
@@ -419,6 +435,9 @@ object MapUtil {
         val m = initMap ?: return
         m.onEvent("click", onClick)
         m.onEvent("mousemove", onMove)
+        // originalEvent is present only for user moves → the cam's own easeTo won't self-cancel (zoom unbound).
+        val cancelOnUser = { event: dynamic -> if (event.originalEvent != null) cancelAutoCamFromUser() }
+        listOf("dragstart", "rotatestart", "pitchstart").forEach { m.onEvent(it, cancelOnUser) }
     }
 
     /** Wire just a map click (demo scenes); MapLibre distinguishes a click from a nav drag. */

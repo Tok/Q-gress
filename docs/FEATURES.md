@@ -120,14 +120,16 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
   (default on); degrades to flat if the DEM is unavailable. (The cannon-es shatter ground stays flat —
   a known approximation.)
 - **Top toolbar** reorganized: Menu far-left (with overlay toggles + Lock-tuning inside it), Home, and a
-  compact **sim-speed button group** — Pause / ×1 / ×3 / Max (the active speed highlighted; Pause is
-  Space-bound; `-`/`+` still nudge) replacing the old pause button + slider; **Auto cam** toggle +
-  Volume far-right. Toolbar stays hidden until the world is ready.
-- **Auto cam** (header toggle, next to Volume): a slow, slightly-randomized cinematic camera drift
-  around the arena — the title-screen orbit reused in-game (`MapUtil.setAutoCam`/`autoCamLeg`), but
-  much slower (~2.6× the title leg) and framing the whole arena (it may pull a touch wider or push a
-  little closer, but holds the picture; the title can push in for detail). **Wall-clock** (chained
-  `setTimeout`/`easeTo`), so it glides at the same pace at any sim speed and isn't cancelled by zooming.
+  seamless **sim-speed segmented control** — Pause / ×1 / ×3 / Max butted together (active speed
+  highlighted; Pause is Space-bound; `-`/`+` still nudge) replacing the old pause button + slider. Far
+  right: **Volume** then the **Auto cam** toggle, both **icon-only** (`util/ui/Icons`) so they don't read
+  as one label. Toolbar stays hidden until the world is ready.
+- **Auto cam** (icon toggle, rightmost; **on by default**): a slow, slightly-randomized cinematic camera
+  drift around the arena — the title-screen orbit reused in-game (`MapUtil.setAutoCam`/`autoCamLeg`), but
+  much slower (~2.6× the title leg) and framing the whole arena (may pull a touch wider or push a little
+  closer, but holds the picture; the title can push in for detail). **Wall-clock** (chained
+  `setTimeout`/`easeTo`) → same pace at any sim speed. A manual **pan/rotate/tilt snaps it back out**
+  (the toggle de-highlights via `onAutoCamChanged`); **zoom is exempt** (zooming while it drifts is fine).
 - **Keyboard controls + sim speed** (`util/Shortcuts`, `util/ui/ShortcutsHelp`): Space pause, Home
   recenter, PageUp/Down (and `-`/`+`) zoom, WASD pan, `,`/`.` building transparency, `-`/`+` sim
   **speed**, Tab cycles the footer, M mute, Esc closes popups; a **"?" shortcuts help** popup lists
