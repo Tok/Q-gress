@@ -9,9 +9,11 @@ import util.Util
 import util.data.Pos
 import kotlin.math.abs
 import kotlin.math.atan2
+import kotlin.math.cos
 import kotlin.math.ln
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.sin
 import kotlin.math.sqrt
 
 /**
@@ -135,12 +137,13 @@ object DamageNumberFx {
         val w = world ?: return
         if (nums.isEmpty()) return
         w.step(1.0 / 60.0, dt, 3)
-        val eye = GlassShader.eye() // the only observer is the camera → billboard every digit toward it
+        val eye = GlassShader.eye() // the only observer is the camera → yaw the WHOLE number toward it
         val dead = mutableListOf<DamageNum>()
         nums.forEach { num ->
             num.age += dt
             val connectedZ = num.origin[2] + RISE_HEIGHT * easeOut(min(1.0, num.age / RISE_DUR))
-            num.digits.forEach { d -> advanceDigit(num, d, connectedZ, eye) }
+            val yaw = numberYaw(num, eye) // one shared yaw for the whole number (its base points at the camera)
+            num.digits.forEach { d -> advanceDigit(num, d, connectedZ, yaw) }
             if (num.age > num.totalLife - FADE) {
                 val a = ((num.totalLife - num.age) / FADE).coerceIn(0.0, 1.0)
                 num.fillMat.opacity = DIGIT_OPACITY * a
@@ -151,42 +154,41 @@ object DamageNumberFx {
         dead.forEach { drop(it) }
     }
 
-    private fun advanceDigit(num: DamageNum, d: Digit, connectedZ: Double, eye: DoubleArray) {
+    private fun advanceDigit(num: DamageNum, d: Digit, connectedZ: Double, yaw: Double) {
+        // The digit's spot in the connected, flat number — laid out along the number's yawed local X.
+        val lx = num.origin[0] + cos(yaw) * d.localX
+        val ly = num.origin[1] + sin(yaw) * d.localX
         if (d.body == null && num.age >= d.release) { // detach this digit into a falling rigid body
-            d.body = spawnBody(d, num.origin[0] + d.localX, num.origin[1], connectedZ).also { world?.addBody(it) }
+            d.body = spawnBody(d, lx, ly, connectedZ).also { world?.addBody(it) }
         }
         val body = d.body
         val px: Double
         val py: Double
         val pz: Double
-        if (body != null) { // physics drives POSITION (it falls / gets blast-flung); orientation is billboarded
+        if (body != null) { // physics drives POSITION (it falls / gets blast-flung)
             val bp = body.asDynamic().position
             px = bp.x as Double
             py = bp.y as Double
             pz = bp.z as Double
-        } else { // still part of the connected, upright number lerping/hanging
-            px = num.origin[0] + d.localX
-            py = num.origin[1]
+        } else { // still part of the connected number lerping/hanging
+            px = lx
+            py = ly
             pz = connectedZ
         }
         d.mesh.position.set(px, py, pz)
-        // Stay FLAT over the portal (extrusion up); just yaw around Z so the number's base points at the
-        // camera (reads upright from the angled view). Not a full face-the-camera tilt.
-        var ax = px - eye[0]
-        var ay = py - eye[1]
-        val len = sqrt(ax * ax + ay * ay)
-        if (len > 1e-6) {
-            ax /= len
-            ay /= len
-        } else {
-            ax = 0.0
-            ay = 1.0
-        }
-        d.mesh.rotation.set(0.0, 0.0, atan2(-ax, ay))
+        d.mesh.rotation.set(0.0, 0.0, yaw) // flat over the portal; the whole number shares this yaw
         if (body != null && pz <= LAND_Z && !d.landed) { // each digit clinks once as it hits the ground
             d.landed = true
             SoundUtil.playGlassShatterSound(num.loc, 0.0, LAND_VOLUME)
         }
+    }
+
+    // One yaw for the whole number so its base points at the camera (flat over the portal, reads upright).
+    private fun numberYaw(num: DamageNum, eye: DoubleArray): Double {
+        val ax = num.origin[0] - eye[0]
+        val ay = num.origin[1] - eye[1]
+        val len = sqrt(ax * ax + ay * ay)
+        return if (len > 1e-6) atan2(-ax / len, ay / len) else 0.0
     }
 
     private fun buildDigits(f: dynamic, text: String, fillMat: dynamic, wireMat: dynamic, g: dynamic): List<Digit> {
@@ -229,8 +231,8 @@ object DamageNumberFx {
             -((bb.min.y as Double) + (bb.max.y as Double)) / 2.0,
             -DEPTH / 2.0,
         )
-        // Mirror on X to counter the scene's -Y model-matrix flip, else the glyphs render reflected.
-        geo.asDynamic().scale(-1.0, 1.0, 1.0)
+        // Mirror on Y to counter the scene's -Y model-matrix flip, else the glyphs render reflected.
+        geo.asDynamic().scale(1.0, -1.0, 1.0)
         geo.computeBoundingBox() // refresh after centring + mirror (used for width/height)
         return geo
     }
