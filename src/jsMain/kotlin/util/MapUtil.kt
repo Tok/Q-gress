@@ -14,6 +14,7 @@ import org.khronos.webgl.Uint8Array
 import org.khronos.webgl.get
 import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.ImageData
+import system.display.OwnBuildings
 import system.display.Scene3D
 import util.data.Cell
 import util.data.Pos
@@ -348,15 +349,23 @@ object MapUtil {
         window.setTimeout({ autoCamLeg(gen) }, AUTOCAM_LEG_MS.toInt())
     }
 
-    /** Feed the rendered building footprints to the physics worlds so falling debris lands on roofs.
-     *  Call once after world-gen, when the buildings are on screen (queryRenderedFeatures = on-screen only). */
+    /**
+     * After world-gen: build our OWN play-area building meshes from the vector-tile footprints + seed
+     * the debris colliders, then hide the MapLibre fill-extrusion layer (our meshes take over). Uses
+     * querySourceFeatures (reads loaded tiles regardless of layer visibility), so a building's missing
+     * vector-tile id no longer matters — each is keyed by its footprint. The MapLibre layer did the
+     * grow-in during gen; swapping to identical meshes at full height is seamless.
+     */
     fun buildBuildingColliders() {
         if (demoMode || !Styles.use3DBuildings) return
         val m = initMap ?: return
-        if (m.asDynamic().getLayer("3d-buildings") == null) return
+        val md = m.asDynamic()
         val opts: dynamic = js("({})")
-        opts.layers = arrayOf("3d-buildings")
-        Scene3D.buildBuildingColliders(m.asDynamic().queryRenderedFeatures(opts))
+        opts.sourceLayer = "building"
+        val feats = md.querySourceFeatures("openmaptiles", opts)
+        OwnBuildings.addFeatures(feats) // our meshes replace MapLibre's extrusions…
+        Scene3D.buildBuildingColliders(feats) // …and seed the falling-debris colliders
+        if (md.getLayer("3d-buildings") != null) md.setLayoutProperty("3d-buildings", "visibility", "none")
     }
 
     /** Register the 3D scene (three.js custom layer) on the base map, anchored at the grid view. */

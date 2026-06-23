@@ -284,6 +284,7 @@ object Scene3D {
         FieldFx.register(newScene)
         ShatterFx.register(newScene)
         DamageNumberFx.register(newScene)
+        OwnBuildings.register(newScene) // our own play-area building meshes (replace MapLibre's after gen)
         BoltFx.register(newScene)
         XmFx.register(newScene)
         showcaseGroup = Three.Group()
