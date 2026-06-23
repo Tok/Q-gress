@@ -321,8 +321,7 @@ object Scene3D {
         val nowMs = js("performance.now()") as Double
         val rawDt = if (lastFrameMs <= 0.0) 0.016 else ((nowMs - lastFrameMs) / 1000.0).coerceIn(0.0, 0.1)
         lastFrameMs = nowMs
-        SunController.setSpeed(!World.isReady) // fast sweep during the intro/gen, slow drift once playing
-        SunController.advance(rawDt) // real-time sun arc (independent of sim speed)
+        SunController.advance(rawDt) // real-time sun arc (independent of sim speed); speed set by Title/Html
         val dt = rawDt * animationSpeed
         animClockMs += dt * 1000.0
         PlasmaShader.setTime(animClockMs / 1000.0) // animate control fields (on the scaled clock)

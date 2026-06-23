@@ -21,6 +21,7 @@ import portal.Portal
 import portal.PortalKey
 import portal.XmMap
 import system.display.Scene3D
+import system.display.SunController
 import system.display.VectorFieldOverlay
 import util.GeoLocator
 import util.GridConnectivity
@@ -45,6 +46,8 @@ object TitleSim {
     private const val TITLE_RESOS = 24
     private const val TITLE_CUBES = 10
     private const val MAX_TITLE_RETRIES = 4 // try a few iconic locations before forcing the known-good default
+    private const val TITLE_BUILD_MESH_MS = 3500 // after the title city has risen, swap to our own meshes (→ shadows)
+    private const val TITLE_SUN_SLOW_MS = 8000 // let the intro sun sweep fast, then ease it to a slow drift
 
     // Title mini-game: click the scene to blast. LMB = a full L8 XMP; RMB = an "ultra-strike" — the same
     // burst squished to a tight, brighter, higher-pitched hit (no dedicated ultra animation yet).
@@ -103,6 +106,10 @@ object TitleSim {
             MapUtil.startTitleCinematic() // 3D terrain + zoom to frame the arena + slow orbit
             buildWorld()
             bindBlasts()
+            // Our own building meshes (→ real shadows) once the title city has risen; then ease the
+            // intro sun from its fast sweep down to a slow drift.
+            window.setTimeout({ MapUtil.buildBuildingColliders() }, TITLE_BUILD_MESH_MS)
+            window.setTimeout({ SunController.setSpeed(false) }, TITLE_SUN_SLOW_MS)
         })
     }
 

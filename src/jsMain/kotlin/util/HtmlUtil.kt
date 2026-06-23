@@ -22,6 +22,7 @@ import system.Cycle
 import system.display.DamageNumberFx
 import system.display.PassabilityOverlay
 import system.display.Scene3D
+import system.display.SunController
 import util.data.GeoCoords
 import util.data.Line
 import util.data.Pos
@@ -647,9 +648,10 @@ object HtmlUtil {
             MapUtil.stopBuildCinematicAndHome() // settle to the Home view (top-down over the play area)
             if (coloredMap) MapUtil.fadeInColor() else MapUtil.setColored(false) // colour eases in post-build
             Scene3D.onTerrainChanged() // sample the DEM height grid (objects sit on the terrain)
-            // Once the Home view has settled (buildings on screen), build static colliders from their
-            // footprints so falling debris/digits land on roofs instead of dropping through.
+            // Once the Home view has settled (buildings on screen), build our own building meshes +
+            // colliders (so debris lands on roofs and the sun casts real building shadows).
             window.setTimeout({ MapUtil.buildBuildingColliders() }, 1600)
+            SunController.setSpeed(false) // the intro's fast sun sweep eases to a slow drift in-game
         }
     }
 
