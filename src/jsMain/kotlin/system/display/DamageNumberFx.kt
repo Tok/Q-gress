@@ -33,6 +33,8 @@ object DamageNumberFx {
     private const val GRAVITY = 20.0
     private const val RISE_HEIGHT = 7.5 // how far the connected number lerps up off the portal top (m)
     private const val DIGIT_OPACITY = 0.82 // a touch of transparency (glassy), still clearly readable
+    private const val WIRE_COPIES = 3 // WebGL ignores LineBasicMaterial.linewidth → concentric copies fake a bolder stroke
+    private const val WIRE_STEP = 0.03 // scale increment between copies (outward halo = apparent line thickness)
     private const val RISE_DUR = 0.55 // seconds for the rise
     private const val HANG_DUR = 1.4 // seconds it hangs upright before the digits drop
     private const val STAGGER = 0.1 // delay between digit releases (right-most first)
@@ -48,7 +50,7 @@ object DamageNumberFx {
     // Volley damage spans orders of magnitude (a few hundred when heavily mitigated → tens of thousands
     // on a fresh portal), so the colour uses a LOG scale between these, not linear.
     private const val YELLOW_AT = 500.0 // ≤ this reads pure yellow
-    private const val RED_AT = 70000.0 // ≥ this reads pure red
+    private const val RED_AT = 20000.0 // ≥ this reads deep dark red (lowered: the top end was rarely reached)
     private const val MAX_ACTIVE = 24 // cap concurrent numbers (drop the oldest beyond this)
 
     // Nearby-blast shove on already-falling digits (shared law with ShatterFx via BlastModel).
@@ -236,12 +238,22 @@ object DamageNumberFx {
             val bb = geo.boundingBox
             val hh = abs((bb.max.y as Double) - (bb.min.y as Double)) / 2.0
             val mesh = Three.Mesh(geo, fillMat)
-            val wire = Three.LineSegments(Three.EdgesGeometry(geo), wireMat) // black outline
-            wire.asDynamic().scale.set(1.03, 1.03, 1.03) // nudge out so the edges don't z-fight the fill
-            mesh.asDynamic().add(wire)
+            addBoldWire(mesh, geo, wireMat)
             g.add(mesh)
             val release = RISE_DUR + HANG_DUR + (text.length - 1 - i) * STAGGER // right-most drops first
             Digit(mesh, localX, max(0.3, w / 2.0), max(0.3, hh), release)
+        }
+    }
+
+    // Black edge outline, ~3× bolder: concentric LineSegments copies (1.03/1.06/1.09×) form a thicker
+    // black band around the glyph, since WebGL won't honour a fat linewidth. Copies share one EdgesGeometry.
+    private fun addBoldWire(mesh: dynamic, geo: dynamic, wireMat: dynamic) {
+        val edges = Three.EdgesGeometry(geo)
+        for (k in 1..WIRE_COPIES) {
+            val wire = Three.LineSegments(edges, wireMat)
+            val s = 1.0 + WIRE_STEP * k // nudge each copy out (also keeps edges off the fill → no z-fight)
+            wire.asDynamic().scale.set(s, s, s)
+            mesh.add(wire)
         }
     }
 
@@ -312,10 +324,11 @@ object DamageNumberFx {
 
     private fun easeOut(t: Double) = 1.0 - (1.0 - t) * (1.0 - t) * (1.0 - t)
 
-    // Yellow (small) → orange → red (big), by damage amount on a LOG scale. Red channel full; G + B drop.
+    // Yellow (small) → orange → DARK red (big), by damage amount on a LOG scale. All three channels ramp
+    // so the top end lands on a deep #a50000 (not the old bright #ff2212) — a real "max damage" red.
     private fun colorFor(amount: Int): String {
         val t = ((ln(max(1.0, amount.toDouble())) - ln(YELLOW_AT)) / (ln(RED_AT) - ln(YELLOW_AT))).coerceIn(0.0, 1.0)
-        return "#ff" + hex((218 - 184 * t).toInt()) + hex((54 - 36 * t).toInt())
+        return "#" + hex((255 - 90 * t).toInt()) + hex((218 - 218 * t).toInt()) + hex((54 - 54 * t).toInt())
     }
 
     private fun hex(v: Int) = v.coerceIn(0, 255).toString(16).padStart(2, '0')
