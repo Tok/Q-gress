@@ -74,7 +74,7 @@ object GlassShader {
     private const val INTERIOR_LUM = 0.02
     private const val RIM_EMISSION = 0.6
     private const val INTERIOR_EMISSION = 0.05
-    private const val FILL_DIM = 0.32 // above the energy line a resonator dims to this (still coloured, not empty)
+    private const val FILL_DIM = 0.2 // above the energy line a resonator dims to this (still coloured, not empty)
 
     private const val VERT =
         "varying vec3 vWorldNormal;\nvarying vec3 vModelPos;\nvarying vec3 vWorldPos;\n" +
@@ -107,8 +107,8 @@ object GlassShader {
             " float alpha = clamp((${BASE_ALPHA.glsl()} + rim * 0.55 + smudge * 0.5) * uBright, 0.04, 0.97) * uFade;\n" +
             // Resonator energy bar: below the fill line (uFill, bottom→top of the unit cylinder) reads full,
             // above dims to FILL_DIM but stays coloured. uFill defaults to 1 (no effect on orbs/links/shards).
-            " if (uFill < 0.999) { float fillT = clamp(vModelPos.y + 0.5, 0.0, 1.0);" +
-            " float lit = fillT <= uFill ? 1.0 : ${FILL_DIM.glsl()}; col *= lit; alpha *= max(lit, 0.6); }\n" +
+            " if (uFill < 0.999) { float fillT = clamp(vModelPos.y + 0.5, 0.0, 1.0); bool full = fillT <= uFill;" +
+            " col *= full ? 1.15 : ${FILL_DIM.glsl()}; alpha *= full ? 1.0 : 0.4; }\n" + // crank full/empty contrast
             " gl_FragColor = vec4(col, alpha); }"
 
     /**

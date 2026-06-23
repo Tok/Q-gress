@@ -374,6 +374,7 @@ object Scene3D {
         shieldMats.clear() // rebuilt by addShieldShells below
         clear(portalsGroup)
         World.allPortals.forEach { addPortal(it) }
+        syncPoleColliders()
         clear(fieldsGroup)
         World.allFields().forEach { addField(it) }
         clear(linksGroup)
@@ -887,6 +888,17 @@ object Scene3D {
         } else if (reform < 1.0) {
             applyBuildGrow(level, 1.0, parts, reform, gz) // orb pops back in after a capture
         }
+    }
+
+    // Refresh portal-pole colliders in the FX physics worlds so falling debris/digits hit the poles.
+    private fun syncPoleColliders() {
+        val specs = World.allPortals.map { p ->
+            val gz = groundZ(p.location)
+            val topZ = gz + poleHeight(p.getLevel().toInt().toDouble())
+            doubleArrayOf(sceneX(p.location), sceneY(p.location), gz, topZ, POLE_R)
+        }.toTypedArray()
+        ShatterFx.setPoleColliders(specs)
+        DamageNumberFx.setPoleColliders(specs)
     }
 
     /**

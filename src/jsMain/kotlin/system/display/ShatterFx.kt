@@ -114,6 +114,28 @@ object ShatterFx {
         w.addBody(Cannon.Body(opts))
     }
 
+    private val poleBodies = mutableListOf<Cannon.Body>()
+
+    /** Replace the portal-pole colliders so falling debris hits the poles instead of passing through.
+     *  [specs] = [cx, cy, baseZ, topZ, radius] per pole; rebuilt each sync (poles grow with level / sink). */
+    fun setPoleColliders(specs: Array<DoubleArray>) {
+        val w = world ?: return
+        poleBodies.forEach { w.removeBody(it) }
+        poleBodies.clear()
+        specs.forEach { s ->
+            val h = s[3] - s[2]
+            if (h > 0.5) {
+                val opts: dynamic = js("({ mass: 0 })")
+                opts.position = Cannon.Vec3(s[0], s[1], s[2] + h / 2.0)
+                opts.shape = Cannon.Box(Cannon.Vec3(s[4], s[4], h / 2.0)) // square box ≈ the round pole
+                Cannon.Body(opts).also {
+                    w.addBody(it)
+                    poleBodies.add(it)
+                }
+            }
+        }
+    }
+
     fun hasActive() = activeShards.isNotEmpty() || sinkingPoles.isNotEmpty()
 
     fun update(dt: Double) {
