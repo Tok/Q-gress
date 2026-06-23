@@ -9,33 +9,56 @@ import kotlin.math.max
 import kotlin.math.min
 
 /**
- * Floating 3D **damage numbers**: when an XMP/US damages a portal, the total pops up as extruded Coda
- * digits (same 3D treatment as the title wordmark), flies up off the portal, then — as a cannon-es
- * rigid body — arcs and falls back to the ground before fading out and being removed. Colour runs
- * **yellow (small) → orange → red (big)** by the damage amount (not the weapon level). Own physics
- * world + ground plane (like [ShatterFx]). [register] once; [spawn] per damage event; [update] per frame.
+ * Floating 3D **damage numbers** (extruded Coda digits + a black wire outline). On a hit the number is
+ * **lerped straight up** off the top of the portal (~[RISE_HEIGHT] m, in code — *not* shoved by the
+ * blast), held upright mid-air for a beat, then its digits **detach and fall individually** as cannon-es
+ * rigid bodies — released right-to-left a few ms apart — to the ground before fading out. While falling,
+ * a nearby explosion ([applyBlast]) flings the loose digits. Colour runs yellow→orange→red by the amount.
+ * Own physics world + ground plane (like [ShatterFx]). [register] once; [spawn] per hit; [update] per frame.
  */
 object DamageNumberFx {
     private const val FONT_URL = "fonts/Coda-ExtraBold.typeface.json"
     private const val SIZE = 4.2 // glyph em size (world units)
     private const val DEPTH = 0.8 // extrude depth
-    private const val MASS = 0.6
-    private const val GRAVITY = 20.0 // ~2× g, matches ShatterFx so debris + numbers fall alike
-    private const val UP_VEL = 12.0 // initial upward pop (m/s)
-    private const val SPREAD = 3.0 // random horizontal velocity so they don't stack
-    private const val SPIN = 1.6 // gentle tumble
-    private const val LIFE = 3.2 // seconds before removal (long enough to pop up + fall back)
-    private const val FADE = 0.8 // fade out over the final seconds
+    private const val GAP = 0.6 // gap between digits
+    private const val MASS = 0.5
+    private const val GRAVITY = 20.0
+    private const val RISE_HEIGHT = 15.0 // how far the connected number lerps up off the portal top (m)
+    private const val RISE_DUR = 0.55 // seconds for the rise
+    private const val HANG_DUR = 1.4 // seconds it hangs upright before the digits drop
+    private const val STAGGER = 0.1 // delay between digit releases (right-most first)
+    private const val FALL_LIFE = 2.4 // seconds a digit lives after release
+    private const val FADE = 0.7 // fade-out at the very end of a number's life
     private const val RED_AT = 4000.0 // damage at/above which the number reads fully red
-    private const val MAX_ACTIVE = 40 // cap concurrent numbers (drop the oldest beyond this)
+    private const val MAX_ACTIVE = 24 // cap concurrent numbers (drop the oldest beyond this)
+
+    // Nearby-blast shove on already-falling digits (shared law with ShatterFx via BlastModel).
+    private const val BLAST_SPEED = 16.0
+    private const val BLAST_REF = 80.0
+    private const val BLAST_FLOOR = 0.4
+    private const val BLAST_UP = 0.5
 
     private var group: dynamic = null
     private var world: Cannon.World? = null
     private var font: dynamic = null
 
-    private class Num(val mesh: dynamic, val mat: dynamic, val body: Cannon.Body, var age: Double)
+    private class Digit(val mesh: dynamic, val localX: Double, val hw: Double, val hh: Double, val release: Double) {
+        var body: Cannon.Body? = null
+    }
 
-    private val active = mutableListOf<Num>()
+    private class DamageNum(
+        val digits: List<Digit>,
+        val cx: Double,
+        val cy: Double,
+        val baseZ: Double,
+        val fillMat: dynamic,
+        val wireMat: dynamic,
+        val totalLife: Double,
+    ) {
+        var age = 0.0
+    }
+
+    private val nums = mutableListOf<DamageNum>()
 
     fun register(scene: Three.Scene) {
         group = Three.Group().also { scene.add(it) }
@@ -48,64 +71,135 @@ object DamageNumberFx {
         FontLoader().load(FONT_URL, { f -> font = f }) // async; spawns before it lands just no-op
     }
 
-    fun hasActive() = active.isNotEmpty()
+    fun hasActive() = nums.isNotEmpty()
 
-    /** Pop a damage number of [amount] at scene-point ([x], [y], [z]); it flies up, falls, then fades. */
+    /** Pop a damage number of [amount] above the portal top at scene-point ([x], [y], [z]). */
     fun spawn(x: Double, y: Double, z: Double, amount: Int) {
         val f = font ?: return
-        val w = world ?: return
         val g = group ?: return
         if (amount <= 0) return
-        if (active.size >= MAX_ACTIVE) remove(active.first())
-        val geo = buildGeometry(f, amount)
-        val mat = buildMaterial(amount)
-        val mesh = Three.Mesh(geo, mat)
-        g.add(mesh)
-        w.addBody(spawnBody(geo, x, y, z).also { active.add(Num(mesh, mat, it, 0.0)) })
+        if (nums.size >= MAX_ACTIVE) drop(nums.first())
+        val fillMat = fillMaterial(amount)
+        val wireMat = wireMaterial()
+        val digits = buildDigits(f, amount.toString(), fillMat, wireMat, g)
+        val fallStart = RISE_DUR + HANG_DUR
+        val maxRelease = fallStart + (digits.size - 1) * STAGGER
+        nums.add(DamageNum(digits, x, y, z, fillMat, wireMat, maxRelease + FALL_LIFE))
     }
 
-    /** Step physics + sync every number's mesh to its body; fade + drop finished ones. */
+    /** A nearby explosion flings any already-falling digits (cloud-centre [origin], scene metres). */
+    fun applyBlast(origin: DoubleArray, level: Int) {
+        nums.forEach { num ->
+            num.digits.forEach { d ->
+                val b = d.body ?: return@forEach
+                val p = b.asDynamic().position
+                val imp = BlastModel.blastImpulse(
+                    origin,
+                    doubleArrayOf(p.x as Double, p.y as Double, p.z as Double),
+                    level,
+                    BLAST_SPEED,
+                    BLAST_REF,
+                    BLAST_FLOOR,
+                )
+                val v = b.asDynamic().velocity
+                v.set((v.x as Double) + imp[0], (v.y as Double) + imp[1], (v.z as Double) + imp[2] * BLAST_UP)
+            }
+        }
+    }
+
+    /** Advance each number: lerp up, hang, release digits to physics (right→left), fade, drop finished. */
     fun update(dt: Double) {
         val w = world ?: return
-        if (active.isEmpty()) return
+        if (nums.isEmpty()) return
         w.step(1.0 / 60.0, dt, 3)
-        val dead = mutableListOf<Num>()
-        active.forEach { n ->
-            n.age += dt
-            val bp = n.body.asDynamic().position
-            n.mesh.position.set(bp.x as Double, bp.y as Double, bp.z as Double)
-            val bq = n.body.asDynamic().quaternion
-            n.mesh.quaternion.set(bq.x as Double, bq.y as Double, bq.z as Double, bq.w as Double)
-            if (n.age > LIFE - FADE) n.mat.opacity = ((LIFE - n.age) / FADE).coerceIn(0.0, 1.0)
-            if (n.age >= LIFE) dead.add(n)
+        val dead = mutableListOf<DamageNum>()
+        nums.forEach { num ->
+            num.age += dt
+            val connectedZ = num.baseZ + RISE_HEIGHT * easeOut(min(1.0, num.age / RISE_DUR))
+            num.digits.forEach { d -> advanceDigit(num, d, connectedZ) }
+            if (num.age > num.totalLife - FADE) {
+                val a = ((num.totalLife - num.age) / FADE).coerceIn(0.0, 1.0)
+                num.fillMat.opacity = a
+                num.wireMat.opacity = a
+            }
+            if (num.age >= num.totalLife) dead.add(num)
         }
-        dead.forEach { remove(it) }
+        dead.forEach { drop(it) }
     }
 
-    private fun buildGeometry(f: dynamic, amount: Int): dynamic {
+    private fun advanceDigit(num: DamageNum, d: Digit, connectedZ: Double) {
+        val body = d.body
+        if (body == null) {
+            if (num.age >= d.release) {
+                d.body = spawnBody(d, num.cx + d.localX, num.cy, connectedZ).also { world?.addBody(it) }
+            } else { // still part of the connected, upright number lerping/hanging
+                d.mesh.position.set(num.cx + d.localX, num.cy, connectedZ)
+                d.mesh.quaternion.set(0.0, 0.0, 0.0, 1.0)
+            }
+            return
+        }
+        val bp = body.asDynamic().position
+        d.mesh.position.set(bp.x as Double, bp.y as Double, bp.z as Double)
+        val bq = body.asDynamic().quaternion
+        d.mesh.quaternion.set(bq.x as Double, bq.y as Double, bq.z as Double, bq.w as Double)
+    }
+
+    private fun buildDigits(f: dynamic, text: String, fillMat: dynamic, wireMat: dynamic, g: dynamic): List<Digit> {
+        val geos = text.map { glyphGeometry(f, it.toString()) }
+        val widths = geos.map { (it.boundingBox.max.x as Double) - (it.boundingBox.min.x as Double) }
+        val total = widths.sum() + GAP * (geos.size - 1)
+        var cursor = -total / 2.0
+        return geos.mapIndexed { i, geo ->
+            val w = widths[i]
+            val localX = cursor + w / 2.0
+            cursor += w + GAP
+            val bb = geo.boundingBox
+            val hh = ((bb.max.y as Double) - (bb.min.y as Double)) / 2.0
+            val mesh = Three.Mesh(geo, fillMat)
+            mesh.asDynamic().add(Three.LineSegments(Three.EdgesGeometry(geo), wireMat)) // black outline
+            g.add(mesh)
+            val release = RISE_DUR + HANG_DUR + (text.length - 1 - i) * STAGGER // right-most drops first
+            Digit(mesh, localX, max(0.3, w / 2.0), max(0.3, hh), release)
+        }
+    }
+
+    private fun glyphGeometry(f: dynamic, ch: String): dynamic {
         val params: dynamic = js("({})")
         params.font = f
         params.size = SIZE
-        params.depth = DEPTH // three r150+
-        params.height = DEPTH // older three
+        params.depth = DEPTH
+        params.height = DEPTH
         params.curveSegments = 3
         params.bevelEnabled = true
         params.bevelThickness = 0.08
         params.bevelSize = 0.06
         params.bevelSegments = 1
-        val geo = TextGeometry(amount.toString(), params)
+        val geo = TextGeometry(ch, params)
         geo.computeBoundingBox()
         val bb = geo.boundingBox
-        // Centre the glyphs on the body origin so it tumbles around its middle.
         geo.asDynamic().translate(
             -((bb.min.x as Double) + (bb.max.x as Double)) / 2.0,
             -((bb.min.y as Double) + (bb.max.y as Double)) / 2.0,
             -DEPTH / 2.0,
         )
+        geo.computeBoundingBox() // refresh after centring (used for width/height)
         return geo
     }
 
-    private fun buildMaterial(amount: Int): dynamic {
+    private fun spawnBody(d: Digit, x: Double, y: Double, z: Double): Cannon.Body {
+        val opts: dynamic = js("({})")
+        opts.mass = MASS
+        opts.position = Cannon.Vec3(x, y, z)
+        opts.shape = Cannon.Box(Cannon.Vec3(d.hw, d.hh, DEPTH / 2.0))
+        opts.linearDamping = 0.05
+        opts.angularDamping = 0.4
+        val body = Cannon.Body(opts)
+        body.asDynamic().velocity.set((Util.random() - 0.5) * 1.5, (Util.random() - 0.5) * 1.5, Util.random() * 1.5)
+        body.asDynamic().angularVelocity.set((Util.random() - 0.5) * 2.0, (Util.random() - 0.5) * 2.0, (Util.random() - 0.5) * 2.0)
+        return body
+    }
+
+    private fun fillMaterial(amount: Int): dynamic {
         val p: dynamic = js("({})")
         p.color = colorFor(amount)
         p.transparent = true
@@ -113,36 +207,31 @@ object DamageNumberFx {
         return Three.MeshBasicMaterial(p)
     }
 
-    private fun spawnBody(geo: dynamic, x: Double, y: Double, z: Double): Cannon.Body {
-        val bb = geo.boundingBox
-        val hw = max(0.3, ((bb.max.x as Double) - (bb.min.x as Double)) / 2.0)
-        val hh = max(0.3, ((bb.max.y as Double) - (bb.min.y as Double)) / 2.0)
-        val opts: dynamic = js("({})")
-        opts.mass = MASS
-        opts.position = Cannon.Vec3(x, y, z)
-        opts.shape = Cannon.Box(Cannon.Vec3(hw, hh, DEPTH / 2.0))
-        opts.linearDamping = 0.05
-        opts.angularDamping = 0.3
-        val body = Cannon.Body(opts)
-        body.asDynamic().velocity.set((Util.random() - 0.5) * SPREAD, (Util.random() - 0.5) * SPREAD, UP_VEL + Util.random() * 4.0)
-        body.asDynamic().angularVelocity.set((Util.random() - 0.5) * SPIN, (Util.random() - 0.5) * SPIN, (Util.random() - 0.5) * SPIN)
-        return body
+    private fun wireMaterial(): dynamic {
+        val p: dynamic = js("({})")
+        p.color = "#000000"
+        p.transparent = true
+        p.depthTest = false
+        return Three.LineBasicMaterial(p)
     }
 
-    private fun remove(n: Num) {
-        world?.removeBody(n.body)
-        group?.remove(n.mesh)
-        n.mesh.geometry.dispose()
-        n.mat.dispose()
-        active.remove(n)
+    private fun drop(num: DamageNum) {
+        num.digits.forEach { d ->
+            d.body?.let { world?.removeBody(it) }
+            group?.remove(d.mesh)
+            d.mesh.geometry.dispose()
+        }
+        num.fillMat.dispose()
+        num.wireMat.dispose()
+        nums.remove(num)
     }
 
-    // Yellow (small) → orange → red (big), by damage amount. Red channel stays full; green + blue drop.
+    private fun easeOut(t: Double) = 1.0 - (1.0 - t) * (1.0 - t) * (1.0 - t)
+
+    // Yellow (small) → orange → red (big), by damage amount. Red channel full; green + blue drop.
     private fun colorFor(amount: Int): String {
         val t = min(1.0, amount / RED_AT)
-        val g = (218 - 184 * t).toInt() // 0xDA → ~0x22
-        val b = (54 - 36 * t).toInt() // 0x36 → 0x12
-        return "#ff" + hex(g) + hex(b)
+        return "#ff" + hex((218 - 184 * t).toInt()) + hex((54 - 36 * t).toInt())
     }
 
     private fun hex(v: Int) = v.coerceIn(0, 255).toString(16).padStart(2, '0')

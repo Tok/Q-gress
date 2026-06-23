@@ -567,6 +567,7 @@ object Scene3D {
         // the gameplay shatter and the title wordmark fly their pieces out from it via BlastModel.
         val origin = doubleArrayOf(sx, sy, gz + BlastModel.cloudHeight(level))
         ShatterFx.recordBlast(origin, level) // shatter pieces arc up-and-out, energy ∝ level / distance
+        DamageNumberFx.applyBlast(origin, level) // already-falling damage digits get flung too
         TitleWordmark.flash(origin, level) // title letters get shoved (no-op until loaded)
         triggerShieldWaves(location, level) // nearby shields ripple as they absorb the blast
         val ll = simPosToLngLat(location) // buildings within the XMP's blast radius bob + settle (US rocks harder)
