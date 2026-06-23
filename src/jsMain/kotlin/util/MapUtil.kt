@@ -351,8 +351,9 @@ object MapUtil {
     }
 
     private var ownBuildingsSwapped = false
-    private const val BUILD_TERRAIN_RETRIES = 24 // ~7 s max, waiting only for the terrain height grid
+    private const val BUILD_TERRAIN_RETRIES = 40 // ~12 s max, waiting for terrain heights + the building stash
     private const val BUILD_TERRAIN_RETRY_MS = 300
+    private const val SHADOW_CAPTURE_TIMEOUT_MS = 6000 // wait this long for the shadow map to finish loading buildings
 
     /**
      * Mesh our OWN buildings from the footprints captured off the full-zoom shadow map at grid time (so
@@ -365,8 +366,8 @@ object MapUtil {
     private fun buildOwnBuildings(attempt: Int) {
         if (demoMode || !Styles.use3DBuildings || ownBuildingsSwapped) return
         val m = initMap ?: return
-        if (!Scene3D.terrainReady() && attempt < BUILD_TERRAIN_RETRIES) { // brief wait for terrain z only
-            window.setTimeout({ buildOwnBuildings(attempt + 1) }, BUILD_TERRAIN_RETRY_MS)
+        if ((!Scene3D.terrainReady() || !OwnBuildings.hasStash()) && attempt < BUILD_TERRAIN_RETRIES) {
+            window.setTimeout({ buildOwnBuildings(attempt + 1) }, BUILD_TERRAIN_RETRY_MS) // wait for terrain z + stash
             return
         }
         ownBuildingsSwapped = true
@@ -573,13 +574,28 @@ object MapUtil {
         if (!demoMode) LoadingOverlay.detail("Tracing roads, water & terrain…")
         val grid = createGrid(imageData, width, height)
         if (!demoMode) LoadingOverlay.detail("Walkable ground: ${(World.walkability * 100).toInt()}% · reading place names…")
-        shadowMap?.let {
-            PortalNames.build(it) // query POI/street names while the tiles are loaded…
-            OwnBuildings.capture(it.asDynamic()) // …and ALL building footprints (full-zoom → complete)
-        }
-        teardownShadowMap() // grid + names are read — destroy the shadow map to free its WebGL context
+        shadowMap?.let { PortalNames.build(it) } // names: POIs are loaded by now (low-zoom layer)
+        // Buildings (source-layer minzoom 14) often aren't fully in yet — wait for the shadow map to go
+        // idle (all z14 tiles loaded) before capturing footprints, THEN tear it down. A timeout fallback
+        // ensures we never leak the map if idle doesn't fire.
+        captureBuildingsThenTeardown()
         captureAnchor()
         callback(grid)
+    }
+
+    private var buildingsCaptured = false
+
+    private fun captureBuildingsThenTeardown() {
+        val sm = shadowMap ?: return
+        buildingsCaptured = false
+        fun grab() {
+            if (buildingsCaptured) return
+            buildingsCaptured = true
+            shadowMap?.let { OwnBuildings.capture(it.asDynamic()) } // all building footprints, fully loaded
+            teardownShadowMap()
+        }
+        sm.once("idle") { grab() }
+        window.setTimeout({ grab() }, SHADOW_CAPTURE_TIMEOUT_MS) // fallback: don't leak the shadow map
     }
 
     /**

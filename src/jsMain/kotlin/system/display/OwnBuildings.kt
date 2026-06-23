@@ -50,6 +50,9 @@ object OwnBuildings {
     /** The captured features — for seeding the debris colliders. */
     fun stashedFeatures(): dynamic = stashed
 
+    /** Whether buildings have been captured off the shadow map yet (it loads them asynchronously). */
+    fun hasStash() = stashed != null
+
     fun register(scene: Three.Scene) {
         group = Three.Group().also { scene.add(it) }
         val p: dynamic = js("({})")
