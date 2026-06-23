@@ -19,7 +19,7 @@ object TitleWordmark {
     private const val DEPTH = 2.2 // extrude depth (the 3D "thickness" / black backline)
     private const val SPACING = 1.6 // gap between letters
     private const val DIST = 64.0 // how far in front of the camera the wordmark floats
-    private const val Y_OFFSET = 24.0 // raise it into the upper part of the frame (above the action)
+    private const val Y_OFFSET = 9.0 // raise it into the upper part of the frame (above the action), but in view
     private const val STIFF = 70.0 // spring stiffness for the flash reaction
     private const val DAMP = 7.0 // spring damping (settles with a little overshoot)
     private const val IMPULSE = 9.0 // spin kick on an XMP flash
