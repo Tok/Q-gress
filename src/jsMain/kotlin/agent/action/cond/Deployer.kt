@@ -38,7 +38,8 @@ object Deployer : ConditionalAction {
         .filter { it is Shield || it is HeatSink }
         .minByOrNull { if (it is Shield) 0 else 1 }
 
-    private fun canDeployMod(agent: Agent): Boolean = agent.actionPortal.isFriendlyTo(agent) && agent.actionPortal.hasFreeModSlot() && deployableMod(agent) != null
+    private fun canDeployMod(agent: Agent): Boolean =
+        agent.actionPortal.isFriendlyTo(agent) && agent.actionPortal.hasFreeModSlot() && deployableMod(agent) != null
 
     override fun performAction(agent: Agent): Agent {
         // One thing per action: a resonator if one fits, else a mod into a free slot.
@@ -96,7 +97,8 @@ object Deployer : ConditionalAction {
     private fun allowedResoLevels(agent: Agent): Map<ResonatorLevel, Int> = agent.actionPortal.findAllowedResoLevels(agent)
 
     private fun ownedInPortal(agent: Agent) = agent.actionPortal.slots.filter { it.value.isOwnedBy(agent) }.toList()
-    private fun inventoryResos(inv: Inventory) = inv.items.filter { it is Resonator }.map { it as Resonator }.sortedByDescending { it.level }
+    private fun inventoryResos(inv: Inventory) =
+        inv.items.filter { it is Resonator }.map { it as Resonator }.sortedByDescending { it.level }
 
     private fun maxDeployable(ownedInPortal: List<Pair<Octant, ResonatorSlot>>, reso: Resonator): Int {
         val owned =
@@ -112,5 +114,6 @@ object Deployer : ConditionalAction {
         .toList()
 
     // Possible exactly when an actual target exists — same gate Portal.deploy uses (no loop).
-    private fun canDeployReso(reso: Resonator, ownedInPortal: List<Pair<Octant, ResonatorSlot>>, agent: Agent): Boolean = deployTargetFor(agent, ownedInPortal, reso) != null
+    private fun canDeployReso(reso: Resonator, ownedInPortal: List<Pair<Octant, ResonatorSlot>>, agent: Agent): Boolean =
+        deployTargetFor(agent, ownedInPortal, reso) != null
 }

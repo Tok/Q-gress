@@ -82,16 +82,8 @@ external object Three {
         radialSegments: dynamic = definedExternally,
         tubularSegments: dynamic = definedExternally,
     )
-    class RingGeometry(
-        innerRadius: dynamic,
-        outerRadius: dynamic,
-        thetaSegments: dynamic = definedExternally,
-    )
-    class SphereGeometry(
-        radius: dynamic,
-        widthSegments: dynamic = definedExternally,
-        heightSegments: dynamic = definedExternally,
-    )
+    class RingGeometry(innerRadius: dynamic, outerRadius: dynamic, thetaSegments: dynamic = definedExternally)
+    class SphereGeometry(radius: dynamic, widthSegments: dynamic = definedExternally, heightSegments: dynamic = definedExternally)
     class CylinderGeometry(
         radiusTop: dynamic,
         radiusBottom: dynamic,
@@ -106,22 +98,11 @@ external object Three {
         val holes: dynamic
     }
     class Path {
-        fun absellipse(
-            aX: dynamic,
-            aY: dynamic,
-            xRadius: dynamic,
-            yRadius: dynamic,
-            startAngle: dynamic,
-            endAngle: dynamic,
-        )
+        fun absellipse(aX: dynamic, aY: dynamic, xRadius: dynamic, yRadius: dynamic, startAngle: dynamic, endAngle: dynamic)
     }
     class ShapeGeometry(shapes: dynamic)
     class ExtrudeGeometry(shapes: dynamic, options: dynamic = definedExternally)
-    class ConeGeometry(
-        radius: dynamic,
-        height: dynamic,
-        radialSegments: dynamic = definedExternally,
-    )
+    class ConeGeometry(radius: dynamic, height: dynamic, radialSegments: dynamic = definedExternally)
     class DodecahedronGeometry(radius: dynamic = definedExternally)
     class BufferGeometry {
         fun setFromPoints(points: dynamic): BufferGeometry

@@ -29,5 +29,8 @@ object Refactorer : ConditionalAction {
 
     private fun virusTypeFor(faction: Faction) = if (faction == Faction.ENL) VirusType.ADA_REFACTOR else VirusType.JARVIS_VIRUS
 
-    private fun matchingVirus(agent: Agent): Virus? = agent.inventory.items.filterIsInstance<Virus>().firstOrNull { it.type == virusTypeFor(agent.faction) }
+    private fun matchingVirus(agent: Agent): Virus? = agent.inventory.items.filterIsInstance<Virus>().firstOrNull {
+        it.type ==
+            virusTypeFor(agent.faction)
+    }
 }

@@ -156,6 +156,10 @@ and consider shaping fitness for *interesting* play (follow-up, not v1).
   **functional-core split** (extract pure logic into `commonMain` + a `jvm()` test target, run Kover
   there). Until then the gates are ktlint + detekt + tests. (6.0/6.1 are the natural place to start
   the split.)
+- **Tighten max line length 140 → 120.** Line length is now enforced at **140** (`.editorconfig`).
+  Dropping to **120** is deferred: ktlint auto-wraps offenders into more physical lines, which inflates
+  detekt's `LargeClass` count — so it needs to land alongside the class extractions below (`Scene3D`,
+  and any others near the 600-line cap like `HtmlUtil`/`MapUtil`). Do it as a dedicated refactor pass.
 
 ## Balance note (recruit-rush, root cause)
 `ActionSelector` picks by weighted-random over `slider × weight`. Recruiting adds agents (up to a

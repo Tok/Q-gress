@@ -68,7 +68,14 @@ object ShatterFx {
     private val activeShards = mutableListOf<Shard>()
     private val sinkingPoles = mutableListOf<SinkPole>()
 
-    private class Shard(val mesh: dynamic, val mat: dynamic, val body: Cannon.Body, var age: Double, val life: Double, val setFade: (Double) -> Unit)
+    private class Shard(
+        val mesh: dynamic,
+        val mat: dynamic,
+        val body: Cannon.Body,
+        var age: Double,
+        val life: Double,
+        val setFade: (Double) -> Unit,
+    )
     private class SinkPole(val mesh: dynamic, val poleH: Double, var age: Double)
 
     /** Create the physics world + the shards group (once, when the scene is set up). */
@@ -171,7 +178,10 @@ object ShatterFx {
         world.addBody(body)
         group.add(mesh)
         activeShards.add(
-            Shard(mesh, mat, body, 0.0, SHARD_LIFE_MIN + Util.random() * (SHARD_LIFE_MAX - SHARD_LIFE_MIN)) { f -> mat.asDynamic().opacity = f },
+            Shard(mesh, mat, body, 0.0, SHARD_LIFE_MIN + Util.random() * (SHARD_LIFE_MAX - SHARD_LIFE_MIN)) { f ->
+                mat.asDynamic().opacity =
+                    f
+            },
         )
     }
 
@@ -205,12 +215,19 @@ object ShatterFx {
         val body = Cannon.Body(opts)
         body.asDynamic().quaternion.setFromEuler(PI / 2, 0.0, 0.0) // upright like in the slot
         val push = blastPush(x, y, z)
-        body.asDynamic().velocity.set((Util.random() - 0.5) * 4.0 + push[0], (Util.random() - 0.5) * 4.0 + push[1], Util.random() * 2.0 + push[2])
+        body.asDynamic().velocity.set(
+            (Util.random() - 0.5) * 4.0 + push[0],
+            (Util.random() - 0.5) * 4.0 + push[1],
+            Util.random() * 2.0 + push[2],
+        )
         body.asDynamic().angularVelocity.set(randSpin(), randSpin(), randSpin())
         w.addBody(body)
         group.add(mesh)
         activeShards.add(
-            Shard(mesh, mat, body, 0.0, SHARD_LIFE_MIN + Util.random() * (SHARD_LIFE_MAX - SHARD_LIFE_MIN)) { f -> mat.asDynamic().opacity = f },
+            Shard(mesh, mat, body, 0.0, SHARD_LIFE_MIN + Util.random() * (SHARD_LIFE_MAX - SHARD_LIFE_MIN)) { f ->
+                mat.asDynamic().opacity =
+                    f
+            },
         )
     }
 
@@ -243,12 +260,19 @@ object ShatterFx {
         opts.collisionFilterMask = SHARD_MASK
         val body = Cannon.Body(opts)
         val push = blastPush(x, y, z)
-        body.asDynamic().velocity.set((Util.random() - 0.5) * 4.0 + push[0], (Util.random() - 0.5) * 4.0 + push[1], Util.random() * 2.0 + push[2])
+        body.asDynamic().velocity.set(
+            (Util.random() - 0.5) * 4.0 + push[0],
+            (Util.random() - 0.5) * 4.0 + push[1],
+            Util.random() * 2.0 + push[2],
+        )
         body.asDynamic().angularVelocity.set(randSpin(), randSpin(), randSpin())
         w.addBody(body)
         group.add(mesh)
         activeShards.add(
-            Shard(mesh, mat, body, 0.0, SHARD_LIFE_MIN + Util.random() * (SHARD_LIFE_MAX - SHARD_LIFE_MIN)) { f -> mat.asDynamic().opacity = f },
+            Shard(mesh, mat, body, 0.0, SHARD_LIFE_MIN + Util.random() * (SHARD_LIFE_MAX - SHARD_LIFE_MIN)) { f ->
+                mat.asDynamic().opacity =
+                    f
+            },
         )
     }
 

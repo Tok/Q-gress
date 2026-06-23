@@ -115,7 +115,10 @@ object PortalNames {
         return if (lng != null && lat != null) doubleArrayOf(lng as Double, lat as Double) else null
     }
 
-    private fun project(raw: List<Triple<Double, Double, String>>): List<Pair<Pos, String>> = raw.map { (lng, lat, name) -> Scene3D.lngLatToSimPos(lng, lat) to name }
+    private fun project(raw: List<Triple<Double, Double, String>>): List<Pair<Pos, String>> = raw.map { (lng, lat, name) ->
+        Scene3D.lngLatToSimPos(lng, lat) to
+            name
+    }
 
     private fun nearest(list: List<Pair<Pos, String>>, loc: Pos, radius: Double): String? {
         var best: String? = null

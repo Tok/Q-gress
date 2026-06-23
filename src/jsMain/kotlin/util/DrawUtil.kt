@@ -70,14 +70,7 @@ object DrawUtil {
         }
     }
 
-    fun drawCircle(
-        ctx: Ctx,
-        circle: Circle,
-        stroke: String,
-        lineWidth: Double,
-        fill: String? = null,
-        alpha: Double = 1.0,
-    ) {
+    fun drawCircle(ctx: Ctx, circle: Circle, stroke: String, lineWidth: Double, fill: String? = null, alpha: Double = 1.0) {
         ctx.globalAlpha = alpha
         ctx.strokeStyle = stroke
         ctx.lineWidth = lineWidth

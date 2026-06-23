@@ -76,7 +76,9 @@ object Scene3D {
     private const val ENERGY_BAR_OPACITY = 0.9
     private const val ENERGY_BAR_FILL_FRAC = 1.06 // fill slightly fatter than the black backing so it reads
     private const val ENERGY_BAR_EPS = 0.08 // fill overhangs the backing caps by this → no z-fighting when full
-    private const val ENERGY_BAR_MAX_H = INDICATOR_SIZE * 3.0 // tallest bar (at max XM capacity); coin foreshortens flat so on-screen it reads taller
+
+    // tallest bar (at max XM capacity); coin foreshortens flat so on-screen it reads taller
+    private const val ENERGY_BAR_MAX_H = INDICATOR_SIZE * 3.0
     private const val MAX_XM_CAPACITY = 14400 // Agent.xmCapacity at L16+ (where capacity stops growing)
     private const val LABEL_W = 22.0 // portal name/level billboard width (scene metres)
     private const val LABEL_GAP = 4.0 // gap above the orb top before the label
@@ -108,7 +110,9 @@ object Scene3D {
     private const val MOD_R_FRAC = 0.16 // chrome mod radius (× orb radius)
     private const val MOD_SCALE = 1.2 // scale the mod solids up a touch (they read bland at base size)
     private const val MOD_WIRE_SCALE = 1.01 // black edge cage right on the surface (no visible gap)
-    private const val MOD_RING_FRAC = 0.55 // tetrahedron vertex distance from orb centre (× orb radius); nudged out so mods clear the link joint
+
+    // tetrahedron vertex distance from orb centre (× orb radius); nudged out so mods clear the link joint
+    private const val MOD_RING_FRAC = 0.55
 
     // Unit regular-tetrahedron vertices (magnitude √3); the 4 mod slots sit at these inside the orb.
     private val TETRA = arrayOf(
@@ -172,7 +176,15 @@ object Scene3D {
     private var flaskVariants: List<List<dynamic>> = emptyList()
     private var flaskScale = 1.0 // scale a flask variant to ≈ the portal top sphere
     private var showcaseGroup: dynamic = null // demo-scene placed portals (not cleared by sync)
-    private class Showcase(val group: dynamic, val parts: Array<dynamic>, val pos: Pos, var level: Int, val color: String, var hackAge: Double, var growAge: Double) {
+    private class Showcase(
+        val group: dynamic,
+        val parts: Array<dynamic>,
+        val pos: Pos,
+        var level: Int,
+        val color: String,
+        var hackAge: Double,
+        var growAge: Double,
+    ) {
         var hackGlyph: Boolean = false // the active hack is a (stronger) glyph hack
     }
     private val showcases = mutableListOf<Showcase>()
@@ -211,12 +223,18 @@ object Scene3D {
     // EdgesGeometry per mod shape (cached): only the real polygon edges, not the triangulation.
     private val modEdgesCache = mutableMapOf<ModType, dynamic>()
     private fun modEdges(type: ModType): dynamic = modEdgesCache.getOrPut(type) { Three.EdgesGeometry(modGeoFor(type)) }
-    private val pentaGeo: dynamic by lazy { Three.CylinderGeometry(TOP_R * MOD_R_FRAC, TOP_R * MOD_R_FRAC, TOP_R * MOD_R_FRAC * 0.55, 5) } // heat-sink radiator
-    private val cubeGeo: dynamic by lazy { Three.BoxGeometry(TOP_R * MOD_R_FRAC * 1.1, TOP_R * MOD_R_FRAC * 1.1, TOP_R * MOD_R_FRAC * 1.1) } // link amp
+    private val pentaGeo: dynamic by lazy {
+        Three.CylinderGeometry(TOP_R * MOD_R_FRAC, TOP_R * MOD_R_FRAC, TOP_R * MOD_R_FRAC * 0.55, 5)
+    } // heat-sink radiator
+    private val cubeGeo: dynamic by lazy {
+        Three.BoxGeometry(TOP_R * MOD_R_FRAC * 1.1, TOP_R * MOD_R_FRAC * 1.1, TOP_R * MOD_R_FRAC * 1.1)
+    } // link amp
     private val shieldGeo: dynamic by lazy { Three.SphereGeometry(TOP_R * PHI, 24, 18) } // shield bubble at φ× the orb
     private val gasketGeo: dynamic by lazy { Three.TorusGeometry(POLE_R * 1.15, POLE_R * 0.4, 10, 20) } // rubber donut
     private val linkGeo: dynamic by lazy { Three.CylinderGeometry(LINK_R, LINK_R, 1.0, 8) } // unit glass tube (scaled to length)
-    private val coreGeo: dynamic by lazy { Three.CylinderGeometry(LINK_R * CORE_R_FRAC, LINK_R * CORE_R_FRAC, 1.0, 6) } // bright filament inside the tube
+    private val coreGeo: dynamic by lazy {
+        Three.CylinderGeometry(LINK_R * CORE_R_FRAC, LINK_R * CORE_R_FRAC, 1.0, 6)
+    } // bright filament inside the tube
     private val linkJointGeo: dynamic by lazy { Three.SphereGeometry(LINK_R * 1.5, 12, 12) } // ball-joint, a bit fatter than the tube
     private val resoRingGeo: dynamic by lazy { Three.TorusGeometry(RESO_RING_R, RESO_RING_TUBE, 8, 14) } // rubber slot grommet
     private val indicatorGeo: dynamic by lazy {
@@ -317,7 +335,14 @@ object Scene3D {
         map.triggerRepaint()
     }
 
-    private fun hasActiveEffects() = ShatterFx.hasActive() || showcasesAnimating() || HackFx.hasActive() || DeployFx.hasActive() || XmFx.hasActive() || XmpBurst.hasActive() || FieldFx.hasActive() || BoltFx.hasActive()
+    private fun hasActiveEffects() = ShatterFx.hasActive() ||
+        showcasesAnimating() ||
+        HackFx.hasActive() ||
+        DeployFx.hasActive() ||
+        XmFx.hasActive() ||
+        XmpBurst.hasActive() ||
+        FieldFx.hasActive() ||
+        BoltFx.hasActive()
 
     // Advance whatever transient FX are live (each self-guards). Split out of render() to keep it simple.
     private fun updateEffects(map: MapLibre.Map, dt: Double, invProj: dynamic) {
@@ -477,13 +502,24 @@ object Scene3D {
     /** A collected stray-XM mote flies from [from] (the heap) to [to] (the agent) before vanishing. */
     fun collectXmFx(from: Pos, to: Pos) {
         scene ?: return
-        XmFx.spawn(doubleArrayOf(sceneX(from), sceneY(from), groundZ(from) + XM_Z), doubleArrayOf(sceneX(to), sceneY(to), groundZ(to) + HEAD_Z))
+        XmFx.spawn(
+            doubleArrayOf(sceneX(from), sceneY(from), groundZ(from) + XM_Z),
+            doubleArrayOf(
+                sceneX(to),
+                sceneY(to),
+                groundZ(to) + HEAD_Z,
+            ),
+        )
     }
 
     /** Hack/glyph loot: [count] motes drop from the portal's orb top down to the hacking agent. */
     fun rewardFx(portalLocation: Pos, level: Int, to: Pos, count: Int) {
         scene ?: return
-        val top = doubleArrayOf(sceneX(portalLocation), sceneY(portalLocation), groundZ(portalLocation) + orbCenterZ(level.coerceAtLeast(1).toDouble()))
+        val top = doubleArrayOf(
+            sceneX(portalLocation),
+            sceneY(portalLocation),
+            groundZ(portalLocation) + orbCenterZ(level.coerceAtLeast(1).toDouble()),
+        )
         val dst = doubleArrayOf(sceneX(to), sceneY(to), groundZ(to) + HEAD_Z)
         repeat(count.coerceAtMost(8)) { XmFx.spawn(top, dst) }
     }
@@ -496,7 +532,15 @@ object Scene3D {
         val half = TOP_R * MOD_R_FRAC * s
         val gz = groundZ(location)
         mods.forEach { mod ->
-            ShatterFx.spawnFallingChunk(modGeoFor(mod.modType()), sceneX(location), sceneY(location), gz + orbCenterZ(lv), s, half, mod.rarity.color)
+            ShatterFx.spawnFallingChunk(
+                modGeoFor(mod.modType()),
+                sceneX(location),
+                sceneY(location),
+                gz + orbCenterZ(lv),
+                s,
+                half,
+                mod.rarity.color,
+            )
         }
     }
 
@@ -711,7 +755,15 @@ object Scene3D {
         CaptureFx.check(id, baseColor) { old ->
             if (old == NEUTRAL_COLOR) return@check
             val lv = displayedLevel[id] ?: level
-            ShatterFx.shatterOrb(sceneX(portal.location), sceneY(portal.location), gz + orbCenterZ(lv), orbScale(lv), old, flaskVariants, flaskScale)
+            ShatterFx.shatterOrb(
+                sceneX(portal.location),
+                sceneY(portal.location),
+                gz + orbCenterZ(lv),
+                orbScale(lv),
+                old,
+                flaskVariants,
+                flaskScale,
+            )
             SoundUtil.playGlassShatterSound(portal.location, CAPTURE_SHATTER_WEIGHT)
         }
         val reform = CaptureFx.reformFactor(id)
@@ -919,7 +971,10 @@ object Scene3D {
 
     private fun activeShowcase() = selectedShowcase ?: showcases.lastOrNull()
 
-    private fun showcaseNear(location: Pos): Showcase? = showcases.minByOrNull { it.pos.distanceTo(location) }?.takeIf { it.pos.distanceTo(location) < SHOWCASE_SELECT_R }
+    private fun showcaseNear(location: Pos): Showcase? = showcases.minByOrNull { it.pos.distanceTo(location) }?.takeIf {
+        it.pos.distanceTo(location) <
+            SHOWCASE_SELECT_R
+    }
 
     /** Demo LMB: select the portal under the cursor, or place a new one if the spot is clear (so two
      *  portals can't be stacked and existing ones can be picked, not replaced). Returns true if it
@@ -1176,10 +1231,15 @@ object Scene3D {
     // (addPortal updates displayedLevel before addField/addLink run in sync, so this reads fresh.)
     private fun displayedOrbLevel(portal: Portal): Double = displayedLevel["portal:${portal.id}"] ?: portal.getLevel().toInt().toDouble()
 
-    private fun orbPos(portal: Portal): DoubleArray = doubleArrayOf(sceneX(portal.location), sceneY(portal.location), groundZ(portal.location) + orbCenterZ(displayedOrbLevel(portal)))
+    private fun orbPos(portal: Portal): DoubleArray = doubleArrayOf(
+        sceneX(portal.location),
+        sceneY(portal.location),
+        groundZ(portal.location) + orbCenterZ(displayedOrbLevel(portal)),
+    )
 
     /** Stable id for a field, independent of which corner is "origin" (its three portals, sorted). */
-    private fun fieldId(field: Field): String = listOf(field.origin.id, field.primaryAnchor.id, field.secondaryAnchor.id).sorted().joinToString("|", "field:")
+    private fun fieldId(field: Field): String =
+        listOf(field.origin.id, field.primaryAnchor.id, field.secondaryAnchor.id).sorted().joinToString("|", "field:")
 
     private fun lineMaterial(color: String): dynamic = materialCache.getOrPut("l$color") {
         val p: dynamic = js("({})")

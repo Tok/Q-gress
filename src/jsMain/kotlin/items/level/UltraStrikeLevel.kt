@@ -24,7 +24,8 @@ enum class UltraStrikeLevel(val level: Int, val damage: Int, val rangeM: Int, va
 
     companion object {
         fun find(level: Int, quality: Quality): UltraStrikeLevel = valueOf(clipLevel(level + quality.addLevels))
-        fun valueOf(level: Int) = UltraStrikeLevel.values().find { it.level == clipLevel(level) } ?: error("No UltraStrikeLevel for level $level")
+        fun valueOf(level: Int) =
+            UltraStrikeLevel.values().find { it.level == clipLevel(level) } ?: error("No UltraStrikeLevel for level $level")
         private fun clipLevel(level: Int): Int = max(1, min(level, 8))
     }
 }

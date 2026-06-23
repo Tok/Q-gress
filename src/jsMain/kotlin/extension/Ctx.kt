@@ -13,6 +13,7 @@ fun Ctx.drawImage(image: Canvas, x: Int, y: Int) = this.drawImage(image, x.toDou
 
 fun Ctx.drawImage(image: Canvas, rect: Line) = this.drawImage(image, rect.fromX, rect.fromY, rect.w, rect.h)
 
-fun Ctx.drawImage(image: Canvas, x: Int, y: Int, w: Int, h: Int) = this.drawImage(image, x.toDouble(), y.toDouble(), w.toDouble(), h.toDouble())
+fun Ctx.drawImage(image: Canvas, x: Int, y: Int, w: Int, h: Int) =
+    this.drawImage(image, x.toDouble(), y.toDouble(), w.toDouble(), h.toDouble())
 
 fun Ctx.getImageData(x: Int, y: Int, w: Int, h: Int) = this.getImageData(x.toDouble(), y.toDouble(), w.toDouble(), h.toDouble())

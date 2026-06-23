@@ -61,7 +61,9 @@ object TuningPanel {
     // Stable order both factions' values are serialized in (Actions then Destinations) — the share link.
     private fun orderedQValues(): List<QValue> = QActions.values().toList() + QDestinations.values().toList()
 
-    private fun sliderInput(qValue: QValue, faction: Faction): HTMLInputElement? = document.getElementById(qValue.sliderId + faction.nickName) as? HTMLInputElement
+    private fun sliderInput(qValue: QValue, faction: Faction): HTMLInputElement? = document.getElementById(
+        qValue.sliderId + faction.nickName,
+    ) as? HTMLInputElement
 
     /** Serialize both factions' tuning as "enl,…|res,…" for the share link (empty until the panel is built). */
     fun exportTuning(): String {

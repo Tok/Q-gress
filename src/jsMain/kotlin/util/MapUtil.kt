@@ -23,132 +23,6 @@ import kotlin.math.log2
 import kotlin.math.roundToInt
 
 object MapUtil {
-    // --- Open, keyless tile sources (no access token / billing) -------------
-    // Street backdrop: hosted OpenFreeMap style. Satellite: Esri World Imagery
-    // raster. Passability "shadow": OpenFreeMap vector tiles rendered as a
-    // white-roads-on-black mask that we read back via WebGL.
-    private const val OPENMAPTILES_URL = "https://tiles.openfreemap.org/planet"
-    private const val STREET_STYLE_URL = "https://tiles.openfreemap.org/styles/positron"
-    private const val ESRI_IMAGERY_TILES =
-        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-
-    // Keyless DEM: AWS "Terrain Tiles" (Mapzen terrarium PNG encoding), CORS-enabled, no token.
-    private const val TERRAIN_DEM_TILES = "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"
-    private const val TERRAIN_SOURCE = "terrain"
-    private const val TERRAIN_EXAGGERATION = 1.3 // height boost; tune for relief vs realism
-    private const val SKY_COLOR = "#2a6cc9" // sky overhead (deep blue, slight cyan)
-    private const val SKY_HORIZON_COLOR = "#bfe0f5" // pale cyan at the horizon
-    private const val SKY_FOG_COLOR = "#dfeefb" // soft haze where the ground meets the sky
-
-    // Cap the satellite source at its globally-available native zoom; past this MapLibre upscales the
-    // last good tiles (a little blurry) instead of showing "map data not yet available" placeholders.
-    private const val SATELLITE_MAX_NATIVE_ZOOM = 19
-
-    private val SATELLITE_STYLE = """{
-        "version": 8,
-        "glyphs": "https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf",
-        "sources": {
-            "satellite": {
-                "type": "raster",
-                "tiles": ["$ESRI_IMAGERY_TILES"],
-                "tileSize": 256,
-                "maxzoom": $SATELLITE_MAX_NATIVE_ZOOM,
-                "attribution": "Imagery © Esri, Maxar, Earthstar Geographics"
-            },
-            "$TERRAIN_SOURCE": {
-                "type": "raster-dem",
-                "encoding": "terrarium",
-                "tiles": ["$TERRAIN_DEM_TILES"],
-                "tileSize": 256,
-                "maxzoom": 15,
-                "attribution": "Elevation © Mapzen, AWS Terrain Tiles"
-            },
-            "openmaptiles": { "type": "vector", "url": "$OPENMAPTILES_URL" }
-        },
-        "layers": [
-            { "id": "satellite", "type": "raster", "source": "satellite", "paint": { "raster-saturation": -1 } }
-        ]
-    }"""
-
-    // Demo scenes: a plain gray backdrop so effects/portals read clearly. The satellite raster is
-    // present but hidden (visibility:none) so a demo checkbox can toggle it on via setLayoutProperty.
-    private val DEMO_STYLE = """{
-        "version": 8,
-        "glyphs": "https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf",
-        "sources": {
-            "satellite": { "type": "raster", "tiles": ["$ESRI_IMAGERY_TILES"], "tileSize": 256, "maxzoom": $SATELLITE_MAX_NATIVE_ZOOM },
-            "$TERRAIN_SOURCE": { "type": "raster-dem", "encoding": "terrarium", "tiles": ["$TERRAIN_DEM_TILES"], "tileSize": 256, "maxzoom": 15 },
-            "openmaptiles": { "type": "vector", "url": "$OPENMAPTILES_URL" }
-        },
-        "layers": [
-            { "id": "bg", "type": "background", "paint": { "background-color": "#8c8c8c" } },
-            { "id": "satellite", "type": "raster", "source": "satellite", "layout": { "visibility": "none" } }
-        ]
-    }"""
-
-    // Grayscale passability mask, read back via readPixels to build the movement grid.
-    // Brightness = walkability: white roads/paths (cheap) > bright-grey grass/park > darker-grey
-    // default ground (high penalty) > black buildings & water (impassable). Layer order matters
-    // (later paints over earlier): roads sit on top, so bridges/streets stay walkable.
-    private val SHADOW_STYLE = """{
-        "version": 8,
-        "sources": {
-            "openmaptiles": { "type": "vector", "url": "$OPENMAPTILES_URL" }
-        },
-        "layers": [
-            { "id": "bg", "type": "background", "paint": { "background-color": "#555555" } },
-            {
-                "id": "landcover",
-                "type": "fill",
-                "source": "openmaptiles",
-                "source-layer": "landcover",
-                "paint": { "fill-color": ["match", ["get", "class"],
-                    "wood", "#6e6e6e",
-                    "wetland", "#5e5e5e",
-                    ["grass", "farmland", "scrub"], "#9a9a9a",
-                    ["sand", "rock", "ice"], "#cccccc",
-                    "#9a9a9a"
-                ] }
-            },
-            {
-                "id": "landuse-green",
-                "type": "fill",
-                "source": "openmaptiles",
-                "source-layer": "landuse",
-                "filter": ["match", ["get", "class"],
-                    ["park", "garden", "recreation_ground", "pitch", "grass", "cemetery"], true, false],
-                "paint": { "fill-color": ["match", ["get", "class"],
-                    ["pitch", "recreation_ground"], "#bdbdbd",
-                    "#9a9a9a"
-                ] }
-            },
-            {
-                "id": "water",
-                "type": "fill",
-                "source": "openmaptiles",
-                "source-layer": "water",
-                "paint": { "fill-color": "#000000" }
-            },
-            {
-                "id": "buildings",
-                "type": "fill",
-                "source": "openmaptiles",
-                "source-layer": "building",
-                "paint": { "fill-color": "#000000" }
-            },
-            {
-                "id": "roads",
-                "type": "line",
-                "source": "openmaptiles",
-                "source-layer": "transportation",
-                "paint": {
-                    "line-color": "#ffffff",
-                    "line-width": ["interpolate", ["linear"], ["zoom"], 14, 6, 18, 24]
-                }
-            }
-        ]
-    }"""
-
     private fun mapOptions(container: String, style: dynamic, preserveBuffer: Boolean): dynamic {
         val opts: dynamic = js("({})")
         opts.container = container
@@ -161,15 +35,15 @@ object MapUtil {
     }
 
     private fun initInitialMapbox(): MapLibre.Map {
-        val style = if (demoMode) DEMO_STYLE else SATELLITE_STYLE
+        val style = if (demoMode) MapStyles.DEMO_STYLE else MapStyles.SATELLITE_STYLE
         return MapLibre.Map(mapOptions(INITIAL_MAP, JSON.parse<Json>(style), false))
     }
 
-    private fun initMapbox(): MapLibre.Map = MapLibre.Map(mapOptions(MAP, STREET_STYLE_URL, false))
+    private fun initMapbox(): MapLibre.Map = MapLibre.Map(mapOptions(MAP, MapStyles.STREET_STYLE_URL, false))
 
     // preserveDrawingBuffer is required so the rendered street mask can be read
     // back with gl.readPixels (otherwise the buffer is cleared after compositing).
-    private fun initShadowMap(): MapLibre.Map = MapLibre.Map(mapOptions(SHADOW_MAP, JSON.parse<Json>(SHADOW_STYLE), true))
+    private fun initShadowMap(): MapLibre.Map = MapLibre.Map(mapOptions(SHADOW_MAP, JSON.parse<Json>(MapStyles.SHADOW_STYLE), true))
 
     private const val INITIAL_MAP = "initialMap"
     private const val MAP = "map"
@@ -297,7 +171,8 @@ object MapUtil {
         if (t < 1.0) window.requestAnimationFrame { stepInflate() }
     }
 
-    private fun inflateExpr(factor: Double, prop: String, fallback: Int): Json = JSON.parse("""["*", $factor, ["coalesce", ["get", "$prop"], $fallback]]""")
+    private fun inflateExpr(factor: Double, prop: String, fallback: Int): Json =
+        JSON.parse("""["*", $factor, ["coalesce", ["get", "$prop"], $fallback]]""")
 
     private fun spinBuild() {
         if (!cinematicActive) return
@@ -352,7 +227,8 @@ object MapUtil {
         opts.center = anchorCenter // hold the centre on the action area → portals stay framed
         opts.bearing = (m.getBearing() as Double) + turn
         opts.pitch = TITLE_PITCH - 8.0 + Util.random() * 16.0 // gentle tilt variation around TITLE_PITCH
-        opts.zoom = titleZoom() + (Util.random() * 2.1 - 1.2) // -1.2..+0.9: dynamic, but never quite as close (letters were clipping terrain)
+        // -1.2..+0.9: dynamic, but never quite as close (letters were clipping terrain)
+        opts.zoom = titleZoom() + (Util.random() * 2.1 - 1.2)
         opts.duration = TITLE_LEG_MS
         m.asDynamic().easeTo(opts)
         window.setTimeout({ titleOrbitLeg() }, TITLE_LEG_MS.toInt())
@@ -403,7 +279,8 @@ object MapUtil {
         opts.center = center // keep the action framed (no fly-in to detail like the title does)
         opts.bearing = (ref.getBearing() as Double) + turn
         opts.pitch = AUTOCAM_PITCH - 6.0 + Util.random() * 12.0 // gentle tilt variation
-        opts.zoom = displayZoom() - AUTOCAM_ZOOM_LO + Util.random() * (AUTOCAM_ZOOM_LO + AUTOCAM_ZOOM_HI) // a bit wider … to a little closer
+        // a bit wider … to a little closer than the framed zoom
+        opts.zoom = displayZoom() - AUTOCAM_ZOOM_LO + Util.random() * (AUTOCAM_ZOOM_LO + AUTOCAM_ZOOM_HI)
         opts.duration = AUTOCAM_LEG_MS
         initMap?.asDynamic()?.easeTo(opts)
         map?.asDynamic()?.easeTo(opts)
@@ -691,7 +568,11 @@ object MapUtil {
         // carries corridors through) so flow fields / walkability / movement truly stay in the circle.
         val grid = maskToCircle(GridConnectivity.connectIslands(rawGrid, w, h), w, h)
         World.walkability = GridConnectivity.walkability(grid, w, h)
-        console.log("grid built: walkability ${(World.walkability * 100).toInt()}% (${GridConnectivity.components(rawGrid).size} islands connected)")
+        console.log(
+            "grid built: walkability ${(World.walkability * 100).toInt()}% (${GridConnectivity.components(
+                rawGrid,
+            ).size} islands connected)",
+        )
         if (Debug.enabled) logConnectivity(rawGrid, grid, w, h)
         if (Debug.mode == "capture") GridCapture.onGridBuilt(rawGrid, w, h) // raw passability snapshot for fixtures
         return grid
@@ -744,11 +625,11 @@ object MapUtil {
     // ground level so the terrain melts into the haze rather than ending on a hard line.
     private fun applySky(map: MapLibre.Map) {
         val sky: dynamic = js("({})")
-        sky["sky-color"] = SKY_COLOR
+        sky["sky-color"] = MapStyles.SKY_COLOR
         sky["sky-horizon-blend"] = 0.6
-        sky["horizon-color"] = SKY_HORIZON_COLOR
+        sky["horizon-color"] = MapStyles.SKY_HORIZON_COLOR
         sky["horizon-fog-blend"] = 0.5
-        sky["fog-color"] = SKY_FOG_COLOR
+        sky["fog-color"] = MapStyles.SKY_FOG_COLOR
         sky["fog-ground-blend"] = 0.4
         map.setSky(sky)
     }
@@ -756,8 +637,8 @@ object MapUtil {
     private fun applyTerrain(map: MapLibre.Map) {
         val opts: dynamic = if (terrainEnabled) js("({})") else null
         if (opts != null) {
-            opts.source = TERRAIN_SOURCE
-            opts.exaggeration = TERRAIN_EXAGGERATION
+            opts.source = MapStyles.TERRAIN_SOURCE
+            opts.exaggeration = MapStyles.TERRAIN_EXAGGERATION
         }
         map.asDynamic().setTerrain(opts)
     }

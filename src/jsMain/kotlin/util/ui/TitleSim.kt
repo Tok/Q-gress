@@ -81,7 +81,9 @@ object TitleSim {
             // live game (GridConnectivity.MIN_WALKABILITY), checked here because it needs the live readback.
             if (World.walkability < GridConnectivity.MIN_WALKABILITY && attempt < MAX_TITLE_RETRIES) {
                 val next = if (attempt + 1 >= MAX_TITLE_RETRIES) Locations.DEFAULT else Locations.randomTitle()
-                console.warn("Title location unplayable (walkability ${(World.walkability * 100).toInt()}%) — retrying at ${next.displayName}")
+                console.warn(
+                    "Title location unplayable (walkability ${(World.walkability * 100).toInt()}%) — retrying at ${next.displayName}",
+                )
                 loadTitleWorld(next.toJSON(), attempt + 1)
                 return
             }

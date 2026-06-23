@@ -51,7 +51,16 @@ data class ActionItem(val text: String, val durationSeconds: Int, val qName: Str
         private val resHiRes = hiResSet(Faction.RES)
         private val nonHiRes = hiResSet(null)
 
-        private fun hiResSet(faction: Faction?): Map<ActionItem, Canvas> = if (HtmlUtil.isRunningInBrowser()) values().mapNotNull { i -> drawTemplate(i, faction, ICON_HIRES_SCALE)?.let { i to it } }.toMap() else emptyMap()
+        private fun hiResSet(faction: Faction?): Map<ActionItem, Canvas> = if (HtmlUtil.isRunningInBrowser()) {
+            values().mapNotNull { i ->
+                drawTemplate(i, faction, ICON_HIRES_SCALE)?.let {
+                    i to
+                        it
+                }
+            }.toMap()
+        } else {
+            emptyMap()
+        }
 
         fun getIcon(item: ActionItem, faction: Faction? = null): Canvas = when (faction) {
             Faction.ENL -> enlImages[item] ?: requireNotNull(enlImages[WAIT]) { "missing ENL WAIT icon" }

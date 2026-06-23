@@ -6,12 +6,7 @@ import util.data.Line
 import kotlin.math.max
 import kotlin.math.sqrt
 
-data class Field private constructor(
-    val origin: Portal,
-    val primaryAnchor: Portal,
-    val secondaryAnchor: Portal,
-    val owner: Agent,
-) {
+data class Field private constructor(val origin: Portal, val primaryAnchor: Portal, val secondaryAnchor: Portal, val owner: Agent) {
     private val idSet: LinkedHashSet<Portal> = linkedSetOf(origin, primaryAnchor, secondaryAnchor)
     fun weakestPortal() = idSet.toList().sortedBy { it.calcHealth() }.last()
     fun strongestAnchors() = idSet.toList().sortedBy { it.calcHealth() }.take(2)
@@ -59,13 +54,10 @@ data class Field private constructor(
 
     companion object {
         const val destroyAp = 750
-        fun isPossible(
-            origin: Portal,
-            primaryAnchor: Portal,
-            secondaryAnchor: Portal,
-        ): Boolean = World.allPortals.flatMap { it.fields }.none {
-            it.idSet == linkedSetOf(origin, primaryAnchor, secondaryAnchor)
-        }
+        fun isPossible(origin: Portal, primaryAnchor: Portal, secondaryAnchor: Portal): Boolean =
+            World.allPortals.flatMap { it.fields }.none {
+                it.idSet == linkedSetOf(origin, primaryAnchor, secondaryAnchor)
+            }
 
         fun create(origin: Portal, primaryAnchor: Portal, secondaryAnchor: Portal, owner: Agent): Field? {
             check(origin != primaryAnchor && origin != secondaryAnchor && primaryAnchor != secondaryAnchor)

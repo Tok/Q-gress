@@ -21,6 +21,7 @@ import portal.XmMap
 import system.Cycle
 import system.display.PassabilityOverlay
 import system.display.Scene3D
+import util.data.GeoCoords
 import util.data.Line
 import util.data.Pos
 import util.ui.AudioDemo
@@ -159,7 +160,12 @@ object HtmlUtil {
         rightGroup.append(createVolumeSpan())
         rightGroup.append(createAutoCamToggle())
         // Keep the toggle's highlight in sync — incl. when a manual move snaps the drift (and toggle) out.
-        MapUtil.onAutoCamChanged = { on -> (document.getElementById("autoCamToggle") as? HTMLElement)?.let { if (on) it.addClass("active") else it.removeClass("active") } }
+        MapUtil.onAutoCamChanged =
+            { on ->
+                (document.getElementById("autoCamToggle") as? HTMLElement)?.let {
+                    if (on) it.addClass("active") else it.removeClass("active")
+                }
+            }
         MapUtil.setAutoCam(true)
 
         // The loaded-location name stretches across the middle (flex-grows between the two groups).
@@ -185,7 +191,6 @@ object HtmlUtil {
                 onReady()
             }
             .catch { _: dynamic -> onReady() }
-        Unit
     }
 
     /**
@@ -204,12 +209,12 @@ object HtmlUtil {
         when {
             GameUrl.isAutoStart() -> {
                 chooseUserFaction(faction ?: Faction.random())
-                setLoadedLocation(urlCenter?.lng ?: Locations.DEFAULT.lng, urlCenter?.lat ?: Locations.DEFAULT.lat, GameUrl.name() ?: Locations.DEFAULT.displayName)
+                loadUrlLocation(urlCenter, Locations.DEFAULT.displayName)
                 initWorld(centerOrDefault())
             }
             faction != null && urlCenter != null -> { // deep link → straight to load
                 chooseUserFaction(faction)
-                setLoadedLocation(urlCenter.lng, urlCenter.lat, GameUrl.name() ?: "Custom location")
+                loadUrlLocation(urlCenter, "Custom location")
                 initWorld(centerOrDefault())
             }
             else -> runOnboarding()
@@ -517,12 +522,7 @@ object HtmlUtil {
     fun rightSliderWidth() = maybeWidth("right-sliders") ?: 213
     fun rightSliderHeight() = maybeHeight("right-sliders") ?: 145
 
-    private fun createButton(
-        id: String,
-        className: String,
-        text: String,
-        callback: ((Event) -> Unit)?,
-    ): HTMLButtonElement {
+    private fun createButton(id: String, className: String, text: String, callback: ((Event) -> Unit)?): HTMLButtonElement {
         val button = document.createElement("BUTTON") as HTMLButtonElement
         button.id = id
         button.addClass(className)
@@ -642,6 +642,10 @@ object HtmlUtil {
         document.getElementById(LOCATION_LABEL_ID)?.textContent = currentLocationName
     }
 
+    // Load at the URL's lng/lat (falling back to DEFAULT), naming it from the URL or [fallbackName].
+    private fun loadUrlLocation(center: GeoCoords?, fallbackName: String) =
+        setLoadedLocation(center?.lng ?: Locations.DEFAULT.lng, center?.lat ?: Locations.DEFAULT.lat, GameUrl.name() ?: fallbackName)
+
     private fun createLocationLabel(): HTMLSpanElement {
         val span = document.createElement("span") as HTMLSpanElement
         span.id = LOCATION_LABEL_ID
@@ -744,7 +748,8 @@ object HtmlUtil {
         screen.append(title)
         val hint = document.createElement("div") as HTMLDivElement
         hint.addClass("onboardHint")
-        hint.textContent = "“$currentLocationName” is only ${(World.walkability * 100).toInt()}% walkable — mostly water or blocked. Pick another location."
+        hint.textContent =
+            "“$currentLocationName” is only ${(World.walkability * 100).toInt()}% walkable — mostly water/blocked. Pick another."
         screen.append(hint)
         screen.append(createButton("gateNewGame", "topButton displayFont onboardStart", "Choose another location") { doNewGame() })
         document.body?.append(screen)

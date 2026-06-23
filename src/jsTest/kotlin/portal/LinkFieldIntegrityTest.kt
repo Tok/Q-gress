@@ -34,9 +34,13 @@ class LinkFieldIntegrityTest {
 
     private fun link(a: Portal, b: Portal): Link = requireNotNull(Link.create(a, b, Factory.linker())).also { a.links.add(it) }
 
-    private fun field(o: Portal, p1: Portal, p2: Portal): Field = requireNotNull(Field.create(o, p1, p2, Factory.owner())).also { o.fields.add(it) }
+    private fun field(o: Portal, p1: Portal, p2: Portal): Field = requireNotNull(Field.create(o, p1, p2, Factory.owner())).also {
+        o.fields.add(it)
+    }
 
-    private fun deployFull(p: Portal, agent: Agent) = Octant.values().forEach { p.deploy(agent, mapOf(it to Resonator.create(agent, 1)), Dim.maxDeploymentRange.toInt()) }
+    private fun deployFull(p: Portal, agent: Agent) = Octant.values().forEach {
+        p.deploy(agent, mapOf(it to Resonator.create(agent, 1)), Dim.maxDeploymentRange.toInt())
+    }
 
     // --- the no-crossing rule at the API level (findLinkableForKeys), not just the geometry ---
 

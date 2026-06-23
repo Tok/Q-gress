@@ -10,8 +10,10 @@ insert_final_newline = true
 
 [*.{kt,kts}]
 ktlint_code_style = intellij_idea
-# JSON/JS interop string literals in this codebase are long and not wrappable.
-ktlint_standard_max-line-length = disabled
+# Cap line length at 140 (a pragmatic middle; 120 is deferred to a future refactor — see PLAN).
+# Long JSON/JS-interop string literals that can't wrap are kept on their own line under the cap.
+max_line_length = 140
+ktlint_standard_max-line-length = enabled
 # Existing code leans on a few package wildcard imports; allow them for now.
 ktlint_standard_no-wildcard-imports = disabled
 # Object-level camelCase "constants" (e.g. Pos.res) are pervasive; detekt's

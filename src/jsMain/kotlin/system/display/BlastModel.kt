@@ -26,7 +26,14 @@ object BlastModel {
      * [baseSpeed] · [levelGain]([level], [levelFloor]) · [refDist] / ([refDist] + dist). Returns
      * `(vx, vy, vz)`. Degenerate (piece exactly at the centre) → straight up at full magnitude.
      */
-    fun blastImpulse(origin: DoubleArray, piece: DoubleArray, level: Int, baseSpeed: Double, refDist: Double, levelFloor: Double): DoubleArray {
+    fun blastImpulse(
+        origin: DoubleArray,
+        piece: DoubleArray,
+        level: Int,
+        baseSpeed: Double,
+        refDist: Double,
+        levelFloor: Double,
+    ): DoubleArray {
         val dx = piece[0] - origin[0]
         val dy = piece[1] - origin[1]
         val dz = piece[2] - origin[2]

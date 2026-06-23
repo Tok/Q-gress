@@ -36,7 +36,13 @@ class LocationTest {
 
     @Test
     fun parseSkipsMalformedEntries() {
-        val json = """[{"name":"OK","displayName":"Ok","lng":1.0,"lat":2.0},{"displayName":"no coords"},{"name":"NO_LAT","displayName":"x","lng":1.0}]"""
+        val json = """
+            [
+              {"name":"OK","displayName":"Ok","lng":1.0,"lat":2.0},
+              {"displayName":"no coords"},
+              {"name":"NO_LAT","displayName":"x","lng":1.0}
+            ]
+        """.trimIndent()
         val locs = Locations.parse(json)
         assertEquals(1, locs.size)
         assertEquals("OK", locs[0].name)

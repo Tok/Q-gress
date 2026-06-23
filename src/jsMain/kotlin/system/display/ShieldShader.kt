@@ -46,7 +46,8 @@ object ShieldShader {
             " vec3 V = normalize(uEye - vWorldPos);\n" +
             " float fres = pow(1.0 - abs(dot(normalize(vNormal), V)), ${RIM_POWER.glsl()});\n" +
             " vec3 p = normalize(vModelPos);\n" +
-            " vec2 uv = vec2(atan(p.y, p.x), asin(clamp(p.z, -1.0, 1.0)));\n" + // sphere → (lon, lat) radians: equal arc length → equilateral hexes
+            // sphere → (lon, lat) radians: equal arc length → equilateral hexes
+            " vec2 uv = vec2(atan(p.y, p.x), asin(clamp(p.z, -1.0, 1.0)));\n" +
             " float h = hexGrid(uv * ${HEX_SCALE.glsl()} + vec2(uTime * 0.04, 0.0));\n" +
             " float line = smoothstep(0.05, 0.0, h);\n" + // crisp cell edge
             " float halo = smoothstep(0.20, 0.0, h);\n" + // soft glow around it (fake single-pass bloom)

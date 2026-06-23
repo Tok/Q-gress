@@ -146,14 +146,22 @@ object BoltFx {
     private fun scale(a: DoubleArray, s: Double) = doubleArrayOf(a[0] * s, a[1] * s, a[2] * s)
     private fun dot(a: DoubleArray, b: DoubleArray) = a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
     private fun lenSq(a: DoubleArray) = dot(a, a)
-    private fun cross(a: DoubleArray, b: DoubleArray) = doubleArrayOf(a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0])
+    private fun cross(a: DoubleArray, b: DoubleArray) = doubleArrayOf(
+        a[1] * b[2] - a[2] * b[1],
+        a[2] * b[0] - a[0] * b[2],
+        a[0] * b[1] - a[1] * b[0],
+    )
 
     private fun norm(a: DoubleArray): DoubleArray {
         val l = sqrt(lenSq(a))
         return if (l < 1e-9) doubleArrayOf(0.0, 1.0, 0.0) else scale(a, 1.0 / l)
     }
 
-    private fun lerp(a: DoubleArray, b: DoubleArray, t: Double) = doubleArrayOf(a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t)
+    private fun lerp(a: DoubleArray, b: DoubleArray, t: Double) = doubleArrayOf(
+        a[0] + (b[0] - a[0]) * t,
+        a[1] + (b[1] - a[1]) * t,
+        a[2] + (b[2] - a[2]) * t,
+    )
 
     private fun lerp1(a: Double, b: Double, t: Double) = a + (b - a) * t
     private fun dist(a: DoubleArray, b: DoubleArray) = sqrt(lenSq(sub(a, b)))

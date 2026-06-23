@@ -16,6 +16,7 @@ enum class PortalLevel(val value: Int, val display: String) {
     fun getColor(): String = LevelColor.map[value] ?: "#FFFFFF"
 
     companion object {
-        fun findByValue(value: Int): PortalLevel = PortalLevel.values().find { it.value == value } ?: error("No PortalLevel for value $value")
+        fun findByValue(value: Int): PortalLevel =
+            PortalLevel.values().find { it.value == value } ?: error("No PortalLevel for value $value")
     }
 }

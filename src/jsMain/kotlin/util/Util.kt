@@ -9,7 +9,8 @@ import kotlin.math.max
 import kotlin.math.min
 
 object Util {
-    private fun findNearestPortals(pos: Pos): Set<Pair<Double, Portal>> = World.allPortals.map { it.location.distanceTo(pos) to it }.sortedBy { it.first }.toSet()
+    private fun findNearestPortals(pos: Pos): Set<Pair<Double, Portal>> =
+        World.allPortals.map { it.location.distanceTo(pos) to it }.sortedBy { it.first }.toSet()
 
     fun findNearestPortal(pos: Pos): Portal? {
         val nearest = findNearestPortals(pos)

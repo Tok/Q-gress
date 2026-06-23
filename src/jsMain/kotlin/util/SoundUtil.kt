@@ -625,7 +625,10 @@ object SoundUtil {
         val baseFreq = 20.0
         val startFreq = minFreq + (baseFreq * areaRatio)
         val endFreq = startFreq * 2.0
-        val midAnchor = Pos((field.primaryAnchor.x() + field.secondaryAnchor.x()) / 2, (field.primaryAnchor.y() + field.secondaryAnchor.y()) / 2)
+        val midAnchor = Pos(
+            (field.primaryAnchor.x() + field.secondaryAnchor.x()) / 2,
+            (field.primaryAnchor.y() + field.secondaryAnchor.y()) / 2,
+        )
         val oscNode = createExponentialRampOscillator(OscillatorType.TRIANGLE, startFreq, endFreq, duration)
         val panNode = createPannerRamp(field.origin.location, midAnchor, duration)
         playSound(oscNode, panNode, gain, duration)
