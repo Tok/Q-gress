@@ -41,6 +41,10 @@ object DamageNumberFx {
     private const val FADE = 0.7 // fade-out at the very end of a number's life
     private const val LAND_Z = 3.0 // a digit is "landed" once it drops to about here (ground ≈ 0)
     private const val LAND_VOLUME = 0.25 // soft glassy clink when the digits hit the ground
+    private const val STACK_STEP = DEPTH * 3.0 // a new number presses earlier ones at the same portal up by this
+
+    /** Menu toggle: damage-number animations on/off (on by default). */
+    var enabled = true
 
     // Volley damage spans orders of magnitude (a few hundred when heavily mitigated → tens of thousands
     // on a fresh portal), so the colour uses a LOG scale between these, not linear.
@@ -101,10 +105,13 @@ object DamageNumberFx {
     /** Pop a damage number of [amount] above the portal top at scene-point ([x], [y], [z]); [loc] = the
      *  portal's sim position, for the positional landing clink. */
     fun spawn(x: Double, y: Double, z: Double, loc: Pos, amount: Int) {
+        if (!enabled) return
         val f = font ?: return
         val g = group ?: return
         if (amount <= 0) return
         if (nums.size >= MAX_ACTIVE) drop(nums.first())
+        // Stack from below: press any numbers already over this portal up so a fresh hit doesn't clip them.
+        nums.forEach { if (it.loc == loc) it.origin[2] += STACK_STEP }
         val fillMat = fillMaterial(amount)
         val wireMat = wireMaterial()
         val digits = buildDigits(f, amount.toString(), fillMat, wireMat, g)

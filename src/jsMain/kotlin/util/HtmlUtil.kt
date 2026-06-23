@@ -19,6 +19,7 @@ import org.w3c.dom.events.Event
 import portal.Portal
 import portal.XmMap
 import system.Cycle
+import system.display.DamageNumberFx
 import system.display.PassabilityOverlay
 import system.display.Scene3D
 import util.data.GeoCoords
@@ -691,6 +692,10 @@ object HtmlUtil {
         val xray = createMenuCheckbox("xrayToggle", "Show through buildings") { Scene3D.drawOverBuildings = it }
         (xray.firstChild as? HTMLInputElement)?.checked = Scene3D.drawOverBuildings
         menu.append(xray)
+        // Damage-number animations on/off (on by default).
+        val dmgNums = createMenuCheckbox("damageNumbersToggle", "Damage numbers") { DamageNumberFx.enabled = it }
+        (dmgNums.firstChild as? HTMLInputElement)?.checked = DamageNumberFx.enabled
+        menu.append(dmgNums)
         // Combat dynamism (0 = realistic/tanky shields … 1 = portals flip very easily). Live-tunable.
         menu.append(MenuControls.slider("Combat", Config.combatDynamism) { Config.combatDynamism = it })
         // Fade the 3D buildings when crowded areas hide the action.
