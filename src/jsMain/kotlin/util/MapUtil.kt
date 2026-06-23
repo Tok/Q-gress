@@ -468,7 +468,9 @@ object MapUtil {
         val rawBuf = Uint8Array((width * height * 4))
         gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, rawBuf)
         val imageData: ImageData = World.createStreetImage(rawBuf, width, height)
+        if (!demoMode) LoadingOverlay.detail("Tracing roads, water & terrain…")
         val grid = createGrid(imageData, width, height)
+        if (!demoMode) LoadingOverlay.detail("Walkable ground: ${(World.walkability * 100).toInt()}% · reading place names…")
         shadowMap?.let { PortalNames.build(it) } // query POI/street names while the tiles are loaded
         teardownShadowMap() // grid + names are read — destroy the shadow map to free its WebGL context
         captureAnchor()

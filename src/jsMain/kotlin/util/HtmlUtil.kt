@@ -580,7 +580,7 @@ object HtmlUtil {
         World.allAgents.clear()
         StuckTracker.reset() // fresh world → drop stale stuck-history (?debug)
         NameGen.reset() // fresh roster → fresh handle dedupe
-        LoadingOverlay.detail("Creating agents…")
+        LoadingOverlay.detail("Deploying ${Config.startFrogs()} ENL + ${Config.startSmurfs()} RES agents…")
         (1..Config.startFrogs()).forEach {
             World.allAgents.add(Agent.createFrog(World.grid))
         }
@@ -614,7 +614,7 @@ object HtmlUtil {
         MapUtil.startBuildCinematic() // gentle orbit while portals + people spawn
         LoadingOverlay.stage(LoadingOverlay.PCT_WORLD, "Building world…")
         createAgentsAndPortals {
-            LoadingOverlay.detail("Ready.")
+            LoadingOverlay.detail("Computing routes & starting simulation…")
             // Start the game with nothing selected (the vector field flashes itself on new portals).
             Scene3D.selected = null
             if (World.userFaction == null) {

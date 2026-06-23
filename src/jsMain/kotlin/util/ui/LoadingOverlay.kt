@@ -23,13 +23,10 @@ object LoadingOverlay {
     const val PCT_PEOPLE = 92 // agents/NPCs begin
 
     private const val OVERLAY_ID = "loadingOverlay"
-    private const val DEFAULT_ACCENT = "#ffffff"
     private var statusEl: HTMLElement? = null
     private var detailEl: HTMLElement? = null
     private var fillEl: HTMLElement? = null // overall progress (large bar)
     private var subFillEl: HTMLElement? = null // current sub-process (small bar)
-    private var titleEl: HTMLElement? = null
-    private var accent = DEFAULT_ACCENT
 
     /** Build + show the overlay (call once, as early as possible). No-op if already shown. */
     fun show() {
@@ -72,8 +69,6 @@ object LoadingOverlay {
         detailEl = detail
         fillEl = fill
         subFillEl = subFill
-        titleEl = title
-        applyAccent()
     }
 
     /** Sub-status line for what's being created right now, e.g. "Creating portal X  (3/21)". */
@@ -99,15 +94,12 @@ object LoadingOverlay {
         (document.getElementById(OVERLAY_ID) as? HTMLElement)?.className = "loadingOverlay loadingOverlayReveal"
     }
 
-    /** Tint the overlay with the chosen faction colour (call once a faction is picked). */
+    /** Tint the whole UI with the chosen faction colour (call once a faction is picked). Sets the
+     *  global `--faction` CSS variable, so the loading bars/title + all faction-branded controls
+     *  (sliders, checkboxes, button glows) update at once — and a player never sees the other faction's
+     *  colour in the chrome. */
     fun setAccent(color: String) {
-        accent = color
-        applyAccent()
-    }
-
-    private fun applyAccent() {
-        titleEl?.style?.textShadow = "0 0 18px $accent"
-        fillEl?.style?.background = "linear-gradient(90deg, ${accent}66, $accent)"
+        (document.documentElement as? HTMLElement)?.style?.setProperty("--faction", color)
     }
 
     /** Advance the overall bar to a labelled [text] step at [percent] (0..100); resets the sub bar. */
@@ -128,7 +120,6 @@ object LoadingOverlay {
         detailEl = null
         fillEl = null
         subFillEl = null
-        titleEl = null
         // Remove after the CSS fade so it stops intercepting nothing (it's already pointer-events:none).
         window.setTimeout({ overlay.remove() }, FADE_MS)
     }
