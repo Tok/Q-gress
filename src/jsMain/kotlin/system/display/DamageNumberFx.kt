@@ -7,9 +7,12 @@ import external.Three
 import util.SoundUtil
 import util.Util
 import util.data.Pos
+import kotlin.math.abs
+import kotlin.math.atan2
 import kotlin.math.ln
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.sqrt
 
 /**
  * Floating 3D **damage numbers** (extruded Coda digits + a black wire outline). On a hit the number is
@@ -167,9 +170,19 @@ object DamageNumberFx {
             pz = connectedZ
         }
         d.mesh.position.set(px, py, pz)
-        // Face the camera: lookAt points -Z at the target, the glyph front is +Z, so aim -Z away from the eye.
-        // (d.mesh is already dynamic — no .asDynamic(), which throws on an already-dynamic value.)
-        d.mesh.lookAt(2.0 * px - eye[0], 2.0 * py - eye[1], 2.0 * pz - eye[2])
+        // Stay FLAT over the portal (extrusion up); just yaw around Z so the number's base points at the
+        // camera (reads upright from the angled view). Not a full face-the-camera tilt.
+        var ax = px - eye[0]
+        var ay = py - eye[1]
+        val len = sqrt(ax * ax + ay * ay)
+        if (len > 1e-6) {
+            ax /= len
+            ay /= len
+        } else {
+            ax = 0.0
+            ay = 1.0
+        }
+        d.mesh.rotation.set(0.0, 0.0, atan2(-ax, ay))
         if (body != null && pz <= LAND_Z && !d.landed) { // each digit clinks once as it hits the ground
             d.landed = true
             SoundUtil.playGlassShatterSound(num.loc, 0.0, LAND_VOLUME)
@@ -178,7 +191,7 @@ object DamageNumberFx {
 
     private fun buildDigits(f: dynamic, text: String, fillMat: dynamic, wireMat: dynamic, g: dynamic): List<Digit> {
         val geos = text.map { glyphGeometry(f, it.toString()) }
-        val widths = geos.map { (it.boundingBox.max.x as Double) - (it.boundingBox.min.x as Double) }
+        val widths = geos.map { abs((it.boundingBox.max.x as Double) - (it.boundingBox.min.x as Double)) } // mirrored → abs
         val total = widths.sum() + GAP * (geos.size - 1)
         var cursor = -total / 2.0
         return geos.mapIndexed { i, geo ->
@@ -186,7 +199,7 @@ object DamageNumberFx {
             val localX = cursor + w / 2.0
             cursor += w + GAP
             val bb = geo.boundingBox
-            val hh = ((bb.max.y as Double) - (bb.min.y as Double)) / 2.0
+            val hh = abs((bb.max.y as Double) - (bb.min.y as Double)) / 2.0
             val mesh = Three.Mesh(geo, fillMat)
             val wire = Three.LineSegments(Three.EdgesGeometry(geo), wireMat) // black outline
             wire.asDynamic().scale.set(1.03, 1.03, 1.03) // nudge out so the edges don't z-fight the fill
@@ -216,7 +229,9 @@ object DamageNumberFx {
             -((bb.min.y as Double) + (bb.max.y as Double)) / 2.0,
             -DEPTH / 2.0,
         )
-        geo.computeBoundingBox() // refresh after centring (used for width/height)
+        // Mirror on X to counter the scene's -Y model-matrix flip, else the glyphs render reflected.
+        geo.asDynamic().scale(-1.0, 1.0, 1.0)
+        geo.computeBoundingBox() // refresh after centring + mirror (used for width/height)
         return geo
     }
 
@@ -239,6 +254,7 @@ object DamageNumberFx {
         p.transparent = true
         p.opacity = DIGIT_OPACITY // slightly glassy
         p.depthWrite = true // self-occlude correctly — transparent defaults this off → we'd see inside the letters
+        p.side = 2 // DoubleSide — the X-mirror flips winding; depthWrite still sorts so it doesn't read inside-out
         return Three.MeshBasicMaterial(p)
     }
 
