@@ -27,9 +27,11 @@ object BuildingShake {
     private const val FREQ = 11.0 // wobble speed (rad/s)
     private const val BASE_AMP_M = 6.75 // peak bob (metres) — a small, point-blank building at L8
     private const val REF_HEIGHT_M = 12.0 // taller than this → progressively less bob ("more mass")
-    private const val QUERY_R_BASE = 80.0 // blast query radius in screen px…
-    private const val QUERY_R_PER_LEVEL = 12.0 // …growing with level (bigger blasts shake a wider area)
-    private const val MAX_SHAKEN = 90 // safety cap on buildings animated at once
+
+    // The blast reaches across most of the view (≈ the playable area, the user wants a wide radius) —
+    // a fraction of the canvas' short side in screen px, a touch wider for bigger blasts.
+    private const val QUERY_SPAN_FRAC = 0.85
+    private const val MAX_SHAKEN = 180 // safety cap on buildings animated at once
 
     private var map: dynamic = null
     private val active = mutableMapOf<String, Shake>() // feature id (as string) → live bob
@@ -52,7 +54,7 @@ object BuildingShake {
         val pt = m.project(origin)
         val ox = pt.x as Double
         val oy = pt.y as Double
-        val r = QUERY_R_BASE + QUERY_R_PER_LEVEL * lvl
+        val r = queryRadiusPx(m, lvl)
         val feats = queryNear(m, ox, oy, r) ?: return
         val levelGain = 0.4 + 0.6 * (lvl / 8.0)
         val count = (feats.length as Int).coerceAtMost(MAX_SHAKEN)
@@ -87,6 +89,13 @@ object BuildingShake {
             }
         }
         done.forEach { active.remove(it) }
+    }
+
+    // Blast radius in screen px: most of the view (≈ the playable area), slightly larger for big blasts.
+    private fun queryRadiusPx(m: dynamic, level: Int): Double {
+        val canvas = m.getCanvas()
+        val span = minOf(canvas.clientWidth as Double, canvas.clientHeight as Double)
+        return span * QUERY_SPAN_FRAC * (0.75 + 0.25 * level / 8.0)
     }
 
     private fun queryNear(m: dynamic, x: Double, y: Double, r: Double): dynamic {

@@ -200,6 +200,9 @@ object MapUtil {
      *  randomized camera (chained eased legs through random bearing/pitch/zoom — a spline-ish drift). */
     fun startTitleCinematic() {
         val m = initMap ?: return
+        // Block map input during the swoop-in: an early click/drag cancels the flyTo and leaves the map
+        // stuck zoomed out. Re-enabled when the fly-in lands (startTitleLeg) — also gates early blasts.
+        m.asDynamic().getCanvasContainer().style.pointerEvents = "none"
         applyTerrain(m) // DEM relief (the demo style now carries the terrain source)
         Scene3D.onTerrainChanged() // sample heights so the portals sit on the terrain
         m.asDynamic().setZoom(titleZoom() - TITLE_FLYIN_ZOOM_OUT) // start high + top-down … (fractional zoom)
@@ -219,6 +222,8 @@ object MapUtil {
     }
 
     private fun startTitleLeg() {
+        // Fly-in has landed → hand input back (free-look + the blast mini-game; idempotent on re-entry).
+        initMap?.let { it.asDynamic().getCanvasContainer().style.pointerEvents = "" }
         titleOrbitGen++ // invalidate any in-flight chain so we don't end up with two overlapping orbits
         titleOrbitLeg(titleOrbitGen)
     }
