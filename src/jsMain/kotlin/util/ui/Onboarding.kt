@@ -213,20 +213,25 @@ object Onboarding {
         val portalsInput = numberInput(defaultPortals)
 
         val presets = div("onboardRow")
+        val presetBtns = mutableListOf<HTMLButtonElement>()
         // Portal count scales with map size (Small 5 · Normal 8 · Large 13); people scale automatically.
         listOf(
             Triple("Small", Sim.SMALL_SCALE, 5),
             Triple("Normal", Sim.NORMAL_SCALE, 8),
             Triple("Large", Sim.LARGE_SCALE, 13),
         ).forEach { (label, sc, portals) ->
-            presets.appendChild(
-                button(label, "onboardPreset") {
-                    widthInput.value = Sim.presetWidth(sc).toString()
-                    heightInput.value = Sim.presetHeight(sc).toString()
-                    portalsInput.value = portals.toString()
-                },
-            )
+            lateinit var btn: HTMLButtonElement
+            btn = button(label, "onboardPreset") {
+                widthInput.value = Sim.presetWidth(sc).toString()
+                heightInput.value = Sim.presetHeight(sc).toString()
+                portalsInput.value = portals.toString()
+                presetBtns.forEach { it.removeClass("onboardActive") }
+                btn.addClass("onboardActive")
+            }
+            presetBtns.add(btn)
+            presets.appendChild(btn)
         }
+        presetBtns.getOrNull(1)?.addClass("onboardActive") // default to Normal — just hit Start to accept
         screen.appendChild(presets)
 
         val fields = div("onboardRow")
