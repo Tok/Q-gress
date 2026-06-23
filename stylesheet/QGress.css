@@ -30,6 +30,19 @@
 :root {
     --enl-color: #03dc03; /* ENL / frogs (green) */
     --res-color: #0088ff; /* RES / smurfs (blue) */
+    /* The player's faction accent — the ONLY chrome colour ("lasers"). Set to the chosen faction's
+       colour at startup (HtmlUtil.chooseUserFaction / LoadingOverlay.setAccent); neutral chrome until then.
+       Everything faction-branded in the UI reads this, so a RES player never sees ENL green and vice versa. */
+    --faction: #cfd3d8;
+
+    /* UI theme: glass, chrome and lasers (the laser = --faction). Chrome = light metal buttons;
+       rubber = the near-black translucent panel like the 3D gasket; the faction edge/glow is the accent. */
+    --ui-chrome: linear-gradient(180deg, #eef1f5 0%, #cfd4db 52%, #b4bac3 100%);
+    --ui-chrome-hi: linear-gradient(180deg, #ffffff 0%, #dfe3e9 52%, #c6ccd4 100%);
+    --ui-rubber: rgba(10, 11, 13, 0.82);
+    --ui-glass-border: rgba(255, 255, 255, 0.16);
+    --ui-faction-edge: color-mix(in srgb, var(--faction) 55%, transparent);
+    --ui-faction-glow: 0 0 14px color-mix(in srgb, var(--faction) 50%, transparent);
 }
 
 * {
@@ -43,6 +56,9 @@ html, body {
     padding: 0;
     overflow: hidden;
     background: #000000;
+    /* Faction-tint all native controls (checkboxes, range tracks) in one place; volume/speed opt back
+       out to grayscale. Inherited, so menu checkboxes + the buildings slider pick it up automatically. */
+    accent-color: var(--faction);
     /* Global default font = Coda (the data/body face); display elements opt into Chakra Petch via
        .displayFont. Always end stacks in a generic so we never fall back to an arbitrary system font. */
     font-family: "Coda", monospace;
@@ -358,14 +374,40 @@ html, body {
     align-items: center;
     justify-content: center;
     gap: 18px;
-    background: radial-gradient(ellipse at center, #0c1410 0%, #000000 100%);
+    /* Shaded vignette: the live title sim still shows through behind, dimmed (the selection steps sit
+       "in the back"). The faction step uses a lighter vignette (it's the showpiece). */
+    background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.62) 0%, rgba(0, 0, 0, 0.86) 100%);
     color: #ffffff;
     font-family: "Chakra Petch", sans-serif;
 }
-/* Faction step: transparent vignette so the real Scene3D demo (TitleSim) shows behind the menu;
-   the dark edges keep the wordmark + buttons readable over the bright map. */
+/* Faction step: lighter vignette so the real Scene3D demo (TitleSim) reads clearly behind the menu.
+   pointer-events:none lets clicks/scroll reach the title map (the blast mini-game + scroll-out); the
+   interactive children opt back in below. */
 .onboardScreen.titleScreen {
     background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 28%, rgba(0, 0, 0, 0.6) 100%);
+    pointer-events: none;
+}
+.titleScreen .factionCta,
+.titleScreen .titleVolume,
+.titleScreen .titleGithub {
+    pointer-events: auto;
+}
+/* Glass + black-rubber panel holding the selection controls (map size / location), faction-laser edge. */
+.onboardPanel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    max-width: 82vw;
+    max-height: 86vh;
+    overflow: auto;
+    padding: 22px 30px 26px;
+    background: var(--ui-rubber);
+    border: 1px solid var(--ui-faction-edge);
+    border-radius: 10px;
+    backdrop-filter: blur(7px);
+    -webkit-backdrop-filter: blur(7px);
+    box-shadow: var(--ui-faction-glow), 0 10px 30px rgba(0, 0, 0, 0.6);
 }
 /* Thin "source on GitHub" link pinned to the bottom of the title screen. */
 .titleGithub {
@@ -608,12 +650,6 @@ html, body {
     box-shadow: 0 0 30px rgba(0, 0, 0, 0.7);
     backdrop-filter: blur(3px);
 }
-.loadingTitle {
-    font-size: 54px;
-    letter-spacing: 6px;
-    margin-bottom: 18px;
-    text-shadow: 0 0 18px rgba(60, 255, 120, 0.5);
-}
 .loadingStatus {
     font-family: "Coda", monospace;
     font-size: 15px;
@@ -632,7 +668,8 @@ html, body {
     height: 100%;
     width: 4%;
     border-radius: 4px;
-    background: linear-gradient(90deg, #2e8b57, #5cff8d);
+    /* faction laser fill (both bars) — was a hardcoded green gradient */
+    background: linear-gradient(90deg, color-mix(in srgb, var(--faction) 35%, transparent), var(--faction));
     transition: width 0.5s ease;
     background-size: 200% 100%;
     animation: loadingShimmer 1.1s linear infinite;
@@ -724,7 +761,7 @@ html, body {
     width: 100%;
 }
 .non {
-    background: #ffffff;
+    background: var(--ui-chrome);
 }
 .enl {
     background: var(--enl-color);
@@ -738,20 +775,8 @@ html, body {
 .resLabel {
     color: var(--res-color) !important;
 }
-.enlSlider {}
-.enlSlider::-moz-range-thumb {
-    background: var(--enl-color) !important;
-}
-.enlSlider::-webkit-slider-thumb {
-    background: var(--enl-color) !important;
-}
-.resSlider {}
-.resSlider::-moz-range-thumb {
-    background: var(--res-color) !important;
-}
-.resSlider::-webkit-slider-thumb {
-    background: var(--res-color) !important;
-}
+/* Tuning sliders are faction-tinted via --faction (see .qSlider thumb); only the player's faction
+   sliders are visible, so no off-faction colour appears. (The enl/res thumb overrides were removed.) */
 .button {
     height: 21px;
     margin-top: 5px;
@@ -831,8 +856,12 @@ html, body {
     width: 13px;
     height: 13px;
     border-radius: 62%;
-    background: #777777;
+    background: var(--faction);
     cursor: pointer;
+}
+.qSlider::-moz-range-thumb {
+    background: var(--faction);
+    border: none;
 }
 .qSliderLabel {
     font-size: 13px;
@@ -1001,6 +1030,50 @@ html, body {
     align-items: center;
     line-height: 0;
     vertical-align: middle;
+}
+
+/* Chrome buttons: light brushed-metal face + dark text (the faction-choice .enl/.res buttons keep
+   their faction colour). Pairs with the glow/lift below. */
+.topButton, .topDrop, .menuItem, .onboardPreset, .speedBtn, .autoCamBtn,
+.gateNewGame, .onboardStart, .popupButton:not(.enl):not(.res) {
+    background: var(--ui-chrome);
+    color: #14171c;
+    border: 1px solid rgba(0, 0, 0, 0.45);
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+/* Game-y interactive controls: a subtle lift + faction "laser" glow on hover, a press-in on click.
+   It's a game, not a serious app — the buttons should feel a little alive. */
+.topButton, .topDrop, .menuItem, .popupButton, .onboardPreset, .speedBtn, .autoCamBtn {
+    transition: transform 0.08s ease, box-shadow 0.15s ease, filter 0.15s ease, background 0.15s ease;
+}
+.topButton:hover, .topDrop:hover, .menuItem:hover, .popupButton:hover,
+.onboardPreset:hover, .speedBtn:hover, .autoCamBtn:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--ui-faction-glow);
+    filter: brightness(1.06);
+}
+/* Brighten the brushed metal on hover (faction-coloured choose buttons keep their colour). */
+.topButton:hover, .topDrop:hover, .menuItem:hover, .onboardPreset:hover,
+.speedBtn:hover, .autoCamBtn:hover, .gateNewGame:hover, .onboardStart:hover,
+.popupButton:not(.enl):not(.res):hover {
+    background: var(--ui-chrome-hi);
+}
+.topButton:active, .topDrop:active, .menuItem:active, .popupButton:active,
+.onboardPreset:active, .speedBtn:active, .autoCamBtn:active {
+    transform: translateY(1px) scale(0.97);
+    filter: brightness(0.95);
+}
+
+/* Glass + black-rubber panels with a faint faction-laser edge — the always-on dark surfaces. */
+.gameMenu, .footer, .loadingPanel, .historyPanel, .factionCta, .popup {
+    backdrop-filter: blur(7px);
+    -webkit-backdrop-filter: blur(7px);
+    border: 1px solid var(--ui-faction-edge);
+}
+.gameMenu, .loadingPanel {
+    background: var(--ui-rubber);
+    box-shadow: var(--ui-faction-glow), 0 8px 26px rgba(0, 0, 0, 0.6);
 }
 
 .volumeSlider,

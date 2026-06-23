@@ -59,6 +59,5 @@
   {"name": "LONDON_BRIDGE", "displayName": "London Bridge, London, UK", "lng": -0.0866, "lat": 51.5078, "title": false},
   {"name": "WESTMINSTER_BRIDGE", "displayName": "Westminster Bridge, London, UK", "lng": -0.1214, "lat": 51.501, "title": false},
   {"name": "MILLENNIUM_BRIDGE", "displayName": "Millennium Bridge, London, UK", "lng": -0.0984, "lat": 51.509, "title": false},
-  {"name": "AKASHI", "displayName": "Akashi Kaikyo Bridge, Kobe, Japan", "lng": 135.0195, "lat": 34.6333, "title": false},
-  {"name": "ORESUND", "displayName": "Øresund Bridge, Denmark–Sweden", "lng": 12.8297, "lat": 55.575, "title": false}
+  {"name": "AKASHI", "displayName": "Akashi Kaikyo Bridge, Kobe, Japan", "lng": 135.0195, "lat": 34.6333, "title": false}
 ]
