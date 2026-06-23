@@ -50,18 +50,6 @@ object Materials {
         Three.MeshBasicMaterial(p)
     }
 
-    /** A single self-illuminated link pipe (one solid glowing rod — replaces the old glass-shell +
-     *  plasma-core double, which read as a busy "3-in-1"). Opaque so you don't see its back wall. */
-    fun linkPipe(color: String): dynamic = cache.getOrPut("lp$color") {
-        val p: dynamic = js("({})")
-        p.color = color
-        p.emissive = color
-        p.emissiveIntensity = 0.7
-        p.metalness = 0.0
-        p.roughness = 0.4
-        Three.MeshStandardMaterial(p)
-    }
-
     /** Slottable-mod fill: translucent + self-luminous (an energy look, not the old shiny chrome). */
     fun modSolid(color: String): dynamic = cache.getOrPut("modf$color") {
         val p: dynamic = js("({})")
@@ -71,7 +59,7 @@ object Materials {
         p.metalness = 0.0
         p.roughness = 1.0
         p.transparent = true
-        p.opacity = 0.35
+        p.opacity = 0.5
         Three.MeshStandardMaterial(p)
     }
 

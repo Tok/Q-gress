@@ -110,7 +110,7 @@ object Scene3D {
     private const val MOD_SCALE = 1.2 // scale the mod solids up a touch (they read bland at base size)
     private val MOD_WIRE_SCALES = doubleArrayOf(1.01, 1.05) // two concentric edge cages → a bolder glowing wire
     private const val MAX_SHIELD_SHELLS = 4 // up to 4 shields per portal → 4 concentric bubbles
-    private const val SHIELD_SHELL_STEP = 0.14 // each shield shell sits this much larger than the last (× radius)
+    private const val SHIELD_SHELL_STEP = 0.09 // each shield shell sits this much larger than the last (× radius)
 
     // tetrahedron vertex distance from orb centre (× orb radius); nudged out so mods clear the link joint
     private const val MOD_RING_FRAC = 0.55
@@ -1073,7 +1073,7 @@ object Scene3D {
         val b = showcases[showcases.size - 2]
         val pa = doubleArrayOf(sceneX(a.pos), sceneY(a.pos), orbCenterZ(a.level.toDouble()))
         val pb = doubleArrayOf(sceneX(b.pos), sceneY(b.pos), orbCenterZ(b.level.toDouble()))
-        val pipe = Three.Mesh(linkGeo, Materials.linkPipe(a.color))
+        val pipe = Three.Mesh(linkGeo, Materials.linkGlass(a.color))
         orientTube(pipe.asDynamic(), pa, pb)
         grp.add(pipe)
         demoLinks.add(DemoLink(a, b, pipe)) // tracked so it's removed if either portal goes
@@ -1162,7 +1162,7 @@ object Scene3D {
         val color = link.creator.faction.color
         val a = orbPos(link.origin) // both ends ride the tweened orb height
         val b = orbPos(link.destination)
-        val pipe = Three.Mesh(linkGeo, Materials.linkPipe(color)) // one solid glowing rod (no nested glass + core)
+        val pipe = Three.Mesh(linkGeo, Materials.linkGlass(color)) // one translucent glass pipe (no plasma core)
         orientTube(pipe.asDynamic(), a, b)
         linksGroup.add(pipe)
         // Bright near-opaque ball-joints at each orb: round the pipe ends + hide their cut faces.

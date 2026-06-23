@@ -60,8 +60,8 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
     **3D mushroom-cloud-centre origin** (above the terrain, rising with level) + **distance falloff**,
     energy ∝ level / distance — the *same* model the title wordmark uses, so normal-play shatters and
     the title letters react with one unified physics.
-  - **Links → a single glowing pipe** (`linkGeo`/`orientTube`, `Materials.linkPipe` — one solid
-    self-illuminated rod, replacing the old glass-shell + plasma-core "3-in-1") with bright ball-joints.
+  - **Links → a single translucent glass pipe** (`linkGeo`/`orientTube`, `Materials.linkGlass`) with
+    bright ball-joints — keeps the glassy transparency but drops the old plasma-core (no more "3-in-1").
   - **Fields → plasma** sheets (`PlasmaShader`, animated; fill-in + dissolve + collapse sound).
   - **XMP** — volumetric raymarched **mini-nuke** (`XmpShaders`/`XmpBurst`), detonates at the agent.
     The field morphs from an initial fireball into a **rising mushroom** — a torus cap (the rising
