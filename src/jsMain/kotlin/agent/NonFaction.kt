@@ -21,6 +21,12 @@ data class NonFaction(
     var busyUntil: Int,
     val id: Int = nextId(), // stable per-NPC id for the 3D spawn (marble drop) animation
 ) {
+    // Stable identity from the immutable [id]. A data class would otherwise hash over the mutable [pos]
+    // etc., so an NPC's hashCode would change as it moves — corrupting any Set it's in (World.allNonFaction)
+    // and throwing "object hashCodes changed". (Same fix as Agent/Portal.)
+    override fun equals(other: Any?) = other is NonFaction && id == other.id
+    override fun hashCode() = id
+
     private val swarmTendency = 0.02
     private val swarmChance = swarmTendency - (swarmTendency * 0.5 * size.offset)
 
