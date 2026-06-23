@@ -28,29 +28,36 @@ object ShatterFx {
     private const val POLE_R = 2.0 // for the gasket collider box
 
     private const val BLAST_WINDOW = 0.6 // s after a blast that shatter pieces still get pushed away
-    private const val BLAST_SPEED = 18.0 // m/s base outward push (energy comes from the XMP's direction)
-    private var blastX = 0.0
-    private var blastY = 0.0
+    private const val BLAST_SPEED = 18.0 // m/s base impulse magnitude at the cloud centre (energy ∝ level/distance via BlastModel)
+    private const val BLAST_REF = 80.0 // distance falloff scale — pieces farther from the cloud centre get less push
+    private const val BLAST_FLOOR = 0.4 // L1 keeps this fraction of full energy (L8 = 1.0)
+    private const val BLAST_UP = 0.5 // upward arc as a fraction of the impulse magnitude (debris flies up-and-out)
+    private val blastOrigin = doubleArrayOf(0.0, 0.0, 0.0) // the 3D mushroom-cloud centre, above the terrain
+    private var blastLevel = 8
     private var blastTime = -1.0
-    private var blastGain = 1.0 // scales the push by XMP level (bigger XMP → more energy)
 
-    /** Record an XMP detonation at scene-metre [x], [y] of [level]; pieces spawned next fly away from it. */
-    fun recordBlast(x: Double, y: Double, level: Int = 8) {
-        blastX = x
-        blastY = y
+    /** Record an XMP detonation whose 3D mushroom-cloud centre is [origin] (scene metres, above ground), of [level]. */
+    fun recordBlast(origin: DoubleArray, level: Int = 8) {
+        blastOrigin[0] = origin[0]
+        blastOrigin[1] = origin[1]
+        blastOrigin[2] = origin[2]
+        blastLevel = level
         blastTime = now()
-        blastGain = 0.4 + 0.6 * (level.coerceIn(1, 8) / 8.0) // L1 still throws pieces, L8 full energy
     }
 
-    /** Outward velocity (vx, vy, vz) pushing a piece at [x], [y] away from a recent blast (else zero). */
-    private fun blastPush(x: Double, y: Double): DoubleArray {
+    /**
+     * Outward velocity (vx, vy, vz) pushing a piece at [x], [y], [z] away from a recent blast (else zero).
+     * Shares [BlastModel]'s 3D cloud-centre + falloff law with the title, then biases the push **up** so
+     * shards/resos arc up-and-out from the cloud centre instead of straight down into the ground.
+     */
+    private fun blastPush(x: Double, y: Double, z: Double): DoubleArray {
         if (blastTime < 0.0 || (now() - blastTime) / 1000.0 > BLAST_WINDOW) return doubleArrayOf(0.0, 0.0, 0.0)
-        val dx = x - blastX
-        val dy = y - blastY
-        val d = sqrt(dx * dx + dy * dy)
-        if (d < 0.001) return doubleArrayOf(0.0, 0.0, 0.0)
-        val speed = BLAST_SPEED * blastGain
-        return doubleArrayOf(dx / d * speed, dy / d * speed, speed * 0.45) // away + a bit up
+        val imp = BlastModel.blastImpulse(blastOrigin, doubleArrayOf(x, y, z), blastLevel, BLAST_SPEED, BLAST_REF, BLAST_FLOOR)
+        val mag = sqrt(imp[0] * imp[0] + imp[1] * imp[1] + imp[2] * imp[2])
+        val hlen = sqrt(imp[0] * imp[0] + imp[1] * imp[1]) // horizontal radial out from the blast column
+        val hx = if (hlen > 1e-6) imp[0] / hlen * mag else 0.0
+        val hy = if (hlen > 1e-6) imp[1] / hlen * mag else 0.0
+        return doubleArrayOf(hx, hy, mag * BLAST_UP) // out (horizontal) + a guaranteed up-arc
     }
 
     private fun now() = Scene3D.animMs() // sim-scaled clock so FX track sim speed
@@ -158,7 +165,8 @@ object ShatterFx {
         opts.linearDamping = 0.05
         opts.angularDamping = 0.3
         val body = Cannon.Body(opts)
-        body.asDynamic().velocity.set((Util.random() - 0.5) * 3.0 + blastPush(x, y)[0], (Util.random() - 0.5) * 3.0 + blastPush(x, y)[1], -1.0 + blastPush(x, y)[2])
+        val push = blastPush(x, y, poleH)
+        body.asDynamic().velocity.set((Util.random() - 0.5) * 3.0 + push[0], (Util.random() - 0.5) * 3.0 + push[1], -1.0 + push[2])
         body.asDynamic().angularVelocity.set(randSpin() * 0.4, randSpin() * 0.4, randSpin() * 0.4)
         world.addBody(body)
         group.add(mesh)
@@ -196,7 +204,8 @@ object ShatterFx {
         opts.collisionFilterMask = SHARD_MASK
         val body = Cannon.Body(opts)
         body.asDynamic().quaternion.setFromEuler(PI / 2, 0.0, 0.0) // upright like in the slot
-        body.asDynamic().velocity.set((Util.random() - 0.5) * 4.0 + blastPush(x, y)[0], (Util.random() - 0.5) * 4.0 + blastPush(x, y)[1], Util.random() * 2.0 + blastPush(x, y)[2])
+        val push = blastPush(x, y, z)
+        body.asDynamic().velocity.set((Util.random() - 0.5) * 4.0 + push[0], (Util.random() - 0.5) * 4.0 + push[1], Util.random() * 2.0 + push[2])
         body.asDynamic().angularVelocity.set(randSpin(), randSpin(), randSpin())
         w.addBody(body)
         group.add(mesh)
@@ -233,7 +242,8 @@ object ShatterFx {
         opts.collisionFilterGroup = SHARD_GROUP
         opts.collisionFilterMask = SHARD_MASK
         val body = Cannon.Body(opts)
-        body.asDynamic().velocity.set((Util.random() - 0.5) * 4.0 + blastPush(x, y)[0], (Util.random() - 0.5) * 4.0 + blastPush(x, y)[1], Util.random() * 2.0 + blastPush(x, y)[2])
+        val push = blastPush(x, y, z)
+        body.asDynamic().velocity.set((Util.random() - 0.5) * 4.0 + push[0], (Util.random() - 0.5) * 4.0 + push[1], Util.random() * 2.0 + push[2])
         body.asDynamic().angularVelocity.set(randSpin(), randSpin(), randSpin())
         w.addBody(body)
         group.add(mesh)
@@ -265,9 +275,10 @@ object ShatterFx {
         val body = Cannon.Body(opts)
         body.asDynamic().quaternion.setFromEuler(shatterRot[0], shatterRot[1], shatterRot[2])
         val a = Util.random() * 2.0 * PI
-        val r = 0.02 + Util.random() * 0.06 // almost no outward push
-        val up = Util.random() * 0.08 // the faintest pop; gravity takes over
-        body.asDynamic().velocity.set(cos(a) * r + blastPush(pos[0], pos[1])[0], sin(a) * r + blastPush(pos[0], pos[1])[1], up + blastPush(pos[0], pos[1])[2])
+        val r = 0.02 + Util.random() * 0.06 // almost no outward push of their own
+        val up = Util.random() * 0.08 // the faintest self-pop; the blast + gravity take over
+        val push = blastPush(pos[0], pos[1], pos[2])
+        body.asDynamic().velocity.set(cos(a) * r + push[0], sin(a) * r + push[1], up + push[2])
         body.asDynamic().angularVelocity.set(randSpin(), randSpin(), randSpin())
         world.addBody(body)
         group.add(mesh)

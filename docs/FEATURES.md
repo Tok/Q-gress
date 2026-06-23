@@ -47,8 +47,11 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
     billboard** floats above each portal's orb (cached `CanvasTexture` sprite, Chakra Petch).
   - **Resonators** — 8 colour-coded rods in rubber slot-rings, real-time from `resoMap()`, grow
     with the pole, **fall on shatter** (cannon-es physics rods), **hack spin + top-jointed
-    centrifuge** (`HackFx`); shatter physics in `ShatterFx` (pole sinks, shards + resos **fly away from
-    the XMP blast**, scaled by XMP level, then fall).
+    centrifuge** (`HackFx`); shatter physics in `ShatterFx` (pole sinks, shards + resos **arc up-and-out
+    from the XMP blast**, then fall). The blast push comes from the shared **`BlastModel`** — one
+    **3D mushroom-cloud-centre origin** (above the terrain, rising with level) + **distance falloff**,
+    energy ∝ level / distance — the *same* model the title wordmark uses, so normal-play shatters and
+    the title letters react with one unified physics.
   - **Links → glass pipes** (`linkGeo`/`orientTube`, brighter variant + additive plasma core).
   - **Fields → plasma** sheets (`PlasmaShader`, animated; fill-in + dissolve + collapse sound).
   - **XMP** — volumetric raymarched **mini-nuke** (`XmpShaders`/`XmpBurst`), detonates at the agent.

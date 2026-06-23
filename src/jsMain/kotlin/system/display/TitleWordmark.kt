@@ -25,6 +25,7 @@ object TitleWordmark {
     private const val POS_DAMP = 9.0 // spring damping (quick return, slight overshoot)
     private const val PUSH = 42.0 // blast shove velocity (away from the XMP)
     private const val PUSH_REF = 250.0 // distance falloff — nearer XMPs shove the letters harder
+    private const val LEVEL_FLOOR = 0.3 // L1 still nudges the letters, L8 = full shove (BlastModel.levelGain)
     private const val JITTER = 16.0 // per-letter random velocity so they don't all move identically
     private const val TILT = 0.1 // letters tilt with their horizontal displacement (liveliness)
 
@@ -147,18 +148,18 @@ object TitleWordmark {
      */
     fun flash(xmpWorld: DoubleArray, level: Int) {
         if (!loaded) return
-        val levelGain = 0.3 + 0.7 * (level.coerceIn(1, 8) / 8.0) // L1 still nudges, L8 full
         letters.forEach { letter ->
             val ud = letter.userData
             val letterWorld = add(lastPos, scale(lastX, ud.baseX as Double)) // letter's rest world position
-            val d = sub(letterWorld, xmpWorld)
-            val dist = sqrt(dot(d, d))
-            val px = dot(d, lastX) // direction away from the XMP, in the wordmark plane
-            val py = dot(d, lastY)
+            // Shared blast law (level gain + 3D distance falloff, radial from the cloud centre)…
+            val imp = BlastModel.blastImpulse(xmpWorld, letterWorld, level, PUSH, PUSH_REF, LEVEL_FLOOR)
+            val strength = sqrt(dot(imp, imp)) // = PUSH · levelGain · falloff for this letter
+            // …then projected into the wordmark plane (the letters only move in-plane).
+            val px = dot(imp, lastX)
+            val py = dot(imp, lastY)
             val plen = sqrt(px * px + py * py)
             val ux = if (plen > 1e-6) px / plen else 0.0
             val uy = if (plen > 1e-6) py / plen else 1.0
-            val strength = PUSH * levelGain * PUSH_REF / (PUSH_REF + dist) // per-letter distance falloff
             ud.vx = (ud.vx as Double) + ux * strength + (Util.random() - 0.5) * JITTER
             ud.vy = (ud.vy as Double) + uy * strength + (Util.random() - 0.5) * JITTER
         }
@@ -168,7 +169,6 @@ object TitleWordmark {
     private fun cross(a: DoubleArray, b: DoubleArray) = doubleArrayOf(a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0])
 
     private fun dot(a: DoubleArray, b: DoubleArray) = a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
-    private fun sub(a: DoubleArray, b: DoubleArray) = doubleArrayOf(a[0] - b[0], a[1] - b[1], a[2] - b[2])
     private fun add(a: DoubleArray, b: DoubleArray) = doubleArrayOf(a[0] + b[0], a[1] + b[1], a[2] + b[2])
     private fun scale(a: DoubleArray, s: Double) = doubleArrayOf(a[0] * s, a[1] * s, a[2] * s)
     private fun norm(a: DoubleArray): DoubleArray {

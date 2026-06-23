@@ -506,11 +506,15 @@ object Scene3D {
      */
     fun playXmpBurst(location: Pos, level: Int, sound: Boolean = true) {
         scene ?: return
-        XmpBurst.play(sceneX(location), sceneY(location), groundZ(location), level) // sit on the terrain
-        ShatterFx.recordBlast(sceneX(location), sceneY(location), level) // shatter pieces fly away, scaled by XMP level
-        // Title letters get shoved by the blast (no-op until loaded). Origin = the mushroom-cloud centre
-        // above the terrain (rises with level); flash scales the shove by level + per-letter distance.
-        TitleWordmark.flash(doubleArrayOf(sceneX(location), sceneY(location), groundZ(location) + 12.0 + level * 4.0), level)
+        val sx = sceneX(location)
+        val sy = sceneY(location)
+        val gz = groundZ(location)
+        XmpBurst.play(sx, sy, gz, level) // the burst sits on the terrain and rises within its own volume
+        // One shared blast origin: the mushroom-cloud centre, above the terrain, rising with level. Both
+        // the gameplay shatter and the title wordmark fly their pieces out from it via BlastModel.
+        val origin = doubleArrayOf(sx, sy, gz + BlastModel.cloudHeight(level))
+        ShatterFx.recordBlast(origin, level) // shatter pieces arc up-and-out, energy ∝ level / distance
+        TitleWordmark.flash(origin, level) // title letters get shoved (no-op until loaded)
         if (sound) SoundUtil.playXmpSound(location, level)
     }
 
