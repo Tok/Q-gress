@@ -58,6 +58,33 @@ object TuningPanel {
         rows.forEach { it.fill.style.width = pct(it.input) }
     }
 
+    // Stable order both factions' values are serialized in (Actions then Destinations) — the share link.
+    private fun orderedQValues(): List<QValue> = QActions.values().toList() + QDestinations.values().toList()
+
+    private fun sliderInput(qValue: QValue, faction: Faction): HTMLInputElement? = document.getElementById(qValue.sliderId + faction.nickName) as? HTMLInputElement
+
+    /** Serialize both factions' tuning as "enl,…|res,…" for the share link (empty until the panel is built). */
+    fun exportTuning(): String {
+        if (!built) return ""
+        val qs = orderedQValues()
+        fun csv(f: Faction) = qs.joinToString(",") { sliderInput(it, f)?.value ?: "0.10" }
+        return "${csv(Faction.ENL)}|${csv(Faction.RES)}"
+    }
+
+    /** Restore tuning from [exportTuning]'s format (no-op if not built or malformed). */
+    fun importTuning(encoded: String) {
+        if (!built || encoded.isBlank()) return
+        val parts = encoded.split("|")
+        if (parts.size != 2) return
+        val qs = orderedQValues()
+        listOf(Faction.ENL to parts[0], Faction.RES to parts[1]).forEach { (faction, csv) ->
+            val vals = csv.split(",")
+            if (vals.size == qs.size) qs.forEachIndexed { i, q -> sliderInput(q, faction)?.value = vals[i] }
+        }
+        rows.forEach { it.valueLabel.textContent = display(it.input.value) } // resync interactive labels
+        refresh() // and the read-only bars
+    }
+
     private fun buildRow(qValue: QValue): HTMLElement {
         val row = el("div", "tuneRow")
         // 4-column grid: a fixed icon column (so every row's icon lines up in a column, regardless of

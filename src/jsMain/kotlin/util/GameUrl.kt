@@ -1,0 +1,59 @@
+package util
+
+import World
+import agent.Faction
+import config.Config
+import config.Sim
+import kotlinx.browser.document
+import org.w3c.dom.url.URL
+import util.data.GeoCoords
+import util.ui.TuningPanel
+
+/**
+ * Read/write of the game's start state in the page URL — the shareable link. Split out of [HtmlUtil]
+ * (which only keeps the DOM-y navigation/clipboard bits). One link round-trips faction, location,
+ * play size, portal/NPC counts, round field, quickstart, the RNG **seed** (so the world replays
+ * deterministically), and the per-faction **tuning** sliders.
+ */
+object GameUrl {
+    private fun url() = URL(document.location?.href ?: "")
+    private fun param(key: String) = url().searchParams.get(key)
+
+    fun name() = param("name")
+    fun seed(): Int? = param("seed")?.toIntOrNull()
+    fun tune(): String? = param("tune")
+    fun portals(): Int? = param("portals")?.toIntOrNull()
+    fun npc(): Int? = param("npc")?.toIntOrNull()
+    fun quickstart(): Boolean? = param("quickstart")?.toBoolean()
+    fun round(): Boolean? = param("round")?.toBoolean()
+    fun isAutoStart() = param("local")?.toBoolean() ?: false
+    fun isReadOnly() = param("readonly")?.toBoolean() ?: false
+    fun faction() = Faction.fromString(param("faction"))
+
+    fun size(): Pair<Int, Int>? {
+        val w = param("w")?.toIntOrNull()
+        val h = param("h")?.toIntOrNull()
+        return if (w != null && h != null) w to h else null
+    }
+
+    fun lngLat(): GeoCoords? = GeoCoords.fromStrings(param("lng"), param("lat"))
+
+    /** Shareable link reproducing the exact current world (location + size + counts + seed + tuning). */
+    fun forShare(lng: Double, lat: Double, name: String): String = build(lng.toString(), lat.toString(), name, Util.currentSeed())
+
+    /** Navigation link (reset / preset): same location + size, but a FRESH world (no seed). */
+    fun forNavigation(lng: Double, lat: Double, name: String): String = build(lng.toString(), lat.toString(), name, null)
+
+    // Build off the current origin + path so it works on any host (local dev, GitHub Pages, …).
+    private fun build(lng: String, lat: String, name: String, seed: Int?): String {
+        val location = document.location
+        val base = (location?.origin ?: "") + (location?.pathname ?: "/")
+        val fact = World.userFaction?.abbr ?: ""
+        val seedPart = if (seed != null) "&seed=$seed" else ""
+        val tune = TuningPanel.exportTuning() // both factions' sliders (empty until the panel is built)
+        val tunePart = if (tune.isNotEmpty()) "&tune=${encodeURIComponent(tune)}" else ""
+        return "$base?faction=$fact&lng=$lng&lat=$lat&name=${encodeURIComponent(name)}" +
+            "&w=${Sim.width}&h=${Sim.height}&portals=${Config.startPortals}&npc=${Config.maxNonFaction}" +
+            "&round=${Sim.roundField}&quickstart=${Config.quickStart}$seedPart$tunePart"
+    }
+}

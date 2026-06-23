@@ -17,13 +17,11 @@ import kotlinx.dom.addClass
 import kotlinx.dom.removeClass
 import org.w3c.dom.*
 import org.w3c.dom.events.Event
-import org.w3c.dom.url.URL
 import portal.Portal
 import portal.XmMap
 import system.Cycle
 import system.display.PassabilityOverlay
 import system.display.Scene3D
-import util.data.GeoCoords
 import util.data.Line
 import util.data.Pos
 import util.ui.AudioDemo
@@ -155,9 +153,10 @@ object HtmlUtil {
         leftGroup.append(createSpeedControls()) // Pause + ×1/×3/Max (Space toggles pause; -/+ keys nudge speed)
         bindKeyboardShortcuts() // Space=pause · Home=recenter · zoom/pan/speed/mute/Esc
 
-        // Right group, far right: volume + base-map view dropdown.
+        // Right group, far right: Auto cam toggle + volume.
         val rightGroup = document.createElement("div") as HTMLDivElement
         rightGroup.addClass("toolbarGroup")
+        rightGroup.append(createCheckbox("autoCamToggle", "Auto cam") { MapUtil.setAutoCam(it) }.also { it.addClass("topCheck") })
         rightGroup.append(createVolumeSpan())
 
         // The loaded-location name stretches across the middle (flex-grows between the two groups).
@@ -184,17 +183,17 @@ object HtmlUtil {
             GridCapture.sweep()
             return
         }
-        val faction = getFactionFromUrl()
-        val urlCenter = getLngLatFromUrl()
+        val faction = GameUrl.faction()
+        val urlCenter = GameUrl.lngLat()
         when {
-            isAutoStartFromUrl() -> {
+            GameUrl.isAutoStart() -> {
                 chooseUserFaction(faction ?: Faction.random())
-                setLoadedLocation(urlCenter?.lng ?: Location.DEFAULT.lng, urlCenter?.lat ?: Location.DEFAULT.lat, getLocationNameFromUrl() ?: Location.DEFAULT.displayName)
+                setLoadedLocation(urlCenter?.lng ?: Location.DEFAULT.lng, urlCenter?.lat ?: Location.DEFAULT.lat, GameUrl.name() ?: Location.DEFAULT.displayName)
                 initWorld(centerOrDefault())
             }
             faction != null && urlCenter != null -> { // deep link → straight to load
                 chooseUserFaction(faction)
-                setLoadedLocation(urlCenter.lng, urlCenter.lat, getLocationNameFromUrl() ?: "Custom location")
+                setLoadedLocation(urlCenter.lng, urlCenter.lat, GameUrl.name() ?: "Custom location")
                 initWorld(centerOrDefault())
             }
             else -> runOnboarding()
@@ -219,7 +218,7 @@ object HtmlUtil {
         }
     }
 
-    private fun centerOrDefault(): Json = getLngLatFromUrl()?.toJson() ?: Location.DEFAULT.toJSON()
+    private fun centerOrDefault(): Json = GameUrl.lngLat()?.toJson() ?: Location.DEFAULT.toJSON()
 
     private fun createCheckbox(id: String, labelText: String, onChange: (Boolean) -> Unit): HTMLSpanElement {
         val span = document.createElement("span") as HTMLSpanElement
@@ -345,13 +344,13 @@ object HtmlUtil {
     private fun initWorld(center: Json) {
         // Size + seed from a shared link (if present) → reproduce the exact world; else a fresh seed
         // (captured for sharing). Set before generation, since Util.random is the sole RNG source.
-        getSizeFromUrl()?.let { Sim.setSize(it.first, it.second) }
+        GameUrl.size()?.let { Sim.setSize(it.first, it.second) }
         // Apply the rest of the onboarding settings if present in the URL (deep link / reload handoff).
-        url().searchParams.get("portals")?.toIntOrNull()?.let { Config.startPortals = it }
-        url().searchParams.get("npc")?.toIntOrNull()?.let { Config.maxNonFaction = it }
-        url().searchParams.get("quickstart")?.toBoolean()?.let { Config.quickStart = it }
-        url().searchParams.get("round")?.toBoolean()?.let { Sim.roundField = it }
-        Util.seed(getSeedFromUrl() ?: Util.freshSeed())
+        GameUrl.portals()?.let { Config.startPortals = it }
+        GameUrl.npc()?.let { Config.maxNonFaction = it }
+        GameUrl.quickstart()?.let { Config.quickStart = it }
+        GameUrl.round()?.let { Sim.roundField = it }
+        Util.seed(GameUrl.seed() ?: Util.freshSeed())
         Onboarding.close() // dismiss the onboarding screen (it loads without a reload)
         // Staged loading overlay, up before the first tile request (the world build runs ~2 min on Big).
         LoadingOverlay.show()
@@ -362,16 +361,12 @@ object HtmlUtil {
         (document.getElementById("popup") as? HTMLDivElement)?.addClass("invisible")
     }
 
-    private fun isAutoStartFromUrl() = url().searchParams.get("local")?.toBoolean() ?: false
-
     private fun createQSliders(fact: Faction) {
         // One merged tuning list in the dock's TUNE tab (Actions, a divider, then Destinations),
         // instead of the two separate floating slider panes.
-        TuningPanel.build(fact, isReadOnlyFromUrl())
+        TuningPanel.build(fact, GameUrl.isReadOnly())
+        GameUrl.tune()?.let { TuningPanel.importTuning(it) } // restore shared-link tuning
     }
-
-    /** `?readonly=true` → ship the tuning sliders as read-only 0–1 bars (agent-vs-agent preview). */
-    private fun isReadOnlyFromUrl() = url().searchParams.get("readonly")?.toBoolean() ?: false
 
     private fun chooseUserFaction(fact: Faction) {
         SoundUtil.enableAudio() // first user gesture → resume audio (autoplay policy)
@@ -584,7 +579,7 @@ object HtmlUtil {
         }
         // Gate mostly-water / unplayable locations before the expensive world build. Auto-start
         // (dev/headless) is exempt so tests never block.
-        if (World.walkability < GridConnectivity.MIN_WALKABILITY && !isAutoStartFromUrl()) {
+        if (World.walkability < GridConnectivity.MIN_WALKABILITY && !GameUrl.isAutoStart()) {
             showUnplayableGate()
             return
         }
@@ -641,6 +636,7 @@ object HtmlUtil {
         menu.append(createButton("menuNewGame", "menuItem displayFont", "New Game") { doNewGame() })
         menu.append(createButton("menuReset", "menuItem displayFont", "Reset") { doReset() })
         menu.append(createButton("menuShare", "menuItem displayFont", "Copy link") { copyShareLink() })
+        menu.append(createButton("menuSave", "menuItem displayFont", "Save") { saveGame() })
         menu.append(createButton("menuDropRates", "menuItem displayFont", "Drop rates") { DropRatesPanel.toggle() })
         menu.append(createButton("menuShortcuts", "menuItem displayFont", "Shortcuts") { ShortcutsHelp.show() })
         // Overlay toggle lives in the menu now (no longer always-visible in the top bar). Vectors are
@@ -665,12 +661,8 @@ object HtmlUtil {
         menu.append(xray)
         // Preview the read-only tuning mode (sliders → 0–1 bars) used for agent-vs-agent matches.
         val lock = createMenuCheckbox("tuneLockToggle", "Lock tuning") { TuningPanel.setMode(it) }
-        (lock.firstChild as? HTMLInputElement)?.checked = isReadOnlyFromUrl()
+        (lock.firstChild as? HTMLInputElement)?.checked = GameUrl.isReadOnly()
         menu.append(lock)
-        // Auto cam: slow, slightly-randomized cinematic drift around the arena (wall-clock, sim-speed-independent).
-        val autoCam = createMenuCheckbox("autoCamToggle", "Auto cam") { MapUtil.setAutoCam(it) }
-        (autoCam.firstChild as? HTMLInputElement)?.checked = MapUtil.isAutoCamOn()
-        menu.append(autoCam)
         // Fade the 3D buildings when crowded areas hide the action.
         menu.append(createMenuSlider("Buildings", 0.9) { MapUtil.setBuildingOpacity(it) })
         // Build version footer (timestamp + git-sha), so any deployed build is identifiable.
@@ -747,51 +739,27 @@ object HtmlUtil {
     }
 
     private fun navigateToLocation(lng: Double, lat: Double, name: String) {
-        document.location?.href = createNewUrl(lng.toString(), lat.toString(), name)
+        document.location?.href = GameUrl.forNavigation(lng, lat, name)
     }
 
-    // Navigation URL (reset / preset / search): same location + size, but a FRESH world (no seed).
-    private fun createNewUrl(lng: String, lat: String, name: String): String = buildUrl(lng, lat, name, null)
-
-    /** A shareable link reproducing the exact current world — location + size + seed. */
-    private fun shareUrl(): String = buildUrl(currentLng.toString(), currentLat.toString(), currentLocationName, Util.currentSeed())
-
-    // Build off the current origin + path so it works on any host (local dev, GitHub Pages, …).
-    private fun buildUrl(lng: String, lat: String, name: String, seed: Int?): String {
-        val location = document.location
-        val base = (location?.origin ?: "") + (location?.pathname ?: "/")
-        val fact = World.userFaction?.abbr ?: ""
-        val seedPart = if (seed != null) "&seed=$seed" else ""
-        return "$base?faction=$fact&lng=$lng&lat=$lat&name=${encodeURIComponent(name)}" +
-            "&w=${Sim.width}&h=${Sim.height}&portals=${Config.startPortals}&npc=${Config.maxNonFaction}" +
-            "&round=${Sim.roundField}&quickstart=${isQuickstart()}$seedPart"
-    }
-
-    /** Copy the shareable link to the clipboard (with brief in-menu feedback). */
+    /** Copy the shareable link (location + size + seed + tuning) to the clipboard, with brief feedback. */
     private fun copyShareLink() {
         val clipboard = window.navigator.asDynamic().clipboard
-        if (clipboard != null) clipboard.writeText(shareUrl())
+        if (clipboard != null) clipboard.writeText(GameUrl.forShare(currentLng, currentLat, currentLocationName))
         (document.getElementById("menuShare") as? HTMLButtonElement)?.let { btn ->
             btn.innerText = "Copied!"
             window.setTimeout({ btn.innerText = "Copy link" }, 1200)
         }
     }
 
-    private fun url() = URL(document.location?.href ?: "")
-    private fun getLocationNameFromUrl() = url().searchParams.get("name")
-    private fun getSeedFromUrl(): Int? = url().searchParams.get("seed")?.toIntOrNull()
-    private fun getSizeFromUrl(): Pair<Int, Int>? {
-        val w = url().searchParams.get("w")?.toIntOrNull()
-        val h = url().searchParams.get("h")?.toIntOrNull()
-        return if (w != null && h != null) w to h else null
+    /** Save: download a small JSON holding the reproducible share link + a stats snapshot (seed-based save). */
+    private fun saveGame() {
+        val link = GameUrl.forShare(currentLng, currentLat, currentLocationName)
+        val json = "{\"link\":\"$link\",\"tick\":${World.tick}," +
+            "\"enlMu\":${World.calcTotalMu(Faction.ENL)},\"resMu\":${World.calcTotalMu(Faction.RES)}}"
+        val a = document.createElement("a") as HTMLAnchorElement
+        a.href = "data:application/json;charset=utf-8," + encodeURIComponent(json)
+        a.download = "qgress-save.json"
+        a.click()
     }
-
-    private fun getLngLatFromUrl(): GeoCoords? {
-        val url = url()
-        val lngString = url.searchParams.get("lng")
-        val latString = url.searchParams.get("lat")
-        return GeoCoords.fromStrings(lngString, latString)
-    }
-
-    private fun getFactionFromUrl() = Faction.fromString(url().searchParams.get("faction"))
 }

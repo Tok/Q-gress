@@ -31,9 +31,12 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
 - **Mini-globe inset** (`util/ui/MiniMap`) — circular synced overview with a FLAT/GLOBE toggle.
 - Presets are labelled **"Name, City, Country"** (`config/Location`); POI labels follow the same form.
 - **Home button** — recenter top-down over the play area (pitch 0) to find the action again.
-- **Shareable links** — URLs carry lng/lat/name + size (w/h) + **seed**; a Menu "Copy link" copies a
-  link reproducing the exact world. Backed by a **seedable mulberry32 RNG** (`Util.random`, the sole
-  randomness source) so the same seed → the same world.
+- **Shareable links** — URLs carry faction + lng/lat/name + size (w/h) + portal/NPC counts + round +
+  quickstart + **seed** + both factions' **tuning sliders** (`GameUrl`, which owns all URL read/build);
+  Menu **"Copy link"** copies a link reproducing the exact world, and **"Save"** downloads a small JSON
+  (that link + a stats snapshot) — a seed-based save. Backed by a **seedable mulberry32 RNG**
+  (`Util.random`, the sole randomness source) so the same seed → the same world (rosters included; the
+  live map grid is the one non-seed input).
 
 ## 3D rendering & the glass visual overhaul
 - **Foundation**: three.js custom layer camera-synced to the MapLibre matrix (`system/display/
@@ -111,14 +114,15 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
   NPCs, stray XM, links/fields, labels, the deploy/loot/pickup FX). Menu **"3D terrain"** toggle
   (default on); degrades to flat if the DEM is unavailable. (The cannon-es shatter ground stays flat —
   a known approximation.)
-- **Top toolbar** reorganized: Menu far-left (with overlay toggles + Lock-tuning + **Auto cam**
-  inside it), Home, and a compact **sim-speed button group** — Pause / ×1 / ×3 / Max (the active speed
-  highlighted; Pause is Space-bound; `-`/`+` still nudge) replacing the old pause button + slider;
+- **Top toolbar** reorganized: Menu far-left (with overlay toggles + Lock-tuning inside it), Home, and a
+  compact **sim-speed button group** — Pause / ×1 / ×3 / Max (the active speed highlighted; Pause is
+  Space-bound; `-`/`+` still nudge) replacing the old pause button + slider; **Auto cam** toggle +
   Volume far-right. Toolbar stays hidden until the world is ready.
-- **Auto cam** (Menu toggle): a slow, slightly-randomized cinematic camera drift around the arena —
-  the title-screen orbit reused in-game (`MapUtil.setAutoCam`/`autoCamLeg`), but **~2× slower and a
-  touch wider** so the action stays framed (the title can push in for detail; in-game holds the whole
-  picture). **Wall-clock** (chained `setTimeout`/`easeTo`), so it glides at the same pace at any sim speed.
+- **Auto cam** (header toggle, next to Volume): a slow, slightly-randomized cinematic camera drift
+  around the arena — the title-screen orbit reused in-game (`MapUtil.setAutoCam`/`autoCamLeg`), but
+  much slower (~2.6× the title leg) and framing the whole arena (it may pull a touch wider or push a
+  little closer, but holds the picture; the title can push in for detail). **Wall-clock** (chained
+  `setTimeout`/`easeTo`), so it glides at the same pace at any sim speed and isn't cancelled by zooming.
 - **Keyboard controls + sim speed** (`util/Shortcuts`, `util/ui/ShortcutsHelp`): Space pause, Home
   recenter, PageUp/Down (and `-`/`+`) zoom, WASD pan, `,`/`.` building transparency, `-`/`+` sim
   **speed**, Tab cycles the footer, M mute, Esc closes popups; a **"?" shortcuts help** popup lists

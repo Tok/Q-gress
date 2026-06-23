@@ -968,6 +968,14 @@ html, body {
     box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.55);
 }
 
+/* Header checkbox (e.g. Auto cam) sitting inline next to the volume slider. */
+.topCheck {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    margin: 5px;
+}
+
 .volumeSlider,
 .speedSlider {
     width: 80px;

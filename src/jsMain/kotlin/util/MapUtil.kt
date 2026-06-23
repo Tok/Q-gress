@@ -357,9 +357,10 @@ object MapUtil {
         titleOrbitActive = false
     }
 
-    private const val AUTOCAM_LEG_MS = 20800.0 // in-game auto-cam leg — ~2× slower than the title drift
+    private const val AUTOCAM_LEG_MS = 27000.0 // in-game auto-cam leg — ~2× slower than the title, then ~30% slower again
     private const val AUTOCAM_PITCH = 42.0 // a bit more top-down than DEFAULT_PITCH so the action stays framed
-    private const val AUTOCAM_ZOOM_OUT = 0.6 // sit wider than the framed zoom → keep the whole arena in view
+    private const val AUTOCAM_ZOOM_LO = 0.4 // can pull a touch wider than the framed zoom…
+    private const val AUTOCAM_ZOOM_HI = 1.2 // …or push a little closer in (still keeping the action in view)
     private var autoCamActive = false
 
     fun isAutoCamOn() = autoCamActive
@@ -386,7 +387,7 @@ object MapUtil {
         opts.center = center // keep the action framed (no fly-in to detail like the title does)
         opts.bearing = (ref.getBearing() as Double) + turn
         opts.pitch = AUTOCAM_PITCH - 6.0 + Util.random() * 12.0 // gentle tilt variation
-        opts.zoom = displayZoom() - AUTOCAM_ZOOM_OUT + Util.random() * 0.7 // wider than framed, small variation
+        opts.zoom = displayZoom() - AUTOCAM_ZOOM_LO + Util.random() * (AUTOCAM_ZOOM_LO + AUTOCAM_ZOOM_HI) // a bit wider … to a little closer
         opts.duration = AUTOCAM_LEG_MS
         initMap?.asDynamic()?.easeTo(opts)
         map?.asDynamic()?.easeTo(opts)
