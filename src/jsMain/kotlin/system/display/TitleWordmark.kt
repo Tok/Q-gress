@@ -44,6 +44,9 @@ object TitleWordmark {
         g.visible = visible
     }
 
+    /** Whether the 3D letters are already in the scene (so a return to the title can re-show them). */
+    fun isLoaded() = loaded
+
     /** Load the font + build the letters into [scene]. [onReady] fires once they're in (e.g. to hide the DOM wordmark). */
     fun load(scene: dynamic, onReady: () -> Unit = {}) {
         if (loaded) return

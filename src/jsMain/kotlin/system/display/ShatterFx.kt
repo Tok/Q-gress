@@ -60,6 +60,27 @@ object ShatterFx {
         return doubleArrayOf(hx, hy, mag * BLAST_UP) // out (horizontal) + a guaranteed up-arc
     }
 
+    /**
+     * A NEW explosion ([origin] = cloud centre, [level]) flings every piece that's already mid-fall —
+     * shards, dropped resonators, mods, o-rings, the gasket — not just ones spawned during this blast.
+     */
+    fun applyBlast(origin: DoubleArray, level: Int) {
+        if (activeShards.isEmpty()) return
+        activeShards.forEach { s ->
+            val p = s.body.asDynamic().position
+            val imp = BlastModel.blastImpulse(
+                origin,
+                doubleArrayOf(p.x as Double, p.y as Double, p.z as Double),
+                level,
+                BLAST_SPEED,
+                BLAST_REF,
+                BLAST_FLOOR,
+            )
+            val v = s.body.asDynamic().velocity
+            v.set((v.x as Double) + imp[0], (v.y as Double) + imp[1], (v.z as Double) + imp[2] * BLAST_UP)
+        }
+    }
+
     private fun now() = Scene3D.animMs() // sim-scaled clock so FX track sim speed
 
     private var world: Cannon.World? = null

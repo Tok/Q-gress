@@ -63,9 +63,17 @@ object Onboarding {
         screen.appendChild(createTitleCredit()) // © credit next to the GitHub link
         document.body?.appendChild(screen)
         val revealCta = { cta.style.opacity = "1" } // idempotent
-        TitleSim.onTitleReady = { window.setTimeout({ revealCta() }, CTA_DELAY_MS) } // 1s after the letters land
-        TitleSim.start() // the real Scene3D demo (portals hacking/XMPing/linking) behind the menu
-        window.setTimeout({ revealCta() }, CTA_FALLBACK_MS) // safety net if the wordmark never loads
+        if (TitleWordmark.isLoaded()) {
+            // Returning to the title (Esc back): the 3D letters already exist + the sim is still running —
+            // keep the flat 2D brand hidden, re-show the 3D wordmark, and reveal the menu right away.
+            brand.style.display = "none"
+            TitleWordmark.setVisible(true)
+            revealCta()
+        } else {
+            TitleSim.onTitleReady = { window.setTimeout({ revealCta() }, CTA_DELAY_MS) } // 1s after the letters land
+            TitleSim.start() // the real Scene3D demo (portals hacking/XMPing/linking) behind the menu
+            window.setTimeout({ revealCta() }, CTA_FALLBACK_MS) // safety net if the wordmark never loads
+        }
     }
 
     private const val CTA_DELAY_MS = 1000 // faction menu appears this long after the title letters are visible

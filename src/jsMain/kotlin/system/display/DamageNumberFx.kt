@@ -54,6 +54,7 @@ object DamageNumberFx {
 
     private class Digit(val mesh: dynamic, val localX: Double, val hw: Double, val hh: Double, val release: Double) {
         var body: Cannon.Body? = null
+        var landed = false // glassy clink plays once per digit, when it first hits the ground
     }
 
     private class DamageNum(
@@ -65,7 +66,6 @@ object DamageNumberFx {
         val totalLife: Double,
     ) {
         var age = 0.0
-        var landed = false // glassy clink plays once, when the first digit hits the ground
     }
 
     private val nums = mutableListOf<DamageNum>()
@@ -159,9 +159,10 @@ object DamageNumberFx {
         }
         d.mesh.position.set(px, py, pz)
         // Face the camera: lookAt points -Z at the target, the glyph front is +Z, so aim -Z away from the eye.
-        d.mesh.asDynamic().lookAt(2.0 * px - eye[0], 2.0 * py - eye[1], 2.0 * pz - eye[2])
-        if (body != null && pz <= LAND_Z && !num.landed) { // first digit reaches the ground → one glassy clink
-            num.landed = true
+        // (d.mesh is already dynamic — no .asDynamic(), which throws on an already-dynamic value.)
+        d.mesh.lookAt(2.0 * px - eye[0], 2.0 * py - eye[1], 2.0 * pz - eye[2])
+        if (body != null && pz <= LAND_Z && !d.landed) { // each digit clinks once as it hits the ground
+            d.landed = true
             SoundUtil.playGlassShatterSound(num.loc, 0.0, LAND_VOLUME)
         }
     }
