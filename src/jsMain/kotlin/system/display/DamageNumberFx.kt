@@ -7,7 +7,6 @@ import external.Three
 import util.SoundUtil
 import util.Util
 import util.data.Pos
-import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.atan2
 import kotlin.math.cos
@@ -196,7 +195,9 @@ object DamageNumberFx {
         val ax = num.origin[0] - eye[0]
         val ay = num.origin[1] - eye[1]
         val len = sqrt(ax * ax + ay * ay)
-        return if (len > 1e-6) atan2(-ax / len, ay / len) + PI else 0.0 // +π: base toward the camera, not away
+        // Pure yaw (a proper rotation — NO in-plane 180° and NO glyph mirror): turns the whole number's
+        // up-axis to point away from the camera, so its base faces the camera and it reads in order.
+        return if (len > 1e-6) atan2(-ax / len, ay / len) else 0.0
     }
 
     private fun buildDigits(f: dynamic, text: String, fillMat: dynamic, wireMat: dynamic, g: dynamic): List<Digit> {
@@ -239,9 +240,7 @@ object DamageNumberFx {
             -((bb.min.y as Double) + (bb.max.y as Double)) / 2.0,
             -DEPTH / 2.0,
         )
-        // Mirror on Y to counter the scene's -Y model-matrix flip, else the glyphs render reflected.
-        geo.asDynamic().scale(1.0, -1.0, 1.0)
-        geo.computeBoundingBox() // refresh after centring + mirror (used for width/height)
+        geo.computeBoundingBox() // refresh after centring (used for width/height)
         return geo
     }
 
@@ -264,7 +263,7 @@ object DamageNumberFx {
         p.transparent = true
         p.opacity = DIGIT_OPACITY // slightly glassy
         p.depthWrite = true // self-occlude correctly — transparent defaults this off → we'd see inside the letters
-        p.side = 2 // DoubleSide — the X-mirror flips winding; depthWrite still sorts so it doesn't read inside-out
+        p.side = 2 // DoubleSide — flat number readable from either side; depthWrite still sorts the relief
         return Three.MeshBasicMaterial(p)
     }
 
