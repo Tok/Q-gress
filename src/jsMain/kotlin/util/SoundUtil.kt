@@ -49,18 +49,36 @@ object SoundUtil {
     // small reference distance + gentle rolloff makes near/far audibly differ at gameplay zoom while
     // distant events still carry. The listener (camera) sits well above, so Z mostly adds elevation.
     private const val SOUND_Z = 1.6 // head height in metres
-    private const val REF_DISTANCE = 45.0
-    private const val MAX_DISTANCE = 6000.0
-    private const val ROLLOFF = 0.8
+
+    // The listener rides the camera, which sits hundreds–thousands of metres from the action at gameplay
+    // zoom, so a small ref distance + steep rolloff crushed everything to near-silence. A large ref
+    // distance + gentle rolloff keeps distant events audible while near/far still differ.
+    private const val REF_DISTANCE = 300.0
+    private const val MAX_DISTANCE = 12000.0
+    private const val ROLLOFF = 0.5
     private const val PANNING_MODEL = "HRTF" // front/back + elevation cues (vs cheaper "equalpower")
+    private const val MASTER_BOOST = 2.6 // lift the whole bus (3D attenuation made it quiet); limiter guards clipping
 
     private val audioCtx = AudioContext()
     private val listener = audioCtx.listener
 
-    // Single master gain all sounds route through; controls overall volume.
+    // Master limiter on the way to the speakers: lets us boost the bus without harsh clipping when many
+    // voices stack. (DynamicsCompressor configured as a brick-wall-ish limiter.)
+    private val limiter: dynamic = run {
+        val c = audioCtx.asDynamic().createDynamicsCompressor()
+        c.threshold.value = -6.0
+        c.knee.value = 6.0
+        c.ratio.value = 12.0
+        c.attack.value = 0.003
+        c.release.value = 0.12
+        c.connect(audioCtx.destination)
+        c
+    }
+
+    // Single master gain all sounds route through; controls overall volume (× MASTER_BOOST into the limiter).
     private val masterGain: GainNode = audioCtx.createGain().also {
         it.gain.value = 0.0
-        it.connect(audioCtx.destination)
+        it.asDynamic().connect(limiter)
     }
 
     // Master volume in 0..1. Starts muted; enabled on the first user gesture
@@ -76,7 +94,7 @@ object SoundUtil {
     fun setMasterVolume(volume: Double) {
         if (audioCtx.state != "running") audioCtx.resume()
         masterVolume = volume
-        masterGain.gain.setTargetAtTime(volume, now(), 0.01)
+        masterGain.gain.setTargetAtTime(volume * MASTER_BOOST, now(), 0.01)
     }
 
     private fun isMuted() = masterVolume <= 0.0

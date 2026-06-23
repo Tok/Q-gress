@@ -71,6 +71,7 @@ object Scene3D {
     private const val INDICATOR_SIZE = 4.8 // action label above an agent (was 1.6 — barely visible)
     private const val INDICATOR_THICK = 1.2 // action-coin thickness (the extruded "wheel" depth)
     private const val COIN_BODY_OPACITY = 0.5 // the coin body (rim + underside) is see-through; the top icon stays solid
+    private const val ENERGY_BUCKETS = 12 // discretize agent XM% on the coin face so the texture cache stays bounded
     private const val LABEL_W = 22.0 // portal name/level billboard width (scene metres)
     private const val LABEL_GAP = 4.0 // gap above the orb top before the label
     private const val LABEL_CANVAS_W = 256 // label texture resolution (kept crisp; faction-neutral white)
@@ -974,8 +975,10 @@ object Scene3D {
         place(sphere.asDynamic(), x, y, gz + HEAD_Z)
         tag(sphere.asDynamic(), id)
         agentsGroup.add(sphere)
-        // Action indicator: a 3D coin/wheel (icon on the round faces) hovering above the head.
-        val coin = Three.Mesh(indicatorGeo, indicatorMaterial(agent.action.item, agent.faction))
+        // Action indicator: a 3D coin/wheel (icon on the round faces) hovering above the head; the face
+        // doubles as the XM gauge (black drains in from the top as the agent's energy falls).
+        val energy = (agent.xm.toDouble() / agent.xmCapacity()).coerceIn(0.0, 1.0)
+        val coin = Three.Mesh(indicatorGeo, indicatorMaterial(agent.action.item, agent.faction, energy))
         coin.asDynamic().rotation.x = PI / 2 // stand the cylinder's faces up (axis → world Z)
         place(coin.asDynamic(), x, y, gz + INDICATOR_Z)
         indicatorsGroup.add(coin)
@@ -1097,23 +1100,47 @@ object Scene3D {
     }
 
     // Coin materials [side, top-cap, bottom-cap]: the top icon is fully opaque; the rim + underside are
-    // see-through (COIN_BODY_OPACITY) so the coin reads as a translucent token with a solid face.
-    private fun indicatorMaterial(item: ActionItem, faction: Faction): dynamic = spriteCache.getOrPut("coin:" + item.text + faction.abbr) {
-        val tex = Three.CanvasTexture(ActionItem.getHiResIcon(item, faction)) // hi-res → crisp
-        val top = coinFace(tex, 1.0)
-        val bottom = coinFace(tex, COIN_BODY_OPACITY)
-        val rimParams: dynamic = js("({})")
-        rimParams.color = faction.color
-        rimParams.depthTest = false
-        rimParams.transparent = true
-        rimParams.opacity = COIN_BODY_OPACITY
-        arrayOf(Three.MeshBasicMaterial(rimParams), top, bottom) // CylinderGeometry groups: 0 = side, 1 = top, 2 = bottom
+    // see-through (COIN_BODY_OPACITY) so the coin reads as a translucent token with a solid face. The
+    // face doubles as the agent's XM (energy) gauge — black drains in from the top as XM falls (full =
+    // icon as-is, empty = all black). depthTest is ON so portals occlude the coin (it sits in the
+    // depth-cleared sim pass, so buildings/terrain still don't — it reads in front of the city).
+    private fun indicatorMaterial(item: ActionItem, faction: Faction, energy: Double): dynamic {
+        val bucket = (energy * ENERGY_BUCKETS).toInt().coerceIn(0, ENERGY_BUCKETS)
+        return spriteCache.getOrPut("coin:${item.text}${faction.abbr}:e$bucket") {
+            val tex = Three.CanvasTexture(energyFace(item, faction, bucket.toDouble() / ENERGY_BUCKETS))
+            val top = coinFace(tex, 1.0)
+            val bottom = coinFace(tex, COIN_BODY_OPACITY)
+            val rimParams: dynamic = js("({})")
+            rimParams.color = faction.color
+            rimParams.depthTest = true
+            rimParams.transparent = true
+            rimParams.opacity = COIN_BODY_OPACITY
+            arrayOf(Three.MeshBasicMaterial(rimParams), top, bottom) // CylinderGeometry groups: 0 = side, 1 = top, 2 = bottom
+        }
+    }
+
+    // The action icon with a black "drained" band over the top (1 − energy) of the face — the XM gauge.
+    private fun energyFace(item: ActionItem, faction: Faction, energy: Double): HTMLCanvasElement {
+        val icon = ActionItem.getHiResIcon(item, faction)
+        val w = icon.asDynamic().width as Int
+        val h = icon.asDynamic().height as Int
+        val canvas = document.createElement("canvas") as HTMLCanvasElement
+        canvas.width = w
+        canvas.height = h
+        val ctx = canvas.getContext("2d").asDynamic()
+        ctx.drawImage(icon, 0, 0)
+        val drainH = h * (1.0 - energy)
+        if (drainH > 0.0) {
+            ctx.fillStyle = "#000000"
+            ctx.fillRect(0.0, 0.0, w.toDouble(), drainH)
+        }
+        return canvas
     }
 
     private fun coinFace(tex: dynamic, opacity: Double): dynamic {
         val p: dynamic = js("({})")
         p.map = tex
-        p.depthTest = false
+        p.depthTest = true // portals occlude the coin; the depth-cleared pass keeps it over buildings
         p.transparent = true
         p.opacity = opacity
         return Three.MeshBasicMaterial(p)
