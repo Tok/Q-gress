@@ -73,13 +73,11 @@ object Scene3D {
     private const val COIN_BODY_OPACITY = 0.5 // the coin body (rim + underside) is see-through; the top icon stays solid
     private const val ENERGY_BAR_R = 0.55 // energy-bar cylinder radius
     private const val ENERGY_BAR_GAP = 1.2 // gap between the coin and the bar above it
-    private const val ENERGY_BAR_PER_LEVEL = INDICATOR_SIZE / 4.0 // each level adds ¼ of the coin size
     private const val ENERGY_BAR_OPACITY = 0.9
     private const val ENERGY_BAR_FILL_FRAC = 1.06 // fill slightly fatter than the black backing so it reads
     private const val ENERGY_BAR_EPS = 0.08 // fill overhangs the backing caps by this → no z-fighting when full
-    private const val ANCHOR_LEVEL = 4 // level whose bar height == the coin size (grows ± from here)
-    private const val MAX_AGENT_LEVEL = 8
-    private const val ENERGY_BAR_HEIGHT_SCALE = 0.5 // overall bar-height multiplier
+    private const val ENERGY_BAR_MAX_H = INDICATOR_SIZE * 5.0 // tallest bar (at max XM capacity) = 5× the coin
+    private const val MAX_XM_CAPACITY = 14400 // Agent.xmCapacity at L16+ (where capacity stops growing)
     private const val LABEL_W = 22.0 // portal name/level billboard width (scene metres)
     private const val LABEL_GAP = 4.0 // gap above the orb top before the label
     private const val LABEL_CANVAS_W = 256 // label texture resolution (kept crisp; faction-neutral white)
@@ -766,7 +764,9 @@ object Scene3D {
                 if (id != null && from != null) {
                     pivot.asDynamic().userData.flyStartX = sceneX(from) - x // agent pos in the reso group's frame
                     pivot.asDynamic().userData.flyStartY = sceneY(from) - y
-                    pivot.asDynamic().userData.flyStartZ = -(poleH * RESO_COLLAR_FRAC) // ground level
+                    // Emerge from the agent's energy bar (above its head), not the ground — DeployFx then
+                    // rises the rod straight up out of the bar before peeling off to the slot.
+                    pivot.asDynamic().userData.flyStartZ = groundZ(from) + INDICATOR_Z - gz - poleH * RESO_COLLAR_FRAC
                     pivot.asDynamic().userData.targetZ = rodLen
                     DeployFx.bind(id, octant, pivot.asDynamic())
                 }
@@ -1164,10 +1164,10 @@ object Scene3D {
     }
 
     private fun addEnergyBar(x: Double, y: Double, gz: Double, agent: Agent) {
-        val pct = (agent.xm.toDouble() / agent.xmCapacity()).coerceIn(0.0, 1.0)
-        val level = agent.getLevel().coerceIn(1, MAX_AGENT_LEVEL)
-        // L4 == the coin size; ±¼ coin size per level (higher level → bigger XM capacity → taller bar).
-        val h = (INDICATOR_SIZE + (level - ANCHOR_LEVEL) * ENERGY_BAR_PER_LEVEL).coerceAtLeast(ENERGY_BAR_PER_LEVEL) * ENERGY_BAR_HEIGHT_SCALE
+        val cap = agent.xmCapacity()
+        val pct = (agent.xm.toDouble() / cap).coerceIn(0.0, 1.0)
+        // Bar height scales with XM capacity: at the max capacity (L16+) it's 5× the coin; shorter below.
+        val h = ENERGY_BAR_MAX_H * (cap.toDouble() / MAX_XM_CAPACITY)
         val bottom = gz + INDICATOR_Z + INDICATOR_THICK / 2.0 + ENERGY_BAR_GAP // stand it centered just above the coin
         val zc = bottom + h / 2.0
         // Black backing for the whole capacity…

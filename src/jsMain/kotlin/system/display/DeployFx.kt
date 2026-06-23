@@ -13,6 +13,8 @@ import util.data.Pos
  */
 object DeployFx {
     private const val DUR = 0.6 // seconds for a resonator to fly into its slot
+    private const val OUT_FRAC = 0.35 // first portion: rise straight up out of the agent's energy bar
+    private const val RISE = 9.0 // how far the rod rises (out of the bar) before peeling off to the slot
 
     private class Deploy(val start: Double, val from: Pos)
 
@@ -52,17 +54,28 @@ object DeployFx {
 
     private fun apply(pivot: dynamic, e: Double) {
         val t = (e / DUR).coerceIn(0.0, 1.0)
-        val ease = 1.0 - (1.0 - t) * (1.0 - t) // easeOutQuad
-        // Start (agent pos) + target (slot) are stamped on userData by Scene3D in the reso group's frame.
+        // Start (agent's energy bar) + target (slot) are stamped on userData by Scene3D in the reso frame.
         val sx = pivot.userData.flyStartX as Double
         val sy = pivot.userData.flyStartY as Double
         val sz = pivot.userData.flyStartZ as Double
         val tx = pivot.userData.targetX as Double
         val ty = pivot.userData.targetY as Double
         val tz = pivot.userData.targetZ as Double
-        pivot.position.set(sx + (tx - sx) * ease, sy + (ty - sy) * ease, sz + (tz - sz) * ease)
-        val s = 0.2 + 0.8 * ease // grows from small to full as it arrives
-        pivot.scale.set(s, s, s)
+        if (t < OUT_FRAC) {
+            // Phase 1: the rod rises straight up out of the energy bar (it IS a rod, like the bar).
+            val p = t / OUT_FRAC
+            pivot.position.set(sx, sy, sz + RISE * p)
+            val s = 0.25 + 0.25 * p
+            pivot.scale.set(s, s, s)
+        } else {
+            // Phase 2: peel off from the top of the bar and lerp into the slot, growing to full.
+            val p = (t - OUT_FRAC) / (1.0 - OUT_FRAC)
+            val ease = 1.0 - (1.0 - p) * (1.0 - p) // easeOutQuad
+            val oz = sz + RISE
+            pivot.position.set(sx + (tx - sx) * ease, sy + (ty - sy) * ease, oz + (tz - oz) * ease)
+            val s = 0.5 + 0.5 * ease
+            pivot.scale.set(s, s, s)
+        }
     }
 
     private fun key(id: String, octant: Octant) = "$id|${octant.name}"
