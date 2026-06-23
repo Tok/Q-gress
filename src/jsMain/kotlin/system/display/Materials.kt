@@ -42,7 +42,7 @@ object Materials {
 
     /** The link end-joint: the SAME glass as the link pipe, just a touch brighter/denser (uBright scales
      *  opacity too) — so it reads as a slightly-less-transparent joint, not the only fully-opaque thing. */
-    fun linkNode(color: String): dynamic = cache.getOrPut("ln$color") { GlassShader.material(color, GlassShader.LINK_BRIGHT * 1.25) }
+    fun linkNode(color: String): dynamic = cache.getOrPut("ln$color") { GlassShader.material(color, GlassShader.LINK_BRIGHT * 2.2) }
 
     /** Slottable-mod fill: translucent + self-luminous (an energy look, not the old shiny chrome). */
     fun modSolid(color: String): dynamic = cache.getOrPut("modf$color") {

@@ -38,7 +38,11 @@ data class Agent(
     private var beelineTicks: Int = 0, // >0 = temporarily bee-line straight at the target, ignoring the (looping) field
     private var triedBeeline: Boolean = false, // a bee-line was already spent this stuck episode → escalate to re-target
 ) {
-    fun key() = toString()
+    // STABLE identity for equals/hashCode + Scene3D keys. Must NOT include mutable state: toString()
+    // embeds getLevel() (from the var ap), so keying on it changed an agent's hashCode when it levelled
+    // up — corrupting the allAgents/frogs/smurfs sets ("Have object hashCodes changed?"). faction+name are
+    // vals and survive the movement copy(), so they identify the same agent across moves + level-ups.
+    fun key() = faction.abbr + "-" + name
     private fun distanceToDestination(): Double = pos.distanceTo(destination)
     fun distanceToPortal(portal: Portal): Double = pos.distanceTo(portal.location)
     fun isAtActionPortal(): Boolean = distanceToPortal(actionPortal) < Dim.maxDeploymentRange
