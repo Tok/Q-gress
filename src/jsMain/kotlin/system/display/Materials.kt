@@ -40,15 +40,9 @@ object Materials {
     /** Brighter glass variant for the thin link tubes (the orb glass reads too faint at pipe radius). */
     fun linkGlass(color: String): dynamic = cache.getOrPut("lg$color") { GlassShader.material(color, GlassShader.LINK_BRIGHT) }
 
-    /** Bright, near-opaque node at each link end — hides the pipe's cut end + reads as a glowing joint
-     *  (unlit MeshBasic → full-brightness faction colour, so it looks self-illuminated). */
-    fun linkNode(color: String): dynamic = cache.getOrPut("ln$color") {
-        val p: dynamic = js("({})")
-        p.color = color
-        p.transparent = true
-        p.opacity = 0.95
-        Three.MeshBasicMaterial(p)
-    }
+    /** The link end-joint: the SAME glass as the link pipe, just a touch brighter/denser (uBright scales
+     *  opacity too) — so it reads as a slightly-less-transparent joint, not the only fully-opaque thing. */
+    fun linkNode(color: String): dynamic = cache.getOrPut("ln$color") { GlassShader.material(color, GlassShader.LINK_BRIGHT * 1.25) }
 
     /** Slottable-mod fill: translucent + self-luminous (an energy look, not the old shiny chrome). */
     fun modSolid(color: String): dynamic = cache.getOrPut("modf$color") {

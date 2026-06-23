@@ -5,6 +5,7 @@ import external.FontLoader
 import external.TextGeometry
 import external.Three
 import util.Util
+import kotlin.math.ln
 import kotlin.math.max
 import kotlin.math.min
 
@@ -29,7 +30,11 @@ object DamageNumberFx {
     private const val STAGGER = 0.1 // delay between digit releases (right-most first)
     private const val FALL_LIFE = 2.4 // seconds a digit lives after release
     private const val FADE = 0.7 // fade-out at the very end of a number's life
-    private const val RED_AT = 4000.0 // damage at/above which the number reads fully red
+
+    // Volley damage spans orders of magnitude (a few hundred when heavily mitigated → tens of thousands
+    // on a fresh portal), so the colour uses a LOG scale between these, not linear.
+    private const val YELLOW_AT = 500.0 // ≤ this reads pure yellow
+    private const val RED_AT = 70000.0 // ≥ this reads pure red
     private const val MAX_ACTIVE = 24 // cap concurrent numbers (drop the oldest beyond this)
 
     // Nearby-blast shove on already-falling digits (shared law with ShatterFx via BlastModel).
@@ -228,9 +233,9 @@ object DamageNumberFx {
 
     private fun easeOut(t: Double) = 1.0 - (1.0 - t) * (1.0 - t) * (1.0 - t)
 
-    // Yellow (small) → orange → red (big), by damage amount. Red channel full; green + blue drop.
+    // Yellow (small) → orange → red (big), by damage amount on a LOG scale. Red channel full; G + B drop.
     private fun colorFor(amount: Int): String {
-        val t = min(1.0, amount / RED_AT)
+        val t = ((ln(max(1.0, amount.toDouble())) - ln(YELLOW_AT)) / (ln(RED_AT) - ln(YELLOW_AT))).coerceIn(0.0, 1.0)
         return "#ff" + hex((218 - 184 * t).toInt()) + hex((54 - 36 * t).toInt())
     }
 

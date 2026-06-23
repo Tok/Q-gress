@@ -45,7 +45,7 @@ object Attacker : ConditionalAction {
         val topLevel = xmps.maxByOrNull { it.level.level }?.level ?: XmpLevel.ONE
         Scene3D.playXmpBurst(agent.pos, topLevel.level, sound = true)
         val damage = xmps.sumOf { it.dealDamage(agent) } // resonator damage (summed for one floating number)
-        if (damage > 0) Scene3D.showDamageNumber(agent.actionPortal.location, damage)
+        if (damage > 0) Scene3D.showDamageNumber(agent.actionPortal, damage)
         // One mod knock-out roll per volley (XMPs strip shields slowly; Ultra-Strikes would be far better).
         XmpBurster.knockMods(agent.actionPortal, agent.pos, topLevel, ultra = false, agent)
         agent.actionPortal.retaliate(agent) // the attacked portal zaps back (drains the attacker → a real cost)

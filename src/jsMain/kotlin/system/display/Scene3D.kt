@@ -114,7 +114,7 @@ object Scene3D {
     private const val MAX_SHIELD_SHELLS = 4 // up to 4 shields per portal → 4 concentric bubbles
     private const val SHIELD_SHELL_STEP = 0.09 // each shield shell sits this much larger than the last (× radius)
     private const val SHIELD_WAVE_RANGE_FRAC = 0.6 // a blast ripples shields within this × the XMP's range
-    private const val DAMAGE_NUMBER_LIFT = 9.0 // spawn the damage number this high above the portal's ground
+    private const val DAMAGE_NUMBER_GAP = 2.0 // start the damage number this far above the flask top
 
     // tetrahedron vertex distance from orb centre (× orb radius); nudged out so mods clear the link joint
     private const val MOD_RING_FRAC = 0.55
@@ -577,10 +577,12 @@ object Scene3D {
         }
     }
 
-    /** Pop a 3D damage number ([amount] XM) above the portal at [location] (flies up, falls, fades). */
-    fun showDamageNumber(location: Pos, amount: Int) {
+    /** Pop a 3D damage number ([amount] XM) from the top of [portal]'s flask (flies up, falls, fades). */
+    fun showDamageNumber(portal: Portal, amount: Int) {
         scene ?: return
-        DamageNumberFx.spawn(sceneX(location), sceneY(location), groundZ(location) + DAMAGE_NUMBER_LIFT, amount)
+        val level = portal.getLevel().value.toDouble()
+        val flaskTop = groundZ(portal.location) + orbCenterZ(level) + TOP_R * orbScale(level)
+        DamageNumberFx.spawn(sceneX(portal.location), sceneY(portal.location), flaskTop + DAMAGE_NUMBER_GAP, amount)
     }
 
     // Ripple any nearby shielded portal's bubble — it "absorbs" the blast. Survivors wave + settle;

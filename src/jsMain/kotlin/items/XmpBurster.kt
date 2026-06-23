@@ -77,7 +77,7 @@ data class XmpBurster(val owner: Agent, val level: XmpLevel) : DeployableItem {
                     reso.takeDamage(attacker, dmg)
                     portalDamage += dmg
                 }
-                if (portalDamage > 0) Scene3D.showDamageNumber(portal.location, portalDamage)
+                if (portalDamage > 0) Scene3D.showDamageNumber(portal, portalDamage)
                 knockMods(portal, pos, level, ultra, attacker)
             }
         }
