@@ -11,7 +11,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import util.data.Complex
 import util.data.Pos
-import kotlin.math.max
 
 object PathUtil {
     const val MIN_HEAT = 35
@@ -19,56 +18,45 @@ object PathUtil {
     private const val MIN_SPEED_FACTOR = 0.45 // slowest terrain still moves at 45% (so agents never stall)
     private const val YIELD_EVERY_CELLS = 2000 // cooperative yield cadence while filling the vector field
 
-    private fun calcPosCost(pos: Pos, heat: Int) = heat + (World.grid[pos]?.movementPenalty ?: MAX_HEAT)
-
-    private fun posToCost(positions: Set<Pos>, heat: Int) = positions.map { pos -> pos to calcPosCost(pos, heat) }.toMap()
-
-    private fun mergeMaps(maps: Set<GridMap>) = maps.flatMap { m -> m.map { it.key to it.value } }.toMap()
-
-    private fun findSuccessors(currentMap: GridMap, passable: Grid, sameHeat: Set<Pos>, heat: Int) = sameHeat.map { pos ->
-        val successors = findUnmarkedSurrounding(pos, passable, currentMap)
-        posToCost(successors, heat) to successors.isNotEmpty()
-    }.toMap()
-
-    private fun calcFront(
-        currentMap: GridMap,
-        passable: Grid,
-        sameHeat: Set<Pos>,
-        heat: Int,
-    ): Pair<GridMap, Boolean> {
-        val result = findSuccessors(currentMap, passable, sameHeat, heat)
-        val front = mergeMaps(result.keys)
-        val hasMore = result.values.contains(true)
-        return front to hasMore
-    }
-
-    private fun createWaveFront(currentHeatMap: GridMap, passable: Grid, heat: Int): Pair<GridMap, Boolean> {
-        val sameHeat: GridMap = currentHeatMap.filter { it.value == heat }
-        val (layer, hasMaybeMore) = calcFront(currentHeatMap, passable, sameHeat.keys, heat)
-        return layer to hasMaybeMore
-    }
-
-    // suspend: yields (delay(0) → setTimeout → macrotask, so the browser can render) after every
-    // wavefront layer, turning this full-grid BFS from a ~1s thread freeze into a background fill.
+    // Cost field by bucketed Dijkstra: each cell's cost = the wave it's reached on + its terrain
+    // movement penalty, so high-penalty ground reads as "farther". A frontier bucket per cost level
+    // means each cell is touched once (O(cells)) instead of re-scanning the whole visited map every
+    // wavefront. suspend: yields (delay(0) → macrotask, so the browser can render) every
+    // ~YIELD_EVERY_CELLS cells, so a full-grid fill stays a background task and never freezes the frame.
     suspend fun generateHeatMap(goal: Pos): GridMap {
         val passable = World.passableCells()
-        var heat = 0
-        var maxHeat = 0
         val map = mutableMapOf<Pos, Int>()
-        map[goal.toShadow()] = heat
-        while (true) {
-            val (layer, hasMaybeMore) = createWaveFront(map, passable, heat++)
-            map.putAll(layer)
-            val layerMax = (layer.map { it.value }.maxOrNull() ?: 0)
-            maxHeat = max(maxHeat, layerMax)
-            val overCount = heat - maxHeat
-            val hasMore = hasMaybeMore || overCount < MAX_HEAT
-            delay(0) // yield each wavefront layer
-            if (!hasMore) {
-                break
+        val buckets = mutableMapOf<Int, MutableList<Pos>>() // cost level → cells awaiting expansion
+        val start = goal.toShadow()
+        map[start] = 0
+        buckets[0] = mutableListOf(start)
+        var heat = 0
+        var sinceYield = 0
+        while (buckets.isNotEmpty()) {
+            for (pos in buckets.remove(heat) ?: emptyList()) {
+                sinceYield += expand(pos, heat, map, buckets, passable)
+                if (sinceYield >= YIELD_EVERY_CELLS) {
+                    sinceYield = 0
+                    delay(0)
+                }
             }
+            heat++
         }
         return map
+    }
+
+    // Mark + bucket pos's unvisited passable neighbours at their cost (wave + terrain penalty); returns
+    // how many were added (so the caller can pace its cooperative yields).
+    private fun expand(pos: Pos, heat: Int, map: MutableMap<Pos, Int>, buckets: MutableMap<Int, MutableList<Pos>>, passable: Grid): Int {
+        var added = 0
+        for (next in findAllSurrounding(pos)) {
+            if (map.containsKey(next) || !passable.containsKey(next)) continue
+            val cost = heat + (World.grid[next]?.movementPenalty ?: MAX_HEAT)
+            map[next] = cost
+            if (cost > heat) buckets.getOrPut(cost) { mutableListOf() }.add(next)
+            added++
+        }
+        return added
     }
 
     // Launch the full heat-map + vector-field computation off the synchronous path. It runs on the
@@ -137,11 +125,6 @@ object PathUtil {
             it.key to Complex.fromMagnitudeAndPhase(magnitude, phase) // FIXME use terrain penalty
         }.toMap()
     }
-
-    private fun findUnmarkedSurrounding(node: Pos, passable: Grid, heatMap: GridMap): Set<Pos> = findAllSurrounding(node)
-        .filterNot { heatMap.containsKey(it) }
-        .filter { passable.containsKey(it) }
-        .toSet()
 
     private fun findAllSurrounding(node: Pos): List<Pos> = listOfNotNull(
         Pos(node.x - 1, node.y - 1),
