@@ -745,6 +745,10 @@ object Scene3D {
     private val heights = DoubleArray(HEIGHT_N * HEIGHT_N)
     private var heightsReady = false
 
+    /** Whether the terrain height grid has been sampled — buildings must wait for it so they sit on the
+     *  terrain (groundZ returns 0 until then, which would drop them to ground level). */
+    fun terrainReady() = heightsReady
+
     /** Re-sample the elevation grid + rebuild the border on it (on terrain toggle / build). Retries cover DEM load. */
     fun onTerrainChanged() {
         sampleHeights()
