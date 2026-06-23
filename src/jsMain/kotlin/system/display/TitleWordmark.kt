@@ -67,12 +67,12 @@ object TitleWordmark {
             mesh.asDynamic().position.x = cursor + w / 2.0
             mesh.asDynamic().userData.angle = 0.0
             mesh.asDynamic().userData.vel = 0.0
-            group.asDynamic().add(mesh)
+            group.add(mesh) // group is already dynamic — no .asDynamic()
             letters.add(mesh)
             cursor += w + SPACING
         }
         val half = (cursor - SPACING) / 2.0
-        letters.forEach { it.asDynamic().position.x = (it.asDynamic().position.x as Double) - half } // centre the word
+        letters.forEach { it.position.x = (it.position.x as Double) - half } // centre the word (it is dynamic)
         scene.add(group)
     }
 
@@ -101,13 +101,14 @@ object TitleWordmark {
         g.quaternion.setFromRotationMatrix(m)
         g.position.set(pos[0], pos[1], pos[2])
         letters.forEach { letter ->
-            val angle = letter.asDynamic().userData.angle as Double
-            val vel = letter.asDynamic().userData.vel as Double
+            // letter is dynamic — access directly, no .asDynamic()
+            val angle = letter.userData.angle as Double
+            val vel = letter.userData.vel as Double
             val nextVel = vel + (-STIFF * angle - DAMP * vel) * dt
             val nextAngle = angle + nextVel * dt
-            letter.asDynamic().userData.vel = nextVel
-            letter.asDynamic().userData.angle = nextAngle
-            letter.asDynamic().rotation.y = nextAngle
+            letter.userData.vel = nextVel
+            letter.userData.angle = nextAngle
+            letter.rotation.y = nextAngle
         }
     }
 
@@ -115,9 +116,10 @@ object TitleWordmark {
     fun flash() {
         if (!loaded) return
         letters.forEachIndexed { i, letter ->
+            // letter is dynamic — access directly
             val dir = if (i % 2 == 0) 1.0 else -1.0
             val jitter = 0.6 + (i % 3) * 0.3
-            letter.asDynamic().userData.vel = (letter.asDynamic().userData.vel as Double) + IMPULSE * dir * jitter
+            letter.userData.vel = (letter.userData.vel as Double) + IMPULSE * dir * jitter
         }
     }
 

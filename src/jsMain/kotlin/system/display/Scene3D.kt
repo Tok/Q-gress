@@ -107,7 +107,7 @@ object Scene3D {
     private const val NEUTRAL_COLOR = "#bbbbbb"
     private const val MOD_R_FRAC = 0.16 // chrome mod radius (× orb radius)
     private const val MOD_SCALE = 1.2 // scale the mod solids up a touch (they read bland at base size)
-    private const val MOD_WIRE_SCALE = 1.08 // black edge cage sits a bit further out → reads bolder
+    private const val MOD_WIRE_SCALE = 1.01 // black edge cage right on the surface (no visible gap)
     private const val MOD_RING_FRAC = 0.55 // tetrahedron vertex distance from orb centre (× orb radius); nudged out so mods clear the link joint
 
     // Unit regular-tetrahedron vertices (magnitude √3); the 4 mod slots sit at these inside the orb.
