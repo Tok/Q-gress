@@ -27,6 +27,7 @@ object Onboarding {
 
     /** Step 1 — pick a faction. [onPick] receives it. */
     fun showFaction(onPick: (Faction) -> Unit) {
+        currentBack = null // first step — nothing to go back to
         document.getElementById(SCREEN_ID)?.remove()
         val screen = div("onboardScreen")
         screen.id = SCREEN_ID
@@ -122,7 +123,8 @@ object Onboarding {
      * preset list), **Select** (reveals the preset list). The globe flies to each new choice; the
      * player can pan/zoom to fine-tune, then confirms the play-area box. [onStart] gets lng, lat, name.
      */
-    fun showLocation(onStart: (Double, Double, String) -> Unit) {
+    fun showLocation(onBack: () -> Unit, onStart: (Double, Double, String) -> Unit) {
+        currentBack = onBack // Esc → back to map size
         val screen = screen("CHOOSE A LOCATION")
         var currentName = ""
 
@@ -215,7 +217,8 @@ object Onboarding {
 
     /** Step 2 — map size + portal density + quick-start. [onStart] gets w, h, portals, quickStart.
      *  (NPC population isn't a player choice — it's auto-derived from map size + location; see Config.) */
-    fun showMapSize(defaultPortals: Int, onStart: (Int, Int, Int, Boolean) -> Unit) {
+    fun showMapSize(defaultPortals: Int, onBack: () -> Unit, onStart: (Int, Int, Int, Boolean) -> Unit) {
+        currentBack = onBack // Esc → back to faction pick
         val screen = screen("MAP SIZE & PORTALS")
         val widthInput = numberInput(Sim.width)
         val heightInput = numberInput(Sim.height)
@@ -259,7 +262,7 @@ object Onboarding {
         screen.appendChild(warn)
 
         screen.appendChild(
-            button("Start", "topButton displayFont onboardStart") {
+            button("Next", "topButton displayFont onboardStart") {
                 Sim.roundField = roundCheck.checked
                 Config.npcMultiplier = npcSlider.valueAsNumber // carried into the game via the reload URL
                 val w = widthInput.value.toIntOrNull() ?: Sim.width
@@ -339,7 +342,19 @@ object Onboarding {
 
     /** Remove the current onboarding screen (the last step loads the world without a reload). */
     fun close() {
+        currentBack = null
         document.getElementById(SCREEN_ID)?.remove()
+    }
+
+    // Where Esc goes from the current step (null on the first step). Set by each show* below.
+    private var currentBack: (() -> Unit)? = null
+
+    /** True while an onboarding screen is up (so Esc can mean "go back" instead of "close a panel"). */
+    fun isShowing() = document.getElementById(SCREEN_ID) != null
+
+    /** Step back one onboarding screen (Esc); no-op on the first step. */
+    fun back() {
+        currentBack?.invoke()
     }
 
     // Builds the full-screen shaded overlay (the title sim shows through, dimmed) + a glass panel, and

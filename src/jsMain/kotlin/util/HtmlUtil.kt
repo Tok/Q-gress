@@ -32,6 +32,7 @@ import util.ui.Footer
 import util.ui.Icons
 import util.ui.Inspector
 import util.ui.LoadingOverlay
+import util.ui.MenuControls
 import util.ui.Onboarding
 import util.ui.ShortcutsHelp
 import util.ui.TuningPanel
@@ -214,22 +215,30 @@ object HtmlUtil {
         }
     }
 
-    private fun runOnboarding() {
+    // Back-able flow (faction → map size → location); Esc steps back (escClose). Block bodies (Unit) on
+    // purpose — expression bodies make the mutual references recurse in type inference.
+    private fun runOnboarding() = onboardFaction()
+
+    private fun onboardFaction() {
         Onboarding.showFaction { f ->
             World.userFaction = null // clear the title sim's placeholder faction so the real pick takes
             chooseUserFaction(f)
-            Onboarding.showMapSize(Config.startPortals) { w, h, portals, quick ->
-                Sim.setSize(w, h) // size first, so the location screen's play-area box is the real size
-                Config.startPortals = portals
-                Config.quickStart = quick
-                Onboarding.showLocation { lng, lat, name ->
-                    // Reload into the game via the deep-link URL (carries faction/size/portals/npc/
-                    // round/quick). This cleanly wipes the real-Scene3D title running behind onboarding,
-                    // reusing the game's proven reload-based load path.
-                    navigateToLocation(lng, lat, name)
-                }
-            }
+            onboardMapSize()
         }
+    }
+
+    private fun onboardMapSize() {
+        Onboarding.showMapSize(Config.startPortals, onBack = { onboardFaction() }) { w, h, portals, quick ->
+            Sim.setSize(w, h) // size first, so the location screen's play-area box is the real size
+            Config.startPortals = portals
+            Config.quickStart = quick
+            onboardLocation()
+        }
+    }
+
+    // Reload into the game via the deep-link URL — cleanly wipes the title sim, reusing the reload load path.
+    private fun onboardLocation() {
+        Onboarding.showLocation(onBack = { onboardMapSize() }) { lng, lat, name -> navigateToLocation(lng, lat, name) }
     }
 
     private fun centerOrDefault(): Json = GameUrl.lngLat()?.toJson() ?: Locations.DEFAULT.toJSON()
@@ -437,6 +446,10 @@ object HtmlUtil {
     }
 
     private fun escClose() {
+        if (Onboarding.isShowing()) { // mid-onboarding, Esc steps back a screen instead of closing panels
+            Onboarding.back()
+            return
+        }
         ShortcutsHelp.close()
         DropRatesPanel.close()
         closePopup()
@@ -676,12 +689,12 @@ object HtmlUtil {
         (xray.firstChild as? HTMLInputElement)?.checked = Scene3D.drawOverBuildings
         menu.append(xray)
         // Combat dynamism (0 = realistic/tanky shields … 1 = portals flip very easily). Live-tunable.
-        menu.append(createMenuSlider("Combat", Config.combatDynamism) { Config.combatDynamism = it })
+        menu.append(MenuControls.slider("Combat", Config.combatDynamism) { Config.combatDynamism = it })
         // Fade the 3D buildings when crowded areas hide the action.
-        menu.append(createMenuSlider("Buildings", 0.9) { MapUtil.setBuildingOpacity(it) })
+        menu.append(MenuControls.slider("Buildings", 0.9) { MapUtil.setBuildingOpacity(it) })
         // Building-shake intensity (0 = off … 2 = 200%).
         menu.append(
-            createMenuSlider("Building shake", Config.buildingShakeMultiplier, 0.0, 2.0, 0.1) {
+            MenuControls.slider("Building shake", Config.buildingShakeMultiplier, 0.0, 2.0, 0.1) {
                 Config.buildingShakeMultiplier = it
             },
         )
@@ -703,36 +716,6 @@ object HtmlUtil {
     private fun createMenuCheckbox(id: String, labelText: String, onChange: (Boolean) -> Unit): HTMLSpanElement {
         val span = createCheckbox(id, labelText, onChange)
         span.addClass("menuCheck")
-        return span
-    }
-
-    /** A labelled 0..1 slider row inside the game menu dropdown (e.g. building opacity). */
-    private fun createMenuSlider(
-        labelText: String,
-        initial: Double,
-        min: Double = 0.0,
-        max: Double = 1.0,
-        step: Double = 0.05,
-        onInput: (Double) -> Unit,
-    ): HTMLSpanElement {
-        val span = document.createElement("span") as HTMLSpanElement
-        span.addClass("menuCheck", "menuSliderRow")
-        val label = document.createElement("span") as HTMLSpanElement
-        label.addClass("label")
-        label.innerHTML = labelText
-        val slider = document.createElement("input") as HTMLInputElement
-        slider.type = "range"
-        slider.min = min.toString()
-        slider.max = max.toString()
-        slider.step = step.toString()
-        slider.value = initial.toString()
-        slider.addClass("slider", "menuSlider")
-        slider.oninput = {
-            onInput(slider.valueAsNumber)
-            null
-        }
-        span.append(label)
-        span.append(slider)
         return span
     }
 
