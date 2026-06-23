@@ -357,6 +357,42 @@ object MapUtil {
         titleOrbitActive = false
     }
 
+    private const val AUTOCAM_LEG_MS = 20800.0 // in-game auto-cam leg — ~2× slower than the title drift
+    private const val AUTOCAM_PITCH = 42.0 // a bit more top-down than DEFAULT_PITCH so the action stays framed
+    private const val AUTOCAM_ZOOM_OUT = 0.6 // sit wider than the framed zoom → keep the whole arena in view
+    private var autoCamActive = false
+
+    fun isAutoCamOn() = autoCamActive
+
+    /** Toggle the in-game auto-cam (the "Auto cam" menu checkbox). On → start the drift; off → it settles where it is. */
+    fun setAutoCam(on: Boolean) {
+        if (on == autoCamActive) return
+        autoCamActive = on
+        if (on) {
+            cinematicActive = false // don't fight the build spin (if somehow still running)
+            autoCamLeg()
+        }
+    }
+
+    // One in-game auto-cam leg: like the title drift but slower and wider — hold the play-area centre
+    // framed, ease to a new yaw/pitch/zoom, then chain another. Wall-clock (setTimeout/easeTo), so the
+    // camera glides at the same pace regardless of sim speed. Drives both maps like goHome.
+    private fun autoCamLeg() {
+        if (!autoCamActive) return
+        val center = anchorCenter ?: return
+        val ref = referenceMap() ?: return
+        val turn = (50.0 + Util.random() * 130.0) * (if (Util.randomBool()) 1.0 else -1.0)
+        val opts: dynamic = js("({})")
+        opts.center = center // keep the action framed (no fly-in to detail like the title does)
+        opts.bearing = (ref.getBearing() as Double) + turn
+        opts.pitch = AUTOCAM_PITCH - 6.0 + Util.random() * 12.0 // gentle tilt variation
+        opts.zoom = displayZoom() - AUTOCAM_ZOOM_OUT + Util.random() * 0.7 // wider than framed, small variation
+        opts.duration = AUTOCAM_LEG_MS
+        initMap?.asDynamic()?.easeTo(opts)
+        map?.asDynamic()?.easeTo(opts)
+        window.setTimeout({ autoCamLeg() }, AUTOCAM_LEG_MS.toInt())
+    }
+
     /** Register the 3D scene (three.js custom layer) on the base map, anchored at the grid view. */
     fun enable3D() {
         val targetMap = initMap ?: return

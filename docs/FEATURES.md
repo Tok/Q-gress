@@ -111,14 +111,20 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
   NPCs, stray XM, links/fields, labels, the deploy/loot/pickup FX). Menu **"3D terrain"** toggle
   (default on); degrades to flat if the DEM is unavailable. (The cannon-es shatter ground stays flat —
   a known approximation.)
-- **Top toolbar** reorganized: Menu far-left (with Terrain/Vectors overlay toggles + Lock-tuning
-  inside it), Pause/Resume, Home; View dropdown + Volume far-right. Toolbar stays hidden until the
-  world is ready.
+- **Top toolbar** reorganized: Menu far-left (with overlay toggles + Lock-tuning + **Auto cam**
+  inside it), Home, and a compact **sim-speed button group** — Pause / ×1 / ×3 / Max (the active speed
+  highlighted; Pause is Space-bound; `-`/`+` still nudge) replacing the old pause button + slider;
+  Volume far-right. Toolbar stays hidden until the world is ready.
+- **Auto cam** (Menu toggle): a slow, slightly-randomized cinematic camera drift around the arena —
+  the title-screen orbit reused in-game (`MapUtil.setAutoCam`/`autoCamLeg`), but **~2× slower and a
+  touch wider** so the action stays framed (the title can push in for detail; in-game holds the whole
+  picture). **Wall-clock** (chained `setTimeout`/`easeTo`), so it glides at the same pace at any sim speed.
 - **Keyboard controls + sim speed** (`util/Shortcuts`, `util/ui/ShortcutsHelp`): Space pause, Home
   recenter, PageUp/Down (and `-`/`+`) zoom, WASD pan, `,`/`.` building transparency, `-`/`+` sim
   **speed**, Tab cycles the footer, M mute, Esc closes popups; a **"?" shortcuts help** popup lists
-  them. The sim **speed slider/keys** drive `Time` tick interval **and** `Scene3D.animationSpeed`, so
-  every animation (hack spin, deploy/shatter, build-in, field shimmer) tracks the sim speed.
+  them. The sim **speed buttons/keys** drive `Time` tick interval **and** `Scene3D.animationSpeed`, so
+  every animation (hack spin, deploy/shatter, build-in, field shimmer) tracks the sim speed. (The
+  **Auto cam** drift is the deliberate exception — wall-clock, decoupled from sim speed.)
 - Map visuals: grayscale-terrain default (the satellite layer starts desaturated in-style → no colour
   flash; eases to colour) + Colored/Street views (`LayerView`), an **atmospheric skybox** (MapLibre
   `setSky`) above the horizon, white play-area border + upright **semi-transparent white boundary

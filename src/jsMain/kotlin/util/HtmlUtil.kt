@@ -48,8 +48,13 @@ object HtmlUtil {
     private const val LOCATION_LABEL_ID = "locationLabel"
     private const val MIN_SPEED = 0.25
     private const val MAX_SPEED = 4.0
-    private const val SPEED_STEP = 0.25 // per ,/. press and slider increment
-    private const val SPEED_SLIDER_ID = "speedSlider"
+
+    // Sim-speed presets behind the toolbar buttons (mult, label, button id). "Max" = MAX_SPEED.
+    private val SPEED_PRESETS = listOf(
+        Triple(1.0, "×1", "speedBtnX1"),
+        Triple(3.0, "×3", "speedBtnX3"),
+        Triple(MAX_SPEED, "Max", "speedBtnMax"),
+    )
 
     // The actually-loaded location (set by setLoadedLocation) — named in the top bar, and the target
     // a Reset reloads onto.
@@ -147,10 +152,7 @@ object HtmlUtil {
         leftGroup.append(createMenuSpan()) // New Game / Reset + overlay toggles
         // Recenter top-down over the play area (find your way back after panning/rotating away).
         leftGroup.append(createButton("homeButton", "topButton displayFont", "Home") { MapUtil.goHome() })
-        val pauseButton = createButton(PAUSE_BUTTON_ID, "topButton", "Pause") { togglePause() }
-        pauseButton.addClass("non", "displayFont")
-        leftGroup.append(pauseButton)
-        leftGroup.append(createSpeedSpan()) // sim-speed slider (also ,/. keys)
+        leftGroup.append(createSpeedControls()) // Pause + ×1/×3/Max (Space toggles pause; -/+ keys nudge speed)
         bindKeyboardShortcuts() // Space=pause · Home=recenter · zoom/pan/speed/mute/Esc
 
         // Right group, far right: volume + base-map view dropdown.
@@ -261,27 +263,33 @@ object HtmlUtil {
         return span
     }
 
-    private fun createSpeedSpan(): HTMLSpanElement {
+    // Four compact buttons replace the old pause button + speed slider: Pause (toggles, Space-bound) and
+    // the ×1 / ×3 / Max presets (active one highlighted; -/+ keys still nudge).
+    private fun createSpeedControls(): HTMLSpanElement {
         val span = document.createElement("span") as HTMLSpanElement
-        val label = document.createElement("span") as HTMLSpanElement
-        label.addClass("label", "topLabel")
-        label.id = "speedLabel"
-        label.innerHTML = "1.0×"
-        span.append(label)
-        val slider = document.createElement("input") as HTMLInputElement
-        slider.id = SPEED_SLIDER_ID
-        slider.type = "range"
-        slider.min = MIN_SPEED.toString()
-        slider.max = MAX_SPEED.toString()
-        slider.step = SPEED_STEP.toString()
-        slider.value = "1.0"
-        slider.addClass("slider", "speedSlider")
-        slider.oninput = {
-            setSpeed(slider.valueAsNumber)
-            null
+        span.addClass("toolbarGroup", "speedControls")
+        span.append(createButton(PAUSE_BUTTON_ID, "topButton displayFont speedBtn", "Pause") { togglePause() })
+        SPEED_PRESETS.forEach { (mult, label, id) ->
+            span.append(createButton(id, "topButton displayFont speedBtn", label) { selectSpeed(mult) })
         }
-        span.append(slider)
+        refreshSpeedButtons()
         return span
+    }
+
+    /** Pick a sim-speed preset; resumes first if currently paused (so a speed button always plays). */
+    private fun selectSpeed(mult: Double) {
+        if (isPaused()) togglePause()
+        setSpeed(mult)
+    }
+
+    private fun isPaused() = intervalID == -1
+
+    // Highlight the preset matching the live speed (none while paused).
+    private fun refreshSpeedButtons() {
+        SPEED_PRESETS.forEach { (mult, _, id) ->
+            val active = !isPaused() && mult == speedMult
+            (document.getElementById(id) as? HTMLElement)?.let { if (active) it.addClass("active") else it.removeClass("active") }
+        }
     }
 
     private fun createControlDiv(): HTMLDivElement {
@@ -382,6 +390,7 @@ object HtmlUtil {
 
     private fun togglePause() {
         intervalID = pauseHandler(intervalID) { tick() }
+        refreshSpeedButtons()
     }
 
     private fun bindKeyboardShortcuts() = Shortcuts.bind(
@@ -425,8 +434,7 @@ object HtmlUtil {
             document.defaultView?.clearInterval(intervalID)
             intervalID = document.defaultView?.setInterval({ tick() }, currentTickMs()) ?: 0
         }
-        (document.getElementById(SPEED_SLIDER_ID) as? HTMLInputElement)?.value = speedMult.toString()
-        (document.getElementById("speedLabel"))?.textContent = "$speedMult×"
+        refreshSpeedButtons()
     }
 
     private fun pauseHandler(intervalID: Int, tickFunction: () -> Unit): Int {
@@ -659,6 +667,10 @@ object HtmlUtil {
         val lock = createMenuCheckbox("tuneLockToggle", "Lock tuning") { TuningPanel.setMode(it) }
         (lock.firstChild as? HTMLInputElement)?.checked = isReadOnlyFromUrl()
         menu.append(lock)
+        // Auto cam: slow, slightly-randomized cinematic drift around the arena (wall-clock, sim-speed-independent).
+        val autoCam = createMenuCheckbox("autoCamToggle", "Auto cam") { MapUtil.setAutoCam(it) }
+        (autoCam.firstChild as? HTMLInputElement)?.checked = MapUtil.isAutoCamOn()
+        menu.append(autoCam)
         // Fade the 3D buildings when crowded areas hide the action.
         menu.append(createMenuSlider("Buildings", 0.9) { MapUtil.setBuildingOpacity(it) })
         // Build version footer (timestamp + git-sha), so any deployed build is identifiable.
