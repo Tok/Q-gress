@@ -6,20 +6,26 @@ import items.deployable.DeployableItem
 import items.level.XmpLevel
 import portal.ModSlot
 import portal.Portal
+import system.display.Scene3D
 import util.Util
 import util.data.Pos
 
 data class XmpBurster(val owner: Agent, val level: XmpLevel) : DeployableItem {
 
-    /** Apply this burst's damage to every resonator in range (quintile falloff + mitigation; see [Combat]). */
-    fun dealDamage(agent: Agent) {
+    /** Apply this burst's damage to every resonator in range (quintile falloff + mitigation; see [Combat]).
+     *  Returns the total XM dealt (so the caller can pop one aggregate 3D damage number). */
+    fun dealDamage(agent: Agent): Int {
+        var total = 0
         agent.findResosInAttackRange(level).forEach { reso ->
             val position = requireNotNull(reso.position) { "resonator in attack range without a position" }
             val distFrac = Combat.distanceFraction(position.distanceTo(agent.pos), level.rangeM, ultra = false)
             val crit = distFrac < 0.2 && Util.random() < Combat.CRIT_RATE
             val mitigation = reso.portal?.totalMitigation() ?: 0 // shields + links reduce incoming damage
-            reso.takeDamage(agent, Combat.resoDamage(level.damage, distFrac, mitigation, ultra = false, crit = crit))
+            val dmg = Combat.resoDamage(level.damage, distFrac, mitigation, ultra = false, crit = crit)
+            reso.takeDamage(agent, dmg)
+            total += dmg
         }
+        return total
     }
 
     override fun toString() = "XMP" + level.level
@@ -60,14 +66,18 @@ data class XmpBurster(val owner: Agent, val level: XmpLevel) : DeployableItem {
          */
         fun blastAt(pos: Pos, level: XmpLevel, attacker: Agent, ultra: Boolean = false) {
             World.allPortals.forEach { portal ->
+                var portalDamage = 0
                 portal.slots.values.forEach { slot ->
                     val reso = slot.resonator ?: return@forEach
                     val rp = reso.position ?: return@forEach
                     val distFrac = Combat.distanceFraction(rp.distanceTo(pos), level.rangeM, ultra)
                     if (distFrac >= 1.0) return@forEach
                     val crit = distFrac < 0.2 && Util.random() < Combat.CRIT_RATE
-                    reso.takeDamage(attacker, Combat.resoDamage(level.damage, distFrac, portal.totalMitigation(), ultra, crit))
+                    val dmg = Combat.resoDamage(level.damage, distFrac, portal.totalMitigation(), ultra, crit)
+                    reso.takeDamage(attacker, dmg)
+                    portalDamage += dmg
                 }
+                if (portalDamage > 0) Scene3D.showDamageNumber(portal.location, portalDamage)
                 knockMods(portal, pos, level, ultra, attacker)
             }
         }

@@ -19,7 +19,7 @@
     font-family: 'Coda';
     font-style: normal;
     font-weight: normal;
-    src: local('Coda'), url('../fonts/Coda.ttf.woff') format('woff');
+    src: local('Coda'), url('../fonts/Coda-Regular.ttf') format('truetype');
 }
 
 .coda {

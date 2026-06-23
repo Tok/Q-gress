@@ -114,6 +114,7 @@ object Scene3D {
     private const val MAX_SHIELD_SHELLS = 4 // up to 4 shields per portal → 4 concentric bubbles
     private const val SHIELD_SHELL_STEP = 0.09 // each shield shell sits this much larger than the last (× radius)
     private const val SHIELD_WAVE_RANGE_FRAC = 0.6 // a blast ripples shields within this × the XMP's range
+    private const val DAMAGE_NUMBER_LIFT = 9.0 // spawn the damage number this high above the portal's ground
 
     // tetrahedron vertex distance from orb centre (× orb radius); nudged out so mods clear the link joint
     private const val MOD_RING_FRAC = 0.55
@@ -280,6 +281,7 @@ object Scene3D {
         XmpBurst.register(newScene)
         FieldFx.register(newScene)
         ShatterFx.register(newScene)
+        DamageNumberFx.register(newScene)
         BoltFx.register(newScene)
         XmFx.register(newScene)
         showcaseGroup = Three.Group()
@@ -333,6 +335,7 @@ object Scene3D {
     }
 
     private fun hasActiveEffects() = ShatterFx.hasActive() ||
+        DamageNumberFx.hasActive() ||
         showcasesAnimating() ||
         HackFx.hasActive() ||
         DeployFx.hasActive() ||
@@ -345,6 +348,7 @@ object Scene3D {
     private fun updateEffects(map: MapLibre.Map, dt: Double, invProj: dynamic) {
         if (!hasActiveEffects()) return
         if (ShatterFx.hasActive()) ShatterFx.update(dt)
+        if (DamageNumberFx.hasActive()) DamageNumberFx.update(dt)
         if (BoltFx.hasActive()) BoltFx.update(dt)
         if (showcasesAnimating()) updateShowcases(dt)
         if (HackFx.hasActive()) HackFx.update()
@@ -565,11 +569,17 @@ object Scene3D {
         ShatterFx.recordBlast(origin, level) // shatter pieces arc up-and-out, energy ∝ level / distance
         TitleWordmark.flash(origin, level) // title letters get shoved (no-op until loaded)
         triggerShieldWaves(location, level) // nearby shields ripple as they absorb the blast
-        val ll = simPosToLngLat(location) // buildings within the XMP's blast radius bob + settle
-        BuildingShake.blast(ll[0], ll[1], XmpLevel.valueOf(level).rangeM, level, animClockMs / 1000.0)
+        val ll = simPosToLngLat(location) // buildings within the XMP's blast radius bob + settle (US rocks harder)
+        BuildingShake.blast(ll[0], ll[1], XmpLevel.valueOf(level).rangeM, level, ultra, animClockMs / 1000.0)
         if (sound) {
             if (ultra) SoundUtil.playUltraStrike(location) else SoundUtil.playXmpSound(location, level)
         }
+    }
+
+    /** Pop a 3D damage number ([amount] XM) above the portal at [location] (flies up, falls, fades). */
+    fun showDamageNumber(location: Pos, amount: Int) {
+        scene ?: return
+        DamageNumberFx.spawn(sceneX(location), sceneY(location), groundZ(location) + DAMAGE_NUMBER_LIFT, amount)
     }
 
     // Ripple any nearby shielded portal's bubble — it "absorbs" the blast. Survivors wave + settle;

@@ -44,7 +44,8 @@ object Attacker : ConditionalAction {
         // Detonate FIRST (records the blast origin) so the resonators/mods it destroys fly away from it.
         val topLevel = xmps.maxByOrNull { it.level.level }?.level ?: XmpLevel.ONE
         Scene3D.playXmpBurst(agent.pos, topLevel.level, sound = true)
-        xmps.forEach { it.dealDamage(agent) } // resonator damage
+        val damage = xmps.sumOf { it.dealDamage(agent) } // resonator damage (summed for one floating number)
+        if (damage > 0) Scene3D.showDamageNumber(agent.actionPortal.location, damage)
         // One mod knock-out roll per volley (XMPs strip shields slowly; Ultra-Strikes would be far better).
         XmpBurster.knockMods(agent.actionPortal, agent.pos, topLevel, ultra = false, agent)
         agent.actionPortal.retaliate(agent) // the attacked portal zaps back (drains the attacker → a real cost)
