@@ -121,7 +121,7 @@ object TitleSim {
         } else {
             Scene3D.playXmpBurst(pos, TITLE_BLAST_LEVEL)
         }
-        XmpBurster.blastAt(pos, XmpLevel.valueOf(TITLE_BLAST_LEVEL), attacker)
+        XmpBurster.blastAt(pos, XmpLevel.valueOf(TITLE_BLAST_LEVEL), attacker, ultra = ultra)
     }
 
     // The 3D letters replace the flat DOM wordmark — hide it once they're in the scene.

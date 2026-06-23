@@ -12,5 +12,10 @@ enum class ModType { SHIELD, HEAT_SINK, LINK_AMP }
 interface Mod : DeployableItem {
     val rarity: Rarity
     val abbr: String
+
+    /** Resistance to being knocked out of its slot by an XMP/Ultra-Strike (0 = pops out easily; see
+     *  [items.Combat.knockChance]). Low-tier items default to 0; shields override with their tier value. */
+    val stickiness: Int get() = 0
+
     fun modType(): ModType
 }

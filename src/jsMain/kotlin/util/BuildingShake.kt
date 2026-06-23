@@ -25,10 +25,10 @@ object BuildingShake {
 
     private const val DURATION = 2.4 // seconds to settle back to rest
     private const val FREQ = 11.0 // wobble speed (rad/s)
-    private const val BASE_AMP_M = 4.5 // peak bob (metres) — a small, point-blank building at L8
+    private const val BASE_AMP_M = 6.75 // peak bob (metres) — a small, point-blank building at L8
     private const val REF_HEIGHT_M = 12.0 // taller than this → progressively less bob ("more mass")
-    private const val QUERY_R_BASE = 46.0 // blast query radius in screen px…
-    private const val QUERY_R_PER_LEVEL = 7.0 // …growing with level (bigger blasts shake a wider area)
+    private const val QUERY_R_BASE = 80.0 // blast query radius in screen px…
+    private const val QUERY_R_PER_LEVEL = 12.0 // …growing with level (bigger blasts shake a wider area)
     private const val MAX_SHAKEN = 90 // safety cap on buildings animated at once
 
     private var map: dynamic = null

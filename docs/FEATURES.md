@@ -206,6 +206,15 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
   filter; no dangling links/fields on portal destroy/neutralise.
 - Removed the dead attack/damage telegraph/queue system (`Attacks`/`Display`/`Damage`/`Queues`);
   damage applies inline, visualised by the 3D XMP burst.
+- **Combat model** (`Combat`, pure + unit-tested): Ingress-flavoured XMP/Ultra-Strike maths shared by
+  gameplay + the title blast. **Bursters** take out resonators (stepped **quintile** range falloff;
+  **mitigation** from shields/links reduces damage, capped 95% with a 1-XM floor); **Ultra-Strikes**
+  barely scratch resonators but **knock slotted mods out** far better, with a much smaller blast radius.
+  Mod knock-out is rolled **once per attack**, chance rising with **proximity** to the portal centre and
+  falling with the mod's **stickiness** (`Mod.stickiness`; low items pop out easily, high-tier shields
+  cling on) — so a fully-shielded L8 portal takes many strikes to strip (`Portal.stripMod`). **Fixed a
+  bug** where any hit destroyed a resonator regardless of damage (`Resonator.takeDamage` `<= newEnergy`),
+  which made attacks — and Ultra-Strikes — wildly too strong; resonators now accumulate damage to 0.
 - **Portal zap defense** (`Portal.retaliate`): hacking or attacking an **enemy** portal makes it
   retaliate — XM damage scaling with portal **level + shields** (mitigation) plus a `BoltFx` lightning
   bolt + thunder. Friendly/neutral portals don't zap. This makes XM the agent's **energy**: drained by

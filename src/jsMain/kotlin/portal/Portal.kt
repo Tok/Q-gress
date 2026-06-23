@@ -117,6 +117,19 @@ data class Portal(
     fun hasFreeModSlot(): Boolean = mods.size < ModSlot.values().size
     fun modCount(): Int = mods.size
 
+    /**
+     * Knock the mod in [slot] out of the portal (an XMP/Ultra-Strike stripped it — see
+     * [items.XmpBurster.knockMods]). Drops it, plays the shield-removal FX, awards AP. Returns the
+     * removed mod, or null if the slot was empty. The dropped mod just vanishes on the next sync.
+     */
+    fun stripMod(slot: ModSlot, destroyer: Agent?): Mod? {
+        val mod = mods.remove(slot) ?: return null
+        destroyer?.addAp(MOD_DESTROY_AP)
+        if (mod is Shield && HtmlUtil.isRunningInBrowser()) SoundUtil.playShieldRemoveSound(location, mod.getLevel())
+        Com.addMessage("$destroyer knocked a ${mod.abbr} off $this.")
+        return mod
+    }
+
     /** Slot a mod (shield / heat sink) into the first free mod slot (charges XM, awards AP, consumes). */
     fun deployMod(deployer: Agent, mod: Mod) {
         val free = ModSlot.values().firstOrNull { !mods.containsKey(it) } ?: return
@@ -561,6 +574,7 @@ data class Portal(
         private const val ZAP_BASE_XM = 15 // retaliation XM damage per portal level
         private const val ZAP_SHIELD_XM = 1 // extra retaliation XM per point of mitigation (shields zap harder)
         private const val MOD_DEPLOY_AP = 125
+        private const val MOD_DESTROY_AP = 75 // AP for knocking a mod off (cf. resonator destroy)
         private const val MIN_COOLDOWN_FACTOR = 0.05 // heat sinks can't reduce cooldown below 5%
         private const val VIRUS_AP = 1000 // AP for flipping a portal with a virus
         private fun clipLevel(level: Int): Int = max(1, min(level, 8))

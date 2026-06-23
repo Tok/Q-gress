@@ -5,6 +5,7 @@ import agent.Inventory
 import agent.action.ActionItem
 import config.Constants
 import items.XmpBurster
+import items.level.XmpLevel
 import system.display.Scene3D
 import util.Util
 
@@ -20,8 +21,11 @@ object Attacker : ConditionalAction {
         if (xmps.isNotEmpty()) {
             // Detonate FIRST (records the blast origin) so the resonators/mods it destroys fly away from
             // it, then apply the damage that shatters them.
-            Scene3D.playXmpBurst(agent.pos, xmps.maxOf { it.level.level }, sound = true)
+            val topLevel = xmps.maxByOrNull { it.level.level }?.level ?: XmpLevel.ONE
+            Scene3D.playXmpBurst(agent.pos, topLevel.level, sound = true)
             xmps.forEach { it.dealDamage(agent) } // apply resonator damage (was the now-removed Queues path)
+            // One mod knock-out roll per volley (XMPs strip shields slowly; Ultra-Strikes would be far better).
+            XmpBurster.knockMods(agent.actionPortal, agent.pos, topLevel, ultra = false, agent)
             agent.actionPortal.retaliate(agent) // the attacked portal zaps back (no-op on friendly/neutral)
         }
         val isDoItAgain = xmps.isNotEmpty() && Util.random() <= 1 / Constants.phi

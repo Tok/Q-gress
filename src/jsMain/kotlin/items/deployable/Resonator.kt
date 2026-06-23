@@ -42,7 +42,7 @@ data class Resonator(
     fun takeDamage(agent: Agent, damage: Int) {
         val newEnergy = max(energy - damage, 0)
         this.energy = newEnergy
-        if (newEnergy <= newEnergy) {
+        if (newEnergy <= 0) { // only destroyed when fully drained (was `<= newEnergy` — a bug: every hit killed it)
             agent.addAp(75)
             octant?.let { portal?.removeReso(it, agent) }
         }
