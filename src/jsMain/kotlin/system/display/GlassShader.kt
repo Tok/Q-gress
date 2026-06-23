@@ -74,7 +74,6 @@ object GlassShader {
     private const val INTERIOR_LUM = 0.02
     private const val RIM_EMISSION = 0.6
     private const val INTERIOR_EMISSION = 0.05
-    private const val FILL_DIM = 0.2 // above the energy line a resonator dims to this (still coloured, not empty)
 
     private const val VERT =
         "varying vec3 vWorldNormal;\nvarying vec3 vModelPos;\nvarying vec3 vWorldPos;\n" +
@@ -105,10 +104,13 @@ object GlassShader {
             " float bright = clamp(rim + smudge * 0.4 + ${INTERIOR_LUM.glsl()}, 0.0, 1.0);\n" +
             " vec3 col = (vec3(bright) * uTint + uTint * (rim * ${RIM_EMISSION.glsl()} + ${INTERIOR_EMISSION.glsl()})) * uBright;\n" +
             " float alpha = clamp((${BASE_ALPHA.glsl()} + rim * 0.55 + smudge * 0.5) * uBright, 0.04, 0.97) * uFade;\n" +
-            // Resonator energy bar: below the fill line (uFill, bottom→top of the unit cylinder) reads full,
-            // above dims to FILL_DIM but stays coloured. uFill defaults to 1 (no effect on orbs/links/shards).
-            " if (uFill < 0.999) { float fillT = clamp(vModelPos.y + 0.5, 0.0, 1.0); bool full = fillT <= uFill;" +
-            " col *= full ? 1.15 : ${FILL_DIM.glsl()}; alpha *= full ? 1.0 : 0.4; }\n" + // crank full/empty contrast
+            // Resonator energy rod: uFill in [0,1] is the charge (bottom→top); the default sentinel (2.0)
+            // means "not a resonator" so orbs/links/shards skip this. The lit part GLOWS in the tint colour
+            // (built straight from uTint, NOT uBright — so a light tint like L1 yellow can't blow out to
+            // white) and is mostly opaque; above the fill line it stays coloured but dim + see-through.
+            " if (uFill <= 1.0001) { float fillT = clamp(vModelPos.y + 0.5, 0.0, 1.0); bool full = fillT <= uFill;\n" +
+            "   col = uTint * (full ? 0.8 : 0.16) + uTint * rim * 0.5;\n" +
+            "   alpha = (full ? clamp(0.72 + rim * 0.25, 0.0, 0.95) : clamp(0.16 + rim * 0.18, 0.0, 0.5)) * uFade; }\n" +
             " gl_FragColor = vec4(col, alpha); }"
 
     /**
@@ -118,15 +120,15 @@ object GlassShader {
      * instance, so its `uFade` uniform (1 → 0) can be driven independently — e.g. shatter shards
      * fading out at end of life.
      */
-    fun material(hexColor: String, bright: Double = 1.0, fill: Double = 1.0): dynamic {
+    fun material(hexColor: String, bright: Double = 1.0, fill: Double = 2.0): dynamic {
         val rgb = hexToRgb(hexColor)
-        val uni: dynamic = js("({ uTint: { value: null }, uBright: { value: 1.0 }, uFade: { value: 1.0 }, uFill: { value: 1.0 } })")
+        val uni: dynamic = js("({ uTint: { value: null }, uBright: { value: 1.0 }, uFade: { value: 1.0 }, uFill: { value: 2.0 } })")
         uni.uTint.value = js("({ x: 0.0, y: 0.0, z: 0.0 })")
         uni.uTint.value.x = rgb[0]
         uni.uTint.value.y = rgb[1]
         uni.uTint.value.z = rgb[2]
         uni.uBright.value = bright
-        uni.uFill.value = fill // <1 = resonator energy bar (bottom→top); 1 = full/everything else
+        uni.uFill.value = fill // 0..1 = resonator energy bar (bottom→top); 2 (default) = not a resonator
         uni.uEye = eyeUniform // shared, refreshed each frame by updateEye()
         val p: dynamic = js("({})")
         p.vertexShader = VERT

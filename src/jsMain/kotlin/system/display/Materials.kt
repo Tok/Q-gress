@@ -53,7 +53,7 @@ object Materials {
         p.metalness = 0.0
         p.roughness = 1.0
         p.transparent = true
-        p.opacity = 0.5
+        p.opacity = 0.72 // slotted mods read fairly solid (was 0.5 — too see-through)
         Three.MeshStandardMaterial(p)
     }
 
@@ -90,11 +90,15 @@ object Materials {
         Three.MeshStandardMaterial(p)
     }
 
-    /** A resonator rod, coloured by its level (the rarity/level colour); slight emissive so it reads. */
-    /** Resonator rods: glass like the orbs + links, with a vertical energy bar — [fill] (0..1 health)
-     *  lights it bottom→top, dimming (still coloured) above the line. Cached per colour + fill octile. */
-    fun resonator(color: String, fill: Double): dynamic =
-        cache.getOrPut("reso$color${(fill * 8).toInt()}") { GlassShader.material(color, GlassShader.LINK_BRIGHT, fill) }
+    /** Resonator rods: a glowing energy rod with a vertical bar — [fill] (0..1 health) lights it
+     *  bottom→top (glows in colour), dim + see-through above the line. Cached per colour + fill octile. */
+    fun resonator(color: String, fill: Double): dynamic = cache.getOrPut("reso$color${(fill * 8).toInt()}") {
+        // Solid-ish glowing rod: front faces only + depth write so we don't see through to its inside.
+        val m = GlassShader.material(color, GlassShader.LINK_BRIGHT, fill)
+        m.depthWrite = true
+        m.side = 0 // Three.FrontSide
+        m
+    }
 
     private fun buildEnv(): dynamic {
         val canvas = document.createElement("canvas") as HTMLCanvasElement
