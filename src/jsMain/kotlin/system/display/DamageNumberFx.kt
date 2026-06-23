@@ -4,7 +4,9 @@ import external.Cannon
 import external.FontLoader
 import external.TextGeometry
 import external.Three
+import util.SoundUtil
 import util.Util
+import util.data.Pos
 import kotlin.math.ln
 import kotlin.math.max
 import kotlin.math.min
@@ -31,6 +33,8 @@ object DamageNumberFx {
     private const val STAGGER = 0.1 // delay between digit releases (right-most first)
     private const val FALL_LIFE = 2.4 // seconds a digit lives after release
     private const val FADE = 0.7 // fade-out at the very end of a number's life
+    private const val LAND_Z = 3.0 // a digit is "landed" once it drops to about here (ground ≈ 0)
+    private const val LAND_VOLUME = 0.25 // soft glassy clink when the digits hit the ground
 
     // Volley damage spans orders of magnitude (a few hundred when heavily mitigated → tens of thousands
     // on a fresh portal), so the colour uses a LOG scale between these, not linear.
@@ -54,14 +58,14 @@ object DamageNumberFx {
 
     private class DamageNum(
         val digits: List<Digit>,
-        val cx: Double,
-        val cy: Double,
-        val baseZ: Double,
+        val origin: DoubleArray, // scene-space x, y, z (the flask top the number rises from)
+        val loc: Pos, // sim position (for the positional landing sound)
         val fillMat: dynamic,
         val wireMat: dynamic,
         val totalLife: Double,
     ) {
         var age = 0.0
+        var landed = false // glassy clink plays once, when the first digit hits the ground
     }
 
     private val nums = mutableListOf<DamageNum>()
@@ -79,8 +83,9 @@ object DamageNumberFx {
 
     fun hasActive() = nums.isNotEmpty()
 
-    /** Pop a damage number of [amount] above the portal top at scene-point ([x], [y], [z]). */
-    fun spawn(x: Double, y: Double, z: Double, amount: Int) {
+    /** Pop a damage number of [amount] above the portal top at scene-point ([x], [y], [z]); [loc] = the
+     *  portal's sim position, for the positional landing clink. */
+    fun spawn(x: Double, y: Double, z: Double, loc: Pos, amount: Int) {
         val f = font ?: return
         val g = group ?: return
         if (amount <= 0) return
@@ -90,7 +95,7 @@ object DamageNumberFx {
         val digits = buildDigits(f, amount.toString(), fillMat, wireMat, g)
         val fallStart = RISE_DUR + HANG_DUR
         val maxRelease = fallStart + (digits.size - 1) * STAGGER
-        nums.add(DamageNum(digits, x, y, z, fillMat, wireMat, maxRelease + FALL_LIFE))
+        nums.add(DamageNum(digits, doubleArrayOf(x, y, z), loc, fillMat, wireMat, maxRelease + FALL_LIFE))
     }
 
     /** A nearby explosion flings any already-falling digits (cloud-centre [origin], scene metres). */
@@ -122,7 +127,7 @@ object DamageNumberFx {
         val dead = mutableListOf<DamageNum>()
         nums.forEach { num ->
             num.age += dt
-            val connectedZ = num.baseZ + RISE_HEIGHT * easeOut(min(1.0, num.age / RISE_DUR))
+            val connectedZ = num.origin[2] + RISE_HEIGHT * easeOut(min(1.0, num.age / RISE_DUR))
             num.digits.forEach { d -> advanceDigit(num, d, connectedZ, eye) }
             if (num.age > num.totalLife - FADE) {
                 val a = ((num.totalLife - num.age) / FADE).coerceIn(0.0, 1.0)
@@ -136,7 +141,7 @@ object DamageNumberFx {
 
     private fun advanceDigit(num: DamageNum, d: Digit, connectedZ: Double, eye: DoubleArray) {
         if (d.body == null && num.age >= d.release) { // detach this digit into a falling rigid body
-            d.body = spawnBody(d, num.cx + d.localX, num.cy, connectedZ).also { world?.addBody(it) }
+            d.body = spawnBody(d, num.origin[0] + d.localX, num.origin[1], connectedZ).also { world?.addBody(it) }
         }
         val body = d.body
         val px: Double
@@ -148,13 +153,17 @@ object DamageNumberFx {
             py = bp.y as Double
             pz = bp.z as Double
         } else { // still part of the connected, upright number lerping/hanging
-            px = num.cx + d.localX
-            py = num.cy
+            px = num.origin[0] + d.localX
+            py = num.origin[1]
             pz = connectedZ
         }
         d.mesh.position.set(px, py, pz)
         // Face the camera: lookAt points -Z at the target, the glyph front is +Z, so aim -Z away from the eye.
         d.mesh.asDynamic().lookAt(2.0 * px - eye[0], 2.0 * py - eye[1], 2.0 * pz - eye[2])
+        if (body != null && pz <= LAND_Z && !num.landed) { // first digit reaches the ground → one glassy clink
+            num.landed = true
+            SoundUtil.playGlassShatterSound(num.loc, 0.0, LAND_VOLUME)
+        }
     }
 
     private fun buildDigits(f: dynamic, text: String, fillMat: dynamic, wireMat: dynamic, g: dynamic): List<Digit> {

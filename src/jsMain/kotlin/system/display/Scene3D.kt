@@ -582,7 +582,7 @@ object Scene3D {
         scene ?: return
         val level = portal.getLevel().value.toDouble()
         val flaskTop = groundZ(portal.location) + orbCenterZ(level) + TOP_R * orbScale(level)
-        DamageNumberFx.spawn(sceneX(portal.location), sceneY(portal.location), flaskTop + DAMAGE_NUMBER_GAP, amount)
+        DamageNumberFx.spawn(sceneX(portal.location), sceneY(portal.location), flaskTop + DAMAGE_NUMBER_GAP, portal.location, amount)
     }
 
     // Ripple any nearby shielded portal's bubble — it "absorbs" the blast. Survivors wave + settle;
