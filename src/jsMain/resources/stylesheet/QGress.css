@@ -34,6 +34,15 @@
        colour at startup (HtmlUtil.chooseUserFaction / LoadingOverlay.setAccent); neutral chrome until then.
        Everything faction-branded in the UI reads this, so a RES player never sees ENL green and vice versa. */
     --faction: #cfd3d8;
+
+    /* UI theme: glass, chrome and lasers (the laser = --faction). Chrome = light metal buttons;
+       rubber = the near-black translucent panel like the 3D gasket; the faction edge/glow is the accent. */
+    --ui-chrome: linear-gradient(180deg, #eef1f5 0%, #cfd4db 52%, #b4bac3 100%);
+    --ui-chrome-hi: linear-gradient(180deg, #ffffff 0%, #dfe3e9 52%, #c6ccd4 100%);
+    --ui-rubber: rgba(10, 11, 13, 0.82);
+    --ui-glass-border: rgba(255, 255, 255, 0.16);
+    --ui-faction-edge: color-mix(in srgb, var(--faction) 55%, transparent);
+    --ui-faction-glow: 0 0 14px color-mix(in srgb, var(--faction) 50%, transparent);
 }
 
 * {
@@ -735,7 +744,7 @@ html, body {
     width: 100%;
 }
 .non {
-    background: #ffffff;
+    background: var(--ui-chrome);
 }
 .enl {
     background: var(--enl-color);
@@ -1006,21 +1015,48 @@ html, body {
     vertical-align: middle;
 }
 
+/* Chrome buttons: light brushed-metal face + dark text (the faction-choice .enl/.res buttons keep
+   their faction colour). Pairs with the glow/lift below. */
+.topButton, .topDrop, .menuItem, .onboardPreset, .speedBtn, .autoCamBtn,
+.gateNewGame, .onboardStart, .popupButton:not(.enl):not(.res) {
+    background: var(--ui-chrome);
+    color: #14171c;
+    border: 1px solid rgba(0, 0, 0, 0.45);
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
 /* Game-y interactive controls: a subtle lift + faction "laser" glow on hover, a press-in on click.
    It's a game, not a serious app — the buttons should feel a little alive. */
 .topButton, .topDrop, .menuItem, .popupButton, .onboardPreset, .speedBtn, .autoCamBtn {
-    transition: transform 0.08s ease, box-shadow 0.15s ease, filter 0.15s ease;
+    transition: transform 0.08s ease, box-shadow 0.15s ease, filter 0.15s ease, background 0.15s ease;
 }
 .topButton:hover, .topDrop:hover, .menuItem:hover, .popupButton:hover,
 .onboardPreset:hover, .speedBtn:hover, .autoCamBtn:hover {
     transform: translateY(-1px);
-    box-shadow: 0 0 12px color-mix(in srgb, var(--faction) 70%, transparent);
-    filter: brightness(1.08);
+    box-shadow: var(--ui-faction-glow);
+    filter: brightness(1.06);
+}
+/* Brighten the brushed metal on hover (faction-coloured choose buttons keep their colour). */
+.topButton:hover, .topDrop:hover, .menuItem:hover, .onboardPreset:hover,
+.speedBtn:hover, .autoCamBtn:hover, .gateNewGame:hover, .onboardStart:hover,
+.popupButton:not(.enl):not(.res):hover {
+    background: var(--ui-chrome-hi);
 }
 .topButton:active, .topDrop:active, .menuItem:active, .popupButton:active,
 .onboardPreset:active, .speedBtn:active, .autoCamBtn:active {
     transform: translateY(1px) scale(0.97);
     filter: brightness(0.95);
+}
+
+/* Glass + black-rubber panels with a faint faction-laser edge — the always-on dark surfaces. */
+.gameMenu, .footer, .loadingPanel, .historyPanel, .factionCta, .popup {
+    backdrop-filter: blur(7px);
+    -webkit-backdrop-filter: blur(7px);
+    border: 1px solid var(--ui-faction-edge);
+}
+.gameMenu, .loadingPanel {
+    background: var(--ui-rubber);
+    box-shadow: var(--ui-faction-glow), 0 8px 26px rgba(0, 0, 0, 0.6);
 }
 
 .volumeSlider,

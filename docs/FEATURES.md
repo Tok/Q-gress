@@ -126,6 +126,13 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
   highlighted; Pause is Space-bound; `-`/`+` still nudge) replacing the old pause button + slider. Far
   right: **Volume** then the **Auto cam** toggle, both **icon-only** (`util/ui/Icons`) so they don't read
   as one label. Toolbar stays hidden until the world is ready.
+- **UI theme — glass, chrome & lasers, faction-branded.** One `--faction` CSS variable (set from the
+  chosen faction in `LoadingOverlay.setAccent`) is the **only** chrome accent — a RES player never sees
+  ENL green in the UI (and vice versa); it drives the loading bars/title, `accent-color` on all native
+  controls (checkboxes, the buildings slider), tuning-slider thumbs, and the button hover glow. Buttons
+  are **brushed-chrome** with a subtle hover lift + faction "laser" glow + press-in (it's a game); the
+  always-on panels (menu, footer, loading, history, popup) are **black-rubber glass** (blur + faint
+  faction-laser edge). Volume/Speed sliders stay deliberately grayscale.
 - **Auto cam** (icon toggle, rightmost; **on by default**): a slow, slightly-randomized cinematic camera
   drift around the arena — the title-screen orbit reused in-game (`MapUtil.setAutoCam`/`autoCamLeg`), but
   much slower (~2.6× the title leg) and framing the whole arena (may pull a touch wider or push a little
