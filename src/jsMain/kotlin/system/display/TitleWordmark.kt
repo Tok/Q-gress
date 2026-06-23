@@ -109,6 +109,7 @@ object TitleWordmark {
         p.roughness = roughness
         p.emissive = emissive
         p.emissiveIntensity = emissiveIntensity
+        p.depthTest = false // the wordmark always reads in front of the buildings/scene
         return Three.MeshStandardMaterial(p)
     }
 

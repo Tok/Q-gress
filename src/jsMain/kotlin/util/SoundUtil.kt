@@ -27,7 +27,7 @@ import kotlin.math.sqrt
 import kotlin.math.tanh
 
 object SoundUtil {
-    const val DEFAULT_VOLUME = 1.0
+    const val DEFAULT_VOLUME = 0.3 // start quiet (30%) — less startling on first interaction
     internal const val EPS = 0.0001 // exponentialRamp can't target 0
     private const val SHATTER_MIX = 0.8 // glass-shatter loudness vs the rest of the mix
 

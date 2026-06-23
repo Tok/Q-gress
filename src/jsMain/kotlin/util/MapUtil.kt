@@ -153,7 +153,7 @@ object MapUtil {
         m.asDynamic().setPadding(pad)
     }
 
-    private const val BUILD_INFLATE_MS = 5200.0 // TITLE-only fixed-duration rise (the title has no world-gen progress)
+    private const val BUILD_INFLATE_MS = 2800.0 // TITLE-only fixed-duration rise (~3 s; title has no world-gen progress)
     private var inflateStart = 0.0
 
     /** TITLE: animate the 3D buildings rising over a fixed duration (no loading overlay there). */
@@ -171,8 +171,9 @@ object MapUtil {
 
     // --- IN-GAME: buildings grow IN STEP with world-gen progress, only reaching full height once gen is
     // finished (portals + agents + NPCs all created) — so the city keeps rising while people drop in.
-    private const val BUILD_EASE = 0.06 // how fast the shown height eases toward the live gen-progress target
+    private const val BUILD_EASE = 0.12 // how fast the shown height eases toward the live gen-progress target
     private const val BUILD_DELAY_FRAC = 0.15 // keep the ground empty for the first part of gen, THEN raise the city
+    private const val BUILD_RISE_SPAN = 0.45 // …and finish the rise within this span of gen (snappier than the full build)
     private var buildTarget = 0.0
     private var buildShown = 0.0
     private var buildLoopRunning = false
@@ -182,8 +183,8 @@ object MapUtil {
      *  reports done — so growth spans the whole build. */
     fun setBuildProgress(fraction: Double) {
         if (demoMode || !Styles.use3DBuildings) return
-        // Delay the rise: stay flat until gen passes BUILD_DELAY_FRAC, then grow over the remaining span.
-        buildTarget = ((fraction.coerceIn(0.0, 1.0) - BUILD_DELAY_FRAC) / (1.0 - BUILD_DELAY_FRAC)).coerceIn(0.0, 1.0)
+        // Delay the rise: stay flat until gen passes BUILD_DELAY_FRAC, then grow (quickly) over BUILD_RISE_SPAN.
+        buildTarget = ((fraction.coerceIn(0.0, 1.0) - BUILD_DELAY_FRAC) / BUILD_RISE_SPAN).coerceIn(0.0, 1.0)
         if (!buildLoopRunning && buildTarget > 0.0) {
             buildLoopRunning = true
             window.requestAnimationFrame { stepBuildGrow() }
