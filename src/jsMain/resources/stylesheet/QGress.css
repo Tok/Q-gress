@@ -935,6 +935,11 @@ html, body {
 }
 /* Required tile attribution: collapsed to a small ⓘ (compact) + dimmed so it's unobtrusive;
    full opacity on hover/expand. (MapLibre 5 uses the maplibregl- prefix.) */
+/* Keep the bottom-right ⓘ above the footer (z 60) and clickable, so it can still be expanded. */
+.maplibregl-ctrl-bottom-right, .mapboxgl-ctrl-bottom-right {
+    z-index: 70;
+    pointer-events: auto;
+}
 .maplibregl-ctrl-attrib, .mapboxgl-ctrl-attrib {
     font-size: 10px;
     opacity: 0.5;
