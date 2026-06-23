@@ -20,7 +20,7 @@ object XmpShaders {
         p.uniforms = uni
         p.transparent = true
         p.depthWrite = false
-        p.depthTest = true // occluded by buildings; the "Show through buildings" toggle clears depth to override
+        p.depthTest = false // always on top: a flat near-ground ring depth-tested vs the terrain z-fights/vanishes
         p.blending = if (additive) Three.AdditiveBlending else Three.NormalBlending
         p.side = 2 // DoubleSide
         return Three.ShaderMaterial(p)
@@ -35,7 +35,12 @@ object XmpShaders {
         p.uniforms = uni
         p.transparent = true
         p.depthWrite = false
-        p.depthTest = true // occluded by buildings; the "Show through buildings" toggle clears depth to override
+        // Always on top. The volume is raymarched on the box's BACK faces (so it works inside or outside
+        // the box), so the fragment's geometric depth is the FAR box face — which sits below the terrain.
+        // Depth-testing that against the shared map depth buffer fails almost everywhere → the fireball
+        // vanishes behind the ground. Proper building-only occlusion needs gl_FragDepth (sphere-entry
+        // depth) + a building depth pass; deferred to the own-mesh building work.
+        p.depthTest = false
         p.blending = Three.NormalBlending
         p.side = 1 // BackSide
         return Three.ShaderMaterial(p)
