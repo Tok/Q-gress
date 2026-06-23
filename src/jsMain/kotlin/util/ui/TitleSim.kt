@@ -13,7 +13,9 @@ import items.XmpBurster
 import items.deployable.Resonator
 import items.deployable.Shield
 import items.types.ShieldType
+import kotlinx.browser.document
 import kotlinx.browser.window
+import org.w3c.dom.HTMLElement
 import portal.Portal
 import portal.PortalKey
 import portal.XmMap
@@ -45,6 +47,7 @@ object TitleSim {
         started = true
         World.userFaction = Faction.ENL
         Scene3D.showBorder = false // no boundary wall/mask on the title
+        Scene3D.titleWordmarkOnReady = { hideDomWordmark() } // swap the DOM wordmark for the 3D letters once loaded
         window.addEventListener("pointerdown", { SoundUtil.enableAudio() }) // autoplay: unlock on first gesture
         Sim.setSize(Sim.presetWidth(Sim.SMALL_SCALE), Sim.presetHeight(Sim.SMALL_SCALE)) // small → fast to build
         Sim.roundField = true // a centered round arena → portals cluster around the centre (border stays hidden)
@@ -57,6 +60,11 @@ object TitleSim {
             MapUtil.startTitleCinematic() // 3D terrain + zoom to frame the arena + slow orbit
             buildWorld()
         })
+    }
+
+    // The 3D letters replace the flat DOM wordmark — hide it once they're in the scene.
+    private fun hideDomWordmark() {
+        (document.getElementsByClassName("titleBrand").item(0) as? HTMLElement)?.style?.display = "none"
     }
 
     /** Stop the tick + camera drift (the scene itself is torn down by the onboarding reload). */

@@ -164,6 +164,10 @@ object Scene3D {
     // actions are never hidden. XMP/explosions stay depthTest=false either way (always on top).
     var drawOverBuildings = false
 
+    // Set by TitleSim before the layer is added → onAdd loads the 3D wordmark + calls this once it's in
+    // (e.g. to hide the DOM wordmark). Null in-game (no 3D wordmark there).
+    var titleWordmarkOnReady: (() -> Unit)? = null
+
     // Glass-orb shatter fracture variants (loaded once from the GLB via ShardAssets).
     private var flaskVariants: List<List<dynamic>> = emptyList()
     private var flaskScale = 1.0 // scale a flask variant to ≈ the portal top sphere
@@ -270,6 +274,7 @@ object Scene3D {
         scene = newScene
         buildBorder()
         loadShatterAssets()
+        titleWordmarkOnReady?.let { TitleWordmark.load(newScene, it) } // 3D title letters (set by TitleSim)
 
         val params: dynamic = js("({})")
         params.canvas = map.getCanvas()
@@ -301,6 +306,7 @@ object Scene3D {
         PlasmaShader.setTime(animClockMs / 1000.0) // animate control fields (on the scaled clock)
         updateEffects(map, dt, invProj)
         tumbleModTetras() // gentle continuous tumble of the mod tetrahedra
+        updateTitleWordmark(invProj, dt) // camera-lock the 3D title letters (no-op until loaded)
         VectorFieldOverlay.sync() // paced flow-field sweep; driven here (continuous loop) so it animates through world-gen too
         activeRenderer.resetState()
         // Realistic by default: keep the depth the map layers wrote so 3D buildings occlude the sim.
@@ -502,6 +508,7 @@ object Scene3D {
         scene ?: return
         XmpBurst.play(sceneX(location), sceneY(location), groundZ(location), level) // sit on the terrain
         ShatterFx.recordBlast(sceneX(location), sceneY(location)) // shatter pieces fly away from here
+        TitleWordmark.flash() // title letters react to the flash (no-op until loaded)
         if (sound) SoundUtil.playXmpSound(location, level)
     }
 
@@ -635,6 +642,21 @@ object Scene3D {
             eye,
             doubleArrayOf(far[0] - eye[0], far[1] - eye[1], far[2] - eye[2]), // forward (normalised in SoundUtil)
             doubleArrayOf(top[0] - mid[0], top[1] - mid[1], top[2] - mid[2]), // up
+        )
+    }
+
+    // Feed the live camera eye/forward/up to the 3D title wordmark so it can lock in front of the camera.
+    private fun updateTitleWordmark(invProj: dynamic, dt: Double) {
+        if (camera == null) return
+        val eye = GlassShader.eye()
+        val mid = unproject(invProj, 0.0, 0.0, 0.0)
+        val far = unproject(invProj, 0.0, 0.0, 1.0)
+        val top = unproject(invProj, 0.0, 1.0, 0.0)
+        TitleWordmark.update(
+            eye,
+            doubleArrayOf(far[0] - eye[0], far[1] - eye[1], far[2] - eye[2]),
+            doubleArrayOf(top[0] - mid[0], top[1] - mid[1], top[2] - mid[2]),
+            dt,
         )
     }
 
