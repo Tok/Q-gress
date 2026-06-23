@@ -33,15 +33,24 @@ object SoundUtil {
     private const val EPS = 0.0001 // exponentialRamp can't target 0
     private const val SHATTER_MIX = 0.8 // glass-shatter loudness vs the rest of the mix
 
-    // Shared 8-note scale for the 8 portal/XMP levels — LEVEL 8 IS THE LOWEST note. A natural-minor
-    // octave (C2 root); XMP, hack, glyph and the level-change sounds all pitch to it (octave-shifted as
-    // needed) so the whole sim plays in one key and a portal's level is audible across every sound.
-    private val SCALE_SEMITONES = intArrayOf(0, 2, 3, 5, 7, 8, 10, 12)
+    // Shared 8-note scale for the 8 portal/XMP levels — LEVEL 8 IS THE LOWEST note (C2 root); XMP, hack,
+    // glyph and the level-change sounds all pitch to it so the whole sim plays in one key and a portal's
+    // level is audible across every sound. The key flips MAJOR when the player's faction leads, MINOR
+    // when it's behind (set via [setLeading]) — the soundtrack brightens/darkens with the score.
+    private val SCALE_MINOR = intArrayOf(0, 2, 3, 5, 7, 8, 10, 12) // C natural minor (behind)
+    private val SCALE_MAJOR = intArrayOf(0, 2, 4, 5, 7, 9, 11, 12) // C major (leading)
     private const val SCALE_ROOT_HZ = 65.41 // C2 — the lowest note (level 8)
+    private var leading = false // is the player's faction ahead? → major vs minor
+
+    /** Brighten (major) the shared scale when the player's faction leads, else minor. Cheap; call freely. */
+    fun setLeading(ahead: Boolean) {
+        leading = ahead
+    }
 
     /** Frequency (Hz) of [level]'s note on the shared scale (level 8 = root); [octaveUp] transposes it. */
     fun noteFor(level: Int, octaveUp: Int = 0): Double {
-        val semis = SCALE_SEMITONES[8 - level.coerceIn(1, 8)] + octaveUp * 12
+        val scale = if (leading) SCALE_MAJOR else SCALE_MINOR
+        val semis = scale[8 - level.coerceIn(1, 8)] + octaveUp * 12
         return SCALE_ROOT_HZ * 2.0.pow(semis / 12.0)
     }
 
@@ -59,7 +68,6 @@ object SoundUtil {
     private const val PANNING_MODEL = "HRTF" // front/back + elevation cues (vs cheaper "equalpower")
     private const val MASTER_BOOST = 2.6 // lift the whole bus (3D attenuation made it quiet); limiter guards clipping
     private const val DEEP_THUMP_HZ = 48.0 // fixed deep sub-kick under the XMP explosion (adds weight)
-    private const val MUFFLE_OPEN_HZ = 22000.0 // muffle filter wide open (no audible effect)
     private const val MUFFLE_CLOSED_HZ = 600.0 // muffled: distant/underwater (title behind onboarding)
 
     private val audioCtx = AudioContext()
@@ -78,25 +86,16 @@ object SoundUtil {
         c
     }
 
-    // Master "muffle" lowpass between the bus and the limiter — wide open by default; dropped to a low
-    // cutoff to make everything sound distant/underwater (e.g. behind the onboarding screens).
-    private val muffle: dynamic = run {
-        val f = audioCtx.asDynamic().createBiquadFilter()
-        f.type = "lowpass"
-        f.frequency.value = MUFFLE_OPEN_HZ
-        f.connect(limiter)
-        f
-    }
-
-    // Single master gain all sounds route through; controls overall volume (× MASTER_BOOST into the limiter).
+    // Single master gain all sounds route through; controls overall volume (× MASTER_BOOST into the
+    // limiter). The master FX bus (low/high-pass + reverb send — see AudioFx) sits between it + the limiter.
     private val masterGain: GainNode = audioCtx.createGain().also {
         it.gain.value = 0.0
-        it.asDynamic().connect(muffle)
+        AudioFx.build(audioCtx.asDynamic(), it.asDynamic(), limiter)
     }
 
     /** Muffle (lowpass) the whole mix, or open it back up — used to push the title audio behind onboarding. */
     fun setMuffled(on: Boolean) {
-        muffle.frequency.setTargetAtTime(if (on) MUFFLE_CLOSED_HZ else MUFFLE_OPEN_HZ, now(), 0.2)
+        AudioFx.setLowpass(if (on) MUFFLE_CLOSED_HZ else AudioFx.LOWPASS_OPEN_HZ)
     }
 
     // Master volume in 0..1. Starts muted; enabled on the first user gesture

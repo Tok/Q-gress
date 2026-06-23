@@ -243,10 +243,15 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
 - Per-event sounds (portal create/remove, field up/down, shatter, XMP, hack/glyph/deploy/link,
   checkpoint/cycle, marble "tok" NPC drop); non-positional events (checkpoint/cycle/fail) stay
   center-panned. **Volume slider** + master gain; audio resumes on first gesture.
-- **Shared 8-note scale** (`SoundUtil.noteFor`, C2 natural-minor octave): the 8 portal/XMP levels map
-  to 8 notes with **level 8 = the lowest**, so a portal's level is audible across every level-keyed
-  sound — XMP boom + volley blips, hack/glyph whirs (+ glyph chime), and upgrade/downgrade notes — and
-  the sim plays in one key.
+- **Shared 8-note scale** (`SoundUtil.noteFor`, C2 root): the 8 portal/XMP levels map to 8 notes with
+  **level 8 = the lowest**, so a portal's level is audible across every level-keyed sound — XMP boom +
+  volley blips, hack/glyph whirs (+ glyph chime), upgrade/downgrade notes — and the sim plays in one key.
+  The key flips **major when the player's faction leads, minor when behind** (`setLeading`, driven by the
+  live MU each tick) — the soundtrack brightens/darkens with the score.
+- **Master FX bus** (`AudioFx`, between the mix + limiter): a tunable low-pass (also the onboarding
+  "muffle"), a high-pass, and a **reverb** send (convolver fed a generated decaying-noise impulse). The
+  **`#audio` demo** auditions every standalone SFX (incl. the ultra-strike) and exposes live sliders for
+  the low/high-pass + reverb mix + a major/minor toggle, to dial the audio in.
 - **Layered XMP explosion** (`SoundUtil.playXmpExplosion`): on top of the kept synthetic boom + noise
   blast, a (tamed) detonation snap + chest-punch sub at the note + a **loud fixed deep sub-kick**
   (`DEEP_THUMP_HZ`) for weight (the blast read too bright) + a long lowpassed rumble tail whose

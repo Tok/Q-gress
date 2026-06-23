@@ -1352,6 +1352,20 @@ html, body {
     gap: 4px;
     margin: 2px 0;
 }
+/* Master-FX tuning row (#audio): label + slider pairs for low/high-pass + reverb. */
+.demoFx {
+    align-items: center;
+    gap: 10px;
+}
+.demoFxItem {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+.demoFxLabel {
+    font-size: 11px;
+    color: #c8c8c8;
+}
 .demoRow .demoButton {
     margin: 0;
     flex: 1 1 auto;

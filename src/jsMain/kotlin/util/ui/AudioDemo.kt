@@ -7,7 +7,9 @@ import kotlinx.dom.addClass
 import org.w3c.dom.HTMLAnchorElement
 import org.w3c.dom.HTMLButtonElement
 import org.w3c.dom.HTMLDivElement
+import org.w3c.dom.HTMLInputElement
 import system.Checkpoint
+import util.AudioFx
 import util.SoundUtil
 import util.data.Pos
 
@@ -28,8 +30,52 @@ object AudioDemo {
         panel.append(heading("AUDIO DEMO"))
         panel.append(link("#demo", "← Demos", "demoBack"))
         panel.append(levelRow())
+        panel.append(fxRow())
         sounds().forEach { (label, action) -> panel.append(button(label, "demoButton", action)) }
         document.body?.append(panel)
+    }
+
+    // Live master-FX tuning (AudioFx) + a major/minor key toggle — so the SFX can be dialled in here.
+    private var leadMajor = false
+    private fun fxRow(): HTMLDivElement {
+        val row = document.createElement("div") as HTMLDivElement
+        row.addClass("demoRow", "demoFx")
+        val keyBtn = document.createElement("button") as HTMLButtonElement
+        keyBtn.className = "demoButton demoMini"
+        keyBtn.innerHTML = "Key: minor"
+        keyBtn.onclick = {
+            leadMajor = !leadMajor
+            SoundUtil.setLeading(leadMajor)
+            keyBtn.innerHTML = if (leadMajor) "Key: major" else "Key: minor"
+            null
+        }
+        row.append(keyBtn)
+        row.append(fxSlider("Low-pass", 200.0, AudioFx.LOWPASS_OPEN_HZ, AudioFx.LOWPASS_OPEN_HZ) { AudioFx.setLowpass(it) })
+        row.append(fxSlider("High-pass", AudioFx.HIGHPASS_OPEN_HZ, 2000.0, AudioFx.HIGHPASS_OPEN_HZ) { AudioFx.setHighpass(it) })
+        row.append(fxSlider("Reverb", 0.0, 1.0, 0.0) { AudioFx.setReverbMix(it) })
+        return row
+    }
+
+    private fun fxSlider(label: String, min: Double, max: Double, value: Double, onInput: (Double) -> Unit): HTMLDivElement {
+        val wrap = document.createElement("div") as HTMLDivElement
+        wrap.addClass("demoFxItem")
+        val lbl = document.createElement("div") as HTMLDivElement
+        lbl.addClass("demoFxLabel")
+        lbl.innerHTML = label
+        val s = document.createElement("input") as HTMLInputElement
+        s.type = "range"
+        s.min = min.toString()
+        s.max = max.toString()
+        s.step = if (max <= 1.0) "0.01" else "1"
+        s.value = value.toString()
+        s.addClass("slider")
+        s.oninput = {
+            onInput(s.valueAsNumber)
+            null
+        }
+        wrap.append(lbl)
+        wrap.append(s)
+        return wrap
     }
 
     private fun sounds(): List<Pair<String, () -> Unit>> = listOf(
@@ -38,6 +84,7 @@ object AudioDemo {
         "Glass shatter" to { SoundUtil.playGlassShatterSound(center) },
         "Neutralize" to { SoundUtil.playNeutralizeSound(center) },
         "XMP" to { SoundUtil.playXmpSound(center, level) },
+        "Ultra-strike" to { SoundUtil.playUltraStrike(center) },
         "Hack" to { SoundUtil.playHackingSound(center, level) },
         "Glyph" to { SoundUtil.playGlyphingSound(center, level) },
         "Reso deploy" to { SoundUtil.playResoDeploySound(center, level) },
