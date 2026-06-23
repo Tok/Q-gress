@@ -29,11 +29,11 @@ import kotlin.math.tanh
 
 object SoundUtil {
     const val DEFAULT_VOLUME = 1.0
-    private const val EPS = 0.0001 // exponentialRamp can't target 0
+    internal const val EPS = 0.0001 // exponentialRamp can't target 0
     private const val SHATTER_MIX = 0.8 // glass-shatter loudness vs the rest of the mix
 
     // The shared musical scale (level → note, major/minor on the lead) lives in [Scale].
-    private fun noteFor(level: Int, octaveUp: Int = 0) = Scale.noteFor(level, octaveUp)
+    internal fun noteFor(level: Int, octaveUp: Int = 0) = Scale.noteFor(level, octaveUp)
 
     // 3D-audio tuning (sim-space is real metres). The play area is hundreds of metres across, so a
     // small reference distance + gentle rolloff makes near/far audibly differ at gameplay zoom while
@@ -51,7 +51,7 @@ object SoundUtil {
     private const val DEEP_THUMP_HZ = 48.0 // fixed deep sub-kick under the XMP explosion (adds weight)
     private const val MUFFLE_CLOSED_HZ = 600.0 // muffled: distant/underwater (title behind onboarding)
 
-    private val audioCtx = AudioContext()
+    internal val audioCtx = AudioContext()
     private val listener = audioCtx.listener
 
     // Master limiter on the way to the speakers: lets us boost the bus without harsh clipping when many
@@ -69,7 +69,7 @@ object SoundUtil {
 
     // Single master gain all sounds route through; controls overall volume (× MASTER_BOOST into the
     // limiter). The master FX bus (low/high-pass + reverb send — see AudioFx) sits between it + the limiter.
-    private val masterGain: GainNode = audioCtx.createGain().also {
+    internal val masterGain: GainNode = audioCtx.createGain().also {
         it.gain.value = 0.0
         AudioFx.build(audioCtx.asDynamic(), it.asDynamic(), limiter)
     }
@@ -95,7 +95,7 @@ object SoundUtil {
         masterGain.gain.setTargetAtTime(volume * MASTER_BOOST, now(), 0.01)
     }
 
-    private fun isMuted() = masterVolume <= 0.0
+    internal fun isMuted() = masterVolume <= 0.0
     private var preMuteVolume = 0.0
 
     /** Toggle mute, remembering the prior level. Returns the new volume (0 when muted). */
@@ -431,75 +431,6 @@ object SoundUtil {
         playSound(oscNode, createPanner(npc.pos), 0.22, duration)
     }
 
-    /** Hack: a short centrifuge whir that spins up then eases off — matches the collar animation.
-     *  Pitched to the portal [level] on the shared scale (level 8 lowest). */
-    fun playHackingSound(pos: Pos, level: Int) {
-        if (isMuted()) return
-        val dur = 0.5
-        val n = now()
-        val panner = createPanner(pos)
-        val base = noteFor(level, octaveUp = 2) // whir fundamental, on-scale (≈262–523 Hz)
-        val osc = audioCtx.createOscillator()
-        osc.type = OscillatorType.TRIANGLE
-        osc.frequency.setValueAtTime(base, n)
-        osc.frequency.exponentialRampToValueAtTime(base * 3.0, n + dur * 0.5) // spin up
-        osc.frequency.exponentialRampToValueAtTime(base * 1.6, n + dur) // ease off
-        val gainNode = audioCtx.createGain()
-        gainNode.gain.setValueAtTime(EPS, n)
-        gainNode.gain.linearRampToValueAtTime(0.16, n + 0.04)
-        gainNode.gain.exponentialRampToValueAtTime(EPS, n + dur)
-        osc.connect(gainNode)
-        gainNode.connect(panner)
-        panner.connect(masterGain)
-        osc.start()
-        osc.stop(n + dur)
-    }
-
-    /** Glyph hack: a deeper, longer whir + a glassy resonant chime — reads as stronger than a hack.
-     *  Pitched to the portal [level] on the shared scale (level 8 lowest). */
-    fun playGlyphingSound(pos: Pos, level: Int) {
-        if (isMuted()) return
-        val dur = 0.95
-        val n = now()
-        val panner = createPanner(pos)
-        val base = noteFor(level, octaveUp = 2) // deeper on-scale whir
-        // Deeper centrifuge whir (sawtooth softened through a lowpass).
-        val osc = audioCtx.createOscillator()
-        osc.type = OscillatorType.SAW
-        osc.frequency.setValueAtTime(base * 0.85, n) // a touch below the hack — reads heavier
-        osc.frequency.exponentialRampToValueAtTime(base * 3.6, n + dur * 0.55)
-        osc.frequency.exponentialRampToValueAtTime(base * 1.5, n + dur)
-        val lowpass = audioCtx.createBiquadFilter()
-        lowpass.type = "lowpass"
-        lowpass.frequency.setValueAtTime(1300.0, n)
-        val gainNode = audioCtx.createGain()
-        gainNode.gain.setValueAtTime(EPS, n)
-        gainNode.gain.linearRampToValueAtTime(0.24, n + 0.05)
-        gainNode.gain.exponentialRampToValueAtTime(EPS, n + dur)
-        osc.connect(lowpass)
-        lowpass.connect(gainNode)
-        gainNode.connect(panner)
-        panner.connect(masterGain)
-        osc.start()
-        osc.stop(n + dur)
-        // A glassy chime rings up as it completes (the "stronger / skill" flourish).
-        val ring = audioCtx.createOscillator()
-        ring.type = OscillatorType.SINE
-        val rt = n + dur * 0.45
-        val chime = noteFor(level, octaveUp = 4) // bright on-scale flourish
-        ring.frequency.setValueAtTime(chime, rt)
-        ring.frequency.exponentialRampToValueAtTime(chime * 1.5, n + dur)
-        val ringGain = audioCtx.createGain()
-        ringGain.gain.setValueAtTime(EPS, n) // silent until the chime onset at rt
-        ringGain.gain.setValueAtTime(EPS, rt)
-        ringGain.gain.linearRampToValueAtTime(0.13, rt + 0.05)
-        ringGain.gain.exponentialRampToValueAtTime(EPS, n + dur + 0.25)
-        ring.connect(ringGain)
-        ringGain.connect(panner)
-        ring.start()
-        ring.stop(n + dur + 0.25)
-    }
-
     /** Portal gained a level: a quick note rising up to the NEW [level]'s note on the shared scale. */
     fun playUpgradeSound(pos: Pos, level: Int) {
         if (isMuted()) return
@@ -674,7 +605,7 @@ object SoundUtil {
         oscNode.stop(now() + duration)
     }
 
-    private fun now() = audioCtx.currentTime.toDouble()
+    internal fun now() = audioCtx.currentTime.toDouble()
 
     private fun createStaticOscillator(type: String, freq: Double): OscillatorNode {
         val node = audioCtx.createOscillator()
@@ -730,7 +661,7 @@ object SoundUtil {
     }
 
     /** A positional source at sim [pos] (metres), spatialized relative to the camera listener. */
-    private fun createPanner(pos: Pos): PannerNode {
+    internal fun createPanner(pos: Pos): PannerNode {
         val node = audioCtx.createPanner()
         node.panningModel = PANNING_MODEL
         node.distanceModel = "inverse"

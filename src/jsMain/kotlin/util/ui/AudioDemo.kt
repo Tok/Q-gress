@@ -9,7 +9,9 @@ import org.w3c.dom.HTMLButtonElement
 import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HTMLInputElement
 import system.Checkpoint
+import system.display.HackFx
 import util.AudioFx
+import util.HackSound
 import util.Scale
 import util.SoundUtil
 import util.data.Pos
@@ -86,8 +88,8 @@ object AudioDemo {
         "Neutralize" to { SoundUtil.playNeutralizeSound(center) },
         "XMP" to { SoundUtil.playXmpSound(center, level) },
         "Ultra-strike" to { SoundUtil.playUltraStrike(center) },
-        "Hack" to { SoundUtil.playHackingSound(center, level) },
-        "Glyph" to { SoundUtil.playGlyphingSound(center, level) },
+        "Hack" to { HackSound.hack("demo", center, level, HackFx.HACK_S) },
+        "Glyph" to { HackSound.glyph("demo", center, level, HackFx.glyphDuration(level)) },
         "Reso deploy" to { SoundUtil.playResoDeploySound(center, level) },
         "Mod deploy" to { SoundUtil.playModDeploySound(center, level) },
         "Shield deploy" to { SoundUtil.playShieldDeploySound(center, level) },

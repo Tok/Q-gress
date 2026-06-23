@@ -1161,7 +1161,7 @@ object Scene3D {
     /** Demo (Hack button): spin the active (selected, else last) portal's resonator collar. */
     fun hackActiveShowcase(glyph: Boolean = false) {
         activeShowcase()?.let {
-            it.hackAge = if (glyph) HackFx.GLYPH_SPIN_S else HackFx.SPIN_S
+            it.hackAge = if (glyph) HackFx.GLYPH_SPIN_S else HackFx.HACK_S
             it.hackGlyph = glyph
         }
     }
@@ -1235,7 +1235,7 @@ object Scene3D {
             if (sc.hackAge > 0.0) { // hack: collar spins + rods centrifuge (same as live portals)
                 sc.hackAge = (sc.hackAge - dt).coerceAtLeast(0.0)
                 val dir = if (sc.color == Faction.ENL.color) -1.0 else 1.0 // ENL cw, else ccw
-                val dur = if (sc.hackGlyph) HackFx.GLYPH_SPIN_S else HackFx.SPIN_S
+                val dur = if (sc.hackGlyph) HackFx.GLYPH_SPIN_S else HackFx.HACK_S
                 HackFx.spinShowcase(sc.parts[3], dur - sc.hackAge, dir, sc.hackGlyph)
             }
         }

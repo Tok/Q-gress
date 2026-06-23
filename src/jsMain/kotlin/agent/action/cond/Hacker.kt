@@ -5,8 +5,8 @@ import agent.action.ActionItem
 import items.QgressItem
 import system.display.HackFx
 import system.display.Scene3D
+import util.HackSound
 import util.HtmlUtil
-import util.SoundUtil
 
 object Hacker : ConditionalAction {
     override val actionItem = ActionItem.HACK
@@ -16,9 +16,13 @@ object Hacker : ConditionalAction {
     override fun performAction(agent: Agent): Agent {
         agent.action.start(actionItem)
         val hackResult = agent.actionPortal.tryHack(agent)
-        SoundUtil.playHackingSound(agent.actionPortal.location, agent.actionPortal.getLevel().toInt())
+        // Whir is keyed by portal + synced to the collar spin (re-hack interrupts it). The wall-clock
+        // length is the spin time / sim speed so the sound tracks the sim-scaled animation.
+        val id = "portal:${agent.actionPortal.id}"
+        val sp = Scene3D.animationSpeed.coerceAtLeast(0.1)
+        HackSound.hack(id, agent.actionPortal.location, agent.actionPortal.getLevel().toInt(), HackFx.HACK_S / sp)
         // ENL spins clockwise, RES counter-clockwise; a plain hack (not a glyph).
-        HackFx.record("portal:${agent.actionPortal.id}", agent.faction, glyph = false)
+        HackFx.record(id, agent.faction, glyph = false, HackFx.HACK_S)
         val newStuff: List<QgressItem>? = hackResult.items
         if (newStuff != null) {
             agent.inventory.items.addAll(newStuff)
