@@ -71,7 +71,13 @@ object Scene3D {
     private const val INDICATOR_SIZE = 4.8 // action label above an agent (was 1.6 — barely visible)
     private const val INDICATOR_THICK = 1.2 // action-coin thickness (the extruded "wheel" depth)
     private const val COIN_BODY_OPACITY = 0.5 // the coin body (rim + underside) is see-through; the top icon stays solid
-    private const val ENERGY_BUCKETS = 12 // discretize agent XM% on the coin face so the texture cache stays bounded
+    private const val ENERGY_BAR_R = 0.55 // energy-bar cylinder radius
+    private const val ENERGY_BAR_GAP = 1.2 // gap between the coin edge and the bar
+    private const val ENERGY_BAR_PER_LEVEL = INDICATOR_SIZE / 4.0 // each level adds ¼ of the coin size
+    private const val ENERGY_BAR_OPACITY = 0.9
+    private const val ENERGY_BAR_FILL_FRAC = 1.06 // fill slightly fatter than the black backing so it reads
+    private const val ANCHOR_LEVEL = 4 // level whose bar height == the coin size (grows ± from here)
+    private const val MAX_AGENT_LEVEL = 8
     private const val LABEL_W = 22.0 // portal name/level billboard width (scene metres)
     private const val LABEL_GAP = 4.0 // gap above the orb top before the label
     private const val LABEL_CANVAS_W = 256 // label texture resolution (kept crisp; faction-neutral white)
@@ -975,13 +981,12 @@ object Scene3D {
         place(sphere.asDynamic(), x, y, gz + HEAD_Z)
         tag(sphere.asDynamic(), id)
         agentsGroup.add(sphere)
-        // Action indicator: a 3D coin/wheel (icon on the round faces) hovering above the head; the face
-        // doubles as the XM gauge (black drains in from the top as the agent's energy falls).
-        val energy = (agent.xm.toDouble() / agent.xmCapacity()).coerceIn(0.0, 1.0)
-        val coin = Three.Mesh(indicatorGeo, indicatorMaterial(agent.action.item, agent.faction, energy))
+        // Action indicator: a 3D coin/wheel (icon on the round faces) hovering above the head.
+        val coin = Three.Mesh(indicatorGeo, indicatorMaterial(agent.action.item, agent.faction))
         coin.asDynamic().rotation.x = PI / 2 // stand the cylinder's faces up (axis → world Z)
         place(coin.asDynamic(), x, y, gz + INDICATOR_Z)
         indicatorsGroup.add(coin)
+        addEnergyBar(x, y, gz, agent) // XM gauge to the side (height scales with the agent's level)
         if (Debug.enabled && StuckTracker.isStuck(agent.key())) addStuckMarker(x, y, gz)
     }
 
@@ -1101,40 +1106,19 @@ object Scene3D {
 
     // Coin materials [side, top-cap, bottom-cap]: the top icon is fully opaque; the rim + underside are
     // see-through (COIN_BODY_OPACITY) so the coin reads as a translucent token with a solid face. The
-    // face doubles as the agent's XM (energy) gauge — black drains in from the top as XM falls (full =
-    // icon as-is, empty = all black). depthTest is ON so portals occlude the coin (it sits in the
-    // depth-cleared sim pass, so buildings/terrain still don't — it reads in front of the city).
-    private fun indicatorMaterial(item: ActionItem, faction: Faction, energy: Double): dynamic {
-        val bucket = (energy * ENERGY_BUCKETS).toInt().coerceIn(0, ENERGY_BUCKETS)
-        return spriteCache.getOrPut("coin:${item.text}${faction.abbr}:e$bucket") {
-            val tex = Three.CanvasTexture(energyFace(item, faction, bucket.toDouble() / ENERGY_BUCKETS))
-            val top = coinFace(tex, 1.0)
-            val bottom = coinFace(tex, COIN_BODY_OPACITY)
-            val rimParams: dynamic = js("({})")
-            rimParams.color = faction.color
-            rimParams.depthTest = true
-            rimParams.transparent = true
-            rimParams.opacity = COIN_BODY_OPACITY
-            arrayOf(Three.MeshBasicMaterial(rimParams), top, bottom) // CylinderGeometry groups: 0 = side, 1 = top, 2 = bottom
-        }
-    }
-
-    // The action icon with a black "drained" band over the top (1 − energy) of the face — the XM gauge.
-    private fun energyFace(item: ActionItem, faction: Faction, energy: Double): HTMLCanvasElement {
-        val icon = ActionItem.getHiResIcon(item, faction)
-        val w = icon.asDynamic().width as Int
-        val h = icon.asDynamic().height as Int
-        val canvas = document.createElement("canvas") as HTMLCanvasElement
-        canvas.width = w
-        canvas.height = h
-        val ctx = canvas.getContext("2d").asDynamic()
-        ctx.drawImage(icon, 0, 0)
-        val drainH = h * (1.0 - energy)
-        if (drainH > 0.0) {
-            ctx.fillStyle = "#000000"
-            ctx.fillRect(0.0, 0.0, w.toDouble(), drainH)
-        }
-        return canvas
+    // XM gauge is a separate bar to the side (addEnergyBar) so the action icon stays clear. depthTest is
+    // ON so portals occlude the coin (it sits in the depth-cleared sim pass, so buildings/terrain still
+    // don't — it reads in front of the city).
+    private fun indicatorMaterial(item: ActionItem, faction: Faction): dynamic = spriteCache.getOrPut("coin:" + item.text + faction.abbr) {
+        val tex = Three.CanvasTexture(ActionItem.getHiResIcon(item, faction)) // hi-res → crisp
+        val top = coinFace(tex, 1.0)
+        val bottom = coinFace(tex, COIN_BODY_OPACITY)
+        val rimParams: dynamic = js("({})")
+        rimParams.color = faction.color
+        rimParams.depthTest = true
+        rimParams.transparent = true
+        rimParams.opacity = COIN_BODY_OPACITY
+        arrayOf(Three.MeshBasicMaterial(rimParams), top, bottom) // CylinderGeometry groups: 0 = side, 1 = top, 2 = bottom
     }
 
     private fun coinFace(tex: dynamic, opacity: Double): dynamic {
@@ -1144,6 +1128,46 @@ object Scene3D {
         p.transparent = true
         p.opacity = opacity
         return Three.MeshBasicMaterial(p)
+    }
+
+    // XM (energy) gauge: a vertical cylinder beside the action coin. Its full height scales with the
+    // agent's LEVEL — higher-level agents have a bigger XM capacity (Ingress: +1000 XM per level), so a
+    // taller bar reads as "more capacity". A faction-coloured fill rises from the bottom for current XM;
+    // the drained top is black (empty = all black, full = all colour). depthTest matches the coin.
+    private val energyBarGeo: dynamic by lazy { Three.CylinderGeometry(ENERGY_BAR_R, ENERGY_BAR_R, 1.0, 12) }
+
+    private fun energyMat(color: String): dynamic = spriteCache.getOrPut("energy:$color") {
+        val p: dynamic = js("({})")
+        p.color = color
+        p.depthTest = true
+        p.transparent = true
+        p.opacity = ENERGY_BAR_OPACITY
+        Three.MeshBasicMaterial(p)
+    }
+
+    private fun addEnergyBar(x: Double, y: Double, gz: Double, agent: Agent) {
+        val pct = (agent.xm.toDouble() / agent.xmCapacity()).coerceIn(0.0, 1.0)
+        val level = agent.getLevel().coerceIn(1, MAX_AGENT_LEVEL)
+        // L4 == the coin size; ±¼ coin size per level (higher level → bigger XM capacity → taller bar).
+        val h = (INDICATOR_SIZE + (level - ANCHOR_LEVEL) * ENERGY_BAR_PER_LEVEL).coerceAtLeast(ENERGY_BAR_PER_LEVEL)
+        val cx = x + INDICATOR_SIZE / 2.0 + ENERGY_BAR_GAP // sit just to the side of the coin
+        val zc = gz + INDICATOR_Z
+        val bottom = zc - h / 2.0
+        // Black backing for the whole capacity…
+        val back = Three.Mesh(energyBarGeo, energyMat("#0a0a0a"))
+        back.asDynamic().rotation.x = PI / 2 // cylinder axis (Y) → world Z (stand it up)
+        back.asDynamic().scale.set(1.0, h, 1.0)
+        place(back.asDynamic(), cx, y, zc)
+        indicatorsGroup.add(back)
+        // …faction-coloured fill rising from the bottom for the current XM.
+        val fillH = h * pct
+        if (fillH > 0.01) {
+            val fill = Three.Mesh(energyBarGeo, energyMat(agent.faction.color))
+            fill.asDynamic().rotation.x = PI / 2
+            fill.asDynamic().scale.set(ENERGY_BAR_FILL_FRAC, fillH, ENERGY_BAR_FILL_FRAC)
+            place(fill.asDynamic(), cx, y, bottom + fillH / 2.0)
+            indicatorsGroup.add(fill)
+        }
     }
 
     /** A camera-facing name + level billboard floating just above the portal's orb (cleared each sync). */
