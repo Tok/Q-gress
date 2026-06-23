@@ -47,7 +47,8 @@ object TitleSim {
         started = true
         World.userFaction = Faction.ENL
         Scene3D.showBorder = false // no boundary wall/mask on the title
-        Scene3D.titleWordmarkOnReady = { hideDomWordmark() } // swap the DOM wordmark for the 3D letters once loaded
+        Scene3D.titleWordmarkOnReady = { hideDomWordmark() } // also triggers the 3D wordmark load in onAdd
+        hideDomWordmark() // the 3D letters replace it — hide the flat DOM text immediately (no flash)
         window.addEventListener("pointerdown", { SoundUtil.enableAudio() }) // autoplay: unlock on first gesture
         Sim.setSize(Sim.presetWidth(Sim.SMALL_SCALE), Sim.presetHeight(Sim.SMALL_SCALE)) // small → fast to build
         Sim.roundField = true // a centered round arena → portals cluster around the centre (border stays hidden)

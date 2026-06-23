@@ -40,7 +40,7 @@ object TitleWordmark {
 
     private fun build(scene: dynamic, font: dynamic) {
         group = Three.Group()
-        val capMat = standard("#f2f4f8", 0.35, 0.32, "#9aa0aa", 0.22) // lit off-white caps
+        val capMat = standard("#ffffff", 0.0, 0.5, "#ffffff", 0.4) // bright white caps (diffuse + white emissive)
         val sideMat = standard("#0a0a0a", 0.55, 0.5, "#000000", 0.0) // near-black extruded sides (the backline)
         var cursor = 0.0
         TEXT.forEach { ch ->
