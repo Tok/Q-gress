@@ -1115,6 +1115,8 @@ html, body {
     margin: 12px 14px 0;
     font-size: 18px;
     color: #f0f0f0;
+    /* Black outline so the white name stays readable over any terrain/buildings underneath. */
+    text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 2px 3px rgba(0, 0, 0, 0.7);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
