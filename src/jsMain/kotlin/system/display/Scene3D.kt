@@ -326,7 +326,9 @@ object Scene3D {
         animClockMs += dt * 1000.0
         PlasmaShader.setTime(animClockMs / 1000.0) // animate control fields (on the scaled clock)
         updateShields(animClockMs / 1000.0) // shield hex/rim animation + per-portal blast-absorb ripple
-        BuildingShake.update(animClockMs / 1000.0) // decay any building bobs back to rest (cheap when idle)
+        // Decay building bobs back to rest (cheap when idle). Our own meshes bob in scene space; MapLibre's
+        // fill-extrusion bobs via feature-state — only one is the live building set.
+        if (OwnBuildings.REPLACE_BUILDINGS) OwnBuildings.updateBobs(animClockMs / 1000.0) else BuildingShake.update(animClockMs / 1000.0)
         updateEffects(map, dt, invProj)
         tumbleModTetras() // gentle continuous tumble of the mod tetrahedra
         updateTitleWordmark(invProj, dt) // camera-lock the 3D title letters (no-op until loaded)
@@ -578,8 +580,14 @@ object Scene3D {
         DamageNumberFx.applyBlast(origin, level) // already-falling damage digits get flung too
         TitleWordmark.flash(origin, level) // title letters get shoved (no-op until loaded)
         triggerShieldWaves(location, level) // nearby shields ripple as they absorb the blast
-        val ll = simPosToLngLat(location) // buildings within the XMP's blast radius bob + settle (US rocks harder)
-        BuildingShake.blast(ll[0], ll[1], XmpLevel.valueOf(level).rangeM, level, ultra, animClockMs / 1000.0)
+        // Buildings within the XMP's blast radius bob + settle (US rocks harder). Our own meshes shake in
+        // scene space (sx/sy already computed above); the MapLibre fallback needs lng/lat + feature-state.
+        if (OwnBuildings.REPLACE_BUILDINGS) {
+            OwnBuildings.applyBlast(sx, sy, XmpLevel.valueOf(level).rangeM.toDouble(), level, ultra, animClockMs / 1000.0)
+        } else {
+            val ll = simPosToLngLat(location)
+            BuildingShake.blast(ll[0], ll[1], XmpLevel.valueOf(level).rangeM, level, ultra, animClockMs / 1000.0)
+        }
         if (sound) {
             if (ultra) SoundUtil.playUltraStrike(location) else SoundUtil.playXmpSound(location, level)
         }

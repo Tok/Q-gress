@@ -88,11 +88,21 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
 - **Buildings occlude the sim by default** (the 3D pass shares the map depth buffer); a Menu
   accessibility toggle **"Show through buildings"** restores the always-on-top draw (XMP/explosions stay
   on top regardless). Action coins are occluded by portals but not buildings in that mode.
-- **Buildings bob from nearby blasts** (`BuildingShake`): an XMP/ultra-strike makes the 3D buildings
-  within range **shake and settle back** (~2.4s spring) — amplitude scales with **blast level +
-  proximity**, damped for **taller** buildings (more mass). Driven via per-building MapLibre
-  `feature-state` added to the extrusion height/base, so it needs native vector-tile feature ids;
-  works in-game + on the title (the `/#demo` gray style has no buildings, so it no-ops there).
+- **Our own building meshes** (`system/display/OwnBuildings`, fed by `util/BuildingTiles`): the
+  play-area buildings are rebuilt as real three.js extruded prisms from a **complete** footprint set —
+  we fetch the OpenFreeMap `.pbf` vector tiles covering the area and **decode them ourselves** (pbf +
+  `@mapbox/vector-tile`, the libs MapLibre uses internally), because MapLibre's own query APIs only
+  ever returned a far-flung fraction (`queryRenderedFeatures` ≈2, `querySourceFeatures` ≈20–30). The
+  tiles are already in the browser cache, so it's near-instant. We control these meshes: they **cast +
+  receive real sun shadows**, **grow in** with world-gen, seed debris colliders, and MapLibre's own
+  fill-extrusion layer is hidden once ours are in. Keyed by footprint centroid (no tile id needed).
+  (`OwnBuildings.REPLACE_BUILDINGS` falls back to MapLibre's buildings if ever needed.)
+- **Buildings bob from nearby blasts**: an XMP/ultra-strike makes the buildings within range **shake
+  and settle back** (~2s spring) — amplitude scales with **blast level + proximity**, damped for
+  **taller** buildings (more mass). On our own meshes it's a per-mesh scene-space z-bob (`OwnBuildings`),
+  so it needs **no native feature id** and works everywhere incl. the title; the `BuildingShake`
+  MapLibre `feature-state` path remains as the fallback when own-meshes are off. (The `/#demo` gray
+  style has no buildings, so it no-ops there.)
 - **Shield bubbles ripple when they absorb a blast** (`ShieldShader` + `ShieldWave`): an explosion
   near a **shielded** portal waves its energy shell like liquid (and flares brighter) for ~1.7s, then
   it settles — so you can see a survived hit getting soaked up. (Also fixed: the shield hex/rim was

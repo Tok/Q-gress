@@ -136,6 +136,10 @@ kotlin {
                 implementation(npm("three", "0.160.0"))
                 // cannon-es: rigid-body physics for the glass shards (tumble + settle).
                 implementation(npm("cannon-es", "0.20.0"))
+                // pbf + @mapbox/vector-tile: decode OpenFreeMap .pbf building tiles ourselves (MapLibre's
+                // query APIs only expose a fraction of the footprints it paints). Same libs MapLibre uses.
+                implementation(npm("pbf", "3.3.0"))
+                implementation(npm("@mapbox/vector-tile", "1.3.1"))
             }
         }
         jsTest.dependencies {

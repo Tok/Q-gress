@@ -195,15 +195,13 @@ dominates" validation is iterative (playtest, or a future headless strategy-comp
 - **Going 3D (gameplay).** A pitched/3D camera breaks the top-down screen→grid mapping; needs a
   decoupled simulation grid or a 3D pathfinding model. Revisit after the functional-core split. (3D
   *buildings* in the top-down satellite view already work.)
-- **Own-mesh buildings (BLOCKED on a complete footprint source).** Rebuilding play-area buildings as
-  our own three.js meshes (`system/display/OwnBuildings`) — for building-cast shadows, walkable roofs,
-  per-mesh shake — is fully written but **gated off** (`OwnBuildings.REPLACE_BUILDINGS = false`); we
-  ship MapLibre's fill-extrusion buildings instead. Blocker: MapLibre's query APIs won't return all
-  the footprints — `queryRenderedFeatures` ≈2 for top-down fill-extrusion, `querySourceFeatures` ≈20–30
-  far-flung "special" features regardless of zoom/pan/idle-accumulation, even though the tiles MapLibre
-  paints clearly contain hundreds. The only reliable fix is **fetching + decoding the raw PBF vector
-  tiles ourselves** (a new dep) — same vector-tile-geometry need as the movement-model rework above, so
-  do them together. Until then: no building-cast shadows (sun + portal/pole shadows already work).
+- **Walkable roofs / more from our own building meshes.** Now that we mesh every play-area building
+  ourselves (`OwnBuildings`, fed by the `BuildingTiles` PBF decode — see FEATURES), the door is open
+  for agents to path over roofs, per-building destruction, etc. The decoder also generalises: the same
+  `BuildingTiles` approach can pull the **road/water/landcover** layers for the movement-model rework
+  below (real vector-tile geometry instead of rasterized shadow pixels).
+- **Building-cast shadow polish.** Our meshes cast + receive sun shadows now; revisit shadow-map
+  resolution / cascade once the sun obscurables (clouds) land so crowded blocks read cleanly.
 - **TTS announcements (low priority).** Speak important events (captures, recruits, new fields, cycle
   changes) via the Web Speech API (`speechSynthesis`), throttled so it doesn't spam; per-faction
   voices a nice touch; off by default, behind a toggle + the master volume.

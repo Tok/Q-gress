@@ -213,6 +213,7 @@ object MapUtil {
     fun applyBuildInflate(factor: Double) {
         val m = initMap ?: return
         if (demoMode || !Styles.use3DBuildings) return
+        if (OwnBuildings.REPLACE_BUILDINGS) OwnBuildings.setInflate(factor) // grow our own meshes (the visible ones)
         if (m.asDynamic().getLayer("3d-buildings") == null) return
         m.setPaintProperty("3d-buildings", "fill-extrusion-height", inflateExpr(factor, "render_height", 8))
         m.setPaintProperty("3d-buildings", "fill-extrusion-base", inflateExpr(factor, "render_min_height", 0))
@@ -351,44 +352,42 @@ object MapUtil {
     }
 
     private var ownBuildingsHooked = false
-    private var ownBuildingsSwapped = false
+    private const val OWN_BUILD_RETRY_MS = 500.0 // poll terrain readiness this often before loading
+    private const val OWN_BUILD_MAX_RETRY = 16 // …up to ~8 s (DEM tiles can be slow)
 
     /**
-     * Seed debris colliders from the DISPLAY map's building footprints, and — when
-     * [OwnBuildings.REPLACE_BUILDINGS] is on — mesh our OWN buildings and hide MapLibre's layer
-     * (opacity 0 so the layer keeps streaming tiles). Driven by the display map's `idle`: each idle
-     * picks up any newly-loaded footprints (dedup), so the set fills in as tiles arrive and on pan.
-     *
-     * Replacement is currently OFF (see [OwnBuildings.REPLACE_BUILDINGS] for why) — we keep MapLibre's
-     * own fill-extrusion buildings as the visible look and only seed colliders from what we can query.
+     * Load a COMPLETE set of play-area building footprints by fetching + decoding the OpenFreeMap `.pbf`
+     * vector tiles ourselves ([BuildingTiles]) — MapLibre's query APIs only ever returned a fraction.
+     * Then seed debris colliders from them, and — when [OwnBuildings.REPLACE_BUILDINGS] is on — mesh our
+     * OWN buildings and hide MapLibre's fill-extrusion layer (opacity 0). Deterministic: we know exactly
+     * which tiles cover the area, so there's no wait-and-retry on tile streaming (only on terrain, which
+     * we need for correct building base z).
      */
     fun buildBuildingColliders() {
         if (demoMode || !Styles.use3DBuildings || ownBuildingsHooked) return
-        val m = initMap ?: return
         ownBuildingsHooked = true
-        m.asDynamic().on("idle", fun() {
-            ownBuildingsTick()
-        })
-        ownBuildingsTick()
+        loadOwnBuildings(0)
     }
 
-    private fun ownBuildingsTick() {
-        if (demoMode || !Styles.use3DBuildings || !Scene3D.terrainReady()) return // need terrain for correct z
-        val m = initMap ?: return
-        val md = m.asDynamic()
-        val opts: dynamic = js("({})")
-        opts.sourceLayer = "building"
-        val feats = md.querySourceFeatures("openmaptiles", opts)
-        if (((feats.length as? Int) ?: 0) == 0) return // tiles not in yet — a later idle will have them
-        if (OwnBuildings.REPLACE_BUILDINGS) OwnBuildings.addFeatures(feats) // accumulate (dedup by footprint)
-        if (!ownBuildingsSwapped) {
-            ownBuildingsSwapped = true
-            Scene3D.buildBuildingColliders(feats) // partial colliders from what we can query (better than none)
-            // Only hand over to our meshes when replacement is on; otherwise leave MapLibre's buildings visible.
-            if (OwnBuildings.REPLACE_BUILDINGS && md.getLayer("3d-buildings") != null) {
-                // opacity 0 (not visibility:none): the openmaptiles source is used only by this layer in the
-                // satellite style, so hiding it would stop tile loading and starve querySourceFeatures.
-                md.setPaintProperty("3d-buildings", "fill-extrusion-opacity", 0)
+    private fun loadOwnBuildings(attempt: Int) {
+        if (demoMode || !Styles.use3DBuildings) return
+        val center = anchorCenter ?: return
+        if (!Scene3D.terrainReady()) { // need terrain for correct building base z; poll briefly
+            if (attempt < OWN_BUILD_MAX_RETRY) {
+                window.setTimeout({ loadOwnBuildings(attempt + 1) }, OWN_BUILD_RETRY_MS.toInt())
+            }
+            return
+        }
+        val halfW = Sim.width / 2.0 * Scene3D.metersPerPixel
+        val halfH = Sim.height / 2.0 * Scene3D.metersPerPixel
+        BuildingTiles.load(center.lng as Double, center.lat as Double, halfW, halfH) { feats ->
+            Scene3D.buildBuildingColliders(feats) // debris colliders from the full set
+            if (OwnBuildings.REPLACE_BUILDINGS) {
+                OwnBuildings.addFeatures(feats) // new meshes pop in at the current grow-in level (applyBuildInflate)
+                val md = initMap?.asDynamic()
+                if (md != null && md.getLayer("3d-buildings") != null) {
+                    md.setPaintProperty("3d-buildings", "fill-extrusion-opacity", 0) // ours take over the look
+                }
             }
         }
     }

@@ -7,7 +7,7 @@ package util
  */
 object MapStyles {
     // --- Open, keyless tile sources (no access token / billing) ---
-    private const val OPENMAPTILES_URL = "https://tiles.openfreemap.org/planet"
+    const val OPENMAPTILES_URL = "https://tiles.openfreemap.org/planet" // TileJSON; BuildingTiles reads .tiles from it
     const val STREET_STYLE_URL = "https://tiles.openfreemap.org/styles/positron"
     private const val ESRI_IMAGERY_TILES =
         "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
