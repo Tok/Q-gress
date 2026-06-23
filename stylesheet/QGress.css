@@ -19,7 +19,7 @@
     font-family: 'Coda';
     font-style: normal;
     font-weight: normal;
-    src: local('Coda'), url('../fonts/Coda.ttf.woff') format('woff');
+    src: local('Coda'), url('../fonts/Coda-Regular.ttf') format('truetype');
 }
 
 .coda {
@@ -430,6 +430,18 @@ html, body {
 .titleGithub:hover {
     color: #ffffff;
 }
+/* © credit in the title footer, bottom-right (alongside the centered GitHub link). */
+.titleCredit {
+    position: fixed;
+    bottom: 12px;
+    right: 16px;
+    z-index: 9999;
+    font-family: "Coda", monospace;
+    font-size: 12px;
+    letter-spacing: 1px;
+    color: rgba(230, 235, 232, 0.6);
+    pointer-events: none;
+}
 .titleGithub svg {
     display: block;
 }
@@ -566,6 +578,13 @@ html, body {
     padding: 14px 36px;
     min-width: 240px; /* fixed, roomy hit-area — the label shouldn't crowd the edges */
     cursor: pointer;
+}
+.onboardSliderLabel {
+    font-family: "Coda", monospace;
+    font-size: 13px;
+    color: rgba(230, 235, 232, 0.85);
+    align-self: center;
+    min-width: 96px;
 }
 .onboardPreset {
     font-family: "Coda", monospace;
@@ -935,6 +954,11 @@ html, body {
 }
 /* Required tile attribution: collapsed to a small ⓘ (compact) + dimmed so it's unobtrusive;
    full opacity on hover/expand. (MapLibre 5 uses the maplibregl- prefix.) */
+/* Keep the bottom-right ⓘ above the footer (z 60) and clickable, so it can still be expanded. */
+.maplibregl-ctrl-bottom-right, .mapboxgl-ctrl-bottom-right {
+    z-index: 70;
+    pointer-events: auto;
+}
 .maplibregl-ctrl-attrib, .mapboxgl-ctrl-attrib {
     font-size: 10px;
     opacity: 0.5;
@@ -1110,6 +1134,8 @@ html, body {
     margin: 12px 14px 0;
     font-size: 18px;
     color: #f0f0f0;
+    /* Black outline so the white name stays readable over any terrain/buildings underneath. */
+    text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 2px 3px rgba(0, 0, 0, 0.7);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -1346,6 +1372,20 @@ html, body {
     flex-wrap: wrap;
     gap: 4px;
     margin: 2px 0;
+}
+/* Master-FX tuning row (#audio): label + slider pairs for low/high-pass + reverb. */
+.demoFx {
+    align-items: center;
+    gap: 10px;
+}
+.demoFxItem {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+.demoFxLabel {
+    font-size: 11px;
+    color: #c8c8c8;
 }
 .demoRow .demoButton {
     margin: 0;
