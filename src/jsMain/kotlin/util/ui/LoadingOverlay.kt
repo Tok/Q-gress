@@ -2,6 +2,7 @@ package util.ui
 
 import kotlinx.browser.document
 import org.w3c.dom.HTMLElement
+import util.MapUtil
 
 /**
  * Full-screen DOM loading overlay shown from the very first frame, so the long world-build (map
@@ -81,10 +82,20 @@ object LoadingOverlay {
     fun building(from: Int, to: Int, done: Int, total: Int, label: String) {
         val frac = if (total <= 0) 1.0 else (done.toDouble() / total).coerceIn(0.0, 1.0)
         statusEl?.textContent = "Building world…"
-        fillEl?.style?.width = "${(from + (to - from) * frac).toInt()}%"
+        val percent = from + (to - from) * frac
+        fillEl?.style?.width = "${percent.toInt()}%"
         subFillEl?.style?.width = "${(frac * 100).toInt()}%"
         detail("$label  ($done/$total)")
+        driveBuildings(percent)
         reveal()
+    }
+
+    private const val BUILD_START_PCT = PCT_WORLD // buildings start rising once portals begin (delayed), full at 100%
+
+    // Grow the 3D buildings in step with world-gen progress — they only reach full height when gen is done.
+    private fun driveBuildings(percent: Double) {
+        val frac = ((percent - BUILD_START_PCT) / (100.0 - BUILD_START_PCT)).coerceIn(0.0, 1.0)
+        MapUtil.setBuildProgress(frac)
     }
 
     private fun reveal() {
@@ -104,6 +115,7 @@ object LoadingOverlay {
         statusEl?.textContent = text
         fillEl?.style?.width = "${percent.coerceIn(0, 100)}%"
         subFillEl?.style?.width = "0%"
+        driveBuildings(percent.toDouble())
         // At the world-build stage, reveal the scene behind so the spawning portals + flow vectors show.
         if (percent >= PCT_WORLD) reveal()
     }
@@ -111,6 +123,7 @@ object LoadingOverlay {
     /** Fill to 100% and fade the overlay out, then remove it. */
     fun done() {
         fillEl?.style?.width = "100%"
+        driveBuildings(100.0) // city reaches full height exactly as world-gen completes
         val overlay = document.getElementById(OVERLAY_ID) as? HTMLElement ?: return
         overlay.className = "loadingOverlay loadingOverlayDone"
         statusEl = null

@@ -138,7 +138,7 @@ object MapUtil {
         cinematicActive = true
         liftViewToCentre() // face the play-area centre from the start (the 3D tilt otherwise sinks it to the bottom)
         window.requestAnimationFrame { spinBuild() }
-        startBuildInflate() // the city rises out of the ground as the world loads
+        applyBuildInflate(0.0) // start flat; the city rises in step with world-gen progress (setBuildProgress)
     }
 
     // The build camera keeps DEFAULT_PITCH for the 3D look, which pushes the play-area centre low on
@@ -152,10 +152,10 @@ object MapUtil {
         m.asDynamic().setPadding(pad)
     }
 
-    private const val BUILD_INFLATE_MS = 2600.0 // how long the buildings take to rise to full height
+    private const val BUILD_INFLATE_MS = 2600.0 // TITLE-only fixed-duration rise (the title has no world-gen progress)
     private var inflateStart = 0.0
 
-    /** Animate the 3D buildings rising from the ground (height + base scale 0→1) while the world builds. */
+    /** TITLE: animate the 3D buildings rising over a fixed duration (no loading overlay there). */
     private fun startBuildInflate() {
         if (demoMode || !Styles.use3DBuildings) return
         inflateStart = js("performance.now()") as Double
@@ -163,12 +163,54 @@ object MapUtil {
     }
 
     private fun stepInflate() {
-        val m = initMap ?: return
         val t = (((js("performance.now()") as Double) - inflateStart) / BUILD_INFLATE_MS).coerceIn(0.0, 1.0)
-        val e = 1.0 - (1.0 - t) * (1.0 - t) * (1.0 - t) // easeOutCubic — fast rise, gentle settle
-        m.setPaintProperty("3d-buildings", "fill-extrusion-height", inflateExpr(e, "render_height", 8))
-        m.setPaintProperty("3d-buildings", "fill-extrusion-base", inflateExpr(e, "render_min_height", 0))
+        applyBuildInflate(easeOutCubic(t))
         if (t < 1.0) window.requestAnimationFrame { stepInflate() }
+    }
+
+    // --- IN-GAME: buildings grow IN STEP with world-gen progress, only reaching full height once gen is
+    // finished (portals + agents + NPCs all created) — so the city keeps rising while people drop in.
+    private const val BUILD_EASE = 0.06 // how fast the shown height eases toward the live gen-progress target
+    private var buildTarget = 0.0
+    private var buildShown = 0.0
+    private var buildLoopRunning = false
+
+    /** Drive the building grow-in by world-gen progress (0..1, from LoadingOverlay). Eases up toward
+     *  [fraction]; only snaps to full when gen reports done — so growth spans the whole build. */
+    fun setBuildProgress(fraction: Double) {
+        if (demoMode || !Styles.use3DBuildings) return
+        buildTarget = fraction.coerceIn(0.0, 1.0)
+        if (!buildLoopRunning && buildTarget > 0.0) {
+            buildLoopRunning = true
+            window.requestAnimationFrame { stepBuildGrow() }
+        }
+    }
+
+    private fun stepBuildGrow() {
+        if (initMap == null) {
+            buildLoopRunning = false
+            return
+        }
+        buildShown += (buildTarget - buildShown) * BUILD_EASE
+        applyBuildInflate(easeOutCubic(buildShown))
+        if (buildShown < 0.999 || buildTarget < 1.0) {
+            window.requestAnimationFrame { stepBuildGrow() }
+        } else {
+            applyBuildInflate(1.0)
+            buildLoopRunning = false
+        }
+    }
+
+    private fun easeOutCubic(t: Double) = 1.0 - (1.0 - t) * (1.0 - t) * (1.0 - t)
+
+    /** Set the 3D buildings to [factor]×full height (0 = flat, 1 = full), incl. the blast-bob term. No-op
+     *  without the building layer (demo style / not yet added). */
+    fun applyBuildInflate(factor: Double) {
+        val m = initMap ?: return
+        if (demoMode || !Styles.use3DBuildings) return
+        if (m.asDynamic().getLayer("3d-buildings") == null) return
+        m.setPaintProperty("3d-buildings", "fill-extrusion-height", inflateExpr(factor, "render_height", 8))
+        m.setPaintProperty("3d-buildings", "fill-extrusion-base", inflateExpr(factor, "render_min_height", 0))
     }
 
     // Inflate factor × the real height, PLUS the per-building blast-bob (feature-state, see BuildingShake).
