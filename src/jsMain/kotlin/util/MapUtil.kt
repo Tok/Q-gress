@@ -354,10 +354,13 @@ object MapUtil {
     private var ownBuildingsSwapped = false
 
     /**
-     * Mesh our OWN buildings from the DISPLAY map's building footprints (where the data the player can
-     * already see lives) + seed debris colliders, then make MapLibre's layer invisible (opacity 0 → ours
-     * take over, but the layer stays active so tiles keep streaming). Driven by the display map's `idle`:
-     * each idle meshes any newly-loaded buildings (dedup), so the set fills in as tiles arrive and on pan.
+     * Seed debris colliders from the DISPLAY map's building footprints, and — when
+     * [OwnBuildings.REPLACE_BUILDINGS] is on — mesh our OWN buildings and hide MapLibre's layer
+     * (opacity 0 so the layer keeps streaming tiles). Driven by the display map's `idle`: each idle
+     * picks up any newly-loaded footprints (dedup), so the set fills in as tiles arrive and on pan.
+     *
+     * Replacement is currently OFF (see [OwnBuildings.REPLACE_BUILDINGS] for why) — we keep MapLibre's
+     * own fill-extrusion buildings as the visible look and only seed colliders from what we can query.
      */
     fun buildBuildingColliders() {
         if (demoMode || !Styles.use3DBuildings || ownBuildingsHooked) return
@@ -377,13 +380,16 @@ object MapUtil {
         opts.sourceLayer = "building"
         val feats = md.querySourceFeatures("openmaptiles", opts)
         if (((feats.length as? Int) ?: 0) == 0) return // tiles not in yet — a later idle will have them
-        OwnBuildings.addFeatures(feats) // accumulate (dedup by footprint)
+        if (OwnBuildings.REPLACE_BUILDINGS) OwnBuildings.addFeatures(feats) // accumulate (dedup by footprint)
         if (!ownBuildingsSwapped) {
             ownBuildingsSwapped = true
-            Scene3D.buildBuildingColliders(feats)
-            // opacity 0 (not visibility:none): the openmaptiles source is used only by this layer in the
-            // satellite style, so hiding it would stop tile loading and starve querySourceFeatures.
-            if (md.getLayer("3d-buildings") != null) md.setPaintProperty("3d-buildings", "fill-extrusion-opacity", 0)
+            Scene3D.buildBuildingColliders(feats) // partial colliders from what we can query (better than none)
+            // Only hand over to our meshes when replacement is on; otherwise leave MapLibre's buildings visible.
+            if (OwnBuildings.REPLACE_BUILDINGS && md.getLayer("3d-buildings") != null) {
+                // opacity 0 (not visibility:none): the openmaptiles source is used only by this layer in the
+                // satellite style, so hiding it would stop tile loading and starve querySourceFeatures.
+                md.setPaintProperty("3d-buildings", "fill-extrusion-opacity", 0)
+            }
         }
     }
 

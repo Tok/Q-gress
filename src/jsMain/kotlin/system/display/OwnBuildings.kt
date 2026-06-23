@@ -16,6 +16,22 @@ import util.data.Pos
  * grow-in (per-mesh z-scale) in step with world-gen; [clear] on teardown.
  */
 object OwnBuildings {
+    /**
+     * Master switch for the own-mesh building replacement.
+     *
+     * Currently OFF. The whole approach is blocked on one thing: getting all the play-area building
+     * footprints out of MapLibre. The data is in the vector tiles MapLibre paints (you can see the
+     * hundreds of buildings), but every public query path hands back only a small, far-flung subset —
+     * `queryRenderedFeatures` returns ~2 for top-down fill-extrusion, `querySourceFeatures` returns
+     * only ~20–30 "special" features regardless of zoom/pan/idle-accumulation. The only way to get
+     * them all is to fetch + decode the raw PBF vector tiles ourselves (a heavy new dependency), which
+     * is out of scope for now. Until then we keep MapLibre's own fill-extrusion buildings as the
+     * visible look (reliable, all of them) and skip our meshes. Sun + portal/pole shadows still work;
+     * building-cast shadows do not (they need our meshes). Flip to `true` to re-enable when/if we have
+     * a complete footprint source.
+     */
+    const val REPLACE_BUILDINGS = false
+
     const val COLOR = "#333333"
     const val OPACITY = 0.9
     private const val MAX_BUILDINGS = 8000 // safety cap (separate mesh per building; perf is fine at our scale)
