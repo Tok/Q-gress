@@ -217,8 +217,10 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
   - **Blast mini-game**: click the scene to detonate — **LMB** fires a full **L8 XMP**, **RMB** an
     **ultra-strike** (the same fireball squished to a **tight** footprint + a touch brighter via the
     shader's `uBright`, with its own **short punchy** sound — no long boom; reuses the XMP shape, no
-    dedicated ultra animation). You can also **scroll out** and the auto-cam **keeps drifting** — a user
-    zoom restarts the orbit leg (gen-guarded) so it never stalls, easing around your zoom.
+    dedicated ultra animation). These **actually damage the scene** (`XmpBurster.blastAt`, faction-
+    agnostic): resonators in range are destroyed, so portals shatter and drop their mods/shields like an
+    agent's XMP. You can also **scroll out** and the auto-cam **keeps drifting** — a user zoom restarts
+    the orbit leg (gen-guarded) so it never stalls, easing around your zoom.
   - **Title location** isn't fixed: it opens on the **player's home** when location was *already*
     shared (silent, no permission prompt — `GeoLocator.homeIfPermitted` via the Permissions API),
     otherwise a **random iconic location** from a curated photogenic subset (`Location.randomTitle`).
@@ -243,11 +245,12 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
 - Per-event sounds (portal create/remove, field up/down, shatter, XMP, hack/glyph/deploy/link,
   checkpoint/cycle, marble "tok" NPC drop); non-positional events (checkpoint/cycle/fail) stay
   center-panned. **Volume slider** + master gain; audio resumes on first gesture.
-- **Shared 8-note scale** (`SoundUtil.noteFor`, C2 root): the 8 portal/XMP levels map to 8 notes with
-  **level 8 = the lowest**, so a portal's level is audible across every level-keyed sound — XMP boom +
-  volley blips, hack/glyph whirs (+ glyph chime), upgrade/downgrade notes — and the sim plays in one key.
-  The key flips **major when the player's faction leads, minor when behind** (`setLeading`, driven by the
-  live MU each tick) — the soundtrack brightens/darkens with the score.
+- **Shared 8-note scale** (`Scale`, C2 root): the 8 portal/XMP levels map to 8 notes with **level 8 =
+  the lowest**, so a portal's level is audible across every level-keyed sound — XMP boom + volley blips,
+  hack/glyph whirs (+ glyph chime), upgrade/downgrade notes — and the sim plays in one key. The key flips
+  **major when the player's faction leads, minor when behind** (`Scale.setLeading`, driven by the live MU
+  each tick) — the soundtrack brightens/darkens with the score. A short rising **level-up jingle**
+  (`playLevelUp`) plays when one of the player's agents dings up a level.
 - **Master FX bus** (`AudioFx`, between the mix + limiter): a tunable low-pass (also the onboarding
   "muffle"), a high-pass, and a **reverb** send (convolver fed a generated decaying-noise impulse). The
   **`#audio` demo** auditions every standalone SFX (incl. the ultra-strike) and exposes live sliders for

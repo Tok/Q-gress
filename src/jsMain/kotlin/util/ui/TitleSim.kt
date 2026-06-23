@@ -12,6 +12,7 @@ import items.PowerCube
 import items.XmpBurster
 import items.deployable.Resonator
 import items.deployable.Shield
+import items.level.XmpLevel
 import items.types.ShieldType
 import kotlinx.browser.document
 import kotlinx.browser.window
@@ -25,6 +26,7 @@ import util.GeoLocator
 import util.GridConnectivity
 import util.MapUtil
 import util.SoundUtil
+import util.data.Pos
 import kotlin.js.Json
 
 /**
@@ -103,15 +105,23 @@ object TitleSim {
     }
 
     // Let the player blast the title scene: LMB = L8 XMP, RMB = a squished/brighter/higher ultra-strike.
+    // Both actually damage the scene (shatter portals, drop shields) like an agent's XMP — not just FX.
     private fun bindBlasts() {
         MapUtil.bindTitleBlasts(
-            { e -> MapUtil.eventToSimPos(e)?.let { Scene3D.playXmpBurst(it, TITLE_BLAST_LEVEL) } },
-            { e ->
-                MapUtil.eventToSimPos(e)?.let {
-                    Scene3D.playXmpBurst(it, TITLE_BLAST_LEVEL, squishXY = ULTRA_SQUISH, bright = ULTRA_BRIGHT, ultra = true)
-                }
-            },
+            { e -> MapUtil.eventToSimPos(e)?.let { blastAt(it, ultra = false) } },
+            { e -> MapUtil.eventToSimPos(e)?.let { blastAt(it, ultra = true) } },
         )
+    }
+
+    private fun blastAt(pos: Pos, ultra: Boolean) {
+        val attacker = World.allAgents.firstOrNull() ?: return // any agent credits the (title) damage
+        // Detonate FIRST (records the blast origin) so destroyed resos/mods fly away from it, then damage.
+        if (ultra) {
+            Scene3D.playXmpBurst(pos, TITLE_BLAST_LEVEL, squishXY = ULTRA_SQUISH, bright = ULTRA_BRIGHT, ultra = true)
+        } else {
+            Scene3D.playXmpBurst(pos, TITLE_BLAST_LEVEL)
+        }
+        XmpBurster.blastAt(pos, XmpLevel.valueOf(TITLE_BLAST_LEVEL), attacker)
     }
 
     // The 3D letters replace the flat DOM wordmark — hide it once they're in the scene.

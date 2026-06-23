@@ -17,6 +17,7 @@ import portal.XmMap
 import system.display.Scene3D
 import util.HtmlUtil
 import util.NameGen
+import util.SoundUtil
 import util.Util
 import util.data.*
 import kotlin.math.max
@@ -60,7 +61,9 @@ data class Agent(
     }
 
     fun addAp(v: Int) {
+        val before = getLevel()
         this.ap += v * Config.apMultiplier
+        if (faction == World.userFaction && getLevel() > before) SoundUtil.playLevelUp(pos) // player agent dinged up
     }
 
     fun act(): Agent {

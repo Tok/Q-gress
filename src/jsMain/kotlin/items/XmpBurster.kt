@@ -1,11 +1,13 @@
 package items
 
+import World
 import agent.Agent
 import config.Constants
 import config.Dim
 import items.deployable.DeployableItem
 import items.level.XmpLevel
 import util.Util
+import util.data.Pos
 import kotlin.math.max
 import kotlin.math.min
 
@@ -31,6 +33,24 @@ data class XmpBurster(val owner: Agent, val level: XmpLevel) : DeployableItem {
     override fun getLevel(): Int = level.level
 
     companion object {
+        /**
+         * A faction-agnostic blast at scene-point [pos] (the title mini-game): damages every resonator
+         * in range — destroying them, so portals shatter and drop their mods/shields just like an
+         * agent's XMP. [attacker] credits the damage (any agent; only matters for AP). [level] sizes it.
+         */
+        fun blastAt(pos: Pos, level: XmpLevel, attacker: Agent) {
+            val range = level.rangeM * 0.5
+            World.allPortals.flatMap { it.slots.values }.forEach { slot ->
+                val reso = slot.resonator ?: return@forEach
+                val rp = reso.position ?: return@forEach
+                if (rp.distanceTo(pos) > range) return@forEach
+                val ratio = max(0.0, min(1.0, 1.0 - rp.distanceTo(pos) * Dim.pixelToMFactor / level.rangeM))
+                val raw = (level.damage * ratio * GLOBAL_DAMAGE_MULTIPLIER).toInt()
+                val mitigation = reso.portal?.totalMitigation() ?: 0
+                reso.takeDamage(attacker, raw * (100 - mitigation) / 100)
+            }
+        }
+
         const val GLOBAL_DAMAGE_MULTIPLIER = 0.20 // FIXME
         const val CRIT_DAMAGE_MULTIPLIER = 3
         const val CRIT_RATE = 0.2

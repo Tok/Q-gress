@@ -23,7 +23,6 @@ import system.display.Scene3D
 import util.data.Pos
 import kotlin.math.PI
 import kotlin.math.exp
-import kotlin.math.pow
 import kotlin.math.sin
 import kotlin.math.sqrt
 import kotlin.math.tanh
@@ -33,26 +32,8 @@ object SoundUtil {
     private const val EPS = 0.0001 // exponentialRamp can't target 0
     private const val SHATTER_MIX = 0.8 // glass-shatter loudness vs the rest of the mix
 
-    // Shared 8-note scale for the 8 portal/XMP levels — LEVEL 8 IS THE LOWEST note (C2 root); XMP, hack,
-    // glyph and the level-change sounds all pitch to it so the whole sim plays in one key and a portal's
-    // level is audible across every sound. The key flips MAJOR when the player's faction leads, MINOR
-    // when it's behind (set via [setLeading]) — the soundtrack brightens/darkens with the score.
-    private val SCALE_MINOR = intArrayOf(0, 2, 3, 5, 7, 8, 10, 12) // C natural minor (behind)
-    private val SCALE_MAJOR = intArrayOf(0, 2, 4, 5, 7, 9, 11, 12) // C major (leading)
-    private const val SCALE_ROOT_HZ = 65.41 // C2 — the lowest note (level 8)
-    private var leading = false // is the player's faction ahead? → major vs minor
-
-    /** Brighten (major) the shared scale when the player's faction leads, else minor. Cheap; call freely. */
-    fun setLeading(ahead: Boolean) {
-        leading = ahead
-    }
-
-    /** Frequency (Hz) of [level]'s note on the shared scale (level 8 = root); [octaveUp] transposes it. */
-    fun noteFor(level: Int, octaveUp: Int = 0): Double {
-        val scale = if (leading) SCALE_MAJOR else SCALE_MINOR
-        val semis = scale[8 - level.coerceIn(1, 8)] + octaveUp * 12
-        return SCALE_ROOT_HZ * 2.0.pow(semis / 12.0)
-    }
+    // The shared musical scale (level → note, major/minor on the lead) lives in [Scale].
+    private fun noteFor(level: Int, octaveUp: Int = 0) = Scale.noteFor(level, octaveUp)
 
     // 3D-audio tuning (sim-space is real metres). The play area is hundreds of metres across, so a
     // small reference distance + gentle rolloff makes near/far audibly differ at gameplay zoom while
@@ -253,6 +234,21 @@ object SoundUtil {
         playNoiseBlast(pos, amp * 0.9, 0.45 + level * 0.05)
         // (2) Proper explosion on top, tuned to the fireball's life (≈ XmpBurst LIFE_BASE + level·0.1).
         playXmpExplosion(pos, amp, note, 1.4 + level * 0.1)
+    }
+
+    /** A short rising 3-note jingle when one of the player's agents levels up (level 5→3→1 on the scale). */
+    fun playLevelUp(pos: Pos) {
+        if (isMuted()) return
+        val n = now()
+        val osc = createStaticOscillator(OscillatorType.TRIANGLE, noteFor(5, octaveUp = 2))
+        osc.frequency.setValueAtTime(noteFor(5, octaveUp = 2), n)
+        osc.frequency.setValueAtTime(noteFor(3, octaveUp = 2), n + 0.09)
+        osc.frequency.setValueAtTime(noteFor(1, octaveUp = 2), n + 0.18)
+        val g = audioCtx.createGain()
+        g.gain.setValueAtTime(0.32, n)
+        g.gain.setValueAtTime(0.32, n + 0.26)
+        g.gain.exponentialRampToValueAtTime(EPS, n + 0.4)
+        connectVoice(osc, createPanner(pos), g, n + 0.4)
     }
 
     /**

@@ -10,6 +10,7 @@ import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HTMLInputElement
 import system.Checkpoint
 import util.AudioFx
+import util.Scale
 import util.SoundUtil
 import util.data.Pos
 
@@ -45,7 +46,7 @@ object AudioDemo {
         keyBtn.innerHTML = "Key: minor"
         keyBtn.onclick = {
             leadMajor = !leadMajor
-            SoundUtil.setLeading(leadMajor)
+            Scale.setLeading(leadMajor)
             keyBtn.innerHTML = if (leadMajor) "Key: major" else "Key: minor"
             null
         }

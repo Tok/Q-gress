@@ -91,7 +91,7 @@ object HtmlUtil {
             Cycle.updateCheckpoints(World.tick, enlMu, resMu)
             val firstMu = if (factions.first == Faction.ENL) enlMu else resMu
             val secondMu = if (factions.first == Faction.RES) enlMu else resMu
-            SoundUtil.setLeading(firstMu >= secondMu) // major key while the player's faction leads, else minor
+            Scale.setLeading(firstMu >= secondMu) // major key while the player's faction leads, else minor
             DrawUtil.redrawUserInterface(firstMu, secondMu, factions)
             World.tick++
         }
