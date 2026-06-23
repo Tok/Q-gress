@@ -31,10 +31,11 @@ data class Agent(
     val action: Action,
     var actionPortal: Portal,
     var destination: Pos,
-    private var lastPosition: Pos,
     var ap: Int = 0,
     var xm: Int = 0,
     var velocity: Complex = Complex.ZERO,
+    private var beelineTicks: Int = 0, // >0 = temporarily bee-line straight at the target, ignoring the (looping) field
+    private var triedBeeline: Boolean = false, // a bee-line was already spent this stuck episode → escalate to re-target
 ) {
     fun key() = toString()
     private fun distanceToDestination(): Double = pos.distanceTo(destination)
@@ -103,16 +104,28 @@ data class Agent(
         }
     }
 
-    fun updateLastPos() {
-        val distance = pos.distanceTo(lastPosition)
-        val isStuck = distance <= Dim.maxDeploymentRange
-        if (isStuck) {
+    /**
+     * Un-stick a travelling agent flagged by [StuckTracker] (looping / wedged for a full window).
+     * Escalates: first spend a **bee-line** (walk straight at the target, ignoring the looping field);
+     * if that doesn't free it (e.g. wedged against the play-area edge), **re-target** a fresh portal.
+     * Called on the ~minute checkpoint cadence (see [system.Cycle]); a no-op when not stuck.
+     */
+    fun recoverIfStuck() {
+        if (!StuckTracker.isStuck(key())) {
+            triedBeeline = false
+            return
+        }
+        if (beelineTicks > 0) return // a bee-line is already underway — let it run its course
+        if (triedBeeline) {
             val newDest = World.randomPortal()
             val dist = skills.deployPrecision * Dim.maxDeploymentRange
             this.actionPortal = newDest
             this.destination = newDest.findRandomPointNearPortal(dist.toInt())
+            triedBeeline = false
+        } else {
+            beelineTicks = BEELINE_DURATION
+            triedBeeline = true
         }
-        this.lastPosition = pos
     }
 
     private fun moveCloserToDestinationPortal(): Agent {
@@ -122,9 +135,17 @@ data class Agent(
         }
         if (isAtActionPortal()) {
             action.end()
+            beelineTicks = 0
+            triedBeeline = false
             return this
         }
-        val force = actionPortal.vectors[pos.toShadow()] ?: MovementUtil.headingTo(pos, actionPortal.location)
+        val beelining = beelineTicks > 0
+        if (beelining) beelineTicks--
+        val force = if (beelining) {
+            MovementUtil.headingTo(pos, actionPortal.location) // un-stick override: straight line through the spiral
+        } else {
+            actionPortal.vectors[pos.toShadow()] ?: MovementUtil.headingTo(pos, actionPortal.location)
+        }
         velocity = MovementUtil.move(velocity, force, skills.speed)
         return this.copy(pos = Pos((pos.x + velocity.re).toInt(), (pos.y + velocity.im).toInt()))
     }
@@ -232,6 +253,8 @@ data class Agent(
     override fun hashCode() = this.key().hashCode() * 31
 
     companion object {
+        private val BEELINE_DURATION = StuckTracker.RECOVERY_BEELINE_TICKS // ticks to bee-line before re-targeting
+
         private fun xmCapacity(level: Int): Int = when (level) {
             1 -> 3000
             2 -> 4000
@@ -298,7 +321,7 @@ data class Agent(
             val agent = Agent(
                 faction, NameGen.handle(faction, HtmlUtil.locationName()), coords, Skills.createRandom(),
                 Inventory.empty(), Action.create(), actionPortal, actionPortal.location,
-                coords, ap, initialXm,
+                ap, initialXm,
             )
             if (HtmlUtil.isQuickstart()) {
                 agent.inventory.items.addAll(Inventory.quickStart(agent))

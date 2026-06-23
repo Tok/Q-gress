@@ -28,6 +28,8 @@ data class NonFaction(
     private val isDrunk = Util.random() <= 0.02 // TODO
 
     private var velocity = Complex.ZERO
+    private var beelineTicks = 0 // >0 = un-stick override: head straight to the destination, ignoring the looping field
+    private var triedBeeline = false // a bee-line was already spent this stuck episode → escalate to a new destination
     private fun distanceToDestination(): Double = pos.distanceTo(destination)
     private fun distanceToPortal(portal: Portal): Double = pos.distanceTo(portal.location)
     private fun isAtDestination(): Boolean = distanceToDestination() < Dim.maxDeploymentRange // Constants.phi
@@ -56,7 +58,11 @@ data class NonFaction(
         if (isAtDestination()) {
             wait()
         } else {
-            val force: Complex = if (Config.isNpcSwarming && Util.random() < swarmChance) {
+            maybeRecoverFromStuck()
+            val force: Complex = if (beelineTicks > 0) {
+                beelineTicks--
+                MovementUtil.headingTo(pos, destination) // un-stick override: straight line through the spiral
+            } else if (Config.isNpcSwarming && Util.random() < swarmChance) {
                 val nearPos = findNearest().pos
                 if (nearPos.distanceTo(pos) < Dim.agentRadius) {
                     val re = -(this.pos.x - nearPos.x)
@@ -74,6 +80,27 @@ data class NonFaction(
         }
     }
 
+    /**
+     * Un-stick a wandering NPC flagged by [StuckTracker]. Escalates like the agents: first spend a
+     * bee-line straight at the destination (ignoring the looping field); if that doesn't free it,
+     * re-roll a new destination via [moveElsewhere]. A no-op while a bee-line is already running or
+     * when not flagged.
+     */
+    private fun maybeRecoverFromStuck() {
+        if (beelineTicks > 0) return
+        if (!StuckTracker.isStuck("npc:$id")) {
+            triedBeeline = false
+            return
+        }
+        if (triedBeeline) {
+            moveElsewhere()
+            triedBeeline = false
+        } else {
+            beelineTicks = StuckTracker.RECOVERY_BEELINE_TICKS
+            triedBeeline = true
+        }
+    }
+
     private fun findNearest() = World.allNonFaction.filterNot { it == this }.minByOrNull {
         it.pos.distanceTo(this.pos)
     } ?: throw IllegalStateException("Unable to find nearest to $pos")
@@ -81,6 +108,8 @@ data class NonFaction(
     private fun wait() {
         this.velocity = Complex.ZERO
         this.busyUntil = World.tick + createWaitTime()
+        this.beelineTicks = 0 // drop any in-flight un-stick override; we've stopped to wait
+        this.triedBeeline = false
     }
 
     private fun moveElsewhere() = if (!pos.isOffScreen() && Util.random() < 0.96) {

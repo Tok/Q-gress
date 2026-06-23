@@ -81,7 +81,7 @@ object HtmlUtil {
         World.flushPendingAgents()
 
         World.allNonFaction.forEach { it.act() }
-        if (Debug.enabled) sampleStuck()
+        sampleStuck() // always on: drives stuck-recovery (Agent.recoverIfStuck / NonFaction); also the ?debug viz
         window.requestAnimationFrame {
             DrawUtil.redraw()
             val userFaction = World.userFactionOrThrow()
@@ -96,7 +96,7 @@ object HtmlUtil {
         }
     }
 
-    // ?debug: feed StuckTracker only the entities actively trying to travel this tick.
+    // Feed StuckTracker only the entities actively trying to travel this tick (powers recovery + ?debug viz).
     private fun sampleStuck() {
         val agents = World.allAgents.filter { it.action.item == ActionItem.MOVE }.map { it.key() to it.pos }
         val npcs = World.allNonFaction.filter { it.isStuckCandidate(World.tick) }.map { "npc:${it.id}" to it.pos }

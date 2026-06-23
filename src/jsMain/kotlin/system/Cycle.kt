@@ -23,7 +23,7 @@ enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>) {
         fun updateCheckpoints(tick: Int, enlMu: Int, resMu: Int) {
             if (isUpdateStuck(tick)) {
                 World.allAgents.filter { it.action.item == ActionItem.MOVE }
-                    .forEach { it.updateLastPos() }
+                    .forEach { it.recoverIfStuck() }
             }
             if (isNewCheckpoint(tick)) {
                 val cp = Checkpoint(

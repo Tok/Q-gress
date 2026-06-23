@@ -143,9 +143,15 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
   cause of agents wandering/looking stuck). `World.walkability` gate blocks mostly-water maps;
   `LocationTest` guards all presets; per-terrain movement penalties (landcover-graded shadow style →
   `PathUtil` flow magnitude) + Terrain overlay.
+- **Stuck/loop recovery** (`StuckTracker`, always on): an agent/NPC whose **net displacement stays
+  under one deployment range over a full sample window** (frozen against geometry, or caught in a
+  vector-field spiral / off-screen-detour loop) is flagged, then un-stuck on the ~minute checkpoint
+  cadence — **escalating**: first a temporary **bee-line** straight at the target (ignoring the looping
+  field, `Agent.recoverIfStuck` / `NonFaction`), and if that doesn't free it (e.g. wedged on the
+  play-area edge) a **re-target** to a fresh portal / new destination. (`?debug` adds a 3D marker +
+  HUD count over the flagged entities.)
 - **`?debug` diagnostics** (off by default, `util.Debug`, disabled in Node): grid-build connectivity
-  self-check log (islands / on-screen islands / walkability, warns when unhealthy); **stuck/loop
-  detection** (`StuckTracker`) that flags non-progressing agents/NPCs with a 3D marker + a HUD count;
+  self-check log (islands / on-screen islands / walkability, warns when unhealthy);
   **`?debug=capture`** sweeps every preset and downloads a `GridFixture` snapshot file, which
   `PresetConnectivityTest` audits offline in Node (single component + on-screen-connected + walkable).
 - **Non-blocking flow fields** (`PathUtil.computeFieldAsync`): the per-portal heat map is a **bucketed

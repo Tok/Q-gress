@@ -4,9 +4,10 @@ import config.Dim
 import util.data.Pos
 
 /**
- * ?debug diagnostic: flags agents/NPCs that aren't making progress — frozen against geometry, or
- * looping/wandering in a small region (the off-screen-detour symptom). **Detection only**; recovery
- * already lives in [Agent.updateLastPos]. Keyed by a stable id, and only fed entities that are
+ * Flags agents/NPCs that aren't making progress — frozen against geometry, or looping/wandering in a
+ * small region (the vector-field spiral / off-screen-detour symptom). **Detection here**; the recovery
+ * (a temporary bee-line, then a re-target) lives in [Agent.recoverIfStuck] + [NonFaction]. Fed every
+ * tick (also powers the `?debug` 3D marker + HUD count). Keyed by a stable id, and only fed entities
  * *currently trying to travel*, so legitimately waiting / at-destination entities aren't flagged.
  *
  * An entity is "stuck" when its net displacement over a full window of samples stays under one
@@ -16,6 +17,9 @@ object StuckTracker {
     private const val WINDOW = 150 // position samples kept per entity (one per tick)
     private const val MIN_SAMPLES = 120 // need a near-full window before judging
     private val stuckRadius get() = Dim.maxDeploymentRange // net move under this over the window = stuck
+
+    /** When flagged stuck, agents/NPCs bee-line straight at their target for this many ticks before re-targeting. */
+    const val RECOVERY_BEELINE_TICKS = 90
 
     private val history = mutableMapOf<String, ArrayDeque<Pos>>()
     private var stuck: Set<String> = emptySet()
