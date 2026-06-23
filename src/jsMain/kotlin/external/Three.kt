@@ -127,6 +127,9 @@ external object Three {
         fun setFromPoints(points: dynamic): BufferGeometry
     }
 
+    class EdgesGeometry(geometry: dynamic, thresholdAngle: dynamic = definedExternally) // polygon edges only (merges coplanar tris)
+    class LineSegments(geometry: dynamic, material: dynamic)
+
     class MeshBasicMaterial(params: dynamic)
     class MeshStandardMaterial(params: dynamic)
     class MeshPhysicalMaterial(params: dynamic) // adds transmission/clearcoat → real glass

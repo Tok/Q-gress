@@ -40,6 +40,16 @@ object Materials {
     /** Brighter glass variant for the thin link tubes (the orb glass reads too faint at pipe radius). */
     fun linkGlass(color: String): dynamic = cache.getOrPut("lg$color") { GlassShader.material(color, GlassShader.LINK_BRIGHT) }
 
+    /** Bright, near-opaque node at each link end — hides the tube's cut end + reads as a glowing joint
+     *  (unlit MeshBasic → full-brightness faction colour, so it looks self-illuminated). */
+    fun linkNode(color: String): dynamic = cache.getOrPut("ln$color") {
+        val p: dynamic = js("({})")
+        p.color = color
+        p.transparent = true
+        p.opacity = 0.95
+        Three.MeshBasicMaterial(p)
+    }
+
     /** Selected-portal orb: the faction-tinted glass lit brighter (selection highlight — no hue change). */
     fun glassBright(color: String): dynamic = cache.getOrPut("pgs$color") { GlassShader.material(color, GlassShader.SELECT_BRIGHT) }
 

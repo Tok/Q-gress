@@ -197,12 +197,15 @@ object Scene3D {
     private val topGeo: dynamic by lazy { Three.SphereGeometry(TOP_R, 20, 16) } // glass orb (scaled per level)
     private val dodecaGeo: dynamic by lazy { Three.DodecahedronGeometry(TOP_R * MOD_R_FRAC) } // shield mod
     private val modWireMat: dynamic by lazy {
-        // thin black wireframe over the mod solids so they read less bland
+        // thin black edge lines over the mod solids so they read less bland
         val p: dynamic = js("({})")
         p.color = "#000000"
-        p.wireframe = true
-        Three.MeshBasicMaterial(p)
+        Three.LineBasicMaterial(p)
     }
+
+    // EdgesGeometry per mod shape (cached): only the real polygon edges, not the triangulation.
+    private val modEdgesCache = mutableMapOf<ModType, dynamic>()
+    private fun modEdges(type: ModType): dynamic = modEdgesCache.getOrPut(type) { Three.EdgesGeometry(modGeoFor(type)) }
     private val pentaGeo: dynamic by lazy { Three.CylinderGeometry(TOP_R * MOD_R_FRAC, TOP_R * MOD_R_FRAC, TOP_R * MOD_R_FRAC * 0.55, 5) } // heat-sink radiator
     private val cubeGeo: dynamic by lazy { Three.BoxGeometry(TOP_R * MOD_R_FRAC * 1.1, TOP_R * MOD_R_FRAC * 1.1, TOP_R * MOD_R_FRAC * 1.1) } // link amp
     private val shieldGeo: dynamic by lazy { Three.SphereGeometry(TOP_R * PHI, 24, 18) } // shield bubble at φ× the orb
@@ -822,7 +825,7 @@ object Scene3D {
             mesh.asDynamic().position.set(v[0] * r, v[1] * r, v[2] * r)
             mesh.asDynamic().scale.set(MOD_SCALE, MOD_SCALE, MOD_SCALE) // a touch bigger so the mods read
             if (mod.modType() == ModType.LINK_AMP) mesh.asDynamic().rotation.set(0.62, 0.62, 0.0) // cube on its diagonal
-            val wire = Three.Mesh(geo, modWireMat) // thin black wireframe just outside the surface
+            val wire = Three.LineSegments(modEdges(mod.modType()), modWireMat) // clean black polygon edges, just outside
             wire.asDynamic().scale.set(1.04, 1.04, 1.04)
             mesh.asDynamic().add(wire)
             orb.add(mesh) // orb is already dynamic (no .asDynamic())
@@ -1060,9 +1063,10 @@ object Scene3D {
         val core = Three.Mesh(coreGeo, Materials.linkCore(color))
         orientTube(core.asDynamic(), a, b)
         linksGroup.add(core)
-        // Round ball-joints at each orb so the pipe meets the portal smoothly (same radius as the tube).
+        // Bright near-opaque ball-joints at each orb: round the pipe end + hide its cut face (the glass
+        // joint was too see-through, so the tube ends still showed).
         listOf(a, b).forEach { end ->
-            val joint = Three.Mesh(linkJointGeo, Materials.linkGlass(color))
+            val joint = Three.Mesh(linkJointGeo, Materials.linkNode(color))
             joint.asDynamic().position.set(end[0], end[1], end[2])
             linksGroup.add(joint)
         }
