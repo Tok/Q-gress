@@ -72,10 +72,11 @@ object Scene3D {
     private const val INDICATOR_THICK = 1.2 // action-coin thickness (the extruded "wheel" depth)
     private const val COIN_BODY_OPACITY = 0.5 // the coin body (rim + underside) is see-through; the top icon stays solid
     private const val ENERGY_BAR_R = 0.55 // energy-bar cylinder radius
-    private const val ENERGY_BAR_GAP = 1.2 // gap between the coin edge and the bar
+    private const val ENERGY_BAR_GAP = 1.2 // gap between the coin and the bar above it
     private const val ENERGY_BAR_PER_LEVEL = INDICATOR_SIZE / 4.0 // each level adds ¼ of the coin size
     private const val ENERGY_BAR_OPACITY = 0.9
     private const val ENERGY_BAR_FILL_FRAC = 1.06 // fill slightly fatter than the black backing so it reads
+    private const val ENERGY_BAR_EPS = 0.08 // fill overhangs the backing caps by this → no z-fighting when full
     private const val ANCHOR_LEVEL = 4 // level whose bar height == the coin size (grows ± from here)
     private const val MAX_AGENT_LEVEL = 8
     private const val LABEL_W = 22.0 // portal name/level billboard width (scene metres)
@@ -1150,22 +1151,22 @@ object Scene3D {
         val level = agent.getLevel().coerceIn(1, MAX_AGENT_LEVEL)
         // L4 == the coin size; ±¼ coin size per level (higher level → bigger XM capacity → taller bar).
         val h = (INDICATOR_SIZE + (level - ANCHOR_LEVEL) * ENERGY_BAR_PER_LEVEL).coerceAtLeast(ENERGY_BAR_PER_LEVEL)
-        val cx = x + INDICATOR_SIZE / 2.0 + ENERGY_BAR_GAP // sit just to the side of the coin
-        val zc = gz + INDICATOR_Z
-        val bottom = zc - h / 2.0
+        val bottom = gz + INDICATOR_Z + INDICATOR_THICK / 2.0 + ENERGY_BAR_GAP // stand it centered just above the coin
+        val zc = bottom + h / 2.0
         // Black backing for the whole capacity…
         val back = Three.Mesh(energyBarGeo, energyMat("#0a0a0a"))
         back.asDynamic().rotation.x = PI / 2 // cylinder axis (Y) → world Z (stand it up)
         back.asDynamic().scale.set(1.0, h, 1.0)
-        place(back.asDynamic(), cx, y, zc)
+        place(back.asDynamic(), x, y, zc)
         indicatorsGroup.add(back)
-        // …faction-coloured fill rising from the bottom for the current XM.
+        // …faction-coloured fill rising from the bottom for the current XM. It's a hair fatter + longer
+        // than the backing so its caps clear the backing's (no z-fighting at the top when full).
         val fillH = h * pct
         if (fillH > 0.01) {
             val fill = Three.Mesh(energyBarGeo, energyMat(agent.faction.color))
             fill.asDynamic().rotation.x = PI / 2
-            fill.asDynamic().scale.set(ENERGY_BAR_FILL_FRAC, fillH, ENERGY_BAR_FILL_FRAC)
-            place(fill.asDynamic(), cx, y, bottom + fillH / 2.0)
+            fill.asDynamic().scale.set(ENERGY_BAR_FILL_FRAC, fillH + ENERGY_BAR_EPS * 2.0, ENERGY_BAR_FILL_FRAC)
+            place(fill.asDynamic(), x, y, bottom + fillH / 2.0)
             indicatorsGroup.add(fill)
         }
     }

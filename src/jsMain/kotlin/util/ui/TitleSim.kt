@@ -21,7 +21,6 @@ import system.display.Scene3D
 import system.display.VectorFieldOverlay
 import util.MapUtil
 import util.SoundUtil
-import util.Util
 
 /**
  * The faction-screen backdrop is a **real, small game sim** — a handful of portals, a 3-v-3 agent
@@ -32,8 +31,7 @@ import util.Util
  */
 object TitleSim {
     private const val TITLE_PORTALS = 8
-    private const val TITLE_FROGS = 3
-    private const val TITLE_SMURFS = 3
+    private val TITLE_LEVELS = intArrayOf(3, 5, 8) // one agent per faction at each of these levels
     private const val TITLE_NPCS = 30
     private const val TITLE_XMPS = 60 // ≥ Attacker's threshold so the agents actually fire
     private const val TITLE_RESOS = 24
@@ -72,28 +70,38 @@ object TitleSim {
         World.allPortals.clear()
         repeat(TITLE_PORTALS) { World.allPortals.add(Portal.createRandom()) }
         World.allAgents.clear()
-        val frogs = List(TITLE_FROGS) { Agent.createFrog(World.grid) }
-        val smurfs = List(TITLE_SMURFS) { Agent.createSmurf(World.grid) }
+        // 3-v-3, one agent per faction at each title level (their AP sets the level).
+        val frogs = TITLE_LEVELS.map { lvl -> Agent.createFrog(World.grid).also { it.ap = apForLevel(lvl) } }
+        val smurfs = TITLE_LEVELS.map { lvl -> Agent.createSmurf(World.grid).also { it.ap = apForLevel(lvl) } }
         frogs.forEach { World.allAgents.add(it) }
         smurfs.forEach { World.allAgents.add(it) }
-        equip(frogs) // the first frog gets a shield
-        equip(smurfs) // the first smurf gets a shield
+        equip(frogs)
+        equip(smurfs)
         World.allNonFaction.clear()
         World.createNonFaction({}, TITLE_NPCS) // paced serial drop-in (renders each as it lands)
         Scene3D.sync()
         interval = window.setInterval({ tick() }, Time.minTickInterval)
     }
 
-    // Give title agents a lively loadout: varied XMPs (so attacks differ), resos + cubes to build,
-    // a key to every portal (so they link + field), and one shield per faction.
+    // Lowest AP within each level band → that exact level (see Agent.getLevel thresholds).
+    private fun apForLevel(level: Int) = when (level) {
+        3 -> 50_000
+        5 -> 200_000
+        8 -> 1_500_000
+        else -> 50_000
+    }
+
+    // Each title agent: XMPs (+ resos/cubes) matched to its OWN level, a key to every portal (so they
+    // link + field), and a shield for the L8 of each faction. (Ultra Strikes aren't implemented yet.)
     private fun equip(agents: List<Agent>) {
-        agents.forEachIndexed { i, a ->
+        agents.forEach { a ->
+            val lvl = a.getLevel().coerceIn(1, 8)
             val inv = a.inventory
-            repeat(TITLE_XMPS) { inv.addItem(XmpBurster.create(a, 3 + Util.randomInt(0, 5))) } // levels 3–8
-            repeat(TITLE_RESOS) { inv.addItem(Resonator.create(a, 5 + Util.randomInt(0, 3))) }
-            repeat(TITLE_CUBES) { inv.addItem(PowerCube.create(a, 6)) }
+            repeat(TITLE_XMPS) { inv.addItem(XmpBurster.create(a, lvl)) }
+            repeat(TITLE_RESOS) { inv.addItem(Resonator.create(a, lvl)) }
+            repeat(TITLE_CUBES) { inv.addItem(PowerCube.create(a, lvl)) }
             World.allPortals.forEach { p -> inv.addItem(PortalKey(p, a)) }
-            if (i == 0) inv.addItem(Shield(ShieldType.VERY_RARE, a))
+            if (lvl >= 8) inv.addItem(Shield(ShieldType.VERY_RARE, a))
         }
     }
 
