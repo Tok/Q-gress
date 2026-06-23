@@ -203,6 +203,7 @@ object Scene3D {
     private val gasketGeo: dynamic by lazy { Three.TorusGeometry(POLE_R * 1.15, POLE_R * 0.4, 10, 20) } // rubber donut
     private val linkGeo: dynamic by lazy { Three.CylinderGeometry(LINK_R, LINK_R, 1.0, 8) } // unit glass tube (scaled to length)
     private val coreGeo: dynamic by lazy { Three.CylinderGeometry(LINK_R * CORE_R_FRAC, LINK_R * CORE_R_FRAC, 1.0, 6) } // bright filament inside the tube
+    private val linkJointGeo: dynamic by lazy { Three.SphereGeometry(LINK_R, 12, 12) } // ball-joint that rounds each link end
     private val resoRingGeo: dynamic by lazy { Three.TorusGeometry(RESO_RING_R, RESO_RING_TUBE, 8, 14) } // rubber slot grommet
     private val indicatorGeo: dynamic by lazy {
         // action coin: a short cylinder (icon on the round faces)
@@ -1046,6 +1047,12 @@ object Scene3D {
         val core = Three.Mesh(coreGeo, Materials.linkCore(color))
         orientTube(core.asDynamic(), a, b)
         linksGroup.add(core)
+        // Round ball-joints at each orb so the pipe meets the portal smoothly (same radius as the tube).
+        listOf(a, b).forEach { end ->
+            val joint = Three.Mesh(linkJointGeo, Materials.linkGlass(color))
+            joint.asDynamic().position.set(end[0], end[1], end[2])
+            linksGroup.add(joint)
+        }
     }
 
     /** Place a unit (Y-axis) cylinder so it spans [a]→[b]: midpoint, Y-scaled to length, Y rotated to dir. */
