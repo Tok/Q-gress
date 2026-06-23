@@ -215,9 +215,10 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
   running — shaded + audio-muffled — behind the map-size/location panes, so the pane isn't on top of it.
   Wiped by the onboarding reload (no in-place teardown). Same renderer/FX as the game.
   - **Blast mini-game**: click the scene to detonate — **LMB** fires a full **L8 XMP**, **RMB** an
-    **ultra-strike** (the same burst squished tight + a touch brighter via the shader's `uBright` + an
-    octave-higher boom; no dedicated ultra animation yet). You can also **scroll out** a little and the
-    auto-cam keeps drifting (it eases around your zoom instead of snapping back).
+    **ultra-strike** (the same fireball squished to a **tight** footprint + a touch brighter via the
+    shader's `uBright`, with its own **short punchy** sound — no long boom; reuses the XMP shape, no
+    dedicated ultra animation). You can also **scroll out** and the auto-cam **keeps drifting** — a user
+    zoom restarts the orbit leg (gen-guarded) so it never stalls, easing around your zoom.
   - **Title location** isn't fixed: it opens on the **player's home** when location was *already*
     shared (silent, no permission prompt — `GeoLocator.homeIfPermitted` via the Permissions API),
     otherwise a **random iconic location** from a curated photogenic subset (`Location.randomTitle`).
@@ -247,9 +248,10 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
   sound — XMP boom + volley blips, hack/glyph whirs (+ glyph chime), and upgrade/downgrade notes — and
   the sim plays in one key.
 - **Layered XMP explosion** (`SoundUtil.playXmpExplosion`): on top of the kept synthetic boom + noise
-  blast, a detonation snap + chest-punch sub at the note + a long lowpassed rumble tail whose
-  brightness and amplitude decay over the fireball's life — so the sound rises and dissolves with the
-  mini-nuke mushroom animation.
+  blast, a (tamed) detonation snap + chest-punch sub at the note + a **loud fixed deep sub-kick**
+  (`DEEP_THUMP_HZ`) for weight (the blast read too bright) + a long lowpassed rumble tail whose
+  brightness and amplitude decay over the fireball's life — rising and dissolving with the mushroom.
+  **Ultra-strike** has its own `playUltraStrike` — a short, sharp, punchy hit (no rumble tail).
 
 ## Mods, viruses, items & drop rates
 - **4 mod slots per portal** (`portal/ModSlot`) holding a generic `Mod` (`items/deployable/Mod`):

@@ -193,6 +193,7 @@ object MapUtil {
     private const val TITLE_COLOR_FADE_MS = 20000.0 // grayscale → colour over ~20s on the title (vs 30s in-game)
     private const val TITLE_LEG_MS = 10400.0 // duration of each randomized camera leg (slow, ~half speed)
     private var titleOrbitActive = false
+    private var titleOrbitGen = 0
 
     /** Title scene: 3D terrain, a dramatic fly-in to the location, fast colour fade, then a flowing
      *  randomized camera (chained eased legs through random bearing/pitch/zoom — a spline-ish drift). */
@@ -210,7 +211,15 @@ object MapUtil {
         fadeInColor(TITLE_COLOR_FADE_MS)
         startBuildInflate() // the city rises while we fly in
         titleOrbitActive = true
-        window.setTimeout({ titleOrbitLeg() }, TITLE_FLYIN_MS.toInt()) // drift once the swoop settles
+        window.setTimeout({ startTitleLeg() }, TITLE_FLYIN_MS.toInt()) // drift once the swoop settles
+        // A user zoom cancels the running easeTo — restart the drift the moment they finish, so the
+        // title auto-cam never stalls (originalEvent ⇒ user move; the orbit's own easeTo is ignored).
+        m.onEvent("moveend") { e -> if (titleOrbitActive && e.originalEvent != null) startTitleLeg() }
+    }
+
+    private fun startTitleLeg() {
+        titleOrbitGen++ // invalidate any in-flight chain so we don't end up with two overlapping orbits
+        titleOrbitLeg(titleOrbitGen)
     }
 
     private fun titleZoom() = displayZoomForSize() + TITLE_ZOOM_BOOST
@@ -219,8 +228,8 @@ object MapUtil {
     // new yaw/pitch/zoom, then chain another → a flowing orbit around the arena. (MapLibre has no camera
     // roll; yaw = bearing, pitch = tilt. To also fly the camera *position* while facing centre we'd need
     // FreeCamera — a follow-up.)
-    private fun titleOrbitLeg() {
-        if (!titleOrbitActive) return
+    private fun titleOrbitLeg(gen: Int) {
+        if (!titleOrbitActive || gen != titleOrbitGen) return
         val m = initMap ?: return
         val turn = (50.0 + Util.random() * 130.0) * (if (Util.randomBool()) 1.0 else -1.0)
         val opts: dynamic = js("({})")
@@ -232,7 +241,7 @@ object MapUtil {
         opts.zoom = ((m.getZoom() as Double) + (Util.random() * 0.5 - 0.25)).coerceIn(titleZoom() - 4.0, titleZoom() + 1.5)
         opts.duration = TITLE_LEG_MS
         m.asDynamic().easeTo(opts)
-        window.setTimeout({ titleOrbitLeg() }, TITLE_LEG_MS.toInt())
+        window.setTimeout({ titleOrbitLeg(gen) }, TITLE_LEG_MS.toInt())
     }
 
     fun stopTitleOrbit() {

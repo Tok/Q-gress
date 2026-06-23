@@ -58,6 +58,7 @@ object SoundUtil {
     private const val ROLLOFF = 0.5
     private const val PANNING_MODEL = "HRTF" // front/back + elevation cues (vs cheaper "equalpower")
     private const val MASTER_BOOST = 2.6 // lift the whole bus (3D attenuation made it quiet); limiter guards clipping
+    private const val DEEP_THUMP_HZ = 48.0 // fixed deep sub-kick under the XMP explosion (adds weight)
     private const val MUFFLE_OPEN_HZ = 22000.0 // muffle filter wide open (no audible effect)
     private const val MUFFLE_CLOSED_HZ = 600.0 // muffled: distant/underwater (title behind onboarding)
 
@@ -237,10 +238,10 @@ object SoundUtil {
      * blast, with a layered "proper" explosion on top tuned to the mushroom animation (see
      * [playXmpExplosion]). Used by the demo + title; the in-game volley uses the lighter overload below.
      */
-    fun playXmpSound(pos: Pos, level: Int, pitch: Double = 1.0) {
+    fun playXmpSound(pos: Pos, level: Int) {
         if (isMuted()) return
         val amp = 0.5 + level * 0.06
-        val note = noteFor(level) * pitch // 65–131 Hz; level 8 lowest. [pitch] 2.0 = an octave up (ultra-strike)
+        val note = noteFor(level) // 65–131 Hz; level 8 is the lowest
         // (1) Synthetic boom: a sine at the scale note sweeping down, with a longer decay.
         val dur = 0.5 + level * 0.04
         val osc = createExponentialRampOscillator(OscillatorType.SINE, note, note * 0.4, dur)
@@ -256,19 +257,28 @@ object SoundUtil {
     }
 
     /**
+     * Ultra-strike: a short, sharp, **punchy** hit — distinct from the XMP's long boom. A tight crack +
+     * a quick high "pew" body + a snappy sub punch, all in ~0.12s (no long rumble tail).
+     */
+    fun playUltraStrike(pos: Pos) {
+        if (isMuted()) return
+        playNoiseCrack(pos, 0.9, 0.05) // sharp, short crack
+        decayVoice(createExponentialRampOscillator(OscillatorType.SQUARE, 440.0, 90.0, 0.1), pos, 0.5, 0.1) // high→low "pew"
+        decayVoice(createExponentialRampOscillator(OscillatorType.SINE, 150.0, 60.0, 0.12), pos, 0.85, 0.12) // tight sub punch
+    }
+
+    /**
      * Layered detonation that rides the mushroom animation: an initial broadband crack (the snap), a
      * chest-punch sub at the note, and a long lowpassed rumble tail whose brightness falls + amplitude
      * decays over [life] (the smoke cooling + dissipating), so the sound rises and fades with the visual.
      */
     private fun playXmpExplosion(pos: Pos, amplitude: Double, note: Double, life: Double) {
         val n = now()
-        playNoiseCrack(pos, amplitude * 1.1, 0.5) // (a) detonation snap
+        playNoiseCrack(pos, amplitude * 0.7, 0.5) // (a) detonation snap (tamed — the blast read too bright/high)
         // (b) sub thump at the note, dropping an octave, quick decay
-        val sub = createExponentialRampOscillator(OscillatorType.SINE, note, note * 0.5, 0.4)
-        val subGain = audioCtx.createGain()
-        subGain.gain.setValueAtTime(amplitude * 1.2, n)
-        subGain.gain.exponentialRampToValueAtTime(EPS, n + 0.4)
-        connectVoice(sub, createPanner(pos), subGain, n + 0.4)
+        decayVoice(createExponentialRampOscillator(OscillatorType.SINE, note, note * 0.5, 0.4), pos, amplitude * 1.2, 0.4)
+        // (b2) deep body thump — a fixed, loud low sub-kick UNDER the noise so the blast lands with weight.
+        decayVoice(createExponentialRampOscillator(OscillatorType.SINE, DEEP_THUMP_HZ, DEEP_THUMP_HZ * 0.6, 0.3), pos, amplitude * 1.9, 0.3)
         // (c) long rumble tail — fast attack, brightness + level fall over the fireball's life
         val sr = audioCtx.sampleRate
         val len = (life * sr).toInt().coerceAtLeast(1)
@@ -381,6 +391,15 @@ object SoundUtil {
         gainNode.connect(masterGain)
         osc.start()
         osc.stop(stopTime)
+    }
+
+    /** Play [osc] at [pos] with a peak→silence exponential decay over [dur] (the common one-shot voice). */
+    private fun decayVoice(osc: OscillatorNode, pos: Pos, peak: Double, dur: Double) {
+        val n = now()
+        val g = audioCtx.createGain()
+        g.gain.setValueAtTime(peak, n)
+        g.gain.exponentialRampToValueAtTime(EPS, n + dur)
+        connectVoice(osc, createPanner(pos), g, n + dur)
     }
 
     fun playCheckpointSound(@Suppress("UNUSED_PARAMETER") checkpoint: Checkpoint) {

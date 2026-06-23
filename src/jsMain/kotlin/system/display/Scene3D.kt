@@ -540,7 +540,14 @@ object Scene3D {
      * Fire an XMP detonation at a location, scaled by burster [level] (1..8). See [XmpBurst].
      * [sound] = false when the caller already plays the attack sound (the game's Queues path).
      */
-    fun playXmpBurst(location: Pos, level: Int, sound: Boolean = true, squishXY: Double = 1.0, bright: Double = 1.0, pitch: Double = 1.0) {
+    fun playXmpBurst(
+        location: Pos,
+        level: Int,
+        sound: Boolean = true,
+        squishXY: Double = 1.0,
+        bright: Double = 1.0,
+        ultra: Boolean = false,
+    ) {
         scene ?: return
         val sx = sceneX(location)
         val sy = sceneY(location)
@@ -551,7 +558,9 @@ object Scene3D {
         val origin = doubleArrayOf(sx, sy, gz + BlastModel.cloudHeight(level))
         ShatterFx.recordBlast(origin, level) // shatter pieces arc up-and-out, energy ∝ level / distance
         TitleWordmark.flash(origin, level) // title letters get shoved (no-op until loaded)
-        if (sound) SoundUtil.playXmpSound(location, level, pitch)
+        if (sound) {
+            if (ultra) SoundUtil.playUltraStrike(location) else SoundUtil.playXmpSound(location, level)
+        }
     }
 
     /** Place (or clear, when pos is null) the build-preview marker on the ground. */
