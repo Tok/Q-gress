@@ -154,8 +154,6 @@ object MapUtil {
     }
 
     private const val BUILD_INFLATE_MS = 2800.0 // TITLE-only fixed-duration rise (~3 s; title has no world-gen progress)
-    private const val BUILD_READY_RETRIES = 16 // wait up to ~6.4 s for terrain heights + building tiles before meshing
-    private const val BUILD_READY_RETRY_MS = 400
     private var inflateStart = 0.0
 
     /** TITLE: animate the 3D buildings rising over a fixed duration (no loading overlay there). */
@@ -352,7 +350,8 @@ object MapUtil {
         window.setTimeout({ autoCamLeg(gen) }, AUTOCAM_LEG_MS.toInt())
     }
 
-    private var ownBuildingsIdleHooked = false
+    private var ownBuildingsHooked = false
+    private var ownBuildingsSwapped = false
 
     private fun queryBuildings(md: dynamic): dynamic {
         val opts: dynamic = js("({})")
@@ -361,32 +360,33 @@ object MapUtil {
     }
 
     /**
-     * After world-gen: build our OWN play-area building meshes from the vector-tile footprints + seed the
-     * debris colliders, then hide the MapLibre fill-extrusion layer (our meshes take over). Robust to
-     * timing: WAITS (retries) until the terrain heights are sampled (else buildings drop to z=0) and the
-     * building tiles are loaded, keeping the MapLibre buildings visible meanwhile (no gap), then swaps.
-     * Afterwards an `idle` hook re-queries to mesh any buildings whose tiles arrive later / on pan.
+     * Build our OWN building meshes from the vector-tile footprints + seed the debris colliders, then hide
+     * the MapLibre fill-extrusion layer (ours take over). Driven by the map's `idle` event (no timeouts):
+     * each idle meshes any newly-loaded buildings (dedup by footprint), so the set fills in as tiles load
+     * and as you pan. The first build waits for the terrain heights (so buildings sit on the terrain, not
+     * z=0); MapLibre's buildings stay visible until then (no gap).
      */
-    fun buildBuildingColliders() = buildOwnBuildings(0)
+    fun buildBuildingColliders() {
+        if (demoMode || !Styles.use3DBuildings || ownBuildingsHooked) return
+        val m = initMap ?: return
+        ownBuildingsHooked = true
+        m.asDynamic().on("idle", fun() {
+            ownBuildingsTick()
+        })
+        ownBuildingsTick()
+    }
 
-    private fun buildOwnBuildings(attempt: Int) {
-        if (demoMode || !Styles.use3DBuildings) return
+    private fun ownBuildingsTick() {
+        if (demoMode || !Styles.use3DBuildings || !Scene3D.terrainReady()) return // need terrain for correct z
         val m = initMap ?: return
         val md = m.asDynamic()
         val feats = queryBuildings(md)
-        val count = (feats.length as? Int) ?: 0
-        if ((!Scene3D.terrainReady() || count == 0) && attempt < BUILD_READY_RETRIES) {
-            window.setTimeout({ buildOwnBuildings(attempt + 1) }, BUILD_READY_RETRY_MS) // wait for terrain + tiles
-            return
-        }
-        OwnBuildings.addFeatures(feats) // our meshes replace MapLibre's extrusions…
-        Scene3D.buildBuildingColliders(feats) // …and seed the falling-debris colliders
-        if (md.getLayer("3d-buildings") != null) md.setLayoutProperty("3d-buildings", "visibility", "none")
-        if (!ownBuildingsIdleHooked) { // keep filling in buildings whose tiles settle later / when panning
-            ownBuildingsIdleHooked = true
-            md.on("idle", fun() {
-                if (!demoMode && Styles.use3DBuildings) OwnBuildings.addFeatures(queryBuildings(md))
-            })
+        if (((feats.length as? Int) ?: 0) == 0) return // tiles not loaded yet — a later idle will have them
+        OwnBuildings.addFeatures(feats) // dedup by footprint → only new buildings are added
+        if (!ownBuildingsSwapped) { // first successful build → seed colliders + hand over from MapLibre
+            ownBuildingsSwapped = true
+            Scene3D.buildBuildingColliders(feats)
+            if (md.getLayer("3d-buildings") != null) md.setLayoutProperty("3d-buildings", "visibility", "none")
         }
     }
 

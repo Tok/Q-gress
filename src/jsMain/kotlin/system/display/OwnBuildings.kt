@@ -18,7 +18,7 @@ import util.data.Pos
 object OwnBuildings {
     const val COLOR = "#333333"
     const val OPACITY = 0.9
-    private const val MAX_BUILDINGS = 2500 // safety cap on meshed buildings
+    private const val MAX_BUILDINGS = 8000 // safety cap (separate mesh per building; perf is fine at our scale)
     private const val DEFAULT_HEIGHT = 8.0 // when a footprint has no render_height
 
     private var group: dynamic = null
@@ -62,6 +62,7 @@ object OwnBuildings {
                 g.add(mesh)
             }
         }
+        console.log("OwnBuildings: $total source features → ${keys.size} meshed (cap $MAX_BUILDINGS)")
     }
 
     // Build the mesh for one feature, registering its key; null if degenerate or already meshed.
