@@ -994,11 +994,13 @@ html, body {
     background: #d4d4d4;
     box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.55);
 }
-/* A toolbar label that holds an icon instead of text (e.g. the Volume speaker). */
+/* A toolbar label that holds an icon instead of text (e.g. the Volume speaker). vertical-align middle
+   so it lines up with the adjacent slider (also middle-aligned) instead of sitting on the text baseline. */
 .topIcon {
     display: inline-flex;
     align-items: center;
     line-height: 0;
+    vertical-align: middle;
 }
 
 .volumeSlider,
