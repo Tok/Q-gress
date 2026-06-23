@@ -41,7 +41,7 @@ object XmpBurst {
         p.color = "#19bfff"
         p.transparent = true
         p.opacity = 1.0
-        p.depthTest = false
+        p.depthTest = true // occluded by buildings; the "Show through buildings" toggle clears depth to override
         p.depthWrite = false
         p.blending = Three.AdditiveBlending
         return Three.MeshBasicMaterial(p)

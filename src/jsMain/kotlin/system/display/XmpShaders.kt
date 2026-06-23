@@ -20,7 +20,7 @@ object XmpShaders {
         p.uniforms = uni
         p.transparent = true
         p.depthWrite = false
-        p.depthTest = false
+        p.depthTest = true // occluded by buildings; the "Show through buildings" toggle clears depth to override
         p.blending = if (additive) Three.AdditiveBlending else Three.NormalBlending
         p.side = 2 // DoubleSide
         return Three.ShaderMaterial(p)
@@ -35,7 +35,7 @@ object XmpShaders {
         p.uniforms = uni
         p.transparent = true
         p.depthWrite = false
-        p.depthTest = false
+        p.depthTest = true // occluded by buildings; the "Show through buildings" toggle clears depth to override
         p.blending = Three.NormalBlending
         p.side = 1 // BackSide
         return Three.ShaderMaterial(p)
