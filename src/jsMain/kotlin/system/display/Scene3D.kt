@@ -264,10 +264,8 @@ object Scene3D {
     private fun onAdd(map: MapLibre.Map, gl: dynamic) {
         val newScene = Three.Scene()
         camera = Three.Camera()
-        newScene.add(Three.AmbientLight(0xffffff, 0.9))
-        val sun = Three.DirectionalLight(0xffffff, 0.5)
-        sun.asDynamic().position.set(60.0, 90.0, 140.0)
-        newScene.add(sun)
+        newScene.add(Three.AmbientLight(0xffffff, 0.5)) // lowered so the moving sun's shadows read
+        // The directional "sun" + shadows are set up by SunController.register below (needs the renderer).
 
         PassabilityOverlay.register(newScene)
         VectorFieldOverlay.register(newScene)
@@ -299,6 +297,10 @@ object Scene3D {
         params.context = gl
         params.antialias = true
         renderer = Three.WebGLRenderer(params).also { it.autoClear = false }
+        // Moving sun + real shadows (portals/buildings → ground). Span ≈ play-area half-width in metres.
+        val span = maxOf(Sim.width, Sim.height) / 2.0 * metersPerPixel
+        val centre = Pos(Sim.width / 2, Sim.height / 2)
+        SunController.register(newScene.asDynamic(), renderer.asDynamic(), span, groundZ(centre))
     }
 
     private fun render(map: MapLibre.Map, args: dynamic) {
@@ -319,6 +321,8 @@ object Scene3D {
         val nowMs = js("performance.now()") as Double
         val rawDt = if (lastFrameMs <= 0.0) 0.016 else ((nowMs - lastFrameMs) / 1000.0).coerceIn(0.0, 0.1)
         lastFrameMs = nowMs
+        SunController.setSpeed(!World.isReady) // fast sweep during the intro/gen, slow drift once playing
+        SunController.advance(rawDt) // real-time sun arc (independent of sim speed)
         val dt = rawDt * animationSpeed
         animClockMs += dt * 1000.0
         PlasmaShader.setTime(animClockMs / 1000.0) // animate control fields (on the scaled clock)
@@ -925,6 +929,7 @@ object Scene3D {
         // Selection lights the orb brighter (faction hue kept). Demo portals (id == null) never highlight.
         val glassMat = if (id != null && id == selected) Materials.glassBright(color) else Materials.glass(color)
         val pole = Three.Mesh(poleGeo, Materials.metal())
+        pole.asDynamic().castShadow = true // the metal pole throws a real shadow (sun)
         pole.asDynamic().rotation.x = PI / 2 // Y-axis cylinder → vertical (Z up)
         pole.asDynamic().scale.set(1.0, poleScale(level), 1.0) // grow height (local Y) only
         place(pole.asDynamic(), x, y, gz + poleH / 2)
