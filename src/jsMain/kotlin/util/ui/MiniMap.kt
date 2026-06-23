@@ -89,7 +89,9 @@ object MiniMap {
         val opts: dynamic = js("({})")
         opts.center = arrayOf(lng, lat)
         opts.zoom = OVERVIEW_ZOOM
-        mini?.flyTo(opts)
+        // jumpTo, not flyTo: confirmCenter() reads getCenter() immediately, so a long animated fly that
+        // hadn't finished yet would confirm a mid-flight (wrong) location for world-gen.
+        mini?.asDynamic()?.jumpTo(opts)
     }
 
     /** The currently-centred location — what will actually be generated. */
