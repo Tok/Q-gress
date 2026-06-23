@@ -1,5 +1,6 @@
 package util
 
+import config.Config
 import external.MapLibre
 import kotlinx.browser.window
 import system.display.Scene3D
@@ -20,10 +21,11 @@ object PortalNames {
     private const val POI_RADIUS = 90.0 // sim px: how close a POI must be to lend its name
     private const val STREET_RADIUS = 140.0
 
-    // The loaded tiles carry thousands of named features; we only ever name a few hundred portals, so
-    // keep just the nearest-to-centre ones (the rest are off-screen anyway). Caps the per-portal scan too.
-    private const val POI_LIMIT = 150
-    private const val STREET_LIMIT = 80
+    // The loaded tiles carry thousands of named features; we only ever name [Config.startPortals] portals,
+    // so keep just the nearest-to-centre ones (the rest are off-screen anyway) — scaled to the portal count
+    // (a small map needs only ~20-30). Bounded so naming has variety yet stays cheap.
+    private fun poiLimit() = (Config.startPortals * 4).coerceIn(24, 200)
+    private fun streetLimit() = (Config.startPortals * 3).coerceIn(16, 120)
 
     private val rawPois = mutableListOf<Triple<Double, Double, String>>() // lng, lat, name
     private val rawStreets = mutableListOf<Triple<Double, Double, String>>()
@@ -41,8 +43,8 @@ object PortalNames {
             val center = shadowMap.getCenter()
             val cx = center.lng as Double
             val cy = center.lat as Double
-            collect(shadowMap, "poi", rawPois, cx, cy, POI_LIMIT)
-            collect(shadowMap, "transportation_name", rawStreets, cx, cy, STREET_LIMIT)
+            collect(shadowMap, "poi", rawPois, cx, cy, poiLimit())
+            collect(shadowMap, "transportation_name", rawStreets, cx, cy, streetLimit())
         } catch (e: Throwable) {
             console.log("PortalNames: query failed ($e)")
         }

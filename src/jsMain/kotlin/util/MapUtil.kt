@@ -388,7 +388,11 @@ object MapUtil {
         if (!ownBuildingsSwapped) { // first successful build → seed colliders + hand over from MapLibre
             ownBuildingsSwapped = true
             Scene3D.buildBuildingColliders(feats)
-            if (md.getLayer("3d-buildings") != null) md.setLayoutProperty("3d-buildings", "visibility", "none")
+            // Make MapLibre's buildings invisible but KEEP the layer active (opacity 0, not visibility:none):
+            // in the satellite style the openmaptiles source is used only by this layer, so hiding it would
+            // stop tile loading and querySourceFeatures would go stale. This way tiles keep streaming and
+            // each idle meshes the rest.
+            if (md.getLayer("3d-buildings") != null) md.setPaintProperty("3d-buildings", "fill-extrusion-opacity", 0)
         }
     }
 
