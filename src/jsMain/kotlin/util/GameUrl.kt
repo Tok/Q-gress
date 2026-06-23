@@ -23,6 +23,7 @@ object GameUrl {
     fun seed(): Int? = param("seed")?.toIntOrNull()
     fun tune(): String? = param("tune")
     fun portals(): Int? = param("portals")?.toIntOrNull()
+    fun npcMultiplier(): Double? = param("npcmult")?.toDoubleOrNull()
     fun quickstart(): Boolean? = param("quickstart")?.toBoolean()
     fun round(): Boolean? = param("round")?.toBoolean()
     fun isAutoStart() = param("local")?.toBoolean() ?: false
@@ -51,9 +52,9 @@ object GameUrl {
         val seedPart = if (seed != null) "&seed=$seed" else ""
         val tune = TuningPanel.exportTuning() // both factions' sliders (empty until the panel is built)
         val tunePart = if (tune.isNotEmpty()) "&tune=${encodeURIComponent(tune)}" else ""
-        // NPC count is auto-derived from size + location at world-gen, so it's not in the URL.
+        // NPC *count* is auto-derived at world-gen; only the player's density multiplier is carried.
         return "$base?faction=$fact&lng=$lng&lat=$lat&name=${encodeURIComponent(name)}" +
-            "&w=${Sim.width}&h=${Sim.height}&portals=${Config.startPortals}" +
+            "&w=${Sim.width}&h=${Sim.height}&portals=${Config.startPortals}&npcmult=${Config.npcMultiplier}" +
             "&round=${Sim.roundField}&quickstart=${Config.quickStart}$seedPart$tunePart"
     }
 }

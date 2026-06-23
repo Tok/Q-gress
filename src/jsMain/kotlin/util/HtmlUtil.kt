@@ -158,12 +158,7 @@ object HtmlUtil {
         rightGroup.append(createVolumeSpan())
         rightGroup.append(createAutoCamToggle())
         // Keep the toggle's highlight in sync — incl. when a manual move snaps the drift (and toggle) out.
-        MapUtil.onAutoCamChanged =
-            { on ->
-                (document.getElementById("autoCamToggle") as? HTMLElement)?.let {
-                    if (on) it.addClass("active") else it.removeClass("active")
-                }
-            }
+        MapUtil.onAutoCamChanged = { on -> syncAutoCamToggle(on) }
         MapUtil.setAutoCam(true)
 
         // The loaded-location name stretches across the middle (flex-grows between the two groups).
@@ -373,6 +368,7 @@ object HtmlUtil {
         GameUrl.size()?.let { Sim.setSize(it.first, it.second) }
         // Apply the rest of the onboarding settings if present in the URL (deep link / reload handoff).
         GameUrl.portals()?.let { Config.startPortals = it }
+        GameUrl.npcMultiplier()?.let { Config.npcMultiplier = it }
         GameUrl.quickstart()?.let { Config.quickStart = it }
         GameUrl.round()?.let { Sim.roundField = it }
         Util.seed(GameUrl.seed() ?: Util.freshSeed())
@@ -422,6 +418,9 @@ object HtmlUtil {
             speedDelta = { setSpeed(speedMult + it) },
         ),
     )
+
+    private fun syncAutoCamToggle(on: Boolean) =
+        (document.getElementById("autoCamToggle") as? HTMLElement)?.let { if (on) it.addClass("active") else it.removeClass("active") }
 
     private fun onShortcutCommand(c: Shortcuts.Command) = when (c) {
         Shortcuts.Command.PAUSE -> togglePause()
@@ -680,6 +679,12 @@ object HtmlUtil {
         menu.append(createMenuSlider("Combat", Config.combatDynamism) { Config.combatDynamism = it })
         // Fade the 3D buildings when crowded areas hide the action.
         menu.append(createMenuSlider("Buildings", 0.9) { MapUtil.setBuildingOpacity(it) })
+        // Building-shake intensity (0 = off … 2 = 200%).
+        menu.append(
+            createMenuSlider("Building shake", Config.buildingShakeMultiplier, 0.0, 2.0, 0.1) {
+                Config.buildingShakeMultiplier = it
+            },
+        )
         // Build version footer (timestamp + git-sha), so any deployed build is identifiable.
         val version = document.createElement("div") as HTMLDivElement
         version.addClass("menuVersion")
@@ -702,7 +707,14 @@ object HtmlUtil {
     }
 
     /** A labelled 0..1 slider row inside the game menu dropdown (e.g. building opacity). */
-    private fun createMenuSlider(labelText: String, initial: Double, onInput: (Double) -> Unit): HTMLSpanElement {
+    private fun createMenuSlider(
+        labelText: String,
+        initial: Double,
+        min: Double = 0.0,
+        max: Double = 1.0,
+        step: Double = 0.05,
+        onInput: (Double) -> Unit,
+    ): HTMLSpanElement {
         val span = document.createElement("span") as HTMLSpanElement
         span.addClass("menuCheck", "menuSliderRow")
         val label = document.createElement("span") as HTMLSpanElement
@@ -710,9 +722,9 @@ object HtmlUtil {
         label.innerHTML = labelText
         val slider = document.createElement("input") as HTMLInputElement
         slider.type = "range"
-        slider.min = "0.0"
-        slider.max = "1.0"
-        slider.step = "0.05"
+        slider.min = min.toString()
+        slider.max = max.toString()
+        slider.step = step.toString()
         slider.value = initial.toString()
         slider.addClass("slider", "menuSlider")
         slider.oninput = {

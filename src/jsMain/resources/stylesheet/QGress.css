@@ -579,6 +579,13 @@ html, body {
     min-width: 240px; /* fixed, roomy hit-area — the label shouldn't crowd the edges */
     cursor: pointer;
 }
+.onboardSliderLabel {
+    font-family: "Coda", monospace;
+    font-size: 13px;
+    color: rgba(230, 235, 232, 0.85);
+    align-self: center;
+    min-width: 96px;
+}
 .onboardPreset {
     font-family: "Coda", monospace;
     font-size: 15px;

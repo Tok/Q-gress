@@ -1,5 +1,7 @@
 package util
 
+import config.Config
+import items.Combat
 import kotlin.math.hypot
 import kotlin.math.sin
 
@@ -25,7 +27,7 @@ object BuildingShake {
     private const val FREQ_X = 27.0 // fast horizontal shudder (rad/s)
     private const val FREQ_Y = 36.0 // …and a different vertical rate so it doesn't slide on one axis
     private const val BASE_AMP_PX = 7.0 // peak screen-px shudder at L8 with the blast at the view centre
-    private const val MIN_FACTOR = 0.4 // off-centre / off-screen blasts still shake this fraction
+    private const val EFFECT_RANGE_MULT = 2.0 // shake reaches 2× the XMP's real range (cosmetic, so we can be generous)
 
     private var map: dynamic = null
     private var end = -1.0 // sim-clock time the current shudder ends
@@ -38,13 +40,19 @@ object BuildingShake {
         map = baseMap
     }
 
-    /** An XMP of [level] detonated at ground [lng]/[lat]; shudder the building layer. [now] = seconds.
-     *  [rangeM] is unused now (kept for the call site / future per-building work). */
-    fun blast(lng: Double, lat: Double, @Suppress("UNUSED_PARAMETER") rangeM: Int, level: Int, now: Double) {
+    /** An XMP of [level] (real blast [rangeM] m) detonated at ground [lng]/[lat]; shudder the building
+     *  layer, **damped by how far the blast is from the view centre** (quintile falloff over 2× the XMP
+     *  range) so distant XMPs no longer shake the whole plane. [now] = seconds. */
+    fun blast(lng: Double, lat: Double, rangeM: Int, level: Int, now: Double) {
         val m = map ?: return
         if (m.getLayer(LAYER) == null) return // no building layer (demo style, or not added yet)
+        val effectPx = metersToPx(m, lng, lat, EFFECT_RANGE_MULT * rangeM)
+        if (effectPx <= 1.0) return
+        // Same stepped-quintile curve as the weapon damage, but over the doubled cosmetic range.
+        val falloff = Combat.rangeFalloff(viewDistancePx(m, lng, lat) / effectPx)
+        if (falloff <= 0.0) return // blast too far from the view → don't shudder
         val levelGain = 0.4 + 0.6 * (level.coerceIn(1, 8) / 8.0)
-        val a = BASE_AMP_PX * levelGain * (MIN_FACTOR + (1.0 - MIN_FACTOR) * screenProximity(m, lng, lat))
+        val a = BASE_AMP_PX * levelGain * falloff * Config.buildingShakeMultiplier
         amp = if (now < end) maxOf(amp, a) else a // overlapping blasts keep the strongest
         end = now + DURATION
         phase = (lng - lat) % 6.28
@@ -67,17 +75,27 @@ object BuildingShake {
         applied = true
     }
 
-    // 1 when the blast is at the view centre → 0 at the edge (so far/off-screen blasts shake less).
-    private fun screenProximity(m: dynamic, lng: Double, lat: Double): Double {
+    // Screen-px distance from the blast to the view centre (the falloff is measured against this).
+    private fun viewDistancePx(m: dynamic, lng: Double, lat: Double): Double {
         val ll: dynamic = js("[0.0, 0.0]")
         ll[0] = lng
         ll[1] = lat
         val p = m.project(ll)
         val canvas = m.getCanvas()
-        val cw = canvas.clientWidth as Double
-        val ch = canvas.clientHeight as Double
-        val d = hypot((p.x as Double) - cw / 2.0, (p.y as Double) - ch / 2.0)
-        return (1.0 - d / (hypot(cw, ch) / 2.0)).coerceIn(0.0, 1.0)
+        return hypot((p.x as Double) - canvas.clientWidth as Double / 2.0, (p.y as Double) - canvas.clientHeight as Double / 2.0)
+    }
+
+    // Convert a real-world [meters] length at [lng]/[lat] to screen px (project the point + one [meters] north).
+    private fun metersToPx(m: dynamic, lng: Double, lat: Double, meters: Double): Double {
+        val a: dynamic = js("[0.0, 0.0]")
+        a[0] = lng
+        a[1] = lat
+        val b: dynamic = js("[0.0, 0.0]")
+        b[0] = lng
+        b[1] = lat + meters / 111_320.0
+        val pa = m.project(a)
+        val pb = m.project(b)
+        return hypot((pa.x as Double) - (pb.x as Double), (pa.y as Double) - (pb.y as Double))
     }
 
     private fun setTranslate(m: dynamic, x: Double, y: Double) {

@@ -42,16 +42,22 @@ object Config {
     const val MIN_NONFACTION = 30 // floor: always enough to recruit, even on a tiny/dense map
     private const val NPC_DENSITY = 240.0 // NPCs per one screenful (Dim.width × Dim.height) of map area
 
+    /** Player NPC-density multiplier (1.0–3.0), chosen at onboarding — scales the auto population. */
+    var npcMultiplier = 1.0
+
     /**
      * Appropriate NPC population for a [width]×[height] map at a location of the given [walkability]
-     * (fraction of passable cells): area-scaled, lightly reduced where there's little open ground, and
-     * floored at [MIN_NONFACTION]. Grows with the play area, so it'll scale up if/when the area does.
+     * (fraction of passable cells): area-scaled, lightly reduced where there's little open ground, scaled
+     * by [npcMultiplier], floored at [MIN_NONFACTION]. Grows with the play area if/when the area does.
      */
     fun npcPopulation(width: Int, height: Int, walkability: Double): Int {
         val areaRatio = (width.toDouble() * height) / (Dim.width.toDouble() * Dim.height)
         val walkFactor = 0.5 + 0.5 * walkability.coerceIn(0.0, 1.0) // 0.5×…1.0× — location matters, but never starves
-        return maxOf(MIN_NONFACTION, (NPC_DENSITY * areaRatio * walkFactor).toInt())
+        return maxOf(MIN_NONFACTION, (NPC_DENSITY * areaRatio * walkFactor * npcMultiplier).toInt())
     }
+
+    /** Building-shake intensity multiplier (0–2), tunable live from the menu "Building shake" slider. */
+    var buildingShakeMultiplier = 1.0
 
     // Combat dynamism (0 = realistic/tanky shields, 1 = portals flip very easily). Drives the live
     // gameplay mitigation cap; tunable from the menu "Combat" slider. Leans dynamic by default — this is

@@ -1,6 +1,7 @@
 package util.ui
 
 import agent.Faction
+import config.Config
 import config.Locations
 import config.Sim
 import kotlinx.browser.document
@@ -248,6 +249,8 @@ object Onboarding {
         fields.appendChild(labeledInput("Portals", portalsInput))
         screen.appendChild(fields)
 
+        val npcSlider = npcDensityRow(screen) // ×1.0–×3.0 multiplier on the auto-derived population
+
         val quickCheck = checkRow(screen, " Quick start (full roster + AP for a fast early game)", true)
         val roundCheck = checkRow(screen, " Round field (play inside an inscribed ellipse)", Sim.roundField)
 
@@ -258,6 +261,7 @@ object Onboarding {
         screen.appendChild(
             button("Start", "topButton displayFont onboardStart") {
                 Sim.roundField = roundCheck.checked
+                Config.npcMultiplier = npcSlider.valueAsNumber // carried into the game via the reload URL
                 val w = widthInput.value.toIntOrNull() ?: Sim.width
                 val h = heightInput.value.toIntOrNull() ?: Sim.height
                 // Round → square the map so the inscribed circle is large (≈ doubles the radius vs a
@@ -279,6 +283,29 @@ object Onboarding {
         b.textContent = label
         b.onclick = { onClick() }
         return b
+    }
+
+    /** NPC-density row (label + ×1.0–×3.0 slider) appended to [screen]; returns the slider input. */
+    private fun npcDensityRow(screen: HTMLElement): HTMLInputElement {
+        val row = div("onboardRow")
+        val label = div("onboardSliderLabel")
+        fun text(v: Double) = "NPCs ×${(v * 10).toInt() / 10.0}"
+        label.textContent = text(Config.npcMultiplier)
+        val slider = document.createElement("input") as HTMLInputElement
+        slider.type = "range"
+        slider.min = "1.0"
+        slider.max = "3.0"
+        slider.step = "0.1"
+        slider.value = Config.npcMultiplier.toString()
+        slider.addClass("slider")
+        slider.oninput = {
+            label.textContent = text(slider.valueAsNumber)
+            null
+        }
+        row.appendChild(label)
+        row.appendChild(slider)
+        screen.appendChild(row)
+        return slider
     }
 
     private fun numberInput(value: Int): HTMLInputElement {
