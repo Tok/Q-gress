@@ -79,6 +79,7 @@ object Scene3D {
     private const val ENERGY_BAR_EPS = 0.08 // fill overhangs the backing caps by this → no z-fighting when full
     private const val ANCHOR_LEVEL = 4 // level whose bar height == the coin size (grows ± from here)
     private const val MAX_AGENT_LEVEL = 8
+    private const val ENERGY_BAR_HEIGHT_SCALE = 0.5 // overall bar-height multiplier
     private const val LABEL_W = 22.0 // portal name/level billboard width (scene metres)
     private const val LABEL_GAP = 4.0 // gap above the orb top before the label
     private const val LABEL_CANVAS_W = 256 // label texture resolution (kept crisp; faction-neutral white)
@@ -157,6 +158,11 @@ object Scene3D {
 
     /** Draw the play-area boundary (wall + outline + dim mask). Off for the title scene. */
     var showBorder = true
+
+    // false (default): the sim shares the map depth buffer, so 3D buildings occlude portals/agents
+    // (realistic). true (accessibility): clear depth first → the whole sim draws over buildings so
+    // actions are never hidden. XMP/explosions stay depthTest=false either way (always on top).
+    var drawOverBuildings = false
 
     // Glass-orb shatter fracture variants (loaded once from the GLB via ShardAssets).
     private var flaskVariants: List<List<dynamic>> = emptyList()
@@ -282,31 +288,35 @@ object Scene3D {
         val dt = rawDt * animationSpeed
         animClockMs += dt * 1000.0
         PlasmaShader.setTime(animClockMs / 1000.0) // animate control fields (on the scaled clock)
-        if (hasActiveEffects()) {
-            if (ShatterFx.hasActive()) ShatterFx.update(dt)
-            if (BoltFx.hasActive()) BoltFx.update(dt)
-            if (showcasesAnimating()) updateShowcases(dt)
-            if (HackFx.hasActive()) HackFx.update()
-            if (DeployFx.hasActive()) DeployFx.update()
-            if (XmFx.hasActive()) XmFx.update()
-            if (FieldFx.hasActive()) FieldFx.update(dt)
-            if (XmpBurst.hasActive()) {
-                val canvas = map.getCanvas()
-                XmpBurst.setView(invProj, canvas.width as Double, canvas.height as Double)
-                XmpBurst.update(dt)
-            }
-        }
+        updateEffects(map, dt, invProj)
         VectorFieldOverlay.sync() // paced flow-field sweep; driven here (continuous loop) so it animates through world-gen too
         activeRenderer.resetState()
-        // Clear the depth buffer the map layers wrote, so portals/agents/links draw over buildings +
-        // terrain (visible through them) — the consistent version of the XMP/indicator depthTest=false.
-        // The scene still self-occludes correctly (its own depth is written fresh from here).
-        activeRenderer.clearDepth()
+        // Realistic by default: keep the depth the map layers wrote so 3D buildings occlude the sim.
+        // The accessibility toggle clears it first so portals/agents/links draw over buildings + terrain
+        // (XMP/indicators that opt out with depthTest=false stay on top in both modes).
+        if (drawOverBuildings) activeRenderer.clearDepth()
         activeRenderer.render(activeScene, cam)
         map.triggerRepaint()
     }
 
     private fun hasActiveEffects() = ShatterFx.hasActive() || showcasesAnimating() || HackFx.hasActive() || DeployFx.hasActive() || XmFx.hasActive() || XmpBurst.hasActive() || FieldFx.hasActive() || BoltFx.hasActive()
+
+    // Advance whatever transient FX are live (each self-guards). Split out of render() to keep it simple.
+    private fun updateEffects(map: MapLibre.Map, dt: Double, invProj: dynamic) {
+        if (!hasActiveEffects()) return
+        if (ShatterFx.hasActive()) ShatterFx.update(dt)
+        if (BoltFx.hasActive()) BoltFx.update(dt)
+        if (showcasesAnimating()) updateShowcases(dt)
+        if (HackFx.hasActive()) HackFx.update()
+        if (DeployFx.hasActive()) DeployFx.update()
+        if (XmFx.hasActive()) XmFx.update()
+        if (FieldFx.hasActive()) FieldFx.update(dt)
+        if (XmpBurst.hasActive()) {
+            val canvas = map.getCanvas()
+            XmpBurst.setView(invProj, canvas.width as Double, canvas.height as Double)
+            XmpBurst.update(dt)
+        }
+    }
 
     /** Rebuild the 3D objects from world state. Called once per simulation tick. */
     fun sync() {
@@ -1150,7 +1160,7 @@ object Scene3D {
         val pct = (agent.xm.toDouble() / agent.xmCapacity()).coerceIn(0.0, 1.0)
         val level = agent.getLevel().coerceIn(1, MAX_AGENT_LEVEL)
         // L4 == the coin size; ±¼ coin size per level (higher level → bigger XM capacity → taller bar).
-        val h = (INDICATOR_SIZE + (level - ANCHOR_LEVEL) * ENERGY_BAR_PER_LEVEL).coerceAtLeast(ENERGY_BAR_PER_LEVEL)
+        val h = (INDICATOR_SIZE + (level - ANCHOR_LEVEL) * ENERGY_BAR_PER_LEVEL).coerceAtLeast(ENERGY_BAR_PER_LEVEL) * ENERGY_BAR_HEIGHT_SCALE
         val bottom = gz + INDICATOR_Z + INDICATOR_THICK / 2.0 + ENERGY_BAR_GAP // stand it centered just above the coin
         val zc = bottom + h / 2.0
         // Black backing for the whole capacity…

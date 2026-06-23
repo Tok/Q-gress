@@ -651,6 +651,11 @@ object HtmlUtil {
         val terrain = createMenuCheckbox("terrainToggle", "3D terrain") { MapUtil.setTerrainEnabled(it) }
         (terrain.firstChild as? HTMLInputElement)?.checked = MapUtil.isTerrainEnabled()
         menu.append(terrain)
+        // Accessibility: draw the whole sim over buildings so actions are never hidden (default off →
+        // the realistic order where buildings can occlude portals/agents).
+        val xray = createMenuCheckbox("xrayToggle", "Show through buildings") { Scene3D.drawOverBuildings = it }
+        (xray.firstChild as? HTMLInputElement)?.checked = Scene3D.drawOverBuildings
+        menu.append(xray)
         // Preview the read-only tuning mode (sliders → 0–1 bars) used for agent-vs-agent matches.
         val lock = createMenuCheckbox("tuneLockToggle", "Lock tuning") { TuningPanel.setMode(it) }
         (lock.firstChild as? HTMLInputElement)?.checked = isReadOnlyFromUrl()
