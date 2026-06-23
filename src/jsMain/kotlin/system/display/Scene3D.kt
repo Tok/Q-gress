@@ -964,7 +964,7 @@ object Scene3D {
             val s = 1.0 + i * SHIELD_SHELL_STEP
             bubble.asDynamic().scale.set(s, s, s)
             orb.add(bubble)
-            shieldMats.add(mat to portal.id) // so ShieldWave can ripple this shell on a nearby blast
+            shieldMats.add(Pair(mat, portal.id)) // so ShieldWave can ripple it; Pair() not `to` (dynamic receiver)
         }
     }
 
