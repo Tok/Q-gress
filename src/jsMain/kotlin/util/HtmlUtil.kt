@@ -70,10 +70,7 @@ object HtmlUtil {
     fun isQuickstart() = Config.quickStart
 
     private fun tick() {
-        if (!World.isReady) {
-            return
-        }
-
+        if (!World.isReady) return
         // Iterate a snapshot so mid-tick recruiting can't mutate the set we're
         // looping (recruits are buffered in World.pendingAgents, flushed below).
         val nextAgents = World.allAgents.toList().map { it.act() }.toSet()
@@ -223,6 +220,7 @@ object HtmlUtil {
 
     private fun runOnboarding() {
         Onboarding.showFaction { f ->
+            World.userFaction = null // clear the title sim's placeholder faction so the real pick takes
             chooseUserFaction(f)
             Onboarding.showMapSize(Config.startPortals) { w, h, portals, npc, quick ->
                 Sim.setSize(w, h) // size first, so the location screen's play-area box is the real size
