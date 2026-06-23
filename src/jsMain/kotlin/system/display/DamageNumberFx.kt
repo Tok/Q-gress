@@ -188,24 +188,26 @@ object DamageNumberFx {
         val lx = num.origin[0] + cos(yaw) * d.localX
         val ly = num.origin[1] + sin(yaw) * d.localX
         if (d.body == null && num.age >= d.release) { // detach this digit into a falling rigid body
-            d.body = spawnBody(d, lx, ly, connectedZ).also { world?.addBody(it) }
+            d.body = spawnBody(d, lx, ly, connectedZ, yaw).also { world?.addBody(it) }
         }
         val body = d.body
         val px: Double
         val py: Double
         val pz: Double
-        if (body != null) { // physics drives POSITION (it falls / gets blast-flung)
+        if (body != null) { // physics fully drives POSITION + ORIENTATION (it falls / tumbles / gets flung)
             val bp = body.asDynamic().position
             px = bp.x as Double
             py = bp.y as Double
             pz = bp.z as Double
-        } else { // still part of the connected number lerping/hanging
+            val q = body.asDynamic().quaternion
+            d.mesh.quaternion.set(q.x as Double, q.y as Double, q.z as Double, q.w as Double)
+        } else { // still part of the connected number lerping/hanging: flat, shared yaw
             px = lx
             py = ly
             pz = connectedZ
+            d.mesh.rotation.set(0.0, 0.0, yaw)
         }
         d.mesh.position.set(px, py, pz)
-        d.mesh.rotation.set(0.0, 0.0, yaw) // flat over the portal; the whole number shares this yaw
         if (body != null && pz <= LAND_Z && !d.landed) { // each digit clinks once as it hits the ground
             d.landed = true
             SoundUtil.playGlassShatterSound(num.loc, 0.0, LAND_VOLUME)
@@ -266,16 +268,17 @@ object DamageNumberFx {
         return geo
     }
 
-    private fun spawnBody(d: Digit, x: Double, y: Double, z: Double): Cannon.Body {
+    private fun spawnBody(d: Digit, x: Double, y: Double, z: Double, yaw: Double): Cannon.Body {
         val opts: dynamic = js("({})")
         opts.mass = MASS
         opts.position = Cannon.Vec3(x, y, z)
         opts.shape = Cannon.Box(Cannon.Vec3(d.hw, d.hh, DEPTH / 2.0))
         opts.linearDamping = 0.05
-        opts.angularDamping = 0.4
+        opts.angularDamping = 0.15 // low → the digit tumbles freely as it falls
         val body = Cannon.Body(opts)
+        body.asDynamic().quaternion.setFromEuler(0.0, 0.0, yaw) // detach at the connected orientation (no pop)
         body.asDynamic().velocity.set((Util.random() - 0.5) * 1.5, (Util.random() - 0.5) * 1.5, Util.random() * 1.5)
-        body.asDynamic().angularVelocity.set((Util.random() - 0.5) * 2.0, (Util.random() - 0.5) * 2.0, (Util.random() - 0.5) * 2.0)
+        body.asDynamic().angularVelocity.set((Util.random() - 0.5) * 3.0, (Util.random() - 0.5) * 3.0, (Util.random() - 0.5) * 3.0)
         return body
     }
 
