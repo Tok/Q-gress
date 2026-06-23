@@ -87,9 +87,9 @@ object OwnBuildings {
         var started = false
         var first = true
         ring.forEach { ll ->
-            val pos = Scene3D.lngLatToSimPos(ll[0], ll[1])
-            val x = Scene3D.sceneX(pos)
-            val y = Scene3D.sceneY(pos)
+            val xy = Scene3D.lngLatToSceneXY(ll[0], ll[1]) // exact float — int rounding would distort the footprint
+            val x = xy[0]
+            val y = xy[1]
             if (!started) {
                 shape.asDynamic().moveTo(x, y)
                 started = true

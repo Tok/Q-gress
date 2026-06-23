@@ -32,7 +32,7 @@ object SunController {
         dist = r * 2.2
 
         renderer.shadowMap.enabled = true
-        renderer.shadowMap.type = 2 // PCFSoftShadowMap — soft edges
+        renderer.shadowMap.type = 1 // PCFShadowMap — crisper than PCFSoft (harder edges)
 
         val light = Three.DirectionalLight(0xffffff, INTENSITY)
         light.asDynamic().castShadow = true
@@ -54,7 +54,7 @@ object SunController {
 
         // Transparent ground plane that only shows the shadows cast onto it (buildings + portals).
         val matOpts: dynamic = js("({})")
-        matOpts.opacity = 0.34
+        matOpts.opacity = 0.55 // darker = harder-reading shadows
         matOpts.transparent = true
         val plane = Three.Mesh(Three.PlaneGeometry(r * 5.0, r * 5.0), Three.ShadowMaterial(matOpts))
         plane.asDynamic().position.z = groundZ + 0.05 // just above the ground so shadows sit on it

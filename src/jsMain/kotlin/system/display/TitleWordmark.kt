@@ -83,7 +83,7 @@ object TitleWordmark {
             val w = maxX - minX
             geo.asDynamic().translate(-(minX + maxX) / 2.0, -(minY + maxY) / 2.0, -DEPTH / 2.0) // centre the glyph
             val mesh = Three.Mesh(geo, arrayOf(capMat, sideMat))
-            mesh.asDynamic().renderOrder = 10000 // draw last → in front of everything (portals, links, fields…)
+            mesh.asDynamic().renderOrder = 99999 // draw last → in front of everything (portals, links, fields, bars…)
             mesh.asDynamic().position.x = cursor + w / 2.0
             mesh.asDynamic().userData.ox = 0.0 // displacement offset (x, y) + velocity, for the blast spring
             mesh.asDynamic().userData.oy = 0.0
@@ -111,7 +111,8 @@ object TitleWordmark {
         p.emissive = emissive
         p.emissiveIntensity = emissiveIntensity
         p.depthTest = false // the wordmark always reads in front of the whole scene…
-        p.depthWrite = false // …and doesn't occlude itself oddly (renderOrder draws it last)
+        p.depthWrite = false
+        p.transparent = true // …join the transparent pass (orbs/agent bars) so renderOrder can put it last
         return Three.MeshStandardMaterial(p)
     }
 

@@ -608,12 +608,15 @@ object Scene3D {
 
     private fun addBuildingBox(geom: dynamic, h: Double): Boolean {
         val bb = lngLatBBox(geom) ?: return false
-        val c = lngLatToSimPos((bb[0] + bb[2]) / 2.0, (bb[1] + bb[3]) / 2.0)
-        val hx = abs(sceneX(lngLatToSimPos(bb[2], bb[1])) - sceneX(lngLatToSimPos(bb[0], bb[1]))) / 2.0
-        val hy = abs(sceneY(lngLatToSimPos(bb[0], bb[3])) - sceneY(lngLatToSimPos(bb[0], bb[1]))) / 2.0
+        val c0 = lngLatToSceneXY(bb[0], bb[1]) // exact float corners (no integer-cell rounding)
+        val c1 = lngLatToSceneXY(bb[2], bb[3])
+        val cx = (c0[0] + c1[0]) / 2.0
+        val cy = (c0[1] + c1[1]) / 2.0
+        val hx = abs(c1[0] - c0[0]) / 2.0
+        val hy = abs(c1[1] - c0[1]) / 2.0
         if (hx < 0.3 || hy < 0.3) return false // skip only truly degenerate footprints
-        ShatterFx.addStaticBox(sceneX(c), sceneY(c), h / 2.0, hx, hy, h / 2.0)
-        DamageNumberFx.addStaticBox(sceneX(c), sceneY(c), h / 2.0, hx, hy, h / 2.0)
+        ShatterFx.addStaticBox(cx, cy, h / 2.0, hx, hy, h / 2.0)
+        DamageNumberFx.addStaticBox(cx, cy, h / 2.0, hx, hy, h / 2.0)
         return true
     }
 
@@ -721,6 +724,15 @@ object Scene3D {
 
     internal fun sceneX(pos: Pos) = (pos.x - Sim.width / 2.0) * metersPerPixel
     internal fun sceneY(pos: Pos) = -(pos.y - Sim.height / 2.0) * metersPerPixel
+
+    /** Exact (un-rounded) scene XY in metres for a lng/lat. [lngLatToSimPos] rounds to an integer sim
+     *  cell (fine for portal points) which visibly distorts/offsets building footprints — use this for those. */
+    internal fun lngLatToSceneXY(lng: Double, lat: Double): DoubleArray {
+        val merc = MapLibre.asDynamic().MercatorCoordinate.fromLngLat(arrayOf(lng, lat), 0.0)
+        val east = (merc.x as Double - (originMerc.x as Double)) / metersScale // metres east of origin = sceneX
+        val south = (merc.y as Double - (originMerc.y as Double)) / metersScale
+        return doubleArrayOf(east, -south) // sceneY = -(south) (the scene's Y is up)
+    }
 
     /** Inverse of [lngLatToSimPos]: a sim Pos → ground [lng, lat] (web-mercator unproject). */
     private fun simPosToLngLat(pos: Pos): DoubleArray {
