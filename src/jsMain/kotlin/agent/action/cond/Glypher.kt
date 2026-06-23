@@ -16,13 +16,15 @@ object Glypher : ConditionalAction {
     override fun performAction(agent: Agent): Agent {
         agent.action.start(actionItem)
         val glyphResult = agent.actionPortal.tryGlyph(agent)
-        // Glyph spin grows with portal level (and, later, agent skill); whir is synced to that spin
-        // and keyed by portal so a re-hack interrupts it.
+        // Glyph spin grows with portal level (and, later, agent skill); sound synced to that spin, keyed
+        // by portal so a re-hack interrupts it; slots drive the per-reso clicks.
         val id = "portal:${agent.actionPortal.id}"
         val level = agent.actionPortal.getLevel().toInt()
         val spin = HackFx.glyphDuration(level)
         val sp = Scene3D.animationSpeed.coerceAtLeast(0.1)
-        HackSound.glyph(id, agent.actionPortal.location, level, spin / sp)
+        val slots = IntArray(8)
+        agent.actionPortal.resoMap().forEach { (oct, reso) -> slots[oct.ordinal] = reso.getLevel() }
+        HackSound.glyph(id, agent.actionPortal.location, level, spin / sp, agent.faction, slots)
         // Glyph hacking gets the stronger collar animation (faster, wider, longer).
         HackFx.record(id, agent.faction, glyph = true, spin)
         val newStuff: List<QgressItem>? = glyphResult.items

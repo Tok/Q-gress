@@ -1,99 +1,165 @@
 package util
 
+import agent.Faction
 import config.OscillatorType
+import org.khronos.webgl.set
+import system.display.HackFx
 import util.data.Pos
+import kotlin.math.PI
 import kotlin.math.min
 
 /**
- * Hack / glyph **centrifuge-whir** sounds — a "sssSSSSsss" that swells in pitch + loudness to a peak
- * mid-spin then eases off, synced to the collar in [system.display.HackFx] spinning up and slowing to
- * a stop. Each whir is keyed by **portal id**: if the same portal is re-hacked before its spin finishes
- * (e.g. RES interrupts an ENL hack, flipping the spin), the previous whir is stopped and a fresh one
- * starts — so the audio always tracks the current spin. Lives outside [SoundUtil] (which is at its size
- * limit) and reuses its audio graph via a few internal members.
+ * Hack / glyph sound, synced to the [system.display.HackFx] collar spin:
+ *  - a **centrifuge whoosh** (lowpassed white noise whose cutoff + loudness track the spin → a
+ *    "sssSSSsss" that brightens + swells to a peak mid-spin, then dulls + fades — no tonal siren), plus
+ *  - **resonator clicks**: a short ping each 1/8 turn the collar passes a *filled* slot, pitched by that
+ *    reso's level (higher level = deeper, on the shared scale). Spin DIRECTION reverses the click order
+ *    and spin SPEED sets the tempo → a little melody that differs per faction + portal.
+ *
+ * Keyed by **portal id**: re-hacking before the spin finishes (e.g. RES interrupts ENL, flipping the
+ * spin) stops the old voice and starts a fresh one. Lives outside [SoundUtil] (at its size limit).
  */
 object HackSound {
-    private class Voice(val osc: dynamic, val gain: dynamic, val chime: dynamic)
+    private const val MAX_CLICKS = 64 // safety cap (long high-level glyphs turn many times)
+    private const val EIGHTH = PI / 4.0 // one reso slot = 1/8 turn
+
+    private class Voice(val gain: dynamic, val oscs: MutableList<dynamic>)
 
     private val active = mutableMapOf<String, Voice>()
 
-    /** Normal hack whir for [id] (portal), [dur] s = the spin's wall-clock length. */
-    fun hack(id: String, pos: Pos, level: Int, dur: Double) {
+    /** Normal hack for [id] (portal); [dur] s = the spin's wall-clock length. [slots] = octant→reso level
+     *  (0 = empty), [faction] sets the click order/direction. */
+    fun hack(id: String, pos: Pos, dur: Double, faction: Faction, slots: IntArray) {
         if (SoundUtil.isMuted()) return
-        stop(id)
-        active[id] = whir(pos, SoundUtil.noteFor(level, 2), 0.9, 3.0, 0.16, dur, OscillatorType.TRIANGLE, null, null)
+        play(id, pos, dur, faction, slots, glyph = false, level = 0)
     }
 
-    /** Glyph hack: heavier whir (deeper rest, sweeps higher — the collar spins faster) + a completion chime. */
-    fun glyph(id: String, pos: Pos, level: Int, dur: Double) {
+    /** Glyph hack: a sharper whoosh (it spins faster) + a glassy completion chime, plus the clicks. */
+    fun glyph(id: String, pos: Pos, level: Int, dur: Double, faction: Faction, slots: IntArray) {
         if (SoundUtil.isMuted()) return
-        stop(id)
-        val chime = chime(pos, level, dur)
-        active[id] = whir(pos, SoundUtil.noteFor(level, 2), 0.7, 4.0, 0.22, dur, OscillatorType.SAW, 1500.0, chime)
+        play(id, pos, dur, faction, slots, glyph = true, level = level)
     }
 
-    /** Stop [id]'s current whir with a quick fade (a re-hack interrupted it before it played out). */
+    /** Stop [id]'s current voice with a quick fade (a re-hack interrupted it before it played out). */
     fun stop(id: String) {
         val v = active.remove(id) ?: return
         val n = SoundUtil.now()
         v.gain.gain.cancelScheduledValues(n)
         v.gain.gain.setTargetAtTime(SoundUtil.EPS, n, 0.02) // ~60 ms fade, no click
-        runCatching { v.osc.stop(n + 0.12) }
-        if (v.chime != null) runCatching { v.chime.stop(n + 0.12) }
+        v.oscs.forEach { runCatching { it.stop(n + 0.12) } }
     }
 
-    @Suppress("LongParameterList") // a parametric whir voice
-    private fun whir(
-        pos: Pos,
-        base: Double,
-        lowMul: Double,
-        highMul: Double,
-        peakGain: Double,
-        dur: Double,
-        type: String,
-        lowpassHz: Double?,
-        chime: dynamic,
-    ): Voice {
+    @Suppress("LongParameterList") // the full hack/glyph sound parameters
+    private fun play(id: String, pos: Pos, dur: Double, faction: Faction, slots: IntArray, glyph: Boolean, level: Int) {
+        stop(id)
         val ctx = SoundUtil.audioCtx
         val n = SoundUtil.now()
         val mid = n + dur * 0.5
         val panner = SoundUtil.createPanner(pos)
-        val osc = ctx.createOscillator()
-        osc.type = type
-        osc.frequency.setValueAtTime(base * lowMul, n)
-        osc.frequency.exponentialRampToValueAtTime(base * highMul, mid) // spins up → pitch rises
-        osc.frequency.exponentialRampToValueAtTime(base * lowMul, n + dur) // slows to a stop → pitch falls
+        val peak = if (glyph) 0.6 else 0.5
+        val highCut = if (glyph) 6500.0 else 4200.0
+
+        // Looped white-noise whoosh through a lowpass whose cutoff (and the gain) track the spin.
+        val len = (ctx.sampleRate * 0.5).toInt().coerceAtLeast(1)
+        val buffer = ctx.createBuffer(1, len, ctx.sampleRate)
+        val data = buffer.getChannelData(0)
+        var i = 0
+        while (i < len) {
+            data[i] = (Util.random() * 2.0 - 1.0).toFloat()
+            i++
+        }
+        val src = ctx.createBufferSource()
+        src.buffer = buffer
+        src.asDynamic().loop = true
+        val lowpass = ctx.createBiquadFilter()
+        lowpass.type = "lowpass"
+        lowpass.frequency.setValueAtTime(420.0, n)
+        lowpass.frequency.linearRampToValueAtTime(highCut, mid) // brightens with spin speed (sss → SSS)
+        lowpass.frequency.linearRampToValueAtTime(420.0, n + dur)
+        lowpass.asDynamic().Q.value = 1.2
         val gainNode = ctx.createGain()
         gainNode.gain.setValueAtTime(SoundUtil.EPS, n)
-        gainNode.gain.linearRampToValueAtTime(peakGain * 0.45, n + min(0.12, dur * 0.15)) // attack in
-        gainNode.gain.linearRampToValueAtTime(peakGain, mid) // loudest at peak spin
-        gainNode.gain.linearRampToValueAtTime(peakGain * 0.4, n + dur * 0.9)
+        gainNode.gain.linearRampToValueAtTime(peak * 0.4, n + min(0.12, dur * 0.15))
+        gainNode.gain.linearRampToValueAtTime(peak, mid)
+        gainNode.gain.linearRampToValueAtTime(peak * 0.35, n + dur * 0.9)
         gainNode.gain.exponentialRampToValueAtTime(SoundUtil.EPS, n + dur)
-        if (lowpassHz != null) {
-            val lowpass = ctx.createBiquadFilter()
-            lowpass.type = "lowpass"
-            lowpass.frequency.setValueAtTime(lowpassHz, n)
-            osc.connect(lowpass)
-            lowpass.connect(gainNode)
-        } else {
-            osc.connect(gainNode)
-        }
+        src.connect(lowpass)
+        lowpass.connect(gainNode)
         gainNode.connect(panner)
         panner.connect(SoundUtil.masterGain)
-        osc.start()
-        osc.stop(n + dur + 0.05)
-        return Voice(osc, gainNode, chime)
+        src.start()
+        src.stop(n + dur + 0.05)
+
+        val oscs = mutableListOf<dynamic>(src)
+        scheduleClicks(oscs, panner, n, dur, faction, slots, glyph)
+        if (glyph) oscs.add(chime(panner, level, n, dur))
+        active[id] = Voice(gainNode, oscs)
+    }
+
+    /** A short ping each 1/8 turn the collar passes a filled slot, pitched by that slot's reso level. */
+    @Suppress("LongParameterList") // click scheduling needs the spin + slot context
+    private fun scheduleClicks(
+        oscs: MutableList<dynamic>,
+        panner: dynamic,
+        n: Double,
+        dur: Double,
+        faction: Faction,
+        slots: IntArray,
+        glyph: Boolean,
+    ) {
+        val total = HackFx.spinRadians(dur, glyph) // total radians turned
+        val dir = if (HackFx.spinSign(faction) >= 0.0) 1 else -1
+        val steps = min((total / EIGHTH).toInt(), MAX_CLICKS)
+        var j = 1
+        while (j <= steps) {
+            val slotIdx = ((-dir * j) % 8 + 8) % 8 // which slot reaches the pickup at this 1/8 turn (dir flips order)
+            val lvl = slots.getOrElse(slotIdx) { 0 }
+            if (lvl > 0) {
+                val u = invSmoother((j * EIGHTH) / total) // when the spin reaches j·45° (eased, so tempo tracks speed)
+                oscs.add(click(panner, SoundUtil.noteFor(lvl, 3), n + u * dur))
+            }
+            j++
+        }
+    }
+
+    private fun click(panner: dynamic, freq: Double, t: Double): dynamic {
+        val ctx = SoundUtil.audioCtx
+        val osc = ctx.createOscillator()
+        osc.type = OscillatorType.TRIANGLE
+        osc.frequency.setValueAtTime(freq, t)
+        val g = ctx.createGain()
+        g.gain.setValueAtTime(SoundUtil.EPS, t)
+        g.gain.linearRampToValueAtTime(0.09, t + 0.004) // sharp transient
+        g.gain.exponentialRampToValueAtTime(SoundUtil.EPS, t + 0.06)
+        osc.connect(g)
+        g.connect(panner)
+        panner.connect(SoundUtil.masterGain)
+        osc.asDynamic().start(t) // typed start() takes no arg; schedule at t
+        osc.stop(t + 0.08)
+        return osc
+    }
+
+    // Invert smootherstep s(u)=6u⁵−15u⁴+10u³ for u in [0,1] (bisection) so a click lands when the eased
+    // spin angle reaches a slot — clicks therefore bunch up at peak speed and thin out at the ends.
+    private fun invSmoother(targetFrac: Double): Double {
+        val target = targetFrac.coerceIn(0.0, 1.0)
+        var lo = 0.0
+        var hi = 1.0
+        repeat(22) {
+            val m = (lo + hi) / 2.0
+            val s = m * m * m * (m * (m * 6.0 - 15.0) + 10.0)
+            if (s < target) lo = m else hi = m
+        }
+        return (lo + hi) / 2.0
     }
 
     /** A glassy chime ringing up as a glyph completes (the "stronger / skill" flourish). */
-    private fun chime(pos: Pos, level: Int, dur: Double): dynamic {
+    private fun chime(panner: dynamic, level: Int, n: Double, dur: Double): dynamic {
         val ctx = SoundUtil.audioCtx
-        val n = SoundUtil.now()
-        val panner = SoundUtil.createPanner(pos)
         val ring = ctx.createOscillator()
         ring.type = OscillatorType.SINE
-        val rt = n + dur * 0.7 // rings near completion
-        val note = SoundUtil.noteFor(level, 4) // bright on-scale flourish
+        val rt = n + dur * 0.7
+        val note = SoundUtil.noteFor(level, 4)
         ring.frequency.setValueAtTime(note, rt)
         ring.frequency.exponentialRampToValueAtTime(note * 1.5, n + dur)
         val ringGain = ctx.createGain()

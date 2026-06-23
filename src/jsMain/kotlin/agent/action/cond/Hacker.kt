@@ -16,11 +16,13 @@ object Hacker : ConditionalAction {
     override fun performAction(agent: Agent): Agent {
         agent.action.start(actionItem)
         val hackResult = agent.actionPortal.tryHack(agent)
-        // Whir is keyed by portal + synced to the collar spin (re-hack interrupts it). The wall-clock
-        // length is the spin time / sim speed so the sound tracks the sim-scaled animation.
+        // Sound keyed by portal + synced to the collar spin (re-hack interrupts it). Wall-clock length =
+        // spin time / sim speed so it tracks the sim-scaled animation; slots drive the per-reso clicks.
         val id = "portal:${agent.actionPortal.id}"
         val sp = Scene3D.animationSpeed.coerceAtLeast(0.1)
-        HackSound.hack(id, agent.actionPortal.location, agent.actionPortal.getLevel().toInt(), HackFx.HACK_S / sp)
+        val slots = IntArray(8)
+        agent.actionPortal.resoMap().forEach { (oct, reso) -> slots[oct.ordinal] = reso.getLevel() }
+        HackSound.hack(id, agent.actionPortal.location, HackFx.HACK_S / sp, agent.faction, slots)
         // ENL spins clockwise, RES counter-clockwise; a plain hack (not a glyph).
         HackFx.record(id, agent.faction, glyph = false, HackFx.HACK_S)
         val newStuff: List<QgressItem>? = hackResult.items

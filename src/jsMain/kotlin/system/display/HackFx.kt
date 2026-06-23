@@ -19,7 +19,7 @@ object HackFx {
     const val GLYPH_SPIN_S = 7.0 // demo-showcase glyph spin; gameplay uses glyphDuration(level)
     private const val GLYPH_BASE_S = 4.0 // glyph floor (~a skilled glypher); + per level below
     private const val GLYPH_PER_LEVEL_S = 0.8 // higher portals take more glyphs → longer (skill TBD)
-    private const val PEAK_RATE = 8.0 // peak spin rad/s, reached mid-hack; 0 at the ends (spins up then stops)
+    private const val PEAK_RATE = 5.0 // peak spin rad/s, reached mid-hack; 0 at the ends (spins up then stops)
     private const val SMOOTH_PEAK = 1.875 // max slope of smootherstep → normalise so peak rate == PEAK_RATE
     private const val TILT_MAX = 0.7 // peak outward rod splay (rad ≈ 40°)
     private const val GLYPH_RATE_MUL = 1.5 // glyph spins faster
@@ -28,6 +28,13 @@ object HackFx {
     /** Glyph spin time grows with portal [level] (more glyphs to draw). Real range is wider (agent skill,
      *  not yet modelled) — a skilled glypher could clear a low portal in ~5s. */
     fun glyphDuration(level: Int) = GLYPH_BASE_S + level.coerceIn(1, 8) * GLYPH_PER_LEVEL_S
+
+    /** Total radians the collar turns over a [dur]-second hack (the integral of the spin envelope).
+     *  HackSound uses this to time a click each 1/8 turn the collar passes a filled reso slot. */
+    fun spinRadians(dur: Double, glyph: Boolean) = PEAK_RATE * (if (glyph) GLYPH_RATE_MUL else 1.0) * dur / SMOOTH_PEAK
+
+    /** +1 (RES, counter-clockwise) or −1 (ENL, clockwise) — the spin/click order direction. */
+    fun spinSign(faction: Faction) = directionFor(faction)
 
     // three.js +Z rotation is CCW (top-down) → ENL clockwise = −1, RES counter-clockwise = +1.
     private fun directionFor(faction: Faction) = if (faction == Faction.ENL) -1.0 else 1.0
