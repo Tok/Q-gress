@@ -107,6 +107,7 @@ object Scene3D {
     private const val NEUTRAL_COLOR = "#bbbbbb"
     private const val MOD_R_FRAC = 0.16 // chrome mod radius (× orb radius)
     private const val MOD_SCALE = 1.2 // scale the mod solids up a touch (they read bland at base size)
+    private const val MOD_WIRE_SCALE = 1.08 // black edge cage sits a bit further out → reads bolder
     private const val MOD_RING_FRAC = 0.55 // tetrahedron vertex distance from orb centre (× orb radius); nudged out so mods clear the link joint
 
     // Unit regular-tetrahedron vertices (magnitude √3); the 4 mod slots sit at these inside the orb.
@@ -299,6 +300,7 @@ object Scene3D {
         animClockMs += dt * 1000.0
         PlasmaShader.setTime(animClockMs / 1000.0) // animate control fields (on the scaled clock)
         updateEffects(map, dt, invProj)
+        tumbleModTetras() // gentle continuous tumble of the mod tetrahedra
         VectorFieldOverlay.sync() // paced flow-field sweep; driven here (continuous loop) so it animates through world-gen too
         activeRenderer.resetState()
         // Realistic by default: keep the depth the map layers wrote so 3D buildings occlude the sim.
@@ -334,6 +336,7 @@ object Scene3D {
         Spawns.beginSync()
         HackFx.resetBindings() // re-bound below as each portal's reso group is rebuilt
         DeployFx.resetBindings()
+        modTetras.clear() // rebuilt by buildMods below
         clear(portalsGroup)
         World.allPortals.forEach { addPortal(it) }
         clear(fieldsGroup)
@@ -818,6 +821,7 @@ object Scene3D {
         val mods = portal.mods.values.toList()
         if (mods.isEmpty()) return
         val r = TOP_R * MOD_RING_FRAC / sqrt(3.0) // normalize the √3-magnitude tetra verts to the ring radius
+        val tetra = Three.Group() // the whole mod tetrahedron — slowly tumbled per frame (see tumbleModTetras)
         mods.forEachIndexed { i, mod ->
             val v = TETRA[i % TETRA.size]
             val geo = modGeoFor(mod.modType())
@@ -826,14 +830,30 @@ object Scene3D {
             mesh.asDynamic().scale.set(MOD_SCALE, MOD_SCALE, MOD_SCALE) // a touch bigger so the mods read
             if (mod.modType() == ModType.LINK_AMP) mesh.asDynamic().rotation.set(0.62, 0.62, 0.0) // cube on its diagonal
             val wire = Three.LineSegments(modEdges(mod.modType()), modWireMat) // clean black polygon edges, just outside
-            wire.asDynamic().scale.set(1.04, 1.04, 1.04)
+            wire.asDynamic().scale.set(MOD_WIRE_SCALE, MOD_WIRE_SCALE, MOD_WIRE_SCALE)
             mesh.asDynamic().add(wire)
-            orb.add(mesh) // orb is already dynamic (no .asDynamic())
+            tetra.asDynamic().add(mesh)
         }
-        if (mods.any { it is Shield }) { // the energy bubble reads "shielded"
+        orb.add(tetra) // orb is already dynamic (no .asDynamic())
+        modTetras.add(tetra)
+        if (mods.any { it is Shield }) { // the energy bubble reads "shielded" (stays put — not in the tumble)
             val color = portal.owner?.faction?.color ?: NEUTRAL_COLOR
             val bubble = Three.Mesh(shieldGeo, ShieldShader.material(color, portal.totalMitigation() / 100.0))
             orb.add(bubble)
+        }
+    }
+
+    private val modTetras = mutableListOf<dynamic>() // mod tetrahedra, rebuilt each sync, tumbled each frame
+
+    // Slowly tumble each mod tetrahedron on incommensurate sine drifts → a gentle, never-repeating spin
+    // that keeps changing direction. Time-driven so it's smooth across the per-sync rebuild.
+    private fun tumbleModTetras() {
+        if (modTetras.isEmpty()) return
+        val t = animClockMs / 1000.0
+        modTetras.forEach { g ->
+            g.rotation.x = sin(t * 0.11) * PI
+            g.rotation.y = sin(t * 0.13 + 1.3) * PI
+            g.rotation.z = sin(t * 0.17 + 2.6) * PI
         }
     }
 
