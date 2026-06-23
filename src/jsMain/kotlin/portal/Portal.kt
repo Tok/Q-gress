@@ -3,11 +3,11 @@ package portal
 import World
 import agent.Agent
 import agent.action.ActionItem
+import config.Config
 import config.DropRates
 import config.Sim
 import config.Time
 import extension.*
-import items.Combat
 import items.PowerCube
 import items.QgressItem
 import items.XmpBurster
@@ -98,9 +98,9 @@ data class Portal(
 
     private fun modMitigation(): Int = mods.values.filterIsInstance<Shield>().sumOf { it.type.mitigation }
 
-    /** Total incoming-damage reduction (links + deployed shields), at the single gameplay cap
-     *  ([items.Combat.MAX_MITIGATION]; the authentic Ingress 95 lives in IngressFacts for reference). */
-    fun totalMitigation(): Int = min(Combat.MAX_MITIGATION, linkMitigation() + modMitigation())
+    /** Total incoming-damage reduction (links + deployed shields), at the live gameplay cap
+     *  ([Config.maxMitigation], from the Combat-dynamism setting; authentic 95 lives in IngressFacts). */
+    fun totalMitigation(): Int = min(Config.maxMitigation(), linkMitigation() + modMitigation())
 
     /** Hack-cooldown multiplier from deployed heat sinks: rarest applies full, each subsequent halved. */
     fun cooldownFactor(): Double {

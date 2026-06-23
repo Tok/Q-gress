@@ -38,6 +38,7 @@ import kotlin.js.Json
  */
 object TitleSim {
     private const val TITLE_PORTALS = 8
+    private const val TITLE_COMBAT_DYNAMISM = 0.9 // quite dynamic (near max) so the demo combat reads lively
     private val TITLE_LEVELS = intArrayOf(3, 5, 8) // one agent per faction at each of these levels
     private const val TITLE_NPCS = 30
     private const val TITLE_XMPS = 60 // ≥ Attacker's threshold so the agents actually fire
@@ -73,6 +74,7 @@ object TitleSim {
         Sim.roundField = true // a centered round arena → portals cluster around the centre (border stays hidden)
         VectorFieldOverlay.flashEnabled = false // no flow-field flashes on the title
         Config.startPortals = TITLE_PORTALS
+        Config.combatDynamism = TITLE_COMBAT_DYNAMISM // the title demo plays flashier than the default game
         // Open on the player's home if location is *already* shared (no prompt — GeoLocator); otherwise
         // a random iconic location. Both build live (no precomputed paths), so any location works.
         GeoLocator.homeIfPermitted(

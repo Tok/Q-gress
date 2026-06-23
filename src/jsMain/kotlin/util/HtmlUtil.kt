@@ -428,6 +428,7 @@ object HtmlUtil {
         Shortcuts.Command.HOME -> MapUtil.goHome()
         Shortcuts.Command.CYCLE_TAB -> Footer.cycleTab()
         Shortcuts.Command.MUTE -> toggleMuteUi()
+        Shortcuts.Command.AUTO_CAM -> MapUtil.setAutoCam(!MapUtil.isAutoCamOn()) // C — highlight syncs via onAutoCamChanged
         Shortcuts.Command.CLOSE -> escClose()
     }
 
@@ -668,28 +669,15 @@ object HtmlUtil {
         menu.append(createButton("menuShortcuts", "menuItem displayFont", "Shortcuts") { ShortcutsHelp.show() })
         // Overlay toggle lives in the menu now (no longer always-visible in the top bar). Vectors are
         // no longer toggled — they flash automatically for ~a second when a portal is created.
-        menu.append(createMenuCheckbox("passabilityToggle", "Terrain") { PassabilityOverlay.setVisible(it) })
-        // Colored map vs grayscale satellite (replaces the old View dropdown). Default coloured; the
-        // colour eases in over 30 s after world-gen, so this toggle is also the manual override.
-        val colored = createMenuCheckbox("coloredMapToggle", "Colored map") {
-            coloredMap = it
-            MapUtil.setColored(it)
-        }
-        (colored.firstChild as? HTMLInputElement)?.checked = coloredMap
-        menu.append(colored)
-        // 3D terrain (DEM relief) on/off.
-        val terrain = createMenuCheckbox("terrainToggle", "3D terrain") { MapUtil.setTerrainEnabled(it) }
-        (terrain.firstChild as? HTMLInputElement)?.checked = MapUtil.isTerrainEnabled()
-        menu.append(terrain)
+        // The "passability" map (greyscale walkability the grid is read from) — this is NOT the terrain.
+        menu.append(createMenuCheckbox("passabilityToggle", "Passability") { PassabilityOverlay.setVisible(it) })
         // Accessibility: draw the whole sim over buildings so actions are never hidden (default off →
         // the realistic order where buildings can occlude portals/agents).
         val xray = createMenuCheckbox("xrayToggle", "Show through buildings") { Scene3D.drawOverBuildings = it }
         (xray.firstChild as? HTMLInputElement)?.checked = Scene3D.drawOverBuildings
         menu.append(xray)
-        // Preview the read-only tuning mode (sliders → 0–1 bars) used for agent-vs-agent matches.
-        val lock = createMenuCheckbox("tuneLockToggle", "Lock tuning") { TuningPanel.setMode(it) }
-        (lock.firstChild as? HTMLInputElement)?.checked = GameUrl.isReadOnly()
-        menu.append(lock)
+        // Combat dynamism (0 = realistic/tanky shields … 1 = portals flip very easily). Live-tunable.
+        menu.append(createMenuSlider("Combat", Config.combatDynamism) { Config.combatDynamism = it })
         // Fade the 3D buildings when crowded areas hide the action.
         menu.append(createMenuSlider("Buildings", 0.9) { MapUtil.setBuildingOpacity(it) })
         // Build version footer (timestamp + git-sha), so any deployed build is identifiable.

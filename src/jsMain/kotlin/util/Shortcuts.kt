@@ -12,10 +12,10 @@ import org.w3c.dom.events.KeyboardEvent
  * and a handled key calls `preventDefault` (so Space/arrows don't scroll, +/- don't browser-zoom).
  *
  * Space=pause · Home=recenter · PageUp/PageDown=zoom · WASD=pan (arrows pan natively) ·
- * -/+ = sim speed · ,/. = building transparency · Tab=footer tab · M=mute · Esc=close panels.
+ * -/+ = sim speed · ,/. = building transparency · Tab=footer tab · M=mute · C=auto-cam · Esc=close panels.
  */
 object Shortcuts {
-    enum class Command { PAUSE, HOME, CYCLE_TAB, MUTE, CLOSE }
+    enum class Command { PAUSE, HOME, CYCLE_TAB, MUTE, CLOSE, AUTO_CAM }
 
     class Handlers(
         val command: (Command) -> Unit,
@@ -86,6 +86,7 @@ object Shortcuts {
             "Period" -> h.buildingOpacity(OPACITY)
             "Tab" -> if (!ev.repeat) h.command(Command.CYCLE_TAB)
             "KeyM" -> if (!ev.repeat) h.command(Command.MUTE)
+            "KeyC" -> if (!ev.repeat) h.command(Command.AUTO_CAM)
             "Escape" -> h.command(Command.CLOSE)
             else -> return false
         }

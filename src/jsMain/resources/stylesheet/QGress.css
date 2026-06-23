@@ -430,6 +430,18 @@ html, body {
 .titleGithub:hover {
     color: #ffffff;
 }
+/* © credit in the title footer, bottom-right (alongside the centered GitHub link). */
+.titleCredit {
+    position: fixed;
+    bottom: 12px;
+    right: 16px;
+    z-index: 9999;
+    font-family: "Coda", monospace;
+    font-size: 12px;
+    letter-spacing: 1px;
+    color: rgba(230, 235, 232, 0.6);
+    pointer-events: none;
+}
 .titleGithub svg {
     display: block;
 }

@@ -21,10 +21,10 @@ object Combat {
     const val CRIT_MULTIPLIER = 3 // a lucky point-blank hit triples reso damage
     const val CRIT_RATE = 0.2 // crit chance when point-blank (first quintile)
 
-    // Softened HARD from Ingress' 95% → 50%: with recharge healing resos and no agent Ultra-Strikes yet,
-    // an 80% cap made shielded portals self-repair faster than XMP-only attackers could damage them (static
-    // sim). At 50% a sustained assault punches through shields. Tunable — lower further if still too tanky.
-    const val MAX_MITIGATION = 50
+    // Hard safety ceiling inside resoDamage (authentic Ingress 95%). The LIVE gameplay cap is
+    // Config.maxMitigation() (driven by the Combat-dynamism setting), applied at Portal.totalMitigation —
+    // so by the time a mitigation value reaches here it's already capped lower; this is just a backstop.
+    const val MAX_MITIGATION = 95
     const val ULTRA_RESO_MULT = 0.12 // an Ultra-Strike does very little direct reso damage
 
     const val RANGE_FRAC = 0.5 // XMP effective px range = rangeM × this (matches Agent.findResosInAttackRange)

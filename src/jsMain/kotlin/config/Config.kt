@@ -53,6 +53,15 @@ object Config {
         return maxOf(MIN_NONFACTION, (NPC_DENSITY * areaRatio * walkFactor).toInt())
     }
 
+    // Combat dynamism (0 = realistic/tanky shields, 1 = portals flip very easily). Drives the live
+    // gameplay mitigation cap; tunable from the menu "Combat" slider. Leans dynamic by default — this is
+    // an AI-vs-AI sim, dynamism matters more than realism. (The authentic 95% cap stays in IngressFacts.)
+    var combatDynamism = 0.75
+
+    /** Gameplay shield/link mitigation cap for the current dynamism: higher dynamism → lower cap → flips. */
+    fun maxMitigation(): Int =
+        (IngressFacts.MITIGATION_CAP_PCT - combatDynamism * 75.0).toInt().coerceIn(15, IngressFacts.MITIGATION_CAP_PCT)
+
     const val apMultiplier = 10
 
     const val isNpcSwarming = true

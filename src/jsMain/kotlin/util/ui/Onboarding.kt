@@ -58,6 +58,7 @@ object Onboarding {
         screen.appendChild(cta)
         screen.appendChild(createTitleVolume()) // an annoyed player can turn it down right away
         screen.appendChild(createGithubLink()) // thin "source on GitHub" footer link
+        screen.appendChild(createTitleCredit()) // © credit next to the GitHub link
         document.body?.appendChild(screen)
         val revealCta = { cta.style.opacity = "1" } // idempotent
         TitleSim.onTitleReady = { window.setTimeout({ revealCta() }, CTA_DELAY_MS) } // 1s after the letters land
@@ -85,6 +86,13 @@ object Onboarding {
         a.rel = "noopener"
         a.innerHTML = "$GITHUB_ICON<span>Source on GitHub</span>"
         return a
+    }
+
+    /** Thin "© Zirteq 2026" credit in the title footer, beside the GitHub link. */
+    private fun createTitleCredit(): HTMLElement {
+        val credit = div("titleCredit")
+        credit.textContent = "© Zirteq 2026"
+        return credit
     }
 
     /** A small volume slider shown on the title screen (the storm starts loud). */
