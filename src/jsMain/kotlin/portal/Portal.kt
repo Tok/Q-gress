@@ -127,7 +127,8 @@ data class Portal(
     fun stripMod(slot: ModSlot, destroyer: Agent?): Mod? {
         val mod = mods.remove(slot) ?: return null
         destroyer?.addAp(MOD_DESTROY_AP)
-        if (mod is Shield && HtmlUtil.isRunningInBrowser()) SoundUtil.playShieldRemoveSound(location, mod.getLevel())
+        // Subtle "plop" as the item pops out of its slot (any mod — shield, heat sink, …).
+        if (HtmlUtil.isRunningInBrowser()) SoundUtil.playKnockOutSound(location)
         Com.addMessage("$destroyer knocked a ${mod.abbr} off $this.")
         return mod
     }

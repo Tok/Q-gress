@@ -521,6 +521,18 @@ object SoundUtil {
         connectVoice(osc, createPanner(pos), gainNode, n + 0.35)
     }
 
+    /** Subtle "plop" when an XMP/Ultra-Strike knocks a mod/shield out of a slot (portal survives). */
+    fun playKnockOutSound(pos: Pos) {
+        if (isMuted()) return
+        val n = now()
+        val osc = createExponentialRampOscillator(OscillatorType.SINE, 430.0, 130.0, 0.11) // quick downward bloop
+        val gainNode = audioCtx.createGain()
+        gainNode.gain.setValueAtTime(EPS, n)
+        gainNode.gain.linearRampToValueAtTime(0.11, n + 0.006) // soft pluck
+        gainNode.gain.exponentialRampToValueAtTime(EPS, n + 0.12)
+        connectVoice(osc, createPanner(pos), gainNode, n + 0.12)
+    }
+
     /** A glitchy faction-pitched sweep when a virus (ADA / JARVIS) flips a portal. */
     fun playVirusSound(pos: Pos, faction: Faction) {
         if (isMuted()) return
