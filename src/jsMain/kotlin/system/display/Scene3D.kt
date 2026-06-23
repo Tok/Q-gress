@@ -872,7 +872,8 @@ object Scene3D {
             SoundUtil.playGlassShatterSound(portal.location, CAPTURE_SHATTER_WEIGHT)
         }
         val reform = CaptureFx.reformFactor(id)
-        val resos = portal.resoMap().mapValues { it.value.getLevel() } // octant → reso level (real-time)
+        // octant → (reso level, health 0..1) — both real-time, so the rod's energy bar tracks its charge.
+        val resos = portal.resoMap().mapValues { Pair(it.value.getLevel(), it.value.calcHealthPercent() / 100.0) }
         // Selection keeps the faction hue but lights the orb brighter (no neutral-looking white tint);
         // buildPortal derives that from id == selected.
         val parts = buildPortal(portalsGroup, portal.location, level, baseColor, id, resos)
@@ -899,7 +900,7 @@ object Scene3D {
         level: Double,
         color: String,
         id: String?,
-        resos: Map<Octant, Int> = emptyMap(),
+        resos: Map<Octant, Pair<Int, Double>> = emptyMap(),
     ): Array<dynamic> {
         val x = sceneX(location)
         val y = sceneY(location)
@@ -936,7 +937,13 @@ object Scene3D {
     }
 
     /** 8 rubber slot-rings around the pole collar; a colour-coded rod stands in each filled slot. */
-    private fun buildResonators(parent: dynamic, location: Pos, level: Double, resos: Map<Octant, Int>, id: String? = null): dynamic {
+    private fun buildResonators(
+        parent: dynamic,
+        location: Pos,
+        level: Double,
+        resos: Map<Octant, Pair<Int, Double>>,
+        id: String? = null,
+    ): dynamic {
         val x = sceneX(location)
         val y = sceneY(location)
         val gz = groundZ(location)
@@ -948,8 +955,10 @@ object Scene3D {
             val ang = i * PI / 4.0
             val ox = ringR * cos(ang)
             val oy = ringR * sin(ang)
-            val lvl = resos[octant]
-            if (lvl != null) {
+            val resoInfo = resos[octant]
+            if (resoInfo != null) {
+                val lvl = resoInfo.first
+                val health = resoInfo.second
                 // Rod hangs from a pivot/joint at its TOP, so a hack swings its loose bottom end
                 // radially outward (centrifuge) while the top stays put. Tagged for the hack update.
                 val pivot = Three.Group()
@@ -969,7 +978,7 @@ object Scene3D {
                     pivot.asDynamic().userData.targetZ = rodLen
                     DeployFx.bind(id, octant, pivot.asDynamic())
                 }
-                val rod = Three.Mesh(resoRodGeo, Materials.resonator(LevelColor.map[lvl] ?: "#ffffff"))
+                val rod = Three.Mesh(resoRodGeo, Materials.resonator(LevelColor.map[lvl] ?: "#ffffff", health))
                 rod.asDynamic().rotation.x = PI / 2 // unit Y-cylinder → vertical
                 rod.asDynamic().scale.set(1.0, rodLen, 1.0)
                 rod.asDynamic().position.set(0.0, 0.0, -rodLen / 2.0) // hangs down to the grommet
@@ -1117,7 +1126,7 @@ object Scene3D {
     fun placeShowcase(location: Pos, level: Int, color: String) {
         val grp = showcaseGroup ?: return
         val group = Three.Group()
-        val resos = Octant.values().associateWith { level } // demo: show a full set at the placed level
+        val resos = Octant.values().associateWith { Pair(level, 1.0) } // demo: a full set, full health
         val parts = buildPortal(group, location, level.toDouble(), color, null, resos)
         applyBuildGrow(level.toDouble(), 0.0, parts) // start collapsed; grows in via updateShowcases
         grp.add(group)

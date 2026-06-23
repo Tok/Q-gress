@@ -74,6 +74,7 @@ object GlassShader {
     private const val INTERIOR_LUM = 0.02
     private const val RIM_EMISSION = 0.6
     private const val INTERIOR_EMISSION = 0.05
+    private const val FILL_DIM = 0.32 // above the energy line a resonator dims to this (still coloured, not empty)
 
     private const val VERT =
         "varying vec3 vWorldNormal;\nvarying vec3 vModelPos;\nvarying vec3 vWorldPos;\n" +
@@ -84,7 +85,7 @@ object GlassShader {
 
     private val FRAG =
         "varying vec3 vWorldNormal;\nvarying vec3 vModelPos;\nvarying vec3 vWorldPos;\n" +
-            "uniform vec3 uTint;\nuniform vec3 uEye;\nuniform float uBright;\nuniform float uFade;\n" +
+            "uniform vec3 uTint;\nuniform vec3 uEye;\nuniform float uBright;\nuniform float uFade;\nuniform float uFill;\n" +
             "float hash(vec3 p){ p = fract(p * vec3(0.1031, 0.1030, 0.0973)); p += dot(p, p.yxz + 33.33);" +
             " return fract((p.x + p.y) * p.z); }\n" +
             "float vnoise(vec3 p){ vec3 i = floor(p); vec3 f = fract(p); f = f * f * (3.0 - 2.0 * f);\n" +
@@ -104,6 +105,10 @@ object GlassShader {
             " float bright = clamp(rim + smudge * 0.4 + ${INTERIOR_LUM.glsl()}, 0.0, 1.0);\n" +
             " vec3 col = (vec3(bright) * uTint + uTint * (rim * ${RIM_EMISSION.glsl()} + ${INTERIOR_EMISSION.glsl()})) * uBright;\n" +
             " float alpha = clamp((${BASE_ALPHA.glsl()} + rim * 0.55 + smudge * 0.5) * uBright, 0.04, 0.97) * uFade;\n" +
+            // Resonator energy bar: below the fill line (uFill, bottom→top of the unit cylinder) reads full,
+            // above dims to FILL_DIM but stays coloured. uFill defaults to 1 (no effect on orbs/links/shards).
+            " if (uFill < 0.999) { float fillT = clamp(vModelPos.y + 0.5, 0.0, 1.0);" +
+            " float lit = fillT <= uFill ? 1.0 : ${FILL_DIM.glsl()}; col *= lit; alpha *= max(lit, 0.6); }\n" +
             " gl_FragColor = vec4(col, alpha); }"
 
     /**
@@ -113,14 +118,15 @@ object GlassShader {
      * instance, so its `uFade` uniform (1 → 0) can be driven independently — e.g. shatter shards
      * fading out at end of life.
      */
-    fun material(hexColor: String, bright: Double = 1.0): dynamic {
+    fun material(hexColor: String, bright: Double = 1.0, fill: Double = 1.0): dynamic {
         val rgb = hexToRgb(hexColor)
-        val uni: dynamic = js("({ uTint: { value: null }, uBright: { value: 1.0 }, uFade: { value: 1.0 } })")
+        val uni: dynamic = js("({ uTint: { value: null }, uBright: { value: 1.0 }, uFade: { value: 1.0 }, uFill: { value: 1.0 } })")
         uni.uTint.value = js("({ x: 0.0, y: 0.0, z: 0.0 })")
         uni.uTint.value.x = rgb[0]
         uni.uTint.value.y = rgb[1]
         uni.uTint.value.z = rgb[2]
         uni.uBright.value = bright
+        uni.uFill.value = fill // <1 = resonator energy bar (bottom→top); 1 = full/everything else
         uni.uEye = eyeUniform // shared, refreshed each frame by updateEye()
         val p: dynamic = js("({})")
         p.vertexShader = VERT

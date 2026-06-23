@@ -223,15 +223,8 @@ object ShatterFx {
     @Suppress("LongParameterList") // position + size + colour for one falling rod
     fun spawnFallingRod(geo: dynamic, x: Double, y: Double, z: Double, radius: Double, length: Double, color: String) {
         val w = world ?: return
-        val p: dynamic = js("({})")
-        p.color = color
-        p.emissive = color
-        p.emissiveIntensity = 0.35
-        p.metalness = 0.3
-        p.roughness = 0.5
-        p.transparent = true
-        p.opacity = 1.0
-        val mat = Three.MeshStandardMaterial(p)
+        // Glassy, but with the energy bar EMPTY (fill 0) — a reso only drops out once destroyed/drained.
+        val mat = GlassShader.material(color, SHARD_BRIGHT, 0.0)
         val mesh = Three.Mesh(geo, mat)
         mesh.asDynamic().scale.set(1.0, length, 1.0) // unit Y-cylinder → rod length
         val opts: dynamic = js("({})")
@@ -255,8 +248,7 @@ object ShatterFx {
         group.add(mesh)
         activeShards.add(
             Shard(mesh, mat, body, 0.0, SHARD_LIFE_MIN + Util.random() * (SHARD_LIFE_MAX - SHARD_LIFE_MIN)) { f ->
-                mat.asDynamic().opacity =
-                    f
+                mat.uniforms.uFade.value = f // glass fade (was MeshStandard opacity)
             },
         )
     }

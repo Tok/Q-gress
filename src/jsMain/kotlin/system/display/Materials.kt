@@ -91,8 +91,10 @@ object Materials {
     }
 
     /** A resonator rod, coloured by its level (the rarity/level colour); slight emissive so it reads. */
-    /** Resonator rods: the same faction/level glass as the orbs + links (translucent, lit rim). */
-    fun resonator(color: String): dynamic = cache.getOrPut("reso$color") { GlassShader.material(color, GlassShader.LINK_BRIGHT) }
+    /** Resonator rods: glass like the orbs + links, with a vertical energy bar — [fill] (0..1 health)
+     *  lights it bottom→top, dimming (still coloured) above the line. Cached per colour + fill octile. */
+    fun resonator(color: String, fill: Double): dynamic =
+        cache.getOrPut("reso$color${(fill * 8).toInt()}") { GlassShader.material(color, GlassShader.LINK_BRIGHT, fill) }
 
     private fun buildEnv(): dynamic {
         val canvas = document.createElement("canvas") as HTMLCanvasElement
