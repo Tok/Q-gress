@@ -187,7 +187,7 @@ object MapUtil {
     // Framed so the chosen play-area size fits; read at call time since the size is picked at onboarding.
     private fun displayZoomForSize() = (ZOOM - log2(Sim.scale)).roundToInt()
     private const val DEMO_ZOOM = 19 // demos frame one central object, so sit closer than the game
-    private const val TITLE_ZOOM_BOOST = -1 // pulled back from the whole-area framing (was a bit too close)
+    private const val TITLE_ZOOM_BOOST = 0.6 // just slightly pulled back from the previous framing
     private const val TITLE_PITCH = 42.0 // less tilt than in-game → the action sits nearer screen centre, not the lower half
     private var demoMode = false
     private fun displayZoom() = if (demoMode) DEMO_ZOOM else displayZoomForSize()
@@ -306,7 +306,7 @@ object MapUtil {
         val m = initMap ?: return
         applyTerrain(m) // DEM relief (the demo style now carries the terrain source)
         Scene3D.onTerrainChanged() // sample heights so the portals sit on the terrain
-        m.setZoom(titleZoom() - TITLE_FLYIN_ZOOM_OUT) // start high + top-down …
+        m.asDynamic().setZoom(titleZoom() - TITLE_FLYIN_ZOOM_OUT) // start high + top-down … (fractional zoom)
         m.setPitch(0.0)
         val fly: dynamic = js("({})")
         fly.zoom = titleZoom()
