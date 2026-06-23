@@ -1,7 +1,6 @@
 package util.ui
 
 import agent.Faction
-import config.Config
 import config.Locations
 import config.Sim
 import kotlinx.browser.document
@@ -205,17 +204,16 @@ object Onboarding {
         )
     }
 
-    /** Step 2 — map size + portal density + people + quick-start. [onStart] gets w, h, portals, npc, quickStart. */
-    fun showMapSize(defaultPortals: Int, onStart: (Int, Int, Int, Int, Boolean) -> Unit) {
+    /** Step 2 — map size + portal density + quick-start. [onStart] gets w, h, portals, quickStart.
+     *  (NPC population isn't a player choice — it's auto-derived from map size + location; see Config.) */
+    fun showMapSize(defaultPortals: Int, onStart: (Int, Int, Int, Boolean) -> Unit) {
         val screen = screen("MAP SIZE & PORTALS")
         val widthInput = numberInput(Sim.width)
         val heightInput = numberInput(Sim.height)
         val portalsInput = numberInput(defaultPortals)
-        val npcInput = numberInput(Config.maxFor())
 
         val presets = div("onboardRow")
-        // Portal + people counts scale with map size (Small 5/250 · Normal 8/500 · Large 13/900).
-        val npcFor = mapOf("Small" to 250, "Normal" to 500, "Large" to 900)
+        // Portal count scales with map size (Small 5 · Normal 8 · Large 13); people scale automatically.
         listOf(
             Triple("Small", Sim.SMALL_SCALE, 5),
             Triple("Normal", Sim.NORMAL_SCALE, 8),
@@ -226,7 +224,6 @@ object Onboarding {
                     widthInput.value = Sim.presetWidth(sc).toString()
                     heightInput.value = Sim.presetHeight(sc).toString()
                     portalsInput.value = portals.toString()
-                    npcInput.value = (npcFor[label] ?: 500).toString()
                 },
             )
         }
@@ -236,7 +233,6 @@ object Onboarding {
         fields.appendChild(labeledInput("Width", widthInput))
         fields.appendChild(labeledInput("Height", heightInput))
         fields.appendChild(labeledInput("Portals", portalsInput))
-        fields.appendChild(labeledInput("People", npcInput))
         screen.appendChild(fields)
 
         val quickCheck = checkRow(screen, " Quick start (full roster + AP for a fast early game)", true)
@@ -258,7 +254,6 @@ object Onboarding {
                     if (roundCheck.checked) side else w,
                     if (roundCheck.checked) side else h,
                     portalsInput.value.toIntOrNull() ?: defaultPortals,
-                    npcInput.value.toIntOrNull() ?: Config.maxFor(),
                     quickCheck.checked,
                 )
             },

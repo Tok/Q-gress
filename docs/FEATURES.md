@@ -36,8 +36,9 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
   `title` flag marking it eligible as a title-screen fallback. This is also the seam for future scenario
   sharing.
 - **Home button** — recenter top-down over the play area (pitch 0) to find the action again.
-- **Shareable links** — URLs carry faction + lng/lat/name + size (w/h) + portal/NPC counts + round +
+- **Shareable links** — URLs carry faction + lng/lat/name + size (w/h) + portal count + round +
   quickstart + **seed** + both factions' **tuning sliders** (`GameUrl`, which owns all URL read/build);
+  (NPC population isn't carried — it's auto-derived from map size + location at world-gen.)
   Menu **"Copy link"** copies a link reproducing the exact world, and **"Save"** downloads a small JSON
   (that link + a stats snapshot) — a seed-based save. Backed by a **seedable mulberry32 RNG**
   (`Util.random`, the sole randomness source) so the same seed → the same world (rosters included; the
@@ -87,6 +88,15 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
 - **Buildings occlude the sim by default** (the 3D pass shares the map depth buffer); a Menu
   accessibility toggle **"Show through buildings"** restores the always-on-top draw (XMP/explosions stay
   on top regardless). Action coins are occluded by portals but not buildings in that mode.
+- **Buildings bob from nearby blasts** (`BuildingShake`): an XMP/ultra-strike makes the 3D buildings
+  within range **shake and settle back** (~2.4s spring) — amplitude scales with **blast level +
+  proximity**, damped for **taller** buildings (more mass). Driven via per-building MapLibre
+  `feature-state` added to the extrusion height/base, so it needs native vector-tile feature ids;
+  works in-game + on the title (the `/#demo` gray style has no buildings, so it no-ops there).
+- **Shield bubbles ripple when they absorb a blast** (`ShieldShader` + `ShieldWave`): an explosion
+  near a **shielded** portal waves its energy shell like liquid (and flares brighter) for ~1.7s, then
+  it settles — so you can see a survived hit getting soaked up. (Also fixed: the shield hex/rim was
+  never being animated — its time/eye uniforms are now driven each frame.)
 - **Real portal names** from map data (`util/PortalNames`: POI/street query on the shadow source).
 - **GLB compaction** (`95dda03`, Blender): `shattered_flask.glb` 2.43 MB → **657 KB** (strip unused
   UVs/materials, weld verts, smooth normals; all 12 shatter variants preserved). Editable source at
@@ -160,6 +170,10 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
 ## Gameplay, balance & map playability
 - **Balance (Phase 5)**: recruiting now **costs XM** + has **diminishing returns** near the cap, so
   recruit-rush is no longer a free snowball. Fixed a recruiting CME (`World.pendingAgents` buffer).
+- **Auto NPC population** (`Config.npcPopulation`): the NPC count is no longer a player setting — it's
+  derived from **map area + location walkability** at world-gen (floored at **30** so there are always
+  recruits), and held constant by **1-for-1 replacement** when an NPC is recruited (`Recruiter`), so a
+  game can't run dry. Scales with the play area, so it'll grow if/when area-expansion mechanics land.
 - **Plausible agent handles** (`util/NameGen`): Ingress-style names from themed word banks (per-faction
   flavour + adjectives/nouns/titles), CamelCase/snake/dot styling, light leet, numeric + `xX_…_Xx`
   wraps, and a location token — deduped per game. Replaces the old gibberish generator.

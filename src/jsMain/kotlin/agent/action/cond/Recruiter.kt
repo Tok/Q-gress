@@ -29,6 +29,7 @@ object Recruiter : ConditionalAction {
         val npc = NonFaction.findNearestTo(agent.pos)
         if (Util.random() < recruitmentChance(agent.faction)) {
             World.allNonFaction.remove(npc)
+            World.allNonFaction.add(NonFaction.create(World.grid)) // 1-for-1 replacement → population never depletes
             val newAgent = when (agent.faction) {
                 Faction.ENL -> Agent.createFrog(World.grid)
                 Faction.RES -> Agent.createSmurf(World.grid)

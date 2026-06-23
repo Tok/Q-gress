@@ -171,8 +171,9 @@ object MapUtil {
         if (t < 1.0) window.requestAnimationFrame { stepInflate() }
     }
 
+    // Inflate factor × the real height, PLUS the per-building blast-bob (feature-state, see BuildingShake).
     private fun inflateExpr(factor: Double, prop: String, fallback: Int): Json =
-        JSON.parse("""["*", $factor, ["coalesce", ["get", "$prop"], $fallback]]""")
+        JSON.parse("""["+", ["*", $factor, ["coalesce", ["get", "$prop"], $fallback]], ${BuildingShake.SHAKE_TERM}]""")
 
     private fun spinBuild() {
         if (!cinematicActive) return
@@ -302,6 +303,7 @@ object MapUtil {
         val targetMap = initMap ?: return
         val center = anchorCenter ?: return
         Scene3D.register(targetMap, center.lng as Double, center.lat as Double, anchorZoom)
+        BuildingShake.attach(targetMap.asDynamic()) // buildings bob when XMPs detonate nearby
         setupNavigation(targetMap)
     }
 
@@ -519,8 +521,8 @@ object MapUtil {
             "minzoom": 14,
             "paint": {
                 "fill-extrusion-color": "#333333",
-                "fill-extrusion-height": ["coalesce", ["get", "render_height"], 8],
-                "fill-extrusion-base": ["coalesce", ["get", "render_min_height"], 0],
+                "fill-extrusion-height": ["+", ["coalesce", ["get", "render_height"], 8], ${BuildingShake.SHAKE_TERM}],
+                "fill-extrusion-base": ["+", ["coalesce", ["get", "render_min_height"], 0], ${BuildingShake.SHAKE_TERM}],
                 "fill-extrusion-opacity": 0.9
             }
         }""",

@@ -223,10 +223,9 @@ object HtmlUtil {
         Onboarding.showFaction { f ->
             World.userFaction = null // clear the title sim's placeholder faction so the real pick takes
             chooseUserFaction(f)
-            Onboarding.showMapSize(Config.startPortals) { w, h, portals, npc, quick ->
+            Onboarding.showMapSize(Config.startPortals) { w, h, portals, quick ->
                 Sim.setSize(w, h) // size first, so the location screen's play-area box is the real size
                 Config.startPortals = portals
-                Config.maxNonFaction = npc
                 Config.quickStart = quick
                 Onboarding.showLocation { lng, lat, name ->
                     // Reload into the game via the deep-link URL (carries faction/size/portals/npc/
@@ -374,7 +373,6 @@ object HtmlUtil {
         GameUrl.size()?.let { Sim.setSize(it.first, it.second) }
         // Apply the rest of the onboarding settings if present in the URL (deep link / reload handoff).
         GameUrl.portals()?.let { Config.startPortals = it }
-        GameUrl.npc()?.let { Config.maxNonFaction = it }
         GameUrl.quickstart()?.let { Config.quickStart = it }
         GameUrl.round()?.let { Sim.roundField = it }
         Util.seed(GameUrl.seed() ?: Util.freshSeed())
@@ -587,6 +585,9 @@ object HtmlUtil {
             World.allAgents.add(Agent.createSmurf(World.grid))
         }
         World.allNonFaction.clear()
+        // Auto-size the population for this map + location (walkability is known now the grid is built);
+        // held constant afterwards by 1-for-1 replacement on recruit, so we never run out of recruits.
+        Config.maxNonFaction = Config.npcPopulation(Sim.width, Sim.height, World.walkability)
         World.createNonFaction(callback, Config.maxFor())
     }
 

@@ -29,11 +29,28 @@ object Config {
     fun startSmurfs() = if (quickStart) 8 else minSmurfs
     fun initialAp() = if (quickStart) 2000000 else 0
 
-    var maxNonFaction = 500 // NPC count (chosen at onboarding); scales with map size
+    // NPC population is NOT a player setting — it's auto-derived from map area + location (see
+    // [npcPopulation]) at world-gen, and held constant by 1-for-1 replacement on recruit (Recruiter),
+    // so a game never runs out of people to recruit.
+    var maxNonFaction = 500 // current target population (set by npcPopulation at world-gen)
     fun maxFor(faction: Faction? = null) = when (faction) {
         Faction.ENL -> maxFrogs
         Faction.RES -> maxSmurfs
         else -> maxNonFaction
+    }
+
+    const val MIN_NONFACTION = 30 // floor: always enough to recruit, even on a tiny/dense map
+    private const val NPC_DENSITY = 240.0 // NPCs per one screenful (Dim.width × Dim.height) of map area
+
+    /**
+     * Appropriate NPC population for a [width]×[height] map at a location of the given [walkability]
+     * (fraction of passable cells): area-scaled, lightly reduced where there's little open ground, and
+     * floored at [MIN_NONFACTION]. Grows with the play area, so it'll scale up if/when the area does.
+     */
+    fun npcPopulation(width: Int, height: Int, walkability: Double): Int {
+        val areaRatio = (width.toDouble() * height) / (Dim.width.toDouble() * Dim.height)
+        val walkFactor = 0.5 + 0.5 * walkability.coerceIn(0.0, 1.0) // 0.5×…1.0× — location matters, but never starves
+        return maxOf(MIN_NONFACTION, (NPC_DENSITY * areaRatio * walkFactor).toInt())
     }
 
     const val apMultiplier = 10

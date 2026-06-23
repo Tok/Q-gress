@@ -14,6 +14,7 @@ import items.deployable.Mod
 import items.deployable.ModType
 import items.deployable.Shield
 import items.level.LevelColor
+import items.level.XmpLevel
 import kotlinx.browser.document
 import kotlinx.browser.window
 import org.w3c.dom.HTMLCanvasElement
@@ -23,6 +24,7 @@ import portal.Octant
 import portal.Portal
 import portal.XmHeap
 import portal.XmMap
+import util.BuildingShake
 import util.Debug
 import util.SoundUtil
 import util.data.Pos
@@ -111,6 +113,7 @@ object Scene3D {
     private val MOD_WIRE_SCALES = doubleArrayOf(1.01, 1.05) // two concentric edge cages → a bolder glowing wire
     private const val MAX_SHIELD_SHELLS = 4 // up to 4 shields per portal → 4 concentric bubbles
     private const val SHIELD_SHELL_STEP = 0.09 // each shield shell sits this much larger than the last (× radius)
+    private const val SHIELD_WAVE_RANGE_FRAC = 0.6 // a blast ripples shields within this × the XMP's range
 
     // tetrahedron vertex distance from orb centre (× orb radius); nudged out so mods clear the link joint
     private const val MOD_RING_FRAC = 0.55
@@ -314,6 +317,8 @@ object Scene3D {
         val dt = rawDt * animationSpeed
         animClockMs += dt * 1000.0
         PlasmaShader.setTime(animClockMs / 1000.0) // animate control fields (on the scaled clock)
+        updateShields(animClockMs / 1000.0) // shield hex/rim animation + per-portal blast-absorb ripple
+        BuildingShake.update(animClockMs / 1000.0) // decay any building bobs back to rest (cheap when idle)
         updateEffects(map, dt, invProj)
         tumbleModTetras() // gentle continuous tumble of the mod tetrahedra
         updateTitleWordmark(invProj, dt) // camera-lock the 3D title letters (no-op until loaded)
@@ -360,6 +365,7 @@ object Scene3D {
         HackFx.resetBindings() // re-bound below as each portal's reso group is rebuilt
         DeployFx.resetBindings()
         modTetras.clear() // rebuilt by buildMods below
+        shieldMats.clear() // rebuilt by addShieldShells below
         clear(portalsGroup)
         World.allPortals.forEach { addPortal(it) }
         clear(fieldsGroup)
@@ -558,9 +564,31 @@ object Scene3D {
         val origin = doubleArrayOf(sx, sy, gz + BlastModel.cloudHeight(level))
         ShatterFx.recordBlast(origin, level) // shatter pieces arc up-and-out, energy ∝ level / distance
         TitleWordmark.flash(origin, level) // title letters get shoved (no-op until loaded)
+        triggerShieldWaves(location, level) // nearby shields ripple as they absorb the blast
+        val ll = simPosToLngLat(location) // buildings near the blast bob + settle (no-op without map/buildings)
+        BuildingShake.blast(ll[0], ll[1], level, animClockMs / 1000.0)
         if (sound) {
             if (ultra) SoundUtil.playUltraStrike(location) else SoundUtil.playXmpSound(location, level)
         }
+    }
+
+    // Ripple any nearby shielded portal's bubble — it "absorbs" the blast. Survivors wave + settle;
+    // shields that the blast destroys just vanish on the next sync, so a triggered-but-dead one is harmless.
+    private fun triggerShieldWaves(location: Pos, level: Int) {
+        val radius = XmpLevel.valueOf(level).rangeM * SHIELD_WAVE_RANGE_FRAC
+        val seconds = animClockMs / 1000.0
+        World.allPortals.forEach { p ->
+            if (p.mods.values.any { it is Shield } && p.location.distanceTo(location) <= radius) {
+                ShieldWave.hit(p.id, seconds)
+            }
+        }
+    }
+
+    private fun updateShields(seconds: Double) {
+        if (shieldMats.isEmpty()) return
+        ShieldShader.setTime(seconds) // animate the hex lattice / pulse (was never driven before)
+        ShieldShader.setEye(GlassShader.eye()) // camera-tracking Fresnel rim
+        shieldMats.forEach { (mat, id) -> ShieldShader.setWave(mat, ShieldWave.amplitudeFor(id, seconds)) }
     }
 
     /** Place (or clear, when pos is null) the build-preview marker on the ground. */
@@ -931,14 +959,19 @@ object Scene3D {
         val color = portal.owner?.faction?.color ?: NEUTRAL_COLOR
         val baseIntensity = portal.totalMitigation() / 100.0
         repeat(shells) { i ->
-            val bubble = Three.Mesh(shieldGeo, ShieldShader.material(color, baseIntensity * (1.0 - i * 0.12)))
+            val mat = ShieldShader.material(color, baseIntensity * (1.0 - i * 0.12))
+            val bubble = Three.Mesh(shieldGeo, mat)
             val s = 1.0 + i * SHIELD_SHELL_STEP
             bubble.asDynamic().scale.set(s, s, s)
             orb.add(bubble)
+            shieldMats.add(mat to portal.id) // so ShieldWave can ripple this shell on a nearby blast
         }
     }
 
     private val modTetras = mutableListOf<dynamic>() // mod tetrahedra, rebuilt each sync, tumbled each frame
+
+    // Shield bubble materials + their portal id, rebuilt each sync → driven per frame by ShieldWave (ripple).
+    private val shieldMats = mutableListOf<Pair<dynamic, String>>()
 
     // Slowly tumble each mod tetrahedron on incommensurate sine drifts → a gentle, never-repeating spin
     // that keeps changing direction. Time-driven so it's smooth across the per-sync rebuild.
