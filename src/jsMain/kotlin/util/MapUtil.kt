@@ -350,50 +350,32 @@ object MapUtil {
         window.setTimeout({ autoCamLeg(gen) }, AUTOCAM_LEG_MS.toInt())
     }
 
-    private var ownBuildingsHooked = false
     private var ownBuildingsSwapped = false
-
-    private fun queryBuildings(md: dynamic): dynamic {
-        // querySourceFeatures (loaded vector tiles) returns far more than queryRenderedFeatures, which is
-        // unreliable for fill-extrusion in a top-down view (returned only a couple). Geometry is lng/lat.
-        val opts: dynamic = js("({})")
-        opts.sourceLayer = "building"
-        return md.querySourceFeatures("openmaptiles", opts)
-    }
+    private const val BUILD_TERRAIN_RETRIES = 24 // ~7 s max, waiting only for the terrain height grid
+    private const val BUILD_TERRAIN_RETRY_MS = 300
 
     /**
-     * Build our OWN building meshes from the vector-tile footprints + seed the debris colliders, then hide
-     * the MapLibre fill-extrusion layer (ours take over). Driven by the map's `idle` event (no timeouts):
-     * each idle meshes any newly-loaded buildings (dedup by footprint), so the set fills in as tiles load
-     * and as you pan. The first build waits for the terrain heights (so buildings sit on the terrain, not
-     * z=0); MapLibre's buildings stay visible until then (no gap).
+     * Mesh our OWN buildings from the footprints captured off the full-zoom shadow map at grid time (so
+     * ALL of them, not the framed display map's fraction) + seed the debris colliders, then make MapLibre's
+     * layer invisible (opacity 0 → ours take over). Only waits on the terrain heights (so buildings sit on
+     * the terrain, not z=0); no data wait — the footprints are already in memory.
      */
-    fun buildBuildingColliders() {
-        if (demoMode || !Styles.use3DBuildings || ownBuildingsHooked) return
-        val m = initMap ?: return
-        ownBuildingsHooked = true
-        m.asDynamic().on("idle", fun() {
-            ownBuildingsTick()
-        })
-        ownBuildingsTick()
-    }
+    fun buildBuildingColliders() = buildOwnBuildings(0)
 
-    private fun ownBuildingsTick() {
-        if (demoMode || !Styles.use3DBuildings || !Scene3D.terrainReady()) return // need terrain for correct z
+    private fun buildOwnBuildings(attempt: Int) {
+        if (demoMode || !Styles.use3DBuildings || ownBuildingsSwapped) return
         val m = initMap ?: return
-        val md = m.asDynamic()
-        val feats = queryBuildings(md)
-        if (((feats.length as? Int) ?: 0) == 0) return // tiles not loaded yet — a later idle will have them
-        OwnBuildings.addFeatures(feats) // dedup by footprint → only new buildings are added
-        if (!ownBuildingsSwapped) { // first successful build → seed colliders + hand over from MapLibre
-            ownBuildingsSwapped = true
-            Scene3D.buildBuildingColliders(feats)
-            // Make MapLibre's buildings invisible but KEEP the layer active (opacity 0, not visibility:none):
-            // in the satellite style the openmaptiles source is used only by this layer, so hiding it would
-            // stop tile loading and querySourceFeatures would go stale. This way tiles keep streaming and
-            // each idle meshes the rest.
-            if (md.getLayer("3d-buildings") != null) md.setPaintProperty("3d-buildings", "fill-extrusion-opacity", 0)
+        if (!Scene3D.terrainReady() && attempt < BUILD_TERRAIN_RETRIES) { // brief wait for terrain z only
+            window.setTimeout({ buildOwnBuildings(attempt + 1) }, BUILD_TERRAIN_RETRY_MS)
+            return
         }
+        ownBuildingsSwapped = true
+        OwnBuildings.buildStashed() // mesh every captured building
+        Scene3D.buildBuildingColliders(OwnBuildings.stashedFeatures()) // …and the falling-debris colliders
+        val md = m.asDynamic()
+        // Make MapLibre's buildings invisible (opacity 0). Keeps the layer active vs visibility:none (which
+        // would stop tile loading), though we no longer depend on that since the footprints are captured.
+        if (md.getLayer("3d-buildings") != null) md.setPaintProperty("3d-buildings", "fill-extrusion-opacity", 0)
     }
 
     /** Register the 3D scene (three.js custom layer) on the base map, anchored at the grid view. */
@@ -591,7 +573,10 @@ object MapUtil {
         if (!demoMode) LoadingOverlay.detail("Tracing roads, water & terrain…")
         val grid = createGrid(imageData, width, height)
         if (!demoMode) LoadingOverlay.detail("Walkable ground: ${(World.walkability * 100).toInt()}% · reading place names…")
-        shadowMap?.let { PortalNames.build(it) } // query POI/street names while the tiles are loaded
+        shadowMap?.let {
+            PortalNames.build(it) // query POI/street names while the tiles are loaded…
+            OwnBuildings.capture(it.asDynamic()) // …and ALL building footprints (full-zoom → complete)
+        }
         teardownShadowMap() // grid + names are read — destroy the shadow map to free its WebGL context
         captureAnchor()
         callback(grid)
