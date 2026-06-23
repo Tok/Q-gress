@@ -28,16 +28,18 @@ object ShatterFx {
     private const val POLE_R = 2.0 // for the gasket collider box
 
     private const val BLAST_WINDOW = 0.6 // s after a blast that shatter pieces still get pushed away
-    private const val BLAST_SPEED = 18.0 // m/s outward push (energy comes from the XMP's direction)
+    private const val BLAST_SPEED = 18.0 // m/s base outward push (energy comes from the XMP's direction)
     private var blastX = 0.0
     private var blastY = 0.0
     private var blastTime = -1.0
+    private var blastGain = 1.0 // scales the push by XMP level (bigger XMP → more energy)
 
-    /** Record an XMP detonation at scene-metre [x], [y]; nearby shatter pieces spawned next fly away from it. */
-    fun recordBlast(x: Double, y: Double) {
+    /** Record an XMP detonation at scene-metre [x], [y] of [level]; pieces spawned next fly away from it. */
+    fun recordBlast(x: Double, y: Double, level: Int = 8) {
         blastX = x
         blastY = y
         blastTime = now()
+        blastGain = 0.4 + 0.6 * (level.coerceIn(1, 8) / 8.0) // L1 still throws pieces, L8 full energy
     }
 
     /** Outward velocity (vx, vy, vz) pushing a piece at [x], [y] away from a recent blast (else zero). */
@@ -47,7 +49,8 @@ object ShatterFx {
         val dy = y - blastY
         val d = sqrt(dx * dx + dy * dy)
         if (d < 0.001) return doubleArrayOf(0.0, 0.0, 0.0)
-        return doubleArrayOf(dx / d * BLAST_SPEED, dy / d * BLAST_SPEED, BLAST_SPEED * 0.45) // away + a bit up
+        val speed = BLAST_SPEED * blastGain
+        return doubleArrayOf(dx / d * speed, dy / d * speed, speed * 0.45) // away + a bit up
     }
 
     private fun now() = Scene3D.animMs() // sim-scaled clock so FX track sim speed

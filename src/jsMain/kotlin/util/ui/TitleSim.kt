@@ -42,12 +42,19 @@ object TitleSim {
     private var interval = 0
     private var started = false
 
+    /** Fires when the 3D title letters are in the scene (so the UI can time the faction menu to them). */
+    var onTitleReady: (() -> Unit)? = null
+
     fun start() {
         if (started) return
         started = true
         World.userFaction = Faction.ENL
         Scene3D.showBorder = false // no boundary wall/mask on the title
-        Scene3D.titleWordmarkOnReady = { hideDomWordmark() } // also triggers the 3D wordmark load in onAdd
+        Scene3D.titleWordmarkOnReady = {
+            // fires once the 3D letters are in the scene
+            hideDomWordmark()
+            onTitleReady?.invoke()
+        }
         hideDomWordmark() // the 3D letters replace it — hide the flat DOM text immediately (no flash)
         window.addEventListener("pointerdown", { SoundUtil.enableAudio() }) // autoplay: unlock on first gesture
         Sim.setSize(Sim.presetWidth(Sim.SMALL_SCALE), Sim.presetHeight(Sim.SMALL_SCALE)) // small → fast to build

@@ -73,6 +73,14 @@ footer (`util/ui/Footer`: EVENT LOG / AGENTS). Remaining:
   off-centre**, so XMP/Ultra-Strike damage falls off with that miss distance. Models skill spread
   across the roster + makes Ultra Strike (small radius) reward good aim. Feeds the damage calc + the
   blast VFX origin; another lever for Phase 6 to learn around.
+- [ ] **Unified XMP blast-energy model.** Today the blast physics live in two places: `ShatterFx`
+  (gameplay — shards/resos/gasket fly away from the 2D blast point, now level-scaled) and
+  `TitleWordmark` (title letters shoved away, level + per-letter distance falloff, origin at the
+  mushroom-cloud centre above the terrain). Extract one shared model — `blastImpulse(origin3D, level,
+  piecePos): vec3` with a **3D cloud-centre origin** (above ground) + **distance falloff** — and drive
+  BOTH from it, so shattering a portal in normal play uses the same richer physics (shards arc up-and-out
+  from the cloud centre, energy ∝ level/distance) as the title. Pairs with the aim skill (off-centre
+  hits → off-centre blast origin).
 - [ ] **Portal-mod follow-ups** (shields / heat sinks / viruses shipped; link amps inactive). Heat-sink
   **instant cooldown/burnout reset** for the deploying agent on attach; **multi-hack** mod; **activate
   link amps** (range/outbound-link/SBUL); the **Ultra Strike** weapon + targeted mod-stripping honouring
