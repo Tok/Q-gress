@@ -88,7 +88,7 @@ enum class Location(val displayName: String, val lng: Double, val lat: Double) {
         // sparse at the small title play-size. The title opens on one of these when it can't use home.
         private val TITLE = listOf(
             RED_SQUARE, EIFFEL_TOWER, GIZA_PLATEAU, GROUND_ZERO, RED_SQUARE_MOSCOW,
-            TIMES_SQUARE, SHIBUYA, PICCADILLY, BRANDENBURG_GATE, COLOSSEUM,
+            TIMES_SQUARE, SHIBUYA, PICCADILLY, BRANDENBURG_GATE,
             DAM_SQUARE, PLAZA_MAYOR, GRAND_BAZAAR, TIANANMEN, TRAFALGAR,
             CHAMPS_ELYSEES, ZOCALO, CATALUNYA, DUOMO_MILAN, CONCORDE,
         )
