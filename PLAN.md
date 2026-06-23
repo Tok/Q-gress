@@ -13,13 +13,6 @@ Q-Gress becomes an **AI-vs-AI sandbox**: each faction (ENL/RES) is driven by an 
 can play any side; any two brains can be matched. **Desktop-only**; mobile is blocked. Until
 the AI layer lands, the slider sim is the substrate we keep hardening.
 
-## Near-term queue
-- [ ] **Re-enable + fix the title-screen portals.** Temporarily **disabled**
-  (`TitleScene3D.PORTALS_ENABLED = false`) — the thunderbolts still fire (sky-bolt fallback), but the
-  portals' look wasn't right. They're built at the game's proportions × `TITLE_SCALE` with the level
-  derived from 8 reso slots (chrome pole + GlassShader orb + reso rods), but the orb/pole sizing, reso
-  collar layout, camera framing and lighting need a visual pass before turning the flag back on.
-
 ## 3D / rendering
 - [ ] **Terrain follow-ups** (DEM heights shipped). Terrain-aware **shatter ground** — the cannon-es
   plane is still flat z=0, so shards/pole sink to sea level on high ground; maybe a Menu exaggeration
@@ -29,8 +22,9 @@ the AI layer lands, the slider sim is the substrate we keep hardening.
   `XmpBurst.update`. If it reads too dense/sparse or too small once seen live, these are the knobs;
   consider promoting them to uniforms if frequent tuning is wanted.
 - [ ] **Stage 2 leftover** — a richer field-up "whoosh" when a control field forms.
-- [ ] **Stage 3 — pathfinding scalability** — drop the per-portal full-map flow field; multi-mode
-  nav (flow fields near, cheap nav far); ambient NPCs; continuous toggleable field viz.
+- [ ] **Stage 3 — pathfinding scalability** — the heat map is now a bucketed Dijkstra (O(cells), all
+  field gen async via `PathUtil.computeFieldAsync`); still **per-portal full-map**. Remaining: multi-mode
+  nav (flow fields near, cheap nav far), coarser `pathResolution` lever, ambient NPCs, field viz.
 - [ ] **Stage 4** — humanoid glTF models (ready: people are head-sized spheres at head height),
   pairs with the colony-management attributes (icebox).
 
@@ -86,12 +80,6 @@ footer (`util/ui/Footer`: EVENT LOG / AGENTS). Remaining:
   link amps** (range/outbound-link/SBUL); the **Ultra Strike** weapon + targeted mod-stripping honouring
   shield `stickiness`; a **3D key** model; a per-game **drop-rate tuning UI** (`DropRates` is already
   centralized — Menu → Drop rates; `docs/MECHANICS.md`).
-- [ ] **Portal retaliation ("thunderbolts").** Portals **defend when attacked**: a tesla-coil-style
-  **bolt flash** arcs from the portal to the attacker on hit (like Ingress's portal-attack feedback),
-  with a **thunderbolt sound**. Model TBD — pure VFX/audio first, then optional retaliation damage
-  (higher-level / shielded portals zap harder). The same bolt VFX + sound feed the **title-screen
-  demo** (below). **Reference the `qlippostasis` project** for the thunderbolt visuals + sounds (the
-  glass-shatter sound was already ported from there).
 
 ## Grand game — multiple locations & a living field (planned, big)
 A core-gameplay direction beyond a single static arena:
@@ -111,12 +99,13 @@ A core-gameplay direction beyond a single static arena:
     travel/relocation between sites works (time/cost), and how cross-site links/fields score.
 
 ## Title / faction screen
-The **CHOOSE YOUR FACTION** screen is a showpiece: the **Q-GRESS** wordmark + compact ENL/RES buttons
-over a **real `Scene3D` mini-sim** (`util/ui/TitleSim`) — a round arena with ~8 portals, a 3-v-3 agent
-roster (equipped: varied XMPs, resos/cubes, keys, a shield each side) and ~30 NPCs, driven by the
-actual tick loop / AI, with a dramatic fly-in + a slow center-facing orbiting camera, 3D terrain, fast
-colour fade, and a GitHub footer link. Wiped by the onboarding reload (HtmlUtil's reload handoff). It
-runs the same renderer/FX as the game (no parallel code). Remaining:
+The **CHOOSE YOUR FACTION** screen is a showpiece: a **real 3D extruded Q-GRESS wordmark** (brand
+font, camera-locked, springs away from XMP blasts) + a compact ENL/RES menu that fades in ~1s after the
+letters land, over a **real `Scene3D` mini-sim** (`util/ui/TitleSim`) — a round arena with ~8 portals, a
+3-v-3 agent roster (one L3/L5/L8 each side, equipped: level-matched XMPs, resos/cubes, keys, an L8
+shield) and ~30 NPCs, driven by the actual tick loop / AI, with a dramatic fly-in + a slow center-facing
+orbiting camera, 3D terrain, colour fade, and a GitHub footer link. Wiped by the onboarding reload
+(HtmlUtil's reload handoff). It runs the same renderer/FX as the game (no parallel code). Remaining:
 - [ ] **Precompute the title world to cut load time.** Serialize the fixed title location's **grid +
   portal positions + flow fields** (extend the `GridCapture` fixture pattern) and load them instead of
   doing the live shadow-readback + async field compute — so the title sim is instant. Pairs with the
@@ -124,14 +113,8 @@ runs the same renderer/FX as the game (no parallel code). Remaining:
 - [ ] **FreeCamera flight path** (optional): fly the camera *position* over the terrain while
   `lookAtPoint(centre)` keeps the action framed (today the cam orbits a fixed centre — MapLibre's
   default camera can't decouple position from look-at without FreeCamera).
-- [ ] Drifting **particles** + a generative **ambient** bed; **thunderbolt retaliation** lands via the
-  game's portal-defense work (below), so the title inherits it for free.
-- [ ] **True 3D extruded wordmark** (qlippostasis-style). Replace the DOM wordmark (currently a layered
-  CSS faux-3D extrude) with real `ExtrudeGeometry` text **camera-locked** in the title scene — pinned in
-  front of the camera (we already compute eye/forward/up each frame for the audio listener) so it flies
-  with the cam over the orbiting world, with a **black extruded backline** + proper lighting (pairs with
-  the planned **sun**). Needs a **typeface.json of the brand font** (Chakra Petch) — convert the TTF, or
-  load it at runtime via three's `TTFLoader`; without it the text falls back to a generic 3D font.
+- [ ] Drifting **particles** + a generative **ambient** bed (the portal-defense thunderbolts + the
+  wordmark's XMP-blast reaction already land — the title inherits the game FX).
 
 ## Phase 6 — AI-vs-AI (the Q-gress payoff)
 

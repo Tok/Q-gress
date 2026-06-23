@@ -29,6 +29,7 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
 - Navigation handed to **MapLibre's own handlers** (left-drag pan, right-drag rotate+tilt, wheel
   zoom, unrestricted; NavigationControl block). Optional WASD / Q-E / R-F keys (`Navigation`).
 - **Mini-globe inset** (`util/ui/MiniMap`) — circular synced overview with a FLAT/GLOBE toggle.
+- Presets are labelled **"Name, City, Country"** (`config/Location`); POI labels follow the same form.
 - **Home button** — recenter top-down over the play area (pitch 0) to find the action again.
 - **Shareable links** — URLs carry lng/lat/name + size (w/h) + **seed**; a Menu "Copy link" copies a
   link reproducing the exact world. Backed by a **seedable mulberry32 RNG** (`Util.random`, the sole
@@ -46,7 +47,8 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
     billboard** floats above each portal's orb (cached `CanvasTexture` sprite, Chakra Petch).
   - **Resonators** — 8 colour-coded rods in rubber slot-rings, real-time from `resoMap()`, grow
     with the pole, **fall on shatter** (cannon-es physics rods), **hack spin + top-jointed
-    centrifuge** (`HackFx`); shatter physics in `ShatterFx` (pole sinks, shards fall).
+    centrifuge** (`HackFx`); shatter physics in `ShatterFx` (pole sinks, shards + resos **fly away from
+    the XMP blast**, scaled by XMP level, then fall).
   - **Links → glass pipes** (`linkGeo`/`orientTube`, brighter variant + additive plasma core).
   - **Fields → plasma** sheets (`PlasmaShader`, animated; fill-in + dissolve + collapse sound).
   - **XMP** — volumetric raymarched **mini-nuke** (`XmpShaders`/`XmpBurst`), detonates at the agent.
@@ -55,10 +57,23 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
     rotation-decorrelated fbm displacement (no smooth-sphere look, no grid streaks). The hot core stays
     emissive while cool smoke is gradient-lit + translucent (warm, not a black blob); it starts tiny and
     fast-expands, then **dissolves gradually** (cooling colour + thinning alpha — a smoke tail). Plus a
-    flat neon ground shockwave ring.
+    3D **torus** ground shockwave ring (reads right on the 3D terrain).
   - **Stray XM** rendered as glowing additive motes (`Materials.xmGlow`).
   - **Lifecycle registry** `Spawns` (per-entity first-seen, survives the sync rebuild) drives
     spawn/teardown animations; `FieldFx` dissolves.
+  - **Portal-defense bolts** (`BoltFx`) — a tesla-coil **fractal-lightning** bolt + flash light arcs
+    from an enemy portal's orb to the agent that hacks/attacks it (ported from the title; see "portal
+    zap" under gameplay).
+  - **Agent XM gauge** — a vertical bar above each agent's action coin; its height scales with the
+    agent's **XM capacity** (level) and a faction-coloured fill (black = drained) shows current XM.
+    Resonators **deploy out of the bar** (rise straight up, then arc into the slot — `DeployFx`).
+  - **Detailing**: round **ball-joints** at each link end (`Materials.linkNode`), a **top o-ring** on
+    each resonator (stays with the pole on shatter), **mod solids** scaled up with clean **black
+    polygon-edge cages** (`EdgesGeometry`) in a **slowly tumbling tetrahedron**; shatter blast energy
+    scales with **XMP level**.
+- **Buildings occlude the sim by default** (the 3D pass shares the map depth buffer); a Menu
+  accessibility toggle **"Show through buildings"** restores the always-on-top draw (XMP/explosions stay
+  on top regardless). Action coins are occluded by portals but not buildings in that mode.
 - **Real portal names** from map data (`util/PortalNames`: POI/street query on the shadow source).
 - **GLB compaction** (`95dda03`, Blender): `shattered_flask.glb` 2.43 MB → **657 KB** (strip unused
   UVs/materials, weld verts, smooth normals; all 12 shatter variants preserved). Editable source at
@@ -94,10 +109,20 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
   (default on); degrades to flat if the DEM is unavailable. (The cannon-es shatter ground stays flat —
   a known approximation.)
 - **Top toolbar** reorganized: Menu far-left (with Terrain/Vectors overlay toggles + Lock-tuning
-  inside it), Pause/Resume, Home; View dropdown + Volume far-right.
-- Map visuals: grayscale-terrain default + Colored/Street views (`LayerView`), white play-area
-  border + upright **semi-transparent white boundary walls** + dimmed out-of-bounds (`PlayAreaMask`),
-  so the arena reads as a physical box. Rule: faction colours for faction things only.
+  inside it), Pause/Resume, Home; View dropdown + Volume far-right. Toolbar stays hidden until the
+  world is ready.
+- **Keyboard controls + sim speed** (`util/Shortcuts`, `util/ui/ShortcutsHelp`): Space pause, Home
+  recenter, PageUp/Down (and `-`/`+`) zoom, WASD pan, `,`/`.` building transparency, `-`/`+` sim
+  **speed**, Tab cycles the footer, M mute, Esc closes popups; a **"?" shortcuts help** popup lists
+  them. The sim **speed slider/keys** drive `Time` tick interval **and** `Scene3D.animationSpeed`, so
+  every animation (hack spin, deploy/shatter, build-in, field shimmer) tracks the sim speed.
+- Map visuals: grayscale-terrain default (the satellite layer starts desaturated in-style → no colour
+  flash; eases to colour) + Colored/Street views (`LayerView`), an **atmospheric skybox** (MapLibre
+  `setSky`) above the horizon, white play-area border + upright **semi-transparent white boundary
+  walls** (closed top/bottom rim rings) + dimmed out-of-bounds (`PlayAreaMask`), so the arena reads as a
+  physical box. **Round play field by default** (bigger inscribed-circle arena on a square map, circular
+  flow vectors). **Buildings inflate from the ground** during world build. Rule: faction colours for
+  faction things only.
 - **Dead 2D canvas layer removed** — `mainCanvas`/`uiCanvas` + the `#canvasLayer` div gone (world is
   the 3D layer, HUD is DOM); `bgCan` kept only as a detached `ImageData` factory for the grid.
 - **Font**: shareware Amarillo USAF → **Chakra Petch** (SIL OFL 1.1, self-hosted), techno/sci-fi-HUD
@@ -106,6 +131,9 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
 ## Gameplay, balance & map playability
 - **Balance (Phase 5)**: recruiting now **costs XM** + has **diminishing returns** near the cap, so
   recruit-rush is no longer a free snowball. Fixed a recruiting CME (`World.pendingAgents` buffer).
+- **Plausible agent handles** (`util/NameGen`): Ingress-style names from themed word banks (per-faction
+  flavour + adjectives/nouns/titles), CamelCase/snake/dot styling, light leet, numeric + `xX_…_Xx`
+  wraps, and a location token — deduped per game. Replaces the old gibberish generator.
 - **Map playability**: `GridConnectivity` carves corridors so no area is sealed off — and the gameplay
   carver (`connectIslands(grid, w, h)`) now also joins **on-screen** regions to each other directly, so
   two areas that both touch the off-screen ring no longer connect only via a long map-edge detour (the
@@ -117,16 +145,23 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
   detection** (`StuckTracker`) that flags non-progressing agents/NPCs with a 3D marker + a HUD count;
   **`?debug=capture`** sweeps every preset and downloads a `GridFixture` snapshot file, which
   `PresetConnectivityTest` audits offline in Node (single component + on-screen-connected + walkable).
-- **Non-blocking flow fields** (`PathUtil.computeFieldAsync`): the per-portal heat-map BFS + vector
-  field are now `suspend` and yield (`delay(0)`) per wavefront layer / every ~2000 cells / between
-  smooth passes, computed on a `MainScope` and written back into `Portal.vectors` (and the offscreen
-  field cache) when ready — so creating a portal/field no longer freezes the JS thread ~1s. Agents
+- **Non-blocking flow fields** (`PathUtil.computeFieldAsync`): the per-portal heat map is a **bucketed
+  Dijkstra** (cost = wave + terrain penalty, one frontier bucket per cost level → each cell touched
+  once, O(cells) instead of the old re-scan-everything wavefront) + vector field, both `suspend` and
+  yielding (`delay(0)`) every ~2000 cells / between smooth passes, computed on a `MainScope` and written
+  back into `Portal.vectors` (and the offscreen field cache) when ready — so creating a portal/field no
+  longer freezes the JS thread. All portal creation (world-gen + the in-game Explore action) is async. Agents
   fall back to a straight-line heading while a field is still empty (so they keep moving + re-sample
   the real field once it lands) instead of stalling on `Complex.ZERO`.
 - **Link/field integrity** (`LinkFieldIntegrityTest`): fixed `Portal.findLinkableForKeys` no-crossing
   filter; no dangling links/fields on portal destroy/neutralise.
 - Removed the dead attack/damage telegraph/queue system (`Attacks`/`Display`/`Damage`/`Queues`);
   damage applies inline, visualised by the 3D XMP burst.
+- **Portal zap defense** (`Portal.retaliate`): hacking or attacking an **enemy** portal makes it
+  retaliate — XM damage scaling with portal **level + shields** (mitigation) plus a `BoltFx` lightning
+  bolt + thunder. Friendly/neutral portals don't zap. This makes XM the agent's **energy**: drained by
+  zaps/deploys, refilled from stray XM + power cubes (the Ingress model; researched). Shatter blast
+  energy also scales with XMP level.
 
 ## Onboarding (Phase 7, partial)
 - **Ordered onboarding** faction → map-size → location → load (`util/ui/Onboarding`), in-memory
@@ -134,6 +169,12 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
 - **Map size + portal density** presets (Small/Normal/Large, editable W/H + portal count).
 - **Staged loading overlay** (`LoadingOverlay`) — map tiles → street tiles → passability → grid →
   building world, faction-tinted, translucent at build to reveal the spawning world.
+- **Title / faction screen is a real `Scene3D` mini-sim** (`util/ui/TitleSim`): a round arena with a
+  3-v-3 levelled roster (L3/L5/L8 each side) + ~30 NPCs running the actual tick loop / AI behind the
+  menu, fronted by a real **3D extruded Q-GRESS wordmark** (brand font via `FontLoader`/`TextGeometry`,
+  camera-locked, letters spring away from XMP blasts), a dramatic fly-in + slow center-facing orbit,
+  grayscale→colour fade, and a GitHub footer link. The faction menu fades in ~1s after the letters land.
+  Wiped by the onboarding reload (no in-place teardown). Same renderer/FX as the game.
 
 ## Audio
 - **True 3D positional audio** (`ba82492`): every positional sound routes through a `PannerNode` at
@@ -141,6 +182,9 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
   (`Scene3D.render` → `SoundUtil.updateListener`; eye from `GlassShader.eye()`, forward/up by
   unprojecting the inverse projection). Distance attenuation + front/back + elevation that track
   rotate/pitch/zoom (HRTF, inverse distance model). Replaced the screen-projected stereo pan.
+  Because the listener rides the (far) camera, a large reference distance + gentle rolloff + a **master
+  boost through a limiter** (`DynamicsCompressor`) keep the action audible instead of crushed by
+  distance attenuation.
 - Per-event sounds (portal create/remove, field up/down, shatter, XMP, hack/glyph/deploy/link,
   checkpoint/cycle, marble "tok" NPC drop); non-positional events (checkpoint/cycle/fail) stay
   center-panned. **Volume slider** + master gain; audio resumes on first gesture.

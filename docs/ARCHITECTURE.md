@@ -81,8 +81,10 @@ the "rework movement model" / "going 3D" icebox notes in PLAN.md.
   glass pipes, fields as plasma sheets, agents/NPCs as faction spheres, stray XM as glowing
   motes. The whole "glass apparatus" look is shader-driven (`GlassShader`, `PlasmaShader`,
   `XmpShaders`) — grayscale vessel, faction colour as the only tint. Effects (shatter via
-  cannon-es, XMP fireball, hack centrifuge, spawn/teardown) live in `ShatterFx`/`XmpBurst`/
-  `HackFx`/`FieldFx`/`Spawns`.
+  cannon-es, XMP fireball, hack centrifuge, spawn/teardown, **portal-defense lightning** in
+  `BoltFx`) live in `ShatterFx`/`XmpBurst`/`HackFx`/`FieldFx`/`BoltFx`/`Spawns`. `Scene3D.render`
+  clears depth **only** when `drawOverBuildings` (the accessibility toggle) is set; by default the
+  3D pass shares the map depth buffer so buildings occlude the sim.
 - **HUD → DOM.** `util/ui/`: `StatsPanel` (MU bars + time/tick + action LOG), `HistoryPanel`
   (per-metric uPlot sparklines + live values), `TopAgentsPanel`, `Inspector`, `LayerView`,
   `Onboarding`, `LoadingOverlay`, `MiniMap` (globe inset), `Controls`. Styled by
@@ -95,6 +97,18 @@ the "rework movement model" / "going 3D" icebox notes in PLAN.md.
 The tick loop (`HtmlUtil.tick`) advances agents on a snapshot (recruits buffer in
 `World.pendingAgents`, flushed after), then a `requestAnimationFrame` drives `DrawUtil.redraw`
 (→ `Scene3D.sync`) + the DOM HUD update.
+
+**Title screen reuses this whole pipeline.** `util/ui/TitleSim` runs a small *real* `Scene3D` sim
+(real grid, ~8 portals, a 3-v-3 levelled roster + ~30 NPCs, the real tick loop) behind the faction
+menu — no parallel rendering code. The wordmark is real 3D extruded text (`system/display/
+TitleWordmark`, camera-locked each frame from the recovered eye/forward/up, reacting to XMP blasts);
+`external/FontLoader` + `external/TextGeometry` (three addons, bundled like `GLTFLoader`) load the
+brand `typeface.json`. Picking a faction **reloads** into the game (URL handoff — there is no in-place
+map/Scene3D teardown).
+
+Flow fields (the per-portal navigation heat maps) are generated **off the synchronous path**:
+`PathUtil.computeFieldAsync` runs a bucketed-Dijkstra heat map + vector field as a `suspend` coroutine
+on `MainScope`, yielding every ~2000 cells, and writes the result back into `Portal.vectors` when ready.
 
 ## Locations
 
