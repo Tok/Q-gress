@@ -91,15 +91,8 @@ object Materials {
     }
 
     /** A resonator rod, coloured by its level (the rarity/level colour); slight emissive so it reads. */
-    fun resonator(color: String): dynamic = cache.getOrPut("reso$color") {
-        val p: dynamic = js("({})")
-        p.color = color
-        p.metalness = 0.3
-        p.roughness = 0.5
-        p.emissive = color
-        p.emissiveIntensity = 0.35
-        Three.MeshStandardMaterial(p)
-    }
+    /** Resonator rods: the same faction/level glass as the orbs + links (translucent, lit rim). */
+    fun resonator(color: String): dynamic = cache.getOrPut("reso$color") { GlassShader.material(color, GlassShader.LINK_BRIGHT) }
 
     private fun buildEnv(): dynamic {
         val canvas = document.createElement("canvas") as HTMLCanvasElement

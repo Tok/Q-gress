@@ -19,12 +19,13 @@ import kotlin.math.min
  */
 object DamageNumberFx {
     private const val FONT_URL = "fonts/Coda-ExtraBold.typeface.json"
-    private const val SIZE = 4.2 // glyph em size (world units)
+    private const val SIZE = 3.4 // glyph em size (world units)
     private const val DEPTH = 0.8 // extrude depth
     private const val GAP = 0.6 // gap between digits
     private const val MASS = 0.5
     private const val GRAVITY = 20.0
-    private const val RISE_HEIGHT = 15.0 // how far the connected number lerps up off the portal top (m)
+    private const val RISE_HEIGHT = 7.5 // how far the connected number lerps up off the portal top (m)
+    private const val DIGIT_OPACITY = 0.82 // a touch of transparency (glassy), still clearly readable
     private const val RISE_DUR = 0.55 // seconds for the rise
     private const val HANG_DUR = 1.4 // seconds it hangs upright before the digits drop
     private const val STAGGER = 0.1 // delay between digit releases (right-most first)
@@ -117,14 +118,15 @@ object DamageNumberFx {
         val w = world ?: return
         if (nums.isEmpty()) return
         w.step(1.0 / 60.0, dt, 3)
+        val eye = GlassShader.eye() // the only observer is the camera → billboard every digit toward it
         val dead = mutableListOf<DamageNum>()
         nums.forEach { num ->
             num.age += dt
             val connectedZ = num.baseZ + RISE_HEIGHT * easeOut(min(1.0, num.age / RISE_DUR))
-            num.digits.forEach { d -> advanceDigit(num, d, connectedZ) }
+            num.digits.forEach { d -> advanceDigit(num, d, connectedZ, eye) }
             if (num.age > num.totalLife - FADE) {
                 val a = ((num.totalLife - num.age) / FADE).coerceIn(0.0, 1.0)
-                num.fillMat.opacity = a
+                num.fillMat.opacity = DIGIT_OPACITY * a
                 num.wireMat.opacity = a
             }
             if (num.age >= num.totalLife) dead.add(num)
@@ -132,21 +134,27 @@ object DamageNumberFx {
         dead.forEach { drop(it) }
     }
 
-    private fun advanceDigit(num: DamageNum, d: Digit, connectedZ: Double) {
-        val body = d.body
-        if (body == null) {
-            if (num.age >= d.release) {
-                d.body = spawnBody(d, num.cx + d.localX, num.cy, connectedZ).also { world?.addBody(it) }
-            } else { // still part of the connected, upright number lerping/hanging
-                d.mesh.position.set(num.cx + d.localX, num.cy, connectedZ)
-                d.mesh.quaternion.set(0.0, 0.0, 0.0, 1.0)
-            }
-            return
+    private fun advanceDigit(num: DamageNum, d: Digit, connectedZ: Double, eye: DoubleArray) {
+        if (d.body == null && num.age >= d.release) { // detach this digit into a falling rigid body
+            d.body = spawnBody(d, num.cx + d.localX, num.cy, connectedZ).also { world?.addBody(it) }
         }
-        val bp = body.asDynamic().position
-        d.mesh.position.set(bp.x as Double, bp.y as Double, bp.z as Double)
-        val bq = body.asDynamic().quaternion
-        d.mesh.quaternion.set(bq.x as Double, bq.y as Double, bq.z as Double, bq.w as Double)
+        val body = d.body
+        val px: Double
+        val py: Double
+        val pz: Double
+        if (body != null) { // physics drives POSITION (it falls / gets blast-flung); orientation is billboarded
+            val bp = body.asDynamic().position
+            px = bp.x as Double
+            py = bp.y as Double
+            pz = bp.z as Double
+        } else { // still part of the connected, upright number lerping/hanging
+            px = num.cx + d.localX
+            py = num.cy
+            pz = connectedZ
+        }
+        d.mesh.position.set(px, py, pz)
+        // Face the camera: lookAt points -Z at the target, the glyph front is +Z, so aim -Z away from the eye.
+        d.mesh.asDynamic().lookAt(2.0 * px - eye[0], 2.0 * py - eye[1], 2.0 * pz - eye[2])
     }
 
     private fun buildDigits(f: dynamic, text: String, fillMat: dynamic, wireMat: dynamic, g: dynamic): List<Digit> {
@@ -161,7 +169,9 @@ object DamageNumberFx {
             val bb = geo.boundingBox
             val hh = ((bb.max.y as Double) - (bb.min.y as Double)) / 2.0
             val mesh = Three.Mesh(geo, fillMat)
-            mesh.asDynamic().add(Three.LineSegments(Three.EdgesGeometry(geo), wireMat)) // black outline
+            val wire = Three.LineSegments(Three.EdgesGeometry(geo), wireMat) // black outline
+            wire.asDynamic().scale.set(1.03, 1.03, 1.03) // nudge out so the edges don't z-fight the fill
+            mesh.asDynamic().add(wire)
             g.add(mesh)
             val release = RISE_DUR + HANG_DUR + (text.length - 1 - i) * STAGGER // right-most drops first
             Digit(mesh, localX, max(0.3, w / 2.0), max(0.3, hh), release)
@@ -208,7 +218,8 @@ object DamageNumberFx {
         val p: dynamic = js("({})")
         p.color = colorFor(amount)
         p.transparent = true
-        p.depthTest = false // always readable, even behind buildings
+        p.opacity = DIGIT_OPACITY // slightly glassy
+        p.depthWrite = true // self-occlude correctly — transparent defaults this off → we'd see inside the letters
         return Three.MeshBasicMaterial(p)
     }
 
@@ -216,7 +227,6 @@ object DamageNumberFx {
         val p: dynamic = js("({})")
         p.color = "#000000"
         p.transparent = true
-        p.depthTest = false
         return Three.LineBasicMaterial(p)
     }
 
