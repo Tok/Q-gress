@@ -204,15 +204,15 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
 - **Map size + portal density** presets (Small/Normal/Large, editable W/H + portal count).
 - **Staged loading overlay** (`LoadingOverlay`) — map tiles → tracing roads/water/terrain (+ walkable %)
   → place names → grid → deploying agents → spawning people → routes, faction-tinted, translucent at
-  build to reveal the spawning world. Fronted by a **fresh 3D extruded Q-GRESS wordmark**
-  (`LoadingWordmark` — its own mini three.js renderer, since the title scene is torn down by the
-  onboarding reload) that **shrinks in + drifts**, with a faction laser glow; falls back to the DOM
-  wordmark text if WebGL/font fails.
+  build to reveal the spawning world. Compact pane (no Q-GRESS wordmark — the player just came from the
+  title), faction-laser bars on a black-rubber glass panel.
 - **Title / faction screen is a real `Scene3D` mini-sim** (`util/ui/TitleSim`): a round arena with a
   3-v-3 levelled roster (L3/L5/L8 each side) + ~30 NPCs running the actual tick loop / AI behind the
   menu, fronted by a real **3D extruded Q-GRESS wordmark** (brand font via `FontLoader`/`TextGeometry`,
   camera-locked, letters spring away from XMP blasts), a dramatic fly-in + slow center-facing orbit,
   grayscale→colour fade, and a GitHub footer link. The faction menu fades in ~1s after the letters land.
+  On faction pick the **3D wordmark pops out** (`TitleWordmark.setVisible`) and the title sim keeps
+  running — shaded + audio-muffled — behind the map-size/location panes, so the pane isn't on top of it.
   Wiped by the onboarding reload (no in-place teardown). Same renderer/FX as the game.
   - **Blast mini-game**: click the scene to detonate — **LMB** fires a full **L8 XMP**, **RMB** an
     **ultra-strike** (the same burst squished tight + a touch brighter via the shader's `uBright` + an

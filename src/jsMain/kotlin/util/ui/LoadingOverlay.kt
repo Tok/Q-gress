@@ -35,9 +35,7 @@ object LoadingOverlay {
         val overlay = document.createElement("div") as HTMLElement
         overlay.id = OVERLAY_ID
         overlay.className = "loadingOverlay"
-        val title = document.createElement("div") as HTMLElement
-        title.className = "loadingTitle"
-        title.textContent = "Q-GRESS"
+        // No Q-GRESS wordmark here — the player just came from the title; the build pane stays compact.
         val status = document.createElement("div") as HTMLElement
         status.className = "loadingStatus"
         status.textContent = "Starting…"
@@ -58,7 +56,6 @@ object LoadingOverlay {
         // Glass pane behind the text + bars so they stay readable once the backdrop goes translucent.
         val panel = document.createElement("div") as HTMLElement
         panel.className = "loadingPanel"
-        panel.appendChild(title)
         panel.appendChild(status)
         panel.appendChild(track)
         panel.appendChild(subTrack)
@@ -69,7 +66,6 @@ object LoadingOverlay {
         detailEl = detail
         fillEl = fill
         subFillEl = subFill
-        LoadingWordmark.mount(title) // a fresh 3D extruded wordmark over the DOM fallback text
     }
 
     /** Sub-status line for what's being created right now, e.g. "Creating portal X  (3/21)". */
@@ -115,7 +111,6 @@ object LoadingOverlay {
     /** Fill to 100% and fade the overlay out, then remove it. */
     fun done() {
         fillEl?.style?.width = "100%"
-        LoadingWordmark.unmount()
         val overlay = document.getElementById(OVERLAY_ID) as? HTMLElement ?: return
         overlay.className = "loadingOverlay loadingOverlayDone"
         statusEl = null

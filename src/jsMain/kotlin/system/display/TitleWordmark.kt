@@ -38,6 +38,12 @@ object TitleWordmark {
     private var lastX = doubleArrayOf(1.0, 0.0, 0.0)
     private var lastY = doubleArrayOf(0.0, 1.0, 0.0)
 
+    /** Show/hide the 3D wordmark — popped out once a faction is picked so it doesn't sit under the onboarding pane. */
+    fun setVisible(visible: Boolean) {
+        val g = group ?: return
+        g.visible = visible
+    }
+
     /** Load the font + build the letters into [scene]. [onReady] fires once they're in (e.g. to hide the DOM wordmark). */
     fun load(scene: dynamic, onReady: () -> Unit = {}) {
         if (loaded) return

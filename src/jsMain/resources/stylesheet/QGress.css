@@ -650,29 +650,6 @@ html, body {
     box-shadow: 0 0 30px rgba(0, 0, 0, 0.7);
     backdrop-filter: blur(3px);
 }
-.loadingTitle {
-    position: relative; /* hosts the 3D wordmark canvas (LoadingWordmark); the text is the fallback */
-    width: 360px;
-    height: 104px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: "Chakra Petch", sans-serif; /* match the title-screen wordmark */
-    font-weight: 700;
-    font-size: 54px;
-    letter-spacing: 6px;
-    margin-bottom: 18px;
-    color: #ffffff;
-    text-shadow: 0 0 18px var(--faction); /* faction laser glow — no off-faction colour */
-}
-/* The 3D extruded wordmark canvas, layered over the fallback text (matches the render aspect ratio). */
-.loadingWordmark {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    filter: drop-shadow(0 0 16px var(--faction)); /* faction laser glow on the 3D letters too */
-}
 .loadingStatus {
     font-family: "Coda", monospace;
     font-size: 15px;

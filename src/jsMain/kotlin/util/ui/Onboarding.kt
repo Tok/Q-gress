@@ -14,6 +14,7 @@ import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLOptionElement
 import org.w3c.dom.HTMLSelectElement
+import system.display.TitleWordmark
 import util.SoundUtil
 
 /**
@@ -44,7 +45,9 @@ object Onboarding {
             btn.addClass(f.abbr.lowercase(), "popupButton", "displayFont")
             btn.textContent = f.abbr
             btn.onclick = {
-                // Keep the title sim running behind the rest of onboarding (shaded), just muffle its audio.
+                // Keep the title sim running behind the rest of onboarding (shaded), but pop the 3D
+                // wordmark out (it'd sit under the selection pane) and muffle the audio.
+                TitleWordmark.setVisible(false)
                 SoundUtil.setMuffled(true)
                 onPick(f)
             }
