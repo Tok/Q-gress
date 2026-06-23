@@ -601,21 +601,23 @@ object MapUtil {
         val w = Sim.width / Pos.res
         val h = Sim.height / Pos.res
         fun isOffScreen(pos: Pos) = pos.x < 0 || pos.y < 0 || pos.x >= w || pos.y >= h
-        fun nextRow(tempCtx: Ctx, h: Int, x: Int): List<Pair<Pos, Cell>> = (-OFFSCREEN_CELL_ROWS until (h + OFFSCREEN_CELL_ROWS)).map { y ->
-            val pos = Pos(x, y)
-            if (isOffScreen(pos)) {
-                val isPassable = true
-                val penalty = 80
-                pos to Cell(pos, isPassable, penalty)
-            } else {
-                val scaledPixel = tempCtx.getImageData(x, y, 1, 1).data[0]
-                val passabilityOffset = 32
-                val isPassable = scaledPixel > passabilityOffset
-                val penalty =
-                    PathUtil.MIN_HEAT + ((255 - scaledPixel) * (PathUtil.MAX_HEAT - PathUtil.MIN_HEAT) / 255)
-                pos to Cell(pos, isPassable, penalty)
+        fun nextRow(passCtx: Ctx, costCtx: Ctx, h: Int, x: Int): List<Pair<Pos, Cell>> =
+            (-OFFSCREEN_CELL_ROWS until (h + OFFSCREEN_CELL_ROWS)).map { y ->
+                val pos = Pos(x, y)
+                if (isOffScreen(pos)) {
+                    pos to Cell(pos, true, 80)
+                } else {
+                    // Crisp pixel → the hard passable test (a blur must NOT bleed walls/water open);
+                    // blurred pixel → the movement COST, so flow fields read smooth (not jagged grid routes).
+                    val passabilityOffset = 32
+                    val passPixel = passCtx.getImageData(x, y, 1, 1).data[0]
+                    val costPixel = costCtx.getImageData(x, y, 1, 1).data[0]
+                    val isPassable = passPixel > passabilityOffset
+                    val penalty =
+                        PathUtil.MIN_HEAT + ((255 - costPixel) * (PathUtil.MAX_HEAT - PathUtil.MIN_HEAT) / 255)
+                    pos to Cell(pos, isPassable, penalty)
+                }
             }
-        }
 
         val unscaledCan = document.createElement("canvas") as Canvas
         val unscaledCtx = unscaledCan.getContext("2d") as Ctx
@@ -623,15 +625,26 @@ object MapUtil {
         unscaledCan.height = height
         unscaledCtx.putImageData(imageData, 0.0, 0.0)
 
-        val tempCan = document.createElement("canvas") as Canvas
-        val tempCtx = tempCan.getContext("2d") as Ctx
-        tempCan.width = w
-        tempCan.height = h
+        // Crisp downsample → the hard passable/impassable test (walls + water stay sharp).
+        val passCan = document.createElement("canvas") as Canvas
+        val passCtx = passCan.getContext("2d") as Ctx
+        passCan.width = w
+        passCan.height = h
+        passCtx.drawImage(unscaledCan, 0, 0, w, h)
 
-        (0..Config.shadowBlurCount).forEach { _ -> tempCan.blur() }
-        tempCtx.drawImage(unscaledCan, 0, 0, w, h)
+        // Blurred downsample → the movement COST only, so flow fields curve smoothly instead of
+        // zig-zagging around blocky building edges. (The old `tempCan.blur()` was the DOM focus method —
+        // a no-op; this uses a real canvas blur filter.)
+        val costCan = document.createElement("canvas") as Canvas
+        val costCtx = costCan.getContext("2d") as Ctx
+        costCan.width = w
+        costCan.height = h
+        costCtx.asDynamic().filter = "blur(${Config.shadowBlurCount}px)"
+        costCtx.drawImage(unscaledCan, 0, 0, w, h)
+        costCtx.asDynamic().filter = "none"
+
         val rawGrid: Grid = (-OFFSCREEN_CELL_ROWS until (w + OFFSCREEN_CELL_ROWS)).flatMap { x ->
-            nextRow(tempCtx, h, x)
+            nextRow(passCtx, costCtx, h, x)
         }.toMap()
         // No closed-off areas + on-screen routes: seal pockets to the outside AND join on-screen
         // regions directly (else agents detour around the map edge between them and look stuck).
