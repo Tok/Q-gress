@@ -2,7 +2,7 @@ package util.ui
 
 import agent.Faction
 import config.Config
-import config.Location
+import config.Locations
 import config.Sim
 import kotlinx.browser.document
 import kotlinx.browser.window
@@ -116,7 +116,7 @@ object Onboarding {
 
         val select = document.createElement("select") as HTMLSelectElement
         select.addClass("topDrop", "displayFont", "invisible") // shown only in Select mode
-        Location.values().forEach { loc ->
+        Locations.all().forEach { loc ->
             val opt = document.createElement("option") as HTMLOptionElement
             opt.text = loc.displayName
             opt.value = loc.name
@@ -127,8 +127,7 @@ object Onboarding {
             MiniMap.setCenter(lng, lat)
         }
         select.onchange = {
-            val loc = Location.valueOf(select.value)
-            fly(loc.lng, loc.lat, loc.displayName)
+            Locations.byName(select.value)?.let { fly(it.lng, it.lat, it.displayName) }
         }
 
         val modes = div("onboardRow")
@@ -141,7 +140,7 @@ object Onboarding {
             btn.addClass("onboardActive")
         }
         fun rollRandom() {
-            val loc = Location.random()
+            val loc = Locations.random()
             select.value = loc.name
             fly(loc.lng, loc.lat, loc.displayName)
         }
@@ -177,7 +176,7 @@ object Onboarding {
         document.body?.appendChild(screen)
 
         // Default mode: Random — open the globe on a random preset.
-        val initial = Location.random()
+        val initial = Locations.random()
         select.value = initial.name
         currentName = initial.displayName
         activate(randomBtn)

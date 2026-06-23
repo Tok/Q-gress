@@ -29,7 +29,12 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
 - Navigation handed to **MapLibre's own handlers** (left-drag pan, right-drag rotate+tilt, wheel
   zoom, unrestricted; NavigationControl block). Optional WASD / Q-E / R-F keys (`Navigation`).
 - **Mini-globe inset** (`util/ui/MiniMap`) — circular synced overview with a FLAT/GLOBE toggle.
-- Presets are labelled **"Name, City, Country"** (`config/Location`); POI labels follow the same form.
+- Presets are labelled **"Name, City, Country"**; POI labels follow the same form. The catalogue is
+  **externalized to `resources/locations.json`** (edit freely — no Kotlin build needed), loaded at
+  startup into the `Locations` registry (`config/Location`: a `Location` data class + a pure, unit-tested
+  parser; only `RED_SQUARE` stays in code as the sync default + fetch-failure fallback). Each entry has a
+  `title` flag marking it eligible as a title-screen fallback. This is also the seam for future scenario
+  sharing.
 - **Home button** — recenter top-down over the play area (pitch 0) to find the action again.
 - **Shareable links** — URLs carry faction + lng/lat/name + size (w/h) + portal/NPC counts + round +
   quickstart + **seed** + both factions' **tuning sliders** (`GameUrl`, which owns all URL read/build);

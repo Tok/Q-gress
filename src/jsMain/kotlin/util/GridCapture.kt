@@ -1,6 +1,7 @@
 package util
 
 import config.Location
+import config.Locations
 import extension.Grid
 import kotlinx.browser.document
 import org.w3c.dom.HTMLAnchorElement
@@ -29,7 +30,7 @@ object GridCapture {
     }
 
     fun sweep() {
-        val presets = Location.values().toList()
+        val presets = Locations.all().toList()
         fixtures.clear()
         fun next(i: Int) {
             if (i >= presets.size) {

@@ -4,7 +4,7 @@ import World
 import agent.Agent
 import agent.Faction
 import config.Config
-import config.Location
+import config.Locations
 import config.Sim
 import config.Time
 import extension.Grid
@@ -69,7 +69,7 @@ object TitleSim {
         // a random iconic location. Both build live (no precomputed paths), so any location works.
         GeoLocator.homeIfPermitted(
             onLocated = { lng, lat -> loadTitleWorld(JSON.parse("[$lng,$lat]")) },
-            onNone = { loadTitleWorld(Location.randomTitle().toJSON()) },
+            onNone = { loadTitleWorld(Locations.randomTitle().toJSON()) },
         )
     }
 
@@ -80,7 +80,7 @@ object TitleSim {
             // to an iconic location, forcing the known-good default on the final try. Same gate as the
             // live game (GridConnectivity.MIN_WALKABILITY), checked here because it needs the live readback.
             if (World.walkability < GridConnectivity.MIN_WALKABILITY && attempt < MAX_TITLE_RETRIES) {
-                val next = if (attempt + 1 >= MAX_TITLE_RETRIES) Location.DEFAULT else Location.randomTitle()
+                val next = if (attempt + 1 >= MAX_TITLE_RETRIES) Locations.DEFAULT else Locations.randomTitle()
                 console.warn("Title location unplayable (walkability ${(World.walkability * 100).toInt()}%) — retrying at ${next.displayName}")
                 loadTitleWorld(next.toJSON(), attempt + 1)
                 return

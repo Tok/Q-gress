@@ -6,7 +6,6 @@ import agent.Faction
 import agent.StuckTracker
 import agent.action.ActionItem
 import config.*
-import config.Location
 import config.Sim
 import extension.Canvas
 import extension.Ctx
@@ -56,9 +55,9 @@ object HtmlUtil {
 
     // The actually-loaded location (set by setLoadedLocation) — named in the top bar, and the target
     // a Reset reloads onto.
-    private var currentLng = Location.DEFAULT.lng
-    private var currentLat = Location.DEFAULT.lat
-    private var currentLocationName = Location.DEFAULT.displayName
+    private var currentLng = Locations.DEFAULT.lng
+    private var currentLat = Locations.DEFAULT.lat
+    private var currentLocationName = Locations.DEFAULT.displayName
 
     /** The loaded place name (for flavouring generated content, e.g. agent handles). */
     fun locationName() = currentLocationName
@@ -169,7 +168,20 @@ object HtmlUtil {
 
         Controls.addLegend()
 
-        startOnboardingOrWorld()
+        loadLocations { startOnboardingOrWorld() } // fetch the editable location catalogue, then run onboarding
+    }
+
+    // Fetch the externalized location catalogue (resources/locations.json) into [Locations], then [onReady].
+    // A missing/malformed file keeps the DEFAULT-only catalogue rather than blocking startup.
+    private fun loadLocations(onReady: () -> Unit) {
+        window.asDynamic().fetch("locations.json")
+            .then { r: dynamic -> r.text() }
+            .then { txt: dynamic ->
+                runCatching { Locations.setAll(Locations.parse(txt as String)) }
+                onReady()
+            }
+            .catch { _: dynamic -> onReady() }
+        Unit
     }
 
     /**
@@ -188,7 +200,7 @@ object HtmlUtil {
         when {
             GameUrl.isAutoStart() -> {
                 chooseUserFaction(faction ?: Faction.random())
-                setLoadedLocation(urlCenter?.lng ?: Location.DEFAULT.lng, urlCenter?.lat ?: Location.DEFAULT.lat, GameUrl.name() ?: Location.DEFAULT.displayName)
+                setLoadedLocation(urlCenter?.lng ?: Locations.DEFAULT.lng, urlCenter?.lat ?: Locations.DEFAULT.lat, GameUrl.name() ?: Locations.DEFAULT.displayName)
                 initWorld(centerOrDefault())
             }
             faction != null && urlCenter != null -> { // deep link → straight to load
@@ -218,7 +230,7 @@ object HtmlUtil {
         }
     }
 
-    private fun centerOrDefault(): Json = GameUrl.lngLat()?.toJson() ?: Location.DEFAULT.toJSON()
+    private fun centerOrDefault(): Json = GameUrl.lngLat()?.toJson() ?: Locations.DEFAULT.toJSON()
 
     private fun createCheckbox(id: String, labelText: String, onChange: (Boolean) -> Unit): HTMLSpanElement {
         val span = document.createElement("span") as HTMLSpanElement
@@ -302,7 +314,7 @@ object HtmlUtil {
     private fun loadDemoScene() {
         World.userFaction = Faction.ENL
         val center = Pos(Sim.width / 2, Sim.height / 2)
-        MapUtil.loadMaps(Location.DEFAULT.toJSON(), demo = true, callback = fun(grid: Grid) {
+        MapUtil.loadMaps(Locations.DEFAULT.toJSON(), demo = true, callback = fun(grid: Grid) {
             World.grid = grid
             World.isReady = true
             Navigation.setup()
