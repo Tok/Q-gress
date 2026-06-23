@@ -25,6 +25,12 @@ object Locations {
     fun random(): Location = Util.shuffle(all)[0]
     fun byName(name: String): Location? = all.firstOrNull { it.name == name }
 
+    /** The catalogue location at ([lng], [lat]) within ~50 m, or null (a custom/unlisted spot). */
+    fun byCoords(lng: Double, lat: Double): Location? {
+        val eps = 0.0005 // ≈ 50 m
+        return all.firstOrNull { kotlin.math.abs(it.lng - lng) < eps && kotlin.math.abs(it.lat - lat) < eps }
+    }
+
     /** A random title-eligible location (the curated showpiece set); [DEFAULT] if none are flagged. */
     fun randomTitle(): Location {
         val eligible = all.filter { it.title }.ifEmpty { listOf(DEFAULT) }

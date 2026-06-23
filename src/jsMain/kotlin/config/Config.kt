@@ -40,20 +40,28 @@ object Config {
     }
 
     const val MIN_NONFACTION = 30 // floor: always enough to recruit, even on a tiny/dense map
-    private const val NPC_DENSITY = 720.0 // NPCs per one screenful (Dim.width × Dim.height) of map area
+    private const val NPC_DENSITY = 720.0 // NPCs per one screenful (Dim.width × Dim.height) of walkable area
+    private const val CITY_GAIN = 1.2 // built-up (low-walkable) areas pack in more people
+    private const val TOURIST_MUL = 1.6 // famous tourist spots draw extra crowds
 
     /** Player NPC-density multiplier (1.0–3.0), chosen at onboarding — scales the auto population. */
     var npcMultiplier = 1.0
 
     /**
      * Appropriate NPC population for a [width]×[height] map at a location of the given [walkability]
-     * (fraction of passable cells): area-scaled, lightly reduced where there's little open ground, scaled
-     * by [npcMultiplier], floored at [MIN_NONFACTION]. Grows with the play area if/when the area does.
+     * (fraction of passable cells). Driven by the **walkable area** (where NPCs can roam), boosted by
+     * **city density** (built-up = low-walkable ≈ denser city → more people; a proxy until we read real
+     * building coverage) and, for a [tourist] hotspot, a crowd bonus. Scaled by [npcMultiplier], floored
+     * at [MIN_NONFACTION] so there are always enough to recruit. Grows with the play area.
      */
-    fun npcPopulation(width: Int, height: Int, walkability: Double): Int {
+    fun npcPopulation(width: Int, height: Int, walkability: Double, tourist: Boolean = false): Int {
+        val walk = walkability.coerceIn(0.0, 1.0)
         val areaRatio = (width.toDouble() * height) / (Dim.width.toDouble() * Dim.height)
-        val walkFactor = 0.5 + 0.5 * walkability.coerceIn(0.0, 1.0) // 0.5×…1.0× — location matters, but never starves
-        return maxOf(MIN_NONFACTION, (NPC_DENSITY * areaRatio * walkFactor * npcMultiplier).toInt())
+        val walkableArea = areaRatio * walk // NPCs roam open ground → the primary driver
+        val cityDensity = 1.0 - walk // proxy: the less walkable a (playable) area is, the more built-up
+        val touristMul = if (tourist) TOURIST_MUL else 1.0
+        val pop = NPC_DENSITY * walkableArea * (1.0 + CITY_GAIN * cityDensity) * touristMul * npcMultiplier
+        return maxOf(MIN_NONFACTION, pop.toInt())
     }
 
     /** Building-shake intensity multiplier (0–2), tunable live from the menu "Building shake" slider. */

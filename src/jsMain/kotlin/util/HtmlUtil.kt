@@ -601,7 +601,9 @@ object HtmlUtil {
         World.allNonFaction.clear()
         // Auto-size the population for this map + location (walkability is known now the grid is built);
         // held constant afterwards by 1-for-1 replacement on recruit, so we never run out of recruits.
-        Config.maxNonFaction = Config.npcPopulation(Sim.width, Sim.height, World.walkability)
+        // Curated showpiece (title-eligible) locations count as tourist hotspots → a crowd bonus.
+        val tourist = Locations.byCoords(currentLng, currentLat)?.title ?: false
+        Config.maxNonFaction = Config.npcPopulation(Sim.width, Sim.height, World.walkability, tourist)
         World.createNonFaction(callback, Config.maxFor())
     }
 

@@ -128,10 +128,13 @@ object World {
                 World.allNonFaction.add(newNonFaction)
                 if (HtmlUtil.isRunningInBrowser()) {
                     Scene3D.sync() // render each NPC as created → serial drop-in
-                    // Keep the flow-field sweep alive through the long people phase by replaying the
-                    // portals' fields (round-robin) — the same viz that ran during portal creation.
+                    // Keep the flow-field sweep alive through the people phase by replaying the portals'
+                    // fields (round-robin). Throttled to ~2 replays per portal regardless of how many NPCs
+                    // there are, so a bigger population doesn't flood the screen with flow fields.
                     if (allPortals.isNotEmpty()) {
-                        VectorFieldOverlay.flash("portal:" + allPortals[(total - count) % allPortals.size].id)
+                        val step = maxOf(1, total / (allPortals.size * 2))
+                        val done = total - count
+                        if (done % step == 0) VectorFieldOverlay.flash("portal:" + allPortals[(done / step) % allPortals.size].id)
                     }
                 }
                 createNonFaction(callback, count - 1)
