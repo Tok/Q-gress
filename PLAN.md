@@ -118,6 +118,12 @@ runs the same renderer/FX as the game (no parallel code). Remaining:
   default camera can't decouple position from look-at without FreeCamera).
 - [ ] Drifting **particles** + a generative **ambient** bed; **thunderbolt retaliation** lands via the
   game's portal-defense work (below), so the title inherits it for free.
+- [ ] **True 3D extruded wordmark** (qlippostasis-style). Replace the DOM wordmark (currently a layered
+  CSS faux-3D extrude) with real `ExtrudeGeometry` text **camera-locked** in the title scene — pinned in
+  front of the camera (we already compute eye/forward/up each frame for the audio listener) so it flies
+  with the cam over the orbiting world, with a **black extruded backline** + proper lighting (pairs with
+  the planned **sun**). Needs a **typeface.json of the brand font** (Chakra Petch) — convert the TTF, or
+  load it at runtime via three's `TTFLoader`; without it the text falls back to a generic 3D font.
 
 ## Phase 6 — AI-vs-AI (the Q-gress payoff)
 
