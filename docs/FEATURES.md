@@ -202,8 +202,12 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
 - **Ordered onboarding** faction → map-size → location → load (`util/ui/Onboarding`), in-memory
   (no reloads); `?local=true` auto-starts; deep links load directly.
 - **Map size + portal density** presets (Small/Normal/Large, editable W/H + portal count).
-- **Staged loading overlay** (`LoadingOverlay`) — map tiles → street tiles → passability → grid →
-  building world, faction-tinted, translucent at build to reveal the spawning world.
+- **Staged loading overlay** (`LoadingOverlay`) — map tiles → tracing roads/water/terrain (+ walkable %)
+  → place names → grid → deploying agents → spawning people → routes, faction-tinted, translucent at
+  build to reveal the spawning world. Fronted by a **fresh 3D extruded Q-GRESS wordmark**
+  (`LoadingWordmark` — its own mini three.js renderer, since the title scene is torn down by the
+  onboarding reload) that **shrinks in + drifts**, with a faction laser glow; falls back to the DOM
+  wordmark text if WebGL/font fails.
 - **Title / faction screen is a real `Scene3D` mini-sim** (`util/ui/TitleSim`): a round arena with a
   3-v-3 levelled roster (L3/L5/L8 each side) + ~30 NPCs running the actual tick loop / AI behind the
   menu, fronted by a real **3D extruded Q-GRESS wordmark** (brand font via `FontLoader`/`TextGeometry`,

@@ -69,6 +69,7 @@ object LoadingOverlay {
         detailEl = detail
         fillEl = fill
         subFillEl = subFill
+        LoadingWordmark.mount(title) // a fresh 3D extruded wordmark over the DOM fallback text
     }
 
     /** Sub-status line for what's being created right now, e.g. "Creating portal X  (3/21)". */
@@ -114,6 +115,7 @@ object LoadingOverlay {
     /** Fill to 100% and fade the overlay out, then remove it. */
     fun done() {
         fillEl?.style?.width = "100%"
+        LoadingWordmark.unmount()
         val overlay = document.getElementById(OVERLAY_ID) as? HTMLElement ?: return
         overlay.className = "loadingOverlay loadingOverlayDone"
         statusEl = null
