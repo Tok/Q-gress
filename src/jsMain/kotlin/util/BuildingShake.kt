@@ -28,9 +28,9 @@ object BuildingShake {
 
     private const val DURATION = 2.0 // seconds to settle back to rest
     private const val FREQ = 12.0 // wobble speed (rad/s)
-    private const val BASE_AMP_M = 5.0 // peak bob (m) at point-blank (clamped to the building's own height)
+    private const val BASE_AMP_M = 7.0 // peak bob (m) at point-blank (clamped to the building's own height)
     private const val REF_HEIGHT_M = 12.0 // taller than this → progressively less bob ("more mass")
-    private const val BOB_MAX_FRAC = 0.3 // never bob more than this × the building's height (no sinking)
+    private const val BOB_MAX_FRAC = 0.5 // never bob more than this × the building's height (no sinking)
     private const val RANGE_MULT = 1.0 // shake reaches the XMP's real blast range (cosmetic; tune freely)
     private const val ULTRA_SHAKE_MULT = 3.0 // an Ultra-Strike rocks buildings WAY harder than an XMP
     private const val ULTRA_BOB_MAX_FRAC = 0.85 // …and is allowed to bob them much further (up to ~building height)

@@ -116,7 +116,7 @@ object Scene3D {
     private const val SHIELD_SHELL_STEP = 0.09 // each shield shell sits this much larger than the last (× radius)
     private const val SHIELD_WAVE_RANGE_FRAC = 0.6 // a blast ripples shields within this × the XMP's range
     private const val DAMAGE_NUMBER_GAP = 2.0 // start the damage number this far above the flask top
-    private const val MAX_BUILDING_COLLIDERS = 600 // cap on static building boxes added to the FX worlds
+    private const val MAX_BUILDING_COLLIDERS = 1500 // cap on static building boxes added to the FX worlds
 
     // tetrahedron vertex distance from orb centre (× orb radius); nudged out so mods clear the link joint
     private const val MOD_RING_FRAC = 0.55
@@ -595,8 +595,10 @@ object Scene3D {
         while (i < total && added < MAX_BUILDING_COLLIDERS) {
             val f = feats[i]
             i++
-            val h = (f.properties?.render_height as? Double) ?: 0.0
-            if (h > 1.0 && addBuildingBox(f.geometry, h)) added++
+            // Default a missing/zero render_height to ~8 m (same as the extrusion default) so small or
+            // un-tagged buildings still get a collider and debris can't fall straight through them.
+            val h = (f.properties?.render_height as? Double)?.takeIf { it > 0.5 } ?: 8.0
+            if (addBuildingBox(f.geometry, h)) added++
         }
     }
 
@@ -605,7 +607,7 @@ object Scene3D {
         val c = lngLatToSimPos((bb[0] + bb[2]) / 2.0, (bb[1] + bb[3]) / 2.0)
         val hx = abs(sceneX(lngLatToSimPos(bb[2], bb[1])) - sceneX(lngLatToSimPos(bb[0], bb[1]))) / 2.0
         val hy = abs(sceneY(lngLatToSimPos(bb[0], bb[3])) - sceneY(lngLatToSimPos(bb[0], bb[1]))) / 2.0
-        if (hx < 0.5 || hy < 0.5) return false
+        if (hx < 0.3 || hy < 0.3) return false // skip only truly degenerate footprints
         ShatterFx.addStaticBox(sceneX(c), sceneY(c), h / 2.0, hx, hy, h / 2.0)
         DamageNumberFx.addStaticBox(sceneX(c), sceneY(c), h / 2.0, hx, hy, h / 2.0)
         return true
