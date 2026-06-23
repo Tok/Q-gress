@@ -76,7 +76,7 @@ object Scene3D {
     private const val ENERGY_BAR_OPACITY = 0.9
     private const val ENERGY_BAR_FILL_FRAC = 1.06 // fill slightly fatter than the black backing so it reads
     private const val ENERGY_BAR_EPS = 0.08 // fill overhangs the backing caps by this → no z-fighting when full
-    private const val ENERGY_BAR_MAX_H = INDICATOR_SIZE * 5.0 // tallest bar (at max XM capacity) = 5× the coin
+    private const val ENERGY_BAR_MAX_H = INDICATOR_SIZE * 3.0 // tallest bar (at max XM capacity); coin foreshortens flat so on-screen it reads taller
     private const val MAX_XM_CAPACITY = 14400 // Agent.xmCapacity at L16+ (where capacity stops growing)
     private const val LABEL_W = 22.0 // portal name/level billboard width (scene metres)
     private const val LABEL_GAP = 4.0 // gap above the orb top before the label

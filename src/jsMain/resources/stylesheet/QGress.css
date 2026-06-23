@@ -406,14 +406,16 @@ html, body {
     letter-spacing: 16px;
     line-height: 1;
     color: #ffffff;
-    /* Faux-3D extrude: a stack of solid black offsets builds a black "backline" down-right (reads as
-       extruded depth), then a soft ambient drop + the faction-neutral white glow. (A true in-scene 3D
-       extruded wordmark is planned — see PLAN.) */
+    /* Faux-3D outline-extrude: a bold black outline in every direction (a 2D outline) pushed straight
+       back, then pulled out a touch down-right for depth, then a soft ambient drop + neutral white
+       glow. (A true in-scene 3D extruded wordmark is planned — see PLAN.) */
     text-shadow:
-        1px 1px 0 #0b0b0b, 2px 2px 0 #0a0a0a, 3px 3px 0 #090909, 4px 4px 0 #080808,
-        5px 5px 0 #070707, 6px 6px 0 #060606, 7px 7px 0 #050505, 8px 8px 0 #040404,
-        10px 10px 16px rgba(0, 0, 0, 0.55),
-        0 0 16px rgba(255, 255, 255, 0.45), 0 0 38px rgba(210, 210, 210, 0.26);
+        1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000,
+        2px 0 0 #000, -2px 0 0 #000, 0 2px 0 #000, 0 -2px 0 #000,
+        2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000,
+        3px 3px 0 #070707, 4px 4px 0 #050505, 5px 5px 0 #040404,
+        7px 7px 12px rgba(0, 0, 0, 0.5),
+        0 0 16px rgba(255, 255, 255, 0.4), 0 0 38px rgba(210, 210, 210, 0.24);
 }
 .onboardTitle {
     font-family: "Coda", monospace; /* subtitle in Coda — different font from the Chakra Petch brand */
