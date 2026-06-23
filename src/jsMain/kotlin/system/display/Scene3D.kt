@@ -85,8 +85,7 @@ object Scene3D {
     private const val LABEL_CANVAS_W = 256 // label texture resolution (kept crisp; faction-neutral white)
     private const val LABEL_CANVAS_H = 96
     private const val POLE_R = 2.0
-    private const val LINK_R = 0.7 // glass-pipe link radius (metres)
-    private const val CORE_R_FRAC = 0.3 // bright inner-filament radius as a fraction of LINK_R
+    private const val LINK_R = 0.7 // link pipe radius (metres)
     private const val PORTAL_GROW_S = 0.7 // seconds for a new portal to inflate in (pole rises, orb pops)
     private const val RESO_POP_DELAY = 0.3 // resonators start popping in once the pole is ~30% up
     private const val CAPTURE_SHATTER_WEIGHT = 0.22 // glass-shatter heaviness on capture (light — only the orb)
@@ -109,7 +108,9 @@ object Scene3D {
     private const val NEUTRAL_COLOR = "#bbbbbb"
     private const val MOD_R_FRAC = 0.16 // chrome mod radius (× orb radius)
     private const val MOD_SCALE = 1.2 // scale the mod solids up a touch (they read bland at base size)
-    private const val MOD_WIRE_SCALE = 1.01 // black edge cage right on the surface (no visible gap)
+    private val MOD_WIRE_SCALES = doubleArrayOf(1.01, 1.05) // two concentric edge cages → a bolder glowing wire
+    private const val MAX_SHIELD_SHELLS = 4 // up to 4 shields per portal → 4 concentric bubbles
+    private const val SHIELD_SHELL_STEP = 0.14 // each shield shell sits this much larger than the last (× radius)
 
     // tetrahedron vertex distance from orb centre (× orb radius); nudged out so mods clear the link joint
     private const val MOD_RING_FRAC = 0.55
@@ -188,7 +189,7 @@ object Scene3D {
         var hackGlyph: Boolean = false // the active hack is a (stronger) glyph hack
     }
     private val showcases = mutableListOf<Showcase>()
-    private class DemoLink(val a: Showcase, val b: Showcase, val tube: dynamic, val core: dynamic)
+    private class DemoLink(val a: Showcase, val b: Showcase, val pipe: dynamic)
     private val demoLinks = mutableListOf<DemoLink>() // demo link pipes, so they can't outlive their portals
     private var selectedShowcase: Showcase? = null // demo: the portal the action buttons act on
     private var demoCursor: dynamic = null // demo: ground ring under the mouse (place vs select)
@@ -213,12 +214,6 @@ object Scene3D {
     private val poleGeo: dynamic by lazy { Three.CylinderGeometry(POLE_R, POLE_R, POLE_H, 12) } // metal pole
     private val topGeo: dynamic by lazy { Three.SphereGeometry(TOP_R, 20, 16) } // glass orb (scaled per level)
     private val dodecaGeo: dynamic by lazy { Three.DodecahedronGeometry(TOP_R * MOD_R_FRAC) } // shield mod
-    private val modWireMat: dynamic by lazy {
-        // thin black edge lines over the mod solids so they read less bland
-        val p: dynamic = js("({})")
-        p.color = "#000000"
-        Three.LineBasicMaterial(p)
-    }
 
     // EdgesGeometry per mod shape (cached): only the real polygon edges, not the triangulation.
     private val modEdgesCache = mutableMapOf<ModType, dynamic>()
@@ -231,11 +226,8 @@ object Scene3D {
     } // link amp
     private val shieldGeo: dynamic by lazy { Three.SphereGeometry(TOP_R * PHI, 24, 18) } // shield bubble at φ× the orb
     private val gasketGeo: dynamic by lazy { Three.TorusGeometry(POLE_R * 1.15, POLE_R * 0.4, 10, 20) } // rubber donut
-    private val linkGeo: dynamic by lazy { Three.CylinderGeometry(LINK_R, LINK_R, 1.0, 8) } // unit glass tube (scaled to length)
-    private val coreGeo: dynamic by lazy {
-        Three.CylinderGeometry(LINK_R * CORE_R_FRAC, LINK_R * CORE_R_FRAC, 1.0, 6)
-    } // bright filament inside the tube
-    private val linkJointGeo: dynamic by lazy { Three.SphereGeometry(LINK_R * 1.5, 12, 12) } // ball-joint, a bit fatter than the tube
+    private val linkGeo: dynamic by lazy { Three.CylinderGeometry(LINK_R, LINK_R, 1.0, 8) } // unit pipe (scaled to length)
+    private val linkJointGeo: dynamic by lazy { Three.SphereGeometry(LINK_R * 1.5, 12, 12) } // ball-joint, a bit fatter than the pipe
     private val resoRingGeo: dynamic by lazy { Three.TorusGeometry(RESO_RING_R, RESO_RING_TUBE, 8, 14) } // rubber slot grommet
     private val indicatorGeo: dynamic by lazy {
         // action coin: a short cylinder (icon on the round faces)
@@ -905,20 +897,34 @@ object Scene3D {
         mods.forEachIndexed { i, mod ->
             val v = TETRA[i % TETRA.size]
             val geo = modGeoFor(mod.modType())
-            val mesh = Three.Mesh(geo, Materials.resonator(mod.rarity.color))
+            val mesh = Three.Mesh(geo, Materials.modSolid(mod.rarity.color)) // translucent + luminous (not chrome)
             mesh.asDynamic().position.set(v[0] * r, v[1] * r, v[2] * r)
             mesh.asDynamic().scale.set(MOD_SCALE, MOD_SCALE, MOD_SCALE) // a touch bigger so the mods read
             if (mod.modType() == ModType.LINK_AMP) mesh.asDynamic().rotation.set(0.62, 0.62, 0.0) // cube on its diagonal
-            val wire = Three.LineSegments(modEdges(mod.modType()), modWireMat) // clean black polygon edges, just outside
-            wire.asDynamic().scale.set(MOD_WIRE_SCALE, MOD_WIRE_SCALE, MOD_WIRE_SCALE)
-            mesh.asDynamic().add(wire)
+            // Bold glowing edge cage: two concentric wire copies fake a thicker line (WebGL caps linewidth).
+            MOD_WIRE_SCALES.forEach { ws ->
+                val wire = Three.LineSegments(modEdges(mod.modType()), Materials.modWire(mod.rarity.color))
+                wire.asDynamic().scale.set(ws, ws, ws)
+                mesh.asDynamic().add(wire)
+            }
             tetra.asDynamic().add(mesh)
         }
         orb.add(tetra) // orb is already dynamic (no .asDynamic())
         modTetras.add(tetra)
-        if (mods.any { it is Shield }) { // the energy bubble reads "shielded" (stays put — not in the tumble)
-            val color = portal.owner?.faction?.color ?: NEUTRAL_COLOR
-            val bubble = Three.Mesh(shieldGeo, ShieldShader.material(color, portal.totalMitigation() / 100.0))
+        addShieldShells(orb, portal, mods)
+    }
+
+    // Up to MAX_SHIELD_SHELLS concentric energy bubbles (one per deployed shield), each a touch larger
+    // than the last → a layered shield that also reads with depth. Stay put (not in the mod tumble).
+    private fun addShieldShells(orb: dynamic, portal: Portal, mods: List<Mod>) {
+        val shells = mods.count { it is Shield }.coerceIn(0, MAX_SHIELD_SHELLS)
+        if (shells == 0) return
+        val color = portal.owner?.faction?.color ?: NEUTRAL_COLOR
+        val baseIntensity = portal.totalMitigation() / 100.0
+        repeat(shells) { i ->
+            val bubble = Three.Mesh(shieldGeo, ShieldShader.material(color, baseIntensity * (1.0 - i * 0.12)))
+            val s = 1.0 + i * SHIELD_SHELL_STEP
+            bubble.asDynamic().scale.set(s, s, s)
             orb.add(bubble)
         }
     }
@@ -1067,20 +1073,16 @@ object Scene3D {
         val b = showcases[showcases.size - 2]
         val pa = doubleArrayOf(sceneX(a.pos), sceneY(a.pos), orbCenterZ(a.level.toDouble()))
         val pb = doubleArrayOf(sceneX(b.pos), sceneY(b.pos), orbCenterZ(b.level.toDouble()))
-        val tube = Three.Mesh(linkGeo, Materials.linkGlass(a.color))
-        orientTube(tube.asDynamic(), pa, pb)
-        grp.add(tube)
-        val core = Three.Mesh(coreGeo, Materials.linkCore(a.color))
-        orientTube(core.asDynamic(), pa, pb)
-        grp.add(core)
-        demoLinks.add(DemoLink(a, b, tube, core)) // tracked so it's removed if either portal goes
+        val pipe = Three.Mesh(linkGeo, Materials.linkPipe(a.color))
+        orientTube(pipe.asDynamic(), pa, pb)
+        grp.add(pipe)
+        demoLinks.add(DemoLink(a, b, pipe)) // tracked so it's removed if either portal goes
     }
 
     /** Demo: remove any link pipes touching [sc] — no link may dangle without both end portals. */
     private fun dropDemoLinksFor(sc: Showcase) {
         demoLinks.filter { it.a === sc || it.b === sc }.forEach {
-            showcaseGroup?.remove(it.tube)
-            showcaseGroup?.remove(it.core)
+            showcaseGroup?.remove(it.pipe)
         }
         demoLinks.removeAll { it.a === sc || it.b === sc }
     }
@@ -1160,14 +1162,10 @@ object Scene3D {
         val color = link.creator.faction.color
         val a = orbPos(link.origin) // both ends ride the tweened orb height
         val b = orbPos(link.destination)
-        val tube = Three.Mesh(linkGeo, Materials.linkGlass(color))
-        orientTube(tube.asDynamic(), a, b)
-        linksGroup.add(tube)
-        val core = Three.Mesh(coreGeo, Materials.linkCore(color))
-        orientTube(core.asDynamic(), a, b)
-        linksGroup.add(core)
-        // Bright near-opaque ball-joints at each orb: round the pipe end + hide its cut face (the glass
-        // joint was too see-through, so the tube ends still showed).
+        val pipe = Three.Mesh(linkGeo, Materials.linkPipe(color)) // one solid glowing rod (no nested glass + core)
+        orientTube(pipe.asDynamic(), a, b)
+        linksGroup.add(pipe)
+        // Bright near-opaque ball-joints at each orb: round the pipe ends + hide their cut faces.
         listOf(a, b).forEach { end ->
             val joint = Three.Mesh(linkJointGeo, Materials.linkNode(color))
             joint.asDynamic().position.set(end[0], end[1], end[2])

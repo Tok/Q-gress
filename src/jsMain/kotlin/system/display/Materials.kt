@@ -40,7 +40,7 @@ object Materials {
     /** Brighter glass variant for the thin link tubes (the orb glass reads too faint at pipe radius). */
     fun linkGlass(color: String): dynamic = cache.getOrPut("lg$color") { GlassShader.material(color, GlassShader.LINK_BRIGHT) }
 
-    /** Bright, near-opaque node at each link end — hides the tube's cut end + reads as a glowing joint
+    /** Bright, near-opaque node at each link end — hides the pipe's cut end + reads as a glowing joint
      *  (unlit MeshBasic → full-brightness faction colour, so it looks self-illuminated). */
     fun linkNode(color: String): dynamic = cache.getOrPut("ln$color") {
         val p: dynamic = js("({})")
@@ -50,19 +50,43 @@ object Materials {
         Three.MeshBasicMaterial(p)
     }
 
-    /** Selected-portal orb: the faction-tinted glass lit brighter (selection highlight — no hue change). */
-    fun glassBright(color: String): dynamic = cache.getOrPut("pgs$color") { GlassShader.material(color, GlassShader.SELECT_BRIGHT) }
+    /** A single self-illuminated link pipe (one solid glowing rod — replaces the old glass-shell +
+     *  plasma-core double, which read as a busy "3-in-1"). Opaque so you don't see its back wall. */
+    fun linkPipe(color: String): dynamic = cache.getOrPut("lp$color") {
+        val p: dynamic = js("({})")
+        p.color = color
+        p.emissive = color
+        p.emissiveIntensity = 0.7
+        p.metalness = 0.0
+        p.roughness = 0.4
+        Three.MeshStandardMaterial(p)
+    }
 
-    /** Additive emissive filament running down the centre of a link tube — the "plasma core". */
-    fun linkCore(color: String): dynamic = cache.getOrPut("lc$color") {
+    /** Slottable-mod fill: translucent + self-luminous (an energy look, not the old shiny chrome). */
+    fun modSolid(color: String): dynamic = cache.getOrPut("modf$color") {
+        val p: dynamic = js("({})")
+        p.color = color
+        p.emissive = color
+        p.emissiveIntensity = 0.6
+        p.metalness = 0.0
+        p.roughness = 1.0
+        p.transparent = true
+        p.opacity = 0.35
+        Three.MeshStandardMaterial(p)
+    }
+
+    /** Bold, bright wireframe cage over a mod (rarity-coloured); two concentric copies fake a thicker
+     *  line since WebGL ignores LineBasicMaterial.linewidth — the "×2 bolder" edges. */
+    fun modWire(color: String): dynamic = cache.getOrPut("modw$color") {
         val p: dynamic = js("({})")
         p.color = color
         p.transparent = true
-        p.opacity = 0.85
-        p.blending = Three.AdditiveBlending
-        p.depthWrite = false
-        Three.MeshBasicMaterial(p)
+        p.opacity = 0.95
+        Three.LineBasicMaterial(p)
     }
+
+    /** Selected-portal orb: the faction-tinted glass lit brighter (selection highlight — no hue change). */
+    fun glassBright(color: String): dynamic = cache.getOrPut("pgs$color") { GlassShader.material(color, GlassShader.SELECT_BRIGHT) }
 
     /** Additive white glow for stray-XM motes (XM is neutral — no faction hue). */
     fun xmGlow(): dynamic = cache.getOrPut("xmGlow") {

@@ -44,7 +44,12 @@ object ShieldShader {
             " p = abs(fract(p) - 0.5); return abs(max(p.x * 1.5 + p.y, p.y * 2.0) - 1.0); }\n" +
             "void main(){\n" +
             " vec3 V = normalize(uEye - vWorldPos);\n" +
-            " float fres = pow(1.0 - abs(dot(normalize(vNormal), V)), ${RIM_POWER.glsl()});\n" +
+            " float ndv = abs(dot(normalize(vNormal), V));\n" +
+            " float fres = pow(1.0 - ndv, ${RIM_POWER.glsl()});\n" +
+            // Near hemisphere bright, far hemisphere dim → the bubble reads as a 3D shell, not a flat decal.
+            " float facing = gl_FrontFacing ? 1.0 : 0.4;\n" +
+            // A soft body sheen that falls off toward the centre (where we look straight through) → volume.
+            " float body = 0.25 + 0.45 * fres + 0.18 * (1.0 - ndv);\n" +
             " vec3 p = normalize(vModelPos);\n" +
             // sphere → (lon, lat) radians: equal arc length → equilateral hexes
             " vec2 uv = vec2(atan(p.y, p.x), asin(clamp(p.z, -1.0, 1.0)));\n" +
@@ -54,10 +59,10 @@ object ShieldShader {
             " float hex = line + halo * 0.5;\n" +
             " float pulse = 0.6 + 0.4 * sin(uTime * 2.0);\n" +
             " vec3 base = mix(vec3(0.65), uTint, 0.5);\n" + // off-tint grayscale leaning faction
-            " float glow = fres * 1.5 + hex * 0.7;\n" +
-            " vec3 col = clamp(base * glow * (0.5 + 0.8 * uIntensity) * pulse, 0.0, 1.0);\n" +
+            " float glow = fres * 1.8 + hex * 0.7 + body * 0.5;\n" +
+            " vec3 col = clamp(base * glow * (0.5 + 0.8 * uIntensity) * pulse * facing, 0.0, 1.0);\n" +
             " col = col * col * (3.0 - 2.0 * col);\n" + // bloom-style tonemap (from the inspiration)
-            " float alpha = clamp(fres * 0.5 + hex * 0.4, 0.0, 0.92) * (0.4 + 0.6 * uIntensity);\n" +
+            " float alpha = clamp(fres * 0.55 + hex * 0.4 + body * 0.15, 0.0, 0.92) * (0.4 + 0.6 * uIntensity) * facing;\n" +
             " gl_FragColor = vec4(col, alpha); }"
 
     /** A shield-bubble material tinted by [hexColor]; [intensity] (0..1) scales density/brightness. */

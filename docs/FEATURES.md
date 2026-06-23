@@ -60,7 +60,8 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
     **3D mushroom-cloud-centre origin** (above the terrain, rising with level) + **distance falloff**,
     energy ∝ level / distance — the *same* model the title wordmark uses, so normal-play shatters and
     the title letters react with one unified physics.
-  - **Links → glass pipes** (`linkGeo`/`orientTube`, brighter variant + additive plasma core).
+  - **Links → a single glowing pipe** (`linkGeo`/`orientTube`, `Materials.linkPipe` — one solid
+    self-illuminated rod, replacing the old glass-shell + plasma-core "3-in-1") with bright ball-joints.
   - **Fields → plasma** sheets (`PlasmaShader`, animated; fill-in + dissolve + collapse sound).
   - **XMP** — volumetric raymarched **mini-nuke** (`XmpShaders`/`XmpBurst`), detonates at the agent.
     The field morphs from an initial fireball into a **rising mushroom** — a torus cap (the rising
@@ -79,8 +80,9 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
     agent's **XM capacity** (level) and a faction-coloured fill (black = drained) shows current XM.
     Resonators **deploy out of the bar** (rise straight up, then arc into the slot — `DeployFx`).
   - **Detailing**: round **ball-joints** at each link end (`Materials.linkNode`), a **top o-ring** on
-    each resonator (stays with the pole on shatter), **mod solids** scaled up with clean **black
-    polygon-edge cages** (`EdgesGeometry`) in a **slowly tumbling tetrahedron**; shatter blast energy
+    each resonator (stays with the pole on shatter), **mod solids** as **translucent, self-luminous
+    energy shapes** (`Materials.modSolid` — not the old chrome) with a **bold double-wire glowing cage**
+    (`Materials.modWire`, `EdgesGeometry`) in a **slowly tumbling tetrahedron**; shatter blast energy
     scales with **XMP level**.
 - **Buildings occlude the sim by default** (the 3D pass shares the map depth buffer); a Menu
   accessibility toggle **"Show through buildings"** restores the always-on-top draw (XMP/explosions stay
@@ -256,7 +258,9 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
 - **3D**: mods render inside the orb at tetrahedron vertices, shaped by type — **dodecahedron**
   (shield) / **pentagonal radiator** (heat sink) / **diagonal cube** (link amp) — rarity-coloured, plus
   a sci-fi **shield bubble** (`ShieldShader`: camera-tracking Fresnel + animated hex lattice + bloom
-  tonemap) at φ× the orb when shielded, intensity scaling with mitigation.
+  tonemap) at φ× the orb when shielded, intensity scaling with mitigation. **Layered**: one bubble per
+  deployed shield (up to 4), each shell a touch larger than the last; the shader dims the far hemisphere
+  (`gl_FrontFacing`) + adds a body sheen so each bubble reads as a 3D shell, not a flat surface.
 - **Keys**: surfaced as counts (leaderboard + inspector); no 3D model yet.
 
 ## Settled decisions
