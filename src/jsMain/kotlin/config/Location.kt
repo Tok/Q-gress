@@ -82,5 +82,18 @@ enum class Location(val displayName: String, val lng: Double, val lat: Double) {
     companion object {
         val DEFAULT = RED_SQUARE
         fun random(): Location = Util.shuffle(values().asList())[0]
+
+        // A curated, photogenic subset for the title showpiece: dense urban squares / landmarks that
+        // build a lively arena. Water-heavy spots (bridges, harbours) are left out — they can read
+        // sparse at the small title play-size. The title opens on one of these when it can't use home.
+        private val TITLE = listOf(
+            RED_SQUARE, EIFFEL_TOWER, GIZA_PLATEAU, GROUND_ZERO, RED_SQUARE_MOSCOW,
+            TIMES_SQUARE, SHIBUYA, PICCADILLY, BRANDENBURG_GATE, COLOSSEUM,
+            DAM_SQUARE, PLAZA_MAYOR, GRAND_BAZAAR, TIANANMEN, TRAFALGAR,
+            CHAMPS_ELYSEES, ZOCALO, CATALUNYA, DUOMO_MILAN, CONCORDE,
+        )
+
+        /** A random iconic location for the title screen (see [TITLE]). */
+        fun randomTitle(): Location = Util.shuffle(TITLE)[0]
     }
 }

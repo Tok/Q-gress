@@ -239,6 +239,7 @@ object MapUtil {
         val opts: dynamic = js("({ pitch: 0.0, bearing: 0.0, duration: 900 })")
         opts.center = center
         opts.zoom = displayZoom()
+        opts.padding = js("({ top: 0.0, bottom: 0.0, left: 0.0, right: 0.0 })") // clear the build-time centre lift
         initMap?.asDynamic()?.flyTo(opts)
         map?.asDynamic()?.flyTo(opts)
     }
@@ -251,14 +252,27 @@ object MapUtil {
     }
 
     private const val BUILD_SPIN_DEG = 0.12 // gentle bearing orbit during world build (~7°/s)
+    private const val BUILD_CENTRE_LIFT_FRAC = 0.25 // raise the tilted play-area centre toward screen centre during build
     private var cinematicActive = false
 
     /** A slow orbit around the play area while the world builds (close — portal placements stay visible). */
     fun startBuildCinematic() {
         if (cinematicActive) return
         cinematicActive = true
+        liftViewToCentre() // face the play-area centre from the start (the 3D tilt otherwise sinks it to the bottom)
         window.requestAnimationFrame { spinBuild() }
         startBuildInflate() // the city rises out of the ground as the world loads
+    }
+
+    // The build camera keeps DEFAULT_PITCH for the 3D look, which pushes the play-area centre low on
+    // screen. A bottom padding (viewport-relative, so it's stable under the bearing spin) lifts the
+    // centre back up to the middle so the first flow-field vectors / portals read centre-frame.
+    private fun liftViewToCentre() {
+        if (demoMode) return
+        val m = initMap ?: return
+        val pad: dynamic = js("({ top: 0.0, left: 0.0, right: 0.0 })")
+        pad.bottom = window.innerHeight * BUILD_CENTRE_LIFT_FRAC
+        m.asDynamic().setPadding(pad)
     }
 
     private const val BUILD_INFLATE_MS = 2600.0 // how long the buildings take to rise to full height

@@ -184,6 +184,14 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
   camera-locked, letters spring away from XMP blasts), a dramatic fly-in + slow center-facing orbit,
   grayscale→colour fade, and a GitHub footer link. The faction menu fades in ~1s after the letters land.
   Wiped by the onboarding reload (no in-place teardown). Same renderer/FX as the game.
+  - **Title location** isn't fixed: it opens on the **player's home** when location was *already*
+    shared (silent, no permission prompt — `GeoLocator.homeIfPermitted` via the Permissions API),
+    otherwise a **random iconic location** from a curated photogenic subset (`Location.randomTitle`).
+    Everything builds live (no precomputed paths), so any location works.
+- **World-build framing** (`MapUtil.startBuildCinematic`): the build camera keeps its 3D tilt but a
+  viewport bottom-padding lift (`liftViewToCentre`, stable under the bearing spin) raises the
+  play-area centre to mid-screen from the start — so the first portals / flow-field vectors read
+  centre-frame instead of sinking to the bottom; cleared on `goHome`.
 
 ## Audio
 - **True 3D positional audio** (`ba82492`): every positional sound routes through a `PannerNode` at

@@ -21,8 +21,10 @@ import portal.PortalKey
 import portal.XmMap
 import system.display.Scene3D
 import system.display.VectorFieldOverlay
+import util.GeoLocator
 import util.MapUtil
 import util.SoundUtil
+import kotlin.js.Json
 
 /**
  * The faction-screen backdrop is a **real, small game sim** — a handful of portals, a 3-v-3 agent
@@ -61,7 +63,16 @@ object TitleSim {
         Sim.roundField = true // a centered round arena → portals cluster around the centre (border stays hidden)
         VectorFieldOverlay.flashEnabled = false // no flow-field flashes on the title
         Config.startPortals = TITLE_PORTALS
-        MapUtil.loadMaps(Location.DEFAULT.toJSON(), demo = false, callback = fun(grid: Grid) {
+        // Open on the player's home if location is *already* shared (no prompt — GeoLocator); otherwise
+        // a random iconic location. Both build live (no precomputed paths), so any location works.
+        GeoLocator.homeIfPermitted(
+            onLocated = { lng, lat -> loadTitleWorld(JSON.parse("[$lng,$lat]")) },
+            onNone = { loadTitleWorld(Location.randomTitle().toJSON()) },
+        )
+    }
+
+    private fun loadTitleWorld(center: Json) {
+        MapUtil.loadMaps(center, demo = false, callback = fun(grid: Grid) {
             World.grid = grid
             World.isReady = true
             MapUtil.enable3D()
