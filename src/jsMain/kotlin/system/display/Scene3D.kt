@@ -107,7 +107,7 @@ object Scene3D {
     private const val NEUTRAL_COLOR = "#bbbbbb"
     private const val MOD_R_FRAC = 0.16 // chrome mod radius (× orb radius)
     private const val MOD_SCALE = 1.2 // scale the mod solids up a touch (they read bland at base size)
-    private const val MOD_RING_FRAC = 0.42 // tetrahedron vertex distance from orb centre (× orb radius)
+    private const val MOD_RING_FRAC = 0.47 // tetrahedron vertex distance from orb centre (× orb radius); nudged out so mods clear the link joint
 
     // Unit regular-tetrahedron vertices (magnitude √3); the 4 mod slots sit at these inside the orb.
     private val TETRA = arrayOf(
