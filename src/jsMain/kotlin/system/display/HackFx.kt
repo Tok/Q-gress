@@ -19,7 +19,7 @@ object HackFx {
     const val GLYPH_SPIN_S = 7.0 // demo-showcase glyph spin; gameplay uses glyphDuration(level)
     private const val GLYPH_BASE_S = 4.0 // glyph floor (~a skilled glypher); + per level below
     private const val GLYPH_PER_LEVEL_S = 0.8 // higher portals take more glyphs → longer (skill TBD)
-    private const val PEAK_RATE = 5.0 // peak spin rad/s, reached mid-hack; 0 at the ends (spins up then stops)
+    private const val PEAK_RATE = 15.0 // peak spin rad/s, reached mid-hack; 0 at the ends (spins up then stops)
     private const val SMOOTH_PEAK = 1.875 // max slope of smootherstep → normalise so peak rate == PEAK_RATE
     private const val TILT_MAX = 0.7 // peak outward rod splay (rad ≈ 40°)
     private const val GLYPH_RATE_MUL = 1.5 // glyph spins faster

@@ -56,8 +56,8 @@ object HackSound {
         val n = SoundUtil.now()
         val mid = n + dur * 0.5
         val panner = SoundUtil.createPanner(pos)
-        val peak = if (glyph) 0.6 else 0.5
-        val highCut = if (glyph) 6500.0 else 4200.0
+        val peak = if (glyph) 0.16 else 0.13 // white noise is perceptually loud — keep it well down
+        val highCut = if (glyph) 4800.0 else 3200.0
 
         // Looped white-noise whoosh through a lowpass whose cutoff (and the gain) track the spin.
         val len = (ctx.sampleRate * 0.5).toInt().coerceAtLeast(1)
@@ -77,12 +77,13 @@ object HackSound {
         lowpass.frequency.linearRampToValueAtTime(highCut, mid) // brightens with spin speed (sss → SSS)
         lowpass.frequency.linearRampToValueAtTime(420.0, n + dur)
         lowpass.asDynamic().Q.value = 1.2
+        // Bell envelope: quiet at the ends, loud in the middle (the "sss → SSS → sss"), silent at start/end.
         val gainNode = ctx.createGain()
         gainNode.gain.setValueAtTime(SoundUtil.EPS, n)
-        gainNode.gain.linearRampToValueAtTime(peak * 0.4, n + min(0.12, dur * 0.15))
-        gainNode.gain.linearRampToValueAtTime(peak, mid)
-        gainNode.gain.linearRampToValueAtTime(peak * 0.35, n + dur * 0.9)
-        gainNode.gain.exponentialRampToValueAtTime(SoundUtil.EPS, n + dur)
+        gainNode.gain.linearRampToValueAtTime(peak * 0.12, n + dur * 0.25) // ease in from silence (soft sss)
+        gainNode.gain.linearRampToValueAtTime(peak, mid) // swell to the peak (SSS)
+        gainNode.gain.linearRampToValueAtTime(peak * 0.12, n + dur * 0.75) // back down (soft sss)
+        gainNode.gain.exponentialRampToValueAtTime(SoundUtil.EPS, n + dur) // fade fully out
         src.connect(lowpass)
         lowpass.connect(gainNode)
         gainNode.connect(panner)
