@@ -41,10 +41,12 @@ object VectorFieldOverlay {
     /** Off for the title scene — no flow-field flashes there. */
     var flashEnabled = true
 
+    private const val MAX_QUEUE = 24 // bound the FIFO (re-flashing through the long people phase can over-feed it)
+
     /** Queue [portalId]'s (now-ready) flow field for the sweep; it shows briefly when its turn comes. */
     fun flash(portalId: String) {
         if (!flashEnabled) return
-        if (currentId != portalId && queue.lastOrNull() != portalId) queue.addLast(portalId)
+        if (currentId != portalId && queue.lastOrNull() != portalId && queue.size < MAX_QUEUE) queue.addLast(portalId)
     }
 
     /** Advance the sweep (after [MIN_SHOW_MS]), rebuild on change, fade out once the queue is drained. */

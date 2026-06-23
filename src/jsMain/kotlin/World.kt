@@ -14,6 +14,7 @@ import org.khronos.webgl.get
 import org.w3c.dom.ImageData
 import portal.Portal
 import system.display.Scene3D
+import system.display.VectorFieldOverlay
 import util.HtmlUtil
 import util.Util
 import util.data.Pos
@@ -125,7 +126,14 @@ object World {
                 LoadingOverlay.building(LoadingOverlay.PCT_PEOPLE, 100, total - count + 1, total, "Creating people")
                 val newNonFaction = NonFaction.create(World.grid)
                 World.allNonFaction.add(newNonFaction)
-                if (HtmlUtil.isRunningInBrowser()) Scene3D.sync() // render each NPC as created → serial drop-in
+                if (HtmlUtil.isRunningInBrowser()) {
+                    Scene3D.sync() // render each NPC as created → serial drop-in
+                    // Keep the flow-field sweep alive through the long people phase by replaying the
+                    // portals' fields (round-robin) — the same viz that ran during portal creation.
+                    if (allPortals.isNotEmpty()) {
+                        VectorFieldOverlay.flash("portal:" + allPortals[(total - count) % allPortals.size].id)
+                    }
+                }
                 createNonFaction(callback, count - 1)
             } else {
                 callback()
