@@ -76,8 +76,8 @@ object SunController {
     }
 
     private fun placeSun() {
-        val light = sun ?: return
+        val light = sun ?: return // already dynamic — no .asDynamic() (it would throw)
         val ce = cos(ELEV)
-        light.asDynamic().position.set(dist * ce * cos(az), dist * ce * sin(az), dist * sin(ELEV))
+        light.position.set(dist * ce * cos(az), dist * ce * sin(az), dist * sin(ELEV))
     }
 }
