@@ -43,6 +43,13 @@ object TitleSim {
     private const val TITLE_CUBES = 10
     private const val MAX_TITLE_RETRIES = 4 // try a few iconic locations before forcing the known-good default
 
+    // Title mini-game: click the scene to blast. LMB = a full L8 XMP; RMB = an "ultra-strike" — the same
+    // burst squished to a tight, brighter, higher-pitched hit (no dedicated ultra animation yet).
+    private const val TITLE_BLAST_LEVEL = 8
+    private const val ULTRA_SQUISH = 0.5
+    private const val ULTRA_BRIGHT = 1.3
+    private const val ULTRA_PITCH = 2.0
+
     private var interval = 0
     private var started = false
 
@@ -92,7 +99,20 @@ object TitleSim {
             MapUtil.enable3D()
             MapUtil.startTitleCinematic() // 3D terrain + zoom to frame the arena + slow orbit
             buildWorld()
+            bindBlasts()
         })
+    }
+
+    // Let the player blast the title scene: LMB = L8 XMP, RMB = a squished/brighter/higher ultra-strike.
+    private fun bindBlasts() {
+        MapUtil.bindTitleBlasts(
+            { e -> MapUtil.eventToSimPos(e)?.let { Scene3D.playXmpBurst(it, TITLE_BLAST_LEVEL) } },
+            { e ->
+                MapUtil.eventToSimPos(e)?.let {
+                    Scene3D.playXmpBurst(it, TITLE_BLAST_LEVEL, squishXY = ULTRA_SQUISH, bright = ULTRA_BRIGHT, pitch = ULTRA_PITCH)
+                }
+            },
+        )
     }
 
     // The 3D letters replace the flat DOM wordmark — hide it once they're in the scene.

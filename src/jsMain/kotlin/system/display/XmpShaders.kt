@@ -80,6 +80,7 @@ object XmpShaders {
         GLSL_NOISE +
             "uniform mat4 uInvProj; uniform vec2 uResolution; uniform vec3 uCenter;\n" +
             "uniform float uRadius; uniform float uProgress; uniform float uTime; uniform float uSeed;\n" +
+            "uniform float uBright;\n" + // overall brightness (1.0 normal; ultra-strike a touch higher)
             "const int STEPS = 30;\n" +
             "const float NOISE_FREQ = 3.0;\n" +
             "const float DISPLACE = 1.3;\n" + // strong → lumpy, non-spherical billows (pyroclastic)
@@ -129,7 +130,7 @@ object XmpShaders {
             " acc.rgb *= mix(1.0, 0.45, smoothstep(0.35, 1.0, uProgress));\n" +
             " acc.a *= 1.0 - smoothstep(0.45, 1.0, uProgress);\n" +
             " if (acc.a < 0.01) discard;\n" +
-            " gl_FragColor = vec4(acc.rgb / max(acc.a, 0.001), acc.a); }"
+            " gl_FragColor = vec4(acc.rgb / max(acc.a, 0.001) * uBright, acc.a); }"
 
     const val RING_FRAG =
         "varying vec2 vUv;\nuniform float uProgress;\n" +

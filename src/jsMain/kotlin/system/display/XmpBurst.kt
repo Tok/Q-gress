@@ -28,8 +28,9 @@ object XmpBurst {
     private val gInvProj: dynamic = js("({ value: null })")
     private val gRes: dynamic = js("({ value: { x: 1.0, y: 1.0 } })")
 
-    /** A detonation: [meshes] = (fireball box, ground ring); [geom] = (x, y, maxR, life); see update. */
-    private class Burst(val meshes: Array<dynamic>, val uni: dynamic, val geom: DoubleArray, var age: Double)
+    /** A detonation: [meshes] = (fireball box, ground ring); [geom] = (x, y, maxR, life); [squishXY]
+     *  flattens the footprint (ultra-strike: narrower box + smaller ring, same height). See update. */
+    private class Burst(val meshes: Array<dynamic>, val uni: dynamic, val geom: DoubleArray, var age: Double, val squishXY: Double)
 
     private val boxGeo: dynamic by lazy { Three.BoxGeometry(1.0, 1.0, 1.0) }
     private val ringGeo: dynamic by lazy { Three.TorusGeometry(1.0, RING_TUBE, 8, 56) } // unit donut, scaled to radius
@@ -61,23 +62,28 @@ object XmpBurst {
         gRes.value.y = height
     }
 
-    /** Fire a detonation at scene-metre [cx], [cy] on a ground at [baseZ], scaled by burster [level] (1..8). */
-    fun play(cx: Double, cy: Double, baseZ: Double, level: Int) {
+    /**
+     * Fire a detonation at scene-metre [cx], [cy] on a ground at [baseZ], scaled by burster [level] (1..8).
+     * [squishXY] flattens the footprint (1.0 = full; ~0.5 = ultra-strike: narrower mushroom + smaller
+     * ring, same height); [bright] scales the fireball brightness (ultra-strike reads a touch hotter).
+     */
+    fun play(cx: Double, cy: Double, baseZ: Double, level: Int, squishXY: Double = 1.0, bright: Double = 1.0) {
         val grp = group ?: return
         val rangeM = XmpLevel.values().find { it.level == level }?.rangeM ?: XmpLevel.ONE.rangeM
         val maxR = rangeM * RANGE_SCALE
         val uni: dynamic = js(
             "({ uTime: { value: 0.0 }, uProgress: { value: 0.0 }, uSeed: { value: 0.0 }," +
-                " uRadius: { value: 0.0 }, uCenter: { value: { x: 0.0, y: 0.0, z: 0.0 } } })",
+                " uRadius: { value: 0.0 }, uBright: { value: 1.0 }, uCenter: { value: { x: 0.0, y: 0.0, z: 0.0 } } })",
         )
         uni.uSeed.value = Util.random() * 10.0
+        uni.uBright.value = bright
         uni.uCenter.value.x = cx
         uni.uCenter.value.y = cy
         uni.uInvProj = gInvProj // shared per-frame view uniforms
         uni.uResolution = gRes
         val box = Three.Mesh(boxGeo, XmpShaders.volumeMaterial(uni))
         val bs = maxR * BOX_SCALE
-        box.asDynamic().scale.set(bs, bs, bs)
+        box.asDynamic().scale.set(bs * squishXY, bs * squishXY, bs) // squish the footprint, keep the height
         box.asDynamic().position.set(cx, cy, baseZ + maxR * BOX_Z)
         box.asDynamic().renderOrder = 2
         val ring = Three.Mesh(ringGeo, ringMaterial()) // a 3D donut sitting on the terrain at the blast
@@ -86,7 +92,7 @@ object XmpBurst {
         ring.asDynamic().renderOrder = 1
         grp.add(box)
         grp.add(ring)
-        active.add(Burst(arrayOf(box, ring), uni, doubleArrayOf(cx, cy, maxR, LIFE_BASE + level * LIFE_PER_LEVEL, baseZ), 0.0))
+        active.add(Burst(arrayOf(box, ring), uni, doubleArrayOf(cx, cy, maxR, LIFE_BASE + level * LIFE_PER_LEVEL, baseZ), 0.0, squishXY))
     }
 
     fun update(dt: Double) {
@@ -106,7 +112,7 @@ object XmpBurst {
             // terrain; the mushroom rises *within* the volume via the shader's cap + stem, not by lifting off.
             b.uni.uCenter.value.z = b.geom[4] + r
             // Ground shockwave donut: expands to maxR, fades out, cyan → magenta (matches the old ring).
-            val rr = maxR * (1.0 - (1.0 - f) * (1.0 - f))
+            val rr = maxR * (1.0 - (1.0 - f) * (1.0 - f)) * b.squishXY // smaller ring for ultra-strike
             b.meshes[1].scale.set(rr, rr, rr)
             val mat = b.meshes[1].material
             mat.color.setRGB(0.1 + 0.9 * f, 0.75 - 0.65 * f, 1.0 - 0.3 * f)

@@ -237,10 +237,10 @@ object SoundUtil {
      * blast, with a layered "proper" explosion on top tuned to the mushroom animation (see
      * [playXmpExplosion]). Used by the demo + title; the in-game volley uses the lighter overload below.
      */
-    fun playXmpSound(pos: Pos, level: Int) {
+    fun playXmpSound(pos: Pos, level: Int, pitch: Double = 1.0) {
         if (isMuted()) return
         val amp = 0.5 + level * 0.06
-        val note = noteFor(level) // 65–131 Hz; level 8 is the lowest
+        val note = noteFor(level) * pitch // 65–131 Hz; level 8 lowest. [pitch] 2.0 = an octave up (ultra-strike)
         // (1) Synthetic boom: a sine at the scale note sweeping down, with a longer decay.
         val dur = 0.5 + level * 0.04
         val osc = createExponentialRampOscillator(OscillatorType.SINE, note, note * 0.4, dur)

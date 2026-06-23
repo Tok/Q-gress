@@ -380,9 +380,17 @@ html, body {
     color: #ffffff;
     font-family: "Chakra Petch", sans-serif;
 }
-/* Faction step: lighter vignette so the real Scene3D demo (TitleSim) reads clearly behind the menu. */
+/* Faction step: lighter vignette so the real Scene3D demo (TitleSim) reads clearly behind the menu.
+   pointer-events:none lets clicks/scroll reach the title map (the blast mini-game + scroll-out); the
+   interactive children opt back in below. */
 .onboardScreen.titleScreen {
     background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 28%, rgba(0, 0, 0, 0.6) 100%);
+    pointer-events: none;
+}
+.titleScreen .factionCta,
+.titleScreen .titleVolume,
+.titleScreen .titleGithub {
+    pointer-events: auto;
 }
 /* Glass + black-rubber panel holding the selection controls (map size / location), faction-laser edge. */
 .onboardPanel {

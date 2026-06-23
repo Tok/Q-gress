@@ -214,6 +214,10 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
   camera-locked, letters spring away from XMP blasts), a dramatic fly-in + slow center-facing orbit,
   grayscale→colour fade, and a GitHub footer link. The faction menu fades in ~1s after the letters land.
   Wiped by the onboarding reload (no in-place teardown). Same renderer/FX as the game.
+  - **Blast mini-game**: click the scene to detonate — **LMB** fires a full **L8 XMP**, **RMB** an
+    **ultra-strike** (the same burst squished tight + a touch brighter via the shader's `uBright` + an
+    octave-higher boom; no dedicated ultra animation yet). You can also **scroll out** a little and the
+    auto-cam keeps drifting (it eases around your zoom instead of snapping back).
   - **Title location** isn't fixed: it opens on the **player's home** when location was *already*
     shared (silent, no permission prompt — `GeoLocator.homeIfPermitted` via the Permissions API),
     otherwise a **random iconic location** from a curated photogenic subset (`Location.randomTitle`).

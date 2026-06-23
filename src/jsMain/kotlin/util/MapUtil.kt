@@ -227,8 +227,9 @@ object MapUtil {
         opts.center = anchorCenter // hold the centre on the action area → portals stay framed
         opts.bearing = (m.getBearing() as Double) + turn
         opts.pitch = TITLE_PITCH - 8.0 + Util.random() * 16.0 // gentle tilt variation around TITLE_PITCH
-        // -1.2..+0.9: dynamic, but never quite as close (letters were clipping terrain)
-        opts.zoom = titleZoom() + (Util.random() * 2.1 - 1.2)
+        // Drift gently around the CURRENT zoom (clamped) so a player can scroll out without the orbit
+        // snapping back — i.e. the auto-cam keeps running through a manual zoom.
+        opts.zoom = ((m.getZoom() as Double) + (Util.random() * 0.5 - 0.25)).coerceIn(titleZoom() - 4.0, titleZoom() + 1.5)
         opts.duration = TITLE_LEG_MS
         m.asDynamic().easeTo(opts)
         window.setTimeout({ titleOrbitLeg() }, TITLE_LEG_MS.toInt())
@@ -320,6 +321,16 @@ object MapUtil {
     /** Wire just a map click (demo scenes); MapLibre distinguishes a click from a nav drag. */
     fun bindClick(onClick: (dynamic) -> Unit) {
         initMap?.onEvent("click", onClick)
+    }
+
+    /** Title mini-game: LMB blast + RMB ultra-strike on the title map (RMB suppresses the context menu). */
+    fun bindTitleBlasts(onLmb: (dynamic) -> Unit, onRmb: (dynamic) -> Unit) {
+        val m = initMap ?: return
+        m.onEvent("click", onLmb)
+        m.onEvent("contextmenu") { event ->
+            event.preventDefault()
+            onRmb(event)
+        }
     }
 
     /** Portal demo: LMB places, RMB removes (suppressing the browser context menu). */
