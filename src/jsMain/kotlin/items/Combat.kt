@@ -20,7 +20,11 @@ object Combat {
     const val GLOBAL_DAMAGE_MULTIPLIER = 0.45 // overall reso-damage scaler (tuning knob)
     const val CRIT_MULTIPLIER = 3 // a lucky point-blank hit triples reso damage
     const val CRIT_RATE = 0.2 // crit chance when point-blank (first quintile)
-    const val MAX_MITIGATION = 80 // damage-reduction cap (softened from Ingress' 95% so defended portals still fall)
+
+    // Softened HARD from Ingress' 95% → 50%: with recharge healing resos and no agent Ultra-Strikes yet,
+    // an 80% cap made shielded portals self-repair faster than XMP-only attackers could damage them (static
+    // sim). At 50% a sustained assault punches through shields. Tunable — lower further if still too tanky.
+    const val MAX_MITIGATION = 50
     const val ULTRA_RESO_MULT = 0.12 // an Ultra-Strike does very little direct reso damage
 
     const val RANGE_FRAC = 0.5 // XMP effective px range = rangeM × this (matches Agent.findResosInAttackRange)

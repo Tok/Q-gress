@@ -16,6 +16,10 @@ object DropRates {
     /** Portal-key drop chance per hack. */
     var keyChance: Double = Probabilities.keyChance
 
+    /** XMP yield multiplier per hack (sim-tuning, not authentic): the base draws give ~4 XMPs/hack, too few
+     *  for agents to sustain assaults on defended portals — this scales that up so attacks stay frequent. */
+    var xmpDropMultiplier: Int = 2
+
     /** Per-shield-type drop chance (rarer = lower); defaults from [ShieldType.chance]. */
     val shieldChance: MutableMap<ShieldType, Double> =
         ShieldType.values().associateWith { it.chance }.toMutableMap()

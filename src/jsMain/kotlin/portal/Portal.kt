@@ -99,7 +99,7 @@ data class Portal(
     private fun modMitigation(): Int = mods.values.filterIsInstance<Shield>().sumOf { it.type.mitigation }
 
     /** Total incoming-damage reduction (links + deployed shields), at the single gameplay cap
-     *  ([items.Combat.MAX_MITIGATION] = 80; the authentic Ingress 95 lives in IngressFacts for reference). */
+     *  ([items.Combat.MAX_MITIGATION]; the authentic Ingress 95 lives in IngressFacts for reference). */
     fun totalMitigation(): Int = min(Combat.MAX_MITIGATION, linkMitigation() + modMitigation())
 
     /** Hack-cooldown multiplier from deployed heat sinks: rarest applies full, each subsequent halved. */
@@ -300,10 +300,13 @@ data class Portal(
 
     private fun obtainXmps(hacker: Agent, level: Int): List<QgressItem> {
         val stuff = mutableListOf<QgressItem>()
-        Quality.values().map { quality ->
-            val selectedLevel = XmpLevel.find(level, quality).level
-            while (Util.random() < quality.chance) {
-                stuff.add(XmpBurster.create(hacker, selectedLevel) as QgressItem)
+        repeat(DropRates.xmpDropMultiplier) {
+            // sim-tuning: more XMPs/hack so agents can sustain assaults
+            Quality.values().map { quality ->
+                val selectedLevel = XmpLevel.find(level, quality).level
+                while (Util.random() < quality.chance) {
+                    stuff.add(XmpBurster.create(hacker, selectedLevel) as QgressItem)
+                }
             }
         }
         return stuff
