@@ -66,7 +66,7 @@ object MapUtil {
             "openmaptiles": { "type": "vector", "url": "$OPENMAPTILES_URL" }
         },
         "layers": [
-            { "id": "satellite", "type": "raster", "source": "satellite" }
+            { "id": "satellite", "type": "raster", "source": "satellite", "paint": { "raster-saturation": -1 } }
         ]
     }"""
 
@@ -294,7 +294,7 @@ object MapUtil {
         goHome()
     }
 
-    private const val TITLE_FLYIN_MS = 2600.0 // dramatic swoop-in to the title location
+    private const val TITLE_FLYIN_MS = 5200.0 // dramatic swoop-in to the title location (slow)
     private const val TITLE_FLYIN_ZOOM_OUT = 4 // start this many zoom levels above the framing zoom
     private const val TITLE_COLOR_FADE_MS = 20000.0 // grayscale → colour over ~20s on the title (vs 30s in-game)
     private const val TITLE_LEG_MS = 10400.0 // duration of each randomized camera leg (slow, ~half speed)
