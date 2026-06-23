@@ -55,7 +55,6 @@
   {"name": "PONT_DES_ARTS", "displayName": "Pont des Arts, Paris, France", "lng": 2.3373, "lat": 48.8585, "title": false},
   {"name": "PONT_NEUF", "displayName": "Pont Neuf, Paris, France", "lng": 2.3406, "lat": 48.8581, "title": false},
   {"name": "PONT_ALMA", "displayName": "Pont de l'Alma, Paris, France", "lng": 2.3022, "lat": 48.8644, "title": false},
-  {"name": "MILLAU", "displayName": "Millau Viaduct, Millau, France", "lng": 3.0211, "lat": 44.0833, "title": false},
   {"name": "LONDON_BRIDGE", "displayName": "London Bridge, London, UK", "lng": -0.0866, "lat": 51.5078, "title": false},
   {"name": "WESTMINSTER_BRIDGE", "displayName": "Westminster Bridge, London, UK", "lng": -0.1214, "lat": 51.501, "title": false},
   {"name": "MILLENNIUM_BRIDGE", "displayName": "Millennium Bridge, London, UK", "lng": -0.0984, "lat": 51.509, "title": false},
