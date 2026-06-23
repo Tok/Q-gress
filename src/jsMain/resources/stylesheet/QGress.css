@@ -976,6 +976,9 @@ html, body {
 .speedBtn:not(:first-child) {
     border-left: none;
 }
+#pauseButton {
+    width: 80px; /* wider than the ×N buttons so "Resume" fits */
+}
 .speedBtn.active {
     background: #d4d4d4;
     box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.55);
