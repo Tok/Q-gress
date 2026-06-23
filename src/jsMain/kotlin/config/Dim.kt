@@ -14,6 +14,7 @@ object Dim {
     val minDistanceBetweenPortals = (2 * portalRadius) * 6 // ×2 vs before so orbs/poles can't visually clip
     val minDistancePortalToImpassable = portalRadius
     val resoRadius = 2.0
+
     val maxDeploymentRange = 34.0
     val minDeploymentRange = 13.0
     val agentRadius = 3

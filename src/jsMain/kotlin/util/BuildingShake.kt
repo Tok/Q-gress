@@ -25,13 +25,14 @@ object BuildingShake {
 
     private const val DURATION = 2.4 // seconds to settle back to rest
     private const val FREQ = 11.0 // wobble speed (rad/s)
-    private const val BASE_AMP_M = 6.75 // peak bob (metres) — a small, point-blank building at L8
+    private const val BASE_AMP_M = 5.0 // peak bob (metres) at point-blank (clamped to the building's own height)
     private const val REF_HEIGHT_M = 12.0 // taller than this → progressively less bob ("more mass")
+    private const val BOB_MAX_FRAC = 0.3 // never bob more than this × the building's height (so it doesn't break)
 
-    // The blast reaches across most of the view (≈ the playable area, the user wants a wide radius) —
-    // a fraction of the canvas' short side in screen px, a touch wider for bigger blasts.
-    private const val QUERY_SPAN_FRAC = 0.85
-    private const val MAX_SHAKEN = 180 // safety cap on buildings animated at once
+    // The shake reaches the XMP's REAL blast radius (XmpLevel.rangeM, ×this) converted to screen px — so it
+    // tracks the weapon + map zoom and stays localized to the blast (not the whole view).
+    private const val SHAKE_RANGE_MULT = 1.3 // shockwave reaches a touch past the kill radius
+    private const val MAX_SHAKEN = 160 // safety cap on buildings animated at once
 
     private var map: dynamic = null
     private val active = mutableMapOf<String, Shake>() // feature id (as string) → live bob
@@ -43,8 +44,9 @@ object BuildingShake {
         map = baseMap
     }
 
-    /** An XMP of [level] detonated at ground [lng]/[lat]; bob nearby buildings. [now] = sim-clock seconds. */
-    fun blast(lng: Double, lat: Double, level: Int, now: Double) {
+    /** An XMP detonated at ground [lng]/[lat] with real blast [rangeM] (m), [level] 1..8; bob the buildings
+     *  inside that radius. [now] = sim-clock seconds. */
+    fun blast(lng: Double, lat: Double, rangeM: Int, level: Int, now: Double) {
         val m = map ?: return
         if (m.getLayer(LAYER) == null) return // no building layer (demo style, or not added yet)
         val lvl = level.coerceIn(1, 8)
@@ -54,7 +56,8 @@ object BuildingShake {
         val pt = m.project(origin)
         val ox = pt.x as Double
         val oy = pt.y as Double
-        val r = queryRadiusPx(m, lvl)
+        val r = metersToPx(m, lng, lat, rangeM * SHAKE_RANGE_MULT) // the XMP's real blast radius, in screen px
+        if (r <= 1.0) return // degenerate (e.g. extreme zoom-out)
         val feats = queryNear(m, ox, oy, r) ?: return
         val levelGain = 0.4 + 0.6 * (lvl / 8.0)
         val count = (feats.length as Int).coerceAtMost(MAX_SHAKEN)
@@ -64,8 +67,10 @@ object BuildingShake {
             if (id == null) continue // need a native feature id to drive feature-state
             val prox = proximity(m, f, ox, oy, r)
             val renderHeight = (f.properties?.render_height as? Double) ?: 8.0
-            val mass = REF_HEIGHT_M / maxOf(renderHeight, REF_HEIGHT_M) // taller → smaller
-            val amp = BASE_AMP_M * levelGain * prox * mass
+            val mass = REF_HEIGHT_M / maxOf(renderHeight, REF_HEIGHT_M) // taller → smaller bob
+            // Clamp to a fraction of the building's own height so a short building isn't bobbed into the
+            // ground (that looked broken — "stuck" — when the amplitude exceeded the building).
+            val amp = minOf(BASE_AMP_M * levelGain * prox * mass, renderHeight * BOB_MAX_FRAC)
             if (amp > 0.0) { // prox 0 (at the edge) → no bob
                 val key = "$id"
                 active[key] = Shake(id, now + DURATION, amp, (key.hashCode() % 628) / 100.0)
@@ -91,11 +96,18 @@ object BuildingShake {
         done.forEach { active.remove(it) }
     }
 
-    // Blast radius in screen px: most of the view (≈ the playable area), slightly larger for big blasts.
-    private fun queryRadiusPx(m: dynamic, level: Int): Double {
-        val canvas = m.getCanvas()
-        val span = minOf(canvas.clientWidth as Double, canvas.clientHeight as Double)
-        return span * QUERY_SPAN_FRAC * (0.75 + 0.25 * level / 8.0)
+    // Convert a real-world [meters] radius at [lng]/[lat] to screen px (so the shake tracks map zoom):
+    // project the point and a point that many metres north, measure the screen gap.
+    private fun metersToPx(m: dynamic, lng: Double, lat: Double, meters: Double): Double {
+        val a: dynamic = js("[0.0, 0.0]")
+        a[0] = lng
+        a[1] = lat
+        val b: dynamic = js("[0.0, 0.0]")
+        b[0] = lng
+        b[1] = lat + meters / 111_320.0 // ~metres per degree latitude
+        val pa = m.project(a)
+        val pb = m.project(b)
+        return hypot((pa.x as Double) - (pb.x as Double), (pa.y as Double) - (pb.y as Double))
     }
 
     private fun queryNear(m: dynamic, x: Double, y: Double, r: Double): dynamic {

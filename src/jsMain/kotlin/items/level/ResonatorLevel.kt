@@ -4,6 +4,8 @@ import portal.Quality
 import kotlin.math.max
 import kotlin.math.min
 
+// [energy] and [deployablePerPlayer] are AUTHENTIC Ingress values (see config.IngressFacts) — DON'T
+// change them directly to tune the sim; balance via items.Combat instead.
 enum class ResonatorLevel(val level: Int, val deployablePerPlayer: Int, val energy: Int) : ItemLevel {
     ONE(1, 8, 1000),
     TWO(2, 4, 1500),

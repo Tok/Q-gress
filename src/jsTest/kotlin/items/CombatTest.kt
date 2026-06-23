@@ -37,10 +37,11 @@ class CombatTest {
     }
 
     @Test
-    fun mitigationIsCappedAtNinetyFive() {
-        val capped = Combat.resoDamage(2700, 0.0, mitigation = 95, ultra = false, crit = false)
+    fun mitigationIsCappedSoDefendedPortalsStillTakeDamage() {
+        val capped = Combat.resoDamage(2700, 0.0, mitigation = Combat.MAX_MITIGATION, ultra = false, crit = false)
         val overCap = Combat.resoDamage(2700, 0.0, mitigation = 100_000, ultra = false, crit = false)
-        assertEquals(capped, overCap, "mitigation beyond 95% must not reduce damage further")
+        assertEquals(capped, overCap, "mitigation beyond the cap must not reduce damage further")
+        assertTrue(capped > 0, "even a maxed-out shield wall lets some damage through")
     }
 
     @Test

@@ -565,8 +565,8 @@ object Scene3D {
         ShatterFx.recordBlast(origin, level) // shatter pieces arc up-and-out, energy ∝ level / distance
         TitleWordmark.flash(origin, level) // title letters get shoved (no-op until loaded)
         triggerShieldWaves(location, level) // nearby shields ripple as they absorb the blast
-        val ll = simPosToLngLat(location) // buildings near the blast bob + settle (no-op without map/buildings)
-        BuildingShake.blast(ll[0], ll[1], level, animClockMs / 1000.0)
+        val ll = simPosToLngLat(location) // buildings within the XMP's blast radius bob + settle
+        BuildingShake.blast(ll[0], ll[1], XmpLevel.valueOf(level).rangeM, level, animClockMs / 1000.0)
         if (sound) {
             if (ultra) SoundUtil.playUltraStrike(location) else SoundUtil.playXmpSound(location, level)
         }

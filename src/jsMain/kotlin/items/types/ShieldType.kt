@@ -1,6 +1,12 @@
 package items.types
 
-/** Portal shields — reduce incoming XMP damage (mitigation). Colour comes from [rarity]. */
+/**
+ * Portal shields — reduce incoming XMP damage (mitigation). Colour comes from [rarity].
+ *
+ * [mitigation] mirrors AUTHENTIC Ingress values (see config.IngressFacts) — don't change to tune the
+ * sim. [stickiness] (resistance to being knocked out) is a real mechanic whose exact values aren't
+ * published; ours are a best-guess ordering and ARE tunable for gameplay (see items.Combat.knockChance).
+ */
 enum class ShieldType(
     val level: Int,
     val abbr: String,

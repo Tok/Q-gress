@@ -15,18 +15,20 @@ import kotlin.math.min
  * fully-shielded L8 portal takes many strikes to strip. All functions are pure → unit-tested in CombatTest.
  */
 object Combat {
-    const val GLOBAL_DAMAGE_MULTIPLIER = 0.20 // overall reso-damage scaler (tuning knob)
+    // Tuned for a DYNAMIC sim (portals must flip often), not strict Ingress realism: higher base damage,
+    // a softer mitigation cap, and shields that an XMP volley actually chips off over a sustained assault.
+    const val GLOBAL_DAMAGE_MULTIPLIER = 0.45 // overall reso-damage scaler (tuning knob)
     const val CRIT_MULTIPLIER = 3 // a lucky point-blank hit triples reso damage
     const val CRIT_RATE = 0.2 // crit chance when point-blank (first quintile)
-    const val MAX_MITIGATION = 95 // damage-reduction cap (Ingress rule)
+    const val MAX_MITIGATION = 80 // damage-reduction cap (softened from Ingress' 95% so defended portals still fall)
     const val ULTRA_RESO_MULT = 0.12 // an Ultra-Strike does very little direct reso damage
 
     const val RANGE_FRAC = 0.5 // XMP effective px range = rangeM × this (matches Agent.findResosInAttackRange)
-    const val ULTRA_RANGE_FRAC = 0.45 // an Ultra-Strike's blast radius is much smaller
+    const val ULTRA_RANGE_FRAC = 0.4 // an Ultra-Strike's blast radius is ~⅓–½ of an XMP's (you stand on the portal)
 
-    const val XMP_KNOCK_BASE = 0.06 // per-attack chance a Burster knocks a stickiness-0 mod out, point-blank
-    const val ULTRA_KNOCK_BASE = 0.5 // …Ultra-Strikes are far better at it
-    const val STICKINESS_HALF = 20.0 // a mod this sticky has its knock-out chance halved
+    const val XMP_KNOCK_BASE = 0.35 // per-attack chance a Burster knocks a stickiness-0 mod out, point-blank
+    const val ULTRA_KNOCK_BASE = 0.7 // …Ultra-Strikes are far better at it
+    const val STICKINESS_HALF = 50.0 // a mod this sticky has its knock-out chance halved
 
     /** Effective blast radius in sim px for an XMP/US of [rangeM] metres. */
     fun rangePx(rangeM: Int, ultra: Boolean): Double = rangeM * RANGE_FRAC * (if (ultra) ULTRA_RANGE_FRAC else 1.0)
@@ -34,7 +36,7 @@ object Combat {
     /** 0..1 distance fraction (1 = edge of range, ≥1 = out of range) for [rawDistPx] from the blast. */
     fun distanceFraction(rawDistPx: Double, rangeM: Int, ultra: Boolean): Double = rawDistPx / rangePx(rangeM, ultra)
 
-    /** Stepped quintile range falloff (Ingress): 100/50/25/12.5/6.25% over the fifths of max range. */
+    /** Stepped quintile range falloff — AUTHENTIC Ingress: 100/50/25/12.5/6.25% over fifths of max range. */
     fun rangeFalloff(distFrac: Double): Double = when {
         distFrac < 0.2 -> 1.0
         distFrac < 0.4 -> 0.5

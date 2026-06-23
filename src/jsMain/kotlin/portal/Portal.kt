@@ -79,7 +79,7 @@ data class Portal(
     fun y() = location.y
 
     private fun getAllResos() = this.slots.map { it.value.resonator }.filterNotNull()
-    private fun numberOfResosLeft() = this.slots.count { it.value.resonator != null }
+    fun numberOfResosLeft() = this.slots.count { it.value.resonator != null }
     private fun isFullyDeployed() = numberOfResosLeft() == 8
     private fun averageResoLevel(): Double {
         val resos = getAllResos()
@@ -569,6 +569,7 @@ data class Portal(
             return chargeable.filter { keys.map { a -> a.portal }.contains(it) }
         }
 
+        // AUTHENTIC Ingress: 4 hacks of a portal before burnout (config.IngressFacts.HACKS_BEFORE_BURNOUT).
         const val MAX_HACKS = 4 // TODO implement multihacks
         private const val MAX_MITIGATION = 95 // damage-reduction cap (Ingress rule)
         private const val ZAP_BASE_XM = 15 // retaliation XM damage per portal level

@@ -12,24 +12,42 @@ import util.Util
 object Attacker : ConditionalAction {
     override val actionItem = ActionItem.ATTACK
 
+    // Only attack once the agent has hoarded enough XMPs to actually make a dent (taking a portal down
+    // needs many bursts) — so agents commit to a real assault instead of one blast then wandering off.
     override fun isActionPossible(agent: Agent) = agent.inventory.findXmps().count() >= attackXmps
 
     override fun performAction(agent: Agent): Agent {
-        val xmps = xmpsForAttack(agent.inventory)
-        doAttack(agent, xmps)
-        agent.inventory.consumeXmps(xmps)
-        if (xmps.isNotEmpty()) {
-            // Detonate FIRST (records the blast origin) so the resonators/mods it destroys fly away from
-            // it, then apply the damage that shatters them.
-            val topLevel = xmps.maxByOrNull { it.level.level }?.level ?: XmpLevel.ONE
-            Scene3D.playXmpBurst(agent.pos, topLevel.level, sound = true)
-            xmps.forEach { it.dealDamage(agent) } // apply resonator damage (was the now-removed Queues path)
-            // One mod knock-out roll per volley (XMPs strip shields slowly; Ultra-Strikes would be far better).
-            XmpBurster.knockMods(agent.actionPortal, agent.pos, topLevel, ultra = false, agent)
-            agent.actionPortal.retaliate(agent) // the attacked portal zaps back (no-op on friendly/neutral)
+        // Sustained assault: keep firing volleys into the portal until it falls, the agent runs dry on
+        // XMPs/XM, or a safety cap — instead of a single volley + a coin-flip to continue. This is what
+        // makes portals actually flip (a lone volley barely scratches a defended portal).
+        var volleys = 0
+        while (volleys < maxVolleys && agent.xm > 0 && isWorthAttacking(agent)) {
+            val xmps = xmpsForAttack(agent.inventory)
+            if (xmps.isEmpty()) break
+            fireVolley(agent, xmps)
+            agent.inventory.consumeXmps(xmps)
+            volleys++
         }
-        val isDoItAgain = xmps.isNotEmpty() && Util.random() <= 1 / Constants.phi
-        return if (isDoItAgain) performAction(agent) else agent
+        return agent
+    }
+
+    // Worth firing while the target is still an enemy portal that has resonators left to destroy.
+    private fun isWorthAttacking(agent: Agent): Boolean {
+        val portal = agent.actionPortal
+        return agent.inventory.findXmps().isNotEmpty() &&
+            portal.owner?.faction != agent.faction &&
+            portal.numberOfResosLeft() > 0
+    }
+
+    private fun fireVolley(agent: Agent, xmps: List<XmpBurster>) {
+        doAttack(agent, xmps)
+        // Detonate FIRST (records the blast origin) so the resonators/mods it destroys fly away from it.
+        val topLevel = xmps.maxByOrNull { it.level.level }?.level ?: XmpLevel.ONE
+        Scene3D.playXmpBurst(agent.pos, topLevel.level, sound = true)
+        xmps.forEach { it.dealDamage(agent) } // resonator damage
+        // One mod knock-out roll per volley (XMPs strip shields slowly; Ultra-Strikes would be far better).
+        XmpBurster.knockMods(agent.actionPortal, agent.pos, topLevel, ultra = false, agent)
+        agent.actionPortal.retaliate(agent) // the attacked portal zaps back (drains the attacker → a real cost)
     }
 
     private fun doAttack(agent: Agent, xmps: List<XmpBurster>) {
@@ -49,7 +67,8 @@ object Attacker : ConditionalAction {
 
     private const val minAttackXmps = 10
     private const val maxAttackXmps = (minAttackXmps * Constants.phi).toInt()
-    private const val attackXmps = 50
+    private const val attackXmps = 30 // hoard needed to start an assault (was 50 — too rarely reached → few flips)
+    private const val maxVolleys = 12 // safety cap on one assault (XMPs run out well before this anyway)
     private fun attackXmpCount() = minAttackXmps + Util.randomInt(maxAttackXmps - minAttackXmps)
     private fun xmpsForAttack(inv: Inventory) = inv.findXmps().sortedByDescending { it.level }.take(attackXmpCount())
 }
