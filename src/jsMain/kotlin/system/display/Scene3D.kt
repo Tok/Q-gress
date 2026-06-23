@@ -29,6 +29,7 @@ import util.Debug
 import util.SoundUtil
 import util.data.Pos
 import kotlin.math.PI
+import kotlin.math.abs
 import kotlin.math.atan
 import kotlin.math.cos
 import kotlin.math.pow
@@ -115,6 +116,7 @@ object Scene3D {
     private const val SHIELD_SHELL_STEP = 0.09 // each shield shell sits this much larger than the last (× radius)
     private const val SHIELD_WAVE_RANGE_FRAC = 0.6 // a blast ripples shields within this × the XMP's range
     private const val DAMAGE_NUMBER_GAP = 2.0 // start the damage number this far above the flask top
+    private const val MAX_BUILDING_COLLIDERS = 600 // cap on static building boxes added to the FX worlds
 
     // tetrahedron vertex distance from orb centre (× orb radius); nudged out so mods clear the link joint
     private const val MOD_RING_FRAC = 0.55
@@ -577,6 +579,66 @@ object Scene3D {
             if (ultra) SoundUtil.playUltraStrike(location) else SoundUtil.playXmpSound(location, level)
         }
     }
+
+    /**
+     * Build static box colliders from the rendered building footprints (lng/lat polygons + render_height)
+     * so falling debris/digits land on roofs instead of dropping through buildings. One axis-aligned box
+     * per building (cheap); base at z=0 (the FX ground plane). Call once after world-gen ([feats] from
+     * MapUtil's queryRenderedFeatures on the building layer).
+     */
+    fun buildBuildingColliders(feats: dynamic) {
+        scene ?: return
+        val total = (feats.length as? Int) ?: return
+        var added = 0
+        var i = 0
+        while (i < total && added < MAX_BUILDING_COLLIDERS) {
+            val f = feats[i]
+            i++
+            val h = (f.properties?.render_height as? Double) ?: 0.0
+            if (h > 1.0 && addBuildingBox(f.geometry, h)) added++
+        }
+    }
+
+    private fun addBuildingBox(geom: dynamic, h: Double): Boolean {
+        val bb = lngLatBBox(geom) ?: return false
+        val c = lngLatToSimPos((bb[0] + bb[2]) / 2.0, (bb[1] + bb[3]) / 2.0)
+        val hx = abs(sceneX(lngLatToSimPos(bb[2], bb[1])) - sceneX(lngLatToSimPos(bb[0], bb[1]))) / 2.0
+        val hy = abs(sceneY(lngLatToSimPos(bb[0], bb[3])) - sceneY(lngLatToSimPos(bb[0], bb[1]))) / 2.0
+        if (hx < 0.5 || hy < 0.5) return false
+        ShatterFx.addStaticBox(sceneX(c), sceneY(c), h / 2.0, hx, hy, h / 2.0)
+        DamageNumberFx.addStaticBox(sceneX(c), sceneY(c), h / 2.0, hx, hy, h / 2.0)
+        return true
+    }
+
+    // Lng/lat bounding box [minLng, minLat, maxLng, maxLat] of a GeoJSON polygon, or null if empty.
+    private fun lngLatBBox(geom: dynamic): DoubleArray? {
+        val coords = geom?.coordinates ?: return null
+        val bb = doubleArrayOf(1e9, 1e9, -1e9, -1e9)
+        var any = false
+        fun walk(node: dynamic) {
+            if (!isDynArray(node)) return
+            if ((node.length as Int) >= 2 && !isDynArray(node[0])) {
+                val lng = node[0] as Double
+                val lat = node[1] as Double
+                bb[0] = minOf(bb[0], lng)
+                bb[1] = minOf(bb[1], lat)
+                bb[2] = maxOf(bb[2], lng)
+                bb[3] = maxOf(bb[3], lat)
+                any = true
+                return
+            }
+            var k = 0
+            val n = node.length as Int
+            while (k < n) {
+                walk(node[k])
+                k++
+            }
+        }
+        walk(coords)
+        return if (any) bb else null
+    }
+
+    private fun isDynArray(v: dynamic): Boolean = js("Array.isArray")(v) as Boolean
 
     /** Pop a 3D damage number ([amount] XM) from the top of [portal]'s flask (flies up, falls, fades). */
     fun showDamageNumber(portal: Portal, amount: Int) {

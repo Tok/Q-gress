@@ -105,6 +105,15 @@ object ShatterFx {
         world = createWorld()
     }
 
+    /** Add a static building box (scene-space centre + half-extents) so falling debris lands on it. */
+    fun addStaticBox(cx: Double, cy: Double, cz: Double, hx: Double, hy: Double, hz: Double) {
+        val w = world ?: return
+        val opts: dynamic = js("({ mass: 0 })")
+        opts.position = Cannon.Vec3(cx, cy, cz)
+        opts.shape = Cannon.Box(Cannon.Vec3(hx, hy, hz))
+        w.addBody(Cannon.Body(opts))
+    }
+
     fun hasActive() = activeShards.isNotEmpty() || sinkingPoles.isNotEmpty()
 
     fun update(dt: Double) {

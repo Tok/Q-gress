@@ -83,6 +83,15 @@ object DamageNumberFx {
 
     fun hasActive() = nums.isNotEmpty()
 
+    /** Add a static building box (scene-space centre + half-extents) so falling digits land on it. */
+    fun addStaticBox(cx: Double, cy: Double, cz: Double, hx: Double, hy: Double, hz: Double) {
+        val w = world ?: return
+        val opts: dynamic = js("({ mass: 0 })")
+        opts.position = Cannon.Vec3(cx, cy, cz)
+        opts.shape = Cannon.Box(Cannon.Vec3(hx, hy, hz))
+        w.addBody(Cannon.Body(opts))
+    }
+
     /** Pop a damage number of [amount] above the portal top at scene-point ([x], [y], [z]); [loc] = the
      *  portal's sim position, for the positional landing clink. */
     fun spawn(x: Double, y: Double, z: Double, loc: Pos, amount: Int) {

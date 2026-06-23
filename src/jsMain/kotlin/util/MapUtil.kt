@@ -345,6 +345,17 @@ object MapUtil {
         window.setTimeout({ autoCamLeg(gen) }, AUTOCAM_LEG_MS.toInt())
     }
 
+    /** Feed the rendered building footprints to the physics worlds so falling debris lands on roofs.
+     *  Call once after world-gen, when the buildings are on screen (queryRenderedFeatures = on-screen only). */
+    fun buildBuildingColliders() {
+        if (demoMode || !Styles.use3DBuildings) return
+        val m = initMap ?: return
+        if (m.asDynamic().getLayer("3d-buildings") == null) return
+        val opts: dynamic = js("({})")
+        opts.layers = arrayOf("3d-buildings")
+        Scene3D.buildBuildingColliders(m.asDynamic().queryRenderedFeatures(opts))
+    }
+
     /** Register the 3D scene (three.js custom layer) on the base map, anchored at the grid view. */
     fun enable3D() {
         val targetMap = initMap ?: return
