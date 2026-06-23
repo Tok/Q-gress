@@ -38,8 +38,9 @@ object DamageNumberFx {
     private const val RISE_DUR = 0.55 // seconds for the rise
     private const val HANG_DUR = 1.4 // seconds it hangs upright before the digits drop
     private const val STAGGER = 0.1 // delay between digit releases (right-most first)
-    private const val FALL_LIFE = 2.4 // seconds a digit lives after release
-    private const val FADE = 0.7 // fade-out at the very end of a number's life
+    private const val FALL_LIFE = 3.0 // seconds a digit lives (visible) after release, before it sinks away
+    private const val SINK_DUR = 1.2 // then it no-clips down through the ground/buildings + despawns while invisible
+    private const val RESTITUTION = 0.45 // digit bounciness on landing (ground / roofs / poles)
     private const val LAND_Z = 3.0 // a digit is "landed" once it drops to about here (ground ≈ 0)
     private const val LAND_VOLUME = 0.25 // soft glassy clink when the digits hit the ground
     private const val STACK_STEP = DEPTH * 3.0 // a new number presses earlier ones at the same portal up by this
@@ -74,9 +75,10 @@ object DamageNumberFx {
         val loc: Pos, // sim position (for the positional landing sound)
         val fillMat: dynamic,
         val wireMat: dynamic,
-        val totalLife: Double,
+        val totalLife: Double, // when the number starts sinking (it's then removed [SINK_DUR] later)
     ) {
         var age = 0.0
+        var sinking = false // past totalLife: digits no-clip down through ground/buildings instead of fading
     }
 
     private val nums = mutableListOf<DamageNum>()
@@ -85,6 +87,7 @@ object DamageNumberFx {
         group = Three.Group().also { scene.add(it) }
         val w = Cannon.World()
         w.asDynamic().gravity.set(0.0, 0.0, -GRAVITY)
+        w.asDynamic().defaultContactMaterial.restitution = RESTITUTION // digits bounce a little when they land
         val groundOpts: dynamic = js("({ mass: 0 })")
         groundOpts.shape = Cannon.Plane()
         w.addBody(Cannon.Body(groundOpts))
@@ -175,14 +178,21 @@ object DamageNumberFx {
             val connectedZ = num.origin[2] + RISE_HEIGHT * easeOut(min(1.0, num.age / RISE_DUR))
             val yaw = numberYaw(num, eye) // one shared yaw for the whole number (its base points at the camera)
             num.digits.forEach { d -> advanceDigit(num, d, connectedZ, yaw) }
-            if (num.age > num.totalLife - FADE) {
-                val a = ((num.totalLife - num.age) / FADE).coerceIn(0.0, 1.0)
-                num.fillMat.opacity = DIGIT_OPACITY * a
-                num.wireMat.opacity = a
-            }
-            if (num.age >= num.totalLife) dead.add(num)
+            if (!num.sinking && num.age >= num.totalLife) startSinking(num) // no-clip down (no fade)
+            if (num.age >= num.totalLife + SINK_DUR) dead.add(num) // by now they've sunk out of sight
         }
         dead.forEach { drop(it) }
+    }
+
+    // End of life: let each digit no-clip straight down through the ground (and any building/roof it's
+    // resting on) under gravity, sinking out of sight — the terrain/buildings occlude it, so it just
+    // disappears downward instead of dimming out. Removed [SINK_DUR] later once it's well below.
+    private fun startSinking(num: DamageNum) {
+        num.sinking = true
+        num.digits.forEach { d ->
+            val b = d.body
+            if (b != null) b.asDynamic().collisionResponse = false
+        }
     }
 
     private fun advanceDigit(num: DamageNum, d: Digit, connectedZ: Double, yaw: Double) {
