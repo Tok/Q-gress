@@ -479,7 +479,7 @@ object SoundUtil {
         val n = now()
         val dur = 0.22
         gainNode.gain.setValueAtTime(EPS, n)
-        gainNode.gain.exponentialRampToValueAtTime(0.16, n + 0.005) // fast attack → the "ding"
+        gainNode.gain.exponentialRampToValueAtTime(0.12, n + 0.005) // fast attack → the "ding"
         gainNode.gain.exponentialRampToValueAtTime(EPS, n + dur) // quick bell decay
         connectVoice(osc, createPanner(pos), gainNode, n + dur)
     }
@@ -491,7 +491,7 @@ object SoundUtil {
         val gainNode = audioCtx.createGain()
         val n = now()
         val dur = 0.16
-        gainNode.gain.setValueAtTime(0.10, n)
+        gainNode.gain.setValueAtTime(0.08, n)
         gainNode.gain.exponentialRampToValueAtTime(EPS, n + dur)
         connectVoice(osc, createPanner(pos), gainNode, n + dur)
     }
@@ -504,7 +504,7 @@ object SoundUtil {
         val gainNode = audioCtx.createGain()
         val n = now()
         gainNode.gain.setValueAtTime(EPS, n)
-        gainNode.gain.exponentialRampToValueAtTime(0.13, n + 0.02)
+        gainNode.gain.exponentialRampToValueAtTime(0.10, n + 0.02)
         gainNode.gain.exponentialRampToValueAtTime(EPS, n + 0.4) // gentle ring-out
         connectVoice(osc, createPanner(pos), gainNode, n + 0.4)
     }

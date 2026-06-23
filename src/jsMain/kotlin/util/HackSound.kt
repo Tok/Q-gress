@@ -56,7 +56,7 @@ object HackSound {
         val n = SoundUtil.now()
         val mid = n + dur * 0.5
         val panner = SoundUtil.createPanner(pos)
-        val peak = if (glyph) 0.16 else 0.13 // white noise is perceptually loud — keep it well down
+        val peak = if (glyph) 0.11 else 0.09 // white noise is perceptually loud — keep it well down
         val highCut = if (glyph) 4800.0 else 3200.0
 
         // Looped white-noise whoosh through a lowpass whose cutoff (and the gain) track the spin.
@@ -130,7 +130,7 @@ object HackSound {
         osc.frequency.setValueAtTime(freq, t)
         val g = ctx.createGain()
         g.gain.setValueAtTime(SoundUtil.EPS, t)
-        g.gain.linearRampToValueAtTime(0.09, t + 0.004) // sharp transient
+        g.gain.linearRampToValueAtTime(0.07, t + 0.004) // sharp transient
         g.gain.exponentialRampToValueAtTime(SoundUtil.EPS, t + 0.06)
         osc.connect(g)
         g.connect(panner)
