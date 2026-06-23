@@ -76,6 +76,8 @@ object GridConnectivity {
         walkability = walkability(grid, w, h),
     )
 
+    const val MIN_WALKABILITY = 0.12 // below this the area is mostly water/blocked → unplayable
+
     /** Fraction (0..1) of the on-screen cells in [0,w)×[0,h) that are passable (excludes the ring). */
     fun walkability(grid: Grid, w: Int, h: Int): Double {
         var passable = 0

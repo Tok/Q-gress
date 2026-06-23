@@ -187,7 +187,10 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
   - **Title location** isn't fixed: it opens on the **player's home** when location was *already*
     shared (silent, no permission prompt — `GeoLocator.homeIfPermitted` via the Permissions API),
     otherwise a **random iconic location** from a curated photogenic subset (`Location.randomTitle`).
-    Everything builds live (no precomputed paths), so any location works.
+    Everything builds live (no precomputed paths). A location that's **unplayable at the small round
+    title size** (e.g. a home over open water — a player on a ship) fails the same walkability gate as
+    the live game (`GridConnectivity.MIN_WALKABILITY`, checked after the live readback) and **falls back**
+    to an iconic location, forcing the known-good default on the final retry.
 - **World-build framing** (`MapUtil.startBuildCinematic`): the build camera keeps its 3D tilt but a
   viewport bottom-padding lift (`liftViewToCentre`, stable under the bearing spin) raises the
   play-area centre to mid-screen from the start — so the first portals / flow-field vectors read

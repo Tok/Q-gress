@@ -11,7 +11,7 @@ import kotlin.test.assertTrue
  * and [harnessFlagsOffScreenDetour] proves the audit logic regardless.
  */
 class PresetConnectivityTest {
-    private val minWalkability = 0.12 // matches the live HtmlUtil gate (mostly-water → unplayable)
+    private val minWalkability = GridConnectivity.MIN_WALKABILITY // the shared live gate (mostly-water → unplayable)
 
     @Test
     fun allPresetsFullyConnectedForGameplay() {

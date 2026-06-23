@@ -46,7 +46,6 @@ object HtmlUtil {
     private var coloredMap = true // terrain colour on (eases in after world-gen); Menu toggle flips it
     private const val PAUSE_BUTTON_ID = "pauseButton"
     private const val LOCATION_LABEL_ID = "locationLabel"
-    private const val MIN_WALKABILITY = 0.12 // below this the area is mostly water/blocked → unplayable
     private const val MIN_SPEED = 0.25
     private const val MAX_SPEED = 4.0
     private const val SPEED_STEP = 0.25 // per ,/. press and slider increment
@@ -577,7 +576,7 @@ object HtmlUtil {
         }
         // Gate mostly-water / unplayable locations before the expensive world build. Auto-start
         // (dev/headless) is exempt so tests never block.
-        if (World.walkability < MIN_WALKABILITY && !isAutoStartFromUrl()) {
+        if (World.walkability < GridConnectivity.MIN_WALKABILITY && !isAutoStartFromUrl()) {
             showUnplayableGate()
             return
         }

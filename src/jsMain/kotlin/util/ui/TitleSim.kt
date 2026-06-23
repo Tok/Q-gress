@@ -22,6 +22,7 @@ import portal.XmMap
 import system.display.Scene3D
 import system.display.VectorFieldOverlay
 import util.GeoLocator
+import util.GridConnectivity
 import util.MapUtil
 import util.SoundUtil
 import kotlin.js.Json
@@ -40,6 +41,7 @@ object TitleSim {
     private const val TITLE_XMPS = 60 // ≥ Attacker's threshold so the agents actually fire
     private const val TITLE_RESOS = 24
     private const val TITLE_CUBES = 10
+    private const val MAX_TITLE_RETRIES = 4 // try a few iconic locations before forcing the known-good default
 
     private var interval = 0
     private var started = false
@@ -71,8 +73,18 @@ object TitleSim {
         )
     }
 
-    private fun loadTitleWorld(center: Json) {
+    private fun loadTitleWorld(center: Json, attempt: Int = 0) {
         MapUtil.loadMaps(center, demo = false, callback = fun(grid: Grid) {
+            // Not every location is playable at the small round title size — a home over open water (a
+            // player on a ship) or an unexpectedly sparse spot has no room for paths/portals. Fall back
+            // to an iconic location, forcing the known-good default on the final try. Same gate as the
+            // live game (GridConnectivity.MIN_WALKABILITY), checked here because it needs the live readback.
+            if (World.walkability < GridConnectivity.MIN_WALKABILITY && attempt < MAX_TITLE_RETRIES) {
+                val next = if (attempt + 1 >= MAX_TITLE_RETRIES) Location.DEFAULT else Location.randomTitle()
+                console.warn("Title location unplayable (walkability ${(World.walkability * 100).toInt()}%) — retrying at ${next.displayName}")
+                loadTitleWorld(next.toJSON(), attempt + 1)
+                return
+            }
             World.grid = grid
             World.isReady = true
             MapUtil.enable3D()
