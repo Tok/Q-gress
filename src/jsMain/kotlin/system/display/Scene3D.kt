@@ -508,7 +508,9 @@ object Scene3D {
         scene ?: return
         XmpBurst.play(sceneX(location), sceneY(location), groundZ(location), level) // sit on the terrain
         ShatterFx.recordBlast(sceneX(location), sceneY(location)) // shatter pieces fly away from here
-        TitleWordmark.flash() // title letters react to the flash (no-op until loaded)
+        // Title letters get shoved by the blast (no-op until loaded). Origin = the mushroom-cloud centre
+        // above the terrain (rises with level); flash scales the shove by level + per-letter distance.
+        TitleWordmark.flash(doubleArrayOf(sceneX(location), sceneY(location), groundZ(location) + 12.0 + level * 4.0), level)
         if (sound) SoundUtil.playXmpSound(location, level)
     }
 

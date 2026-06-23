@@ -50,12 +50,17 @@ object Onboarding {
             row.appendChild(btn)
         }
         cta.appendChild(row)
+        cta.style.opacity = "0" // fade the faction menu in ~1s after the title is up (let the scene land first)
+        cta.style.transition = "opacity 0.7s ease"
         screen.appendChild(cta)
         screen.appendChild(createTitleVolume()) // an annoyed player can turn it down right away
         screen.appendChild(createGithubLink()) // thin "source on GitHub" footer link
         document.body?.appendChild(screen)
         TitleSim.start() // the real Scene3D demo (portals hacking/XMPing/linking) behind the menu
+        window.setTimeout({ cta.style.opacity = "1" }, CTA_DELAY_MS)
     }
+
+    private const val CTA_DELAY_MS = 1000 // faction menu appears this long after the title is visible
 
     private const val GITHUB_ICON =
         "<svg viewBox=\"0 0 16 16\" width=\"14\" height=\"14\" fill=\"currentColor\" aria-hidden=\"true\">" +

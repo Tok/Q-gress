@@ -333,7 +333,7 @@ object MapUtil {
         opts.center = anchorCenter // hold the centre on the action area → portals stay framed
         opts.bearing = (m.getBearing() as Double) + turn
         opts.pitch = TITLE_PITCH - 8.0 + Util.random() * 16.0 // gentle tilt variation around TITLE_PITCH
-        opts.zoom = titleZoom() + (Util.random() * 2.4 - 1.2) // ±1.2 around the framing zoom (a bit dynamic)
+        opts.zoom = titleZoom() + (Util.random() * 2.1 - 1.2) // -1.2..+0.9: dynamic, but never quite as close (letters were clipping terrain)
         opts.duration = TITLE_LEG_MS
         m.asDynamic().easeTo(opts)
         window.setTimeout({ titleOrbitLeg() }, TITLE_LEG_MS.toInt())

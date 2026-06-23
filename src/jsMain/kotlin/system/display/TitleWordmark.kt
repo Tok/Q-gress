@@ -3,6 +3,7 @@ package system.display
 import external.FontLoader
 import external.TextGeometry
 import external.Three
+import util.Util
 import kotlin.math.sqrt
 
 /**
@@ -20,13 +21,21 @@ object TitleWordmark {
     private const val SPACING = 1.6 // gap between letters
     private const val DIST = 64.0 // how far in front of the camera the wordmark floats
     private const val Y_OFFSET = 9.0 // raise it into the upper part of the frame (above the action), but in view
-    private const val STIFF = 70.0 // spring stiffness for the flash reaction
-    private const val DAMP = 7.0 // spring damping (settles with a little overshoot)
-    private const val IMPULSE = 9.0 // spin kick on an XMP flash
+    private const val POS_STIFF = 80.0 // position spring: displaced letters pull back to rest
+    private const val POS_DAMP = 9.0 // spring damping (quick return, slight overshoot)
+    private const val PUSH = 42.0 // blast shove velocity (away from the XMP)
+    private const val PUSH_REF = 250.0 // distance falloff — nearer XMPs shove the letters harder
+    private const val JITTER = 16.0 // per-letter random velocity so they don't all move identically
+    private const val TILT = 0.1 // letters tilt with their horizontal displacement (liveliness)
 
     private var group: dynamic = null
     private val letters = mutableListOf<dynamic>()
     private var loaded = false
+
+    // Latest camera-locked frame (set in update) so flash() can project the XMP into the wordmark plane.
+    private var lastPos = doubleArrayOf(0.0, 0.0, 0.0)
+    private var lastX = doubleArrayOf(1.0, 0.0, 0.0)
+    private var lastY = doubleArrayOf(0.0, 1.0, 0.0)
 
     /** Load the font + build the letters into [scene]. [onReady] fires once they're in (e.g. to hide the DOM wordmark). */
     fun load(scene: dynamic, onReady: () -> Unit = {}) {
@@ -65,14 +74,21 @@ object TitleWordmark {
             geo.asDynamic().translate(-(minX + maxX) / 2.0, -(minY + maxY) / 2.0, -DEPTH / 2.0) // centre the glyph
             val mesh = Three.Mesh(geo, arrayOf(capMat, sideMat))
             mesh.asDynamic().position.x = cursor + w / 2.0
-            mesh.asDynamic().userData.angle = 0.0
-            mesh.asDynamic().userData.vel = 0.0
+            mesh.asDynamic().userData.ox = 0.0 // displacement offset (x, y) + velocity, for the blast spring
+            mesh.asDynamic().userData.oy = 0.0
+            mesh.asDynamic().userData.vx = 0.0
+            mesh.asDynamic().userData.vy = 0.0
             group.add(mesh) // group is already dynamic — no .asDynamic()
             letters.add(mesh)
             cursor += w + SPACING
         }
         val half = (cursor - SPACING) / 2.0
-        letters.forEach { it.position.x = (it.position.x as Double) - half } // centre the word (it is dynamic)
+        letters.forEach {
+            // centre the word + remember each letter's rest x (it is dynamic)
+            val restX = (it.position.x as Double) - half
+            it.position.x = restX
+            it.userData.baseX = restX
+        }
         scene.add(group)
     }
 
@@ -86,7 +102,7 @@ object TitleWordmark {
         return Three.MeshStandardMaterial(p)
     }
 
-    /** Camera-lock the group in front of the camera + advance each letter's spring spin. */
+    /** Camera-lock the group in front of the camera + advance each letter's displacement spring. */
     fun update(eye: DoubleArray, forward: DoubleArray, up: DoubleArray, dt: Double) {
         val g = group ?: return
         if (!loaded) return
@@ -100,32 +116,59 @@ object TitleWordmark {
         m.asDynamic().makeBasis(Three.Vector3(x[0], x[1], x[2]), Three.Vector3(y[0], y[1], y[2]), Three.Vector3(z[0], z[1], z[2]))
         g.quaternion.setFromRotationMatrix(m)
         g.position.set(pos[0], pos[1], pos[2])
-        letters.forEach { letter ->
-            // letter is dynamic — access directly, no .asDynamic()
-            val angle = letter.userData.angle as Double
-            val vel = letter.userData.vel as Double
-            val nextVel = vel + (-STIFF * angle - DAMP * vel) * dt
-            val nextAngle = angle + nextVel * dt
-            letter.userData.vel = nextVel
-            letter.userData.angle = nextAngle
-            letter.rotation.y = nextAngle
-        }
+        lastPos = pos
+        lastX = x
+        lastY = y
+        letters.forEach { springLetter(it, dt) }
     }
 
-    /** An XMP fired — kick every letter into a spin (randomised by index) that springs back to rest. */
-    fun flash() {
+    // Critically-ish-damped spring: pull each letter's (ox, oy) displacement back to rest; tilt with it.
+    private fun springLetter(letter: dynamic, dt: Double) {
+        val ud = letter.userData
+        val ox = ud.ox as Double
+        val oy = ud.oy as Double
+        val nvx = (ud.vx as Double) + (-POS_STIFF * ox - POS_DAMP * (ud.vx as Double)) * dt
+        val nvy = (ud.vy as Double) + (-POS_STIFF * oy - POS_DAMP * (ud.vy as Double)) * dt
+        val nox = ox + nvx * dt
+        val noy = oy + nvy * dt
+        ud.vx = nvx
+        ud.vy = nvy
+        ud.ox = nox
+        ud.oy = noy
+        letter.position.x = (ud.baseX as Double) + nox
+        letter.position.y = noy
+        letter.rotation.z = -nox * TILT
+    }
+
+    /**
+     * An XMP fired at [xmpWorld] (the mushroom-cloud centre, above the terrain) at [level]. Shove each
+     * letter away from it in the wordmark plane — closer letters harder (per-letter falloff), bigger XMPs
+     * harder (level) — then the spring lerps them back.
+     */
+    fun flash(xmpWorld: DoubleArray, level: Int) {
         if (!loaded) return
-        letters.forEachIndexed { i, letter ->
-            // letter is dynamic — access directly
-            val dir = if (i % 2 == 0) 1.0 else -1.0
-            val jitter = 0.6 + (i % 3) * 0.3
-            letter.userData.vel = (letter.userData.vel as Double) + IMPULSE * dir * jitter
+        val levelGain = 0.3 + 0.7 * (level.coerceIn(1, 8) / 8.0) // L1 still nudges, L8 full
+        letters.forEach { letter ->
+            val ud = letter.userData
+            val letterWorld = add(lastPos, scale(lastX, ud.baseX as Double)) // letter's rest world position
+            val d = sub(letterWorld, xmpWorld)
+            val dist = sqrt(dot(d, d))
+            val px = dot(d, lastX) // direction away from the XMP, in the wordmark plane
+            val py = dot(d, lastY)
+            val plen = sqrt(px * px + py * py)
+            val ux = if (plen > 1e-6) px / plen else 0.0
+            val uy = if (plen > 1e-6) py / plen else 1.0
+            val strength = PUSH * levelGain * PUSH_REF / (PUSH_REF + dist) // per-letter distance falloff
+            ud.vx = (ud.vx as Double) + ux * strength + (Util.random() - 0.5) * JITTER
+            ud.vy = (ud.vy as Double) + uy * strength + (Util.random() - 0.5) * JITTER
         }
     }
 
     // --- vec3 helpers ---
     private fun cross(a: DoubleArray, b: DoubleArray) = doubleArrayOf(a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0])
 
+    private fun dot(a: DoubleArray, b: DoubleArray) = a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
+    private fun sub(a: DoubleArray, b: DoubleArray) = doubleArrayOf(a[0] - b[0], a[1] - b[1], a[2] - b[2])
     private fun add(a: DoubleArray, b: DoubleArray) = doubleArrayOf(a[0] + b[0], a[1] + b[1], a[2] + b[2])
     private fun scale(a: DoubleArray, s: Double) = doubleArrayOf(a[0] * s, a[1] * s, a[2] * s)
     private fun norm(a: DoubleArray): DoubleArray {
