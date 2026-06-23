@@ -7,6 +7,7 @@ import config.DropRates
 import config.Sim
 import config.Time
 import extension.*
+import items.Combat
 import items.PowerCube
 import items.QgressItem
 import items.XmpBurster
@@ -97,8 +98,9 @@ data class Portal(
 
     private fun modMitigation(): Int = mods.values.filterIsInstance<Shield>().sumOf { it.type.mitigation }
 
-    /** Total incoming-damage reduction (links + deployed shields), capped at 95% (Ingress rule). */
-    fun totalMitigation(): Int = min(MAX_MITIGATION, linkMitigation() + modMitigation())
+    /** Total incoming-damage reduction (links + deployed shields), at the single gameplay cap
+     *  ([items.Combat.MAX_MITIGATION] = 80; the authentic Ingress 95 lives in IngressFacts for reference). */
+    fun totalMitigation(): Int = min(Combat.MAX_MITIGATION, linkMitigation() + modMitigation())
 
     /** Hack-cooldown multiplier from deployed heat sinks: rarest applies full, each subsequent halved. */
     fun cooldownFactor(): Double {
@@ -175,8 +177,11 @@ data class Portal(
     }
 
     private fun calcTotalXm(): Int = getAllResos().map { it.energy }.sum()
+
+    // AUTHENTIC Ingress link-range formula: 160 × (avg resonator level)⁴ metres (see config.IngressFacts)
+    // — DON'T change the 160/⁴ to tune; it's the original. (Note: currently returns a lambda, not the value.)
     fun calculateLinkingRangeInMeters() = {
-        val x = averageResoLevel() // kotlin.math.pow?
+        val x = averageResoLevel()
         if (isFullyDeployed()) 160 * x * x * x * x else 0.0
     }
 
@@ -569,9 +574,7 @@ data class Portal(
             return chargeable.filter { keys.map { a -> a.portal }.contains(it) }
         }
 
-        // AUTHENTIC Ingress: 4 hacks of a portal before burnout (config.IngressFacts.HACKS_BEFORE_BURNOUT).
-        const val MAX_HACKS = 4 // TODO implement multihacks
-        private const val MAX_MITIGATION = 95 // damage-reduction cap (Ingress rule)
+        const val MAX_HACKS = 4 // TODO implement multihacks (authentic: 4 hacks → burnout, IngressFacts)
         private const val ZAP_BASE_XM = 15 // retaliation XM damage per portal level
         private const val ZAP_SHIELD_XM = 1 // extra retaliation XM per point of mitigation (shields zap harder)
         private const val MOD_DEPLOY_AP = 125
