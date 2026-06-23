@@ -44,7 +44,8 @@ object Onboarding {
             btn.addClass(f.abbr.lowercase(), "popupButton", "displayFont")
             btn.textContent = f.abbr
             btn.onclick = {
-                TitleSim.stop() // stop the auto-driver; the scene is wiped by the onboarding reload
+                // Keep the title sim running behind the rest of onboarding (shaded), just muffle its audio.
+                SoundUtil.setMuffled(true)
                 onPick(f)
             }
             row.appendChild(btn)
@@ -173,7 +174,6 @@ object Onboarding {
                 MiniMap.confirmCenter()?.let { onStart(it.first, it.second, currentName) }
             },
         )
-        document.body?.appendChild(screen)
 
         // Default mode: Random — open the globe on a random preset.
         val initial = Locations.random()
@@ -260,7 +260,6 @@ object Onboarding {
                 )
             },
         )
-        document.body?.appendChild(screen)
     }
 
     private fun button(label: String, classes: String, onClick: () -> Unit): HTMLButtonElement {
@@ -305,14 +304,19 @@ object Onboarding {
         document.getElementById(SCREEN_ID)?.remove()
     }
 
+    // Builds the full-screen shaded overlay (the title sim shows through, dimmed) + a glass panel, and
+    // appends the overlay to the body. Returns the PANEL — callers add their controls into it.
     private fun screen(titleText: String): HTMLElement {
         document.getElementById(SCREEN_ID)?.remove()
         val s = div("onboardScreen")
         s.id = SCREEN_ID
+        val panel = div("onboardPanel")
         val title = div("onboardTitle")
         title.textContent = titleText
-        s.appendChild(title)
-        return s
+        panel.appendChild(title)
+        s.appendChild(panel)
+        document.body?.appendChild(s)
+        return panel
     }
 
     private fun div(cls: String): HTMLElement {

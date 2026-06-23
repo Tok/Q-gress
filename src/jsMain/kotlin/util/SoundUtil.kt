@@ -58,6 +58,8 @@ object SoundUtil {
     private const val ROLLOFF = 0.5
     private const val PANNING_MODEL = "HRTF" // front/back + elevation cues (vs cheaper "equalpower")
     private const val MASTER_BOOST = 2.6 // lift the whole bus (3D attenuation made it quiet); limiter guards clipping
+    private const val MUFFLE_OPEN_HZ = 22000.0 // muffle filter wide open (no audible effect)
+    private const val MUFFLE_CLOSED_HZ = 600.0 // muffled: distant/underwater (title behind onboarding)
 
     private val audioCtx = AudioContext()
     private val listener = audioCtx.listener
@@ -75,10 +77,25 @@ object SoundUtil {
         c
     }
 
+    // Master "muffle" lowpass between the bus and the limiter — wide open by default; dropped to a low
+    // cutoff to make everything sound distant/underwater (e.g. behind the onboarding screens).
+    private val muffle: dynamic = run {
+        val f = audioCtx.asDynamic().createBiquadFilter()
+        f.type = "lowpass"
+        f.frequency.value = MUFFLE_OPEN_HZ
+        f.connect(limiter)
+        f
+    }
+
     // Single master gain all sounds route through; controls overall volume (× MASTER_BOOST into the limiter).
     private val masterGain: GainNode = audioCtx.createGain().also {
         it.gain.value = 0.0
-        it.asDynamic().connect(limiter)
+        it.asDynamic().connect(muffle)
+    }
+
+    /** Muffle (lowpass) the whole mix, or open it back up — used to push the title audio behind onboarding. */
+    fun setMuffled(on: Boolean) {
+        muffle.frequency.setTargetAtTime(if (on) MUFFLE_CLOSED_HZ else MUFFLE_OPEN_HZ, now(), 0.2)
     }
 
     // Master volume in 0..1. Starts muted; enabled on the first user gesture
