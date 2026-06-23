@@ -40,7 +40,7 @@ object Config {
     }
 
     const val MIN_NONFACTION = 30 // floor: always enough to recruit, even on a tiny/dense map
-    private const val NPC_DENSITY = 240.0 // NPCs per one screenful (Dim.width × Dim.height) of map area
+    private const val NPC_DENSITY = 720.0 // NPCs per one screenful (Dim.width × Dim.height) of map area
 
     /** Player NPC-density multiplier (1.0–3.0), chosen at onboarding — scales the auto population. */
     var npcMultiplier = 1.0

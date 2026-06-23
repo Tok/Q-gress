@@ -21,7 +21,9 @@ the AI layer lands, the slider sim is the substrate we keep hardening.
   `XmpShaders.VOLUME_FRAG` (`NOISE_FREQ`, `DISPLACE`, `DENSITY_GAIN`, `STEPS`) + the rise/grow curve in
   `XmpBurst.update`. If it reads too dense/sparse or too small once seen live, these are the knobs;
   consider promoting them to uniforms if frequent tuning is wanted.
-- [ ] **Stage 2 leftover** — a richer field-up "whoosh" when a control field forms.
+- [x] **Stage 2 leftover** — richer link + field-up sounds: linking glissandos between the two
+  portals' notes (deeper/longer for long links); fielding plays a swelling triad from the three side
+  lengths in a register set by the field's area. (`SoundUtil.playLinkingSound` / `playFieldingSound`)
 - [ ] **Stage 3 — pathfinding scalability** — the heat map is now a bucketed Dijkstra (O(cells), all
   field gen async via `PathUtil.computeFieldAsync`); still **per-portal full-map**. Remaining: multi-mode
   nav (flow fields near, cheap nav far), coarser `pathResolution` lever, ambient NPCs, field viz.

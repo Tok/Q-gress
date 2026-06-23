@@ -4,7 +4,6 @@ import World
 import agent.Faction
 import agent.NonFaction
 import config.Config
-import config.Constants
 import config.Dim
 import config.OscillatorType
 import config.Sim
@@ -560,18 +559,19 @@ object SoundUtil {
         playSound(oscNode, createPanner(pos), gain, duration)
     }
 
+    /** Linking: a quick glissando between the two portals' notes (their levels) travelling along the
+     *  link — so the sound expresses *what* is being joined. Longer links sweep longer + a register
+     *  deeper (a long span reads heavier). */
     fun playLinkingSound(link: Link) {
         if (isMuted()) return
-        val ratio = link.getLine().length() / World.diagonalLength()
-        val gain = 0.30
-        val duration = 0.04 + (0.16 * ratio)
-        val minFreq = 500.0 * ratio
-        val baseFreq = 500.0
-        val startFreq = minFreq + (baseFreq * ratio)
-        val endFreq = minFreq + (baseFreq * ratio * 2)
-        val oscNode = createLinearRampOscillator(OscillatorType.SINE, startFreq, endFreq, duration)
-        val panNode = createPannerRamp(link.getLine().from, link.getLine().to, duration)
-        playSound(oscNode, panNode, gain, duration)
+        val ratio = (link.getLine().length() / World.diagonalLength()).coerceIn(0.0, 1.0)
+        val dur = 0.1 + 0.3 * ratio
+        val oct = if (ratio > 0.5) 1 else 2 // longer link → deeper octave
+        val from = noteFor(link.origin.getLevel().toInt(), octaveUp = oct)
+        val to = noteFor(link.destination.getLevel().toInt(), octaveUp = oct)
+        val oscNode = createLinearRampOscillator(OscillatorType.SINE, from, to, dur)
+        val panNode = createPannerRamp(link.getLine().from, link.getLine().to, dur)
+        playSound(oscNode, panNode, 0.22, dur)
     }
 
     /** Field collapse (teardown): a short downward sweep that decays away. */
@@ -586,26 +586,38 @@ object SoundUtil {
         connectVoice(osc, createStaticPan(0.0), gainNode, n + dur)
     }
 
+    /** Fielding: a swelling triad whose three notes come from the field's three side lengths (longer side
+     *  → lower note → the triangle's SHAPE as a chord), in a register set by the field's AREA (bigger =
+     *  deeper, longer, fuller) — a control field powering up. */
     fun playFieldingSound(field: Field) {
         if (isMuted()) return
-        val areaRatio = field.calculateArea() / World.totalArea()
-        val gain = 0.4
-        val minDuration = 1.0 / Constants.phi
-        val maxDuration = 1.0
-        val diff = maxDuration - minDuration
-        val additionalDuration = diff * areaRatio
-        val duration = minDuration + additionalDuration
-        val minFreq = 70.0
-        val baseFreq = 20.0
-        val startFreq = minFreq + (baseFreq * areaRatio)
-        val endFreq = startFreq * 2.0
-        val midAnchor = Pos(
-            (field.primaryAnchor.x() + field.secondaryAnchor.x()) / 2,
-            (field.primaryAnchor.y() + field.secondaryAnchor.y()) / 2,
-        )
-        val oscNode = createExponentialRampOscillator(OscillatorType.TRIANGLE, startFreq, endFreq, duration)
-        val panNode = createPannerRamp(field.origin.location, midAnchor, duration)
-        playSound(oscNode, panNode, gain, duration)
+        val areaRatio = (field.calculateArea().toDouble() / World.totalArea()).coerceIn(0.0, 1.0)
+        val dur = 0.7 + 1.0 * areaRatio // bigger field rings longer
+        val oct = if (areaRatio > 0.4) 1 else 2 // bigger field → deeper register
+        val diag = World.diagonalLength().toDouble()
+        val o = field.origin
+        val p = field.primaryAnchor
+        val s = field.secondaryAnchor
+        val center = Pos((o.x() + p.x() + s.x()) / 3, (o.y() + p.y() + s.y()) / 3)
+        listOf(
+            o.location.distanceTo(p.location),
+            o.location.distanceTo(s.location),
+            p.location.distanceTo(s.location),
+        ).forEach { len ->
+            val lvl = (1 + (len / diag) * 7.0).toInt().coerceIn(1, 8) // longer side → higher level → lower note
+            fieldVoice(center, noteFor(lvl, octaveUp = oct), dur)
+        }
+    }
+
+    /** One swelling voice of the fielding triad: a slight upward bend (power-up whoosh) that swells then rings out. */
+    private fun fieldVoice(pos: Pos, base: Double, dur: Double) {
+        val n = now()
+        val osc = createLinearRampOscillator(OscillatorType.TRIANGLE, base, base * 1.04, dur)
+        val gainNode = audioCtx.createGain()
+        gainNode.gain.setValueAtTime(EPS, n)
+        gainNode.gain.linearRampToValueAtTime(0.11, n + dur * 0.45) // swell in
+        gainNode.gain.exponentialRampToValueAtTime(EPS, n + dur) // ring out
+        connectVoice(osc, createPanner(pos), gainNode, n + dur)
     }
 
     private fun playSound(oscNode: OscillatorNode, panNode: AudioNode, gain: Double, duration: Double) {
