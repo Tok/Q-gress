@@ -23,6 +23,11 @@ object HistoryPanel {
     private const val CHART_H = 42
     private const val FILL_ALPHA = "0.16)" // appended to a faction's "rgba(r, g, b, " prefix
 
+    // The exact midpoint between the two faction colours, used for the OVERLAP line (drawn on top where the
+    // two series coincide) so the chart is faction-agnostic — without it, whichever faction is drawn last
+    // (RES) always wins the colour where the lines sit on top of each other, even though the values are equal.
+    private val OVERLAP_COLOR = blendHex(Faction.ENL.color, Faction.RES.color)
+
     /** A dashboard row: a title, the live per-faction value, and the per-checkpoint history value. */
     private class Metric(
         val title: String,
@@ -61,7 +66,10 @@ object HistoryPanel {
         metrics.forEachIndexed { i, m ->
             val enl = cps.map { m.enlAt(it.second).toDouble() }.toTypedArray()
             val res = cps.map { m.resAt(it.second).toDouble() }.toTypedArray()
-            plots[i]?.setData(arrayOf(xs, enl, res))
+            // Overlap series: the value only where the two factions are EQUAL, else a gap (null) — drawn on
+            // top in the blended colour so coincident lines read as neutral, not whichever was drawn last.
+            val overlap: Array<Double?> = Array(enl.size) { if (enl[it] == res[it]) enl[it] else null }
+            plots[i]?.setData(arrayOf(xs, enl, res, overlap))
         }
     }
 
@@ -104,8 +112,8 @@ object HistoryPanel {
         opts.legend = js("({ show: false })")
         opts.scales = js("({ x: { time: false } })")
         opts.axes = arrayOf(js("({ show: false })"), js("({ show: false })"))
-        opts.series = arrayOf(js("({})"), seriesOpts(Faction.ENL), seriesOpts(Faction.RES))
-        val empty: dynamic = arrayOf(arrayOf<Double>(), arrayOf<Double>(), arrayOf<Double>())
+        opts.series = arrayOf(js("({})"), seriesOpts(Faction.ENL), seriesOpts(Faction.RES), overlapSeriesOpts())
+        val empty: dynamic = arrayOf(arrayOf<Double>(), arrayOf<Double>(), arrayOf<Double>(), arrayOf<Double>())
         return UPlot(opts, empty, target)
     }
 
@@ -116,6 +124,25 @@ object HistoryPanel {
         s.fill = faction.fieldStyle + FILL_ALPHA // faction-tinted translucent area (maximalist look)
         s.points = js("({ show: false })")
         return s
+    }
+
+    // Drawn last, on top of both faction lines: a neutral blended stroke only where ENL == RES (gaps
+    // elsewhere). No fill — the two faction area fills already stack to a blend where they overlap.
+    private fun overlapSeriesOpts(): dynamic {
+        val s: dynamic = js("({})")
+        s.stroke = OVERLAP_COLOR
+        s.width = 1.5
+        s.points = js("({ show: false })")
+        return s
+    }
+
+    // Midpoint of two "#rrggbb" colours as an "rgb(r, g, b)" string.
+    private fun blendHex(a: String, b: String): String {
+        fun channel(hex: String, i: Int) = hex.substring(1 + i * 2, 3 + i * 2).toInt(16)
+        val r = (channel(a, 0) + channel(b, 0)) / 2
+        val g = (channel(a, 1) + channel(b, 1)) / 2
+        val bl = (channel(a, 2) + channel(b, 2)) / 2
+        return "rgb($r, $g, $bl)"
     }
 
     private fun el(cls: String): HTMLElement {
