@@ -623,6 +623,8 @@ data class Portal(
                     portal.vectors = field
                     Fx.sink.flashVectorField("portal:${portal.id}")
                 }
+            } else if (Config.headlessFieldCompute) {
+                portal.vectors = PathUtil.computeFieldSync(location) // headless match: deterministic, inline
             }
             return portal
         }

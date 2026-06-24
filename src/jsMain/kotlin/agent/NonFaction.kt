@@ -237,6 +237,9 @@ data class NonFaction(
             if (maybeField != null && maybeField.isNotEmpty()) {
                 return maybeField
             }
+            if (Config.headlessFieldCompute && HtmlUtil.isNotRunningInBrowser()) {
+                return PathUtil.computeFieldSync(destination).also { fields[destination] = it } // headless match
+            }
             if (pending.add(destination)) {
                 PathUtil.computeFieldAsync(destination) { field ->
                     fields[destination] = field

@@ -148,20 +148,26 @@ area is maximized, and hold it across the cycle. So fitness = the **sum/average 
   `FactionPolicies`). `BrowserEffects` forwards 1:1; `NoOpEffects` (headless default) is the no-op, so the
   tick loop runs in Node without touching three.js (was: `Portal.remove()` → unguarded `Scene3D.shatterPortal`
   forced a lazy geometry → crash). `EffectsSeamTest` proves it. Zero browser-visible change.
-- _Spike finding (deferred):_ a first `SimRunner` ran the tick loop headless, but the sim **isn't cleanly
-  synchronous yet** — per-tick **pathfinding is too slow** (full-map flow-field per portal/dest) to run a
-  match in a Node test budget, and field gen is **async** (`PathUtil.computeFieldAsync` coroutine) so it
-  doesn't fit a synchronous match loop. Stage 1 (effect sink) is done; **Stage 2 — sync/fast pathfinding**
-  is the remaining prerequisite, then `SimRunner` (Stage 3) is straightforward.
-- [ ] **`SimRunner`** — `runMatch(gridFixture, policyEnl, policyRes, seed, maxTicks): MatchResult`,
-  tick loop with rendering/audio/DOM stubbed at the shell boundary; result captures **per-checkpoint MU**
-  (the fitness signal above), not just the final score.
+- _Functional-core split, Stage 2 **DONE** — sync pathfinding (`PathUtil.computeFieldSync`):_ a non-suspend
+  twin of `computeFieldAsync` (same bucketed-Dijkstra heat map + vector field + smoothing, shared pure
+  helpers → deterministic) that returns the field inline, no coroutine / no frame-yield. Headless field
+  compute is opt-in via `Config.headlessFieldCompute` (default off → unit tests unchanged, agents bee-line);
+  when on, `Portal.create` + `NonFaction.getOrCreateVectorField` compute fields synchronously. `PathUtilSyncTest`
+  covers it. Fields are computed once per portal / per unique offscreen destination (cached), not per tick,
+  so the earlier "too slow" worry was really the async coroutine never running in a sync loop — now moot.
+- _Spike finding (resolved by Stages 1–2):_ the original `SimRunner` spike died because the sim wasn't
+  synchronous/headless (renderer crashes + async field gen). Both are now fixed. Remaining for Stage 3:
+- [ ] **`SimRunner`** — `runMatch(gridFixture, policyEnl, policyRes, seed, maxTicks): MatchResult`, a
+  synchronous tick loop (set `Config.headlessFieldCompute = true`, seed RNG, build the grid from a fixture,
+  drive `World` ticks) capturing **per-checkpoint MU** (the fitness signal), with effects on `NoOpEffects`.
+  Watch-outs from the spike: `NonFaction.findNearestTo` throws on an empty roster; seed + reset
+  `FactionPolicies`/`Fx`/`World` between matches.
 - [ ] **Grid fixtures** — serialize a built `Grid` (+ portal seeds) to committed JSON so matches
   reproduce without live tiles / `readPixels`. (The synthetic open grid worked in the spike; real-tile
-  fixtures still need the `?debug=capture` pass.)
-- [ ] **Sync, fast pathfinding for headless** — a non-suspend flow-field path (or multi-mode nav / coarser
-  `pathResolution`) so a match runs deterministically without the coroutine event loop, fast enough for
-  hundreds/min in Node (CI) + a Web Worker (in-tab training).
+  fixtures still need the `?debug=capture` pass.) `GridFixture` already does the RLE serialization.
+- [x] **Sync, fast pathfinding for headless** — `PathUtil.computeFieldSync` (Stage 2 above). If it ever
+  proves too slow on large real-tile grids, the levers are multi-mode nav (flow near, cheap far) / a
+  coarser `pathResolution`; fields are cached per portal/destination so it's not per-tick.
 
 **6.2 — Track A: custom net + neuroevolution** → [docs/NN.md](docs/NN.md)
 - [ ] Tiny MLP (`ai/net/`, output = 19 sliders); ES/self-play trainer; `NetPolicy` (JSON genome);

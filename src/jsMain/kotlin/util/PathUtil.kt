@@ -68,6 +68,44 @@ object PathUtil {
         }
     }
 
+    // The synchronous twin of [computeFieldAsync]: same bucketed-Dijkstra heat map + vector field +
+    // smoothing, computed inline and returned (no coroutine, no frame-yielding `delay(0)`). For headless
+    // matches (the SimRunner / Node) where there's no frame to keep responsive and a synchronous tick
+    // loop can't drive `MainScope`. Same result as the async path (shares [expand]/[createVec]/
+    // [smoothVectorMap]) → deterministic. Browser keeps the async path so the frame never stalls.
+    fun computeFieldSync(destination: Pos): VectorField = calculateVectorFieldSync(generateHeatMapSync(destination), destination)
+
+    private fun generateHeatMapSync(goal: Pos): GridMap {
+        val passable = World.passableCells()
+        val map = mutableMapOf<Pos, Int>()
+        val buckets = mutableMapOf<Int, MutableList<Pos>>()
+        val start = goal.toShadow()
+        map[start] = 0
+        buckets[0] = mutableListOf(start)
+        var heat = 0
+        while (buckets.isNotEmpty()) {
+            for (pos in buckets.remove(heat) ?: emptyList()) {
+                expand(pos, heat, map, buckets, passable)
+            }
+            heat++
+        }
+        return map
+    }
+
+    private fun calculateVectorFieldSync(heatMap: GridMap, destination: Pos): VectorField {
+        val maxHeat = heatMap.values.max()
+        val fields = mutableMapOf<Pos, Complex>()
+        World.grid.forEach { (pos, cell) ->
+            val raw = createVec(heatMap, maxHeat, destination, pos)
+            val speedFactor = (MIN_HEAT.toDouble() / cell.movementPenalty).coerceIn(MIN_SPEED_FACTOR, 1.0)
+            fields[pos] = raw.copyWithNewMagnitude(speedFactor)
+        }
+        return smoothSync(fields, Config.vectorSmoothCount)
+    }
+
+    private fun smoothSync(vectors: VectorField, count: Int): VectorField =
+        if (count > 0) smoothSync(smoothVectorMap(vectors), count - 1) else vectors
+
     private fun createVec(heatMap: GridMap, maxHeat: Int, destination: Pos, pos: Pos): Complex {
         val left = heatMap[Pos(pos.x - 1, pos.y)] ?: maxHeat
         val right = heatMap[Pos(pos.x + 1, pos.y)] ?: maxHeat
