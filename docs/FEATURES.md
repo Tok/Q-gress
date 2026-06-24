@@ -60,7 +60,9 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
     from the XMP blast**, then fall). The blast push comes from the shared **`BlastModel`** — one
     **3D mushroom-cloud-centre origin** (above the terrain, rising with level) + **distance falloff**,
     energy ∝ level / distance — the *same* model the title wordmark uses, so normal-play shatters and
-    the title letters react with one unified physics.
+    the title letters react with one unified physics. Falling debris (shards, resos, knocked-out mods,
+    gasket) lands on the terrain + **building roofs**, then at end of life **no-clips straight down**
+    through the ground/buildings and despawns once it's occluded below — instead of fading its opacity.
   - **Links → a single translucent glass pipe** (`linkGeo`/`orientTube`, `Materials.linkGlass`) with
     bright ball-joints — keeps the glassy transparency but drops the old plasma-core (no more "3-in-1").
   - **Fields → plasma** sheets (`PlasmaShader`, animated; fill-in + dissolve + collapse sound).
@@ -71,6 +73,12 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
     emissive while cool smoke is gradient-lit + translucent (warm, not a black blob); it starts tiny and
     fast-expands, then **dissolves gradually** (cooling colour + thinning alpha — a smoke tail). Plus a
     3D **torus** ground shockwave ring (reads right on the 3D terrain).
+  - **3D damage numbers** (`DamageNumberFx`): each hit pops an **extruded Coda** number above the portal
+    — it rises off the top, hangs, then its digits **detach and fall** as cannon-es bodies (right→left),
+    **bouncing** on the terrain / roofs / poles. The whole number yaws to face the camera; rapid hits
+    **stack** upward (filled from below); colour runs **yellow → orange → deep dark red** by amount (log
+    scale) with a **bold 3×** black wire outline. At end of life they **no-clip straight down** through
+    the ground and despawn (no opacity fade). Menu toggle to disable.
   - **Stray XM** rendered as glowing additive motes (`Materials.xmGlow`).
   - **Lifecycle registry** `Spawns` (per-entity first-seen, survives the sync rebuild) drives
     spawn/teardown animations; `FieldFx` dissolves.
@@ -90,13 +98,20 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
   on top regardless). Action coins are occluded by portals but not buildings in that mode.
 - **Our own building meshes** (`system/display/OwnBuildings`, fed by `util/BuildingTiles`): the
   play-area buildings are rebuilt as real three.js extruded prisms from a **complete** footprint set —
-  we fetch the OpenFreeMap `.pbf` vector tiles covering the area and **decode them ourselves** (pbf +
-  `@mapbox/vector-tile`, the libs MapLibre uses internally), because MapLibre's own query APIs only
-  ever returned a far-flung fraction (`queryRenderedFeatures` ≈2, `querySourceFeatures` ≈20–30). The
-  tiles are already in the browser cache, so it's near-instant. We control these meshes: they **cast +
-  receive real sun shadows**, **grow in** with world-gen, seed debris colliders, and MapLibre's own
-  fill-extrusion layer is hidden once ours are in. Keyed by footprint centroid (no tile id needed).
-  (`OwnBuildings.REPLACE_BUILDINGS` falls back to MapLibre's buildings if ever needed.)
+  we query **OSM directly via the Overpass API** for every building in the area (one keyless,
+  CORS-enabled, browser-cacheable GET → lng/lat polygons with `height`/`building:levels`). MapLibre's
+  own building layer (and the OpenFreeMap vector tiles behind it) is heavily simplified — a St. Gallen
+  tile carried only ~19 of the **1100** buildings OSM actually has there — and its query APIs returned
+  even less, so Overpass is the only source with the full set. We control these meshes: they **cast +
+  receive real sun shadows**, **grow in** with world-gen, sit on the terrain (live-DEM elevation via
+  `Scene3D.groundZAtLngLat`), seed debris colliders, and MapLibre's own fill-extrusion layer is hidden
+  once ours are in. Keyed by footprint centroid (no tile id needed); `OwnBuildings.REPLACE_BUILDINGS`
+  falls back to MapLibre's buildings if Overpass is down. *(The pbf + `@mapbox/vector-tile` decode of
+  the raw `.pbf` tiles stays in the tree — `external/VectorTile.kt` — for reusing other tile layers.)*
+- **Buildings stream as the camera flies elsewhere** (`util/BuildingStream`): leaving the play area no
+  longer shows bare ground — on each map `idle` over a not-yet-covered area, a region (~2.6 km box,
+  coarse-cell dedup, one Overpass query in flight at a time) is pulled and meshed. Far buildings are
+  visual only (no debris colliders; debris only spawns at play-area portals).
 - **Buildings bob from nearby blasts**: an XMP/ultra-strike makes the buildings within range **shake
   and settle back** (~2s spring) — amplitude scales with **blast level + proximity**, damped for
   **taller** buildings (more mass). On our own meshes it's a per-mesh scene-space z-bob (`OwnBuildings`),
@@ -139,8 +154,10 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
   objects **sit on the terrain**: `Scene3D` samples a coarse elevation grid (`groundZ`, bilinear, via
   `simPosToLngLat` + `queryTerrainElevation`) and offsets every ground-anchored z (portals, agents,
   NPCs, stray XM, links/fields, labels, the deploy/loot/pickup FX). Menu **"3D terrain"** toggle
-  (default on); degrades to flat if the DEM is unavailable. (The cannon-es shatter ground stays flat —
-  a known approximation.)
+  (default on); degrades to flat if the DEM is unavailable. The cannon-es debris/digit physics floors
+  **and the per-building colliders** are lifted to the terrain elevation too (`setGroundZ` +
+  `groundZAtLngLat`), so falling pieces land on the ground and on **building roofs**, not hundreds of
+  metres below at sea level.
 - **Top toolbar** reorganized: Menu far-left (with overlay toggles + Lock-tuning inside it), Home, and a
   seamless **sim-speed segmented control** — Pause / ×1 / ×3 / Max butted together (active speed
   highlighted; Pause is Space-bound; `-`/`+` still nudge) replacing the old pause button + slider. Far

@@ -74,6 +74,14 @@ are all implicitly tied to zoom 18. The display zooms out to *frame* the whole S
 the grid anchor stays at 18. Dynamic-zoom would require rebuilding the grid + rescaling — see
 the "rework movement model" / "going 3D" icebox notes in PLAN.md.
 
+**Buildings are our own meshes, sourced from OSM.** MapLibre's openmaptiles building layer is
+heavily simplified (a city tile may hold ~19 of 1000+ real buildings), so `util/BuildingTiles`
+queries **OSM via Overpass** for the full footprints in the play-area bbox; `system/display/
+OwnBuildings` extrudes them into three.js prisms (sun shadows, grow-in, per-mesh blast shake,
+debris colliders) and hides MapLibre's fill-extrusion. `util/BuildingStream` keeps streaming
+new regions from Overpass as the camera flies elsewhere. Elevation comes from the live DEM
+(`Scene3D.groundZAtLngLat`) so buildings sit right even outside the play-area height grid.
+
 ## Rendering pipeline (3D + DOM, no 2D game canvas)
 
 - **World → 3D.** `system/display/Scene3D` builds/refreshes three.js meshes each tick

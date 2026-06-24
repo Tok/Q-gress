@@ -195,13 +195,24 @@ dominates" validation is iterative (playtest, or a future headless strategy-comp
 - **Going 3D (gameplay).** A pitched/3D camera breaks the top-down screen→grid mapping; needs a
   decoupled simulation grid or a 3D pathfinding model. Revisit after the functional-core split. (3D
   *buildings* in the top-down satellite view already work.)
-- **Walkable roofs / more from our own building meshes.** Now that we mesh every play-area building
-  ourselves (`OwnBuildings`, fed by the `BuildingTiles` PBF decode — see FEATURES), the door is open
-  for agents to path over roofs, per-building destruction, etc. The decoder also generalises: the same
-  `BuildingTiles` approach can pull the **road/water/landcover** layers for the movement-model rework
-  below (real vector-tile geometry instead of rasterized shadow pixels).
+- **Walkable roofs / more from our own building meshes.** Now that we mesh every building ourselves
+  (`OwnBuildings`, fed by OSM/Overpass via `BuildingTiles`, streamed by `BuildingStream` — see
+  FEATURES), the door is open for agents to path over roofs, per-building destruction, etc. The
+  pbf/`@mapbox/vector-tile` decoder still in the tree (`external/VectorTile.kt`) can also pull the
+  **road/water/landcover** layers for the movement-model rework below (real geometry instead of
+  rasterized shadow pixels).
+- **Building perf + lifecycle (follow-ups from today's Overpass switch).**
+  - **Many shadow-casters.** Each building is its own mesh (needed for per-mesh shake). A dense city +
+    streaming can reach 1000s of shadow-casting meshes; if FPS suffers, **merge** static buildings into
+    a few `BufferGeometry` batches (keep only the play-area ones individually shakeable).
+  - **Reset wiring.** `OwnBuildings.clear()` + `BuildingStream.reset()` exist but aren't called on
+    world-regen yet, so an old city's meshes/coverage can linger — wire them into the reset path.
+  - **Overpass politeness.** A long fly-around fires repeated Overpass queries; add a per-bbox
+    **response cache** (and/or a fallback mirror) so we don't hammer the public instance / hit limits.
 - **Building-cast shadow polish.** Our meshes cast + receive sun shadows now; revisit shadow-map
-  resolution / cascade once the sun obscurables (clouds) land so crowded blocks read cleanly.
+  resolution / cascade once the sun obscurables (clouds) land so crowded blocks read cleanly. The sun's
+  ortho shadow camera is sized to the play area — **streamed** buildings beyond it won't cast/receive
+  until that's widened or made to follow the view.
 - **TTS announcements (low priority).** Speak important events (captures, recruits, new fields, cycle
   changes) via the Web Speech API (`speechSynthesis`), throttled so it doesn't spam; per-faction
   voices a nice touch; off by default, behind a toggle + the master volume.
