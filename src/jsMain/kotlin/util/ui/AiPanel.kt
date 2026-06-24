@@ -5,6 +5,8 @@ import ai.DomSliderPolicy
 import ai.FactionPolicies
 import ai.HeuristicPolicy
 import ai.Observation
+import ai.net.NetPolicy
+import ai.net.NetStore
 import kotlinx.browser.document
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLOptionElement
@@ -86,20 +88,22 @@ object AiPanel {
 
     /**
      * Driver picker. **Manual** = the tuning sliders ([DomSliderPolicy]); **Heuristic** = the adaptive
-     * [HeuristicPolicy] (the first live AI driver — it auto-moves the sliders). Net/LLM stay disabled until a
-     * trained genome is loadable (Phase 6.2/6.3). Picking an AI driver hands slider control to it.
+     * [HeuristicPolicy]; **Neural net** = the trained [NetPolicy] from [NetStore] (the saved winner, else the
+     * baked champion). All three auto-move the sliders. LLM stays disabled until Phase 6.3. Picking an AI
+     * driver hands slider control to it.
      */
     private fun driverSelect(faction: Faction): HTMLElement {
         val sel = document.createElement("select") as HTMLSelectElement
         sel.className = "aiDriverSelect"
         sel.appendChild(option("manual", "Manual (sliders)", disabled = false))
         sel.appendChild(option("heuristic", "Heuristic (adaptive)", disabled = false))
-        sel.appendChild(option("net", "Neural net — soon", disabled = true))
+        sel.appendChild(option("net", "Neural net (trained)", disabled = false))
         sel.appendChild(option("llm", "LLM — soon", disabled = true))
         sel.value = "manual"
         sel.onchange = {
             when (sel.value) {
                 "heuristic" -> FactionPolicies.set(faction, HeuristicPolicy(faction))
+                "net" -> FactionPolicies.set(faction, NetPolicy(NetStore.loadNet(), faction))
                 else -> FactionPolicies.set(faction, DomSliderPolicy(faction))
             }
             null

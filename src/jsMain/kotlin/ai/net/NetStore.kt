@@ -1,0 +1,34 @@
+package ai.net
+
+import kotlinx.browser.window
+import util.HtmlUtil
+
+/**
+ * Persists/loads a trained net for the live game (PLAN Phase 6.2). The **active** genome is whatever's been
+ * [save]d to `localStorage` (e.g. a freshly trained or pasted-in winner), falling back to the baked
+ * [Champion]. So the **Neural net** driver always has a real net to install, and an improved one survives a
+ * reload once saved. Headless ([HtmlUtil] off) there's no `localStorage`, so it just yields the champion.
+ */
+object NetStore {
+    private const val KEY = "qgress.net.genome"
+
+    /** Persist a genome JSON (no-op headless). Validate with [GenomeIO.decode] before calling. */
+    fun save(genomeJson: String) {
+        if (HtmlUtil.isNotRunningInBrowser()) return
+        window.localStorage.setItem(KEY, genomeJson)
+    }
+
+    /** Drop any saved override, reverting to the baked [Champion]. */
+    fun clear() {
+        if (HtmlUtil.isRunningInBrowser()) window.localStorage.removeItem(KEY)
+    }
+
+    /** The active genome JSON: the saved override if present, else the baked [Champion]. */
+    fun activeJson(): String {
+        if (HtmlUtil.isNotRunningInBrowser()) return Champion.JSON
+        return window.localStorage.getItem(KEY) ?: Champion.JSON
+    }
+
+    /** Decode the active genome into a [Net]; falls back to the baked [Champion] if a saved override is corrupt. */
+    fun loadNet(): Net = runCatching { GenomeIO.decode(activeJson()) }.getOrElse { GenomeIO.decode(Champion.JSON) }
+}
