@@ -50,45 +50,37 @@ data class NonFaction(
     fun isStuckCandidate(tick: Int) = !isBusy(tick) && !isAtDestination()
 
     fun act() {
-        if (isBusy(World.tick)) {
-            if (Util.random() < 0.001) { // stop waiting and go somewhere random
-                this.busyUntil = World.tick
-                moveElsewhere()
-            }
+        if (isBusy(World.tick)) return // resting at a spot — stay put until the rest timer expires
+
+        // NPCs change destination ONLY on arrival, never mid-journey: re-deciding while crossing (it used
+        // to ~1.5%/tick) sent them to the new "far side", which flips at the centre — so they kept drifting
+        // back toward the middle. Now they commit to a destination, walk clear across the map, rest, then
+        // strike out for the next one. (Stuck recovery is the one exception, so a wedged NPC isn't frozen.)
+        if (isAtDestination()) {
+            moveElsewhere() // pick the next destination…
+            wait() // …then rest here a beat before setting off
             return
         }
 
-        if (Util.random() < 0.007) {
-            wait()
-        }
-
-        if (Util.random() < 0.015) {
-            moveElsewhere()
-        }
-
-        if (isAtDestination()) {
-            wait()
-        } else {
-            maybeRecoverFromStuck()
-            val force: Complex = if (beelineTicks > 0) {
-                beelineTicks--
-                MovementUtil.headingTo(pos, destination) // un-stick override: straight line through the spiral
-            } else if (Config.isNpcSwarming && Util.random() < swarmChance) {
-                val nearPos = findNearest().pos
-                if (nearPos.distanceTo(pos) < Dim.agentRadius) {
-                    val re = -(this.pos.x - nearPos.x)
-                    val im = -(this.pos.y - nearPos.y)
-                    val acceleration = 1.2
-                    Complex(re * acceleration, im * acceleration)
-                } else {
-                    Complex(pos.x, pos.y)
-                }
+        maybeRecoverFromStuck()
+        val force: Complex = if (beelineTicks > 0) {
+            beelineTicks--
+            MovementUtil.headingTo(pos, destination) // un-stick override: straight line through the spiral
+        } else if (Config.isNpcSwarming && Util.random() < swarmChance) {
+            val nearPos = findNearest().pos
+            if (nearPos.distanceTo(pos) < Dim.agentRadius) {
+                val re = -(this.pos.x - nearPos.x)
+                val im = -(this.pos.y - nearPos.y)
+                val acceleration = 1.2
+                Complex(re * acceleration, im * acceleration)
             } else {
-                vectors[pos.toShadow()] ?: MovementUtil.headingTo(pos, destination)
+                Complex(pos.x, pos.y)
             }
-            velocity = MovementUtil.move(velocity, force, speed)
-            this.pos = Pos(pos.x + velocity.re, pos.y + velocity.im)
+        } else {
+            vectors[pos.toShadow()] ?: MovementUtil.headingTo(pos, destination)
         }
+        velocity = MovementUtil.move(velocity, force, speed)
+        this.pos = Pos(pos.x + velocity.re, pos.y + velocity.im)
     }
 
     /**

@@ -36,6 +36,17 @@ object MiniMap {
         "paint": { "line-color": "#ffffff", "line-width": 2 }
     }"""
 
+    // Dim everything OUTSIDE the play-area box (the box is the hole) so the fixed playable region reads
+    // clearly at any zoom: panning/zooming the map never makes the playable area look bigger or smaller —
+    // it's always the one bright window in a darkened world.
+    private const val MASK_LAYER = """{
+        "id": "areaMaskFill", "type": "fill", "source": "areaMask",
+        "paint": { "fill-color": "#000000", "fill-opacity": 0.55 }
+    }"""
+
+    // A world-spanning ring (web-mercator latitude limits); the play-area ring is punched out as a hole.
+    private const val WORLD_RING = "[[-180,-85],[180,-85],[180,85],[-180,85],[-180,-85]]"
+
     private var mini: MapLibre.Map? = null
     private var toggleBtn: HTMLElement? = null
     private var globe = true
@@ -67,13 +78,18 @@ object MiniMap {
         val m = MapLibre.Map(opts)
         m.on("load") {
             applyProjection()
+            val maskSrc: dynamic = js("({})")
+            maskSrc.type = "geojson"
+            maskSrc.data = areaMask(lng, lat)
+            m.addSource("areaMask", maskSrc)
+            m.addLayer(JSON.parse<Json>(MASK_LAYER)) // dim outside first, so the box line sits on top
             val src: dynamic = js("({})")
             src.type = "geojson"
             src.data = areaBox(lng, lat)
             m.addSource("areaBox", src)
             m.addLayer(JSON.parse<Json>(BOX_LAYER))
         }
-        m.on("move") { updateBox() } // keep the play-area box centred on the current view
+        m.on("move") { updateBox() } // keep the play-area box + mask centred on the current view
         mini = m
 
         val btn = document.createElement("button") as HTMLElement
@@ -103,16 +119,27 @@ object MiniMap {
     private fun updateBox() {
         val m = mini ?: return
         val c = m.getCenter()
-        val source = m.getSource("areaBox") ?: return
-        source.setData(areaBox(c.lng as Double, c.lat as Double))
+        val lng = c.lng as Double
+        val lat = c.lat as Double
+        m.getSource("areaBox")?.setData(areaBox(lng, lat))
+        m.getSource("areaMask")?.setData(areaMask(lng, lat))
     }
 
     /** A GeoJSON outline of the sim's play area (metres → degrees) centred at [lng]/[lat] — a
      *  rectangle, or a circle when the round field is selected (so the confirm screen matches). */
-    private fun areaBox(lng: Double, lat: Double): dynamic {
+    private fun areaBox(lng: Double, lat: Double): dynamic =
+        JSON.parse<Json>("""{"type":"Feature","geometry":{"type":"Polygon","coordinates":[${boxRing(lng, lat)}]}}""")
+
+    /** The world, with the play-area [boxRing] punched out as a hole — fills the dimming mask. */
+    private fun areaMask(lng: Double, lat: Double): dynamic =
+        JSON.parse<Json>("""{"type":"Feature","geometry":{"type":"Polygon","coordinates":[$WORLD_RING,${boxRing(lng, lat)}]}}""")
+
+    /** The play-area ring (a single GeoJSON linear ring) centred at [lng]/[lat]: a circle when the round
+     *  field is selected, else the sim rectangle. Shared by the box outline and the dimming mask's hole. */
+    private fun boxRing(lng: Double, lat: Double): String {
         val mpp = METERS_PER_PIXEL_Z0 * cos(lat * PI / 180.0) / 2.0.pow(ANCHOR_ZOOM)
         val degLng = METERS_PER_DEG_LAT * cos(lat * PI / 180.0)
-        val ring = if (Sim.roundField) {
+        return if (Sim.roundField) {
             val rLat = Sim.fieldRadius() * mpp / METERS_PER_DEG_LAT
             val rLng = Sim.fieldRadius() * mpp / degLng
             val sb = StringBuilder()
@@ -128,7 +155,6 @@ object MiniMap {
             "[[${lng - dLng},${lat - dLat}],[${lng + dLng},${lat - dLat}]," +
                 "[${lng + dLng},${lat + dLat}],[${lng - dLng},${lat + dLat}],[${lng - dLng},${lat - dLat}]]"
         }
-        return JSON.parse<Json>("""{"type":"Feature","geometry":{"type":"Polygon","coordinates":[$ring]}}""")
     }
 
     private const val CIRCLE_SEGMENTS = 48

@@ -646,12 +646,15 @@ html, body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
     background: radial-gradient(ellipse at center, #0c1410 0%, #000000 100%);
     color: #ffffff;
     font-family: "Chakra Petch", sans-serif;
     transition: opacity 0.6s ease;
 }
+/* Seat the panel below dead-centre: split the vertical free space top : bottom = 4 : 1 via grow-only flex
+   spacers, so the panel's centre lands ~80% down the screen. */
+.loadingOverlay::before { content: ""; flex: 4 1 0; }
+.loadingOverlay::after { content: ""; flex: 1 1 0; }
 .loadingOverlayDone {
     opacity: 0;
     pointer-events: none;
