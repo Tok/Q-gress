@@ -5,8 +5,7 @@ import agent.Faction
 import agent.action.cond.*
 import agent.qvalue.QActions
 import agent.qvalue.QValue
-import kotlinx.browser.window
-import org.w3c.dom.HTMLInputElement
+import ai.FactionPolicies
 import util.Util
 
 object ActionSelector {
@@ -20,14 +19,10 @@ object ActionSelector {
         }
     }
 
-    fun q(faction: Faction, value: QValue): Double {
-        val id = value.id + "Slider" + faction.nickName
-        // No tuning UI (the title sim / headless runs) → fall back to the slider's default weighting.
-        val slider = window.document.getElementById(id) as? HTMLInputElement
-        return (slider?.valueAsNumber ?: DEFAULT_Q) * value.weight
-    }
-
-    private const val DEFAULT_Q = 0.1 // matches the tuning sliders' default value
+    // The faction's behaviour-slider weighting for [value] × the QValue's own weight. The weighting comes
+    // from the faction's installed FactionPolicy (Phase 6.0) — by default DomSliderPolicy (the tuning
+    // sliders, or 0.1 headless), so this is unchanged from the old inline DOM read.
+    fun q(faction: Faction, value: QValue): Double = FactionPolicies.of(faction).weight(value) * value.weight
 
     private fun default(agent: Agent) = { agent.doNothing() }
     private fun doAnywhereAction(agent: Agent): Agent = Util.select(actionsForAnywhere(agent), default(agent)).invoke()

@@ -24,9 +24,12 @@ see PLAN.md).
     action by **weighted-random selection** (`Util.select`) over candidate actions.
   - **`agent/action/cond/`** — one object per action (`Recruiter`, `Hacker`, `Linker`,
     `Deployer`, `Attacker`, `Recharger`, `Glypher`, `Explorer`, `Recycler`).
-  - **`agent/qvalue/`** — `QActions` (11) and `QDestinations` (7) define the tunable
+  - **`agent/qvalue/`** — `QActions` (12) and `QDestinations` (7) define the tunable
     behaviours. Each `QValue` has a base `weight`; the **slider value (0..1) × weight** is the
     selection probability. Sliders exist per faction (`…SliderFrog` / `…SliderSmurf`).
+  - **`ai/`** — the AI substrate (PLAN Phase 6.0): `FactionPolicy` (the per-faction source of slider
+    weightings; default `DomSliderPolicy` reads the DOM), `SliderVector` (the 19 sliders as one ordered
+    encode/decode vector), `Observation` (a normalized world feature vector — the NN/LLM input).
 - **`portal/`** — portals, resonators, links, fields, XM, cooldowns, level/quality.
 - **`items/`** — bursters, power cubes, resonators, mods, levels.
 - **`config/`** — `Config` (balance constants), `Dim`/`Sim` (geometry), `Location` (preset
@@ -42,10 +45,12 @@ see PLAN.md).
 
 ## The selection brain (sliders → behaviour)
 
-`ActionSelector.q(faction, qValue)` currently reads the slider straight from the DOM
-(`getElementById("${id}Slider${nick}").valueAsNumber × qValue.weight`) and feeds the weight
-into `Util.select` (cumulative-probability weighted random). **This DOM read is the exact
-seam** the future AI drivers plug into (PLAN.md Phase 6 replaces it with a `FactionPolicy`).
+`ActionSelector.q(faction, qValue)` returns `FactionPolicies.of(faction).weight(qValue) × qValue.weight`
+and feeds that into `Util.select` (cumulative-probability weighted random). The default policy
+(`DomSliderPolicy`) reads the slider straight from the DOM
+(`getElementById("${id}Slider${nick}").valueAsNumber`, or `0.1` headless), so behaviour is unchanged —
+but **this policy seam is where the AI drivers plug in** (PLAN.md Phase 6: a net/LLM installs a
+`SliderVectorPolicy` via `FactionPolicies.set`, re-tuning the 19 sliders at checkpoint cadence).
 
 Scoring: `World.calcTotalMu(faction)` (Mind Units = summed field area control) is the headline
 metric. `system/Cycle` snapshots a `Checkpoint` every `Config.ticksPerCheckpoint` ticks into a

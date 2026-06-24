@@ -9,7 +9,7 @@ AI-driver design notes see [docs/NN.md](docs/NN.md) + [docs/LLM.md](docs/LLM.md)
 ## North star
 
 Q-Gress becomes an **AI-vs-AI sandbox**: each faction (ENL/RES) is driven by an agent whose
-**output layer _is_ the 18 behaviour sliders** — a custom net and/or an in-browser LLM. Human
+**output layer _is_ the 19 behaviour sliders** — a custom net and/or an in-browser LLM. Human
 can play any side; any two brains can be matched. **Desktop-only**; mobile is blocked. Until
 the AI layer lands, the slider sim is the substrate we keep hardening.
 
@@ -115,17 +115,23 @@ orbiting camera, 3D terrain, colour fade, and a GitHub footer link. Wiped by the
 **Decided:** build **both** AI drivers on **one** shared substrate, so any faction can be Human /
 Net / LLM independently and fight in any combination. Track design lives in [docs/NN.md](docs/NN.md)
 (custom net + neuroevolution) and [docs/LLM.md](docs/LLM.md) (in-browser LLM). The slider vector
-stays the action substrate (the net/LLM only re-tunes the 18 sliders at checkpoint cadence — it does
+stays the action substrate (the net/LLM only re-tunes the 19 sliders at checkpoint cadence — it does
 **not** replace per-agent `ActionSelector`).
 
-**6.0 — Substrate I: programmatic policy API + determinism** _(prereq, no AI yet)_
-- [ ] **`FactionPolicy`** — replace the DOM slider read in `ActionSelector.q()` with a per-faction
-  policy source; default `DomSliderPolicy` = today's behaviour (zero gameplay change).
-- [ ] **`Observation` (pure)** — `observe(world, faction): DoubleArray`, fixed normalized feature
-  vector (MU + Δ, per-faction counts, tick fraction, avg agent XM/level, …). The NN/LLM input.
-- [ ] **`SliderVector` (pure)** — 18 named slots ↔ `QActions`+`QDestinations`; encode/decode + clamp.
+**6.0 — Substrate I: programmatic policy API + determinism** _(prereq, no AI yet)_ — **DONE** (`ai/`)
+- [x] **`FactionPolicy`** (`ai/FactionPolicy.kt`) — `ActionSelector.q()` now reads the faction's installed
+  policy × the QValue weight; the registry `FactionPolicies` defaults each faction to `DomSliderPolicy`
+  (the tuning sliders, or `0.1` headless) → zero gameplay change. A driver calls `FactionPolicies.set`.
+- [x] **`Observation` (pure)** (`ai/Observation.kt`) — `observe(faction): DoubleArray`, a fixed 13-slot
+  normalized vector (cycle fraction, MU/link/field share, portal control, roster fill, avg level + XM per
+  side). Read-only over `World`; deterministic. The NN/LLM input.
+- [x] **`SliderVector` (pure)** (`ai/SliderVector.kt`) — **19** named slots (12 `QActions` + 7
+  `QDestinations`, stable `ORDER`) ↔ encode/decode + clamp; `SliderVectorPolicy` wraps one as a
+  `FactionPolicy`. (PLAN earlier said "18" — actual count is 19.)
 - Seedable RNG is **done** — `Util.random()` is a seedable mulberry32; same seed reproduces a world
-  (powers shareable "Copy link" + the 6.1 match harness). Remaining for 6.0: the three items above.
+  (powers shareable "Copy link" + the 6.1 match harness).
+- Also made the Q-value system **headless-safe** (`QActions` skips UI icons, `DomSliderPolicy` skips the
+  DOM read when there's no `window`) so the substrate inits in Node — a prereq for the 6.1 SimRunner.
 
 **6.1 — Substrate II: headless match harness** _(the training engine; pays off the functional-core split)_
 - [ ] **`SimRunner`** — `runMatch(gridFixture, policyEnl, policyRes, seed, maxTicks): MatchResult`,
@@ -136,7 +142,7 @@ stays the action substrate (the net/LLM only re-tunes the 18 sliders at checkpoi
   runs headless & deterministic, hundreds/min.
 
 **6.2 — Track A: custom net + neuroevolution** → [docs/NN.md](docs/NN.md)
-- [ ] Tiny MLP (`ai/net/`, output = 18 sliders); ES/self-play trainer; `NetPolicy` (JSON genome);
+- [ ] Tiny MLP (`ai/net/`, output = 19 sliders); ES/self-play trainer; `NetPolicy` (JSON genome);
   live **activation + path visualization**. Exit: beats the default-slider baseline over K seeded
   matches, loads into the live game, activations visualized.
 
