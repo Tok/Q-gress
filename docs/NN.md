@@ -8,8 +8,8 @@
 
 ## The idea (the original "Q-gress")
 
-Each faction is driven by a small purpose-built network whose **output layer _is_ the 18
-behaviour sliders** (11 `QActions` + 7 `QDestinations`, each 0..1). Input is a normalized
+Each faction is driven by a small purpose-built network whose **output layer _is_ the 17
+behaviour sliders** (10 `QActions` + 7 `QDestinations`, each 0..1). Input is a normalized
 `Observation` of world state; output is a `SliderVector`, re-evaluated at a slow cadence
 (≈ once per checkpoint). The slider vector stays the action substrate — the net does **not**
 replace per-agent `ActionSelector`.
@@ -17,7 +17,7 @@ replace per-agent `ActionSelector`.
 ## What's built (`ai/net/`)
 
 - **`Net`** — a tiny fixed-topology MLP: `Observation.SIZE` (13) inputs → one hidden layer (tanh) →
-  `SliderVector.SIZE` (18) outputs (sigmoid → 0..1). All weights in one flat genome array; pure
+  `SliderVector.SIZE` (17) outputs (sigmoid → 0..1). All weights in one flat genome array; pure
   deterministic forward pass.
 - **`NetPolicy`** — wraps a `Net` as a `FactionPolicy`: maps the live `Observation` → a `SliderVector`,
   re-evaluated **once per scoring checkpoint** (not per action). `Evolution.train(...).bestPolicy(faction)`

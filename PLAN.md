@@ -9,7 +9,7 @@ AI-driver design notes see [docs/NN.md](docs/NN.md) + [docs/LLM.md](docs/LLM.md)
 ## North star
 
 Q-Gress becomes an **AI-vs-AI sandbox**: each faction (ENL/RES) is driven by an agent whose
-**output layer _is_ the 18 behaviour sliders** — a custom net and/or an in-browser LLM. Human
+**output layer _is_ the 17 behaviour sliders** — a custom net and/or an in-browser LLM. Human
 can play any side; any two brains can be matched. **Desktop-only**; mobile is blocked. Until
 the AI layer lands, the slider sim is the substrate we keep hardening.
 
@@ -64,6 +64,11 @@ footer (`util/ui/Footer`: EVENT LOG / AGENTS). Remaining:
   (`HackFx`/`SoundUtil`); this is the reward/skill/timing model behind it. Lives in
   `Glypher`/`Portal.tryGlyph` + a glyph skill on `agent/Skills`; expose it as a high-risk/high-reward
   QAction the AI weighs (ties into Phase 6 — the net/LLM should learn when glyphing is worth it).
+- [ ] **Recruiting as an agent skill + items.** Recruiting is no longer a tuning slider (retired — it was
+  too snowbally to crank); its rate is now self-balancing (`Recruiter.selectionWeight` × the anti-snowball
+  `Balance.recruitFactor`, so the smaller team recruits more). Next: make recruiting a per-agent **skill**
+  (`agent/Skills`) that some agents are better at, supported by **items** (e.g. *beer* — a temporary recruit
+  boost), instead of a flat faction-wide rate. A richer, more characterful balance lever than a global knob.
 - [ ] **Aim skill (XMP / Ultra Strike accuracy)** — a per-agent skill on `agent/Skills`: a high-aim
   agent detonates **closer to the portal centre** (max damage); a low-aim agent's blasts land **farther
   off-centre**, so XMP/Ultra-Strike damage falls off with that miss distance. Models skill spread
@@ -115,7 +120,7 @@ orbiting camera, 3D terrain, colour fade, and a GitHub footer link. Wiped by the
 **Decided:** build **both** AI drivers on **one** shared substrate, so any faction can be Human /
 Net / LLM independently and fight in any combination. Track design lives in [docs/NN.md](docs/NN.md)
 (custom net + neuroevolution) and [docs/LLM.md](docs/LLM.md) (in-browser LLM). The slider vector
-stays the action substrate (the net/LLM only re-tunes the 18 sliders at checkpoint cadence — it does
+stays the action substrate (the net/LLM only re-tunes the 17 sliders at checkpoint cadence — it does
 **not** replace per-agent `ActionSelector`).
 
 **Fitness objective (what we optimize for):** each faction maximizes its **Mind Units at every
@@ -131,7 +136,7 @@ area is maximized, and hold it across the cycle. So fitness = the **sum/average 
 - [x] **`Observation` (pure)** (`ai/Observation.kt`) — `observe(faction): DoubleArray`, a fixed 13-slot
   normalized vector (cycle fraction, MU/link/field share, portal control, roster fill, avg level + XM per
   side). Read-only over `World`; deterministic. The NN/LLM input.
-- [x] **`SliderVector` (pure)** (`ai/SliderVector.kt`) — **18** named slots (11 `QActions` + 7
+- [x] **`SliderVector` (pure)** (`ai/SliderVector.kt`) — **17** named slots (10 `QActions` + 7
   `QDestinations`, stable `ORDER`) ↔ encode/decode + clamp; `SliderVectorPolicy` wraps one as a
   `FactionPolicy`. (Was 19; the faction-neutral EXPLORE action was retired — portal discovery is now a
   density-driven system process, see *Gameplay mechanics*.)

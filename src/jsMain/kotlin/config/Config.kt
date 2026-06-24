@@ -32,6 +32,11 @@ object Config {
     const val recruitmentXmCost = 250 // XM spent per recruit attempt (cf. link = 250)
     const val recruitmentBaseChance = 0.05 // success chance at an empty roster; scales →0 at the cap
 
+    // Base recruit selection weight (Recruiter.selectionWeight × Balance.recruitFactor) — recruiting is no
+    // longer a tuning slider. Matches the old default (0.1 slider × 0.0005 weight) so the even-team rate is
+    // unchanged; the anti-snowball recruitFactor modulates it per faction.
+    var recruitWeight = 0.00005
+
     // Anti-snowball recruiting (Balance.recruitFactor): the LARGER faction recruits less, the SMALLER more,
     // so team sizes self-correct instead of the leader running away (recruiting was the dominant snowball).
     // The recruit chance is multiplied by (enemyRoster+1)/(myRoster+1), clamped to this band.
