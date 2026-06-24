@@ -166,12 +166,16 @@ area is maximized, and hold it across the cycle. So fitness = the **sum/average 
   extracted into `system.Simulation` (the live `HtmlUtil.tick` calls the same `stepEntities`). Also hardened a
   latent unbounded recursion in `Portal.findRandomPointNearPortal` (the harness surfaced it) and made
   `Agent.initialActionPortal` reuse a world portal (no per-agent flow-field compute).
-  - _Throughput caveat:_ a full-resolution grid (~21.6k cells) is too slow for many matches yet — each
-    flow-field compute is O(cells) and portal discovery/creation triggers them. Small grids run fast; the
-    deferred **pathfinding scalability** work (multi-mode nav / coarser `pathResolution` / open-area shortcut)
-    is the prerequisite for high match throughput. `SimRunnerTest` uses a small arena for that reason.
-  - _Realism caveat:_ headless spawn positions use grid (shadow) coords, so on a sub-Sim grid agents cluster;
-    fuller match realism is a follow-up (matters once training runs in 6.2).
+- [x] **Match throughput — SOLVED (it was never pathfinding).** The AI only consumes stats
+  (`ai.Observation`), never cell data, so cell-grid flow-field navigation was never on the AI's critical
+  path. Profiling showed the real cost was `Pos.createRandomPassable` doing an **O(cells) full shuffle +
+  allocation on every spawn/recruit**; cached the passable-key list per grid → O(1). A full-resolution
+  match (180×120 ≈ 23k cells, 300 ticks) dropped **160,000 ms → ~20 ms** (~8000×). Turning flow fields off
+  alone did *nothing* — confirming pathfinding wasn't the bottleneck. So the cell sim is fast enough for
+  training as-is; no abstract/stats-only sim or pathfinding rework needed. `MatchSetup.flowFields` (default
+  off = straight-line movement; on = obstacle-routed) remains a fidelity knob, not a perf lever.
+  - _Realism caveat (open):_ headless spawn positions use grid (shadow) coords, so on a sub-Sim grid agents
+    cluster; fuller match realism is a follow-up (matters once training runs in 6.2).
 - [ ] **Grid fixtures** — serialize a built `Grid` (+ portal seeds) to committed JSON so matches
   reproduce without live tiles / `readPixels`. `GridFixture` already does the RLE serialization; the
   real-tile fixtures still need the `?debug=capture` pass.

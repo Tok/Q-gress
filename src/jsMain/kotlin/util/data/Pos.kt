@@ -123,14 +123,26 @@ data class Pos(val x: Double, val y: Double) {
             return candidates[(Util.random() * candidates.size).toInt()]
         }
 
+        // Cache the passable-cell key list per grid (rebuilt only when the grid reference changes — once
+        // per world / headless match). Picking a random passable cell was an O(cells) full shuffle +
+        // allocation on every call (every recruit), which dominated headless-match cost; this makes it O(1)
+        // after the first call (and fixes spawning on impassable cells — the old shuffle keyed off all cells).
+        private var cachedGrid: Grid? = null
+        private var cachedPassableKeys: List<Pos> = emptyList()
+
+        private fun passableKeys(grid: Grid): List<Pos> {
+            if (cachedGrid !== grid) {
+                cachedGrid = grid
+                cachedPassableKeys = grid.filterValues { it.isPassable }.keys.toList()
+            }
+            return cachedPassableKeys
+        }
+
         fun createRandomPassable(grid: Grid) = createRandomPassable(grid, 10)
         private fun createRandomPassable(grid: Grid, retries: Int): Pos {
             if (HtmlUtil.isNotRunningInBrowser()) {
-                return if (grid.isEmpty()) {
-                    Pos(0, 0)
-                } else {
-                    Util.shuffle(grid.keys).first()
-                }
+                val keys = passableKeys(grid)
+                return if (keys.isEmpty()) Pos(0, 0) else keys[(Util.random() * keys.size).toInt()]
             }
             check(grid.isNotEmpty())
             val random = createRandomNoOffset()

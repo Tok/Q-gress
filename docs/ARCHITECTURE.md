@@ -128,8 +128,9 @@ and the message log (`Com`) already self-guard / are pure, so they stay outside 
 `Simulation.stepEntities`, a whole match runs in Node: `SimRunner.runMatch(grid, seed, maxTicks, …)` seeds
 the RNG + a `GridFixture` grid, seeds portals/agents/NPCs, ticks, and returns a `MatchResult` of
 per-checkpoint MU (the AI fitness signal). `SimRunner.reset()` clears all match state between runs. This is
-the training/eval engine for Phase 6.2+. (Match *throughput* at full grid resolution still needs the deferred
-pathfinding-scalability work — see PLAN.)
+the training/eval engine for Phase 6.2+. A full-resolution match runs in ~tens of ms (the AI consumes only
+`Observation` stats, never cell data, so flow-field navigation isn't on its critical path); `MatchSetup.flowFields`
+toggles obstacle-routed vs straight-line movement for fidelity, not speed.
 
 **Title screen reuses this whole pipeline.** `util/ui/TitleSim` runs a small *real* `Scene3D` sim
 (real grid, ~8 portals, a 3-v-3 levelled roster + ~30 NPCs, the real tick loop) behind the faction

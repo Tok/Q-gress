@@ -46,12 +46,22 @@ data class MatchResult(
     }
 }
 
-/** How many portals / faction agents / NPCs a match starts with (defaults mirror the live game's onboarding). */
+/**
+ * How a match starts: roster sizes (defaults mirror the live game's onboarding) and the movement model.
+ *
+ * [flowFields] = false (the default) runs **straight-line movement** — agents head directly for their
+ * target (the live game's no-field fallback). The AI only consumes portal/agent/field *stats*
+ * ([ai.Observation]), never cell data, so obstacle-routed navigation doesn't change what it learns; off is
+ * the right default for training. Set true to spot-check against the live game's exact movement (pays an
+ * O(cells) flow-field compute per portal). Note: match speed comes from the O(1) spawn pick in
+ * `Pos.createRandomPassable`, not this toggle — a full match runs in ~tens of ms either way.
+ */
 data class MatchSetup(
     val portals: Int = Config.startPortals,
     val frogs: Int = Config.startFrogs(),
     val smurfs: Int = Config.startSmurfs(),
     val npcs: Int = DEFAULT_NPCS,
+    val flowFields: Boolean = false,
 ) {
     companion object {
         const val DEFAULT_NPCS = 30
@@ -87,7 +97,7 @@ object SimRunner {
     ): MatchResult {
         reset()
         Util.seed(seed)
-        Config.headlessFieldCompute = true
+        Config.headlessFieldCompute = setup.flowFields // off by default → cheap abstract (straight-line) movement
         World.grid = grid
         policyEnl?.let { FactionPolicies.set(Faction.ENL, it) }
         policyRes?.let { FactionPolicies.set(Faction.RES, it) }
