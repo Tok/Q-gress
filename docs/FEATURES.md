@@ -160,10 +160,16 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
   `Observation → SliderVector` mapping re-evaluated per checkpoint (attack when behind, consolidate into
   links/fields when ahead, hack/glyph when low on XM). Selectable per faction in the **AI** tab's driver
   picker; a sane baseline opponent until a trained net is loadable.
-- **AI footer tab** (`util/ui/AiPanel`, PLAN Phase 6): a footer tab (AGENTS / **AI** / TUNING / EVENT LOG)
-  showing, per faction, the **driver** picker (Manual + **Heuristic** live; Net/LLM disabled until 6.2/6.3)
-  and a live **observation** readout — the 13-slot normalized feature vector (`ai.Observation`) a net/LLM
-  would receive, as labelled 0–1 bars. The control + transparency surface for the AI substrate.
+- **AI footer tab** (`util/ui/AiPanel`, PLAN Phase 6): a footer tab (AGENTS / **AI** / NET / TUNING / EVENT
+  LOG) showing, per faction, the **driver** picker (Manual + **Heuristic** + **Neural net** live; LLM until
+  6.3) and a live **observation** readout — the 13-slot normalized feature vector (`ai.Observation`) a net/LLM
+  receives, as labelled 0–1 bars. The control + transparency surface for the AI substrate.
+- **NET footer tab** (`util/ui/NetVizPanel`): a live **activation diagram** of the neural-net driver. Per
+  net-driven faction it draws the net as three node columns — observation inputs, hidden neurons, slider
+  outputs — wired by edges whose brightness tracks each connection's live contribution (weight × upstream
+  activation). Node brightness = activation; the strongest outputs (the actions the net favours now) are
+  ringed + labelled and the top one's incoming edges are lit as the "chosen path". You watch the net think as
+  the match swings (`Net.forwardTraced` exposes the per-layer activations).
 - **TUNING footer tab** (`util/ui/SliderHistoryPanel`): one uPlot sparkline per behaviour-slider slot,
   per faction, over the checkpoint window — the visible record of an AI driver re-tuning the sliders (drifting
   lines) vs Manual control (flat). Faction-agnostic overlap blend where the two coincide, like the history

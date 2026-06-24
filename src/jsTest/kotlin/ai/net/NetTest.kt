@@ -39,4 +39,28 @@ class NetTest {
     fun rejectsAGenomeOfTheWrongLength() {
         assertFailsWith<IllegalArgumentException> { Net.fromGenome(DoubleArray(5), hidden = 8) }
     }
+
+    @Test
+    fun tracedForwardExposesEveryLayerAndAgreesWithForward() {
+        val net = Net.fromGenome(DoubleArray(Net.genomeSize(8)) { it * 0.001 - 0.05 }, hidden = 8)
+        val input = DoubleArray(Observation.SIZE) { 0.3 }
+        val trace = net.forwardTraced(input)
+
+        assertEquals(Observation.SIZE, trace.input.size)
+        assertEquals(8, trace.hidden.size, "the hidden layer is captured")
+        assertEquals(SliderVector.SIZE, trace.output.size)
+        assertTrue(trace.hidden.all { it in -1.0..1.0 }, "tanh hidden activations")
+        assertEquals(net.forward(input).toList(), trace.output.toList(), "the traced output matches forward()")
+    }
+
+    @Test
+    fun weightAccessorsReadBackTheGenome() {
+        // Genome layout: hidden neurons [bias, w_in0, w_in1, …] then output neurons [bias, w_h0, …].
+        val genome = DoubleArray(Net.genomeSize(4)) { it.toDouble() }
+        val net = Net.fromGenome(genome, hidden = 4)
+
+        assertEquals(genome[0 * (Observation.SIZE + 1) + 1 + 2], net.inputWeight(i = 2, h = 0))
+        val outBase = 4 * (Observation.SIZE + 1)
+        assertEquals(genome[outBase + 5 * (4 + 1) + 1 + 3], net.hiddenWeight(h = 3, o = 5))
+    }
 }

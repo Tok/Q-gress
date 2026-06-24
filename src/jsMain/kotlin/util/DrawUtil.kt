@@ -12,6 +12,7 @@ import util.ui.AiPanel
 import util.ui.DebugHud
 import util.ui.HistoryPanel
 import util.ui.Inspector
+import util.ui.NetVizPanel
 import util.ui.SliderHistoryPanel
 import util.ui.StatsPanel
 import util.ui.TopAgentsPanel
@@ -36,6 +37,7 @@ object DrawUtil {
         HistoryPanel.update()
         TuningPanel.refresh() // mirror an AI driver's vector onto the sliders (no-op under manual control)
         AiPanel.update() // AI footer tab: per-faction driver + live observation readout
+        NetVizPanel.update() // NET footer tab: the net driver's live activation diagram
         SliderHistoryPanel.update() // TUNING footer tab: each slider's value over the checkpoint window
         if (Styles.isDrawTopAgents) {
             TopAgentsPanel.update()

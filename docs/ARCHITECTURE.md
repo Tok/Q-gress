@@ -107,8 +107,9 @@ new regions from Overpass as the camera flies elsewhere. Elevation comes from th
   3D pass shares the map depth buffer so buildings occlude the sim.
 - **HUD → DOM.** `util/ui/`: `StatsPanel` (MU bars + time/tick + action LOG), `HistoryPanel`
   (per-metric uPlot sparklines + live values), `TuningPanel` (behaviour sliders; auto-moves under an AI
-  driver), `AiPanel` (driver picker + observation readout), `SliderHistoryPanel` (the TUNING tab —
-  per-slider sparklines over time), `TopAgentsPanel`, `Inspector`, `LayerView`,
+  driver), `AiPanel` (driver picker + observation readout), `NetVizPanel` (the NET tab — the net driver's
+  live activation diagram), `SliderHistoryPanel` (the TUNING tab — per-slider sparklines over time),
+  `TopAgentsPanel`, `Inspector`, `LayerView`,
   `Onboarding`, `LoadingOverlay`, `MiniMap` (globe inset), `Controls`. Styled by
   `resources/stylesheet/QGress.css` (faction colours via `--enl-color`/`--res-color`;
   **Chakra Petch** title face, **Coda** for text/numbers).

@@ -25,12 +25,25 @@ class Net(val hidden: Int, private val weights: DoubleArray) {
     /** A defensive copy of the flat genome (to mutate / serialize). */
     fun genome(): DoubleArray = weights.copyOf()
 
+    /** A captured forward pass — every layer's activations (for the live activation visualization). */
+    class Trace(val input: DoubleArray, val hidden: DoubleArray, val output: DoubleArray)
+
     /** Run the net: [input] (length [INPUTS]) → [OUTPUTS] values in 0..1. */
-    fun forward(input: DoubleArray): DoubleArray {
+    fun forward(input: DoubleArray): DoubleArray = forwardTraced(input).output
+
+    /** Like [forward] but keeps the hidden-layer activations too — what the activation viz renders. */
+    fun forwardTraced(input: DoubleArray): Trace {
         require(input.size == INPUTS) { "expected $INPUTS inputs, got ${input.size}" }
         val hiddenOut = dense(input, hidden, 0) { tanh(it) }
-        return dense(hiddenOut, OUTPUTS, hidden * (INPUTS + 1)) { sigmoid(it) }
+        val output = dense(hiddenOut, OUTPUTS, hidden * (INPUTS + 1)) { sigmoid(it) }
+        return Trace(input, hiddenOut, output)
     }
+
+    /** Weight on the edge from input [i] to hidden neuron [h] (for the activation diagram's edges). */
+    fun inputWeight(i: Int, h: Int): Double = weights[h * (INPUTS + 1) + 1 + i]
+
+    /** Weight on the edge from hidden neuron [h] to output [o]. */
+    fun hiddenWeight(h: Int, o: Int): Double = weights[hidden * (INPUTS + 1) + o * (hidden + 1) + 1 + h]
 
     // One fully-connected layer reading genome weights starting at [from]: for each output neuron, a bias
     // then one weight per input, run through [activation].

@@ -14,7 +14,7 @@ import config.Config
  * (the net re-tunes the sliders periodically; it does not run per action). [weight] just reads the cached
  * vector between checkpoints, so installing this costs no more per-action than a plain slider read.
  */
-class NetPolicy(private val net: Net, private val faction: Faction) : FactionPolicy {
+class NetPolicy(val net: Net, private val faction: Faction) : FactionPolicy {
 
     private var vector: SliderVector = SliderVector.uniform()
     private var evaluatedCheckpoint = -1

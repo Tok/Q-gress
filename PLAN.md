@@ -233,8 +233,13 @@ area is maximized, and hold it across the cycle. So fitness = the **sum/average 
   (flat lines under Manual). Snapshots via `FactionPolicies.of(f).weight(q)` so manual + AI read uniformly.
 - [ ] JSON genome (de)serialization for saving/loading a trained net; load a winner into the live game (then
   the **net** driver in the AI tab installs a `NetPolicy` — the slider-animation + TUNING graph already work).
-- [ ] Live **activation + chosen-path visualization** (the payoff). Exit: beats the default-slider baseline
-  over K seeded matches, loads into the live game, activations visualized.
+- [x] **Live activation + chosen-path visualization — DONE** (`util/ui/NetVizPanel`, the **NET** footer tab).
+  `Net.forwardTraced` captures every layer's activations; the panel draws the net as observation→hidden→slider
+  node columns wired by edges whose brightness = live contribution (weight × upstream activation), node
+  brightness = activation, the top outputs ringed + labelled (the favoured actions) and the top one's incoming
+  edges lit as the "chosen path". Recomputed each frame from the current observation, per net-driven faction.
+  **6.2 exit met:** the champion beats the default-slider baseline, loads into the live game (`NetStore` →
+  the AI tab's Neural-net driver), and its activations are visualized.
 
 **6.3 — Track B: in-browser LLM driver** → [docs/LLM.md](docs/LLM.md)
 - [ ] `LlmPolicy` at checkpoint cadence (state → prompt → JSON slider vector, schema-validated,
