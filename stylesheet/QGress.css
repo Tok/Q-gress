@@ -412,7 +412,7 @@ html, body {
 /* Thin "source on GitHub" link pinned to the bottom of the title screen. */
 .titleGithub {
     position: fixed;
-    bottom: 12px;
+    bottom: 30px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 9999;
@@ -430,16 +430,17 @@ html, body {
 .titleGithub:hover {
     color: #ffffff;
 }
-/* © credit in the title footer, bottom-right (alongside the centered GitHub link). */
+/* © credit in the title footer, centered directly under the GitHub link (clear of MapLibre's ⓘ). */
 .titleCredit {
     position: fixed;
-    bottom: 12px;
-    right: 16px;
+    bottom: 13px;
+    left: 50%;
+    transform: translateX(-50%);
     z-index: 9999;
     font-family: "Coda", monospace;
-    font-size: 12px;
+    font-size: 10px;
     letter-spacing: 1px;
-    color: rgba(230, 235, 232, 0.6);
+    color: rgba(230, 235, 232, 0.55);
     pointer-events: none;
 }
 .titleGithub svg {
