@@ -22,16 +22,23 @@ object Balance {
     }
 
     /**
-     * Resonator-damage multiplier (`≥ 1`) for an attacker of [faction]: the side BEHIND on portals hits
-     * harder (up to `1 + [Config.comebackAttackBonus]` at a full deficit), so a losing faction can claw
-     * portals back — "attacking easier than defending". Exactly `1.0` when even or ahead (no penalty for
-     * leading; the underdog is helped, the leader isn't punished).
+     * Resonator-damage multiplier (`≥ 1`) for an attacker of [faction] — the comeback rubber-band. The side
+     * that's BEHIND hits much harder so it can tear down the leader's fielded, link-mitigated portals
+     * (collapsing a field = a big MU swing = a lead change), preventing a runaway leader. Scales with the
+     * WORSE of the MU and portal deficits (so a faction shut out on either gets help), STEEPLY (deficit²) so
+     * it's gentle when close but powerful when near-defeated: up to `1 + COMEBACK_MAX × dynamism` (≈ 2.8×
+     * damage at default). Exactly `1.0` when even or ahead — the underdog is helped, the leader isn't punished.
      */
     fun attackBoost(faction: Faction): Double {
-        val mine = World.countPortals(faction)
-        val theirs = World.countPortals(faction.enemy())
-        val total = (mine + theirs).coerceAtLeast(1)
-        val deficit = ((theirs - mine).toDouble() / total).coerceAtLeast(0.0)
-        return 1.0 + Config.comebackAttackBonus() * deficit
+        val muDeficit = shareDeficit(World.calcTotalMu(faction), World.calcTotalMu(faction.enemy()))
+        val portalDeficit = shareDeficit(World.countPortals(faction), World.countPortals(faction.enemy()))
+        val deficit = maxOf(muDeficit, portalDeficit)
+        return 1.0 + Config.comebackMax * Config.comebackAttackBonus() * deficit * deficit
+    }
+
+    // How far [mine] is behind [theirs] as a 0..1 share of the total (0 = even/ahead, 1 = fully shut out).
+    private fun shareDeficit(mine: Int, theirs: Int): Double {
+        val total = (mine + theirs).toDouble()
+        return if (total <= 0.0) 0.0 else ((theirs - mine) / total).coerceIn(0.0, 1.0)
     }
 }

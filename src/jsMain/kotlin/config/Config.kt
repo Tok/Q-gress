@@ -80,13 +80,17 @@ object Config {
     /** Building-shake intensity multiplier (0–2), tunable live from the menu "Building shake" slider. */
     var buildingShakeMultiplier = 1.0
 
+    // Peak comeback strength (Balance.attackBoost): a fully-shut-out faction deals up to
+    // `comebackMax × dynamism ×` deficit² extra resonator damage, so it can tear down the leader's fielded
+    // portals and turn the board. The anti-runaway lever (tuned via headless sweeps; ai/BalanceSweep).
+    var comebackMax = 3.0 // headless sweep optimum (ai/BalanceSweep): >3 over-corrects → chaotic + unbalanced
+
     // Combat dynamism (0 = realistic/tanky shields, slow board … 1 = portals flip very easily). The SINGLE
     // combat knob (menu "Combat dynamics" slider) — it drives shield mitigation, weapon-drop rate, how eagerly
-    // agents attack, and the underdog comeback. Default ≈0.45: measured (over seeded SimRunner matches) as the
-    // sweet spot — portals are tanky enough to HOLD + field + score, yet the board still churns and MU swings
-    // (true dynamism = MU volatility, not just fast capturing). Higher → churnier but fields rarely survive to
-    // score. (The authentic 95% mitigation cap stays in IngressFacts.)
-    var combatDynamism = 0.45
+    // agents attack, and the underdog comeback. Default 0.6: the headless balanced-dynamics sweep optimum
+    // (ai/BalanceSweep) — the MU lead alternates and is shared ~evenly between equally-tuned factions, with
+    // real fields forming, without descending into chaos. (The authentic 95% mitigation cap is in IngressFacts.)
+    var combatDynamism = 0.6
 
     /** Gameplay shield/link mitigation cap for the current dynamism: higher dynamism → lower cap → flips. */
     fun maxMitigation(): Int =
