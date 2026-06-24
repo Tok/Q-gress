@@ -47,6 +47,14 @@ model yet.
 ## Drop rates (per hack roll) — `config/DropRates.kt`
 - **Resonators / XMP / Power Cubes**: roll by **tier** via `portal/Quality.kt` (BEST 0.1 / TOP 0.3 /
   GOOD 0.5 / MORE 0.7, with level offsets). Community estimate: ~1.5 resonators per item roll.
+- **XMP + Ultra-Strike yield** is scaled by the **`Config.weaponDropMultiplier`** live knob (menu
+  "Weapon drops" slider, `1×` base … default **`3×`** — tripled so agents can sustain assaults and
+  flip defended portals). It multiplies the XMP draw count (`DropRates.xmpDropMultiplier`, base 2) and
+  the Ultra-Strike draw count.
+- **Ultra Strikes** *(sim-tuning, not authentic)*: now drop from hacks at `DropRates.usDropChance`
+  (default 0.25) per weapon draw — a single Bernoulli per draw, so **rarer** than XMP's quality
+  cascade. Agents spend a US for the per-volley mod-knock roll when they have one (`Attacker`), since
+  Ultra-Strikes strip shields far better than Bursters → the dynamism payoff.
 - **Portal key**: `DropRates.keyChance` (default 0.8).
 - **Shields**: per type (`DropRates.shieldChance`, defaults from `ShieldType.chance`).
 - **Heat sinks**: per type (`DropRates.heatSinkChance`).

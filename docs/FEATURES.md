@@ -330,6 +330,11 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
 - **Drop rates** are centralized + tunable in `config/DropRates` (single source; future per-game
   override), surfaced in-app via **Menu → Drop rates** and documented (with ~2018 Ingress sources) in
   `docs/MECHANICS.md`. Fixed a long-standing bug where viruses never dropped (integer `1/roll` = 0).
+- **Weapon-drop slider** (Menu "Weapon drops", `Config.weaponDropMultiplier`, 1×–5×, default **3×**):
+  a live knob that scales XMP **and** Ultra-Strike yield per hack, for a more dynamic, assault-heavy
+  sim. **Ultra-Strikes now drop from hacks** (rarer than XMP, `DropRates.usDropChance`) and agents
+  **spend them on the per-volley mod-knock roll** (`Attacker`) — far better at stripping shields than
+  Bursters, so defended portals flip sooner.
 - **3D**: mods render inside the orb at tetrahedron vertices, shaped by type — **dodecahedron**
   (shield) / **pentagonal radiator** (heat sink) / **diagonal cube** (link amp) — rarity-coloured, plus
   a sci-fi **shield bubble** (`ShieldShader`: camera-tracking Fresnel + animated hex lattice + bloom

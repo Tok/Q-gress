@@ -17,8 +17,13 @@ object DropRates {
     var keyChance: Double = Probabilities.keyChance
 
     /** XMP yield multiplier per hack (sim-tuning, not authentic): the base draws give ~4 XMPs/hack, too few
-     *  for agents to sustain assaults on defended portals — this scales that up so attacks stay frequent. */
+     *  for agents to sustain assaults on defended portals — this scales that up so attacks stay frequent.
+     *  Scaled live by the menu "Weapon drops" slider ([config.Config.weaponDropMultiplier]). */
     var xmpDropMultiplier: Int = 2
+
+    /** Ultra-Strike drop chance per weapon draw (rarer than XMP, one Bernoulli vs XMP's quality cascade —
+     *  as in Ingress). Also scaled live by the "Weapon drops" slider ([config.Config.weaponDropMultiplier]). */
+    var usDropChance: Double = 0.25
 
     /** Per-shield-type drop chance (rarer = lower); defaults from [ShieldType.chance]. */
     val shieldChance: MutableMap<ShieldType, Double> =

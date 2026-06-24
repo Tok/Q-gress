@@ -3,8 +3,10 @@ import agent.Faction
 import agent.Inventory
 import config.Dim
 import items.PowerCube
+import items.UltraStrike
 import items.XmpBurster
 import items.deployable.Resonator
+import items.level.UltraStrikeLevel
 import portal.Link
 import portal.Octant
 import portal.Portal
@@ -39,6 +41,7 @@ object Factory {
     fun inventory() = Inventory.empty()
     fun portalKey() = PortalKey(portal(), owner())
     fun xmpBurster() = XmpBurster.create(owner(), 1)
+    fun ultraStrike(level: Int = 1) = UltraStrike(UltraStrikeLevel.valueOf(level), owner())
     fun resonator(owner: Agent? = owner(), level: Int = 1) = Resonator.create(owner ?: owner(), level)
     fun powerCube() = PowerCube.create(owner(), 1)
     fun slot() = ResonatorSlot.create()

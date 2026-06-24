@@ -10,6 +10,7 @@ import config.Time
 import extension.*
 import items.PowerCube
 import items.QgressItem
+import items.UltraStrike
 import items.XmpBurster
 import items.deployable.HeatSink
 import items.deployable.Mod
@@ -19,6 +20,7 @@ import items.deployable.Virus
 import items.level.PortalLevel
 import items.level.PowerCubeLevel
 import items.level.ResonatorLevel
+import items.level.UltraStrikeLevel
 import items.level.XmpLevel
 import items.types.HeatSinkType
 import items.types.ShieldType
@@ -271,6 +273,7 @@ data class Portal(
         val newStuff = mutableListOf<QgressItem?>()
         newStuff.addAll(obtainResos(hacker, level))
         newStuff.addAll(obtainXmps(hacker, level))
+        newStuff.addAll(obtainUltraStrikes(hacker, level))
         newStuff.addAll(obtainShields(hacker))
         newStuff.addAll(obtainHeatSinks(hacker))
         newStuff.addAll(obtainVirus(hacker))
@@ -301,7 +304,7 @@ data class Portal(
 
     private fun obtainXmps(hacker: Agent, level: Int): List<QgressItem> {
         val stuff = mutableListOf<QgressItem>()
-        repeat(DropRates.xmpDropMultiplier) {
+        repeat(weaponDraws()) {
             // sim-tuning: more XMPs/hack so agents can sustain assaults
             Quality.values().map { quality ->
                 val selectedLevel = XmpLevel.find(level, quality).level
@@ -312,6 +315,21 @@ data class Portal(
         }
         return stuff
     }
+
+    private fun obtainUltraStrikes(hacker: Agent, level: Int): List<QgressItem> {
+        val stuff = mutableListOf<QgressItem>()
+        repeat(weaponDraws()) {
+            // US drops are rarer than XMP: one Bernoulli per draw, not a full quality cascade (as in Ingress).
+            if (Util.random() < DropRates.usDropChance) {
+                stuff.add(UltraStrike(UltraStrikeLevel.find(level, Quality.GOOD), hacker))
+            }
+        }
+        return stuff
+    }
+
+    // Live weapon-draw count per hack: the base XMP multiplier scaled by the menu "Weapon drops" slider
+    // ([Config.weaponDropMultiplier], default 3× = tripled). Drives both XMP and Ultra-Strike yields.
+    private fun weaponDraws(): Int = (DropRates.xmpDropMultiplier * Config.weaponDropMultiplier).toInt().coerceAtLeast(1)
 
     private fun obtainShields(hacker: Agent): List<QgressItem> {
         val stuff = mutableListOf<QgressItem>()

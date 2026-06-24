@@ -702,6 +702,12 @@ object HtmlUtil {
         menu.append(dmgNums)
         // Combat dynamism (0 = realistic/tanky shields … 1 = portals flip very easily). Live-tunable.
         menu.append(MenuControls.slider("Combat", Config.combatDynamism) { Config.combatDynamism = it })
+        // Weapon-drop rate — XMP + Ultra-Strike yield per hack (1× = base … 3× = tripled). Live-tunable.
+        menu.append(
+            MenuControls.slider("Weapon drops", Config.weaponDropMultiplier, 1.0, 5.0, 0.5) {
+                Config.weaponDropMultiplier = it
+            },
+        )
         // Fade the 3D buildings when crowded areas hide the action.
         menu.append(MenuControls.slider("Buildings", 0.9) { MapUtil.setBuildingOpacity(it) })
         // Building-shake intensity (0 = off … 2 = 200%).

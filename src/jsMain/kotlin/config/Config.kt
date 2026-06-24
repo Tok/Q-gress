@@ -67,6 +67,13 @@ object Config {
     /** Building-shake intensity multiplier (0–2), tunable live from the menu "Building shake" slider. */
     var buildingShakeMultiplier = 1.0
 
+    /**
+     * Weapon-drop multiplier (XMP + Ultra-Strike yield per hack), tunable live from the menu "Weapon drops"
+     * slider. `1.0` = the base [DropRates] rate; defaults to `3.0` (tripled) so agents can hoard enough
+     * firepower to sustain assaults and flip defended portals — i.e. a more dynamic, weapon-rich sim.
+     */
+    var weaponDropMultiplier = 3.0
+
     // Combat dynamism (0 = realistic/tanky shields, 1 = portals flip very easily). Drives the live
     // gameplay mitigation cap; tunable from the menu "Combat" slider. Leans dynamic by default — this is
     // an AI-vs-AI sim, dynamism matters more than realism. (The authentic 95% cap stays in IngressFacts.)

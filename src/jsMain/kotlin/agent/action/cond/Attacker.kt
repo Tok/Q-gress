@@ -46,8 +46,16 @@ object Attacker : ConditionalAction {
         Scene3D.playXmpBurst(agent.pos, topLevel.level, sound = true)
         val damage = xmps.sumOf { it.dealDamage(agent) } // resonator damage (summed for one floating number)
         if (damage > 0) Scene3D.showDamageNumber(agent.actionPortal, damage)
-        // One mod knock-out roll per volley (XMPs strip shields slowly; Ultra-Strikes would be far better).
-        XmpBurster.knockMods(agent.actionPortal, agent.pos, topLevel, ultra = false, agent)
+        // One mod knock-out roll per volley. Spend an Ultra-Strike if we have one — it strips shields/mods
+        // far better than a Burster (the whole point of carrying them); else fall back to an XMP roll.
+        val us = agent.inventory.findUltraStrikes().maxByOrNull { it.level.level }
+        if (us != null) {
+            agent.removeXm(us.level.xmCost)
+            XmpBurster.knockMods(agent.actionPortal, agent.pos, topLevel, ultra = true, agent)
+            agent.inventory.consumeUltraStrikes(listOf(us))
+        } else {
+            XmpBurster.knockMods(agent.actionPortal, agent.pos, topLevel, ultra = false, agent)
+        }
         agent.actionPortal.retaliate(agent) // the attacked portal zaps back (drains the attacker → a real cost)
     }
 

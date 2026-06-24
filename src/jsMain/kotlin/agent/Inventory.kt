@@ -12,6 +12,7 @@ import portal.PortalKey
 data class Inventory(val items: MutableList<QgressItem> = mutableListOf()) {
     fun findKeys(): List<PortalKey> = items.filter { it is PortalKey }.map { it as PortalKey }
     fun findXmps(): List<XmpBurster> = items.filter { it is XmpBurster }.map { it as XmpBurster }
+    fun findUltraStrikes(): List<UltraStrike> = items.filter { it is UltraStrike }.map { it as UltraStrike }
     fun findResonators(): List<Resonator> = items.filter { it is Resonator }.map { it as Resonator }
     fun findPowerCubes(): List<PowerCube> = items.filter { it is PowerCube }.map { it as PowerCube }
     fun findShields(): List<Shield> = items.filter { it is Shield }.map { it as Shield }
@@ -27,6 +28,7 @@ data class Inventory(val items: MutableList<QgressItem> = mutableListOf()) {
     }
 
     fun consumeXmps(xmps: List<XmpBurster>) = items.removeAll(xmps)
+    fun consumeUltraStrikes(us: List<UltraStrike>) = items.removeAll(us)
     fun consumeResos(resos: List<Resonator>) = items.removeAll(resos)
     fun consumeCubes(cubes: List<PowerCube>) = items.removeAll(cubes)
 
