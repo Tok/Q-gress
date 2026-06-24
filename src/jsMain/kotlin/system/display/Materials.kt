@@ -100,6 +100,22 @@ object Materials {
         m
     }
 
+    /** Resonator "energy surface": a glowing disc the rod-build positions at the current FILL LEVEL (the
+     *  top of the charged part), so the reso reads as filled with a rising/falling surface, not just a fill
+     *  line on the outside. Additive + faction-coloured. Keeps `depthTest` (so the opaque pole/buildings
+     *  hide it — no see-through bleed); the rod-build gives it a negative `renderOrder` so it draws before
+     *  the depth-writing glass rod and isn't self-occluded by it. Cached per colour. */
+    fun resonatorCap(color: String): dynamic = cache.getOrPut("resocap$color") {
+        val p: dynamic = js("({})")
+        p.color = color
+        p.transparent = true
+        p.opacity = 0.85
+        p.blending = Three.AdditiveBlending // glows
+        p.depthWrite = false
+        p.side = 2 // DoubleSide — readable as the rod swings on a hack
+        Three.MeshBasicMaterial(p)
+    }
+
     private fun buildEnv(): dynamic {
         val canvas = document.createElement("canvas") as HTMLCanvasElement
         canvas.width = 8

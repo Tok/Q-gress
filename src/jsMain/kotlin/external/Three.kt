@@ -83,6 +83,7 @@ external object Three {
         tubularSegments: dynamic = definedExternally,
     )
     class RingGeometry(innerRadius: dynamic, outerRadius: dynamic, thetaSegments: dynamic = definedExternally)
+    class CircleGeometry(radius: dynamic = definedExternally, segments: dynamic = definedExternally)
     class SphereGeometry(radius: dynamic, widthSegments: dynamic = definedExternally, heightSegments: dynamic = definedExternally)
     class CylinderGeometry(
         radiusTop: dynamic,

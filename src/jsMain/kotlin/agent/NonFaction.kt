@@ -15,6 +15,7 @@ import util.ui.LoadingOverlay
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
+import kotlin.math.sqrt
 
 data class NonFaction(
     var pos: Pos,
@@ -122,16 +123,18 @@ data class NonFaction(
         this.triedBeeline = false
     }
 
-    private fun moveElsewhere() = if (!pos.isOffScreen() && Util.random() < 0.96) {
-        moveToRandomOffscreenDestination() // ambient NPCs roam off-map (in/out of the play area) for life
+    private fun moveElsewhere() = if (Util.random() < OFFSCREEN_DEST_CHANCE) {
+        // Mostly head for the FAR side of the map (even when already off-screen) so NPCs walk clear across
+        // it, edge to edge, instead of clumping around the central portals.
+        moveToOpposingOffscreenDestination()
     } else if (Util.random() < 0.7) {
-        moveToFarPortal()
+        moveToFarPortal() // ...but still send some to portals so there's life around them too
     } else {
         moveToRandomPortal()
     }
 
-    private fun moveToRandomOffscreenDestination() {
-        val destination = Util.shuffle(offscreenDestinations()).first()
+    private fun moveToOpposingOffscreenDestination() {
+        val destination = opposingOffscreenDestination(pos)
         this.vectors = getOrCreateVectorField(destination)
         this.destination = destination
     }
@@ -157,6 +160,7 @@ data class NonFaction(
         private val OFFSCREEN_SPACING = minOf(Dim.width, Dim.height) * 0.5
         private const val MIN_OFFSCREEN = 8
         private const val MAX_OFFSCREEN = 14
+        private const val OFFSCREEN_DEST_CHANCE = 0.85 // mostly cross the map edge-to-edge; the rest head to portals
 
         /**
          * Hidden destinations placed JUST OUTSIDE the play field, spaced evenly around its border, that NPCs
@@ -204,6 +208,30 @@ data class NonFaction(
 
         fun prepareOffscreenLocations() = offscreenDestinations().forEach { getOrCreateVectorField(it) }
 
+        // An off-map destination on the FAR side of the field from [from], so the NPC walks clear across the
+        // map rather than to the nearest edge. We pick by DIRECTION (the half whose bearing from centre most
+        // opposes the NPC's), not raw distance: on a round field every edge point is equidistant from the
+        // centre, so a distance sort ties and tie-breaks to one compass direction (NPCs piling up north).
+        // Near the centre there's no meaningful "opposite", so pick uniformly. Random within the chosen set.
+        fun opposingOffscreenDestination(from: Pos): Pos {
+            val all = offscreenDestinations()
+            val cx = World.simW() / 2.0
+            val cy = World.simH() / 2.0
+            val dx = from.x - cx
+            val dy = from.y - cy
+            val dist = sqrt(dx * dx + dy * dy)
+            val nearCentre = minOf(World.simW(), World.simH()) * 0.15
+            val pick = if (dist < nearCentre) {
+                all // anywhere is "across" from the middle → don't bias a direction
+            } else {
+                val ux = dx / dist
+                val uy = dy / dist
+                // ascending dot product → most-opposite bearings first; take the opposing half.
+                all.sortedBy { (it.x - cx) * ux + (it.y - cy) * uy }.take((all.size / 2).coerceAtLeast(1))
+            }
+            return Util.shuffle(pick).first()
+        }
+
         private val fields = mutableMapOf<Pos, VectorField>()
         private val pending = mutableSetOf<Pos>() // destinations whose field is computing async
         fun offscreenCount(): Int = fields.count()
@@ -245,11 +273,11 @@ data class NonFaction(
             val position = Pos.createRandomPassable(grid)
             val size = AgentSize.createRandom()
             val speed = Skills.randomNpcSpeed()
-            val newNonFaction = if (Util.random() < 0.1) { // move to offscreen destination
-                val destination = Util.shuffle(offscreenDestinations()).first()
+            val newNonFaction = if (Util.random() < OFFSCREEN_DEST_CHANCE) { // mostly cross the map edge-to-edge
+                val destination = opposingOffscreenDestination(position)
                 val vectorField = getOrCreateVectorField(destination)
                 NonFaction(position, speed, size, destination, vectorField, World.tick)
-            } else { // move to random portal
+            } else { // some still head to a portal so there's life around them
                 val portal = World.allPortals[(Util.random() * (World.allPortals.size - 1)).toInt()]
                 NonFaction(position, speed, size, portal.location, portal.vectors, World.tick)
             }

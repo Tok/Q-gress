@@ -55,7 +55,11 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
     (`GlassShader.SELECT_BRIGHT`) — no more neutral-looking white tint. A faction-neutral **name + level
     billboard** floats above each portal's orb (cached `CanvasTexture` sprite, Chakra Petch).
   - **Resonators** — 8 colour-coded rods in rubber slot-rings, real-time from `resoMap()`, grow
-    with the pole, **fall on shatter** (cannon-es physics rods), **hack spin + top-jointed
+    with the pole. Each rod shows its **energy/health**: a bottom→top glowing **fill bar** (`GlassShader`
+    `uFill`) plus a glowing **"energy surface" disc** (`Materials.resonatorCap`, additive) positioned at
+    the **current fill level** (`-rodLen·(1-health)`: at the top when full, sinking as it drains) — so a
+    reso reads as *filled* to that height, not just an outside indicator.
+    They **fall on shatter** (cannon-es physics rods), **hack spin + top-jointed
     centrifuge** (`HackFx`); shatter physics in `ShatterFx` (pole sinks, shards + resos **arc up-and-out
     from the XMP blast**, then fall). The blast push comes from the shared **`BlastModel`** — one
     **3D mushroom-cloud-centre origin** (above the terrain, rising with level) + **distance falloff**,

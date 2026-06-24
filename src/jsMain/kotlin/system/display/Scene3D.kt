@@ -240,6 +240,7 @@ object Scene3D {
         Three.CylinderGeometry(INDICATOR_SIZE / 2.0, INDICATOR_SIZE / 2.0, INDICATOR_THICK, 28)
     }
     private val resoRodGeo: dynamic by lazy { Three.CylinderGeometry(RESO_ROD_R, RESO_ROD_R, 1.0, 8) } // unit rod, scaled to length
+    private val resoCapGeo: dynamic by lazy { Three.CircleGeometry(RESO_ROD_R * 0.92, 16) } // energy "surface" disc on the rod top
     private val materialCache = mutableMapOf<String, dynamic>()
     private val spriteCache = mutableMapOf<String, dynamic>()
 
@@ -1042,11 +1043,23 @@ object Scene3D {
                     pivot.asDynamic().userData.targetZ = rodLen
                     DeployFx.bind(id, octant, pivot.asDynamic())
                 }
-                val rod = Three.Mesh(resoRodGeo, Materials.resonator(LevelColor.map[lvl] ?: "#ffffff", health))
+                val rodMat = Materials.resonator(LevelColor.map[lvl] ?: "#ffffff", health)
+                val rod = Three.Mesh(resoRodGeo, rodMat)
                 rod.asDynamic().rotation.x = PI / 2 // unit Y-cylinder → vertical
                 rod.asDynamic().scale.set(1.0, rodLen, 1.0)
                 rod.asDynamic().position.set(0.0, 0.0, -rodLen / 2.0) // hangs down to the grommet
                 pivot.asDynamic().add(rod)
+                // A glowing "energy surface" disc sitting at the current FILL LEVEL, so the reso reads as
+                // filled to that height (not just a fill line on the outside). The rod spans pivot-local
+                // z ∈ [-rodLen, 0] (bottom→top), so the charged surface is at -rodLen·(1-fill). Use the rod
+                // material's ACTUAL uFill (it's cached per fill-octile) so the disc lines up with the bar
+                // exactly instead of drifting an octile too high. renderOrder -1 draws it before the
+                // depth-writing rod (so the rod doesn't self-occlude it) while the opaque pole still hides it.
+                val shownFill = (rodMat.uniforms.uFill.value as Double).coerceIn(0.0, 1.0)
+                val cap = Three.Mesh(resoCapGeo, Materials.resonatorCap(LevelColor.map[lvl] ?: "#ffffff"))
+                cap.asDynamic().position.set(0.0, 0.0, -rodLen * (1.0 - shownFill))
+                cap.asDynamic().renderOrder = -1
+                pivot.asDynamic().add(cap)
                 // The grommet is part of the reso: it rides INSIDE the pivot at the rod's bottom, so it
                 // centrifuges out with the rod on a hack instead of staying stuck to the pole collar.
                 val ring = Three.Mesh(resoRingGeo, Materials.rubber())
