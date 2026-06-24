@@ -66,7 +66,7 @@ object Scene3D {
     // faction-coloured with an action indicator floating just above the head.
     private const val HEAD_R = 0.45
     private const val HEAD_Z = 1.6
-    private const val XM_R = 0.7 // stray-XM mote radius (metres)
+    private const val XM_R = HEAD_R / 1.618 // stray-XM mote radius: 1.618× (φ) smaller than an agent head
     private const val XM_Z = 1.2 // stray-XM floats just above the ground
     private const val NPC_DROP_S = 0.8 // seconds for an NPC to fall in from the sky on first appearance
     private const val NPC_DROP_HEIGHT = 70.0 // metres an NPC drops from
