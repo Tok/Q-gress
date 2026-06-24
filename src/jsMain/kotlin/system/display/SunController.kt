@@ -14,7 +14,7 @@ import kotlin.math.sin
 object SunController {
     private const val ELEV = 0.62 // sun elevation above the horizon (rad ≈ 35°) — long, readable shadows
     private const val FAST = 0.85 // intro azimuth speed (rad/s)
-    private const val SLOW = 0.04 // settled drift speed (rad/s)
+    private const val SLOW = 0.12 // settled drift speed (rad/s) — a full sweep ≈ 52s so shadows visibly move in-game
     private const val SPEED_EASE = 0.4 // per-second easing of the live speed toward its target
     private const val INTENSITY = 1.15 // directional strength (ambient is lowered so shadows read)
     private const val SHADOW_MAP = 2048
