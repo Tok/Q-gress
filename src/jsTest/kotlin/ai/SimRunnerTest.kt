@@ -44,4 +44,22 @@ class SimRunnerTest {
         assertEquals(a.finalEnlMu, b.finalEnlMu)
         assertEquals(a.finalResMu, b.finalResMu)
     }
+
+    // An arena + seed that actually produce FIELDS (MU>0), so the determinism check below isn't vacuous —
+    // the leak it guards (stdlib shuffled() is unseeded) only manifests once gameplay reaches fields/XM.
+    private fun muGrid() = GridFixture("MU", 60, 40, 2, GridFixture.rleEncode(List(60 * 40) { true })).toGrid()
+
+    @Test
+    fun reproducibleAfterAnotherMatch() {
+        val grid = muGrid()
+        val a = SimRunner.runMatch(grid, seed = 3, maxTicks = 1800, setup = MatchSetup(npcs = 12))
+        SimRunner.runMatch(grid, seed = 1003, maxTicks = 600) // a DIFFERENT match in between
+        val b = SimRunner.runMatch(grid, seed = 3, maxTicks = 1800, setup = MatchSetup(npcs = 12))
+
+        assertTrue(
+            a.checkpointMuSum(Faction.ENL) + a.checkpointMuSum(Faction.RES) > 0,
+            "non-vacuous: this match must form fields (MU>0) at some checkpoint",
+        )
+        assertEquals(a.checkpoints, b.checkpoints, "a match is reproducible even after another match runs between")
+    }
 }

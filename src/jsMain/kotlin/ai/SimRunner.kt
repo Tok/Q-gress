@@ -92,6 +92,7 @@ object SimRunner {
      * [Config.ticksPerCheckpoint]). [setup] sizes the starting roster; optional [policyEnl]/[policyRes]
      * install AI/slider policies per faction.
      */
+    @Suppress("LongParameterList") // a harness entry point: grid + seed + length + roster + 2 policies + a debug hook
     fun runMatch(
         grid: Grid,
         seed: Int,
@@ -99,6 +100,7 @@ object SimRunner {
         setup: MatchSetup = MatchSetup(),
         policyEnl: FactionPolicy? = null,
         policyRes: FactionPolicy? = null,
+        onTick: ((Int) -> Unit)? = null, // called after each tick's scoring (for determinism/debug inspection)
     ): MatchResult {
         reset()
         Util.seed(seed)
@@ -118,6 +120,7 @@ object SimRunner {
         repeat(maxTicks) {
             Simulation.stepEntities()
             Cycle.updateCheckpoints(World.tick, World.calcTotalMu(Faction.ENL), World.calcTotalMu(Faction.RES))
+            onTick?.invoke(World.tick)
             World.tick++
         }
 

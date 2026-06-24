@@ -85,7 +85,7 @@ enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>) {
                 val ratio = count / maxCount
                 if (Util.random() <= ratio) {
                     val selection = agents.sortedBy { it.getLevel() }.takeLast(count - maxCount)
-                    val removed = selection.shuffled().first()
+                    val removed = Util.shuffle(selection).first() // seeded — NOT stdlib shuffled() (unseeded → nondeterministic)
                     if (fc) {
                         Com.addMessage("Portal $removed quit the game.")
                     } else {
@@ -131,8 +131,7 @@ enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>) {
                     }
                 }.forEach { XmMap.createStrayXm(it, true) }
 
-            World.allNonFaction.filterNot { it.pos.isOffScreen() }
-                .shuffled()
+            Util.shuffle(World.allNonFaction.filterNot { it.pos.isOffScreen() }) // seeded; stdlib shuffled() is unseeded
                 .take((World.allNonFaction.size * Config.npcXmSpawnRatio * mult).toInt())
                 .map { XmMap.createStrayXm(it.pos.randomNearPoint(Dim.npcXmSpawnRadius), false) }
         }

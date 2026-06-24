@@ -204,22 +204,20 @@ area is maximized, and hold it across the cycle. So fitness = the **sum/average 
   Measured over a match the board now moves both ways (portals 2/1→6/1→5/3→7/3), RES captures + fields, and
   **MU forms (e.g. 1209/200)** → fitness is no longer flat. `BalanceTest` covers the helper; the knobs are
   `Config` vars (user-tunable). Quick-start rosters (`MatchSetup.quickStart`, default on) ensure gameplay.
-- [~] **First training run — net beats baseline (but BLOCKED on a determinism leak).** `Evolution.train`
-  (NetPolicy=ENL vs the default-slider baseline=RES) finds genomes with **positive** fitness — best summed
-  per-checkpoint MU margin ≈ **+1689** (rubber-band on) / **+2248** (off) over a 12-genome × 12-gen run. So a
-  learned net *can* out-play the default sliders — the substrate works. **BUT** the per-generation champion is
-  noisy + non-monotonic, which elitism makes impossible *if matches are deterministic* — and they're not:
-  - **Cross-match determinism leak (must fix first).** A match that forms fields (MU>0) is **not** reproducible
-    after a *different* match runs in between (verified: seeds with MU give `afterOtherEqual=false`; 0-MU seeds
-    are fine). `SimRunner.reset()` misses some global state on the field/link path. A match *is* deterministic
-    given (Util-seed, grid, Config), so the prime suspect is **Kotlin/JS identity-hash ordering** (the lazy
-    global identity-hashCode counter accumulates across matches → some hash-ordered iteration over override-less
-    objects varies). Find via tick-level bisection of where two same-seed runs diverge. Until fixed, training
-    selection (and the retained `bestGenome`) is unreliable. _(Note: `EvolutionTest`'s monotonicity check is
-    vacuous — its 301-tick matches make 0 MU, so 0==0.)_
-  - **Eval environment:** training with the anti-runaway mechanics OFF (`dominanceDecay`/`leaderDistraction`/
-    `comebackMax` = 0) gives a cleaner gradient (a better policy can actually pull ahead) — consider a
-    "clean-eval" flag on `Evolution`/`MatchSetup` once determinism is fixed.
+- [x] **First training run — net beats baseline, training converges cleanly.** `Evolution.train`
+  (NetPolicy=ENL vs the default-slider baseline=RES) evolves genomes that beat the default sliders, and with
+  the determinism fix below the per-generation champion is now **monotonic + improving** (e.g.
+  `214→214→…→848→…→1518`) — elitism works, the retained `bestGenome` is reproducible. The 6.2 substrate
+  is proven end-to-end.
+  - **Cross-match determinism leak — FIXED.** A match that formed fields was not reproducible after another
+    match ran between, because `system/Cycle` used the stdlib **no-arg `shuffled()`** (the global *unseeded*
+    `Random.Default`) in `spawnXm` (XM placement) + `removeAgents` — now `Util.shuffle` (seeded).
+    `SimRunnerTest.reproducibleAfterAnotherMatch` guards it with a *non-vacuous* MU-producing match (the old
+    `EvolutionTest` monotonicity check was vacuous — 301-tick matches make 0 MU). Found via a tick-level
+    divergence hunt over `SimRunner.runMatch(onTick = …)` (the hook stayed in as a debug affordance).
+  - **Eval environment (open):** training with the anti-runaway mechanics OFF (`dominanceDecay`/
+    `leaderDistraction`/`comebackMax` = 0) gives a slightly cleaner gradient — a "clean-eval" flag on
+    `Evolution`/`MatchSetup` is a nice-to-have.
 - [ ] JSON genome (de)serialization for saving/loading a trained net; load a winner into the live game.
 - [ ] Live **activation + chosen-path visualization** (the payoff). Exit: beats the default-slider baseline
   over K seeded matches, loads into the live game, activations visualized.
