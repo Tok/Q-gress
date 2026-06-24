@@ -118,6 +118,12 @@ Net / LLM independently and fight in any combination. Track design lives in [doc
 stays the action substrate (the net/LLM only re-tunes the 19 sliders at checkpoint cadence — it does
 **not** replace per-agent `ActionSelector`).
 
+**Fitness objective (what we optimize for):** each faction maximizes its **Mind Units at every
+checkpoint** (and overall) — MU is total controlled **field area**, so the goal is a *team effort to
+create and maintain the largest fields*: use the available portals/space to **layer** fields so total
+area is maximized, and hold it across the cycle. So fitness = the **sum/average of checkpoint MU**
+(rewarding sustained large fields), not just final MU — `Cycle` already snapshots per-checkpoint MU.
+
 **6.0 — Substrate I: programmatic policy API + determinism** _(prereq, no AI yet)_ — **DONE** (`ai/`)
 - [x] **`FactionPolicy`** (`ai/FactionPolicy.kt`) — `ActionSelector.q()` now reads the faction's installed
   policy × the QValue weight; the registry `FactionPolicies` defaults each faction to `DomSliderPolicy`
@@ -134,12 +140,22 @@ stays the action substrate (the net/LLM only re-tunes the 19 sliders at checkpoi
   DOM read when there's no `window`) so the substrate inits in Node — a prereq for the 6.1 SimRunner.
 
 **6.1 — Substrate II: headless match harness** _(the training engine; pays off the functional-core split)_
+- _Groundwork done:_ the **audio** + Q-value systems are now headless-safe (`SoundUtil` self-guards via a
+  lazy graph + `isMuted()`; `QActions`/`DomSliderPolicy` skip DOM/icons headless) — SimRunner needs that.
+- _Spike finding (deferred):_ a first `SimRunner` ran the tick loop headless, but the sim **isn't cleanly
+  synchronous/headless yet** — per-tick **pathfinding is too slow** (full-map flow-field per portal/dest)
+  to run a match in a Node test budget, and field gen is **async** (`PathUtil.computeFieldAsync` coroutine)
+  so it doesn't fit a synchronous match loop. So the **functional-core split** (+ pathfinding scalability,
+  Stage 3) is the real prerequisite — do that first, then `SimRunner` is straightforward.
 - [ ] **`SimRunner`** — `runMatch(gridFixture, policyEnl, policyRes, seed, maxTicks): MatchResult`,
-  tick loop with rendering/audio/DOM stubbed at the shell boundary.
+  tick loop with rendering/audio/DOM stubbed at the shell boundary; result captures **per-checkpoint MU**
+  (the fitness signal above), not just the final score.
 - [ ] **Grid fixtures** — serialize a built `Grid` (+ portal seeds) to committed JSON so matches
-  reproduce without live tiles / `readPixels`.
-- [ ] **Speed** — accelerated in Node (CI) and a Web Worker (in-tab training). Exit: a full match
-  runs headless & deterministic, hundreds/min.
+  reproduce without live tiles / `readPixels`. (The synthetic open grid worked in the spike; real-tile
+  fixtures still need the `?debug=capture` pass.)
+- [ ] **Sync, fast pathfinding for headless** — a non-suspend flow-field path (or multi-mode nav / coarser
+  `pathResolution`) so a match runs deterministically without the coroutine event loop, fast enough for
+  hundreds/min in Node (CI) + a Web Worker (in-tab training).
 
 **6.2 — Track A: custom net + neuroevolution** → [docs/NN.md](docs/NN.md)
 - [ ] Tiny MLP (`ai/net/`, output = 19 sliders); ES/self-play trainer; `NetPolicy` (JSON genome);
