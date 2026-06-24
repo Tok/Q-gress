@@ -367,6 +367,8 @@ object MapUtil {
         if (demoMode || !Styles.use3DBuildings || ownBuildingsHooked) return
         ownBuildingsHooked = true
         loadOwnBuildings(0)
+        // Stream buildings for wherever the camera goes (auto-cam drift, title orbit, manual pan).
+        initMap?.let { BuildingStream.attach(it) }
     }
 
     private fun loadOwnBuildings(attempt: Int) {

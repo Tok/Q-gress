@@ -35,7 +35,13 @@ object BuildingTiles {
      *  Polygon features (with render_height) to [onComplete]. Always fires (empty array on failure). */
     fun load(lng: Double, lat: Double, halfWM: Double, halfHM: Double, onComplete: (dynamic) -> Unit) {
         val b = bbox(lng, lat, halfWM, halfHM)
-        val q = "[out:json][timeout:25];way[\"building\"](${b[0]},${b[1]},${b[2]},${b[3]});out geom;"
+        loadBBox(b[0], b[1], b[2], b[3], onComplete)
+    }
+
+    /** Query OSM buildings in an explicit [south]/[west]/[north]/[east] degree bbox (for streaming new
+     *  regions as the camera flies elsewhere). Always fires [onComplete] (empty array on failure). */
+    fun loadBBox(south: Double, west: Double, north: Double, east: Double, onComplete: (dynamic) -> Unit) {
+        val q = "[out:json][timeout:25];way[\"building\"]($south,$west,$north,$east);out geom;"
         val url = OVERPASS_URL + "?data=" + (js("encodeURIComponent")(q) as String) // GET → browser-cacheable
         val req = window.asDynamic().fetch(url)
         req.then { r: dynamic -> if (r.ok == true) r.json() else null }
