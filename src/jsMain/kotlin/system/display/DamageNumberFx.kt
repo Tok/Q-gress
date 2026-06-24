@@ -38,7 +38,7 @@ object DamageNumberFx {
     private const val RISE_DUR = 0.55 // seconds for the rise
     private const val HANG_DUR = 1.4 // seconds it hangs upright before the digits drop
     private const val STAGGER = 0.1 // delay between digit releases (right-most first)
-    private const val FALL_LIFE = 3.0 // seconds a digit lives (visible) after release, before it sinks away
+    private const val FALL_LIFE = 4.5 // seconds a digit lives (visible) after release, before it sinks away
     private const val SINK_DUR = 1.2 // then it no-clips down through the ground/buildings + despawns while invisible
     private const val RESTITUTION = 0.45 // digit bounciness on landing (ground / roofs / poles)
     private const val LAND_CLEARANCE = 3.0 // a digit is "landed" once it drops to about this far above the floor

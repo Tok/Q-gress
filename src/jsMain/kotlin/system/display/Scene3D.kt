@@ -603,7 +603,9 @@ object Scene3D {
         scene ?: return
         // Lift the debris/digit physics floors to the terrain so falling pieces land on the ground, not
         // hundreds of metres below it at sea level (z=0).
-        DamageNumberFx.setGroundZ(groundZ(Pos(Sim.width / 2, Sim.height / 2)))
+        val centreGroundZ = groundZ(Pos(Sim.width / 2, Sim.height / 2))
+        DamageNumberFx.setGroundZ(centreGroundZ)
+        ShatterFx.setGroundZ(centreGroundZ)
         val total = (feats.length as? Int) ?: return
         var added = 0
         var i = 0
@@ -626,8 +628,11 @@ object Scene3D {
         val hx = abs(c1[0] - c0[0]) / 2.0
         val hy = abs(c1[1] - c0[1]) / 2.0
         if (hx < 0.3 || hy < 0.3) return false // skip only truly degenerate footprints
-        ShatterFx.addStaticBox(cx, cy, h / 2.0, hx, hy, h / 2.0)
-        DamageNumberFx.addStaticBox(cx, cy, h / 2.0, hx, hy, h / 2.0)
+        // Sit the collider on the terrain (base at the building's ground), not at sea level z=0 — else it
+        // sits ~hundreds of metres below the actual building and debris/digits fall straight through.
+        val cz = groundZAtLngLat((bb[0] + bb[2]) / 2.0, (bb[1] + bb[3]) / 2.0) + h / 2.0
+        ShatterFx.addStaticBox(cx, cy, cz, hx, hy, h / 2.0)
+        DamageNumberFx.addStaticBox(cx, cy, cz, hx, hy, h / 2.0)
         return true
     }
 
@@ -797,6 +802,18 @@ object Scene3D {
             }
         }
         if (any) heightsReady = true
+    }
+
+    /** Terrain elevation (scene metres) at an arbitrary [lng]/[lat] — works OUTSIDE the play-area height
+     *  grid (for buildings streamed in as the camera flies elsewhere) by sampling the live DEM directly.
+     *  Falls back to the sampled grid (then flat) when the DEM tile isn't loaded there yet. */
+    fun groundZAtLngLat(lng: Double, lat: Double): Double {
+        val m = terrainMap
+        if (m != null) {
+            val e = m.asDynamic().queryTerrainElevation(arrayOf(lng, lat)) as? Double
+            if (e != null) return e
+        }
+        return groundZ(lngLatToSimPos(lng, lat))
     }
 
     /** Terrain elevation (scene metres) under a sim [pos]; 0 until the DEM has sampled (flat fallback). */

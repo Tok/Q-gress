@@ -3,7 +3,6 @@ package system.display
 import config.Config
 import external.Three
 import items.Combat
-import util.data.Pos
 import kotlin.math.PI
 import kotlin.math.hypot
 import kotlin.math.sin
@@ -110,8 +109,8 @@ object OwnBuildings {
         if (key in keys) return null
         val h = (f.properties?.render_height as? Double)?.takeIf { it > 0.5 } ?: DEFAULT_HEIGHT
         val minH = (f.properties?.render_min_height as? Double) ?: 0.0
-        val centre = ringCentreSim(ring)
-        val baseZ = Scene3D.groundZ(centre) + minH
+        val (cLng, cLat) = ringCentreLngLat(ring)
+        val baseZ = Scene3D.groundZAtLngLat(cLng, cLat) + minH // live DEM → correct even outside the play area
         val mesh = buildMesh(ring, h, minH, mat, baseZ) ?: return null
         keys.add(key)
         val xy = ringCentreSceneXY(ring)
@@ -234,11 +233,6 @@ object OwnBuildings {
         val n = (ring.length as? Int) ?: return null
         if (n < 3) return null
         return Array(n) { doubleArrayOf(ring[it][0] as Double, ring[it][1] as Double) }
-    }
-
-    private fun ringCentreSim(ring: Array<DoubleArray>): Pos {
-        val (lng, lat) = ringCentreLngLat(ring)
-        return Scene3D.lngLatToSimPos(lng, lat)
     }
 
     private fun ringCentreSceneXY(ring: Array<DoubleArray>): DoubleArray {

@@ -16,7 +16,8 @@ import kotlin.math.sqrt
  */
 object ShatterFx {
     private const val SHARD_BRIGHT = 1.4 // shards share the orb GlassShader, a touch brighter so the pieces read
-    private const val SHARD_FADE = 1.2 // seconds to fade out at end of life
+    private const val SHARD_SINK_MAX = 1.4 // seconds after its life to no-clip down + despawn (hard cap)
+    private const val SHARD_GONE_M = 4.0 // …or drop it once it's sunk this far below the terrain floor
     private const val SHARD_LIFE_MIN = 6.0
     private const val SHARD_LIFE_MAX = 10.0
     private const val SHARD_SPIN = 1.8 // max tumble rad/s — a gentle turn
@@ -85,18 +86,23 @@ object ShatterFx {
 
     private var world: Cannon.World? = null
     private var group: dynamic = null // shards + sinking poles (not cleared by sync)
+    private var groundBody: Cannon.Body? = null
+    private var groundZ = 0.0 // the physics floor's elevation = terrain height under the play area
+
+    /** Lift the physics floor to the terrain elevation [z] so debris lands on the ground, not ~hundreds
+     *  of metres below it at sea level (z=0). */
+    fun setGroundZ(z: Double) {
+        groundZ = z
+        val gb = groundBody ?: return
+        gb.asDynamic().position.set(0.0, 0.0, z)
+    }
     private var shatterRot = doubleArrayOf(0.0, 0.0, 0.0) // per-shatter random orientation
     private val activeShards = mutableListOf<Shard>()
     private val sinkingPoles = mutableListOf<SinkPole>()
 
-    private class Shard(
-        val mesh: dynamic,
-        val mat: dynamic,
-        val body: Cannon.Body,
-        var age: Double,
-        val life: Double,
-        val setFade: (Double) -> Unit,
-    )
+    private class Shard(val mesh: dynamic, val mat: dynamic, val body: Cannon.Body, var age: Double, val life: Double) {
+        var sinking = false // past its life: no-clips down through ground/buildings instead of fading
+    }
     private class SinkPole(val mesh: dynamic, val poleH: Double, var age: Double)
 
     /** Create the physics world + the shards group (once, when the scene is set up). */
@@ -230,10 +236,7 @@ object ShatterFx {
         world.addBody(body)
         group.add(mesh)
         activeShards.add(
-            Shard(mesh, mat, body, 0.0, SHARD_LIFE_MIN + Util.random() * (SHARD_LIFE_MAX - SHARD_LIFE_MIN)) { f ->
-                mat.asDynamic().opacity =
-                    f
-            },
+            Shard(mesh, mat, body, 0.0, SHARD_LIFE_MIN + Util.random() * (SHARD_LIFE_MAX - SHARD_LIFE_MIN)),
         )
     }
 
@@ -269,9 +272,7 @@ object ShatterFx {
         w.addBody(body)
         group.add(mesh)
         activeShards.add(
-            Shard(mesh, mat, body, 0.0, SHARD_LIFE_MIN + Util.random() * (SHARD_LIFE_MAX - SHARD_LIFE_MIN)) { f ->
-                mat.uniforms.uFade.value = f // glass fade (was MeshStandard opacity)
-            },
+            Shard(mesh, mat, body, 0.0, SHARD_LIFE_MIN + Util.random() * (SHARD_LIFE_MAX - SHARD_LIFE_MIN)),
         )
     }
 
@@ -313,10 +314,7 @@ object ShatterFx {
         w.addBody(body)
         group.add(mesh)
         activeShards.add(
-            Shard(mesh, mat, body, 0.0, SHARD_LIFE_MIN + Util.random() * (SHARD_LIFE_MAX - SHARD_LIFE_MIN)) { f ->
-                mat.asDynamic().opacity =
-                    f
-            },
+            Shard(mesh, mat, body, 0.0, SHARD_LIFE_MIN + Util.random() * (SHARD_LIFE_MAX - SHARD_LIFE_MIN)),
         )
     }
 
@@ -351,9 +349,7 @@ object ShatterFx {
         world.addBody(body)
         group.add(mesh)
         activeShards.add(
-            Shard(mesh, mat, body, 0.0, SHARD_LIFE_MIN + Util.random() * (SHARD_LIFE_MAX - SHARD_LIFE_MIN)) { f ->
-                mat.uniforms.uFade.value = f // mat is already dynamic — no .asDynamic()
-            },
+            Shard(mesh, mat, body, 0.0, SHARD_LIFE_MIN + Util.random() * (SHARD_LIFE_MAX - SHARD_LIFE_MIN)),
         )
     }
 
@@ -364,13 +360,17 @@ object ShatterFx {
             val s = iter.next()
             s.age += dt
             val bodyPos = s.body.asDynamic().position
-            s.mesh.position.set(bodyPos.x as Double, bodyPos.y as Double, bodyPos.z as Double)
+            val pz = bodyPos.z as Double
+            s.mesh.position.set(bodyPos.x as Double, bodyPos.y as Double, pz)
             val bodyQuat = s.body.asDynamic().quaternion
             s.mesh.quaternion.set(bodyQuat.x as Double, bodyQuat.y as Double, bodyQuat.z as Double, bodyQuat.w as Double)
-            if (s.age > s.life - SHARD_FADE) {
-                s.setFade(((s.life - s.age) / SHARD_FADE).coerceIn(0.0, 1.0))
+            // End of life: no-clip straight down through the ground/buildings (like the damage digits) and
+            // drop once it's well below the terrain — instead of fading out the opacity.
+            if (!s.sinking && s.age >= s.life) {
+                s.sinking = true
+                s.body.asDynamic().collisionResponse = false
             }
-            if (s.age >= s.life) {
+            if (s.age >= s.life + SHARD_SINK_MAX || (s.sinking && pz < groundZ - SHARD_GONE_M)) {
                 world?.removeBody(s.body)
                 group.remove(s.mesh)
                 s.mat.dispose()
@@ -384,9 +384,11 @@ object ShatterFx {
     private fun createWorld(): Cannon.World {
         val w = Cannon.World()
         w.asDynamic().gravity.set(0.0, 0.0, -GRAVITY)
-        val groundOpts: dynamic = js("({ mass: 0 })") // static ground plane at z=0 (normal +Z)
+        val groundOpts: dynamic = js("({ mass: 0 })") // static ground plane (normal +Z); lifted to terrain via setGroundZ
         groundOpts.shape = Cannon.Plane()
-        w.addBody(Cannon.Body(groundOpts))
+        val gb = Cannon.Body(groundOpts)
+        w.addBody(gb)
+        groundBody = gb
         return w
     }
 }
