@@ -16,6 +16,7 @@ import org.w3c.dom.HTMLOptionElement
 import org.w3c.dom.HTMLSelectElement
 import system.display.TitleWordmark
 import util.SoundUtil
+import kotlin.math.abs
 
 /**
  * Pre-load onboarding screens, shown in order before any map loads: **faction → map-size →
@@ -24,6 +25,7 @@ import util.SoundUtil
  */
 object Onboarding {
     private const val SCREEN_ID = "onboard"
+    private const val NAME_KEEP_EPS = 0.05 // ~5 km: keep the picked place's name within this of the confirmed centre
 
     /** Step 1 — pick a faction. [onPick] receives it. */
     fun showFaction(onPick: (Faction) -> Unit) {
@@ -132,6 +134,11 @@ object Onboarding {
         currentBack = onBack // Esc → back to map size
         val screen = screen("CHOOSE A LOCATION")
         var currentName = ""
+        // The coords of the currently-named selection. The user pans/zooms to fine-tune the play-area box
+        // AFTER picking a place, so the confirmed centre can drift from it — if it drifts far, the name no
+        // longer describes the spot (the "Brandenburg Gate but actually elsewhere" bug), so we drop it.
+        var selectedLng = 0.0
+        var selectedLat = 0.0
 
         val select = document.createElement("select") as HTMLSelectElement
         select.addClass("topDrop", "displayFont", "invisible") // shown only in Select mode
@@ -143,6 +150,8 @@ object Onboarding {
         }
         fun fly(lng: Double, lat: Double, name: String) {
             currentName = name
+            selectedLng = lng
+            selectedLat = lat
             MiniMap.setCenter(lng, lat)
         }
         select.onchange = {
@@ -189,7 +198,13 @@ object Onboarding {
 
         screen.appendChild(
             button("Confirm location", "topButton displayFont onboardStart") {
-                MiniMap.confirmCenter()?.let { onStart(it.first, it.second, currentName) }
+                MiniMap.confirmCenter()?.let { (lng, lat) ->
+                    // Keep the selected name only if the confirmed centre is still near it; a preset that the
+                    // centre snapped onto wins; otherwise it's a custom spot — don't mislabel it.
+                    val kept = abs(lng - selectedLng) < NAME_KEEP_EPS && abs(lat - selectedLat) < NAME_KEEP_EPS
+                    val name = Locations.byCoords(lng, lat)?.displayName ?: if (kept) currentName else "Custom location"
+                    onStart(lng, lat, name)
+                }
             },
         )
 
