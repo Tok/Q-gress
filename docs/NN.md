@@ -1,16 +1,30 @@
 # NN.md — custom neural-net faction driver (Phase 6, Track A)
 
-> **Status: stub / prep.** Design notes for the custom-network AI driver. The work itself is
-> scoped in [../PLAN.md](../PLAN.md) → *Phase 6 (Track A: custom net + neuroevolution)*; flesh
-> this file out when 6.2 starts. The shared substrate (policy API, headless harness) is 6.0/6.1.
+> **Status: machinery built (6.2), not yet trainable.** `ai/net/` ships `Net` + `NetPolicy` +
+> `Evolution` (all tested + deterministic). The blocker is the *fitness signal*, not the net: headless
+> matches currently yield ~0 MU (fields rarely form), so there's nothing to select on — see
+> [../PLAN.md](../PLAN.md) → *Phase 6.2* for the options. The shared substrate (policy API, headless
+> `SimRunner`) is 6.0/6.1.
 
 ## The idea (the original "Q-gress")
 
-Each faction is driven by a small purpose-built network whose **output layer _is_ the 18
-behaviour sliders** (11 `QActions` + 7 `QDestinations`, each 0..1). Input is a normalized
+Each faction is driven by a small purpose-built network whose **output layer _is_ the 19
+behaviour sliders** (12 `QActions` + 7 `QDestinations`, each 0..1). Input is a normalized
 `Observation` of world state; output is a `SliderVector`, re-evaluated at a slow cadence
 (≈ once per checkpoint). The slider vector stays the action substrate — the net does **not**
 replace per-agent `ActionSelector`.
+
+## What's built (`ai/net/`)
+
+- **`Net`** — a tiny fixed-topology MLP: `Observation.SIZE` (13) inputs → one hidden layer (tanh) →
+  `SliderVector.SIZE` (19) outputs (sigmoid → 0..1). All weights in one flat genome array; pure
+  deterministic forward pass.
+- **`NetPolicy`** — wraps a `Net` as a `FactionPolicy`: maps the live `Observation` → a `SliderVector`,
+  re-evaluated **once per scoring checkpoint** (not per action). `Evolution.train(...).bestPolicy(faction)`
+  builds one from the winning genome.
+- **`Evolution`** — a `(μ+λ)` GA (elitism + gaussian mutation; the env is non-differentiable + the reward
+  episodic, so ES not gradient RL). Fitness = mean **per-checkpoint MU margin** over K seeded `SimRunner`
+  matches. Its RNG is independent of `Util` (which `SimRunner` reseeds per match) → fully deterministic.
 
 ## Mechanism (decided)
 

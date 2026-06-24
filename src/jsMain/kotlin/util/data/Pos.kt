@@ -142,7 +142,12 @@ data class Pos(val x: Double, val y: Double) {
         private fun createRandomPassable(grid: Grid, retries: Int): Pos {
             if (HtmlUtil.isNotRunningInBrowser()) {
                 val keys = passableKeys(grid)
-                return if (keys.isEmpty()) Pos(0, 0) else keys[(Util.random() * keys.size).toInt()]
+                if (keys.isEmpty()) return Pos(0, 0)
+                // Grid keys are SHADOW cells; agents/portals live in SIM space. Return the cell centre in
+                // sim coords (× res), else headless spawns cluster in a shadow-sized corner of the map and
+                // never reach the (sim-space) portals — no gameplay, no MU (broke AI training).
+                val cell = keys[(Util.random() * keys.size).toInt()]
+                return Pos(cell.x * res + res / 2, cell.y * res + res / 2)
             }
             check(grid.isNotEmpty())
             val random = createRandomNoOffset()

@@ -58,13 +58,18 @@ data class MatchResult(
  */
 data class MatchSetup(
     val portals: Int = Config.startPortals,
-    val frogs: Int = Config.startFrogs(),
-    val smurfs: Int = Config.startSmurfs(),
+    val frogs: Int = DEFAULT_ROSTER,
+    val smurfs: Int = DEFAULT_ROSTER,
     val npcs: Int = DEFAULT_NPCS,
     val flowFields: Boolean = false,
+    // Start agents with a full inventory + AP (the game's "quick start"). On by default for matches because
+    // empty-handed, level-1, 0-AP agents almost never get as far as creating a FIELD in a bounded match —
+    // so MU (the fitness signal) stays flat 0 for both sides and there's nothing for the AI to learn from.
+    val quickStart: Boolean = true,
 ) {
     companion object {
         const val DEFAULT_NPCS = 30
+        const val DEFAULT_ROSTER = 8 // a full quick-start roster per faction
     }
 }
 
@@ -98,6 +103,7 @@ object SimRunner {
         reset()
         Util.seed(seed)
         Config.headlessFieldCompute = setup.flowFields // off by default → cheap abstract (straight-line) movement
+        Config.quickStart = setup.quickStart
         World.grid = grid
         policyEnl?.let { FactionPolicies.set(Faction.ENL, it) }
         policyRes?.let { FactionPolicies.set(Faction.RES, it) }
@@ -137,6 +143,7 @@ object SimRunner {
         FactionPolicies.reset()
         Fx.reset()
         Config.headlessFieldCompute = false
+        Config.quickStart = false
     }
 
     private fun seedPortals(count: Int) {

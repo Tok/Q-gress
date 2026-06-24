@@ -174,16 +174,30 @@ area is maximized, and hold it across the cycle. So fitness = the **sum/average 
   alone did *nothing* — confirming pathfinding wasn't the bottleneck. So the cell sim is fast enough for
   training as-is; no abstract/stats-only sim or pathfinding rework needed. `MatchSetup.flowFields` (default
   off = straight-line movement; on = obstacle-routed) remains a fidelity knob, not a perf lever.
-  - _Realism caveat (open):_ headless spawn positions use grid (shadow) coords, so on a sub-Sim grid agents
-    cluster; fuller match realism is a follow-up (matters once training runs in 6.2).
+  - _Spawn realism — FIXED:_ headless `Pos.createRandomPassable` returned grid (shadow) coords as positions,
+    so agents clustered in a corner away from the (sim-space) portals; now returns the cell centre in sim
+    coords. Agents reach + capture portals.
 - [ ] **Grid fixtures** — serialize a built `Grid` (+ portal seeds) to committed JSON so matches
   reproduce without live tiles / `readPixels`. `GridFixture` already does the RLE serialization; the
   real-tile fixtures still need the `?debug=capture` pass.
 
 **6.2 — Track A: custom net + neuroevolution** → [docs/NN.md](docs/NN.md)
-- [ ] Tiny MLP (`ai/net/`, output = 19 sliders); ES/self-play trainer; `NetPolicy` (JSON genome);
-  live **activation + path visualization**. Exit: beats the default-slider baseline over K seeded
-  matches, loads into the live game, activations visualized.
+- [x] **Net machinery DONE + tested** (`ai/net/`): `Net` (tiny MLP, `Observation.SIZE`→hidden(tanh)→
+  `SliderVector.SIZE`(sigmoid), flat genome), `NetPolicy` (maps the live `Observation` → sliders, re-evaluated
+  once per checkpoint), `Evolution` (a `(μ+λ)` GA — elitism + gaussian mutation, fitness = mean per-checkpoint
+  MU margin over K seeded `SimRunner` matches, RNG independent of `Util`). Deterministic; `bestPolicy()`
+  installs the winner. `Net`/`NetPolicy`/`Evolution` tests prove determinism + elitism monotonicity.
+- [ ] **BLOCKER — no training signal yet: matches yield ~0 MU.** Diagnosed a baseline match: agents capture
+  portals but **fields almost never form** (linking needs hacked keys + a non-crossing triangle), and MU comes
+  only from fields → fitness is flat 0 → nothing to select on. Also an **ENL/RES asymmetry** (RES captures
+  nothing vs an identical baseline — agent turn-order + the 30-XMP attack threshold). Options to resolve
+  (needs a call — user's objective is pure MU): **(a)** shape fitness with MU-leading indicators
+  (portal-control + link margin) so there's gradient before fields form, keeping MU dominant; **(b)** tune
+  matches so fields form (longer/multi-cycle, denser/closer portals, link-biased setup); **(c)** fix the
+  capture asymmetry first. Quick-start rosters (`MatchSetup.quickStart`, default on) help but don't suffice.
+- [ ] JSON genome (de)serialization for saving/loading a trained net; load a winner into the live game.
+- [ ] Live **activation + chosen-path visualization** (the payoff). Exit: beats the default-slider baseline
+  over K seeded matches, loads into the live game, activations visualized.
 
 **6.3 — Track B: in-browser LLM driver** → [docs/LLM.md](docs/LLM.md)
 - [ ] `LlmPolicy` at checkpoint cadence (state → prompt → JSON slider vector, schema-validated,
