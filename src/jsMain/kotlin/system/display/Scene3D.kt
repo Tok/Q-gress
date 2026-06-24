@@ -290,7 +290,7 @@ object Scene3D {
         scene = newScene
         buildBorder()
         loadShatterAssets()
-        titleWordmarkOnReady?.let { TitleWordmark.load(newScene, it) } // 3D title letters (set by TitleSim)
+        titleWordmarkOnReady?.let { TitleWordmark.load(it) } // 3D title letters (own scene/pass; set by TitleSim)
 
         val params: dynamic = js("({})")
         params.canvas = map.getCanvas()
@@ -339,6 +339,7 @@ object Scene3D {
         // (XMP/indicators that opt out with depthTest=false stay on top in both modes).
         if (drawOverBuildings) activeRenderer.clearDepth()
         activeRenderer.render(activeScene, cam)
+        TitleWordmark.renderOverlay(activeRenderer, cam) // title letters: own pass, depth cleared → in front + self-occluding
         map.triggerRepaint()
     }
 

@@ -30,6 +30,7 @@ object TitleWordmark {
     private const val TILT = 0.1 // letters tilt with their horizontal displacement (liveliness)
 
     private var group: dynamic = null
+    private var wordScene: dynamic = null // the wordmark renders in its OWN scene + pass (see renderOverlay)
     private val letters = mutableListOf<dynamic>()
     private var loaded = false
 
@@ -47,17 +48,27 @@ object TitleWordmark {
     /** Whether the 3D letters are already in the scene (so a return to the title can re-show them). */
     fun isLoaded() = loaded
 
-    /** Load the font + build the letters into [scene]. [onReady] fires once they're in (e.g. to hide the DOM wordmark). */
-    fun load(scene: dynamic, onReady: () -> Unit = {}) {
+    /** Load the font + build the letters into the wordmark's own scene. [onReady] fires once they're in. */
+    fun load(onReady: () -> Unit = {}) {
         if (loaded) return
         FontLoader().load(FONT_URL, { font ->
-            build(scene, font)
+            build(font)
             loaded = true
             onReady()
         })
     }
 
-    private fun build(scene: dynamic, font: dynamic) {
+    /** Draw the wordmark over the whole frame with normal depth (so it self-occludes): clear the depth
+     *  buffer, then render its own scene. Called by [Scene3D] right after the main scene render. */
+    fun renderOverlay(renderer: dynamic, cam: dynamic) {
+        val s = wordScene ?: return
+        val g = group ?: return
+        if (!loaded || g.visible != true) return
+        renderer.clearDepth()
+        renderer.render(s, cam)
+    }
+
+    private fun build(font: dynamic) {
         group = Three.Group()
         val capMat = standard("#ffffff", 0.0, 0.5, "#ffffff", 0.4) // bright white caps (diffuse + white emissive)
         val sideMat = standard("#0a0a0a", 0.55, 0.5, "#000000", 0.0) // near-black extruded sides (the backline)
@@ -100,7 +111,13 @@ object TitleWordmark {
             it.position.x = restX
             it.userData.baseX = restX
         }
-        scene.add(group)
+        // Own scene + a flat bright fill: the white caps read full-white (diffuse + emissive), the
+        // near-black extruded sides stay dark (the 3D "backline"); no directional light, so the look is
+        // identical from any camera angle as the wordmark orbits with the cinematic.
+        val s: dynamic = Three.Scene()
+        s.add(Three.AmbientLight("#ffffff", 1.0))
+        s.add(group)
+        wordScene = s
     }
 
     private fun standard(color: String, metalness: Double, roughness: Double, emissive: String, emissiveIntensity: Double): dynamic {
@@ -110,9 +127,9 @@ object TitleWordmark {
         p.roughness = roughness
         p.emissive = emissive
         p.emissiveIntensity = emissiveIntensity
-        p.depthTest = false // the wordmark always reads in front of the whole scene…
-        p.depthWrite = false
-        p.transparent = true // …join the transparent pass (orbs/agent bars) so renderOrder can put it last
+        // Normal depth → the 3D letters self-occlude (no dark back/side faces bleeding through the white).
+        // "In front of everything" is handled by rendering the wordmark in its own pass after a depth clear
+        // (see [renderOverlay]), not by disabling the depth test.
         return Three.MeshStandardMaterial(p)
     }
 
