@@ -13,7 +13,16 @@ object Config {
     const val frogQuitRate = 0.1
     const val smurfQuitRate = 0.1
     const val factionChangeRate = 0.01
-    const val portalRemovalRate = 0.1
+
+    // Density-driven portal churn (system/Cycle.managePortalDensity, every checkpoint). Portals are
+    // DISCOVERED and REMOVED as a neutral process that converges the count toward [targetPortals]: well below
+    // target, discovery ≫ removal (~4:1) so the board fills; at target, ~1:1; above, removal wins. Replaces
+    // the old agent EXPLORE action + cycle-end removePortals.
+    var portalChurnRate = 0.5 // per-checkpoint activity (chance scale for a create/remove)
+    private const val PORTAL_TARGET_GROWTH = 2.5 // equilibrium density ≈ this × the onboarding startPortals
+
+    /** Equilibrium portal count the churn converges toward — grows from [startPortals], capped at [maxPortals]. */
+    fun targetPortals(): Int = (startPortals * PORTAL_TARGET_GROWTH).toInt().coerceIn(startPortals, maxPortals)
 
     // --- Recruitment balance (Phase 5) ---------------------------------------
     // Recruiting used to be free, making "recruit-rush" a strictly-positive

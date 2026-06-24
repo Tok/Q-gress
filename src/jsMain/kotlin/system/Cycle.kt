@@ -6,10 +6,12 @@ import agent.Faction
 import agent.action.ActionItem
 import config.Config
 import config.Dim
+import portal.Portal
 import portal.XmHeap
 import portal.XmMap
 import util.SoundUtil
 import util.Util
+import util.data.Pos
 
 enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>) {
     INSTANCE(mutableMapOf()),
@@ -40,8 +42,8 @@ enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>) {
                 INSTANCE.checkpoints[tick] = cp
                 spawnXm() // every checkpoint (not just cycle end) so agent XM is replenished mid-cycle
                 World.allPortals.toList().forEach { it.erodeByDominance() } // the leader's empire erodes → board reopens
+                managePortalDensity() // neutral portal discovery + removal, density-driven toward the target
                 if (cp.isCycleEnd) {
-                    removePortals()
                     removeFrogs()
                     removeSmurfs()
                     factionChange()
@@ -53,14 +55,27 @@ enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>) {
             }
         }
 
-        private fun removePortals() {
-            if (Util.random() <= Config.portalRemovalRate) {
-                val ratio = World.countPortals() / Config.maxPortals
-                if (Util.random() <= ratio) {
-                    val deprecated = World.randomPortal()
-                    deprecated.remove()
-                    Com.addMessage("Portal $deprecated no longer exists.")
-                }
+        // Neutral, density-driven portal churn (run every checkpoint). The board's portal count converges to
+        // [Config.targetPortals]: discovery dominates when sparse (~4:1 near empty), evens to ~1:1 at target,
+        // and removal dominates above it. d = count / target (1.0 at target); create fades as d rises, remove
+        // grows — they cross at the target. Helps no faction directly; it just keeps the map alive + bounded.
+        private fun managePortalDensity() {
+            val count = World.countPortals()
+            val d = count / Config.targetPortals().toDouble()
+            val createChance = Config.portalChurnRate * (1.0 - d / 2.0).coerceIn(0.0, 1.0)
+            // No room to place a non-clipping portal → don't even try (no wasted attempt); roll the would-be
+            // discovery budget into REMOVAL instead, so a packed board thins out rather than stalling.
+            val hasSpace = count < Config.maxPortals && Pos.hasPortalSpace()
+            val removeChance = Config.portalChurnRate * (d / 2.0).coerceIn(0.0, 1.0) + if (hasSpace) 0.0 else createChance
+            if (hasSpace && Util.random() < createChance) {
+                val discovered = Portal.createRandom()
+                World.allPortals.add(discovered)
+                Com.addMessage("A new portal $discovered was discovered.")
+            }
+            if (count > Config.minPortals && Util.random() < removeChance) {
+                val gone = World.randomPortal()
+                gone.remove()
+                Com.addMessage("Portal $gone no longer exists.")
             }
         }
 

@@ -114,6 +114,11 @@ data class Pos(val x: Double, val y: Double) {
                 .filter { Sim.isInsideField(it.x, it.y) } // round field → only spawn within the inscribed ellipse
         }
 
+        /** Whether a new portal can still be placed without clipping an existing one (a free, well-spaced
+         *  candidate exists). Always true headless (no rendering → spacing irrelevant). Lets the density
+         *  system skip discovery when the map is packed instead of failing to place. */
+        fun hasPortalSpace(): Boolean = HtmlUtil.isNotRunningInBrowser() || portalCandidates().isNotEmpty()
+
         fun createRandomForPortal(): Pos {
             if (HtmlUtil.isNotRunningInBrowser()) {
                 return Pos(Util.randomInt(Sim.width), Util.randomInt(Sim.height))

@@ -44,6 +44,21 @@ change animates through `CaptureFx`; a `playVirusSound` plays.
 Per-agent inventory; used to link to a portal. Surfaced as counts (leaderboard + inspector); no 3D
 model yet.
 
+## Portal discovery & removal — `system/Cycle.managePortalDensity`
+Portals are **discovered and removed** by a neutral, density-driven *system* process (every checkpoint),
+not an agent action — discovering a portal helps no faction, so it made a dull behaviour slider (the old
+`EXPLORE` action + slider are **retired**; the AI's `SliderVector` is now 18, not 19). The count converges
+toward `Config.targetPortals()` (≈ 2.5 × the onboarding `startPortals`, capped at `maxPortals` 89):
+- `d = count / target` (1.0 at target). `createChance ∝ (1 − d/2)`, `removeChance ∝ (d/2)` (× `Config.
+  portalChurnRate`) — so well below target discovery dominates (~4:1 near empty), at target it's ~1:1, and
+  above it removal wins. Equilibrium settles a bit *below* target because combat also destroys portals
+  (discovery replaces them).
+- **No-space handling:** if the map is too packed to place a non-clipping portal (`Pos.hasPortalSpace`,
+  enforced by `Dim.minDistanceBetweenPortals`), discovery is skipped and that budget rolls into removal, so
+  a full board thins out instead of stalling. (Min-distance also caps portal density per area.)
+- A **removed** portal `remove()`s like any destroyed portal: it shatters (FX + sound), drops its mods, and
+  all its links + fields (incoming and outgoing) are destroyed.
+
 ## Resonator decay & recharge — `items/deployable/Resonator.kt`
 Resonators lose energy over time; a portal with no energy left loses resonators and eventually goes
 neutral. Recharging (`Recharger`, via a held key) tops them back up at an XM cost.

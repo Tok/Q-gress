@@ -9,7 +9,7 @@ AI-driver design notes see [docs/NN.md](docs/NN.md) + [docs/LLM.md](docs/LLM.md)
 ## North star
 
 Q-Gress becomes an **AI-vs-AI sandbox**: each faction (ENL/RES) is driven by an agent whose
-**output layer _is_ the 19 behaviour sliders** — a custom net and/or an in-browser LLM. Human
+**output layer _is_ the 18 behaviour sliders** — a custom net and/or an in-browser LLM. Human
 can play any side; any two brains can be matched. **Desktop-only**; mobile is blocked. Until
 the AI layer lands, the slider sim is the substrate we keep hardening.
 
@@ -115,7 +115,7 @@ orbiting camera, 3D terrain, colour fade, and a GitHub footer link. Wiped by the
 **Decided:** build **both** AI drivers on **one** shared substrate, so any faction can be Human /
 Net / LLM independently and fight in any combination. Track design lives in [docs/NN.md](docs/NN.md)
 (custom net + neuroevolution) and [docs/LLM.md](docs/LLM.md) (in-browser LLM). The slider vector
-stays the action substrate (the net/LLM only re-tunes the 19 sliders at checkpoint cadence — it does
+stays the action substrate (the net/LLM only re-tunes the 18 sliders at checkpoint cadence — it does
 **not** replace per-agent `ActionSelector`).
 
 **Fitness objective (what we optimize for):** each faction maximizes its **Mind Units at every
@@ -131,9 +131,10 @@ area is maximized, and hold it across the cycle. So fitness = the **sum/average 
 - [x] **`Observation` (pure)** (`ai/Observation.kt`) — `observe(faction): DoubleArray`, a fixed 13-slot
   normalized vector (cycle fraction, MU/link/field share, portal control, roster fill, avg level + XM per
   side). Read-only over `World`; deterministic. The NN/LLM input.
-- [x] **`SliderVector` (pure)** (`ai/SliderVector.kt`) — **19** named slots (12 `QActions` + 7
+- [x] **`SliderVector` (pure)** (`ai/SliderVector.kt`) — **18** named slots (11 `QActions` + 7
   `QDestinations`, stable `ORDER`) ↔ encode/decode + clamp; `SliderVectorPolicy` wraps one as a
-  `FactionPolicy`. (PLAN earlier said "18" — actual count is 19.)
+  `FactionPolicy`. (Was 19; the faction-neutral EXPLORE action was retired — portal discovery is now a
+  density-driven system process, see *Gameplay mechanics*.)
 - Seedable RNG is **done** — `Util.random()` is a seedable mulberry32; same seed reproduces a world
   (powers shareable "Copy link" + the 6.1 match harness).
 - Also made the Q-value system **headless-safe** (`QActions` skips UI icons, `DomSliderPolicy` skips the

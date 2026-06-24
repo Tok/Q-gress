@@ -13,7 +13,9 @@ object QActions {
     // anywhere
     val MOVE_ELSEWHERE = QValue("move", 0.01, "move elsewhere", icon(ActionItem.MOVE))
     val RECRUIT = QValue("recruit", 0.0005, "recruit agents", icon(ActionItem.RECRUIT))
-    val EXPLORE = QValue("explore", 0.0002, "explore portals", icon(ActionItem.EXPLORE))
+
+    // Portal discovery is NOT an agent action any more: it's faction-neutral (helps nobody) so it made a dull
+    // slider. Portals are now discovered + removed by a density-driven system process (system/Cycle).
     val RECYCLE = QValue("recycle", 1.0, "recycle items", icon(ActionItem.RECYCLE))
     val RECHARGE = QValue("recharge", 1.0, "recharge portals", icon(ActionItem.RECHARGE))
 
@@ -38,7 +40,6 @@ object QActions {
 
     fun values() = listOf(
         MOVE_ELSEWHERE,
-        EXPLORE,
         RECRUIT,
         ATTACK,
         VIRUS,
