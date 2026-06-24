@@ -32,6 +32,8 @@ object TuningPanel {
         val valueLabel: HTMLElement,
         val bar: HTMLElement,
         val fill: HTMLElement,
+        val lock: HTMLElement,
+        var locked: Boolean = false,
     )
 
     private var built = false
@@ -62,9 +64,10 @@ object TuningPanel {
 
     /**
      * Per-frame sync (called from [util.DrawUtil.redrawUserInterface]). If an **AI policy** drives the
-     * displayed faction, mirror its current vector onto the inputs and flip the panel to its auto-moving
-     * read-only mode — so the player watches the sliders move under AI control (manual lock is a later
-     * opt-out). Under manual control this is just the read-only-bar resync (a no-op in interactive mode).
+     * displayed faction, mirror its current vector onto the inputs and auto-move the read-only bars — the
+     * player watches the sliders move under AI control. A **locked** slider (the 🔒 toggle, AI-driven only)
+     * stays interactive and the AI doesn't overwrite it. Under manual control this is just the read-only-bar
+     * resync (a no-op in interactive mode).
      */
     fun refresh() {
         if (!built) return
@@ -72,15 +75,29 @@ object TuningPanel {
         val nowDriven = vector != null
         if (nowDriven != aiDriven) {
             aiDriven = nowDriven
-            setMode(nowDriven) // AI in control → auto-moving bars; back to manual → interactive sliders
+            rows.forEach { it.locked = FactionPolicies.lockedValue(userFaction, it.qValue) != null } // resync on driver change
+            applyMode()
         }
         if (vector != null) {
             rows.forEach { r ->
+                if (r.locked) return@forEach // player owns this slider — leave it
                 r.input.valueAsNumber = vector[r.qValue]
                 r.valueLabel.textContent = display(r.input.value)
+                r.fill.style.width = pct(r.input)
             }
+        } else if (mode == Mode.READONLY) {
+            rows.forEach { it.fill.style.width = pct(it.input) }
         }
-        if (mode == Mode.READONLY) rows.forEach { it.fill.style.width = pct(it.input) }
+    }
+
+    private fun toggleLock(row: Row) {
+        row.locked = !row.locked
+        if (row.locked) {
+            FactionPolicies.lock(userFaction, row.qValue, row.input.valueAsNumber)
+        } else {
+            FactionPolicies.unlock(userFaction, row.qValue)
+        }
+        applyMode()
     }
 
     // Stable order both factions' values are serialized in (Actions then Destinations) — the share link.
@@ -118,18 +135,26 @@ object TuningPanel {
         // how the name text aligns) | name | slider/bar | value. Inline so nothing can collapse it.
         val rst = row.asDynamic().style
         rst.display = "grid"
-        rst.gridTemplateColumns = "16px 1fr 92px 34px"
+        rst.gridTemplateColumns = "16px 1fr 92px 34px 16px" // + a lock-toggle column (AI-driven only)
         rst.alignItems = "center"
         rst.columnGap = "6px"
         val userInput = slider(qValue, userFaction)
         val enemyInput = slider(qValue, userFaction.enemy()).also { it.classList.add("invisible") }
         val valueLabel = el("span", "qSliderLabel").also { it.textContent = display(userInput.value) }
-        userInput.oninput = {
-            valueLabel.textContent = display(userInput.value)
-            null
-        }
         val bar = el("div", "qBar")
         val fill = el("div", "qBarFill").also { bar.appendChild(it) }
+        val lock = lockToggle()
+        val builtRow = Row(qValue, userInput, valueLabel, bar, fill, lock)
+        userInput.oninput = {
+            valueLabel.textContent = display(userInput.value)
+            // While the AI drives, an edit only sticks if this slider is locked — push it to the override.
+            if (builtRow.locked) FactionPolicies.lock(userFaction, qValue, userInput.valueAsNumber)
+            null
+        }
+        lock.onclick = {
+            toggleLock(builtRow)
+            null
+        }
         // Fixed 3-column grid (icon+label | slider/bar | value) so icons + values line up in columns.
         val control = el("div", "tuneControl")
         control.appendChild(userInput)
@@ -139,8 +164,16 @@ object TuningPanel {
         row.appendChild(textLabel(qValue))
         row.appendChild(control)
         row.appendChild(valueLabel)
-        rows.add(Row(qValue, userInput, valueLabel, bar, fill))
+        row.appendChild(lock)
+        rows.add(builtRow)
         return row
+    }
+
+    // The per-row lock toggle: shown only when an AI drives the faction; click to grab/release the slider.
+    private fun lockToggle(): HTMLElement = el("span", "qLockToggle").also {
+        it.textContent = "🔓"
+        it.asDynamic().style.cursor = "pointer"
+        it.title = "Lock this slider (override the AI)"
     }
 
     // The action icon in its own fixed 16px column → icons line up in a column across all rows.
@@ -169,13 +202,19 @@ object TuningPanel {
     }
 
     private fun applyMode() {
-        val readOnly = mode == Mode.READONLY
+        val globallyLocked = mode == Mode.READONLY
         rows.forEach { r ->
-            r.input.disabled = readOnly
-            setVisible(r.input, !readOnly)
-            setVisible(r.valueLabel, !readOnly)
-            setVisible(r.bar, readOnly)
-            if (readOnly) r.fill.style.width = pct(r.input)
+            // A row is interactive when the panel isn't globally locked AND either no AI drives it or the
+            // player has grabbed it (locked). Otherwise it's an auto-moving read-only bar.
+            val interactive = !globallyLocked && (!aiDriven || r.locked)
+            r.input.disabled = !interactive
+            setVisible(r.input, interactive)
+            setVisible(r.valueLabel, interactive)
+            setVisible(r.bar, !interactive)
+            if (!interactive) r.fill.style.width = pct(r.input)
+            // The lock toggle only makes sense while an AI drives and the panel isn't globally locked.
+            setVisible(r.lock, aiDriven && !globallyLocked)
+            r.lock.textContent = if (r.locked) "🔒" else "🔓"
         }
     }
 

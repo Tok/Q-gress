@@ -38,9 +38,9 @@ footer (`util/ui/Footer`: EVENT LOG / AGENTS). Remaining:
   (e.g. movement-penalty heatmap) alongside the existing Terrain/Vectors toggles.
 - [x] **Stage 4 (slider↔AI link) — DONE.** `TuningPanel.refresh()` now reads the displayed faction's
   installed `FactionPolicy.currentVector()` each frame: when an AI policy drives the faction it mirrors that
-  vector onto the inputs and flips to the auto-moving read-only bars, so AI-driven sliders animate live. (The
-  manual-lock opt-out — let the player override a driven slider — is the remaining 6.4 nicety.) Still open:
-  per-faction tuning presets.
+  vector onto the inputs and flips to the auto-moving read-only bars, so AI-driven sliders animate live. The
+  **manual-lock opt-out** is in too: a per-slider 🔒 (AI-driven only) keeps that one slider interactive and
+  pins it via `ai.OverridePolicy` (the AI drives the rest). Still open: per-faction tuning presets.
 - [ ] **Stage 5 — a proper, polished UI (the end-state goal).** A cohesive visual theme + layout pass
   over the whole HUD / onboarding / menus building on the dock: consistent typography, spacing, panels
   and states; responsive to window size. This is the "real UI" we want in the end.
@@ -242,9 +242,10 @@ area is maximized, and hold it across the cycle. So fitness = the **sum/average 
   Exit: an LLM drives a faction end-to-end in-browser, sim stays smooth.
 
 **6.4 — Mix, match & human-vs-AI**
-- Per-faction driver selection + **AI-driven sliders animate read-only — DONE** (the AI tab's driver picker
-  installs a policy per faction; `TuningPanel` auto-moves under AI control). Remaining: Human/Net/LLM in
-  onboarding, a manual-lock override, and a tournament/eval view (round-robin → leaderboard).
+- Per-faction driver selection + **AI-driven sliders animate read-only, with a per-slider manual-lock
+  override — DONE** (the AI tab's driver picker installs a policy per faction; `TuningPanel` auto-moves under
+  AI control; the 🔒 toggle pins a slider via `OverridePolicy`). Remaining: Human/Net/LLM in onboarding, and a
+  tournament/eval view (round-robin → leaderboard).
 
 **Cross-cutting:** desktop-only + **WebGPU** gating; seeds via `?seed=`; **balance risk** — pure
 win-maximizing self-play may rediscover the recruit-rush degenerate (below), so keep tuning `Config`

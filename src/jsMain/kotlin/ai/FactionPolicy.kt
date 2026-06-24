@@ -48,9 +48,40 @@ class DomSliderPolicy(private val faction: Faction) : FactionPolicy {
 }
 
 /**
+ * Wraps an AI [inner] policy with **player overrides** (PLAN Phase 6.4): a locked slider returns the
+ * player's value instead of the AI's, for both behaviour ([weight]) and display ([currentVector]). Unlocked
+ * slots pass straight through, so the AI still drives everything the player hasn't grabbed. Overrides are
+ * keyed by [QValue.id]; an empty override set is a transparent pass-through.
+ */
+class OverridePolicy(val inner: FactionPolicy) : FactionPolicy {
+    private val overrides = mutableMapOf<String, Double>()
+
+    fun lock(value: QValue, weight: Double) {
+        overrides[value.id] = weight.coerceIn(0.0, 1.0)
+    }
+
+    fun unlock(value: QValue) {
+        overrides.remove(value.id)
+    }
+
+    fun lockedValue(value: QValue): Double? = overrides[value.id]
+
+    override fun weight(value: QValue): Double = overrides[value.id] ?: inner.weight(value)
+
+    override fun currentVector(): SliderVector? {
+        val base = inner.currentVector() ?: return null
+        if (overrides.isEmpty()) return base
+        var v = base
+        SliderVector.ORDER.forEach { q -> overrides[q.id]?.let { v = v.with(q, it) } }
+        return v
+    }
+}
+
+/**
  * The live per-faction [FactionPolicy] registry. Each faction defaults to its own [DomSliderPolicy] (zero
  * gameplay change vs pre-6.0); an AI driver calls [set] to install a [SliderVectorPolicy] / net / LLM, and
- * [reset] restores the defaults (e.g. between headless matches).
+ * [reset] restores the defaults (e.g. between headless matches). [lock]/[unlock] let the player override
+ * individual sliders of an AI-driven faction (the AI keeps driving the rest).
  */
 object FactionPolicies {
     private val policies = mutableMapOf<Faction, FactionPolicy>()
@@ -58,8 +89,23 @@ object FactionPolicies {
     fun of(faction: Faction): FactionPolicy = policies.getOrPut(faction) { DomSliderPolicy(faction) }
 
     fun set(faction: Faction, policy: FactionPolicy) {
-        policies[faction] = policy
+        policies[faction] = policy // installing a fresh driver drops any prior overrides (intentional reset)
     }
+
+    /** Pin [value] to the player's [weight] for [faction] (wrapping its AI policy in an [OverridePolicy]). */
+    fun lock(faction: Faction, value: QValue, weight: Double) {
+        val current = of(faction)
+        val override = current as? OverridePolicy ?: OverridePolicy(current).also { policies[faction] = it }
+        override.lock(value, weight)
+    }
+
+    /** Hand [value] back to the AI for [faction]. */
+    fun unlock(faction: Faction, value: QValue) {
+        (policies[faction] as? OverridePolicy)?.unlock(value)
+    }
+
+    /** The player-locked value for [faction]'s [value], or null if the AI still drives it. */
+    fun lockedValue(faction: Faction, value: QValue): Double? = (policies[faction] as? OverridePolicy)?.lockedValue(value)
 
     fun reset() = policies.clear()
 }
