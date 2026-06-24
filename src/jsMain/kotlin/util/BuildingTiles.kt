@@ -1,156 +1,102 @@
 package util
 
-import external.Pbf
-import external.VectorTileModule
 import kotlinx.browser.window
 import kotlin.math.PI
-import kotlin.math.abs
 import kotlin.math.cos
-import kotlin.math.floor
-import kotlin.math.ln
-import kotlin.math.tan
 
 /**
- * Fetches the OpenFreeMap `.pbf` vector tiles covering the play area and decodes their `building`
- * layer ourselves (via pbf + @mapbox/vector-tile), yielding a COMPLETE set of footprints as lng/lat
- * GeoJSON features — MapLibre's own query APIs (`queryRenderedFeatures`/`querySourceFeatures`) only
- * ever return a small, far-flung fraction of the buildings it paints. The tiles are already in the
- * browser HTTP cache from MapLibre's own rendering, so our fetches are near-instant and add no real
- * network overhead. Decoding gives us the door to do far more with the data later (roads → pathfinding,
- * water, POI). Tile math is pure (unit-tested); the fetch/decode is the IO edge.
+ * Loads a COMPLETE set of play-area building footprints straight from OpenStreetMap via the Overpass
+ * API. We tried OpenFreeMap's vector tiles first, but its `building` layer is heavily simplified at its
+ * max zoom (14) — e.g. a St. Gallen tile carries only ~19 of the 1100 buildings OSM actually has there.
+ * Overpass returns every building polygon in a bbox (with height tags), which is exactly what we want
+ * for our own meshes (shadows, shake, colliders). One keyless GET (CORS-enabled, browser-cacheable);
+ * Overpass has rate limits, so this is a per-world-gen query, not a hot path.
+ *
+ * Output features match the GeoJSON shape `OwnBuildings`/`Scene3D.buildBuildingColliders` consume:
+ * `{ geometry: { type:'Polygon', coordinates:[ring] }, properties:{ render_height, render_min_height } }`.
  */
 object BuildingTiles {
-    const val BUILDING_ZOOM = 14 // openmaptiles serves buildings up to z14
-    const val CONTEXT_M = 250.0 // also keep buildings this far OUTSIDE the play area (off-area shadow casters)
-    private const val SOURCE_LAYER = "building"
+    private const val OVERPASS_URL = "https://overpass-api.de/api/interpreter"
+    const val CONTEXT_M = 250.0 // also pull buildings this far OUTSIDE the play area (off-area shadow casters)
     private const val METERS_PER_DEG = 111_320.0
-    private const val TILE_MARGIN_M = 200.0 // pad the tile cover so edge tiles are always included
-    private const val MAX_NEST = 6 // GeoJSON coordinate nesting guard (Point→…→MultiPolygon)
+    private const val MAX_BUILDINGS = 2500 // perf cap on how many footprints we hand back
+    private const val DEFAULT_HEIGHT = 8.0 // when a building has no height/levels tag
+    private const val LEVEL_HEIGHT_M = 3.0 // metres per storey when only building:levels is tagged
+    private const val MIN_RING = 3 // a polygon needs ≥3 points
 
-    data class Tile(val x: Int, val y: Int, val z: Int)
-
-    private var template: String? = null // resolved (versioned) {z}/{x}/{y} url, read once from the TileJSON
-
-    /** Slippy-map tile containing [lng]/[lat] at zoom [z] (standard web-mercator tiling). */
-    fun tileOf(lng: Double, lat: Double, z: Int): Tile {
-        val n = (1 shl z).toDouble()
-        val xt = (lng + 180.0) / 360.0 * n
-        val latRad = lat * PI / 180.0
-        val yt = (1.0 - ln(tan(latRad) + 1.0 / cos(latRad)) / PI) / 2.0 * n
-        return Tile(floor(xt).toInt(), floor(yt).toInt(), z)
+    /** [south, west, north, east] degree bounds of the play area + context margin. Pure (unit-tested). */
+    fun bbox(lng: Double, lat: Double, halfWM: Double, halfHM: Double): DoubleArray {
+        val dLat = (halfHM + CONTEXT_M) / METERS_PER_DEG
+        val dLng = (halfWM + CONTEXT_M) / (METERS_PER_DEG * cos(lat * PI / 180.0))
+        return doubleArrayOf(lat - dLat, lng - dLng, lat + dLat, lng + dLng)
     }
 
-    /** Every [BUILDING_ZOOM] tile covering the play area (centre ± half-extents in metres) + a margin. */
-    fun tilesForBounds(lng: Double, lat: Double, halfWM: Double, halfHM: Double): List<Tile> {
-        val dLat = (halfHM + TILE_MARGIN_M) / METERS_PER_DEG
-        val dLng = (halfWM + TILE_MARGIN_M) / (METERS_PER_DEG * cos(lat * PI / 180.0))
-        val nw = tileOf(lng - dLng, lat + dLat, BUILDING_ZOOM) // north-west → min x, min y
-        val se = tileOf(lng + dLng, lat - dLat, BUILDING_ZOOM) // south-east → max x, max y
-        val tiles = mutableListOf<Tile>()
-        var x = nw.x
-        while (x <= se.x) {
-            var y = nw.y
-            while (y <= se.y) {
-                tiles.add(Tile(x, y, BUILDING_ZOOM))
-                y++
-            }
-            x++
-        }
-        return tiles
-    }
-
-    // Per-load state (clip bounds + accumulator + completion), kept off the parameter lists.
-    private class Job(val lng: Double, val lat: Double, val ctxW: Double, val ctxH: Double, val onComplete: (dynamic) -> Unit) {
-        val all: dynamic = js("[]")
-        var remaining = 0
-    }
-
-    /**
-     * Resolve the tile template (once, from the openmaptiles TileJSON), fetch every covering tile,
-     * decode its building features (clipped to the play area + [CONTEXT_M] margin), and deliver the
-     * merged GeoJSON-feature array to [onComplete]. [halfWM]/[halfHM] are the play-area half-extents
-     * in scene metres; [onComplete] always fires (empty array if nothing loads).
-     */
+    /** Query OSM for every building in the play area + context and deliver them as lng/lat GeoJSON
+     *  Polygon features (with render_height) to [onComplete]. Always fires (empty array on failure). */
     fun load(lng: Double, lat: Double, halfWM: Double, halfHM: Double, onComplete: (dynamic) -> Unit) {
-        val job = Job(lng, lat, halfWM + CONTEXT_M, halfHM + CONTEXT_M, onComplete)
-        val cached = template
-        if (cached != null) {
-            fetchAll(cached, lng, lat, halfWM, halfHM, job)
-            return
-        }
-        val req = window.asDynamic().fetch(MapStyles.OPENMAPTILES_URL)
-        req.then { r: dynamic -> r.json() }.then { j: dynamic ->
-            val arr = j?.tiles // JS array → index, NOT .get() (that compiles to a non-existent method call)
-            val tmpl = (if (arr != null) arr[0] else null) as? String
-            if (tmpl == null) {
-                onComplete(job.all)
-            } else {
-                template = tmpl
-                fetchAll(tmpl, lng, lat, halfWM, halfHM, job)
-            }
-        }.catch { _: dynamic -> onComplete(job.all) }
-    }
-
-    private fun fetchAll(tmpl: String, lng: Double, lat: Double, halfWM: Double, halfHM: Double, job: Job) {
-        val tiles = tilesForBounds(lng, lat, halfWM, halfHM)
-        if (tiles.isEmpty()) {
-            job.onComplete(job.all)
-            return
-        }
-        job.remaining = tiles.size
-        tiles.forEach { t ->
-            val url = tmpl.replace("{z}", t.z.toString()).replace("{x}", t.x.toString()).replace("{y}", t.y.toString())
-            fetchTile(url, t, job)
-        }
-    }
-
-    private fun fetchTile(url: String, t: Tile, job: Job) {
+        val b = bbox(lng, lat, halfWM, halfHM)
+        val q = "[out:json][timeout:25];way[\"building\"](${b[0]},${b[1]},${b[2]},${b[3]});out geom;"
+        val url = OVERPASS_URL + "?data=" + (js("encodeURIComponent")(q) as String) // GET → browser-cacheable
         val req = window.asDynamic().fetch(url)
-        req.then { r: dynamic -> if (r.ok == true) r.arrayBuffer() else null }
-            .then { buf: dynamic ->
-                if (buf != null) decodeInto(buf, t, job)
-                tileDone(job)
-            }
-            .catch { _: dynamic -> tileDone(job) }
+        req.then { r: dynamic -> if (r.ok == true) r.json() else null }
+            .then { j: dynamic -> onComplete(toFeatures(j)) }
+            .catch { _: dynamic -> onComplete(js("[]")) }
     }
 
-    private fun tileDone(job: Job) {
-        job.remaining--
-        if (job.remaining <= 0) job.onComplete(job.all)
-    }
-
-    private fun decodeInto(buf: dynamic, t: Tile, job: Job) {
-        val pbf = Pbf(buf) // pbf wraps an ArrayBuffer in a Uint8Array itself
-        val tile: dynamic = VectorTileModule.VectorTile(pbf)
-        val layer = tile.layers[SOURCE_LAYER] ?: return
-        val n = (layer.length as? Int) ?: return
+    private fun toFeatures(j: dynamic): dynamic {
+        val out: dynamic = js("[]")
+        val els = j?.elements ?: return out
+        val n = (els.length as? Int) ?: return out
         var i = 0
-        while (i < n) {
-            val gj = layer.feature(i).toGeoJSON(t.x, t.y, t.z)
+        while (i < n && (out.length as Int) < MAX_BUILDINGS) {
+            val f = wayToFeature(els[i])
             i++
-            if (withinContext(gj, job)) job.all.push(gj)
+            if (f != null) out.push(f)
         }
+        console.log("BuildingTiles(OSM): $n ways → ${out.length} building features")
+        return out
     }
 
-    // Cheap clip: keep features whose first vertex falls within the play area + context margin (metres).
-    private fun withinContext(gj: dynamic, job: Job): Boolean {
-        val ll = firstLngLat(gj?.geometry?.coordinates) ?: return false
-        val dEast = (ll[0] - job.lng) * METERS_PER_DEG * cos(job.lat * PI / 180.0)
-        val dNorth = (ll[1] - job.lat) * METERS_PER_DEG
-        return abs(dEast) <= job.ctxW && abs(dNorth) <= job.ctxH
-    }
-
-    // Descend the GeoJSON coordinate nest to the first [lng, lat] pair.
-    private fun firstLngLat(coords: dynamic): DoubleArray? {
-        var c = coords ?: return null
-        var guard = 0
-        while (guard < MAX_NEST && isArr(c) && isArr(c[0])) {
-            c = c[0]
-            guard++
+    // One OSM building way → a GeoJSON Polygon feature. `out geom;` gives geometry as [{lat,lon},...].
+    private fun wayToFeature(el: dynamic): dynamic? {
+        val geom = el?.geometry ?: return null
+        val nPts = (geom.length as? Int) ?: return null
+        if (nPts < MIN_RING) return null
+        val ring: dynamic = js("[]")
+        var k = 0
+        while (k < nPts) {
+            val p = geom[k]
+            k++
+            val pt: dynamic = js("[]")
+            pt.push(p.lon)
+            pt.push(p.lat)
+            ring.push(pt)
         }
-        if (!isArr(c) || ((c.length as? Int) ?: 0) < 2) return null
-        return doubleArrayOf(c[0] as Double, c[1] as Double)
+        val feature: dynamic = js("({ type: 'Feature' })")
+        val g: dynamic = js("({ type: 'Polygon' })")
+        g.coordinates = js("[]")
+        g.coordinates.push(ring)
+        feature.geometry = g
+        val props: dynamic = js("({})")
+        props.render_height = heightOf(el.tags)
+        props.render_min_height = 0
+        feature.properties = props
+        return feature
     }
 
-    private fun isArr(v: dynamic): Boolean = js("Array.isArray")(v) as Boolean
+    // OSM height in metres: explicit `height`, else `building:levels` × storey height, else a default.
+    private fun heightOf(tags: dynamic): Double {
+        if (tags == null) return DEFAULT_HEIGHT
+        val h = numFrom(tags.height)
+        if (h != null && h > 0.5) return h
+        val levels = numFrom(tags["building:levels"])
+        if (levels != null && levels > 0.0) return levels * LEVEL_HEIGHT_M
+        return DEFAULT_HEIGHT
+    }
+
+    private fun numFrom(v: dynamic): Double? {
+        if (v == null) return null
+        val d = (js("parseFloat")("" + v) as? Double) ?: return null
+        return if (js("isNaN")(d) as Boolean) null else d
+    }
 }

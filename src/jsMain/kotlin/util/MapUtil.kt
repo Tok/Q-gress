@@ -381,8 +381,11 @@ object MapUtil {
         val halfW = Sim.width / 2.0 * Scene3D.metersPerPixel
         val halfH = Sim.height / 2.0 * Scene3D.metersPerPixel
         BuildingTiles.load(center.lng as Double, center.lat as Double, halfW, halfH) { feats ->
+            val n = (feats.length as? Int) ?: 0
             Scene3D.buildBuildingColliders(feats) // debris colliders from the full set
-            if (OwnBuildings.REPLACE_BUILDINGS) {
+            // Only take over the look if OSM actually returned buildings (Overpass can rate-limit / fail);
+            // otherwise leave MapLibre's own fill-extrusion visible as the fallback.
+            if (OwnBuildings.REPLACE_BUILDINGS && n > 0) {
                 OwnBuildings.addFeatures(feats) // new meshes pop in at the current grow-in level (applyBuildInflate)
                 val md = initMap?.asDynamic()
                 if (md != null && md.getLayer("3d-buildings") != null) {
