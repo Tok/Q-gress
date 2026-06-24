@@ -2,6 +2,7 @@ package agent.action.cond
 
 import World
 import agent.Agent
+import agent.Balance
 import agent.Faction
 import agent.NonFaction
 import agent.action.ActionItem
@@ -16,11 +17,12 @@ object Recruiter : ConditionalAction {
     // growing the roster compete with linking/deploying instead of being free.
     override fun isActionPossible(agent: Agent) = World.canRecruitMore(agent.faction) && agent.xm >= Config.recruitmentXmCost
 
-    // Success chance diminishes as the faction fills toward its cap, so rushing
-    // the cap yields ever-smaller returns rather than a guaranteed head start.
+    // Success chance diminishes as the faction fills toward its cap (rushing the cap yields ever-smaller
+    // returns) AND is scaled by [Balance.recruitFactor] — the larger team recruits less, the smaller more,
+    // so recruiting can't snowball the leader and team sizes self-balance.
     private fun recruitmentChance(faction: Faction): Double {
         val fillRatio = World.countAgents(faction).toDouble() / Config.maxFor(faction)
-        return Config.recruitmentBaseChance * (1.0 - fillRatio)
+        return Config.recruitmentBaseChance * (1.0 - fillRatio) * Balance.recruitFactor(faction)
     }
 
     override fun performAction(agent: Agent): Agent {

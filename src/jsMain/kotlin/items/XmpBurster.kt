@@ -2,6 +2,7 @@ package items
 
 import World
 import agent.Agent
+import agent.Balance
 import items.deployable.DeployableItem
 import items.level.XmpLevel
 import portal.ModSlot
@@ -16,12 +17,13 @@ data class XmpBurster(val owner: Agent, val level: XmpLevel) : DeployableItem {
      *  Returns the total XM dealt (so the caller can pop one aggregate 3D damage number). */
     fun dealDamage(agent: Agent): Int {
         var total = 0
+        val boost = Balance.attackBoost(agent.faction) // comeback: a faction behind on portals hits harder
         agent.findResosInAttackRange(level).forEach { reso ->
             val position = requireNotNull(reso.position) { "resonator in attack range without a position" }
             val distFrac = Combat.distanceFraction(position.distanceTo(agent.pos), level.rangeM, ultra = false)
             val crit = distFrac < 0.2 && Util.random() < Combat.CRIT_RATE
             val mitigation = reso.portal?.totalMitigation() ?: 0 // shields + links reduce incoming damage
-            val dmg = Combat.resoDamage(level.damage, distFrac, mitigation, ultra = false, crit = crit)
+            val dmg = (Combat.resoDamage(level.damage, distFrac, mitigation, ultra = false, crit = crit) * boost).toInt()
             reso.takeDamage(agent, dmg)
             total += dmg
         }

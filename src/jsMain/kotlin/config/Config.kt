@@ -23,6 +23,20 @@ object Config {
     const val recruitmentXmCost = 250 // XM spent per recruit attempt (cf. link = 250)
     const val recruitmentBaseChance = 0.05 // success chance at an empty roster; scales →0 at the cap
 
+    // Anti-snowball recruiting (Balance.recruitFactor): the LARGER faction recruits less, the SMALLER more,
+    // so team sizes self-correct instead of the leader running away (recruiting was the dominant snowball).
+    // The recruit chance is multiplied by (enemyRoster+1)/(myRoster+1), clamped to this band.
+    var recruitFactorMin = 0.3 // a much-larger faction recruits at ≥30% of base
+    var recruitFactorMax = 3.0 // a much-smaller faction recruits at ≤300% of base
+
+    // Comeback combat (Balance.attackBoost): the faction BEHIND on portals deals up to this fraction MORE
+    // resonator damage (at a total deficit), so a losing side can flip the board — attacking beats defending.
+    var comebackAttackBonus = 0.8
+
+    // XMPs an agent hoards before committing to an assault. Lower = portals flip more often (more dynamic);
+    // was 30, which left the board static (few attacks ever started). The underdog also benefits via attackBoost.
+    var attackXmpThreshold = 15
+
     var startPortals = 8 // initial portal count (chosen at onboarding — the "portal density"); scales by map size
     var quickStart = false // onboarding option: start with a full roster + AP so the early game moves
     fun startFrogs() = if (quickStart) 8 else minFrogs

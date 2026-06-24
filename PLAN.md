@@ -187,14 +187,17 @@ area is maximized, and hold it across the cycle. So fitness = the **sum/average 
   once per checkpoint), `Evolution` (a `(μ+λ)` GA — elitism + gaussian mutation, fitness = mean per-checkpoint
   MU margin over K seeded `SimRunner` matches, RNG independent of `Util`). Deterministic; `bestPolicy()`
   installs the winner. `Net`/`NetPolicy`/`Evolution` tests prove determinism + elitism monotonicity.
-- [ ] **BLOCKER — no training signal yet: matches yield ~0 MU.** Diagnosed a baseline match: agents capture
-  portals but **fields almost never form** (linking needs hacked keys + a non-crossing triangle), and MU comes
-  only from fields → fitness is flat 0 → nothing to select on. Also an **ENL/RES asymmetry** (RES captures
-  nothing vs an identical baseline — agent turn-order + the 30-XMP attack threshold). Options to resolve
-  (needs a call — user's objective is pure MU): **(a)** shape fitness with MU-leading indicators
-  (portal-control + link margin) so there's gradient before fields form, keeping MU dominant; **(b)** tune
-  matches so fields form (longer/multi-cycle, denser/closer portals, link-biased setup); **(c)** fix the
-  capture asymmetry first. Quick-start rosters (`MatchSetup.quickStart`, default on) help but don't suffice.
+- [x] **Training signal + balance — RESOLVED via the anti-snowball/comeback pass** (`agent/Balance.kt`).
+  A baseline match was static + lopsided (ENL grabbed every portal, RES 0, no fields, MU flat 0). Root cause
+  was twofold and both are fixed: **(1) turn-order bias** — agents were processed in insertion order so the ENL
+  roster always acted first and took every neutral portal; `Simulation.stepEntities` now **shuffles** the agent
+  order each tick (seeded → deterministic). **(2) attacking ≫ defending** — `Balance.attackBoost` gives the
+  faction *behind on portals* up to `+Config.comebackAttackBonus` reso damage (comeback / "attack beats
+  defend"), `Config.attackXmpThreshold` dropped 30→15 (assaults actually start), and `Balance.recruitFactor`
+  makes the *larger* roster recruit less + the *smaller* more (anti-snowball, esp. when teams are unbalanced).
+  Measured over a match the board now moves both ways (portals 2/1→6/1→5/3→7/3), RES captures + fields, and
+  **MU forms (e.g. 1209/200)** → fitness is no longer flat. `BalanceTest` covers the helper; the knobs are
+  `Config` vars (user-tunable). Quick-start rosters (`MatchSetup.quickStart`, default on) ensure gameplay.
 - [ ] JSON genome (de)serialization for saving/loading a trained net; load a winner into the live game.
 - [ ] Live **activation + chosen-path visualization** (the payoff). Exit: beats the default-slider baseline
   over K seeded matches, loads into the live game, activations visualized.
@@ -225,9 +228,12 @@ and consider shaping fitness for *interesting* play (follow-up, not v1).
 ## Balance note (recruit-rush, root cause)
 `ActionSelector` picks by weighted-random over `slider × weight`. Recruiting adds agents (up to a
 cap), and more agents = more actions/tick = a compounding snowball, so rushing recruitment beats
-balanced play. Phase 5 gave recruiting an **XM cost + diminishing returns**; deeper "no strategy
-dominates" validation is iterative (playtest, or a future headless strategy-comparison harness — see
-6.1). Self-play fitness shaping is the AI-era lever.
+balanced play. Phase 5 gave recruiting an **XM cost + diminishing returns**; the 6.2 balance pass
+added **`Balance.recruitFactor`** (the larger roster recruits less, the smaller more → team sizes
+self-correct) and **`Balance.attackBoost`** (the side behind on portals attacks harder → the board
+flips instead of a leader running away), plus a lower attack threshold and a fair (shuffled) agent
+order. Measured dynamic + competitive over a `SimRunner` match. Deeper "no strategy dominates"
+validation is still iterative (playtest + the headless harness); self-play fitness shaping is the AI-era lever.
 
 ## Under consideration (icebox)
 - **Weather simulation (gameplay + atmosphere).** Simulate weather at the location — **rain**, fog,

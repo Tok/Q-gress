@@ -3,6 +3,7 @@ package agent.action.cond
 import agent.Agent
 import agent.Inventory
 import agent.action.ActionItem
+import config.Config
 import config.Constants
 import items.XmpBurster
 import items.level.XmpLevel
@@ -14,7 +15,7 @@ object Attacker : ConditionalAction {
 
     // Only attack once the agent has hoarded enough XMPs to actually make a dent (taking a portal down
     // needs many bursts) — so agents commit to a real assault instead of one blast then wandering off.
-    override fun isActionPossible(agent: Agent) = agent.inventory.findXmps().count() >= attackXmps
+    override fun isActionPossible(agent: Agent) = agent.inventory.findXmps().count() >= Config.attackXmpThreshold
 
     override fun performAction(agent: Agent): Agent {
         // Sustained assault: keep firing volleys into the portal until it falls, the agent runs dry on
@@ -76,7 +77,6 @@ object Attacker : ConditionalAction {
 
     private const val minAttackXmps = 10
     private const val maxAttackXmps = (minAttackXmps * Constants.phi).toInt()
-    private const val attackXmps = 30 // hoard needed to start an assault (was 50 — too rarely reached → few flips)
     private const val maxVolleys = 12 // safety cap on one assault (XMPs run out well before this anyway)
     private fun attackXmpCount() = minAttackXmps + Util.randomInt(maxAttackXmps - minAttackXmps)
     private fun xmpsForAttack(inv: Inventory) = inv.findXmps().sortedByDescending { it.level }.take(attackXmpCount())

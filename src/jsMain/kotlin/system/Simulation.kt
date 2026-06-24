@@ -4,6 +4,7 @@ import World
 import agent.StuckTracker
 import agent.action.ActionItem
 import portal.XmMap
+import util.Util
 
 /**
  * The functional-core tick step, shared by the live game (`HtmlUtil.tick`, which wraps this in a
@@ -15,9 +16,11 @@ object Simulation {
 
     /** Advance all agents (on a snapshot so mid-tick recruits buffer safely) then all NPCs, one tick. */
     fun stepEntities() {
-        // Iterate a snapshot so mid-tick recruiting can't mutate the set we're looping
-        // (recruits are buffered in World.pendingAgents, flushed below).
-        val nextAgents = World.allAgents.toList().map { it.act() }.toSet()
+        // Iterate a snapshot so mid-tick recruiting can't mutate the set we're looping (recruits are
+        // buffered in World.pendingAgents, flushed below). SHUFFLE the order (seeded → deterministic) so
+        // neither faction is consistently processed first: in insertion order the ENL roster always acted
+        // first and grabbed every neutral portal each tick, shutting RES out — a turn-order bias, not balance.
+        val nextAgents = Util.shuffle(World.allAgents.toList()).map { it.act() }.toSet()
         XmMap.updateStrayXm()
 
         World.allAgents.clear()
