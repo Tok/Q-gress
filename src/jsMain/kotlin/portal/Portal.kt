@@ -26,8 +26,7 @@ import items.types.HeatSinkType
 import items.types.ShieldType
 import items.types.VirusType
 import system.Com
-import system.display.Scene3D
-import system.display.VectorFieldOverlay
+import system.effect.Fx
 import util.*
 import util.data.Line
 import util.data.Pos
@@ -498,10 +497,8 @@ data class Portal(
         if (defender.faction == agent.faction) return
         val level = getLevel().value
         agent.removeXm(ZAP_BASE_XM * level + ZAP_SHIELD_XM * totalMitigation())
-        if (HtmlUtil.isRunningInBrowser()) {
-            Scene3D.fireBolt(location, level, agent.pos, defender.faction.color)
-            SoundUtil.playThunderSound((agent.pos.x / Sim.width * 2.0 - 1.0).coerceIn(-1.0, 1.0))
-        }
+        Fx.sink.fireBolt(location, level, agent.pos, defender.faction.color)
+        SoundUtil.playThunderSound((agent.pos.x / Sim.width * 2.0 - 1.0).coerceIn(-1.0, 1.0))
     }
 
     fun destroy(destroyer: Agent? = null) {
@@ -512,8 +509,8 @@ data class Portal(
             it.value.clear()
         }
         mods.clear()
-        if (droppedMods.isNotEmpty() && HtmlUtil.isRunningInBrowser()) {
-            Scene3D.dropMods(location, lvl, droppedMods) // mods tumble out when the portal goes down
+        if (droppedMods.isNotEmpty()) {
+            Fx.sink.dropMods(location, lvl, droppedMods) // mods tumble out when the portal goes down
             droppedMods.filterIsInstance<Shield>().firstOrNull()?.let { SoundUtil.playShieldRemoveSound(location, it.getLevel()) }
         }
         destroyAllLinksAndFields(destroyer)
@@ -532,7 +529,7 @@ data class Portal(
         val resoLevels = resoMap().mapValues { it.value.getLevel() } // capture before destroy clears the slots
         val heaviness = (0.1 + level * 0.06).coerceAtMost(0.7)
         destroy()
-        Scene3D.shatterPortal(location, shardColor, level, resoLevels) // glass shards + resonators fall
+        Fx.sink.shatterPortal(location, shardColor, level, resoLevels) // glass shards + resonators fall
         SoundUtil.playGlassShatterSound(location, heaviness, 0.8)
         World.allAgents.forEach { agent ->
             val portalKeys: List<PortalKey>? = agent.inventory.findKeys().filter { key -> key.portal == this }.toList()
@@ -547,8 +544,8 @@ data class Portal(
         val lvl = getLevel().value
         val resoLevel = slots[octant]?.resonator?.getLevel()
         this.slots[octant]?.clear()
-        if (resoLevel != null && HtmlUtil.isRunningInBrowser()) {
-            Scene3D.dropResonator(location, lvl, octant.ordinal, resoLevel) // the destroyed rod falls out
+        if (resoLevel != null) {
+            Fx.sink.dropResonator(location, lvl, octant.ordinal, resoLevel) // the destroyed rod falls out
         }
         val leftResos = numberOfResosLeft()
         when {
@@ -624,7 +621,7 @@ data class Portal(
                 SoundUtil.playPortalCreationSound(location)
                 PathUtil.computeFieldAsync(location) { field ->
                     portal.vectors = field
-                    VectorFieldOverlay.flash("portal:${portal.id}")
+                    Fx.sink.flashVectorField("portal:${portal.id}")
                 }
             }
             return portal

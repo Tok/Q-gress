@@ -34,8 +34,9 @@ see PLAN.md).
 - **`items/`** — bursters, power cubes, resonators, mods, levels.
 - **`config/`** — `Config` (balance constants), `Dim`/`Sim` (geometry), `Location` (preset
   places), `Styles`, `Colors`, `Time`.
-- **`system/`** — `Cycle`/`Checkpoint` (scoring/history over time), `Com` (message log), and
-  **`system/display/`** (all 3D rendering: `Scene3D` + the shader/effect/material modules).
+- **`system/`** — `Cycle`/`Checkpoint` (scoring/history over time), `Com` (message log),
+  **`system/display/`** (all 3D rendering: `Scene3D` + the shader/effect/material modules), and
+  **`system/effect/`** (the `Effects` sink seam — see *Rendering* below).
 - **`util/`** — `HtmlUtil` (DOM/UI construction + the main tick loop), `MapUtil` (MapLibre
   lifecycle + grid build + camera), `PathUtil` (vector-field pathfinding), `Navigation`,
   `SoundUtil`, `GridConnectivity`, `DrawUtil` (canvas-icon prerender helpers), geometry under
@@ -110,6 +111,15 @@ new regions from Overpass as the camera flies elsewhere. Elevation comes from th
 The tick loop (`HtmlUtil.tick`) advances agents on a snapshot (recruits buffer in
 `World.pendingAgents`, flushed after), then a `requestAnimationFrame` drives `DrawUtil.redraw`
 (→ `Scene3D.sync`) + the DOM HUD update.
+
+**The effect-sink seam (`system/effect/`).** The crash-prone *visual* effects that game logic fires
+inline (XMP bursts, hack/deploy animations, reward motes, retaliation bolts, portal shatter, falling
+resonators, the flow-field flash) go through `Fx.sink` — an installable `Effects` interface, mirroring
+`FactionPolicies`. `BrowserEffects` forwards 1:1 to the `system/display/` renderer; `NoOpEffects` (the
+headless default) does nothing, so the whole tick loop runs in Node without touching three.js — the
+imperative-shell boundary that unblocks the headless `SimRunner` (PLAN Phase 6.1). Audio (`SoundUtil`)
+and the message log (`Com`) already self-guard / are pure, so they stay outside this seam. This is the
+first stage of the functional-core/imperative-shell split; sync pathfinding + `SimRunner` follow.
 
 **Title screen reuses this whole pipeline.** `util/ui/TitleSim` runs a small *real* `Scene3D` sim
 (real grid, ~8 portals, a 3-v-3 levelled roster + ~30 NPCs, the real tick loop) behind the faction

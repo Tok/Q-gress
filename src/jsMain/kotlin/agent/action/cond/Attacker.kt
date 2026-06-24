@@ -6,7 +6,7 @@ import agent.action.ActionItem
 import config.Constants
 import items.XmpBurster
 import items.level.XmpLevel
-import system.display.Scene3D
+import system.effect.Fx
 import util.Util
 
 object Attacker : ConditionalAction {
@@ -43,9 +43,9 @@ object Attacker : ConditionalAction {
         doAttack(agent, xmps)
         // Detonate FIRST (records the blast origin) so the resonators/mods it destroys fly away from it.
         val topLevel = xmps.maxByOrNull { it.level.level }?.level ?: XmpLevel.ONE
-        Scene3D.playXmpBurst(agent.pos, topLevel.level, sound = true)
+        Fx.sink.playXmpBurst(agent.pos, topLevel.level, sound = true)
         val damage = xmps.sumOf { it.dealDamage(agent) } // resonator damage (summed for one floating number)
-        if (damage > 0) Scene3D.showDamageNumber(agent.actionPortal, damage)
+        if (damage > 0) Fx.sink.showDamageNumber(agent.actionPortal, damage)
         // One mod knock-out roll per volley. Spend an Ultra-Strike if we have one — it strips shields/mods
         // far better than a Burster (the whole point of carrying them); else fall back to an XMP roll.
         val us = agent.inventory.findUltraStrikes().maxByOrNull { it.level.level }

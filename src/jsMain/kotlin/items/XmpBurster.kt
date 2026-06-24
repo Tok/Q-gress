@@ -6,7 +6,7 @@ import items.deployable.DeployableItem
 import items.level.XmpLevel
 import portal.ModSlot
 import portal.Portal
-import system.display.Scene3D
+import system.effect.Fx
 import util.Util
 import util.data.Pos
 
@@ -77,7 +77,7 @@ data class XmpBurster(val owner: Agent, val level: XmpLevel) : DeployableItem {
                     reso.takeDamage(attacker, dmg)
                     portalDamage += dmg
                 }
-                if (portalDamage > 0) Scene3D.showDamageNumber(portal, portalDamage)
+                if (portalDamage > 0) Fx.sink.showDamageNumber(portal, portalDamage)
                 knockMods(portal, pos, level, ultra, attacker)
             }
         }

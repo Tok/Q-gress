@@ -140,13 +140,19 @@ area is maximized, and hold it across the cycle. So fitness = the **sum/average 
   DOM read when there's no `window`) so the substrate inits in Node — a prereq for the 6.1 SimRunner.
 
 **6.1 — Substrate II: headless match harness** _(the training engine; pays off the functional-core split)_
-- _Groundwork done:_ the **audio** + Q-value systems are now headless-safe (`SoundUtil` self-guards via a
+- _Groundwork done:_ the **audio** + Q-value systems are headless-safe (`SoundUtil` self-guards via a
   lazy graph + `isMuted()`; `QActions`/`DomSliderPolicy` skip DOM/icons headless) — SimRunner needs that.
+- _Functional-core split, Stage 1 **DONE** — the effect-sink seam (`system/effect/`):_ the crash-prone
+  visual effects logic fired inline (XMP burst, hack/deploy/reward FX, retaliation bolt, portal shatter,
+  reso drop, flow-field flash) now route through `Fx.sink` (an installable `Effects` interface, mirroring
+  `FactionPolicies`). `BrowserEffects` forwards 1:1; `NoOpEffects` (headless default) is the no-op, so the
+  tick loop runs in Node without touching three.js (was: `Portal.remove()` → unguarded `Scene3D.shatterPortal`
+  forced a lazy geometry → crash). `EffectsSeamTest` proves it. Zero browser-visible change.
 - _Spike finding (deferred):_ a first `SimRunner` ran the tick loop headless, but the sim **isn't cleanly
-  synchronous/headless yet** — per-tick **pathfinding is too slow** (full-map flow-field per portal/dest)
-  to run a match in a Node test budget, and field gen is **async** (`PathUtil.computeFieldAsync` coroutine)
-  so it doesn't fit a synchronous match loop. So the **functional-core split** (+ pathfinding scalability,
-  Stage 3) is the real prerequisite — do that first, then `SimRunner` is straightforward.
+  synchronous yet** — per-tick **pathfinding is too slow** (full-map flow-field per portal/dest) to run a
+  match in a Node test budget, and field gen is **async** (`PathUtil.computeFieldAsync` coroutine) so it
+  doesn't fit a synchronous match loop. Stage 1 (effect sink) is done; **Stage 2 — sync/fast pathfinding**
+  is the remaining prerequisite, then `SimRunner` (Stage 3) is straightforward.
 - [ ] **`SimRunner`** — `runMatch(gridFixture, policyEnl, policyRes, seed, maxTicks): MatchResult`,
   tick loop with rendering/audio/DOM stubbed at the shell boundary; result captures **per-checkpoint MU**
   (the fitness signal above), not just the final score.
