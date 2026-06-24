@@ -109,6 +109,12 @@ object Config {
     const val isNpcSwarming = true
     const val npcXmSpawnRatio = 0.2
 
+    // Stray-XM supply multiplier. XM (agent energy) used to spawn only at cycle end (every ticksPerCycle),
+    // so agents starved mid-cycle and couldn't sustain assaults (firing XMPs costs real Ingress XM). XM now
+    // spawns every checkpoint; this scales how much, so there's enough lying around to refuel from while
+    // roaming (collected passively in range). Raise for an energy-rich, attack-heavy sim.
+    var strayXmMultiplier = 2.0
+
     val isSoundOn = !HtmlUtil.isLocal()
     const val isPlayInitialSound = false
     const val isSatOn = false

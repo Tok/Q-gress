@@ -38,8 +38,8 @@ enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>) {
                 INSTANCE.checkpoints.clear()
                 INSTANCE.checkpoints.putAll(old)
                 INSTANCE.checkpoints[tick] = cp
+                spawnXm() // every checkpoint (not just cycle end) so agent XM is replenished mid-cycle
                 if (cp.isCycleEnd) {
-                    spawnXm()
                     removePortals()
                     removeFrogs()
                     removeSmurfs()
@@ -106,9 +106,10 @@ enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>) {
         }
 
         private fun spawnXm() {
+            val mult = Config.strayXmMultiplier
             World.allPortals.map { it.leakXm() }
                 .flatMap { (pos, xm) ->
-                    val heapCount = xm / XmHeap.capacity
+                    val heapCount = (xm / XmHeap.capacity * mult).toInt()
                     (0..heapCount).map {
                         pos.randomNearPoint(Dim.portalXmSpawnRadius)
                     }
@@ -116,7 +117,7 @@ enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>) {
 
             World.allNonFaction.filterNot { it.pos.isOffScreen() }
                 .shuffled()
-                .take((World.allNonFaction.size * Config.npcXmSpawnRatio).toInt())
+                .take((World.allNonFaction.size * Config.npcXmSpawnRatio * mult).toInt())
                 .map { XmMap.createStrayXm(it.pos.randomNearPoint(Dim.npcXmSpawnRadius), false) }
         }
     }

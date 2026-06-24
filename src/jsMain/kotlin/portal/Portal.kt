@@ -597,7 +597,10 @@ data class Portal(
             return chargeable.filter { keys.map { a -> a.portal }.contains(it) }
         }
 
-        const val MAX_HACKS = 4 // TODO implement multihacks (authentic: 4 hacks → burnout, IngressFacts)
+        // Hacks allowed before burnout. Above the authentic 4 (a poor-man's multi-hack) so agents restock
+        // XMPs / Ultra-Strikes / power cubes (→ XM) fast enough to mount a portal-felling assault — the
+        // supply side of "shielded portals barely change". A real multi-hack mod can refine this later.
+        const val MAX_HACKS = 6
         private const val NEARBY_POINT_TRIES = 16 // ring-sampling cap in findRandomPointNearPortal (no infinite recursion)
         private const val ZAP_BASE_XM = 15 // retaliation XM damage per portal level
         private const val ZAP_SHIELD_XM = 1 // extra retaliation XM per point of mitigation (shields zap harder)
