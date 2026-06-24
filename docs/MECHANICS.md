@@ -48,7 +48,7 @@ model yet.
 - **Resonators / XMP / Power Cubes**: roll by **tier** via `portal/Quality.kt` (BEST 0.1 / TOP 0.3 /
   GOOD 0.5 / MORE 0.7, with level offsets). Community estimate: ~1.5 resonators per item roll.
 - **XMP + Ultra-Strike yield** is scaled by the **`Config.weaponDropMultiplier`** live knob (menu
-  "Weapon drops" slider, `1×` base … default **`3×`** — tripled so agents can sustain assaults and
+  "Weapon drops" slider, `1×` base … `20×`, default **`10×`** — so agents hoard firepower fast and
   flip defended portals). It multiplies the XMP draw count (`DropRates.xmpDropMultiplier`, base 2) and
   the Ultra-Strike draw count.
 - **Ultra Strikes** *(sim-tuning, not authentic)*: now drop from hacks at `DropRates.usDropChance`

@@ -26,10 +26,14 @@ object VectorFieldOverlay {
     private const val FADE_MS = 450.0 // fade the arrows out over the final stretch (smooth, not abrupt)
     private const val MIN_SHOW_MS = 110.0 // min time each field stays up before the queue advances to the next
 
+    private const val TERRAIN_WAIT_MS = 5000.0 // hold the sweep until DEM heights load (cones sit on the ground,
+    // not at sea level → no "too low" arrows on a cold first build), then show anyway as a fallback.
+
     private var group: dynamic = null
     private val queue = ArrayDeque<String>() // portal ids whose fields are ready, awaiting their turn in the sweep
     private var currentId: String? = null
     private var shownAt = 0.0
+    private var firstQueuedAt = 0.0 // when the first field was queued — drives the terrain-wait fallback
     private var builtKey: String? = null
     private val coneGeo: dynamic by lazy { Three.ConeGeometry(CONE_R, CONE_H, 6) }
     private val matCache = mutableMapOf<String, dynamic>()
@@ -46,14 +50,21 @@ object VectorFieldOverlay {
     /** Queue [portalId]'s (now-ready) flow field for the sweep; it shows briefly when its turn comes. */
     fun flash(portalId: String) {
         if (!flashEnabled) return
-        if (currentId != portalId && queue.lastOrNull() != portalId && queue.size < MAX_QUEUE) queue.addLast(portalId)
+        if (currentId != portalId && queue.lastOrNull() != portalId && queue.size < MAX_QUEUE) {
+            if (firstQueuedAt == 0.0) firstQueuedAt = now()
+            queue.addLast(portalId)
+        }
     }
 
     /** Advance the sweep (after [MIN_SHOW_MS]), rebuild on change, fade out once the queue is drained. */
     fun sync() {
         val g = group ?: return
         val age = now() - shownAt
-        if ((currentId == null || age >= MIN_SHOW_MS) && queue.isNotEmpty()) {
+        val dueForNext = currentId == null || age >= MIN_SHOW_MS
+        // Don't place arrows until the terrain grid is sampled, or they'd sit at z=0 (sea level) — too low.
+        // Fall back to showing them anyway after [TERRAIN_WAIT_MS] so a flat / DEM-less map still flashes.
+        val terrainOk = Scene3D.terrainReady() || (firstQueuedAt > 0.0 && now() - firstQueuedAt > TERRAIN_WAIT_MS)
+        if (dueForNext && queue.isNotEmpty() && terrainOk) {
             currentId = queue.removeFirst()
             shownAt = now()
             g.clear()

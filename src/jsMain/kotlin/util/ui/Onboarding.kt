@@ -105,23 +105,20 @@ object Onboarding {
         return credit
     }
 
-    /** A small volume slider shown on the title screen (the storm starts loud). */
+    /** A small volume slider shown on the title screen, with the same click-to-mute speaker icon as in-game. */
     private fun createTitleVolume(): HTMLElement {
         val wrap = div("titleVolume")
-        val label = div("titleVolumeLabel")
-        label.textContent = "Volume"
+        val icon = document.createElement("span") as HTMLElement
+        icon.addClass("titleVolumeLabel", "volumeIcon")
         val slider = document.createElement("input") as HTMLInputElement
         slider.type = "range"
         slider.min = "0.0"
         slider.max = "1.0"
         slider.step = "0.05"
-        slider.value = "1.0"
+        slider.value = SoundUtil.DEFAULT_VOLUME.toString() // match the actual default (30%), not a hardcoded 100%
         slider.addClass("slider", "volumeSlider")
-        slider.oninput = {
-            SoundUtil.setMasterVolume(slider.valueAsNumber)
-            null
-        }
-        wrap.appendChild(label)
+        VolumeControl.build(icon, slider)
+        wrap.appendChild(icon)
         wrap.appendChild(slider)
         return wrap
     }

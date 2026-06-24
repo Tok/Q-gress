@@ -69,10 +69,10 @@ object Config {
 
     /**
      * Weapon-drop multiplier (XMP + Ultra-Strike yield per hack), tunable live from the menu "Weapon drops"
-     * slider. `1.0` = the base [DropRates] rate; defaults to `3.0` (tripled) so agents can hoard enough
-     * firepower to sustain assaults and flip defended portals — i.e. a more dynamic, weapon-rich sim.
+     * slider. `1.0` = the base [DropRates] rate; defaults to `10.0` so agents hoard firepower fast and flip
+     * defended portals — i.e. a very dynamic, weapon-rich sim.
      */
-    var weaponDropMultiplier = 3.0
+    var weaponDropMultiplier = 10.0
 
     // Combat dynamism (0 = realistic/tanky shields, 1 = portals flip very easily). Drives the live
     // gameplay mitigation cap; tunable from the menu "Combat" slider. Leans dynamic by default — this is

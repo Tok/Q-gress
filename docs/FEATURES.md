@@ -294,7 +294,9 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
   distance attenuation.
 - Per-event sounds (portal create/remove, field up/down, shatter, XMP, hack/glyph/deploy/link,
   checkpoint/cycle, marble "tok" NPC drop); non-positional events (checkpoint/cycle/fail) stay
-  center-panned. **Volume slider** + master gain; audio resumes on first gesture.
+  center-panned. **Volume slider** + master gain; audio resumes on first gesture. Slider starts at the
+  real **30% default** on both the title screen and in-game, each with a **click-to-mute speaker icon**
+  (shared `VolumeControl`: swaps to a muted glyph and zeroes/restores the slider; the **M** key reuses it).
 - **Shared 8-note scale** (`Scale`, C2 root): the 8 portal/XMP levels map to 8 notes with **level 8 =
   the lowest**, so a portal's level is audible across every level-keyed sound — XMP boom + volley blips,
   hack/glyph whirs (+ glyph chime), upgrade/downgrade notes — and the sim plays in one key. The key flips
@@ -330,8 +332,8 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
 - **Drop rates** are centralized + tunable in `config/DropRates` (single source; future per-game
   override), surfaced in-app via **Menu → Drop rates** and documented (with ~2018 Ingress sources) in
   `docs/MECHANICS.md`. Fixed a long-standing bug where viruses never dropped (integer `1/roll` = 0).
-- **Weapon-drop slider** (Menu "Weapon drops", `Config.weaponDropMultiplier`, 1×–5×, default **3×**):
-  a live knob that scales XMP **and** Ultra-Strike yield per hack, for a more dynamic, assault-heavy
+- **Weapon-drop slider** (Menu "Weapon drops", `Config.weaponDropMultiplier`, 1×–20×, default **10×**):
+  a live knob that scales XMP **and** Ultra-Strike yield per hack, for a very dynamic, assault-heavy
   sim. **Ultra-Strikes now drop from hacks** (rarer than XMP, `DropRates.usDropChance`) and agents
   **spend them on the per-volley mod-knock roll** (`Attacker`) — far better at stripping shields than
   Bursters, so defended portals flip sooner.

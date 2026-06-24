@@ -38,6 +38,7 @@ import util.ui.MenuControls
 import util.ui.Onboarding
 import util.ui.ShortcutsHelp
 import util.ui.TuningPanel
+import util.ui.VolumeControl
 import kotlin.js.Json
 
 @Suppress("UnusedParameter") // external JS global; param describes the contract
@@ -267,11 +268,8 @@ object HtmlUtil {
     private fun createVolumeSpan(): HTMLSpanElement {
         val span = document.createElement("span") as HTMLSpanElement
         val label = document.createElement("span") as HTMLSpanElement
-        label.addClass("label", "topLabel", "topIcon")
+        label.addClass("label", "topLabel", "topIcon", "volumeIcon")
         label.id = "soundLabel"
-        label.innerHTML = Icons.VOLUME
-        label.title = "Volume"
-        span.append(label)
         val slider = document.createElement("input") as HTMLInputElement
         slider.id = "volumeSlider"
         slider.type = "range"
@@ -280,10 +278,8 @@ object HtmlUtil {
         slider.step = "0.05"
         slider.value = SoundUtil.DEFAULT_VOLUME.toString()
         slider.addClass("slider", "volumeSlider")
-        slider.oninput = {
-            SoundUtil.setMasterVolume(slider.valueAsNumber)
-            null
-        }
+        VolumeControl.build(label, slider) // speaker icon (click = mute) + slider, shared with the title screen
+        span.append(label)
         span.append(slider)
         return span
     }
@@ -443,8 +439,10 @@ object HtmlUtil {
     }
 
     private fun toggleMuteUi() {
-        val v = SoundUtil.toggleMute()
-        (document.getElementById("volumeSlider") as? HTMLInputElement)?.value = v.toString()
+        // Reuse the speaker icon's own click handler (toggles mute + syncs slider + swaps the glyph) so the
+        // M-key and the icon stay in lock-step; fall back to a bare toggle if the toolbar isn't built yet.
+        val icon = document.getElementById("soundLabel") as? HTMLElement
+        if (icon != null) icon.click() else SoundUtil.toggleMute()
     }
 
     private fun escClose() {
@@ -628,6 +626,11 @@ object HtmlUtil {
         // Registering first means portals actually adopt their real map names (else all fall back to
         // the random generator).
         MapUtil.enable3D()
+        // Sample the DEM height grid BEFORE spawning portals (+ schedule retries as tiles stream in), so the
+        // flow-field arrows that flash during world-gen sit on the terrain instead of at sea level. Without
+        // this the first build often shows the vectors too low (heights weren't ready); a re-sample after the
+        // Home view settles (below) keeps them accurate.
+        Scene3D.onTerrainChanged()
         MapUtil.startBuildCinematic() // gentle orbit while portals + people spawn
         LoadingOverlay.stage(LoadingOverlay.PCT_WORLD, "Building world…")
         createAgentsAndPortals {
@@ -702,9 +705,9 @@ object HtmlUtil {
         menu.append(dmgNums)
         // Combat dynamism (0 = realistic/tanky shields … 1 = portals flip very easily). Live-tunable.
         menu.append(MenuControls.slider("Combat", Config.combatDynamism) { Config.combatDynamism = it })
-        // Weapon-drop rate — XMP + Ultra-Strike yield per hack (1× = base … 3× = tripled). Live-tunable.
+        // Weapon-drop rate — XMP + Ultra-Strike yield per hack (1× = base … default 10×). Live-tunable.
         menu.append(
-            MenuControls.slider("Weapon drops", Config.weaponDropMultiplier, 1.0, 5.0, 0.5) {
+            MenuControls.slider("Weapon drops", Config.weaponDropMultiplier, 1.0, 20.0, 1.0) {
                 Config.weaponDropMultiplier = it
             },
         )
