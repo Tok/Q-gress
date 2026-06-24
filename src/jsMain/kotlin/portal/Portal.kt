@@ -161,6 +161,10 @@ data class Portal(
         owner = agent
         slots.values.filter { it.resonator != null }.forEach { it.owner = agent }
         mods.clear()
+        // The portal changed faction, so every link/field it touches is now cross-faction → destroy them all
+        // (incoming + outgoing + anchored fields). Without this the old faction's links survive on the flipped
+        // portal — e.g. a green portal virus-flipped to blue would still show its incoming GREEN links.
+        destroyAllLinksAndFields()
         agent.addAp(VIRUS_AP)
         if (strippedShield != null && HtmlUtil.isRunningInBrowser()) SoundUtil.playShieldRemoveSound(location, strippedShield.getLevel())
         Com.addMessage("$agent refactored $this to ${agent.faction}.")

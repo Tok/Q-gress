@@ -3,6 +3,7 @@ package portal
 import Factory
 import World
 import agent.Agent
+import agent.Faction
 import config.Dim
 import items.deployable.Resonator
 import util.data.Line
@@ -140,6 +141,33 @@ class LinkFieldIntegrityTest {
         field(o, p1, p2)
         o.destroy()
         assertTrue(World.allFields().isEmpty(), "destroying the origin removes its field")
+    }
+
+    // --- a virus flip must not leave the old faction's links/fields on the flipped portal ---
+
+    @Test
+    fun virusFlipDestroysCrossFactionLinksAndFields() {
+        val a = portalAt(0, 0)
+        val b = portalAt(100, 0)
+        val c = portalAt(0, 100)
+        a.owner = Factory.frog()
+        b.owner = Factory.frog()
+        link(a, b) // a → b (green), an INCOMING link to b stored on a — the one that used to survive the flip
+        link(b, c) // b → c (green), an OUTGOING link stored on b
+        field(b, a, c) // a field anchored on b
+
+        b.refactor(Factory.smurf()) // JARVIS / ADA virus: flip b to RES
+
+        assertEquals(Faction.RES, b.owner?.faction, "the virus flips the portal's faction")
+        assertTrue(
+            World.allLinks().none {
+                it.isConnectedTo(b)
+            },
+            "no link may survive on a virus-flipped portal (the green-links-on-a-blue-portal bug)",
+        )
+        assertTrue(b.links.isEmpty(), "the flipped portal keeps no outgoing links")
+        assertTrue(a.links.isEmpty(), "the incoming green link is cleared from its origin too")
+        assertTrue(World.allFields().none { it.isConnectedTo(b) }, "no field may survive on a virus-flipped portal")
     }
 
     // --- neutralising via destroy() clears everything ---
