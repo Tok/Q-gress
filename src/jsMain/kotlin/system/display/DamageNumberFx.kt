@@ -41,7 +41,7 @@ object DamageNumberFx {
     private const val FALL_LIFE = 3.0 // seconds a digit lives (visible) after release, before it sinks away
     private const val SINK_DUR = 1.2 // then it no-clips down through the ground/buildings + despawns while invisible
     private const val RESTITUTION = 0.45 // digit bounciness on landing (ground / roofs / poles)
-    private const val LAND_Z = 3.0 // a digit is "landed" once it drops to about here (ground ≈ 0)
+    private const val LAND_CLEARANCE = 3.0 // a digit is "landed" once it drops to about this far above the floor
     private const val LAND_VOLUME = 0.25 // soft glassy clink when the digits hit the ground
     private const val STACK_STEP = DEPTH * 3.0 // a new number presses earlier ones at the same portal up by this
 
@@ -63,6 +63,16 @@ object DamageNumberFx {
     private var group: dynamic = null
     private var world: Cannon.World? = null
     private var font: dynamic = null
+    private var groundBody: Cannon.Body? = null
+    private var groundZ = 0.0 // the physics floor's elevation = terrain height under the play area (set after gen)
+
+    /** Lift the physics floor to the terrain elevation [z] so digits land on the ground (not 884 m below
+     *  it at sea level). Without this they'd fall straight through the visible terrain. */
+    fun setGroundZ(z: Double) {
+        groundZ = z
+        val gb = groundBody ?: return
+        gb.asDynamic().position.set(0.0, 0.0, z)
+    }
 
     private class Digit(val mesh: dynamic, val localX: Double, val hw: Double, val hh: Double, val release: Double) {
         var body: Cannon.Body? = null
@@ -90,7 +100,9 @@ object DamageNumberFx {
         w.asDynamic().defaultContactMaterial.restitution = RESTITUTION // digits bounce a little when they land
         val groundOpts: dynamic = js("({ mass: 0 })")
         groundOpts.shape = Cannon.Plane()
-        w.addBody(Cannon.Body(groundOpts))
+        val gb = Cannon.Body(groundOpts) // infinite floor, normal +Z; lifted to the terrain via setGroundZ
+        w.addBody(gb)
+        groundBody = gb
         world = w
         FontLoader().load(FONT_URL, { f -> font = f }) // async; spawns before it lands just no-op
     }
@@ -220,7 +232,7 @@ object DamageNumberFx {
             d.mesh.rotation.set(0.0, 0.0, yaw)
         }
         d.mesh.position.set(px, py, pz)
-        if (body != null && pz <= LAND_Z && !d.landed) { // each digit clinks once as it hits the ground
+        if (body != null && pz <= groundZ + LAND_CLEARANCE && !d.landed) { // each digit clinks once as it hits the ground
             d.landed = true
             SoundUtil.playGlassShatterSound(num.loc, 0.0, LAND_VOLUME)
         }

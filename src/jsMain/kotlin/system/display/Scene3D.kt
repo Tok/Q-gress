@@ -601,6 +601,9 @@ object Scene3D {
      */
     fun buildBuildingColliders(feats: dynamic) {
         scene ?: return
+        // Lift the debris/digit physics floors to the terrain so falling pieces land on the ground, not
+        // hundreds of metres below it at sea level (z=0).
+        DamageNumberFx.setGroundZ(groundZ(Pos(Sim.width / 2, Sim.height / 2)))
         val total = (feats.length as? Int) ?: return
         var added = 0
         var i = 0
