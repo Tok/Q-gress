@@ -646,12 +646,15 @@ html, body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
     background: radial-gradient(ellipse at center, #0c1410 0%, #000000 100%);
     color: #ffffff;
     font-family: "Chakra Petch", sans-serif;
     transition: opacity 0.6s ease;
 }
+/* Seat the panel below dead-centre: split the vertical free space top : bottom = 4 : 1 via grow-only flex
+   spacers, so the panel's centre lands ~80% down the screen. */
+.loadingOverlay::before { content: ""; flex: 4 1 0; }
+.loadingOverlay::after { content: ""; flex: 1 1 0; }
 .loadingOverlayDone {
     opacity: 0;
     pointer-events: none;
@@ -676,6 +679,7 @@ html, body {
     color: #b8c4bc;
     margin-bottom: 14px;
     min-height: 18px;
+    font-feature-settings: "frac" 0; /* don't turn counts like "111/200" into a ½ fraction glyph */
 }
 .loadingTrack {
     width: 340px;
@@ -709,6 +713,7 @@ html, body {
     color: #9aa6a0;
     margin-top: 10px;
     min-height: 16px;
+    font-feature-settings: "frac" 0; /* don't turn counts like "111/200" into a ½ fraction glyph */
 }
 @keyframes loadingShimmer {
     0% { background-position: 200% 0; }
@@ -1055,6 +1060,14 @@ html, body {
     align-items: center;
     line-height: 0;
     vertical-align: middle;
+}
+
+/* The speaker glyph beside a volume slider (title + in-game) is a click-to-mute toggle. */
+.volumeIcon {
+    display: inline-flex;
+    align-items: center;
+    line-height: 0;
+    cursor: pointer;
 }
 
 /* Chrome buttons: light brushed-metal face + dark text (the faction-choice .enl/.res buttons keep
