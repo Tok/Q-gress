@@ -293,7 +293,7 @@ object Onboarding {
         return b
     }
 
-    /** NPC-density row (label + ×1.0–×3.0 slider) appended to [screen]; returns the slider input. */
+    /** NPC-density row (label + ×0.1–×3.0 slider) appended to [screen]; returns the slider input. */
     private fun npcDensityRow(screen: HTMLElement): HTMLInputElement {
         val row = div("onboardRow")
         val label = div("onboardSliderLabel")
@@ -301,7 +301,7 @@ object Onboarding {
         label.textContent = text(Config.npcMultiplier)
         val slider = document.createElement("input") as HTMLInputElement
         slider.type = "range"
-        slider.min = "1.0"
+        slider.min = "0.1" // allow thinning the crowd (×0.1, ×0.5 …), not just boosting it; floored at 30 NPCs
         slider.max = "3.0"
         slider.step = "0.1"
         slider.value = Config.npcMultiplier.toString()

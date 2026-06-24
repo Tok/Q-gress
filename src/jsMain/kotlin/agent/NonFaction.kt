@@ -3,6 +3,7 @@ package agent
 import World
 import config.Config
 import config.Dim
+import config.Sim
 import config.Time
 import extension.Grid
 import extension.VectorField
@@ -11,6 +12,9 @@ import util.*
 import util.data.Complex
 import util.data.Pos
 import util.ui.LoadingOverlay
+import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.sin
 
 data class NonFaction(
     var pos: Pos,
@@ -127,7 +131,7 @@ data class NonFaction(
     }
 
     private fun moveToRandomOffscreenDestination() {
-        val destination = Util.shuffle(DESTINATIONS).first()
+        val destination = Util.shuffle(offscreenDestinations()).first()
         this.vectors = getOrCreateVectorField(destination)
         this.destination = destination
     }
@@ -146,35 +150,64 @@ data class NonFaction(
 
     companion object {
         private val OFFSCREEN_DISTANCE = Pos.res * (MapUtil.OFFSCREEN_CELL_ROWS / 2)
-        private val DESTINATIONS = listOf(
-            // NORTH
-            Pos(World.simW() / 3, -OFFSCREEN_DISTANCE),
-            Pos(World.simW() * 2 / 3, -OFFSCREEN_DISTANCE),
-            // WEST
-            Pos(-OFFSCREEN_DISTANCE, World.simH() / 3),
-            Pos(-OFFSCREEN_DISTANCE, World.simH() * 2 / 3),
-            // EAST
-            Pos(World.simW() + OFFSCREEN_DISTANCE, World.simH() / 3),
-            Pos(World.simW() + OFFSCREEN_DISTANCE, World.simH() * 2 / 3),
-            // SOUTH
-            Pos(World.simW() / 3, World.simH() + OFFSCREEN_DISTANCE),
-            Pos(World.simW() * 2 / 3, World.simH() + OFFSCREEN_DISTANCE),
-        )
-        private val OFFSCREEN_EDGES = listOf(
-            Pos(-OFFSCREEN_DISTANCE, -OFFSCREEN_DISTANCE),
-            Pos(World.simW() + OFFSCREEN_DISTANCE, -OFFSCREEN_DISTANCE),
-            Pos(-OFFSCREEN_DISTANCE, World.simH() + OFFSCREEN_DISTANCE),
-            Pos(World.simW() + OFFSCREEN_DISTANCE, World.simH() + OFFSCREEN_DISTANCE),
-        )
-        val OFFSCREEN = DESTINATIONS + (if (Config.useOffscreenEdgeDestinations) OFFSCREEN_EDGES else emptyList())
-        fun prepareOffscreenLocations() = OFFSCREEN.forEach {
-            NonFaction.getOrCreateVectorField(it)
+
+        // Roughly the gap between adjacent off-map destinations along the border (sim units ≈ half a screen).
+        // The count then scales with the field perimeter, bounded so we don't compute too many full-map flow
+        // fields (each destination needs one).
+        private val OFFSCREEN_SPACING = minOf(Dim.width, Dim.height) * 0.5
+        private const val MIN_OFFSCREEN = 8
+        private const val MAX_OFFSCREEN = 14
+
+        /**
+         * Hidden destinations placed JUST OUTSIDE the play field, spaced evenly around its border, that NPCs
+         * walk toward so they stream across the whole map instead of clumping at the central portals.
+         * Computed from the CURRENT play-area size + shape on every call — NOT captured once at class-load,
+         * when [Sim] still held its default size (that staleness put targets *inside* a larger map → the
+         * centre-clustering bug). A point beyond the bounding box is outside any inscribed shape, so this
+         * works for the round field (a ring of points by angle) and the rectangle (points along each border)
+         * alike; irregular shapes can extend this later.
+         */
+        fun offscreenDestinations(): List<Pos> {
+            val w = World.simW()
+            val h = World.simH()
+            return if (Sim.roundField) {
+                val cx = w / 2.0
+                val cy = h / 2.0
+                val r = Sim.fieldRadius() + OFFSCREEN_DISTANCE
+                val n = (2.0 * PI * r / OFFSCREEN_SPACING).toInt().coerceIn(MIN_OFFSCREEN, MAX_OFFSCREEN)
+                (0 until n).map { i ->
+                    val a = 2.0 * PI * i / n
+                    Pos((cx + r * cos(a)).toInt(), (cy + r * sin(a)).toInt())
+                }
+            } else {
+                rectBorderDestinations(w, h)
+            }
         }
+
+        // Points spaced evenly along the rectangle border, one [OFFSCREEN_DISTANCE] past each edge.
+        private fun rectBorderDestinations(w: Int, h: Int): List<Pos> {
+            val perEdgeX = (w / OFFSCREEN_SPACING).toInt().coerceIn(2, MAX_OFFSCREEN / 2)
+            val perEdgeY = (h / OFFSCREEN_SPACING).toInt().coerceIn(2, MAX_OFFSCREEN / 2)
+            val dest = mutableListOf<Pos>()
+            for (i in 1..perEdgeX) {
+                val x = w * i / (perEdgeX + 1)
+                dest.add(Pos(x, -OFFSCREEN_DISTANCE)) // top
+                dest.add(Pos(x, h + OFFSCREEN_DISTANCE)) // bottom
+            }
+            for (j in 1..perEdgeY) {
+                val y = h * j / (perEdgeY + 1)
+                dest.add(Pos(-OFFSCREEN_DISTANCE, y)) // left
+                dest.add(Pos(w + OFFSCREEN_DISTANCE, y)) // right
+            }
+            return dest
+        }
+
+        fun prepareOffscreenLocations() = offscreenDestinations().forEach { getOrCreateVectorField(it) }
 
         private val fields = mutableMapOf<Pos, VectorField>()
         private val pending = mutableSetOf<Pos>() // destinations whose field is computing async
         fun offscreenCount(): Int = fields.count()
-        fun offscreenTotal(): Int = OFFSCREEN.count()
+        fun offscreenTotal(): Int = offscreenDestinations().count()
 
         // Returns the cached field, or empty-now + an async fill on a miss. Callers snapshot the
         // empty map and fall back to a straight-line heading (see act()) until the field lands; they
@@ -213,7 +246,7 @@ data class NonFaction(
             val size = AgentSize.createRandom()
             val speed = Skills.randomNpcSpeed()
             val newNonFaction = if (Util.random() < 0.1) { // move to offscreen destination
-                val destination = Util.shuffle(OFFSCREEN).first()
+                val destination = Util.shuffle(offscreenDestinations()).first()
                 val vectorField = getOrCreateVectorField(destination)
                 NonFaction(position, speed, size, destination, vectorField, World.tick)
             } else { // move to random portal

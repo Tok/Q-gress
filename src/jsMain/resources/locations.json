@@ -16,7 +16,6 @@
   {"name": "GRAND_BAZAAR", "displayName": "Grand Bazaar, Istanbul, Turkey", "lng": 28.968, "lat": 41.0106, "title": false},
   {"name": "TOWER_BRIDGE", "displayName": "Tower Bridge, London, UK", "lng": -0.0754, "lat": 51.5055, "title": false},
   {"name": "BROOKLYN_BRIDGE", "displayName": "Brooklyn Bridge, New York, USA", "lng": -73.9969, "lat": 40.7061, "title": false},
-  {"name": "GOLDEN_GATE", "displayName": "Golden Gate Bridge, San Francisco, USA", "lng": -122.4783, "lat": 37.8199, "title": false},
   {"name": "RIALTO", "displayName": "Rialto Bridge, Venice, Italy", "lng": 12.3358, "lat": 45.438, "title": false},
   {"name": "CHARLES_BRIDGE", "displayName": "Charles Bridge, Prague, Czechia", "lng": 14.4113, "lat": 50.0865, "title": false},
   {"name": "PONTE_VECCHIO", "displayName": "Ponte Vecchio, Florence, Italy", "lng": 11.2531, "lat": 43.768, "title": false},
@@ -57,6 +56,5 @@
   {"name": "PONT_ALMA", "displayName": "Pont de l'Alma, Paris, France", "lng": 2.3022, "lat": 48.8644, "title": false},
   {"name": "LONDON_BRIDGE", "displayName": "London Bridge, London, UK", "lng": -0.0866, "lat": 51.5078, "title": false},
   {"name": "WESTMINSTER_BRIDGE", "displayName": "Westminster Bridge, London, UK", "lng": -0.1214, "lat": 51.501, "title": false},
-  {"name": "MILLENNIUM_BRIDGE", "displayName": "Millennium Bridge, London, UK", "lng": -0.0984, "lat": 51.509, "title": false},
-  {"name": "AKASHI", "displayName": "Akashi Kaikyo Bridge, Kobe, Japan", "lng": 135.0195, "lat": 34.6333, "title": false}
+  {"name": "MILLENNIUM_BRIDGE", "displayName": "Millennium Bridge, London, UK", "lng": -0.0984, "lat": 51.509, "title": false}
 ]

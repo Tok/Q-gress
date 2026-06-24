@@ -197,10 +197,17 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
 ## Gameplay, balance & map playability
 - **Balance (Phase 5)**: recruiting now **costs XM** + has **diminishing returns** near the cap, so
   recruit-rush is no longer a free snowball. Fixed a recruiting CME (`World.pendingAgents` buffer).
-- **Auto NPC population** (`Config.npcPopulation`): the NPC count is no longer a player setting — it's
-  derived from **map area + location walkability** at world-gen (floored at **30** so there are always
-  recruits), and held constant by **1-for-1 replacement** when an NPC is recruited (`Recruiter`), so a
-  game can't run dry. Scales with the play area, so it'll grow if/when area-expansion mechanics land.
+- **Auto NPC population** (`Config.npcPopulation`): the NPC count is derived from **map area + location
+  walkability** at world-gen, **clamped to [30, 2000]** (always recruits, never a perf-killing crowd on a
+  huge map), and held constant by **1-for-1 replacement** when an NPC is recruited (`Recruiter`), so a
+  game can't run dry. The onboarding **NPC-density slider** scales it from **×0.1 to ×3.0** (thin the
+  crowd or pack it in; the ×30 floor still applies).
+- **Off-map NPC destinations** (`NonFaction.offscreenDestinations`): ~8–14 hidden targets spaced evenly
+  **just outside the play field** that ambient NPCs walk toward, so they stream across the whole map
+  instead of clumping at the central portals. Computed from the **current** field size + shape every time
+  (a ring of points for the round field, border points for a rectangle) — they used to be captured once at
+  class-load with the default size, which dropped targets *inside* a larger map and re-caused the
+  centre-clustering. Beyond-the-box points sit outside any inscribed shape, so round/rectangular both work.
 - **Plausible agent handles** (`util/NameGen`): Ingress-style names from themed word banks (per-faction
   flavour + adjectives/nouns/titles), CamelCase/snake/dot styling, light leet, numeric + `xX_…_Xx`
   wraps, and a location token — deduped per game. Replaces the old gibberish generator.
