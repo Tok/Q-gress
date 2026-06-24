@@ -4,6 +4,7 @@ import agent.Faction
 import agent.qvalue.QActions
 import agent.qvalue.QDestinations
 import agent.qvalue.QValue
+import ai.FactionPolicies
 import kotlinx.browser.document
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLImageElement
@@ -25,11 +26,18 @@ import org.w3c.dom.HTMLInputElement
 object TuningPanel {
     enum class Mode { INTERACTIVE, READONLY }
 
-    private class Row(val input: HTMLInputElement, val valueLabel: HTMLElement, val bar: HTMLElement, val fill: HTMLElement)
+    private class Row(
+        val qValue: QValue,
+        val input: HTMLInputElement,
+        val valueLabel: HTMLElement,
+        val bar: HTMLElement,
+        val fill: HTMLElement,
+    )
 
     private var built = false
     private var mode = Mode.INTERACTIVE
     private var userFaction = Faction.ENL
+    private var aiDriven = false // is the displayed faction currently driven by an AI policy?
     private val rows = mutableListOf<Row>()
 
     /** Build the panel into the dock's TUNE tab (idempotent). [readOnly] picks the initial mode. */
@@ -52,10 +60,27 @@ object TuningPanel {
         applyMode()
     }
 
-    /** Re-sync the read-only bars from the (possibly externally-written) input values. */
+    /**
+     * Per-frame sync (called from [util.DrawUtil.redrawUserInterface]). If an **AI policy** drives the
+     * displayed faction, mirror its current vector onto the inputs and flip the panel to its auto-moving
+     * read-only mode — so the player watches the sliders move under AI control (manual lock is a later
+     * opt-out). Under manual control this is just the read-only-bar resync (a no-op in interactive mode).
+     */
     fun refresh() {
-        if (mode != Mode.READONLY) return
-        rows.forEach { it.fill.style.width = pct(it.input) }
+        if (!built) return
+        val vector = FactionPolicies.of(userFaction).currentVector()
+        val nowDriven = vector != null
+        if (nowDriven != aiDriven) {
+            aiDriven = nowDriven
+            setMode(nowDriven) // AI in control → auto-moving bars; back to manual → interactive sliders
+        }
+        if (vector != null) {
+            rows.forEach { r ->
+                r.input.valueAsNumber = vector[r.qValue]
+                r.valueLabel.textContent = display(r.input.value)
+            }
+        }
+        if (mode == Mode.READONLY) rows.forEach { it.fill.style.width = pct(it.input) }
     }
 
     // Stable order both factions' values are serialized in (Actions then Destinations) — the share link.
@@ -114,7 +139,7 @@ object TuningPanel {
         row.appendChild(textLabel(qValue))
         row.appendChild(control)
         row.appendChild(valueLabel)
-        rows.add(Row(userInput, valueLabel, bar, fill))
+        rows.add(Row(qValue, userInput, valueLabel, bar, fill))
         return row
     }
 

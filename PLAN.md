@@ -36,9 +36,11 @@ The HUD is shipped: tuning controls left (`util/ui/TuningPanel`, with a read-onl
 footer (`util/ui/Footer`: EVENT LOG / AGENTS). Remaining:
 - [ ] **Stage 2** — **Schematic** base view (reuse `SHADOW_STYLE`) + more toggleable info overlays
   (e.g. movement-penalty heatmap) alongside the existing Terrain/Vectors toggles.
-- [ ] **Stage 4** — tuning-slider polish: per-faction presets, and **wire the read-only bar mode to
-  the AI driver** (Phase 6.4) so AI-driven sliders animate live — `TuningPanel.refresh()` is the hook;
-  it reads the inputs each frame, the driver just needs to write them at checkpoint cadence.
+- [x] **Stage 4 (slider↔AI link) — DONE.** `TuningPanel.refresh()` now reads the displayed faction's
+  installed `FactionPolicy.currentVector()` each frame: when an AI policy drives the faction it mirrors that
+  vector onto the inputs and flips to the auto-moving read-only bars, so AI-driven sliders animate live. (The
+  manual-lock opt-out — let the player override a driven slider — is the remaining 6.4 nicety.) Still open:
+  per-faction tuning presets.
 - [ ] **Stage 5 — a proper, polished UI (the end-state goal).** A cohesive visual theme + layout pass
   over the whole HUD / onboarding / menus building on the dock: consistent typography, spacing, panels
   and states; responsive to window size. This is the "real UI" we want in the end.
@@ -218,7 +220,19 @@ area is maximized, and hold it across the cycle. So fitness = the **sum/average 
   - **Eval environment (open):** training with the anti-runaway mechanics OFF (`dominanceDecay`/
     `leaderDistraction`/`comebackMax` = 0) gives a slightly cleaner gradient — a "clean-eval" flag on
     `Evolution`/`MatchSetup` is a nice-to-have.
-- [ ] JSON genome (de)serialization for saving/loading a trained net; load a winner into the live game.
+- [x] **First live AI driver — `HeuristicPolicy` (`ai/HeuristicPolicy.kt`).** A hand-written adaptive policy
+  (the stepping stone before a net is loadable): pure `tune(Observation) → SliderVector` re-evaluated per
+  checkpoint — behind on MU → press the attack + hunt enemy portals; ahead → consolidate into links/fields;
+  low XM → hack/glyph to refuel. Selectable per faction in the **AI** footer tab's driver picker; installing it
+  hands slider control to the AI and the tuning sliders auto-move (above). Doubles as a sane baseline opponent.
+  `HeuristicPolicyTest` covers the mapping. (Net/LLM drivers still gated on genome load / 6.3.)
+- [x] **`FactionPolicy.currentVector()`** — a policy exposes the slider vector it's driving (null for
+  `DomSliderPolicy` = "no AI in control"); the UI uses it to decide auto-move and to graph the slots.
+- [x] **TUNING footer tab (`util/ui/SliderHistoryPanel`)** — one uPlot sparkline per slider slot per faction
+  over the checkpoint window (faction-agnostic overlap blend), so the AI's re-tuning is visible over time
+  (flat lines under Manual). Snapshots via `FactionPolicies.of(f).weight(q)` so manual + AI read uniformly.
+- [ ] JSON genome (de)serialization for saving/loading a trained net; load a winner into the live game (then
+  the **net** driver in the AI tab installs a `NetPolicy` — the slider-animation + TUNING graph already work).
 - [ ] Live **activation + chosen-path visualization** (the payoff). Exit: beats the default-slider baseline
   over K seeded matches, loads into the live game, activations visualized.
 
@@ -228,8 +242,9 @@ area is maximized, and hold it across the cycle. So fitness = the **sum/average 
   Exit: an LLM drives a faction end-to-end in-browser, sim stays smooth.
 
 **6.4 — Mix, match & human-vs-AI**
-- [ ] Per-faction driver selection (Human / Net / LLM) in onboarding + the Stage-4 slider panel →
-  any combination; AI-driven sliders animate read-only. Tournament/eval view (round-robin → leaderboard).
+- Per-faction driver selection + **AI-driven sliders animate read-only — DONE** (the AI tab's driver picker
+  installs a policy per faction; `TuningPanel` auto-moves under AI control). Remaining: Human/Net/LLM in
+  onboarding, a manual-lock override, and a tournament/eval view (round-robin → leaderboard).
 
 **Cross-cutting:** desktop-only + **WebGPU** gating; seeds via `?seed=`; **balance risk** — pure
 win-maximizing self-play may rediscover the recruit-rush degenerate (below), so keep tuning `Config`

@@ -3,6 +3,7 @@ package util.ui
 import agent.Faction
 import ai.DomSliderPolicy
 import ai.FactionPolicies
+import ai.HeuristicPolicy
 import ai.Observation
 import kotlinx.browser.document
 import org.w3c.dom.HTMLElement
@@ -83,16 +84,24 @@ object AiPanel {
         return col
     }
 
-    /** Driver picker: Manual (sliders) is the only live driver; Net/LLM are disabled until Phase 6.2/6.3. */
+    /**
+     * Driver picker. **Manual** = the tuning sliders ([DomSliderPolicy]); **Heuristic** = the adaptive
+     * [HeuristicPolicy] (the first live AI driver — it auto-moves the sliders). Net/LLM stay disabled until a
+     * trained genome is loadable (Phase 6.2/6.3). Picking an AI driver hands slider control to it.
+     */
     private fun driverSelect(faction: Faction): HTMLElement {
         val sel = document.createElement("select") as HTMLSelectElement
         sel.className = "aiDriverSelect"
         sel.appendChild(option("manual", "Manual (sliders)", disabled = false))
+        sel.appendChild(option("heuristic", "Heuristic (adaptive)", disabled = false))
         sel.appendChild(option("net", "Neural net — soon", disabled = true))
         sel.appendChild(option("llm", "LLM — soon", disabled = true))
         sel.value = "manual"
         sel.onchange = {
-            if (sel.value == "manual") FactionPolicies.set(faction, DomSliderPolicy(faction))
+            when (sel.value) {
+                "heuristic" -> FactionPolicies.set(faction, HeuristicPolicy(faction))
+                else -> FactionPolicies.set(faction, DomSliderPolicy(faction))
+            }
             null
         }
         return sel

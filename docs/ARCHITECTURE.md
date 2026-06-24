@@ -27,10 +27,12 @@ see PLAN.md).
   - **`agent/qvalue/`** — `QActions` (10) and `QDestinations` (7) define the tunable
     behaviours. Each `QValue` has a base `weight`; the **slider value (0..1) × weight** is the
     selection probability. Sliders exist per faction (`…SliderFrog` / `…SliderSmurf`).
-  - **`ai/`** — the AI substrate (PLAN Phase 6.0/6.1): `FactionPolicy` (the per-faction source of slider
-    weightings; default `DomSliderPolicy` reads the DOM), `SliderVector` (the 17 sliders as one ordered
-    encode/decode vector), `Observation` (a normalized world feature vector — the NN/LLM input), and
-    `SimRunner` (the **headless match harness** — see *Rendering* below).
+  - **`ai/`** — the AI substrate (PLAN Phase 6): `FactionPolicy` (the per-faction source of slider
+    weightings; default `DomSliderPolicy` reads the DOM, and `currentVector()` exposes the vector an AI is
+    driving — null = no AI in control), `SliderVector` (the 17 sliders as one ordered encode/decode vector),
+    `HeuristicPolicy` (the first live AI driver — an adaptive `Observation → SliderVector` mapping),
+    `ai/net/NetPolicy` (a trained net as a driver), `Observation` (a normalized world feature vector — the
+    NN/LLM input), and `SimRunner` (the **headless match harness** — see *Rendering* below).
 - **`portal/`** — portals, resonators, links, fields, XM, cooldowns, level/quality.
 - **`items/`** — bursters, power cubes, resonators, mods, levels.
 - **`config/`** — `Config` (balance constants), `Dim`/`Sim` (geometry), `Location` (preset
@@ -51,8 +53,11 @@ see PLAN.md).
 and feeds that into `Util.select` (cumulative-probability weighted random). The default policy
 (`DomSliderPolicy`) reads the slider straight from the DOM
 (`getElementById("${id}Slider${nick}").valueAsNumber`, or `0.1` headless), so behaviour is unchanged —
-but **this policy seam is where the AI drivers plug in** (PLAN.md Phase 6: a net/LLM installs a
-`SliderVectorPolicy` via `FactionPolicies.set`, re-tuning the 17 sliders at checkpoint cadence).
+but **this policy seam is where the AI drivers plug in** (PLAN.md Phase 6: a driver installs a
+`SliderVectorPolicy` / `HeuristicPolicy` / `NetPolicy` via `FactionPolicies.set`, re-tuning the 17 sliders
+at checkpoint cadence). When a faction is AI-driven, `FactionPolicy.currentVector()` is non-null, so the
+`TuningPanel` mirrors that vector onto the live sliders each frame (they auto-move) and the **TUNING** footer
+tab (`SliderHistoryPanel`) graphs every slot over the checkpoint window.
 
 Scoring: `World.calcTotalMu(faction)` (Mind Units = summed field area control) is the headline
 metric. `system/Cycle` snapshots a `Checkpoint` every `Config.ticksPerCheckpoint` ticks into a
@@ -101,7 +106,9 @@ new regions from Overpass as the camera flies elsewhere. Elevation comes from th
   clears depth **only** when `drawOverBuildings` (the accessibility toggle) is set; by default the
   3D pass shares the map depth buffer so buildings occlude the sim.
 - **HUD → DOM.** `util/ui/`: `StatsPanel` (MU bars + time/tick + action LOG), `HistoryPanel`
-  (per-metric uPlot sparklines + live values), `TopAgentsPanel`, `Inspector`, `LayerView`,
+  (per-metric uPlot sparklines + live values), `TuningPanel` (behaviour sliders; auto-moves under an AI
+  driver), `AiPanel` (driver picker + observation readout), `SliderHistoryPanel` (the TUNING tab —
+  per-slider sparklines over time), `TopAgentsPanel`, `Inspector`, `LayerView`,
   `Onboarding`, `LoadingOverlay`, `MiniMap` (globe inset), `Controls`. Styled by
   `resources/stylesheet/QGress.css` (faction colours via `--enl-color`/`--res-color`;
   **Chakra Petch** title face, **Coda** for text/numbers).

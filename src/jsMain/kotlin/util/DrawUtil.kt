@@ -12,6 +12,7 @@ import util.ui.AiPanel
 import util.ui.DebugHud
 import util.ui.HistoryPanel
 import util.ui.Inspector
+import util.ui.SliderHistoryPanel
 import util.ui.StatsPanel
 import util.ui.TopAgentsPanel
 import util.ui.TuningPanel
@@ -33,8 +34,9 @@ object DrawUtil {
         // values), and the top-agents table (TopAgentsPanel).
         StatsPanel.update(firstMu, secondMu, factions)
         HistoryPanel.update()
-        TuningPanel.refresh() // keep the read-only bars in sync (no-op in interactive mode)
+        TuningPanel.refresh() // mirror an AI driver's vector onto the sliders (no-op under manual control)
         AiPanel.update() // AI footer tab: per-faction driver + live observation readout
+        SliderHistoryPanel.update() // TUNING footer tab: each slider's value over the checkpoint window
         if (Styles.isDrawTopAgents) {
             TopAgentsPanel.update()
         }

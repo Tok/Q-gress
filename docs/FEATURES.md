@@ -148,13 +148,25 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
   now one flat list (Actions, a divider, then Destinations). The DOM `<input>` per (q-value × faction)
   is still the value store `ActionSelector.q` reads. A **read-only mode** (`?readonly=true` or the
   Menu "Lock tuning" toggle) swaps the sliders for 0–1 progress bars that mirror the values
-  (`refresh()` re-syncs them) — the hook for future agent-vs-agent matches where the player can't tune.
-  Action icons render from the **hi-res** (supersampled) canvas + shown small via CSS, so they're crisp.
-- **AI footer tab** (`util/ui/AiPanel`, PLAN Phase 6): a third footer tab (AGENTS / **AI** / EVENT LOG)
-  showing, per faction, the **driver** picker (Manual sliders live; Net/LLM disabled until 6.2/6.3) and a
-  live **observation** readout — the 13-slot normalized feature vector (`ai.Observation`) a net/LLM would
-  receive, as labelled 0–1 bars. The control + transparency surface for the AI substrate; tuning stays on
-  the sliders.
+  (`refresh()` re-syncs them) — also used live when an **AI driver** is in control (below). Action icons
+  render from the **hi-res** (supersampled) canvas + shown small via CSS, so they're crisp.
+- **AI drives the sliders, visibly** (PLAN Phase 6.4): when a faction's installed `FactionPolicy` exposes a
+  `currentVector()` (i.e. an AI is in control, not the manual sliders), `TuningPanel` mirrors that vector onto
+  the displayed faction's inputs each frame and flips to the auto-moving read-only bars — so the player
+  watches the sliders re-tune themselves as the match swings. Manual control is unchanged (interactive); a
+  player override-lock on a driven slider is a later nicety.
+- **Heuristic AI driver** (`ai/HeuristicPolicy`, PLAN Phase 6): the first live AI driver — an adaptive
+  `Observation → SliderVector` mapping re-evaluated per checkpoint (attack when behind, consolidate into
+  links/fields when ahead, hack/glyph when low on XM). Selectable per faction in the **AI** tab's driver
+  picker; a sane baseline opponent until a trained net is loadable.
+- **AI footer tab** (`util/ui/AiPanel`, PLAN Phase 6): a footer tab (AGENTS / **AI** / TUNING / EVENT LOG)
+  showing, per faction, the **driver** picker (Manual + **Heuristic** live; Net/LLM disabled until 6.2/6.3)
+  and a live **observation** readout — the 13-slot normalized feature vector (`ai.Observation`) a net/LLM
+  would receive, as labelled 0–1 bars. The control + transparency surface for the AI substrate.
+- **TUNING footer tab** (`util/ui/SliderHistoryPanel`): one uPlot sparkline per behaviour-slider slot,
+  per faction, over the checkpoint window — the visible record of an AI driver re-tuning the sliders (drifting
+  lines) vs Manual control (flat). Faction-agnostic overlap blend where the two coincide, like the history
+  dashboard; snapshots via each faction's policy weighting so manual + AI read uniformly.
 - **Portals are discovered, not placed**: manual portal **placement** and **deletion** are removed
   from the real game (the map click only selects/deselects; the Inspector has no Remove button). The
   `/#demo` sandbox keeps LMB-place / RMB-shatter for showcasing.

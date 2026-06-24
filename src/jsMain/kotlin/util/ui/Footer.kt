@@ -10,7 +10,7 @@ import org.w3c.dom.HTMLElement
  * survives the panels building in any order.
  */
 object Footer {
-    private val tabs = listOf("AGENTS" to AGENTS_ID, "AI" to AI_ID, "EVENT LOG" to LOG_ID)
+    private val tabs = listOf("AGENTS" to AGENTS_ID, "AI" to AI_ID, "TUNING" to TUNING_ID, "EVENT LOG" to LOG_ID)
     private var built = false
     private var active = AGENTS_ID
     private var collapsed = false
@@ -24,6 +24,7 @@ object Footer {
         val bodyId = when (id) {
             "agents" -> AGENTS_ID
             "ai" -> AI_ID
+            "tuning" -> TUNING_ID
             else -> LOG_ID
         }
         return document.getElementById(bodyId) as HTMLElement
@@ -103,4 +104,5 @@ object Footer {
     private const val LOG_ID = "footerLog"
     private const val AGENTS_ID = "footerAgents"
     private const val AI_ID = "footerAi"
+    private const val TUNING_ID = "footerTuning"
 }

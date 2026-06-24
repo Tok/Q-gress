@@ -30,7 +30,7 @@ class SliderVector private constructor(private val slots: DoubleArray) {
         /** The stable slot order: every action slider, then every destination slider. */
         val ORDER: List<QValue> = QActions.values() + QDestinations.values()
 
-        /** Number of slots (currently 19 = 12 actions + 7 destinations). */
+        /** Number of slots ([QActions] + [QDestinations], computed from [ORDER] so it stays in sync). */
         val SIZE: Int = ORDER.size
 
         private val indexById: Map<String, Int> = ORDER.withIndex().associate { (i, q) -> q.id to i }
@@ -55,4 +55,5 @@ class SliderVector private constructor(private val slots: DoubleArray) {
  */
 class SliderVectorPolicy(var vector: SliderVector) : FactionPolicy {
     override fun weight(value: QValue): Double = vector[value]
+    override fun currentVector(): SliderVector = vector
 }

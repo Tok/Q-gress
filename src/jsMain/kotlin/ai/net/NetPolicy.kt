@@ -19,12 +19,17 @@ class NetPolicy(private val net: Net, private val faction: Faction) : FactionPol
     private var vector: SliderVector = SliderVector.uniform()
     private var evaluatedCheckpoint = -1
 
-    override fun weight(value: QValue): Double {
+    override fun weight(value: QValue): Double = ensureEvaluated()[value]
+
+    /** The vector the net chose at the current checkpoint — what the UI mirrors onto the sliders. */
+    override fun currentVector(): SliderVector = ensureEvaluated()
+
+    private fun ensureEvaluated(): SliderVector {
         val checkpoint = World.tick / Config.ticksPerCheckpoint
         if (checkpoint != evaluatedCheckpoint) {
             evaluatedCheckpoint = checkpoint
             vector = SliderVector.decode(net.forward(Observation.observe(faction)))
         }
-        return vector[value]
+        return vector
     }
 }

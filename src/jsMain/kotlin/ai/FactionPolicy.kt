@@ -19,6 +19,13 @@ import util.HtmlUtil
 interface FactionPolicy {
     /** The raw slider weighting (0..1) for [value], before [QValue.weight] is applied. */
     fun weight(value: QValue): Double
+
+    /**
+     * The full slider vector this policy is currently driving, or `null` when the policy IS the live UI
+     * sliders ([DomSliderPolicy]) — i.e. **non-null means "an AI is in control"**, so the tuning UI should
+     * stop being interactive and auto-move to mirror what the AI chose. Re-read at display cadence.
+     */
+    fun currentVector(): SliderVector? = null
 }
 
 /**
