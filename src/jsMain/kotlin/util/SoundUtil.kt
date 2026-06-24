@@ -50,12 +50,15 @@ object SoundUtil {
     private const val DEEP_THUMP_HZ = 48.0 // fixed deep sub-kick under the XMP explosion (adds weight)
     private const val MUFFLE_CLOSED_HZ = 600.0 // muffled: distant/underwater (title behind onboarding)
 
-    internal val audioCtx = AudioContext()
-    private val listener = audioCtx.listener
+    // The whole audio graph is LAZY so merely referencing SoundUtil headless (Node tests / SimRunner)
+    // doesn't construct an AudioContext (which doesn't exist outside a browser → would crash). Every play*
+    // method gates on isMuted() (true headless), so these are only ever touched in a browser.
+    internal val audioCtx: AudioContext by lazy { AudioContext() }
+    private val listener by lazy { audioCtx.listener }
 
     // Master limiter on the way to the speakers: lets us boost the bus without harsh clipping when many
     // voices stack. (DynamicsCompressor configured as a brick-wall-ish limiter.)
-    private val limiter: dynamic = run {
+    private val limiter: dynamic by lazy {
         val c = audioCtx.asDynamic().createDynamicsCompressor()
         c.threshold.value = -6.0
         c.knee.value = 6.0
@@ -68,13 +71,16 @@ object SoundUtil {
 
     // Single master gain all sounds route through; controls overall volume (× MASTER_BOOST into the
     // limiter). The master FX bus (low/high-pass + reverb send — see AudioFx) sits between it + the limiter.
-    internal val masterGain: GainNode = audioCtx.createGain().also {
-        it.gain.value = 0.0
-        AudioFx.build(audioCtx.asDynamic(), it.asDynamic(), limiter)
+    internal val masterGain: GainNode by lazy {
+        audioCtx.createGain().also {
+            it.gain.value = 0.0
+            AudioFx.build(audioCtx.asDynamic(), it.asDynamic(), limiter)
+        }
     }
 
     /** Muffle (lowpass) the whole mix, or open it back up — used to push the title audio behind onboarding. */
     fun setMuffled(on: Boolean) {
+        if (HtmlUtil.isNotRunningInBrowser()) return
         AudioFx.setLowpass(if (on) MUFFLE_CLOSED_HZ else AudioFx.LOWPASS_OPEN_HZ)
     }
 
@@ -84,17 +90,22 @@ object SoundUtil {
 
     /** Resume the audio context and turn sound on. Idempotent; call on a user gesture. */
     fun enableAudio() {
+        if (HtmlUtil.isNotRunningInBrowser()) return
         if (audioCtx.state != "running") audioCtx.resume()
         if (masterVolume <= 0.0) setMasterVolume(DEFAULT_VOLUME)
     }
 
     fun setMasterVolume(volume: Double) {
+        if (HtmlUtil.isNotRunningInBrowser()) return
         if (audioCtx.state != "running") audioCtx.resume()
         masterVolume = volume
         masterGain.gain.setTargetAtTime(volume * MASTER_BOOST, now(), 0.01)
     }
 
-    internal fun isMuted() = masterVolume <= 0.0
+    // True when muted OR there's simply no audio (headless: Node tests / SimRunner). Every play* method
+    // checks this first, so it's the single gate that keeps ALL sound — and the lazy audio graph — off
+    // outside a browser; no per-call-site guards needed.
+    internal fun isMuted() = masterVolume <= 0.0 || HtmlUtil.isNotRunningInBrowser()
     private var preMuteVolume = 0.0
 
     /** Toggle mute, remembering the prior level. Returns the new volume (0 when muted). */
@@ -116,6 +127,7 @@ object SoundUtil {
      * frame keeps the last orientation.
      */
     fun updateListener(eye: DoubleArray, forward: DoubleArray, up: DoubleArray) {
+        if (HtmlUtil.isNotRunningInBrowser()) return
         val fl = sqrt(forward[0] * forward[0] + forward[1] * forward[1] + forward[2] * forward[2])
         val ul = sqrt(up[0] * up[0] + up[1] * up[1] + up[2] * up[2])
         if (fl < EPS || ul < EPS) return

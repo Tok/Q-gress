@@ -44,7 +44,7 @@ enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>) {
                     removeFrogs()
                     removeSmurfs()
                     factionChange()
-                    SoundUtil.playCycleSound()
+                    SoundUtil.playCycleSound() // SoundUtil self-guards headless (isMuted())
                     World.allPortals.forEach { it.decay() }
                 } else {
                     SoundUtil.playCheckpointSound(cp)
