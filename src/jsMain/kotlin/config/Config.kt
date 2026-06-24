@@ -105,6 +105,13 @@ object Config {
     // headless sweep showed it lifts lead-sharing balance from ~0.37 (runaway) to ~0.75 between equal factions.
     var dominanceDecay = 3.0
 
+    // Leader tempo handicap (ActionSelector): a leading faction's agents WANDER instead of acting with
+    // probability leadShare × this, so the side that's ahead spends time on faction-neutral movement and the
+    // trailing side keeps its focus. A behavioural anti-runaway lever (complements dominanceDecay). Default
+    // 0.5: the headless sweep showed it ~doubles MU-lead changes (2.5→4.5/match) at high balance (0.83);
+    // above ~0.6 it over-corrects (the leader can't hold anything → MU collapses).
+    var leaderDistraction = 0.5
+
     // Combat dynamism (0 = realistic/tanky shields, slow board … 1 = portals flip very easily). The SINGLE
     // combat knob (menu "Combat dynamics" slider) — it drives shield mitigation, weapon-drop rate, how eagerly
     // agents attack, and the underdog comeback. Default 0.6: the headless balanced-dynamics sweep optimum

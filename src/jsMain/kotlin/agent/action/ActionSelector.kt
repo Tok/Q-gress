@@ -1,15 +1,21 @@
 package agent.action
 
 import agent.Agent
+import agent.Balance
 import agent.Faction
 import agent.action.cond.*
 import agent.qvalue.QActions
 import agent.qvalue.QValue
 import ai.FactionPolicies
+import config.Config
 import util.Util
 
 object ActionSelector {
     fun doSomethingElse(agent: Agent): Agent {
+        // Leader tempo handicap: an agent of the LEADING faction wanders (a neutral, non-contributing move)
+        // instead of acting, with probability leadShare × Config.leaderDistraction — so being ahead costs
+        // tempo and the trailing side keeps its focus. Off (0) by default; an anti-runaway balance lever.
+        if (Util.random() < Balance.leadShare(agent.faction) * Config.leaderDistraction) return agent.moveElsewhere()
         val portalFaction = agent.actionPortal.owner?.faction
         return when {
             !agent.isAtActionPortal() -> doAnywhereAction(agent)
