@@ -4,7 +4,6 @@ import World
 import agent.Agent
 import agent.Faction
 import agent.StuckTracker
-import agent.action.ActionItem
 import config.*
 import config.Sim
 import extension.Canvas
@@ -17,8 +16,8 @@ import kotlinx.dom.removeClass
 import org.w3c.dom.*
 import org.w3c.dom.events.Event
 import portal.Portal
-import portal.XmMap
 import system.Cycle
+import system.Simulation
 import system.display.DamageNumberFx
 import system.display.PassabilityOverlay
 import system.display.Scene3D
@@ -75,17 +74,7 @@ object HtmlUtil {
 
     private fun tick() {
         if (!World.isReady) return
-        // Iterate a snapshot so mid-tick recruiting can't mutate the set we're
-        // looping (recruits are buffered in World.pendingAgents, flushed below).
-        val nextAgents = World.allAgents.toList().map { it.act() }.toSet()
-        XmMap.updateStrayXm()
-
-        World.allAgents.clear()
-        World.allAgents.addAll(nextAgents)
-        World.flushPendingAgents()
-
-        World.allNonFaction.forEach { it.act() }
-        sampleStuck() // always on: drives stuck-recovery (Agent.recoverIfStuck / NonFaction); also the ?debug viz
+        Simulation.stepEntities() // shared functional-core step (agents + NPCs + stuck tracker)
         window.requestAnimationFrame {
             DrawUtil.redraw()
             val userFaction = World.userFactionOrThrow()
@@ -99,13 +88,6 @@ object HtmlUtil {
             DrawUtil.redrawUserInterface(firstMu, secondMu, factions)
             World.tick++
         }
-    }
-
-    // Feed StuckTracker only the entities actively trying to travel this tick (powers recovery + ?debug viz).
-    private fun sampleStuck() {
-        val agents = World.allAgents.filter { it.action.item == ActionItem.MOVE }.map { it.key() to it.pos }
-        val npcs = World.allNonFaction.filter { it.isStuckCandidate(World.tick) }.map { "npc:${it.id}" to it.pos }
-        StuckTracker.sample(agents + npcs)
     }
 
     fun load() {

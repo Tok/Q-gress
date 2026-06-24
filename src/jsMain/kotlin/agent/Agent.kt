@@ -312,11 +312,10 @@ data class Agent(
             else -> 2000
         }
 
-        private fun initialActionPortal(pos: Pos) = if (HtmlUtil.isRunningInBrowser()) {
-            Util.findNearestPortal(pos) ?: World.allPortals[0]
-        } else {
-            Portal.create(pos)
-        }
+        // Prefer an existing world portal (browser + headless): a fresh agent shouldn't mint a throwaway
+        // portal — that also means a headless match (ai.SimRunner) doesn't pay a flow-field compute per
+        // agent/recruit. Only the degenerate "no portals yet" case falls back to creating one.
+        private fun initialActionPortal(pos: Pos) = Util.findNearestPortal(pos) ?: Portal.create(pos)
 
         fun createFrog(grid: Grid) = create(grid, Faction.ENL)
         fun createSmurf(grid: Grid) = create(grid, Faction.RES)

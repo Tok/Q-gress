@@ -27,9 +27,10 @@ see PLAN.md).
   - **`agent/qvalue/`** — `QActions` (12) and `QDestinations` (7) define the tunable
     behaviours. Each `QValue` has a base `weight`; the **slider value (0..1) × weight** is the
     selection probability. Sliders exist per faction (`…SliderFrog` / `…SliderSmurf`).
-  - **`ai/`** — the AI substrate (PLAN Phase 6.0): `FactionPolicy` (the per-faction source of slider
+  - **`ai/`** — the AI substrate (PLAN Phase 6.0/6.1): `FactionPolicy` (the per-faction source of slider
     weightings; default `DomSliderPolicy` reads the DOM), `SliderVector` (the 19 sliders as one ordered
-    encode/decode vector), `Observation` (a normalized world feature vector — the NN/LLM input).
+    encode/decode vector), `Observation` (a normalized world feature vector — the NN/LLM input), and
+    `SimRunner` (the **headless match harness** — see *Rendering* below).
 - **`portal/`** — portals, resonators, links, fields, XM, cooldowns, level/quality.
 - **`items/`** — bursters, power cubes, resonators, mods, levels.
 - **`config/`** — `Config` (balance constants), `Dim`/`Sim` (geometry), `Location` (preset
@@ -108,9 +109,11 @@ new regions from Overpass as the camera flies elsewhere. Elevation comes from th
   the offscreen prerender of agent action icons (→ 3D textures). `World.bgCan` survives solely
   as a detached `ImageData` factory for the grid readback.
 
-The tick loop (`HtmlUtil.tick`) advances agents on a snapshot (recruits buffer in
-`World.pendingAgents`, flushed after), then a `requestAnimationFrame` drives `DrawUtil.redraw`
-(→ `Scene3D.sync`) + the DOM HUD update.
+The tick loop (`HtmlUtil.tick`) calls the shared functional-core step `system/Simulation.stepEntities`
+(advance every agent on a snapshot — recruits buffer in `World.pendingAgents`, flushed after — then every
+NPC, then feed the stuck tracker), then a `requestAnimationFrame` drives `DrawUtil.redraw`
+(→ `Scene3D.sync`) + the DOM HUD update + `Cycle` scoring. The headless harness (`ai/SimRunner`) calls the
+*same* `Simulation.stepEntities` with synchronous `Cycle` scoring instead — no rendering loop.
 
 **The effect-sink seam (`system/effect/`).** The crash-prone *visual* effects that game logic fires
 inline (XMP bursts, hack/deploy animations, reward motes, retaliation bolts, portal shatter, falling
@@ -118,8 +121,15 @@ resonators, the flow-field flash) go through `Fx.sink` — an installable `Effec
 `FactionPolicies`. `BrowserEffects` forwards 1:1 to the `system/display/` renderer; `NoOpEffects` (the
 headless default) does nothing, so the whole tick loop runs in Node without touching three.js — the
 imperative-shell boundary that unblocks the headless `SimRunner` (PLAN Phase 6.1). Audio (`SoundUtil`)
-and the message log (`Com`) already self-guard / are pure, so they stay outside this seam. This is the
-first stage of the functional-core/imperative-shell split; sync pathfinding + `SimRunner` follow.
+and the message log (`Com`) already self-guard / are pure, so they stay outside this seam.
+
+**Headless matches (`ai/SimRunner`).** With the effect sink (no renderer crashes), `PathUtil.computeFieldSync`
+(deterministic inline flow fields, opt-in via `Config.headlessFieldCompute`) and the shared
+`Simulation.stepEntities`, a whole match runs in Node: `SimRunner.runMatch(grid, seed, maxTicks, …)` seeds
+the RNG + a `GridFixture` grid, seeds portals/agents/NPCs, ticks, and returns a `MatchResult` of
+per-checkpoint MU (the AI fitness signal). `SimRunner.reset()` clears all match state between runs. This is
+the training/eval engine for Phase 6.2+. (Match *throughput* at full grid resolution still needs the deferred
+pathfinding-scalability work — see PLAN.)
 
 **Title screen reuses this whole pipeline.** `util/ui/TitleSim` runs a small *real* `Scene3D` sim
 (real grid, ~8 portals, a 3-v-3 levelled roster + ~30 NPCs, the real tick loop) behind the faction

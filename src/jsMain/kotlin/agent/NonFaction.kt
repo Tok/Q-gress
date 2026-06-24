@@ -260,6 +260,14 @@ data class NonFaction(
         private var seq = 0
         private fun nextId() = seq++
 
+        /** Drop the cached offscreen flow fields, pending launches and id counter — for the headless
+         *  match harness resetting state between matches (ai.SimRunner). */
+        fun reset() {
+            fields.clear()
+            pending.clear()
+            seq = 0
+        }
+
         fun findNearestTo(pos: Pos) = World.allNonFaction.minByOrNull {
             it.pos.distanceTo(pos)
         } ?: throw IllegalStateException("Unable to find nearest to $pos")

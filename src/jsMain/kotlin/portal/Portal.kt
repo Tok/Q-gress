@@ -188,15 +188,15 @@ data class Portal(
     }
 
     fun findRandomPointNearPortal(distance: Int): Pos {
-        val angle = Util.random() * PI
-        val xOffset: Int = (distance * cos(angle)).toInt()
-        val yOffset: Int = (distance * sin(angle)).toInt()
-        val point = location.copy(x = location.x + xOffset, y = location.y + yOffset)
-        return if (World.grid[point.toShadow()]?.isPassable ?: false) {
-            point
-        } else {
-            findRandomPointNearPortal(distance)
+        // Sample points on the ring until one lands on passable ground, but cap the tries: a portal boxed
+        // in by impassable cells (or off the grid, as in a headless match) would otherwise recurse forever
+        // → stack overflow. Falling back to the portal centre is always safe.
+        repeat(NEARBY_POINT_TRIES) {
+            val angle = Util.random() * PI
+            val point = location.copy(x = location.x + (distance * cos(angle)).toInt(), y = location.y + (distance * sin(angle)).toInt())
+            if (World.grid[point.toShadow()]?.isPassable ?: false) return point
         }
+        return location
     }
 
     private fun findConnectedPortals(): List<Portal> = findOutgoingTo() + findIncomingFrom()
@@ -594,6 +594,7 @@ data class Portal(
         }
 
         const val MAX_HACKS = 4 // TODO implement multihacks (authentic: 4 hacks → burnout, IngressFacts)
+        private const val NEARBY_POINT_TRIES = 16 // ring-sampling cap in findRandomPointNearPortal (no infinite recursion)
         private const val ZAP_BASE_XM = 15 // retaliation XM damage per portal level
         private const val ZAP_SHIELD_XM = 1 // extra retaliation XM per point of mitigation (shields zap harder)
         private const val MOD_DEPLOY_AP = 125

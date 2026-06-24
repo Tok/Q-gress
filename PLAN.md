@@ -156,18 +156,25 @@ area is maximized, and hold it across the cycle. So fitness = the **sum/average 
   covers it. Fields are computed once per portal / per unique offscreen destination (cached), not per tick,
   so the earlier "too slow" worry was really the async coroutine never running in a sync loop — now moot.
 - _Spike finding (resolved by Stages 1–2):_ the original `SimRunner` spike died because the sim wasn't
-  synchronous/headless (renderer crashes + async field gen). Both are now fixed. Remaining for Stage 3:
-- [ ] **`SimRunner`** — `runMatch(gridFixture, policyEnl, policyRes, seed, maxTicks): MatchResult`, a
-  synchronous tick loop (set `Config.headlessFieldCompute = true`, seed RNG, build the grid from a fixture,
-  drive `World` ticks) capturing **per-checkpoint MU** (the fitness signal), with effects on `NoOpEffects`.
-  Watch-outs from the spike: `NonFaction.findNearestTo` throws on an empty roster; seed + reset
-  `FactionPolicies`/`Fx`/`World` between matches.
+  synchronous/headless (renderer crashes + async field gen). Both fixed by Stages 1–2.
+- [x] **`SimRunner`, Stage 3 DONE** — `ai/SimRunner.runMatch(grid, seed, maxTicks, setup, policyEnl, policyRes):
+  MatchResult`: a synchronous match in Node — seeds the RNG, installs the grid, flips
+  `Config.headlessFieldCompute`, seeds portals/agents/NPCs, then ticks the shared `system.Simulation.stepEntities`
+  + `Cycle` scoring, capturing **per-checkpoint MU** (`MatchResult.checkpointMuSum/Avg` = the fitness signal).
+  Effects stay on `NoOpEffects`. `SimRunner.reset()` clears all match state (added `XmMap.clear`/`NonFaction.reset`).
+  `SimRunnerTest` proves it runs headless, captures ≥2 checkpoints, and is deterministic. The tick core is now
+  extracted into `system.Simulation` (the live `HtmlUtil.tick` calls the same `stepEntities`). Also hardened a
+  latent unbounded recursion in `Portal.findRandomPointNearPortal` (the harness surfaced it) and made
+  `Agent.initialActionPortal` reuse a world portal (no per-agent flow-field compute).
+  - _Throughput caveat:_ a full-resolution grid (~21.6k cells) is too slow for many matches yet — each
+    flow-field compute is O(cells) and portal discovery/creation triggers them. Small grids run fast; the
+    deferred **pathfinding scalability** work (multi-mode nav / coarser `pathResolution` / open-area shortcut)
+    is the prerequisite for high match throughput. `SimRunnerTest` uses a small arena for that reason.
+  - _Realism caveat:_ headless spawn positions use grid (shadow) coords, so on a sub-Sim grid agents cluster;
+    fuller match realism is a follow-up (matters once training runs in 6.2).
 - [ ] **Grid fixtures** — serialize a built `Grid` (+ portal seeds) to committed JSON so matches
-  reproduce without live tiles / `readPixels`. (The synthetic open grid worked in the spike; real-tile
-  fixtures still need the `?debug=capture` pass.) `GridFixture` already does the RLE serialization.
-- [x] **Sync, fast pathfinding for headless** — `PathUtil.computeFieldSync` (Stage 2 above). If it ever
-  proves too slow on large real-tile grids, the levers are multi-mode nav (flow near, cheap far) / a
-  coarser `pathResolution`; fields are cached per portal/destination so it's not per-tick.
+  reproduce without live tiles / `readPixels`. `GridFixture` already does the RLE serialization; the
+  real-tile fixtures still need the `?debug=capture` pass.
 
 **6.2 — Track A: custom net + neuroevolution** → [docs/NN.md](docs/NN.md)
 - [ ] Tiny MLP (`ai/net/`, output = 19 sliders); ES/self-play trainer; `NetPolicy` (JSON genome);
