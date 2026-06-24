@@ -3,6 +3,7 @@ package system.display
 import external.Three
 import kotlinx.browser.document
 import org.w3c.dom.HTMLCanvasElement
+import kotlin.math.roundToInt
 
 /**
  * Cached three.js materials for the scene's solid entities and portal parts, split out of
@@ -90,21 +91,33 @@ object Materials {
         Three.MeshStandardMaterial(p)
     }
 
+    // Quantise the energy-bar fill so a faction colour reuses a handful of materials instead of one per
+    // reso per frame. 32 steps is fine enough to read smooth — and crucially the resonator CAP disc reads
+    // this same (stepped) uFill, so the sharp disc lines up with the bar exactly; a coarser step used to
+    // leave the cap visibly above/below the true level. The stored uFill is the ROUNDED step value (not the
+    // first health to hit the bucket), so it's deterministic and within ~1/64 of the real charge.
+    private const val RESO_FILL_STEPS = 32
+
     /** Resonator rods: a glowing energy rod with a vertical bar — [fill] (0..1 health) lights it
-     *  bottom→top (glows in colour), dim + see-through above the line. Cached per colour + fill octile. */
-    fun resonator(color: String, fill: Double): dynamic = cache.getOrPut("reso$color${(fill * 8).toInt()}") {
-        // Solid-ish glowing rod: front faces only + depth write so we don't see through to its inside.
-        val m = GlassShader.material(color, GlassShader.LINK_BRIGHT, fill)
-        m.depthWrite = true
-        m.side = 0 // Three.FrontSide
-        m
+     *  bottom→top (glows in colour), dim + see-through above the line. Cached per colour + fill step. */
+    fun resonator(color: String, fill: Double): dynamic {
+        val step = (fill * RESO_FILL_STEPS).roundToInt().coerceIn(0, RESO_FILL_STEPS)
+        return cache.getOrPut("reso$color$step") {
+            // Front faces only, and NO depth write: a translucent rod that doesn't occlude the energy-surface
+            // cap discs (which draw just after it) — so a far reso's cap can't be hidden behind a nearer rod.
+            // The opaque pole still hides what's truly behind it. (Falling shatter rods use their own material.)
+            val m = GlassShader.material(color, GlassShader.LINK_BRIGHT, step.toDouble() / RESO_FILL_STEPS)
+            m.side = 0 // Three.FrontSide
+            m
+        }
     }
 
     /** Resonator "energy surface": a glowing disc the rod-build positions at the current FILL LEVEL (the
      *  top of the charged part), so the reso reads as filled with a rising/falling surface, not just a fill
      *  line on the outside. Additive + faction-coloured. Keeps `depthTest` (so the opaque pole/buildings
-     *  hide it — no see-through bleed); the rod-build gives it a negative `renderOrder` so it draws before
-     *  the depth-writing glass rod and isn't self-occluded by it. Cached per colour. */
+     *  hide it — no see-through bleed); the rod-build draws it just AFTER the (now non-depth-writing) rods
+     *  via a positive `renderOrder`, so its glow sits on top of the glass rather than being painted over or
+     *  hidden behind a nearer resonator. Cached per colour. */
     fun resonatorCap(color: String): dynamic = cache.getOrPut("resocap$color") {
         val p: dynamic = js("({})")
         p.color = color

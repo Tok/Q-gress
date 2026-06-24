@@ -1052,13 +1052,13 @@ object Scene3D {
                 // A glowing "energy surface" disc sitting at the current FILL LEVEL, so the reso reads as
                 // filled to that height (not just a fill line on the outside). The rod spans pivot-local
                 // z ∈ [-rodLen, 0] (bottom→top), so the charged surface is at -rodLen·(1-fill). Use the rod
-                // material's ACTUAL uFill (it's cached per fill-octile) so the disc lines up with the bar
-                // exactly instead of drifting an octile too high. renderOrder -1 draws it before the
-                // depth-writing rod (so the rod doesn't self-occlude it) while the opaque pole still hides it.
+                // material's ACTUAL (stepped) uFill so the disc lines up with the bar exactly. renderOrder 1
+                // draws it AFTER the now-non-depth-writing rods, so its glow sits on top instead of being
+                // painted over or hidden behind a nearer resonator; depthTest still lets the pole hide it.
                 val shownFill = (rodMat.uniforms.uFill.value as Double).coerceIn(0.0, 1.0)
                 val cap = Three.Mesh(resoCapGeo, Materials.resonatorCap(LevelColor.map[lvl] ?: "#ffffff"))
                 cap.asDynamic().position.set(0.0, 0.0, -rodLen * (1.0 - shownFill))
-                cap.asDynamic().renderOrder = -1
+                cap.asDynamic().renderOrder = 1
                 pivot.asDynamic().add(cap)
                 // The grommet is part of the reso: it rides INSIDE the pivot at the rod's bottom, so it
                 // centrifuges out with the rod on a hack instead of staying stuck to the pole collar.
