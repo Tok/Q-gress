@@ -150,6 +150,11 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
   Menu "Lock tuning" toggle) swaps the sliders for 0–1 progress bars that mirror the values
   (`refresh()` re-syncs them) — the hook for future agent-vs-agent matches where the player can't tune.
   Action icons render from the **hi-res** (supersampled) canvas + shown small via CSS, so they're crisp.
+- **AI footer tab** (`util/ui/AiPanel`, PLAN Phase 6): a third footer tab (AGENTS / **AI** / EVENT LOG)
+  showing, per faction, the **driver** picker (Manual sliders live; Net/LLM disabled until 6.2/6.3) and a
+  live **observation** readout — the 13-slot normalized feature vector (`ai.Observation`) a net/LLM would
+  receive, as labelled 0–1 bars. The control + transparency surface for the AI substrate; tuning stays on
+  the sliders.
 - **Portals are discovered, not placed**: manual portal **placement** and **deletion** are removed
   from the real game (the map click only selects/deselects; the Inspector has no Remove button). The
   `/#demo` sandbox keeps LMB-place / RMB-shatter for showcasing.

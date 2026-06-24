@@ -8,6 +8,7 @@ import system.display.Scene3D
 import util.data.Circle
 import util.data.Line
 import util.data.Pos
+import util.ui.AiPanel
 import util.ui.DebugHud
 import util.ui.HistoryPanel
 import util.ui.Inspector
@@ -33,6 +34,7 @@ object DrawUtil {
         StatsPanel.update(firstMu, secondMu, factions)
         HistoryPanel.update()
         TuningPanel.refresh() // keep the read-only bars in sync (no-op in interactive mode)
+        AiPanel.update() // AI footer tab: per-faction driver + live observation readout
         if (Styles.isDrawTopAgents) {
             TopAgentsPanel.update()
         }

@@ -101,6 +101,69 @@ html, body {
     box-sizing: border-box;
     color: #ffffff;
 }
+/* AI footer tab: per-faction driver picker + a live observation (feature-vector) readout. */
+.aiPanel {
+    display: flex;
+    gap: 28px;
+    width: 100%;
+    box-sizing: border-box;
+    font-family: "Coda", monospace;
+    font-size: 11px;
+    color: #b8c4bc;
+}
+.aiCol {
+    flex: 1;
+    min-width: 0;
+}
+.aiColHead {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+}
+.aiFactionName {
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+.aiDriverSelect {
+    background: rgba(0, 0, 0, 0.5);
+    color: #e6ebe8;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 4px;
+    font-family: "Coda", monospace;
+    font-size: 11px;
+    padding: 1px 4px;
+}
+.aiObsRow {
+    display: grid;
+    grid-template-columns: 96px 1fr 40px;
+    align-items: center;
+    gap: 8px;
+    line-height: 1.5;
+}
+.aiObsLabel {
+    color: #9aa6a0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.aiObsTrack {
+    height: 7px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.12);
+    overflow: hidden;
+}
+.aiObsBar {
+    display: block;
+    height: 100%;
+    width: 0;
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+.aiObsValue {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
 .taTable {
     border-collapse: collapse;
     table-layout: fixed;
@@ -651,9 +714,9 @@ html, body {
     font-family: "Chakra Petch", sans-serif;
     transition: opacity 0.6s ease;
 }
-/* Seat the panel below dead-centre: split the vertical free space top : bottom = 4 : 1 via grow-only flex
-   spacers, so the panel's centre lands ~80% down the screen. */
-.loadingOverlay::before { content: ""; flex: 4 1 0; }
+/* Seat the panel low: split the vertical free space top : bottom = 9 : 1 via grow-only flex spacers, so
+   the panel's centre lands ~90% down the screen. */
+.loadingOverlay::before { content: ""; flex: 9 1 0; }
 .loadingOverlay::after { content: ""; flex: 1 1 0; }
 .loadingOverlayDone {
     opacity: 0;

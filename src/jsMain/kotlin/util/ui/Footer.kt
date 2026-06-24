@@ -4,13 +4,13 @@ import kotlinx.browser.document
 import org.w3c.dom.HTMLElement
 
 /**
- * Full-width bottom footer: a header with tab buttons (EVENT LOG / AGENTS) + a collapse chevron, and
- * a body that shows the active tab. Collapsing hides the body, leaving just the header bar. Panels
- * append into [tab] ("log" / "agents"); tab visibility + collapse are class/style driven so it
+ * Full-width bottom footer: a header with tab buttons (AGENTS / AI / EVENT LOG) + a collapse chevron,
+ * and a body that shows the active tab. Collapsing hides the body, leaving just the header bar. Panels
+ * append into [tab] ("log" / "agents" / "ai"); tab visibility + collapse are class/style driven so it
  * survives the panels building in any order.
  */
 object Footer {
-    private val tabs = listOf("AGENTS" to AGENTS_ID, "EVENT LOG" to LOG_ID)
+    private val tabs = listOf("AGENTS" to AGENTS_ID, "AI" to AI_ID, "EVENT LOG" to LOG_ID)
     private var built = false
     private var active = AGENTS_ID
     private var collapsed = false
@@ -18,10 +18,15 @@ object Footer {
     private var body: HTMLElement? = null
     private var chevron: HTMLElement? = null
 
-    /** The content element for a footer tab ("log" or "agents"); builds the footer on first call. */
+    /** The content element for a footer tab ("log" / "agents" / "ai"); builds the footer on first call. */
     fun tab(id: String): HTMLElement {
         build()
-        return document.getElementById(if (id == "agents") AGENTS_ID else LOG_ID) as HTMLElement
+        val bodyId = when (id) {
+            "agents" -> AGENTS_ID
+            "ai" -> AI_ID
+            else -> LOG_ID
+        }
+        return document.getElementById(bodyId) as HTMLElement
     }
 
     private fun build() {
@@ -97,4 +102,5 @@ object Footer {
 
     private const val LOG_ID = "footerLog"
     private const val AGENTS_ID = "footerAgents"
+    private const val AI_ID = "footerAi"
 }
