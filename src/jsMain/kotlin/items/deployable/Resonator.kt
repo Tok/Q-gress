@@ -31,8 +31,9 @@ data class Resonator(
 
     private fun decayEnergy() = (level.energy * DECAY_RATIO).toInt()
 
-    fun decay() {
-        val newEnergy = max(energy - decayEnergy(), 0)
+    /** Lose [scale]× the base decay (1.0 = the normal cycle-end decay; a fraction = dominance erosion). */
+    fun decay(scale: Double = 1.0) {
+        val newEnergy = max(energy - (decayEnergy() * scale).toInt(), 0)
         this.energy = newEnergy
         if (newEnergy <= 0) {
             octant?.let { portal?.removeReso(it, null) }

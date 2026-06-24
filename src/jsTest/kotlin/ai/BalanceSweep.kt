@@ -52,24 +52,24 @@ class BalanceSweep {
         val grid = grid()
         val seeds = 1..4
         val results = mutableListOf<Pair<String, Score>>()
-        for (dyn in listOf(0.3, 0.45, 0.6, 0.75)) {
-            for (cb in listOf(3.0, 6.0, 10.0)) {
-                Config.combatDynamism = dyn
-                Config.comebackMax = cb
-                val scores = seeds.map { seed ->
-                    val r = SimRunner.runMatch(grid, seed = seed, maxTicks = 6000, setup = MatchSetup(npcs = 10))
-                    SimRunner.reset()
-                    scoreMatch(r)
-                }
-                val avg = Score(
-                    scores.map { it.composite }.average(),
-                    scores.map { it.leadChanges }.average(),
-                    scores.map { it.balance }.average(),
-                    scores.map { it.live }.average(),
-                    scores.map { it.mu }.average().toInt(),
-                )
-                results.add("dyn=$dyn cb=$cb" to avg)
+        // Hold the combat optimum; sweep the new dominance-decay mechanic (0 = off = the previous best).
+        Config.combatDynamism = 0.6
+        Config.comebackMax = 3.0
+        for (dd in listOf(0.0, 0.5, 1.0, 2.0, 3.0)) {
+            Config.dominanceDecay = dd
+            val scores = seeds.map { seed ->
+                val r = SimRunner.runMatch(grid, seed = seed, maxTicks = 6000, setup = MatchSetup(frogs = 12, smurfs = 12, npcs = 20))
+                SimRunner.reset()
+                scoreMatch(r)
             }
+            val avg = Score(
+                scores.map { it.composite }.average(),
+                scores.map { it.leadChanges }.average(),
+                scores.map { it.balance }.average(),
+                scores.map { it.live }.average(),
+                scores.map { it.mu }.average().toInt(),
+            )
+            results.add("dominanceDecay=$dd" to avg)
         }
         results.sortedByDescending { it.second.composite }.forEach { (k, s) ->
             println(

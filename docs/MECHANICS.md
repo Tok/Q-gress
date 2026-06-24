@@ -44,17 +44,32 @@ change animates through `CaptureFx`; a `playVirusSound` plays.
 Per-agent inventory; used to link to a portal. Surfaced as counts (leaderboard + inspector); no 3D
 model yet.
 
+## Resonator decay & recharge — `items/deployable/Resonator.kt`
+Resonators lose energy over time; a portal with no energy left loses resonators and eventually goes
+neutral. Recharging (`Recharger`, via a held key) tops them back up at an XM cost.
+- **Authentic Ingress (doc'd for reference, not implemented as-is):** a portal loses **15% of each
+  resonator's energy per day**, so an un-recharged portal (e.g. a remote one you only hold via a key)
+  fully **decays after ~a week**. We deliberately *don't* model real-time day/week decay — matches are
+  meant to be fast — but it's the canonical mechanic to keep in mind.
+- **Sim model:** `Resonator.DECAY_RATIO = 0.15` (the 15% figure) applied at **cycle end**
+  (`Portal.decay`), i.e. accelerated to sim time. Recharging counters it.
+- **Dominance decay (sim anti-runaway, `Config.dominanceDecay`):** *every checkpoint*, a portal owned by
+  the **leading** faction erodes extra resonator energy proportional to that faction's MU lead
+  (`Portal.erodeByDominance`, scale = `leadShare × dominanceDecay`). An over-extended empire crumbles, the
+  board reopens, and the MU lead can change — tuned via the headless sweep (`ai/BalanceSweep`); it lifted
+  lead-sharing balance from ~0.37 (runaway) to ~0.75 between equally-tuned factions. Not in real Ingress.
+
 ## Drop rates (per hack roll) — `config/DropRates.kt`
 - **Resonators / XMP / Power Cubes**: roll by **tier** via `portal/Quality.kt` (BEST 0.1 / TOP 0.3 /
   GOOD 0.5 / MORE 0.7, with level offsets). Community estimate: ~1.5 resonators per item roll.
-- **XMP + Ultra-Strike yield** is scaled by the **`Config.weaponDropMultiplier`** live knob (menu
-  "Weapon drops" slider, `1×` base … `20×`, default **`10×`** — so agents hoard firepower fast and
-  flip defended portals). It multiplies the XMP draw count (`DropRates.xmpDropMultiplier`, base 2) and
-  the Ultra-Strike draw count.
-- **Ultra Strikes** *(sim-tuning, not authentic)*: now drop from hacks at `DropRates.usDropChance`
-  (default 0.25) per weapon draw — a single Bernoulli per draw, so **rarer** than XMP's quality
-  cascade. Agents spend a US for the per-volley mod-knock roll when they have one (`Attacker`), since
-  Ultra-Strikes strip shields far better than Bursters → the dynamism payoff.
+- **XMP + Ultra-Strike yield** is scaled by **`Config.weaponDropMultiplier()`**, now derived from the
+  single **Combat dynamics** slider (`Config.combatDynamism`, `1×`…`20×`) — higher dynamism hands out more
+  firepower so agents flip defended portals. It multiplies the XMP draw count
+  (`DropRates.xmpDropMultiplier`, base 2) and the Ultra-Strike draw count.
+- **Ultra Strikes** *(sim-tuning, not authentic)*: drop from hacks at `DropRates.usDropChance`
+  (default 0.25) per weapon draw — a single Bernoulli per draw, so **rarer** than XMP's quality cascade.
+  In an assault (`Attacker`) the agent spends Ultra-Strikes **first**, to strip the portal's shields/mods
+  *before* the burst volleys — so the bursts aren't soaked up by shield mitigation (the dynamism payoff).
 - **Portal key**: `DropRates.keyChance` (default 0.8).
 - **Shields**: per type (`DropRates.shieldChance`, defaults from `ShieldType.chance`).
 - **Heat sinks**: per type (`DropRates.heatSinkChance`).

@@ -41,4 +41,12 @@ object Balance {
         val total = (mine + theirs).toDouble()
         return if (total <= 0.0) 0.0 else ((theirs - mine) / total).coerceIn(0.0, 1.0)
     }
+
+    /**
+     * How far [faction] is AHEAD on Mind Units, as a 0..1 share (0 = even/behind, 1 = total dominance).
+     * Drives dominance decay ([Portal.erodeByDominance]): the further ahead a faction is, the faster its own
+     * resonators erode — an over-extended empire crumbles, opening the board so the lead can change.
+     */
+    fun leadShare(faction: Faction): Double =
+        shareDeficit(World.calcTotalMu(faction.enemy()), World.calcTotalMu(faction)) // enemy's deficit = our lead
 }

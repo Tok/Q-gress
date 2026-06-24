@@ -39,6 +39,7 @@ enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>) {
                 INSTANCE.checkpoints.putAll(old)
                 INSTANCE.checkpoints[tick] = cp
                 spawnXm() // every checkpoint (not just cycle end) so agent XM is replenished mid-cycle
+                World.allPortals.toList().forEach { it.erodeByDominance() } // the leader's empire erodes → board reopens
                 if (cp.isCycleEnd) {
                     removePortals()
                     removeFrogs()

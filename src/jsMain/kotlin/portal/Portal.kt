@@ -2,6 +2,7 @@ package portal
 
 import World
 import agent.Agent
+import agent.Balance
 import agent.action.ActionItem
 import config.Config
 import config.DropRates
@@ -585,6 +586,17 @@ data class Portal(
         if (newResos.isEmpty()) {
             destroy()
         }
+    }
+
+    /** Per-checkpoint dominance erosion: a portal owned by the LEADING faction loses extra resonator energy
+     *  proportional to how far ahead that faction is on MU (× [Config.dominanceDecay]). An over-extended
+     *  empire crumbles → the board reopens → the lead can change. No-op when even/behind or the lever is off. */
+    fun erodeByDominance() {
+        val faction = owner?.faction ?: return
+        val scale = Config.dominanceDecay * Balance.leadShare(faction)
+        if (scale <= 0.0) return
+        getAllResos().forEach { it.decay(scale) }
+        if (getAllResos().isEmpty()) destroy()
     }
 
     override fun toString() = name

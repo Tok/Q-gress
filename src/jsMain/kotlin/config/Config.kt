@@ -85,6 +85,12 @@ object Config {
     // portals and turn the board. The anti-runaway lever (tuned via headless sweeps; ai/BalanceSweep).
     var comebackMax = 3.0 // headless sweep optimum (ai/BalanceSweep): >3 over-corrects → chaotic + unbalanced
 
+    // Dominance decay (Portal.erodeByDominance, every checkpoint): the further AHEAD a faction is on MU, the
+    // faster its OWN resonators erode (scale = leadShare × this), so an over-extended empire crumbles and the
+    // board reopens → the lead changes. 0 = off. The anti-runaway *mechanic* (vs comebackMax, a combat boost);
+    // headless sweep showed it lifts lead-sharing balance from ~0.37 (runaway) to ~0.75 between equal factions.
+    var dominanceDecay = 3.0
+
     // Combat dynamism (0 = realistic/tanky shields, slow board … 1 = portals flip very easily). The SINGLE
     // combat knob (menu "Combat dynamics" slider) — it drives shield mitigation, weapon-drop rate, how eagerly
     // agents attack, and the underdog comeback. Default 0.6: the headless balanced-dynamics sweep optimum
