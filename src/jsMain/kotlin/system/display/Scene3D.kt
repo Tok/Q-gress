@@ -1336,6 +1336,10 @@ object Scene3D {
     }
 
     private fun addNpc(npc: NonFaction) {
+        // Hide NPCs outside the play area (beyond the inner edge of the boundary wall). Passability isn't
+        // computed out there (to save CPU), so NPCs drift/clip along the border — don't render those, nor
+        // any inside/walking through the wall. Works for round (inscribed circle) and rectangular fields.
+        if (!Sim.isInPlayArea(npc.pos.x.toDouble(), npc.pos.y.toDouble())) return
         val sphere = Three.Mesh(headGeo, Materials.solid(NEUTRAL_COLOR))
         val gz = groundZ(npc.pos)
         if (Debug.enabled && StuckTracker.isStuck("npc:${npc.id}")) addStuckMarker(sceneX(npc.pos), sceneY(npc.pos), gz)

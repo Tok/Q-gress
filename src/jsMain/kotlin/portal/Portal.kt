@@ -52,7 +52,11 @@ data class Portal(
     fun isFriendlyTo(agent: Agent) = owner != null && owner?.faction == agent.faction
 
     private fun isCoveredByField() = World.allFields().any { it.isCoveringPortal(this) }
-    private fun isLinkable(linker: Agent): Boolean = this.owner?.faction == linker.faction && isFullyDeployed()
+
+    // Owned by the linker's faction + at least [Config.linkMinResos] resonators. The old rule required FULL
+    // deployment (all 8), which under a dynamic, flipping board was almost never reached → fields never formed
+    // ("cat-and-mouse capturing"). Ingress lets any owned portal link; a low floor lets fields actually happen.
+    private fun isLinkable(linker: Agent): Boolean = this.owner?.faction == linker.faction && numberOfResosLeft() >= Config.linkMinResos
     private fun isInside(): Boolean = findConnectedPortals().none { connected ->
         connected.fields.filter { it.isConnectedTo(this) }.count() > 1
     }
@@ -199,7 +203,7 @@ data class Portal(
         return location
     }
 
-    private fun findConnectedPortals(): List<Portal> = findOutgoingTo() + findIncomingFrom()
+    fun findConnectedPortals(): List<Portal> = findOutgoingTo() + findIncomingFrom()
 
     fun findLinkableForKeys(linker: Agent): List<Portal> {
         val keyset = linker.inventory.findUniqueKeys() ?: return emptyList()
@@ -328,7 +332,7 @@ data class Portal(
 
     // Live weapon-draw count per hack: the base XMP multiplier scaled by the menu "Weapon drops" slider
     // ([Config.weaponDropMultiplier], default 3× = tripled). Drives both XMP and Ultra-Strike yields.
-    private fun weaponDraws(): Int = (DropRates.xmpDropMultiplier * Config.weaponDropMultiplier).toInt().coerceAtLeast(1)
+    private fun weaponDraws(): Int = (DropRates.xmpDropMultiplier * Config.weaponDropMultiplier()).toInt().coerceAtLeast(1)
 
     private fun obtainShields(hacker: Agent): List<QgressItem> {
         val stuff = mutableListOf<QgressItem>()

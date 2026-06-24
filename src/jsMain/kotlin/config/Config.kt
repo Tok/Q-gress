@@ -29,13 +29,10 @@ object Config {
     var recruitFactorMin = 0.3 // a much-larger faction recruits at ≥30% of base
     var recruitFactorMax = 3.0 // a much-smaller faction recruits at ≤300% of base
 
-    // Comeback combat (Balance.attackBoost): the faction BEHIND on portals deals up to this fraction MORE
-    // resonator damage (at a total deficit), so a losing side can flip the board — attacking beats defending.
-    var comebackAttackBonus = 0.8
-
-    // XMPs an agent hoards before committing to an assault. Lower = portals flip more often (more dynamic);
-    // was 30, which left the board static (few attacks ever started). The underdog also benefits via attackBoost.
-    var attackXmpThreshold = 15
+    // Min resonators an owned portal needs before it can link out (Portal.isLinkable). Low (Ingress-like:
+    // any owned portal links) so fields form even on a fast-flipping board; raise toward 8 for tankier,
+    // harder-to-field play. The field-formation lever.
+    var linkMinResos = 1
 
     var startPortals = 8 // initial portal count (chosen at onboarding — the "portal density"); scales by map size
     var quickStart = false // onboarding option: start with a full roster + AP so the early game moves
@@ -83,21 +80,29 @@ object Config {
     /** Building-shake intensity multiplier (0–2), tunable live from the menu "Building shake" slider. */
     var buildingShakeMultiplier = 1.0
 
-    /**
-     * Weapon-drop multiplier (XMP + Ultra-Strike yield per hack), tunable live from the menu "Weapon drops"
-     * slider. `1.0` = the base [DropRates] rate; defaults to `10.0` so agents hoard firepower fast and flip
-     * defended portals — i.e. a very dynamic, weapon-rich sim.
-     */
-    var weaponDropMultiplier = 10.0
-
-    // Combat dynamism (0 = realistic/tanky shields, 1 = portals flip very easily). Drives the live
-    // gameplay mitigation cap; tunable from the menu "Combat" slider. Leans dynamic by default — this is
-    // an AI-vs-AI sim, dynamism matters more than realism. (The authentic 95% cap stays in IngressFacts.)
-    var combatDynamism = 0.75
+    // Combat dynamism (0 = realistic/tanky shields, slow board … 1 = portals flip very easily). The SINGLE
+    // combat knob (menu "Combat dynamics" slider) — it drives shield mitigation, weapon-drop rate, how eagerly
+    // agents attack, and the underdog comeback. Default ≈0.45: measured (over seeded SimRunner matches) as the
+    // sweet spot — portals are tanky enough to HOLD + field + score, yet the board still churns and MU swings
+    // (true dynamism = MU volatility, not just fast capturing). Higher → churnier but fields rarely survive to
+    // score. (The authentic 95% mitigation cap stays in IngressFacts.)
+    var combatDynamism = 0.45
 
     /** Gameplay shield/link mitigation cap for the current dynamism: higher dynamism → lower cap → flips. */
     fun maxMitigation(): Int =
         (IngressFacts.MITIGATION_CAP_PCT - combatDynamism * 75.0).toInt().coerceIn(15, IngressFacts.MITIGATION_CAP_PCT)
+
+    /** Weapon-drop multiplier (XMP + Ultra-Strike yield per hack) vs the base [DropRates] rate: `1×` … `20×`
+     *  as dynamism rises, so a dynamic sim hands out the firepower needed to flip defended portals. */
+    fun weaponDropMultiplier(): Double = 1.0 + combatDynamism * 19.0
+
+    /** XMPs an agent hoards before committing to an assault: `30` (cautious) … `8` (trigger-happy) as
+     *  dynamism rises — lower means assaults start sooner and portals flip more often. */
+    fun attackXmpThreshold(): Int = (30 - combatDynamism * 22).toInt().coerceAtLeast(8)
+
+    /** Comeback bonus (`Balance.attackBoost`): the faction behind on portals deals up to this fraction MORE
+     *  resonator damage at a full deficit, so a losing side can turn the board. Scales with dynamism. */
+    fun comebackAttackBonus(): Double = combatDynamism
 
     const val apMultiplier = 10
 

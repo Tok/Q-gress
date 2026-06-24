@@ -21,14 +21,16 @@ object QActions {
     val HACK = QValue("hack", 1.0, "hack portal", icon(ActionItem.HACK))
     val GLYPH = QValue("glyph", 1.0, "glyph portal", icon(ActionItem.GLYPH))
 
-    // at friendly portals
-    val DEPLOY = QValue("deploy", 1.0, "deploy portal", icon(ActionItem.DEPLOY))
+    // at friendly portals — weighted ABOVE hack/attack so agents consolidate captured ground into
+    // fully-deployed, linked portals (the path to fields/MU) instead of just hacking + capturing forever.
+    // (These still only fire when actually possible — a deployable reso to hand, a key + an uncrossed target.)
+    val DEPLOY = QValue("deploy", 2.0, "deploy portal", icon(ActionItem.DEPLOY))
 
     // at neutral portals
-    val CAPTURE = QValue("capture", 1.0, "capture portal", icon(ActionItem.CAPTURE))
+    val CAPTURE = QValue("capture", 1.5, "capture portal", icon(ActionItem.CAPTURE))
 
-    // at friendly portals
-    val LINK = QValue("link", 1.0, "create link", icon(ActionItem.LINK))
+    // at friendly portals — the field-maker; weighted highest so a linkable portal actually gets linked
+    val LINK = QValue("link", 3.0, "create link", icon(ActionItem.LINK))
 
     // at enemy portals
     val ATTACK = QValue("attack", 1.0, "attack portals", icon(ActionItem.ATTACK))

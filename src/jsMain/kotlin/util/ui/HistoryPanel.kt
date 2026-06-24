@@ -34,9 +34,10 @@ object HistoryPanel {
 
     private val metrics = listOf(
         Metric("Mind Units", { World.calcTotalMu(Faction.ENL) }, { World.calcTotalMu(Faction.RES) }, { it.enlMu }, { it.resMu }),
-        Metric("Portals", { World.countPortals(Faction.ENL) }, { World.countPortals(Faction.RES) }, { it.enlPortals }, { it.resPortals }),
-        Metric("Links", { World.countLinks(Faction.ENL) }, { World.countLinks(Faction.RES) }, { it.enlLinks }, { it.resLinks }),
+        // Fields sits right under MU (MU = field area, so it's the headline's direct driver).
         Metric("Fields", { World.countFields(Faction.ENL) }, { World.countFields(Faction.RES) }, { it.enlFields }, { it.resFields }),
+        Metric("Links", { World.countLinks(Faction.ENL) }, { World.countLinks(Faction.RES) }, { it.enlLinks }, { it.resLinks }),
+        Metric("Portals", { World.countPortals(Faction.ENL) }, { World.countPortals(Faction.RES) }, { it.enlPortals }, { it.resPortals }),
         Metric("Agents", { World.countAgents(Faction.ENL) }, { World.countAgents(Faction.RES) }, { it.enlAgents }, { it.resAgents }),
     )
 

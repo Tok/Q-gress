@@ -32,6 +32,6 @@ object Balance {
         val theirs = World.countPortals(faction.enemy())
         val total = (mine + theirs).coerceAtLeast(1)
         val deficit = ((theirs - mine).toDouble() / total).coerceAtLeast(0.0)
-        return 1.0 + Config.comebackAttackBonus * deficit
+        return 1.0 + Config.comebackAttackBonus() * deficit
     }
 }

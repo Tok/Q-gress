@@ -15,7 +15,7 @@ object Attacker : ConditionalAction {
 
     // Only attack once the agent has hoarded enough XMPs to actually make a dent (taking a portal down
     // needs many bursts) — so agents commit to a real assault instead of one blast then wandering off.
-    override fun isActionPossible(agent: Agent) = agent.inventory.findXmps().count() >= Config.attackXmpThreshold
+    override fun isActionPossible(agent: Agent) = agent.inventory.findXmps().count() >= Config.attackXmpThreshold()
 
     override fun performAction(agent: Agent): Agent {
         // Sustained assault: keep firing volleys into the portal until it falls, the agent runs dry on

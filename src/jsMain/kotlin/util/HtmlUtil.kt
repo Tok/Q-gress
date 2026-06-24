@@ -685,14 +685,9 @@ object HtmlUtil {
         val dmgNums = createMenuCheckbox("damageNumbersToggle", "Damage numbers") { DamageNumberFx.enabled = it }
         (dmgNums.firstChild as? HTMLInputElement)?.checked = DamageNumberFx.enabled
         menu.append(dmgNums)
-        // Combat dynamism (0 = realistic/tanky shields … 1 = portals flip very easily). Live-tunable.
-        menu.append(MenuControls.slider("Combat", Config.combatDynamism) { Config.combatDynamism = it })
-        // Weapon-drop rate — XMP + Ultra-Strike yield per hack (1× = base … default 10×). Live-tunable.
-        menu.append(
-            MenuControls.slider("Weapon drops", Config.weaponDropMultiplier, 1.0, 20.0, 1.0) {
-                Config.weaponDropMultiplier = it
-            },
-        )
+        // The single combat-dynamics knob (0 = realistic/tanky, slow board … 1 = portals flip very easily).
+        // Drives shield mitigation + weapon drops + attack eagerness + the underdog comeback. Live-tunable.
+        menu.append(MenuControls.slider("Combat dynamics", Config.combatDynamism) { Config.combatDynamism = it })
         // Fade the 3D buildings when crowded areas hide the action.
         menu.append(MenuControls.slider("Buildings", 0.9) { MapUtil.setBuildingOpacity(it) })
         // Building-shake intensity (0 = off … 2 = 200%).

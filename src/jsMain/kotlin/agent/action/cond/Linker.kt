@@ -21,9 +21,17 @@ object Linker : ConditionalAction {
     override fun performAction(agent: Agent): Agent {
         agent.action.start(actionItem)
         val linkOptions: List<Portal> = targetOptions(agent)
-        val linkTarget = Util.shuffle(linkOptions).first()
+        // Prefer a target that closes a TRIANGLE (= a field, the only source of MU): one sharing a connected
+        // portal with our portal, so createLink's anchor check fires. Else link randomly (builds toward future
+        // triangles). This is what turns "lots of links" into actual fields instead of a sprawl of lines.
+        val linkTarget = fieldClosingTarget(agent, linkOptions) ?: Util.shuffle(linkOptions).first()
         agent.actionPortal.createLink(agent, linkTarget)
         return agent
+    }
+
+    private fun fieldClosingTarget(agent: Agent, options: List<Portal>): Portal? {
+        val ourNeighbours = agent.actionPortal.findConnectedPortals().toSet()
+        return options.firstOrNull { target -> target.findConnectedPortals().any { ourNeighbours.contains(it) } }
     }
 
     private fun hasFriendlyKeys(agent: Agent) = agent.keySet().any { it.isFriendlyToOwner() }
