@@ -29,12 +29,18 @@ can play any side; any two brains can be matched. **Desktop-only**; mobile is bl
 the AI layer lands, the slider sim is the substrate we keep hardening.
 
 ## 3D / rendering
+- [ ] **★ 3D portal names (HIGH PRIORITY — next session).** Render each portal's name as a 3D label in the
+  scene (billboarded / above the orb), not just in the DOM HUD. The names already resolve from map POI/street
+  data (`PortalNames`); this is the 3D presentation (a text mesh / sprite per portal, faction-tinted,
+  LOD/cull at distance, kept legible against buildings).
 - [x] **Buildings: parallel mode (DONE)** — at some locations (e.g. Red Square) not every MapLibre building
-  meshed, but we hid MapLibre's whole layer → gaps. `OwnBuildings.PARALLEL_MODE` now keeps MapLibre's
-  buildings visible everywhere (look + native shake) and uses our meshes as invisible shadow-casters (+ the
-  colliders/letter-hitboxes already come from the full feature set). _Future refinement:_ per-building
-  replacement (hide only the MapLibre footprints we have a mesh for) so we can show our own look without gaps —
-  needs matching our synthetic keys to MapLibre feature ids (or a custom building layer we fully own).
+  meshed, but we hid MapLibre's whole layer → gaps. `OwnBuildings.PARALLEL_MODE` keeps MapLibre's buildings
+  visible everywhere (fills the gaps) **while our own meshes still render on top, visible** — so they shake
+  (per-mesh, no feature-id needed → works in-game + title) + cast shadows as before; MapLibre just fills where
+  a footprint failed to mesh. (Earlier tried invisible shadow-only meshes + routing the shake to MapLibre, but
+  MapLibre's feature-state shake needs feature ids the tiles lack → nothing shook; reverted to visible meshes.)
+  _Future refinement:_ per-building replacement (hide only the MapLibre footprints we have a mesh for) so the
+  gap-fillers and our look match — needs matching our synthetic keys to MapLibre feature ids.
 - [ ] **Terrain follow-ups** (DEM heights shipped). Terrain-aware **shatter ground** — the cannon-es
   plane is still flat z=0, so shards/pole sink to sea level on high ground; maybe a Menu exaggeration
   slider; resample the height grid if the play area ever moves (ties into the grand-game movable field).

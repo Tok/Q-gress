@@ -34,21 +34,14 @@ object OwnBuildings {
     const val REPLACE_BUILDINGS = true
 
     /**
-     * **Parallel mode** (fixes "not all MapLibre buildings get replaced" — e.g. Red Square): instead of hiding
-     * MapLibre's extrusion layer and showing OUR gray meshes (which leaves gaps wherever a footprint failed to
-     * mesh), keep **MapLibre's buildings visible everywhere** (the look + the native shake) and use our meshes
-     * only as **invisible shadow-casters** (opacity 0, no depth-write → they cast real sun shadows + occlude
-     * nothing, while the debris colliders / letter hitboxes come from the full feature set regardless). Flip to
-     * `false` for the old full-replacement look (our meshes visible, MapLibre hidden).
+     * **Parallel mode** (fixes "not all MapLibre buildings get replaced" — e.g. Red Square): keep MapLibre's
+     * extrusion layer **visible** so wherever a footprint failed to mesh, MapLibre fills the gap — while OUR
+     * meshes still render on top **visible**, so they shake (`applyBlast`, no feature-id needed → works in-game
+     * AND on the title) + cast real sun shadows, exactly as before. Flip to `false` to hide MapLibre entirely
+     * (the pure full-replacement look — gaps possible). The only difference vs full-replace is MapLibre staying
+     * on underneath to fill gaps; the per-mesh shake is unchanged.
      */
     const val PARALLEL_MODE = true
-
-    /**
-     * True when OUR meshes are the **visible** buildings (full-replacement) — so they take the XMP/US shake.
-     * In [PARALLEL_MODE] the visible buildings are MapLibre's (ours are invisible shadow-casters), so the
-     * native `util.BuildingShake` shakes them instead; shaking our hidden meshes would just be invisible.
-     */
-    fun shakesOwnMeshes(): Boolean = REPLACE_BUILDINGS && !PARALLEL_MODE
 
     const val COLOR = "#333333"
     const val OPACITY = 0.9
@@ -85,10 +78,7 @@ object OwnBuildings {
         val p: dynamic = js("({})")
         p.color = COLOR
         p.transparent = true
-        // Parallel mode: invisible (opacity 0) + no depth-write so our meshes don't occlude the sim or
-        // MapLibre's visible buildings — they exist only to cast shadows (the shadow pass ignores opacity).
-        p.opacity = if (PARALLEL_MODE) 0.0 else OPACITY
-        p.depthWrite = !PARALLEL_MODE
+        p.opacity = OPACITY // visible meshes (they shake + cast shadows); MapLibre fills gaps behind in parallel mode
         p.metalness = 0.0
         p.roughness = 1.0
         material = Three.MeshStandardMaterial(p)
