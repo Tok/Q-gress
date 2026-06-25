@@ -6,6 +6,21 @@ Future TODOs only. For *what's already shipped* see [docs/FEATURES.md](docs/FEAT
 for *how the system fits together* see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md); for the
 AI-driver design notes see [docs/NN.md](docs/NN.md) + [docs/LLM.md](docs/LLM.md).
 
+## ⚑ Pending visual verification (do a `./start.sh` pass next session)
+
+Shipped but unverified in-browser (built headless — confirm they read right, then tick off):
+- **Parallel buildings** (`OwnBuildings.PARALLEL_MODE`) — esp. **Red Square**: gaps gone? MapLibre buildings
+  visible + our shadows look right? (flip `PARALLEL_MODE=false` to compare).
+- **Hack/glyph centrifuge** — do the top o-rings now tilt out *with* the rods, and fall with them on shatter /
+  reso-destroyed?
+- **NET tab** — does maximize/collapse now compact it (toolbar-clearance fix)? Activation diagram + **genome
+  heatmap** legible? Multi-layer (16×16) renders as 4 columns?
+- **"Who plays?" onboarding** — grid aligned, selected option clearly highlighted, opponent has no Human,
+  picks actually take effect in-game (toolbar reflects them)?
+- **LLM driver** (`WebLlmClient`) — does the WebGPU model load + drive a faction? (the only truly unverifiable
+  bit; reasoning panel shows status/prompt/reply).
+- **Misc**: white right-aligned lock icons; slower initial fly-to-Home (2.6 s); AI pickers in the top toolbar.
+
 ## North star
 
 Q-Gress becomes an **AI-vs-AI sandbox**: each faction (ENL/RES) is driven by an agent whose
@@ -290,12 +305,30 @@ area is maximized, and hold it across the cycle. So fitness = the **sum/average 
   render their throwaway portals), then shows the `Standing` table. Lets you **pit net variants** (different
   `NetArch`) head-to-head and see which wins.
 
-**6.5 — Visual NN trainer** _(after the above lands)_
-- [ ] An in-browser **trainer UI**: define a `NetArch` (layers/widths/bias/activation) + `EvolutionConfig`
-  (pop/gens/mutation), run `Evolution` live with a fitness curve + best-genome preview (the genome heatmap +
-  activation viz already exist), then **save the winner** to `NetStore` / install it as a driver. The headless
-  pieces (`Evolution`, `SimRunner`, `Tournament`, `GenomeIO`, `NetStore`) are all in place; this is the UI +
-  wiring (run training off the main thread / chunked so the sim stays smooth).
+**6.5 — Visual NN trainer** _(NEXT SESSION — start here)_
+- [ ] **In-browser trainer UI, in a new `TRAIN` footer tab.** Define a `NetArch` (layers/widths/bias/
+  activation) + `EvolutionConfig` (pop/gens/mutation), run `Evolution` live with a **fitness curve** + a
+  champion preview (reuse the genome heatmap + activation viz), then **save the winner** to `NetStore` /
+  install it as a driver. The headless pieces (`Evolution`, `SimRunner`, `Tournament`, `GenomeIO`, `NetStore`,
+  `WorldSnapshot`) are all in place — this is the UI + the live-run wiring. **Concrete plan (from this
+  session's scouting):**
+  1. **Make `Evolution` resumable** — add an `Evolution.Session` (constructor `(grid, seed, config, opponent)`)
+     holding the population, with `step(): Double` running ONE generation (returns champion fitness) +
+     `bestGenome`/`bestFitness`/`generation`/`done`. Refactor `train()` to loop `Session.step()` (so the
+     existing `EvolutionTest` still covers it). Add a `SessionTest` (N steps ≡ `train(generations=N)`).
+  2. **Drive it chunked off the UI** — the trainer calls `session.step()` once per `window.setTimeout(…, 0)`
+     and yields between generations (one generation blocks briefly; keep the in-browser default config SMALL —
+     e.g. pop 10–12, short matches — so each step is well under a second; note that serious training stays
+     headless). Update the fitness curve + status each step.
+  3. **Don't clobber the live game** — `SimRunner.reset()` clears the shared `World` singletons, so wrap the
+     whole run in `WorldSnapshot.capture()` → train → `WorldSnapshot.restore()`. **Pause the live loop while
+     training:** `HtmlUtil.tick()` early-returns on `!World.isReady` (HtmlUtil.kt:76) — gate it on a
+     `training` flag too (or hold `isReady=false` for the duration), and the snapshot restores the real state
+     after. (Also install `NoOpEffects` via `Fx` during the run so no 3D FX fire — same as the leaderboard.)
+  4. **Champion actions** — on done: show fitness, "Save to NetStore" (`NetStore.save(GenomeIO.encode(net,
+     fitness))`), and "Install as ENL/RES driver" (`FactionPolicies.set(faction, NetPolicy(net, faction))`).
+- [ ] **Then: the in-game leaderboard UI** (6.4, above) shares this exact run harness (snapshot + pause + Fx
+  no-op) — build it right after the trainer so net variants can be ranked from the same surface.
 - [ ] **icebox — download / upload trained nets.** `GenomeIO` already JSON-ables a genome+arch (small, ~16 KB
   at 16×16), so: a "download champion" (Blob → file) + "load from file/paste" path, and a small library of
   saved nets. Lets nets be shared / versioned outside `localStorage`.

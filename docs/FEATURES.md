@@ -108,9 +108,12 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
   tile carried only ~19 of the **1100** buildings OSM actually has there — and its query APIs returned
   even less, so Overpass is the only source with the full set. We control these meshes: they **cast +
   receive real sun shadows**, **grow in** with world-gen, sit on the terrain (live-DEM elevation via
-  `Scene3D.groundZAtLngLat`), seed debris colliders, and MapLibre's own fill-extrusion layer is hidden
-  once ours are in. Keyed by footprint centroid (no tile id needed); `OwnBuildings.REPLACE_BUILDINGS`
-  falls back to MapLibre's buildings if Overpass is down. *(The pbf + `@mapbox/vector-tile` decode of
+  `Scene3D.groundZAtLngLat`), seed debris colliders, and (in full-replace mode) MapLibre's own
+  fill-extrusion layer is hidden once ours are in. Keyed by footprint centroid (no tile id needed);
+  `OwnBuildings.REPLACE_BUILDINGS` falls back to MapLibre's buildings if Overpass is down. **Parallel mode**
+  (`OwnBuildings.PARALLEL_MODE`, default on) keeps MapLibre's buildings visible *everywhere* (the look + the
+  native shake, no gaps where a footprint failed to mesh — e.g. Red Square) and uses our meshes only as
+  **invisible shadow-casters**. *(The pbf + `@mapbox/vector-tile` decode of
   the raw `.pbf` tiles stays in the tree — `external/VectorTile.kt` — for reusing other tile layers.)*
 - **Buildings stream as the camera flies elsewhere** (`util/BuildingStream`): leaving the play area no
   longer shows bare ground — on each map `idle` over a not-yet-covered area, a region (~2.6 km box,
@@ -177,14 +180,20 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
   over-time** sparklines (one uPlot per slider slot per faction: the visible record of an AI driver re-tuning
   the sliders — drifting lines — vs Manual's flat ones; faction-agnostic overlap blend, snapshots via each
   faction's policy weighting so manual + AI read uniformly). The future LLM **reasoning** panel lands here too.
+- **Configurable net architecture** (`ai/net/NetArch`): the net shape is a first-class knob — any number of
+  hidden layers, any width (**default `13 → 16 → 16 → 17`, two hidden layers of 16**), a bias toggle, and a
+  hidden activation (TANH/RELU/SIGMOID/LINEAR; output always sigmoid). `GenomeIO` serializes the whole arch
+  (back-compatible with old single-layer genomes); `Evolution`, the NET viz, and the `Tournament` all work for
+  any shape — so different nets can be matched head-to-head.
 - **NET footer tab** (`util/ui/NetVizPanel`): a live **activation diagram** of the neural-net driver. Per
-  net-driven faction it draws the net as three node columns — observation inputs, hidden neurons, slider
+  net-driven faction it draws the net as node columns — observation inputs, **each hidden layer**, slider
   outputs — wired by edges whose brightness tracks each connection's live contribution (weight × upstream
   activation). Node brightness = activation; the strongest outputs (the actions the net favours now) are
-  ringed + labelled and the top one's incoming edges are lit as the "chosen path". Beside it, a **stats
-  sidebar** (network shape, champion fitness, the dominant driving input, the peak hidden neuron, the favoured
-  actions) updates live. The canvas renders at **device-pixel resolution** for crisp lines/text. You watch
-  the net think as the match swings (`Net.forwardTraced` exposes the per-layer activations).
+  ringed + labelled and the top one's incoming edges are lit as the "chosen path". Beside it a **stats
+  sidebar** (network shape, champion fitness, dominant driving input, peak hidden neuron, favoured actions),
+  and below it a **genome heatmap** — every weight as a sign×magnitude cell. The canvas renders at
+  **device-pixel resolution** for crisp lines/text. You watch the net think as the match swings
+  (`Net.forwardTraced` exposes the per-layer activations).
 - **Portals are discovered, not placed**: manual portal **placement** and **deletion** are removed
   from the real game (the map click only selects/deselects; the Inspector has no Remove button). The
   `/#demo` sandbox keeps LMB-place / RMB-shatter for showcasing.

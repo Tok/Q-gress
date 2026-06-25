@@ -1,4 +1,8 @@
-# Q-Gress (3D)
+<p align="center">
+  <a href="https://tok.github.io/Q-gress/"><img src="assets/images/banner-readme.png" alt="Q-Gress" width="100%"></a>
+</p>
+
+# Q-Gress
 
 [![CI](https://github.com/Tok/Q-gress/actions/workflows/ci.yml/badge.svg)](https://github.com/Tok/Q-gress/actions/workflows/ci.yml)
 [![desktop only](https://img.shields.io/badge/platform-desktop%20only-informational)](#desktop-only)
