@@ -201,6 +201,11 @@ the board; fair shuffled agent order). Deeper "no single strategy dominates" val
   shakeable); (b) wire `OwnBuildings.clear()` + `BuildingStream.reset()` into world-regen (they exist, unused);
   (c) a per-bbox **Overpass response cache** so a long fly-around doesn't hammer the public instance; (d) widen
   / view-follow the sun's ortho shadow camera so **streamed** buildings beyond the play area cast/receive.
+- **Sound-design pass → 303 / 808 / 909.** The detonations now lead with a deep, hard 909 kick + reverb send
+  (`KickDrum`/`AudioFx`); take the rest of the palette the same way — drum-machine-flavoured hits (808 toms/
+  claps, 909 hats) for deploys/links/checkpoints and acid-303 sweeps for viruses/power-ups, a shared reverb/
+  delay bus, and maybe a subtle musical bed. Tune the kick (`XMP_KICK_HZ`/`US_KICK_HZ`, `KickDrum` consts) +
+  global `AudioFx.setReverbMix` to taste; the `#audio` demo is the dial-in surface.
 - **TTS announcements (low pri)** — speak key events (captures, fields, cycle changes) via `speechSynthesis`,
   throttled, per-faction voices, off by default behind a toggle + master volume.
 - **Modern Ingress (post-2018), optional** — most-aligned first: **Machina** (the red AI "third faction" — the

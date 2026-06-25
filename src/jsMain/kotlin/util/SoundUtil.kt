@@ -47,7 +47,11 @@ object SoundUtil {
     private const val ROLLOFF = 0.5
     private const val PANNING_MODEL = "HRTF" // front/back + elevation cues (vs cheaper "equalpower")
     private const val MASTER_BOOST = 2.6 // lift the whole bus (3D attenuation made it quiet); limiter guards clipping
-    private const val DEEP_THUMP_HZ = 48.0 // fixed deep sub-kick under the XMP explosion (adds weight)
+
+    // 909-style kick under the detonations (deep, hard, punchy; see [KickDrum]) — start pitch per weapon.
+    private const val XMP_KICK_HZ = 120.0 // XMP kick start pitch
+    private const val US_KICK_HZ = 165.0 // Ultra-Strike kick — a touch higher + tighter than the XMP
+    private const val BLAST_REVERB_SEND = 0.22 // reverb send for the explosion rumble tail
     private const val MUFFLE_CLOSED_HZ = 600.0 // muffled: distant/underwater (title behind onboarding)
 
     // The whole audio graph is LAZY so merely referencing SoundUtil headless (Node tests / SimRunner)
@@ -268,6 +272,7 @@ object SoundUtil {
      */
     fun playUltraStrike(pos: Pos) {
         if (isMuted()) return
+        KickDrum.play(pos, US_KICK_HZ, 1.0, 0.24) // deep, hard 909 kick — punch first (a touch higher + tighter than the XMP)
         playNoiseCrack(pos, 0.9, 0.05) // sharp, short crack
         decayVoice(createExponentialRampOscillator(OscillatorType.SQUARE, 440.0, 90.0, 0.1), pos, 0.5, 0.1) // high→low "pew"
         decayVoice(createExponentialRampOscillator(OscillatorType.SINE, 150.0, 60.0, 0.12), pos, 0.85, 0.12) // tight sub punch
@@ -283,8 +288,8 @@ object SoundUtil {
         playNoiseCrack(pos, amplitude * 0.7, 0.5) // (a) detonation snap (tamed — the blast read too bright/high)
         // (b) sub thump at the note, dropping an octave, quick decay
         decayVoice(createExponentialRampOscillator(OscillatorType.SINE, note, note * 0.5, 0.4), pos, amplitude * 1.2, 0.4)
-        // (b2) deep body thump — a fixed, loud low sub-kick UNDER the noise so the blast lands with weight.
-        decayVoice(createExponentialRampOscillator(OscillatorType.SINE, DEEP_THUMP_HZ, DEEP_THUMP_HZ * 0.6, 0.3), pos, amplitude * 1.9, 0.3)
+        // (b2) deep, hard 909 kick at the blast front — the punch that lands the detonation with weight.
+        KickDrum.play(pos, XMP_KICK_HZ, amplitude * 1.8, 0.36)
         // (c) long rumble tail — fast attack, brightness + level fall over the fireball's life
         val sr = audioCtx.sampleRate
         val len = (life * sr).toInt().coerceAtLeast(1)
@@ -311,6 +316,7 @@ object SoundUtil {
         lowpass.connect(rumbleGain)
         rumbleGain.connect(panNode)
         panNode.connect(masterGain)
+        KickDrum.sendToReverb(rumbleGain, amplitude * BLAST_REVERB_SEND) // a reverberant tail (space on the blast)
         source.start()
         source.stop(n + life)
     }
@@ -643,7 +649,7 @@ object SoundUtil {
 
     internal fun now() = audioCtx.currentTime.toDouble()
 
-    private fun createStaticOscillator(type: String, freq: Double): OscillatorNode {
+    internal fun createStaticOscillator(type: String, freq: Double): OscillatorNode {
         val node = audioCtx.createOscillator()
         node.type = type
         node.frequency.setTargetAtTime(freq, now(), 0.0)
@@ -721,7 +727,7 @@ object SoundUtil {
         return node
     }
 
-    private fun createStaticGain(gain: Double): GainNode {
+    internal fun createStaticGain(gain: Double): GainNode {
         val node = audioCtx.createGain()
         node.gain.setTargetAtTime(gain, now(), 0.0)
         return node

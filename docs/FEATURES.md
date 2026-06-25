@@ -375,10 +375,12 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
   **`#audio` demo** auditions every standalone SFX (incl. the ultra-strike) and exposes live sliders for
   the low/high-pass + reverb mix + a major/minor toggle, to dial the audio in.
 - **Layered XMP explosion** (`SoundUtil.playXmpExplosion`): on top of the kept synthetic boom + noise
-  blast, a (tamed) detonation snap + chest-punch sub at the note + a **loud fixed deep sub-kick**
-  (`DEEP_THUMP_HZ`) for weight (the blast read too bright) + a long lowpassed rumble tail whose
-  brightness and amplitude decay over the fireball's life — rising and dissolving with the mushroom.
-  **Ultra-strike** has its own `playUltraStrike` — a short, sharp, punchy hit (no rumble tail).
+  blast, a (tamed) detonation snap + chest-punch sub at the note + a deep, hard **909-style kick**
+  (`KickDrum`: fast pitch-drop sine + a high-passed beater click) for the punch + a long lowpassed rumble
+  tail whose brightness and amplitude decay over the fireball's life — rising and dissolving with the
+  mushroom. The kick + rumble feed a **reverb send** (`AudioFx` per-voice bus) for space. **Ultra-strike**
+  (`playUltraStrike`) leads with the same kick a touch **higher + tighter**, then its short sharp crack —
+  punchy, no rumble tail. (Both steps toward a wider **303/808/909** palette — see PLAN.)
 
 ## Mods, viruses, items & drop rates
 - **4 mod slots per portal** (`portal/ModSlot`) holding a generic `Mod` (`items/deployable/Mod`):
