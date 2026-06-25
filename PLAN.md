@@ -11,9 +11,10 @@ Branch: `develop` · Owner: @zirteq
 
 ## ⚑ Verify in-browser first (`./start.sh`)
 Built headless recently, not yet confirmed on screen — eyeball these, then move on:
-- **3D portal names** (`PortalLabels`) — faction-tinted name+level billboards float above orbs, legible over
-  buildings; they **fade + cull** with distance and **de-clutter** in a crowd (only the nearest/biggest show).
-  Tune `FADE_NEAR`/`FADE_FAR`/`DECLUTTER_PX` if the cull distance reads wrong for the scene scale.
+- **3D portal names** (`PortalNameTicker`) — **hover** a portal in-game → its name rings the orb as spinning
+  extruded 3D letters (white, φ-smaller damage-number style, facing sideways). Arabic/Hebrew spin **CCW**, the
+  rest **CW**; **no names on the title**. Tune `SPIN_SPEED` / `RADIUS_MARGIN` / `NAME_RING_GAP`; if a name reads
+  mirrored as it spins, flip the placement sign in `buildRing` (the spin-direction requirement is separate).
 - **Buildings (parallel mode)** — at e.g. **Red Square**: gaps gone; our meshes **and** MapLibre's gap-fillers
   both bob on an XMP. The z-fight + too-dark fixes landed (footprint inset + roof drop + emissive) — confirm
   **no flicker** where the two overlap and the tone matches MapLibre; tune `EMISSIVE_INTENSITY` /

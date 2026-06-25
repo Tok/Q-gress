@@ -26,15 +26,15 @@ import kotlin.math.sqrt
  */
 object DamageNumberFx {
     private const val FONT_URL = "fonts/Coda-ExtraBold.typeface.json"
-    private const val SIZE = 3.4 // glyph em size (world units)
-    private const val DEPTH = 0.8 // extrude depth
-    private const val GAP = 0.6 // gap between digits
+    internal const val SIZE = 3.4 // glyph em size (world units) — shared with PortalNameTicker (same style)
+    internal const val DEPTH = 0.8 // extrude depth
+    internal const val GAP = 0.6 // gap between digits
     private const val MASS = 0.5
     private const val GRAVITY = 20.0
     private const val RISE_HEIGHT = 7.5 // how far the connected number lerps up off the portal top (m)
-    private const val DIGIT_OPACITY = 0.82 // a touch of transparency (glassy), still clearly readable
-    private const val WIRE_COPIES = 3 // WebGL ignores LineBasicMaterial.linewidth → concentric copies fake a bolder stroke
-    private const val WIRE_STEP = 0.03 // scale increment between copies (outward halo = apparent line thickness)
+    internal const val DIGIT_OPACITY = 0.82 // a touch of transparency (glassy), still clearly readable
+    internal const val WIRE_COPIES = 3 // WebGL ignores LineBasicMaterial.linewidth → concentric copies fake a bolder stroke
+    internal const val WIRE_STEP = 0.03 // scale increment between copies (outward halo = apparent line thickness)
     private const val RISE_DUR = 0.55 // seconds for the rise
     private const val HANG_DUR = 1.4 // seconds it hangs upright before the digits drop
     private const val STAGGER = 0.1 // delay between digit releases (right-most first)
@@ -249,7 +249,7 @@ object DamageNumberFx {
     }
 
     private fun buildDigits(f: dynamic, text: String, fillMat: dynamic, wireMat: dynamic, g: dynamic): List<Digit> {
-        val geos = text.map { glyphGeometry(f, it.toString()) }
+        val geos = text.map { glyphGeometry(f, it.toString(), SIZE, DEPTH) }
         val widths = geos.map { abs((it.boundingBox.max.x as Double) - (it.boundingBox.min.x as Double)) } // mirrored → abs
         val total = widths.sum() + GAP * (geos.size - 1)
         var cursor = -total / 2.0
@@ -269,7 +269,8 @@ object DamageNumberFx {
 
     // Black edge outline, ~3× bolder: concentric LineSegments copies (1.03/1.06/1.09×) form a thicker
     // black band around the glyph, since WebGL won't honour a fat linewidth. Copies share one EdgesGeometry.
-    private fun addBoldWire(mesh: dynamic, geo: dynamic, wireMat: dynamic) {
+    // Shared with PortalNameTicker (same outlined look).
+    internal fun addBoldWire(mesh: dynamic, geo: dynamic, wireMat: dynamic) {
         val edges = Three.EdgesGeometry(geo)
         for (k in 1..WIRE_COPIES) {
             val wire = Three.LineSegments(edges, wireMat)
@@ -279,12 +280,13 @@ object DamageNumberFx {
         }
     }
 
-    private fun glyphGeometry(f: dynamic, ch: String): dynamic {
+    // One centred, extruded glyph at [size]/[depth]. Shared with PortalNameTicker (same Coda style, φ-scaled).
+    internal fun glyphGeometry(f: dynamic, ch: String, size: Double, depth: Double): dynamic {
         val params: dynamic = js("({})")
         params.font = f
-        params.size = SIZE
-        params.depth = DEPTH
-        params.height = DEPTH
+        params.size = size
+        params.depth = depth
+        params.height = depth
         params.curveSegments = 3
         params.bevelEnabled = true
         params.bevelThickness = 0.08
@@ -296,7 +298,7 @@ object DamageNumberFx {
         geo.asDynamic().translate(
             -((bb.min.x as Double) + (bb.max.x as Double)) / 2.0,
             -((bb.min.y as Double) + (bb.max.y as Double)) / 2.0,
-            -DEPTH / 2.0,
+            -depth / 2.0,
         )
         geo.computeBoundingBox() // refresh after centring (used for width/height)
         return geo

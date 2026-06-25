@@ -81,7 +81,7 @@ object Scene3D {
     // tallest bar (at max XM capacity); coin foreshortens flat so on-screen it reads taller
     private const val ENERGY_BAR_MAX_H = INDICATOR_SIZE * 3.0
     private const val MAX_XM_CAPACITY = 14400 // Agent.xmCapacity at L16+ (where capacity stops growing)
-    private const val LABEL_GAP = 4.0 // gap above the orb top before the portal-name label (see PortalLabels)
+    private const val NAME_RING_GAP = 2.0 // gap above the orb top for the hovered-portal name ring (PortalNameTicker)
     private const val POLE_R = 2.0
     private const val LINK_R = 0.7 // link pipe radius (metres)
     private const val PORTAL_GROW_S = 0.7 // seconds for a new portal to inflate in (pole rises, orb pops)
@@ -279,7 +279,7 @@ object Scene3D {
         ShatterFx.register(newScene)
         DamageNumberFx.register(newScene)
         OwnBuildings.register(newScene) // our own play-area building meshes (replace MapLibre's after gen)
-        PortalLabels.register(newScene) // 3D portal name/level billboards (own group; groomed each frame)
+        PortalNameTicker.register(newScene) // hovered-portal name ring (own group; spun each frame)
         BoltFx.register(newScene)
         XmFx.register(newScene)
         showcaseGroup = Three.Group()
@@ -310,8 +310,6 @@ object Scene3D {
             .scale(Three.Vector3(metersScale, -metersScale, metersScale))
         cam.projectionMatrix = mapMatrix.multiply(modelMatrix)
         GlassShader.updateEye(cam.projectionMatrix) // camera-tracking glass rim (orbs + links)
-        val labelCanvas = map.getCanvas()
-        PortalLabels.update(cam.projectionMatrix, GlassShader.eye(), labelCanvas.width as Double, labelCanvas.height as Double)
         val invProj = Three.Matrix4().copy(cam.projectionMatrix).invert()
         updateAudioListener(invProj) // place the Web Audio listener at the live camera
         // Advance the sim-scaled animation clock every frame (so plasma fields shimmer even when no
@@ -334,6 +332,7 @@ object Scene3D {
             BuildingShake.update(animClockMs / 1000.0)
         }
         updateEffects(map, dt, invProj)
+        PortalNameTicker.update(dt) // spin the hovered portal's name ring (no-op when nothing is hovered)
         tumbleModTetras() // gentle continuous tumble of the mod tetrahedra
         updateTitleWordmark(invProj, dt) // camera-lock the 3D title letters (no-op until loaded)
         VectorFieldOverlay.sync() // paced flow-field sweep; driven here (continuous loop) so it animates through world-gen too
@@ -384,7 +383,6 @@ object Scene3D {
         modTetras.clear() // rebuilt by buildMods below
         shieldMats.clear() // rebuilt by addShieldShells below
         clear(portalsGroup)
-        PortalLabels.beginSync() // own group → not wiped by clear(indicatorsGroup) below
         World.allPortals.forEach { addPortal(it) }
         syncPoleColliders()
         clear(fieldsGroup)
@@ -947,7 +945,6 @@ object Scene3D {
         // Selection keeps the faction hue but lights the orb brighter (no neutral-looking white tint);
         // buildPortal derives that from id == selected.
         val parts = buildPortal(portalsGroup, portal.location, level, baseColor, id, resos)
-        addPortalLabel(portal, level)
         buildMods(parts[0], portal) // chrome mods + shield bubble inside/around the orb (if shielded)
         HackFx.bind(id, parts[3]) // spin the collar if this portal is being hacked
         // Build-in: the pole rises and the orb grows from the ground; [reform] re-pops the orb only.
@@ -1536,10 +1533,23 @@ object Scene3D {
         }
     }
 
-    /** Hand this portal's name/level to [PortalLabels] (faction-tinted billboard above the orb). */
-    private fun addPortalLabel(portal: Portal, level: Double) {
-        val z = groundZ(portal.location) + orbCenterZ(level) + TOP_R * orbScale(level) + LABEL_GAP
-        val color = portal.owner?.faction?.color ?: NEUTRAL_COLOR
-        PortalLabels.add(portal.name, portal.getLevel().toInt(), sceneX(portal.location), sceneY(portal.location), z, color)
+    /** In-game hover: show the spinning name ticker for [portal] above its orb (null clears it). The title
+     *  never wires hover, so no names appear there. */
+    fun setHoveredPortal(portal: Portal?) {
+        if (portal == null) {
+            PortalNameTicker.hide()
+            return
+        }
+        val level = portal.getLevel().toInt().toDouble()
+        val orbR = TOP_R * orbScale(level)
+        val z = groundZ(portal.location) + orbCenterZ(level) + orbR + NAME_RING_GAP // top of the over-portal stack
+        PortalNameTicker.show(
+            "portal:${portal.id}",
+            portal.name,
+            sceneX(portal.location),
+            sceneY(portal.location),
+            z,
+            orbR,
+        )
     }
 }

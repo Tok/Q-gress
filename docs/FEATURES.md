@@ -52,12 +52,12 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
     camera-tracking rim via `updateEye`).
   - Portals = **metal pole + rubber gasket + glass orb** (φ-scaled by level L1→L8), **grow-on-spawn**
     + **level-up tween**. **Selection** keeps the faction hue and just lights the orb brighter
-    (`GlassShader.SELECT_BRIGHT`) — no more neutral-looking white tint. A **name + level billboard**
-    floats above each portal's orb (`system/display/PortalLabels`: cached `CanvasTexture` sprite, Chakra
-    Petch) with a **faction-tinted halo** (ENL green / RES blue / neutral grey) over white text, drawn on
-    top of buildings (`depthTest = false`). Groomed every frame: **distance fade + cull** (gone past
-    `FADE_FAR`) and **screen-space de-clutter** — in a crowd the higher-level (then nearer) portal keeps
-    its label and neighbours within `DECLUTTER_PX` are hidden.
+    (`GlassShader.SELECT_BRIGHT`) — no more neutral-looking white tint. On **hover**, the portal's name
+    appears as a ring of **extruded 3D letters circling the orb like a ticker** (`system/display/PortalNameTicker`):
+    same Coda glyph style as the damage numbers (shared `glyphGeometry`/`addBoldWire`), white and **φ
+    smaller**, each letter upright and facing **sideways** (radially outward), the whole ring spinning.
+    **Spin direction follows the script** — Arabic / Hebrew names spin **CCW**, everything else **CW**.
+    Hover-driven only (off the in-game map `mousemove`), so the **title shows no names**.
   - **Resonators** — 8 colour-coded rods in rubber slot-rings, real-time from `resoMap()`, grow
     with the pole. Each rod shows its **energy/health**: a bottom→top glowing **fill bar** (`GlassShader`
     `uFill`) plus a glowing **"energy surface" disc** (`Materials.resonatorCap`, additive) positioned at
