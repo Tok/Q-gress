@@ -329,7 +329,7 @@ object Scene3D {
         updateShields(animClockMs / 1000.0) // shield hex/rim animation + per-portal blast-absorb ripple
         // Decay building bobs back to rest (cheap when idle). Our own meshes bob in scene space; MapLibre's
         // fill-extrusion bobs via feature-state — only one is the live building set.
-        if (OwnBuildings.REPLACE_BUILDINGS) OwnBuildings.updateBobs(animClockMs / 1000.0) else BuildingShake.update(animClockMs / 1000.0)
+        if (OwnBuildings.shakesOwnMeshes()) OwnBuildings.updateBobs(animClockMs / 1000.0) else BuildingShake.update(animClockMs / 1000.0)
         updateEffects(map, dt, invProj)
         tumbleModTetras() // gentle continuous tumble of the mod tetrahedra
         updateTitleWordmark(invProj, dt) // camera-lock the 3D title letters (no-op until loaded)
@@ -589,9 +589,10 @@ object Scene3D {
         DamageNumberFx.applyBlast(origin, level) // already-falling damage digits get flung too
         TitleWordmark.flash(origin, level) // title letters get shoved (no-op until loaded)
         triggerShieldWaves(location, level) // nearby shields ripple as they absorb the blast
-        // Buildings within the XMP's blast radius bob + settle (US rocks harder). Our own meshes shake in
-        // scene space (sx/sy already computed above); the MapLibre fallback needs lng/lat + feature-state.
-        if (OwnBuildings.REPLACE_BUILDINGS) {
+        // Buildings within the XMP's blast radius bob + settle (US rocks harder). When our own meshes are the
+        // visible ones they shake in scene space (sx/sy); otherwise (PARALLEL_MODE / no-replace) MapLibre's
+        // visible buildings shake via feature-state (needs lng/lat).
+        if (OwnBuildings.shakesOwnMeshes()) {
             OwnBuildings.applyBlast(sx, sy, XmpLevel.valueOf(level).rangeM.toDouble(), level, ultra, animClockMs / 1000.0)
         } else {
             val ll = simPosToLngLat(location)

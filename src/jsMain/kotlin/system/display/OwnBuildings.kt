@@ -43,6 +43,13 @@ object OwnBuildings {
      */
     const val PARALLEL_MODE = true
 
+    /**
+     * True when OUR meshes are the **visible** buildings (full-replacement) — so they take the XMP/US shake.
+     * In [PARALLEL_MODE] the visible buildings are MapLibre's (ours are invisible shadow-casters), so the
+     * native `util.BuildingShake` shakes them instead; shaking our hidden meshes would just be invisible.
+     */
+    fun shakesOwnMeshes(): Boolean = REPLACE_BUILDINGS && !PARALLEL_MODE
+
     const val COLOR = "#333333"
     const val OPACITY = 0.9
     private const val MAX_BUILDINGS = 8000 // safety cap (separate mesh per building; perf is fine at our scale)
