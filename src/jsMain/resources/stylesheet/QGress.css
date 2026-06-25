@@ -614,7 +614,6 @@ html, body {
     pointer-events: none;
 }
 .titleScreen .factionCta,
-.titleScreen .titleVolume,
 .titleScreen .titleGithub {
     pointer-events: auto;
 }
@@ -742,11 +741,13 @@ html, body {
     letter-spacing: 2px;
     color: #e6ebe8;
 }
-/* Volume on the title screen (top-right) — the storm starts loud. */
-.titleVolume {
-    position: absolute;
+/* Master volume — a fixed widget (top-right) that stays put through title, onboarding, world-gen and
+   gameplay. z above the onboarding (9998) + loading (9999) overlays so it's always clickable. */
+.persistentVolume {
+    position: fixed;
     top: 18px;
     right: 22px;
+    z-index: 10001;
     display: flex;
     align-items: center;
     gap: 8px;
@@ -1068,6 +1069,8 @@ html, body {
 .buttonDiv {
     height: 100px;
     width: 100%;
+    box-sizing: border-box;
+    padding-right: 165px; /* clear the fixed .persistentVolume widget in the top-right corner */
     display: flex;
     align-items: flex-start; /* hug the top edge, not vertically centred in the 100px band */
     justify-content: space-between;

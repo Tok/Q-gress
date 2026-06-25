@@ -98,6 +98,9 @@ object HtmlUtil {
         }
         val rootDiv = document.getElementById("root") as HTMLDivElement
         rootDiv.addClass("container")
+        // Master volume + mute live in their own fixed widget so they stay visible across every phase
+        // (title, onboarding, world-gen, gameplay) — not bound to a screen/toolbar that comes and goes.
+        document.body?.appendChild(createPersistentVolume())
 
         // Offscreen ImageData factory for the passability-grid readback (never displayed). No
         // on-screen 2D canvas layer remains — the world renders in the three.js custom layer and
@@ -138,10 +141,9 @@ object HtmlUtil {
         leftGroup.append(createSpeedControls()) // Pause + ×1/×3/Max (Space toggles pause; -/+ keys nudge speed)
         bindKeyboardShortcuts() // Space=pause · Home=recenter · zoom/pan/speed/mute/Esc
 
-        // Right group, far right: volume, then the Auto cam toggle (rightmost; on by default).
+        // Right group, far right: the Auto cam toggle (volume is now a persistent fixed widget, see load()).
         val rightGroup = document.createElement("div") as HTMLDivElement
         rightGroup.addClass("toolbarGroup")
-        rightGroup.append(createVolumeSpan())
         rightGroup.append(createAutoCamToggle())
         // Keep the toggle's highlight in sync — incl. when a manual move snaps the drift (and toggle) out.
         MapUtil.onAutoCamChanged = { on -> syncAutoCamToggle(on) }
@@ -254,8 +256,12 @@ object HtmlUtil {
         return span
     }
 
-    private fun createVolumeSpan(): HTMLSpanElement {
-        val span = document.createElement("span") as HTMLSpanElement
+    // Always-visible master-volume widget (fixed top-right), created once and parented to <body> so it
+    // persists across the title, onboarding, world-gen and gameplay. Keeps the "soundLabel"/"volumeSlider"
+    // ids the mute shortcut + audio-enable rely on.
+    private fun createPersistentVolume(): HTMLDivElement {
+        val wrap = document.createElement("div") as HTMLDivElement
+        wrap.addClass("persistentVolume")
         val label = document.createElement("span") as HTMLSpanElement
         label.addClass("label", "topLabel", "topIcon", "volumeIcon")
         label.id = "soundLabel"
@@ -267,10 +273,10 @@ object HtmlUtil {
         slider.step = "0.05"
         slider.value = SoundUtil.DEFAULT_VOLUME.toString()
         slider.addClass("slider", "volumeSlider")
-        VolumeControl.build(label, slider) // speaker icon (click = mute) + slider, shared with the title screen
-        span.append(label)
-        span.append(slider)
-        return span
+        VolumeControl.build(label, slider) // speaker icon (click = mute) + slider
+        wrap.append(label)
+        wrap.append(slider)
+        return wrap
     }
 
     // Four compact buttons replace the old pause button + speed slider: Pause (toggles, Space-bound) and

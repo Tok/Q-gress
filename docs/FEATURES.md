@@ -220,8 +220,8 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
 - **Top toolbar** reorganized: Menu far-left (with overlay toggles + Lock-tuning inside it), Home, and a
   seamless **sim-speed segmented control** — Pause / ×1 / ×3 / Max butted together (active speed
   highlighted; Pause is Space-bound; `-`/`+` still nudge) replacing the old pause button + slider. Far
-  right: **Volume** then the **Auto cam** toggle, both **icon-only** (`util/ui/Icons`) so they don't read
-  as one label. Toolbar stays hidden until the world is ready.
+  right: the **Auto cam** toggle, **icon-only** (`util/ui/Icons`). Toolbar stays hidden until the world is
+  ready (the **Volume** widget is separate and always visible — see Audio).
 - **UI theme — glass, chrome & lasers, faction-branded.** One `--faction` CSS variable (set from the
   chosen faction in `LoadingOverlay.setAccent`) is the **only** chrome accent — a RES player never sees
   ENL green in the UI (and vice versa); it drives the loading bars/title, `accent-color` on all native
@@ -360,9 +360,10 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
   distance attenuation.
 - Per-event sounds (portal create/remove, field up/down, shatter, XMP, hack/glyph/deploy/link,
   checkpoint/cycle, marble "tok" NPC drop); non-positional events (checkpoint/cycle/fail) stay
-  center-panned. **Volume slider** + master gain; audio resumes on first gesture. Slider starts at the
-  real **30% default** on both the title screen and in-game, each with a **click-to-mute speaker icon**
-  (shared `VolumeControl`: swaps to a muted glyph and zeroes/restores the slider; the **M** key reuses it).
+  center-panned. **Volume slider** + master gain; audio resumes on first gesture. It's a single
+  **persistent widget** (fixed top-right, parented to `<body>`) that stays visible across **every** phase —
+  title, onboarding, world-gen and gameplay — starting at the real **30% default**, with a **click-to-mute
+  speaker icon** (`VolumeControl`: swaps to a muted glyph and zeroes/restores the slider; the **M** key reuses it).
 - **Shared 8-note scale** (`Scale`, C2 root): the 8 portal/XMP levels map to 8 notes with **level 8 =
   the lowest**, so a portal's level is audible across every level-keyed sound — XMP boom + volley blips,
   hack/glyph whirs (+ glyph chime), upgrade/downgrade notes — and the sim plays in one key. The key flips

@@ -60,7 +60,6 @@ object Onboarding {
         cta.style.opacity = "0" // fade the faction menu in ~1s after the title letters are visible
         cta.style.transition = "opacity 0.7s ease"
         screen.appendChild(cta)
-        screen.appendChild(createTitleVolume()) // an annoyed player can turn it down right away
         screen.appendChild(createGithubLink()) // thin "source on GitHub" footer link
         screen.appendChild(createTitleCredit()) // © credit next to the GitHub link
         document.body?.appendChild(screen)
@@ -105,24 +104,6 @@ object Onboarding {
         val credit = div("titleCredit")
         credit.textContent = "© Zirteq 2026"
         return credit
-    }
-
-    /** A small volume slider shown on the title screen, with the same click-to-mute speaker icon as in-game. */
-    private fun createTitleVolume(): HTMLElement {
-        val wrap = div("titleVolume")
-        val icon = document.createElement("span") as HTMLElement
-        icon.addClass("titleVolumeLabel", "volumeIcon")
-        val slider = document.createElement("input") as HTMLInputElement
-        slider.type = "range"
-        slider.min = "0.0"
-        slider.max = "1.0"
-        slider.step = "0.05"
-        slider.value = SoundUtil.DEFAULT_VOLUME.toString() // match the actual default (30%), not a hardcoded 100%
-        slider.addClass("slider", "volumeSlider")
-        VolumeControl.build(icon, slider)
-        wrap.appendChild(icon)
-        wrap.appendChild(slider)
-        return wrap
     }
 
     /**
