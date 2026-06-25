@@ -1614,6 +1614,23 @@ html, body {
     max-height: calc(100vh - 20px);
     overflow-y: auto; /* the audio demo has many buttons — scroll rather than overflow the screen */
 }
+/* Audio demo: span the screen (vs the narrow menu column) and grid the many sound buttons so they
+   fill the space instead of a tall scroll column. */
+.demoPanel.audioDemo {
+    width: auto;
+    right: 10px;
+    box-sizing: border-box;
+}
+.demoGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 6px;
+    margin-top: 12px;
+}
+.demoGrid .demoButton {
+    margin: 0;
+    width: 100%;
+}
 .demoPanelTitle {
     font-size: 18px;
     margin-bottom: 6px;
