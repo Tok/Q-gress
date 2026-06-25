@@ -165,10 +165,15 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
   → fills up to just below the top scoreboard, with the sim still running behind it) — so space-hungry tabs
   like NET get room. Normal is a short docked strip; Tab cycles tabs. The **NET** tab **auto-expands** on
   entry and auto-restores on leave (unless you've taken manual control of the size).
-- **AI footer tab** (`util/ui/AiPanel`, PLAN Phase 6): a footer tab (AGENTS / **AI** / NET / TUNING / EVENT
-  LOG) showing, per faction, the **driver** picker (Manual + **Heuristic** + **Neural net** live; LLM until
-  6.3) and a live **observation** readout — the 13-slot normalized feature vector (`ai.Observation`) a net/LLM
-  receives, as labelled 0–1 bars. The control + transparency surface for the AI substrate.
+- **Driver picker in the footer header** (`util/ui/DriverControls`): per faction, Manual / **Heuristic** /
+  **Neural net** (LLM pending 6.3), reachable from any tab. **Neural net is the default** — the sim plays
+  itself (AI-vs-AI) out of the box; switch a faction to Manual to drive it with the sliders.
+- **AI footer tab** (`util/ui/AiPanel` + `util/ui/SliderHistoryPanel`, PLAN Phase 6): the merged
+  AI-transparency tab (AGENTS / **AI** / NET / EVENT LOG) — a live **observation** readout (the 13-slot
+  `ai.Observation` feature vector a net/LLM receives, as labelled 0–1 bars) beside the **behaviour-sliders-
+  over-time** sparklines (one uPlot per slider slot per faction: the visible record of an AI driver re-tuning
+  the sliders — drifting lines — vs Manual's flat ones; faction-agnostic overlap blend, snapshots via each
+  faction's policy weighting so manual + AI read uniformly). The future LLM **reasoning** panel lands here too.
 - **NET footer tab** (`util/ui/NetVizPanel`): a live **activation diagram** of the neural-net driver. Per
   net-driven faction it draws the net as three node columns — observation inputs, hidden neurons, slider
   outputs — wired by edges whose brightness tracks each connection's live contribution (weight × upstream
@@ -177,10 +182,6 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
   sidebar** (network shape, champion fitness, the dominant driving input, the peak hidden neuron, the favoured
   actions) updates live. The canvas renders at **device-pixel resolution** for crisp lines/text. You watch
   the net think as the match swings (`Net.forwardTraced` exposes the per-layer activations).
-- **TUNING footer tab** (`util/ui/SliderHistoryPanel`): one uPlot sparkline per behaviour-slider slot,
-  per faction, over the checkpoint window — the visible record of an AI driver re-tuning the sliders (drifting
-  lines) vs Manual control (flat). Faction-agnostic overlap blend where the two coincide, like the history
-  dashboard; snapshots via each faction's policy weighting so manual + AI read uniformly.
 - **Portals are discovered, not placed**: manual portal **placement** and **deletion** are removed
   from the real game (the map click only selects/deselects; the Inspector has no Remove button). The
   `/#demo` sandbox keeps LMB-place / RMB-shatter for showcasing.

@@ -42,9 +42,12 @@ object AiPanel {
         if (built) return
         if (document.body == null) return
         built = true
+        val section = el("div", "aiSection")
+        section.appendChild(el("div", "aiSectionTitle").also { it.textContent = "Observation — the AI's input" })
         val panel = el("div", "aiPanel")
         Faction.all().forEach { faction -> panel.appendChild(factionColumn(faction)) }
-        Footer.tab("ai").appendChild(panel)
+        section.appendChild(panel)
+        Footer.tab("ai").appendChild(section)
     }
 
     private fun factionColumn(faction: Faction): HTMLElement {

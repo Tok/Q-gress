@@ -59,8 +59,8 @@ and feeds that into `Util.select` (cumulative-probability weighted random). The 
 but **this policy seam is where the AI drivers plug in** (PLAN.md Phase 6: a driver installs a
 `SliderVectorPolicy` / `HeuristicPolicy` / `NetPolicy` via `FactionPolicies.set`, re-tuning the 17 sliders
 at checkpoint cadence). When a faction is AI-driven, `FactionPolicy.currentVector()` is non-null, so the
-`TuningPanel` mirrors that vector onto the live sliders each frame (they auto-move) and the **TUNING** footer
-tab (`SliderHistoryPanel`) graphs every slot over the checkpoint window.
+`TuningPanel` mirrors that vector onto the live sliders each frame (they auto-move) and the **AI** footer
+tab (`SliderHistoryPanel`, merged with the observation readout) graphs every slot over the checkpoint window.
 
 Scoring: `World.calcTotalMu(faction)` (Mind Units = summed field area control) is the headline
 metric. `system/Cycle` snapshots a `Checkpoint` every `Config.ticksPerCheckpoint` ticks into a
@@ -111,7 +111,7 @@ new regions from Overpass as the camera flies elsewhere. Elevation comes from th
 - **HUD → DOM.** `util/ui/`: `StatsPanel` (MU bars + time/tick + action LOG), `HistoryPanel`
   (per-metric uPlot sparklines + live values), `TuningPanel` (behaviour sliders; auto-moves under an AI
   driver), `AiPanel` (driver picker + observation readout), `NetVizPanel` (the NET tab — the net driver's
-  live activation diagram), `SliderHistoryPanel` (the TUNING tab — per-slider sparklines over time),
+  live activation diagram), `SliderHistoryPanel` (per-slider sparklines over time, in the AI tab),
   `TopAgentsPanel`, `Inspector`, `LayerView`,
   `Onboarding`, `LoadingOverlay`, `MiniMap` (globe inset), `Controls`. Styled by
   `resources/stylesheet/QGress.css` (faction colours via `--enl-color`/`--res-color`;

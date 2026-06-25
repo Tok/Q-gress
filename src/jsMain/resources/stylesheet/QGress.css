@@ -421,6 +421,22 @@ html, body {
     max-height: calc(100vh - 86px);
 }
 
+/* AI footer tab: the observation readout + the slider-history sparklines, side by side (wrap when narrow). */
+#footerAi {
+    display: flex;
+    gap: 36px;
+    flex-wrap: wrap;
+    align-items: flex-start;
+}
+.aiSectionTitle {
+    font-family: "Chakra Petch", sans-serif;
+    letter-spacing: 1px;
+    font-size: 12px;
+    text-transform: uppercase;
+    color: #9aa6a0;
+    margin-bottom: 8px;
+}
+
 /* NET footer tab: the neural-net activation diagram + a stats sidebar (best viewed footer-maximized). */
 .netVizPanel {
     display: flex;

@@ -228,11 +228,11 @@ area is maximized, and hold it across the cycle. So fitness = the **sum/average 
   `HeuristicPolicyTest` covers the mapping. (Net/LLM drivers still gated on genome load / 6.3.)
 - [x] **`FactionPolicy.currentVector()`** — a policy exposes the slider vector it's driving (null for
   `DomSliderPolicy` = "no AI in control"); the UI uses it to decide auto-move and to graph the slots.
-- [x] **TUNING footer tab (`util/ui/SliderHistoryPanel`)** — one uPlot sparkline per slider slot per faction
-  over the checkpoint window (faction-agnostic overlap blend), so the AI's re-tuning is visible over time
-  (flat lines under Manual). Snapshots via `FactionPolicies.of(f).weight(q)` so manual + AI read uniformly.
-- [ ] JSON genome (de)serialization for saving/loading a trained net; load a winner into the live game (then
-  the **net** driver in the AI tab installs a `NetPolicy` — the slider-animation + TUNING graph already work).
+- [x] **Slider-history sparklines (`util/ui/SliderHistoryPanel`, in the merged AI tab)** — one uPlot per slider
+  slot per faction over the checkpoint window (faction-agnostic overlap blend), so the AI's re-tuning is visible
+  over time (flat lines under Manual). Snapshots via `FactionPolicies.of(f).weight(q)` so manual + AI read uniformly.
+- [x] JSON genome (de)serialization for saving/loading a trained net + loading a winner into the live game
+  (`GenomeIO`/`NetStore`/`Champion`; the **Neural net** driver installs a `NetPolicy`). Done (see 6.2 above).
 - [x] **Live activation + chosen-path visualization — DONE** (`util/ui/NetVizPanel`, the **NET** footer tab).
   `Net.forwardTraced` captures every layer's activations; the panel draws the net as observation→hidden→slider
   node columns wired by edges whose brightness = live contribution (weight × upstream activation), node

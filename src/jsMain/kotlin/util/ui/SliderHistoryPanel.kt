@@ -10,11 +10,12 @@ import org.w3c.dom.HTMLElement
 import system.Cycle
 
 /**
- * The **TUNING** footer tab: one sparkline per behaviour-slider slot, tracking how each faction's weighting
- * has moved over the checkpoint window. It's the visible record of an AI driver re-tuning the sliders
- * (lines that drift as the match swings) versus Manual control (flat lines). Each slot's snapshot is the
- * faction's installed [ai.FactionPolicy] weighting, so it reads uniformly for manual sliders and AI policies
- * alike. Mirrors [HistoryPanel]'s uPlot row style; rebuilt lazily, fed only when a checkpoint changes.
+ * The slider-history section of the **AI** footer tab (merged with [AiPanel]'s observation readout): one
+ * sparkline per behaviour-slider slot, tracking how each faction's weighting has moved over the checkpoint
+ * window. It's the visible record of an AI driver re-tuning the sliders (lines that drift as the match swings)
+ * versus Manual control (flat lines). Each slot's snapshot is the faction's installed [ai.FactionPolicy]
+ * weighting, so it reads uniformly for manual sliders and AI policies alike. Mirrors [HistoryPanel]'s uPlot
+ * row style; rebuilt lazily, fed only when a checkpoint changes.
  */
 object SliderHistoryPanel {
     private const val CONTAINER_ID = "sliderHistoryPanel"
@@ -96,7 +97,10 @@ object SliderHistoryPanel {
             container.appendChild(row)
             plots[i] = makePlot(chart)
         }
-        Footer.tab("tuning").appendChild(container)
+        val section = el("aiSection")
+        section.appendChild(el("aiSectionTitle").also { it.textContent = "Behaviour sliders over time" })
+        section.appendChild(container)
+        Footer.tab("ai").appendChild(section)
         built = true
         return true
     }
