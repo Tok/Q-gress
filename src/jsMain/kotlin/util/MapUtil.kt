@@ -112,9 +112,10 @@ object MapUtil {
      * so a player who has panned/rotated away can instantly find the action again. Centers on the
      * grid anchor at the framed display zoom.
      */
-    fun goHome() {
+    fun goHome(durationMs: Int = 900) {
         val center = anchorCenter ?: return
-        val opts: dynamic = js("({ pitch: 0.0, bearing: 0.0, duration: 900 })")
+        val opts: dynamic = js("({ pitch: 0.0, bearing: 0.0 })")
+        opts.duration = durationMs
         opts.center = center
         opts.zoom = displayZoom()
         opts.padding = js("({ top: 0.0, bottom: 0.0, left: 0.0, right: 0.0 })") // clear the build-time centre lift
@@ -232,10 +233,12 @@ object MapUtil {
     /** Stop the build orbit and settle to the Home view (top-down over the play area). */
     fun stopBuildCinematicAndHome() {
         cinematicActive = false
-        goHome()
-        // Auto-cam is on by default: start the drift once Home's ~900ms flight has settled (map now exists).
-        if (autoCamActive) window.setTimeout({ autoCamLeg(autoCamGen) }, 1100)
+        goHome(INITIAL_HOME_MS) // a gentle, unhurried first settle (the Home button stays snappy at the default)
+        // Auto-cam is on by default: start the drift once the (slower) initial flight has settled.
+        if (autoCamActive) window.setTimeout({ autoCamLeg(autoCamGen) }, INITIAL_HOME_MS + 300)
     }
+
+    private const val INITIAL_HOME_MS = 2600 // the first fly-to-Home when a game starts (slow; was an abrupt 900)
 
     private const val TITLE_FLYIN_MS = 5200.0 // dramatic swoop-in to the title location (slow)
     private const val TITLE_FLYIN_ZOOM_OUT = 4 // start this many zoom levels above the framing zoom

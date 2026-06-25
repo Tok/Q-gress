@@ -433,10 +433,12 @@ html, body {
     overflow: auto;
     padding: 6px 12px;
 }
-/* Expanded: pull the footer up to fill the screen up to just below the top header (leaving ~58px for the
-   scoreboard), for space-hungry tabs (NET viz); the sim keeps running behind it. */
+/* Expanded: pull the footer up to fill the screen up to just below the top toolbar (which is 100px tall,
+   z-index 100), for space-hungry tabs (NET viz); the sim keeps running behind it. The reserve MUST clear the
+   toolbar so the footer header — with the maximize/collapse buttons — stays clickable (it sits at the top of
+   the footer block). 100px toolbar + ~28px header + a gap → 140px. */
 .footer.expanded .footerBody {
-    max-height: calc(100vh - 86px);
+    max-height: calc(100vh - 140px);
 }
 
 /* AI footer tab: the observation readout + the slider-history sparklines, side by side (wrap when narrow). */
