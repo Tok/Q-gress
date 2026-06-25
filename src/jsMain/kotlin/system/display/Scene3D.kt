@@ -66,8 +66,8 @@ object Scene3D {
     private const val HEAD_Z = 1.6
     private const val XM_R = HEAD_R / 1.618 // stray-XM mote radius: 1.618× (φ) smaller than an agent head
     private const val XM_Z = 1.2 // stray-XM floats just above the ground
-    private const val NPC_DROP_S = 0.8 // seconds for an NPC to fall in from the sky on first appearance
-    private const val NPC_DROP_HEIGHT = 70.0 // metres an NPC drops from
+    private const val NPC_DROP_S = 1.7 // seconds for an NPC to fall in from the sky on first appearance
+    private const val NPC_DROP_HEIGHT = 650.0 // metres an NPC drops from (well off-screen → a long plunge in)
     private const val INDICATOR_Z = 5.0 // raised to clear the head now the indicator is ~3× bigger
     private const val INDICATOR_SIZE = 4.8 // action label above an agent (was 1.6 — barely visible)
     private const val INDICATOR_THICK = 1.2 // action-coin thickness (the extruded "wheel" depth)
