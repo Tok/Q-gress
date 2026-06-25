@@ -367,6 +367,22 @@ html, body {
     background: rgba(255, 255, 255, 0.16);
     border-color: rgba(255, 255, 255, 0.25);
 }
+.footerHeaderRight {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+.footerDriver {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+}
+.footerDriverLabel {
+    font-family: "Chakra Petch", sans-serif;
+    letter-spacing: 1px;
+    font-size: 11px;
+}
 .footerControls {
     display: flex;
     align-items: center;
@@ -418,42 +434,33 @@ html, body {
     font-size: 14px;
     margin-bottom: 8px;
 }
-.netVizBody {
-    display: flex;
-    gap: 22px;
-    align-items: flex-start;
-}
+/* Stats grid above the diagram: compact key/value cells, ~4 per row. */
 .netVizStats {
-    min-width: 200px;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(116px, 1fr));
+    gap: 8px 20px;
+    max-width: 540px;
+    margin-bottom: 12px;
     font-size: 12.5px;
-    padding-top: 6px;
 }
-.netVizStatRow {
+.netVizStatCell {
     display: flex;
-    justify-content: space-between;
-    gap: 16px;
-    padding: 4px 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
 }
 .netVizStatKey {
     color: #9aa6a0;
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
 }
 .netVizStatVal {
     color: #ffffff;
     font-variant-numeric: tabular-nums;
-}
-.netVizSub {
-    margin: 12px 0 4px;
-    color: #9aa6a0;
-    font-size: 11px;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-}
-.netVizAction {
-    display: flex;
-    justify-content: space-between;
-    gap: 16px;
-    padding: 3px 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 .netVizHint {
     opacity: 0.7;

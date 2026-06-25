@@ -120,10 +120,9 @@ object NetVizPanel {
         view.drive.textContent = "${IN_LABELS.getOrElse(driveIdx) { "f$driveIdx" }} ${pct(trace.input[driveIdx])}"
         val peakIdx = trace.hidden.indices.maxByOrNull { abs(trace.hidden[it]) } ?: 0
         view.peakHidden.textContent = "#$peakIdx ${signed(trace.hidden[peakIdx])}"
-        view.actions.forEachIndexed { rank, row ->
+        view.actions.forEachIndexed { rank, valueEl ->
             val o = top.getOrNull(rank)
-            (row.firstChild as? HTMLElement)?.textContent = if (o == null) "" else OUT_LABELS[o]
-            (row.lastChild as? HTMLElement)?.textContent = if (o == null) "" else pct(trace.output[o])
+            valueEl.textContent = if (o == null) "—" else "${OUT_LABELS[o]} ${pct(trace.output[o])}"
         }
     }
 
@@ -248,10 +247,8 @@ object NetVizPanel {
             it.asDynamic().style.color = faction.color
         }
         block.appendChild(head)
-        val body = el("div", "netVizBody")
-        body.appendChild(canvasFor(faction))
-        body.appendChild(statsFor(faction))
-        block.appendChild(body)
+        block.appendChild(statsFor(faction)) // a compact stat grid (≈4 per row) above the diagram
+        block.appendChild(canvasFor(faction))
         blocks[faction] = block
         return block
     }
@@ -271,32 +268,25 @@ object NetVizPanel {
 
     private fun statsFor(faction: Faction): HTMLElement {
         val box = el("div", "netVizStats")
-        val arch = statRow(box, "Network")
-        val fitness = statRow(box, "Champion fitness")
-        val drive = statRow(box, "Driving input")
-        val peakHidden = statRow(box, "Peak hidden")
-        box.appendChild(el("div", "netVizSub").also { it.textContent = "Favoured actions" })
-        val actions = (0 until TOP_ACTIONS).map { actionRow(box, faction) }
+        val arch = statCell(box, "Network")
+        val fitness = statCell(box, "Fitness")
+        val drive = statCell(box, "Driving input")
+        val peakHidden = statCell(box, "Peak hidden")
+        val actions = listOf("Top action", "2nd", "3rd").map { label ->
+            statCell(box, label).also { it.asDynamic().style.color = faction.color }
+        }
         stats[faction] = StatsView(arch, fitness, drive, peakHidden, actions)
         return box
     }
 
-    private fun statRow(parent: HTMLElement, key: String): HTMLElement {
-        val row = el("div", "netVizStatRow")
-        row.appendChild(el("span", "netVizStatKey").also { it.textContent = key })
+    // One stat cell in the grid: a small key label over its (live-updated) value. Returns the value element.
+    private fun statCell(parent: HTMLElement, key: String): HTMLElement {
+        val cell = el("div", "netVizStatCell")
+        cell.appendChild(el("span", "netVizStatKey").also { it.textContent = key })
         val value = el("span", "netVizStatVal")
-        row.appendChild(value)
-        parent.appendChild(row)
+        cell.appendChild(value)
+        parent.appendChild(cell)
         return value
-    }
-
-    // A favoured-action row: a faction-coloured name cell (firstChild) + a value cell (lastChild), both set live.
-    private fun actionRow(parent: HTMLElement, faction: Faction): HTMLElement {
-        val row = el("div", "netVizAction")
-        row.appendChild(el("span", "netVizActionName").also { it.asDynamic().style.color = faction.color })
-        row.appendChild(el("span", "netVizStatVal"))
-        parent.appendChild(row)
-        return row
     }
 
     private fun setVisible(e: HTMLElement, visible: Boolean) {

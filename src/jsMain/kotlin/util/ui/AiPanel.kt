@@ -1,23 +1,15 @@
 package util.ui
 
 import agent.Faction
-import ai.DomSliderPolicy
-import ai.FactionPolicies
-import ai.HeuristicPolicy
 import ai.Observation
-import ai.net.NetPolicy
-import ai.net.NetStore
 import kotlinx.browser.document
 import org.w3c.dom.HTMLElement
-import org.w3c.dom.HTMLOptionElement
-import org.w3c.dom.HTMLSelectElement
 
 /**
- * The **AI** footer tab (PLAN Phase 6): per faction, the **driver** it's controlled by and a live readout
- * of its **observation** — the normalized world feature vector ([Observation]) a net/LLM would receive.
- * Today the only live driver is **Manual** (the tuning sliders → `DomSliderPolicy`); Net/LLM are listed
- * but disabled until Phase 6.2/6.3. The "tune" surface stays the slider panel; this is the control +
- * transparency surface. Rebuilt lazily; the bars refresh each frame from [DrawUtil.redrawUserInterface].
+ * The **AI** footer tab (PLAN Phase 6): per faction, a live readout of its **observation** — the normalized
+ * world feature vector ([Observation]) a net/LLM receives, as labelled 0–1 bars. The driver picker moved to
+ * the footer header ([DriverControls], reachable from any tab); this stays the transparency surface. Rebuilt
+ * lazily; the bars refresh each frame from [DrawUtil.redrawUserInterface].
  */
 object AiPanel {
     // One label per Observation slot — keep in order/length sync with Observation.observe().
@@ -63,7 +55,6 @@ object AiPanel {
             it.style.color = faction.color
         }
         head.appendChild(name)
-        head.appendChild(driverSelect(faction))
         col.appendChild(head)
 
         val barArr = arrayOfNulls<HTMLElement>(Observation.SIZE)
@@ -84,39 +75,6 @@ object AiPanel {
         bars[faction] = barArr
         values[faction] = valArr
         return col
-    }
-
-    /**
-     * Driver picker. **Manual** = the tuning sliders ([DomSliderPolicy]); **Heuristic** = the adaptive
-     * [HeuristicPolicy]; **Neural net** = the trained [NetPolicy] from [NetStore] (the saved winner, else the
-     * baked champion). All three auto-move the sliders. LLM stays disabled until Phase 6.3. Picking an AI
-     * driver hands slider control to it.
-     */
-    private fun driverSelect(faction: Faction): HTMLElement {
-        val sel = document.createElement("select") as HTMLSelectElement
-        sel.className = "aiDriverSelect"
-        sel.appendChild(option("manual", "Manual (sliders)", disabled = false))
-        sel.appendChild(option("heuristic", "Heuristic (adaptive)", disabled = false))
-        sel.appendChild(option("net", "Neural net (trained)", disabled = false))
-        sel.appendChild(option("llm", "LLM — soon", disabled = true))
-        sel.value = "manual"
-        sel.onchange = {
-            when (sel.value) {
-                "heuristic" -> FactionPolicies.set(faction, HeuristicPolicy(faction))
-                "net" -> FactionPolicies.set(faction, NetPolicy(NetStore.loadNet(), faction))
-                else -> FactionPolicies.set(faction, DomSliderPolicy(faction))
-            }
-            null
-        }
-        return sel
-    }
-
-    private fun option(value: String, label: String, disabled: Boolean): HTMLOptionElement {
-        val o = document.createElement("option") as HTMLOptionElement
-        o.value = value
-        o.textContent = label
-        o.disabled = disabled
-        return o
     }
 
     private fun el(tag: String, cls: String): HTMLElement {
