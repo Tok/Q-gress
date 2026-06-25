@@ -33,6 +33,16 @@ object OwnBuildings {
      */
     const val REPLACE_BUILDINGS = true
 
+    /**
+     * **Parallel mode** (fixes "not all MapLibre buildings get replaced" — e.g. Red Square): instead of hiding
+     * MapLibre's extrusion layer and showing OUR gray meshes (which leaves gaps wherever a footprint failed to
+     * mesh), keep **MapLibre's buildings visible everywhere** (the look + the native shake) and use our meshes
+     * only as **invisible shadow-casters** (opacity 0, no depth-write → they cast real sun shadows + occlude
+     * nothing, while the debris colliders / letter hitboxes come from the full feature set regardless). Flip to
+     * `false` for the old full-replacement look (our meshes visible, MapLibre hidden).
+     */
+    const val PARALLEL_MODE = true
+
     const val COLOR = "#333333"
     const val OPACITY = 0.9
     private const val MAX_BUILDINGS = 8000 // safety cap (separate mesh per building; perf is fine at our scale)
@@ -68,7 +78,10 @@ object OwnBuildings {
         val p: dynamic = js("({})")
         p.color = COLOR
         p.transparent = true
-        p.opacity = OPACITY
+        // Parallel mode: invisible (opacity 0) + no depth-write so our meshes don't occlude the sim or
+        // MapLibre's visible buildings — they exist only to cast shadows (the shadow pass ignores opacity).
+        p.opacity = if (PARALLEL_MODE) 0.0 else OPACITY
+        p.depthWrite = !PARALLEL_MODE
         p.metalness = 0.0
         p.roughness = 1.0
         material = Three.MeshStandardMaterial(p)

@@ -389,9 +389,13 @@ object MapUtil {
             // otherwise leave MapLibre's own fill-extrusion visible as the fallback.
             if (OwnBuildings.REPLACE_BUILDINGS && n > 0) {
                 OwnBuildings.addFeatures(feats) // new meshes pop in at the current grow-in level (applyBuildInflate)
-                val md = initMap?.asDynamic()
-                if (md != null && md.getLayer("3d-buildings") != null) {
-                    md.setPaintProperty("3d-buildings", "fill-extrusion-opacity", 0) // ours take over the look
+                // Full-replacement only: hide MapLibre's extrusion so OUR meshes take over the look. In
+                // PARALLEL_MODE we keep MapLibre visible everywhere (no gaps) and our meshes are shadow-only.
+                if (!OwnBuildings.PARALLEL_MODE) {
+                    val md = initMap?.asDynamic()
+                    if (md != null && md.getLayer("3d-buildings") != null) {
+                        md.setPaintProperty("3d-buildings", "fill-extrusion-opacity", 0)
+                    }
                 }
             }
         }
