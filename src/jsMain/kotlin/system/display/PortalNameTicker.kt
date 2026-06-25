@@ -17,9 +17,9 @@ import kotlin.math.sqrt
  *
  * **Spin direction follows the script**: Arabic / Hebrew names spin **CCW**, everything else **CW**.
  *
- * Hover-driven only ([show]/[hide] from `Scene3D.setHoveredPortal`, wired off the in-game map `mousemove`).
- * The title never wires hover, so no names appear there. One portal at a time; [show] is a no-op while the
- * same portal stays hovered (the ring just keeps spinning).
+ * Selection-driven ([show]/[hide] from `Scene3D.refreshNameTicker`, off the `Scene3D.selected` setter +
+ * each `sync`). The title never selects portals, so no names appear there. One portal at a time; while the
+ * same portal stays selected the ring is kept (just re-positioned as it levels up) and keeps spinning.
  */
 object PortalNameTicker {
     private const val FONT_URL = "fonts/Coda-ExtraBold.typeface.json"
@@ -72,13 +72,17 @@ object PortalNameTicker {
 
     /** Show the ticker for portal [id] ([name]) centred at scene ([x], [y], [z]); [orbRadius] sizes the ring. */
     fun show(id: String, name: String, x: Double, y: Double, z: Double, orbRadius: Double) {
-        if (id == currentId) return // same portal still hovered → keep spinning the existing ring
-        currentId = id
-        reqName = name
         reqX = x
         reqY = y
         reqZ = z
         reqRadius = orbRadius
+        if (id == currentId) { // same portal still selected → keep the ring, just track its position (level-ups)
+            val g = group
+            if (g != null && letters.isNotEmpty()) g.position.set(x, y, z)
+            return
+        }
+        currentId = id
+        reqName = name
         spinSign = if (isRtl(name)) 1.0 else -1.0
         needsBuild = true
     }

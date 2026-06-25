@@ -504,14 +504,12 @@ object HtmlUtil {
     }
 
     private fun onMapMove(event: dynamic) {
-        // Hover affordance only — highlight the portal under the cursor + show its spinning 3D name ticker.
+        // Hover affordance only — highlight the portal under the cursor (nothing is buildable now).
         val pos = MapUtil.eventToSimPos(event)
         if (pos != null && pos.hasClosePortalForClick()) {
             Scene3D.setBuildMarker(pos, "portal")
-            Scene3D.setHoveredPortal(pos.findClosestPortal())
         } else {
             Scene3D.setBuildMarker(null, "")
-            Scene3D.setHoveredPortal(null)
         }
     }
 

@@ -11,7 +11,7 @@ Branch: `develop` · Owner: @zirteq
 
 ## ⚑ Verify in-browser first (`./start.sh`)
 Built headless recently, not yet confirmed on screen — eyeball these, then move on:
-- **3D portal names** (`PortalNameTicker`) — **hover** a portal in-game → its name rings the orb as spinning
+- **3D portal names** (`PortalNameTicker`) — **select** a portal in-game → its name rings the orb as spinning
   extruded 3D letters (white, φ-smaller damage-number style, facing sideways). Arabic/Hebrew spin **CCW**, the
   rest **CW**; **no names on the title**. Tune `SPIN_SPEED` / `RADIUS_MARGIN` / `NAME_RING_GAP`; if a name reads
   mirrored as it spins, flip the placement sign in `buildRing` (the spin-direction requirement is separate).

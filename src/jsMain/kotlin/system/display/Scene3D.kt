@@ -139,6 +139,10 @@ object Scene3D {
 
     // Currently selected entity, as "portal:<id>" / "agent:<name>" (see pick()).
     var selected: String? = null
+        set(value) {
+            field = value
+            refreshNameTicker() // selecting a portal spins up its 3D name ring (cleared on deselect / agent)
+        }
 
     private var scene: Three.Scene? = null
     private var camera: Three.Camera? = null
@@ -396,6 +400,7 @@ object Scene3D {
         clear(agentsGroup)
         clear(indicatorsGroup)
         World.allAgents.forEach { addAgent(it) }
+        refreshNameTicker() // keep the selected portal's name ring positioned (level-ups / terrain resample)
         teardownGone(Spawns.endSync())
     }
 
@@ -1533,9 +1538,16 @@ object Scene3D {
         }
     }
 
-    /** In-game hover: show the spinning name ticker for [portal] above its orb (null clears it). The title
-     *  never wires hover, so no names appear there. */
-    fun setHoveredPortal(portal: Portal?) {
+    // Show the spinning name ticker for the selected portal (or hide it if nothing/an agent is selected).
+    // Driven by the [selected] setter (immediate on click) and re-run each [sync] (keeps it positioned as
+    // the portal levels up / terrain resamples). The title never selects portals, so no names appear there.
+    private fun refreshNameTicker() {
+        val sel = selected
+        val portal = if (sel != null && sel.startsWith("portal:")) {
+            World.allPortals.firstOrNull { "portal:${it.id}" == sel }
+        } else {
+            null
+        }
         if (portal == null) {
             PortalNameTicker.hide()
             return
