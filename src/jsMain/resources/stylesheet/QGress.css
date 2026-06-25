@@ -383,6 +383,24 @@ html, body {
     letter-spacing: 1px;
     font-size: 11px;
 }
+/* The "AI vs AI" driver pickers in the top toolbar. */
+.driverControls {
+    gap: 8px;
+}
+.driverControlsLabel {
+    font-family: "Chakra Petch", sans-serif;
+    letter-spacing: 1px;
+    font-size: 11px;
+    color: #9aa6a0;
+}
+/* The per-slider lock toggle (AI-driven only): white icon, pushed to the right edge of its row. */
+.qLockToggle {
+    color: #ffffff;
+    justify-self: end;
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+}
 .footerControls {
     display: flex;
     align-items: center;

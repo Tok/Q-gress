@@ -147,9 +147,11 @@ object HtmlUtil {
         MapUtil.onAutoCamChanged = { on -> syncAutoCamToggle(on) }
         MapUtil.setAutoCam(true)
 
-        // The loaded-location name stretches across the middle (flex-grows between the two groups).
+        // The loaded-location name stretches across the middle (flex-grows between the two groups). The
+        // per-faction AI driver pickers ("AI vs AI") sit just left of the right group, up in the header.
         buttonDiv.append(leftGroup)
         buttonDiv.append(createLocationLabel())
+        buttonDiv.append(util.ui.DriverControls.toolbarGroup())
         buttonDiv.append(rightGroup)
         controlDiv.append(buttonDiv)
 

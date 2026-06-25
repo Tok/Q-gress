@@ -24,6 +24,14 @@ object DriverControls {
     private const val DEFAULT = "net"
     private val llmClient by lazy { WebLlmClient() } // shared across factions → one model load
 
+    /** Both faction pickers wrapped as a top-toolbar group (the "AI vs AI" control, reachable from anywhere). */
+    fun toolbarGroup(): HTMLElement {
+        val group = el("div", "toolbarGroup driverControls")
+        group.appendChild(el("span", "driverControlsLabel").also { it.textContent = "AI" })
+        Faction.all().forEach { group.appendChild(picker(it)) }
+        return group
+    }
+
     /** A faction-labelled driver `<select>` that installs (and defaults to) the Neural-net driver. */
     fun picker(faction: Faction): HTMLElement {
         val wrap = el("span", "footerDriver")

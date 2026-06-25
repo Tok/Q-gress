@@ -1,6 +1,5 @@
 package util.ui
 
-import agent.Faction
 import kotlinx.browser.document
 import org.w3c.dom.HTMLElement
 
@@ -56,7 +55,7 @@ object Footer {
             tabButtons[bodyId] = t
         }
         header.appendChild(tabBar)
-        header.appendChild(headerRight())
+        header.appendChild(controls())
         footerEl.appendChild(header)
         val b = el("div", "footerBody")
         body = b
@@ -69,14 +68,6 @@ object Footer {
         document.body?.appendChild(footerEl)
         activate(active)
         applyState()
-    }
-
-    // The right side of the header: the per-faction driver pickers (always reachable), then the size controls.
-    private fun headerRight(): HTMLElement {
-        val right = el("div", "footerHeaderRight")
-        Faction.all().forEach { right.appendChild(DriverControls.picker(it)) }
-        right.appendChild(controls())
-        return right
     }
 
     // The size controls: maximize (normal ↔ near-full-screen) then collapse (hide ↔ show).
