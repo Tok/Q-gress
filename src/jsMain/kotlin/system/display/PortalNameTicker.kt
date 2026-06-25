@@ -88,18 +88,19 @@ object PortalNameTicker {
         currentId = null
         needsBuild = false
         clearLetters()
-        group?.asDynamic()?.visible = false
+        val g = group
+        if (g != null) g.visible = false
     }
 
     /** Per-frame: build the ring once the font is ready, then spin it. [dt] = sim-scaled seconds. */
     fun update(dt: Double) {
-        group ?: return
+        val g = group ?: return
         if (needsBuild && font != null) {
             buildRing()
             needsBuild = false
         }
         if (currentId == null) return
-        group.asDynamic().rotation.z += spinSign * SPIN_SPEED * dt
+        g.rotation.z += spinSign * SPIN_SPEED * dt
     }
 
     // Lay the (truncated) name out around a horizontal circle, each letter upright + facing outward.
@@ -109,7 +110,7 @@ object PortalNameTicker {
         clearLetters()
         val text = if (reqName.length > NAME_MAX) reqName.take(NAME_MAX - 1) + "…" else reqName
         if (text.isEmpty()) {
-            g.asDynamic().visible = false
+            g.visible = false
             return
         }
         val geos = text.map { DamageNumberFx.glyphGeometry(f, it.toString(), SIZE, DEPTH) }
@@ -121,7 +122,7 @@ object PortalNameTicker {
         val radius = maxOf(reqRadius + RADIUS_MARGIN, MIN_RADIUS, totalL / (2.0 * PI * MAX_ARC_FRAC))
         var cursor = 0.0
         geos.forEachIndexed { i, geo ->
-            geo.asDynamic().rotateX(PI / 2.0) // stand the glyph upright: local Y (up) → world Z
+            geo.rotateX(PI / 2.0) // stand the glyph upright: local Y (up) → world Z
             val centre = cursor + widths[i] / 2.0 - totalL / 2.0 // arc-length centre, word centred at angle 0
             cursor += widths[i] + GAP
             val angle = spinSign * centre / radius // placement dir tracks the spin so it reads under rotation
@@ -132,9 +133,9 @@ object PortalNameTicker {
             g.add(mesh)
             letters.add(mesh)
         }
-        g.asDynamic().position.set(reqX, reqY, reqZ)
-        g.asDynamic().rotation.z = 0.0
-        g.asDynamic().visible = true
+        g.position.set(reqX, reqY, reqZ)
+        g.rotation.z = 0.0
+        g.visible = true
     }
 
     private fun clearLetters() {
