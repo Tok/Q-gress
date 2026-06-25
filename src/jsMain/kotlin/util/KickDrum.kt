@@ -24,8 +24,12 @@ object KickDrum {
     private const val CLICK_HP_HZ = 1400.0 // click high-pass (keeps just the beater snap)
     private const val REVERB_SEND = 0.3 // how much of the kick body feeds the reverb (a bit of space)
 
-    /** Deep hard kick at sim [pos]: pitch drops fast from [startHz], peak [amp], body length [decay] s. */
-    fun play(pos: Pos, startHz: Double, amp: Double, decay: Double) {
+    /**
+     * Deep hard kick at sim [pos]: pitch drops fast from [startHz], peak [amp], body length [decay] s.
+     * [clickFrac] sizes the beater click (the sharp transient) — small/0 for a deep boom (XMP), bigger
+     * for a tight punch (Ultra-Strike).
+     */
+    fun play(pos: Pos, startHz: Double, amp: Double, decay: Double, clickFrac: Double = CLICK_AMP_FRAC) {
         val ctx = SoundUtil.audioCtx
         val n = SoundUtil.now()
         val osc = SoundUtil.createStaticOscillator(OscillatorType.SINE, startHz)
@@ -42,7 +46,7 @@ object KickDrum {
         sendToReverb(g, amp * REVERB_SEND)
         osc.start()
         osc.stop(n + decay)
-        playClick(pos, amp * CLICK_AMP_FRAC) // the hard transient on top of the body
+        if (clickFrac > 0.0) playClick(pos, amp * clickFrac) // the hard transient on top of the body
     }
 
     /** Tap [node]'s output into the master reverb send bus at [amount] (explosion-only space; see [AudioFx]). */

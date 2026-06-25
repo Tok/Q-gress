@@ -48,8 +48,11 @@ object SoundUtil {
     private const val PANNING_MODEL = "HRTF" // front/back + elevation cues (vs cheaper "equalpower")
     private const val MASTER_BOOST = 2.6 // lift the whole bus (3D attenuation made it quiet); limiter guards clipping
 
-    // 909-style kick under the detonations (deep, hard, punchy; see [KickDrum]) — start pitch per weapon.
-    private const val XMP_KICK_HZ = 120.0 // XMP kick start pitch
+    // 909-style kick under the detonations (deep, hard, punchy; see [KickDrum]) — XMP is the deep boom,
+    // the Ultra-Strike is higher + tighter + clickier (the sharp punch).
+    private const val XMP_KICK_HZ = 80.0 // XMP kick start pitch — deep
+    private const val XMP_KICK_DECAY = 0.5 // …and longer (boomy)
+    private const val XMP_KICK_CLICK = 0.18 // …with only a soft beater click (deep, not sharp)
     private const val US_KICK_HZ = 165.0 // Ultra-Strike kick — a touch higher + tighter than the XMP
     private const val BLAST_REVERB_SEND = 0.22 // reverb send for the explosion rumble tail
     private const val MUFFLE_CLOSED_HZ = 600.0 // muffled: distant/underwater (title behind onboarding)
@@ -288,8 +291,8 @@ object SoundUtil {
         playNoiseCrack(pos, amplitude * 0.7, 0.5) // (a) detonation snap (tamed — the blast read too bright/high)
         // (b) sub thump at the note, dropping an octave, quick decay
         decayVoice(createExponentialRampOscillator(OscillatorType.SINE, note, note * 0.5, 0.4), pos, amplitude * 1.2, 0.4)
-        // (b2) deep, hard 909 kick at the blast front — the punch that lands the detonation with weight.
-        KickDrum.play(pos, XMP_KICK_HZ, amplitude * 1.8, 0.36)
+        // (b2) deep, hard 909 kick at the blast front — the boom that lands the XMP with weight.
+        KickDrum.play(pos, XMP_KICK_HZ, amplitude * 1.8, XMP_KICK_DECAY, XMP_KICK_CLICK)
         // (c) long rumble tail — fast attack, brightness + level fall over the fireball's life
         val sr = audioCtx.sampleRate
         val len = (life * sr).toInt().coerceAtLeast(1)
