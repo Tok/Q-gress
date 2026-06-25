@@ -126,7 +126,7 @@ object PortalNameTicker {
             cursor += slot.width + GAP
             val geo = slot.geo ?: continue // blank advance (space / missing glyph)
             geo.rotateX(PI / 2.0) // stand the glyph upright: local Y (up) → world Z
-            val angle = spinSign * centre / radius // placement dir tracks the spin so it reads under rotation
+            val angle = -spinSign * centre / radius // place against the spin so the word reads forwards, not mirrored
             val mesh = Three.Mesh(geo, fillMat)
             DamageNumberFx.addBoldWire(mesh, geo, wireMat)
             mesh.asDynamic().position.set(radius * cos(angle), radius * sin(angle), 0.0)
