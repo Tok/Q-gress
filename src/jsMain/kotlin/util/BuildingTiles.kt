@@ -16,7 +16,14 @@ import kotlin.math.cos
  * `{ geometry: { type:'Polygon', coordinates:[ring] }, properties:{ render_height, render_min_height } }`.
  */
 object BuildingTiles {
-    private const val OVERPASS_URL = "https://overpass-api.de/api/interpreter"
+    // Overpass mirrors, tried in order: the main endpoint 504s / rate-limits under load, so we fall over to
+    // the next mirror before finally giving up (→ empty array → caller keeps MapLibre's buildings). All are
+    // keyless + CORS-enabled + browser-cacheable.
+    private val OVERPASS_URLS = arrayOf(
+        "https://overpass-api.de/api/interpreter",
+        "https://overpass.kumi.systems/api/interpreter",
+        "https://overpass.openstreetmap.fr/api/interpreter",
+    )
     const val CONTEXT_M = 250.0 // also pull buildings this far OUTSIDE the play area (off-area shadow casters)
     private const val METERS_PER_DEG = 111_320.0
     private const val MAX_BUILDINGS = 2500 // perf cap on how many footprints we hand back
@@ -42,11 +49,23 @@ object BuildingTiles {
      *  regions as the camera flies elsewhere). Always fires [onComplete] (empty array on failure). */
     fun loadBBox(south: Double, west: Double, north: Double, east: Double, onComplete: (dynamic) -> Unit) {
         val q = "[out:json][timeout:25];way[\"building\"]($south,$west,$north,$east);out geom;"
-        val url = OVERPASS_URL + "?data=" + (js("encodeURIComponent")(q) as String) // GET → browser-cacheable
-        val req = window.asDynamic().fetch(url)
-        req.then { r: dynamic -> if (r.ok == true) r.json() else null }
-            .then { j: dynamic -> onComplete(toFeatures(j)) }
-            .catch { _: dynamic -> onComplete(js("[]")) }
+        val data = "?data=" + (js("encodeURIComponent")(q) as String) // GET → browser-cacheable
+        tryMirror(0, data, onComplete)
+    }
+
+    // Fetch from mirror [idx]; on a non-OK response (e.g. 504) or network error, fall over to the next one.
+    // When every mirror is exhausted we hand back an empty array so the caller keeps MapLibre's buildings.
+    private fun tryMirror(idx: Int, data: String, onComplete: (dynamic) -> Unit) {
+        if (idx >= OVERPASS_URLS.size) {
+            console.warn("BuildingTiles(OSM): all ${OVERPASS_URLS.size} Overpass mirrors failed → MapLibre fallback")
+            onComplete(js("[]"))
+            return
+        }
+        val next = { tryMirror(idx + 1, data, onComplete) }
+        window.asDynamic().fetch(OVERPASS_URLS[idx] + data)
+            .then { r: dynamic -> if (r.ok == true) r.json() else null }
+            .then { j: dynamic -> if (j == null) next() else onComplete(toFeatures(j)) }
+            .catch { _: dynamic -> next() }
     }
 
     private fun toFeatures(j: dynamic): dynamic {

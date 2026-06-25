@@ -45,8 +45,19 @@ object OwnBuildings {
 
     const val COLOR = "#333333"
     const val OPACITY = 0.9
+
+    // Self-shading under the sun + 0.5 ambient crushes our unlit faces toward black (MapLibre's flat-lit
+    // extrusion never darkens). A modest emissive of the same gray lifts the shaded-face floor back toward
+    // MapLibre's tone while keeping cast + received shadows and the 3D depth.
+    private const val EMISSIVE_INTENSITY = 0.4
     private const val MAX_BUILDINGS = 8000 // safety cap (separate mesh per building; perf is fine at our scale)
     private const val DEFAULT_HEIGHT = 8.0 // when a footprint has no render_height
+
+    // In PARALLEL_MODE MapLibre's identical extrusion stays visible underneath ours, so coincident
+    // walls/roofs z-fight. Shrink ours a hair — footprint inward + roof a touch lower — so neither
+    // surface is coplanar with MapLibre's. The metres-high shake still pops well clear of MapLibre's roof.
+    private const val INSET_FRAC = 0.985 // footprint shrink toward the centroid (~1.5%) → our walls sit inside
+    private const val ROOF_DROP_M = 0.3 // and our roof sits this far below MapLibre's
 
     // XMP/US shake (mirrors util.BuildingShake's feel, but applied to our meshes in scene space).
     private const val SHAKE_DURATION = 2.0 // seconds to settle back to rest
@@ -81,6 +92,8 @@ object OwnBuildings {
         p.opacity = OPACITY // visible meshes (they shake + cast shadows); MapLibre fills gaps behind in parallel mode
         p.metalness = 0.0
         p.roughness = 1.0
+        p.emissive = COLOR // lift shaded faces back toward MapLibre's flat tone (no near-black self-shading)
+        p.emissiveIntensity = EMISSIVE_INTENSITY
         material = Three.MeshStandardMaterial(p)
     }
 
@@ -202,29 +215,38 @@ object OwnBuildings {
     }
 
     private fun buildMesh(ring: Array<DoubleArray>, h: Double, minH: Double, mat: dynamic, baseZ: Double): dynamic {
-        val shape = Three.Shape()
-        var started = false
-        var pointCount = 0
-        ring.forEach { ll ->
-            val xy = Scene3D.lngLatToSceneXY(ll[0], ll[1]) // exact float — int rounding would distort the footprint
-            if (!started) {
-                shape.asDynamic().moveTo(xy[0], xy[1])
-                started = true
-            } else {
-                shape.asDynamic().lineTo(xy[0], xy[1])
-            }
-            pointCount++
+        val n = ring.size
+        if (n < 3) return js("null") // degenerate
+        // Project the footprint to scene XY up front so we can shrink it toward its centroid (anti-z-fight).
+        val xs = DoubleArray(n)
+        val ys = DoubleArray(n)
+        var cx = 0.0
+        var cy = 0.0
+        for (i in 0 until n) {
+            val xy = Scene3D.lngLatToSceneXY(ring[i][0], ring[i][1]) // exact float — int rounding would distort it
+            xs[i] = xy[0]
+            ys[i] = xy[1]
+            cx += xy[0]
+            cy += xy[1]
         }
-        if (pointCount < 3) return js("null") // degenerate
+        cx /= n
+        cy /= n
+        val inset = if (PARALLEL_MODE) INSET_FRAC else 1.0 // only needed when MapLibre stays visible underneath
+        val shape = Three.Shape()
+        for (i in 0 until n) {
+            val x = cx + (xs[i] - cx) * inset
+            val y = cy + (ys[i] - cy) * inset
+            if (i == 0) shape.asDynamic().moveTo(x, y) else shape.asDynamic().lineTo(x, y)
+        }
         val opts: dynamic = js("({ bevelEnabled: false, steps: 1 })")
-        opts.depth = (h - minH).coerceAtLeast(0.5)
+        val depth = (h - minH).coerceAtLeast(0.5)
+        opts.depth = if (PARALLEL_MODE) (depth - ROOF_DROP_M).coerceAtLeast(0.5) else depth
         val geo = Three.ExtrudeGeometry(shape, opts)
         val mesh = Three.Mesh(geo, mat)
         if (!sampled) { // one-time diagnostic: compare to where portals/the map sit
             sampled = true
-            val s = Scene3D.lngLatToSceneXY(ring[0][0], ring[0][1])
             console.log(
-                "OwnBuildings sample: lnglat=${ring[0][0]},${ring[0][1]} → sceneXY=${s[0]},${s[1]} baseZ=$baseZ depth=${opts.depth}",
+                "OwnBuildings sample: lnglat=${ring[0][0]},${ring[0][1]} → sceneXY=${xs[0]},${ys[0]} baseZ=$baseZ depth=${opts.depth}",
             )
         }
         // The shape carries absolute scene XY; sit it on the terrain at the building's base.
