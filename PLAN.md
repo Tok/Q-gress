@@ -56,6 +56,11 @@ be matched. **Desktop-only**; mobile is blocked.
   window size. The "real UI" we want to ship behind.
 
 ## Onboarding
+- [ ] **Map-size pass.** (a) A **warning popup for large maps** — "reduced FPS to be expected" before the
+  build, so the player opts in knowingly. (b) **Optimize the three size presets** (Small / Normal / Large) —
+  profile + tune each (portal count, NPC density, build time, runtime FPS) so each hits a sane quality/perf
+  target. (c) **Drop square maps** if any remain (the round-field option already squares; rectangular presets
+  are the keepers) — confirm and remove.
 - [ ] **Location selection polish** — Home / nearest city via Geolocation; a curated preset list; Random;
   surface the free-form search on the onboarding screen (it only exists in-game now).
 - [ ] **Real per-stage load %** (especially flow-field computation).
@@ -201,6 +206,13 @@ the board; fair shuffled agent order). Deeper "no single strategy dominates" val
 - **Evaluate NVIDIA Komodo** (per user) — investigate fit (rendering / AI / acceleration?) before committing.
 - **Legacy 2D TODOs still open** — smarter agent behaviour (more destinations, **swarming**); an
   inventory/capacity limit; an FPS/perf readout (pairs with `?debug`); unit tests for fielding + deploying.
+
+## Known glitches (low priority)
+- **Loading-count fraction glyph.** In world-creation progress, counts like `1/2` and `1/4` render as the
+  precomposed ½/¼ glyph (`LoadingOverlay.detail("… ($done/$total)")`). `font-feature-settings: "frac" 0` on
+  `.loadingDetail` is already set but **doesn't fix it** — next time try also disabling `dlig`/`clig`/`liga`
+  (or `font-variant-ligatures: none`), or break the sequence (a hair-space / ZWNJ between the digit and the
+  slash). Cosmetic, non-critical.
 
 ## Constraints / agreements
 - Commit to `develop`; **no pushing** until something works end-to-end.
