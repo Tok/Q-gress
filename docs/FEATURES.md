@@ -162,8 +162,9 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
   picker; a sane baseline opponent until a trained net is loadable.
 - **Collapsible + expandable footer** (`util/ui/Footer`): the full-width bottom tab bar has three body
   heights via two header controls — **collapse** (chevron: hide → just the tab bar) and **maximize** (expand
-  → near-full-screen, with the sim still running behind it) — so space-hungry tabs like NET get room. Normal
-  is a short docked strip; Tab cycles tabs (revealing the body if collapsed).
+  → fills up to just below the top scoreboard, with the sim still running behind it) — so space-hungry tabs
+  like NET get room. Normal is a short docked strip; Tab cycles tabs. The **NET** tab **auto-expands** on
+  entry and auto-restores on leave (unless you've taken manual control of the size).
 - **AI footer tab** (`util/ui/AiPanel`, PLAN Phase 6): a footer tab (AGENTS / **AI** / NET / TUNING / EVENT
   LOG) showing, per faction, the **driver** picker (Manual + **Heuristic** + **Neural net** live; LLM until
   6.3) and a live **observation** readout — the 13-slot normalized feature vector (`ai.Observation`) a net/LLM
@@ -172,8 +173,10 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
   net-driven faction it draws the net as three node columns — observation inputs, hidden neurons, slider
   outputs — wired by edges whose brightness tracks each connection's live contribution (weight × upstream
   activation). Node brightness = activation; the strongest outputs (the actions the net favours now) are
-  ringed + labelled and the top one's incoming edges are lit as the "chosen path". You watch the net think as
-  the match swings (`Net.forwardTraced` exposes the per-layer activations).
+  ringed + labelled and the top one's incoming edges are lit as the "chosen path". Beside it, a **stats
+  sidebar** (network shape, champion fitness, the dominant driving input, the peak hidden neuron, the favoured
+  actions) updates live. The canvas renders at **device-pixel resolution** for crisp lines/text. You watch
+  the net think as the match swings (`Net.forwardTraced` exposes the per-layer activations).
 - **TUNING footer tab** (`util/ui/SliderHistoryPanel`): one uPlot sparkline per behaviour-slider slot,
   per faction, over the checkpoint window — the visible record of an AI driver re-tuning the sliders (drifting
   lines) vs Manual control (flat). Faction-agnostic overlap blend where the two coincide, like the history

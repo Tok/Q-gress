@@ -399,9 +399,65 @@ html, body {
     overflow: auto;
     padding: 6px 12px;
 }
-/* Expanded: pull the footer up to near-full-screen for space-hungry tabs (NET viz); sim runs behind it. */
+/* Expanded: pull the footer up to fill the screen up to just below the top header (leaving ~58px for the
+   scoreboard), for space-hungry tabs (NET viz); the sim keeps running behind it. */
 .footer.expanded .footerBody {
-    max-height: 88vh;
+    max-height: calc(100vh - 86px);
+}
+
+/* NET footer tab: the neural-net activation diagram + a stats sidebar (best viewed footer-maximized). */
+.netVizPanel {
+    display: flex;
+    gap: 32px;
+    flex-wrap: wrap;
+    padding: 8px 6px 16px;
+}
+.netVizHead {
+    font-family: "Chakra Petch", sans-serif;
+    letter-spacing: 1px;
+    font-size: 14px;
+    margin-bottom: 8px;
+}
+.netVizBody {
+    display: flex;
+    gap: 22px;
+    align-items: flex-start;
+}
+.netVizStats {
+    min-width: 200px;
+    font-size: 12.5px;
+    padding-top: 6px;
+}
+.netVizStatRow {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+.netVizStatKey {
+    color: #9aa6a0;
+}
+.netVizStatVal {
+    color: #ffffff;
+    font-variant-numeric: tabular-nums;
+}
+.netVizSub {
+    margin: 12px 0 4px;
+    color: #9aa6a0;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+.netVizAction {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 3px 0;
+}
+.netVizHint {
+    opacity: 0.7;
+    padding: 12px;
 }
 
 /* History dashboard (HistoryPanel) — right intel column: per metric, live ENL/RES value + sparkline. */

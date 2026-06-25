@@ -5,31 +5,36 @@ import ai.FactionPolicies
 import ai.Observation
 import ai.OverridePolicy
 import ai.SliderVector
+import ai.net.GenomeIO
 import ai.net.Net
 import ai.net.NetPolicy
+import ai.net.NetStore
 import kotlinx.browser.document
+import kotlinx.browser.window
 import org.w3c.dom.CanvasRenderingContext2D
 import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.HTMLElement
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.pow
+import kotlin.math.roundToInt
 
 /**
- * The **NET** footer tab (PLAN Phase 6.2 payoff): a live activation diagram of the neural-net driver. For
- * each net-driven faction it draws the three layers as columns of nodes — the [Observation] inputs, the
- * hidden neurons, and the [SliderVector] outputs — wired by edges whose brightness tracks each connection's
- * live contribution (weight × upstream activation). Node brightness tracks activation; the strongest outputs
- * (the actions the net favours right now) are ringed + labelled, and the top one's incoming edges are lit as
- * the "chosen path". Recomputed each frame from the current observation, so the net is visibly *thinking* as
- * the match shifts (behaviour itself still re-tunes only at checkpoint cadence).
+ * The **NET** footer tab (PLAN Phase 6.2 payoff): a live activation diagram of the neural-net driver, beside a
+ * stats sidebar. For each net-driven faction it draws the three layers as columns of nodes — the
+ * [Observation] inputs, the hidden neurons, and the [SliderVector] outputs — wired by edges whose brightness
+ * tracks each connection's live contribution (weight × upstream activation). Node brightness tracks
+ * activation; the strongest outputs (the actions the net favours right now) are ringed + labelled, and the
+ * top one's incoming edges are lit as the "chosen path". Recomputed each frame from the current observation,
+ * so the net is visibly *thinking* as the match shifts (behaviour itself still re-tunes per checkpoint). The
+ * canvas renders at device-pixel resolution for crisp lines; best viewed with the footer maximized.
  */
 object NetVizPanel {
-    private const val CW = 380
-    private const val CH = 300
-    private const val TOP = 30.0
-    private const val BOT = 14.0
-    private const val NODE_R = 4.0
+    private const val CW = 460
+    private const val CH = 560
+    private const val TOP = 46.0
+    private const val BOT = 26.0
+    private const val NODE_R = 5.5
     private const val TOP_ACTIONS = 3 // outputs to ring + label as the favoured actions
     private const val FONT = "Coda" // the HUD number/text face
     private const val TAU = 2.0 * PI
@@ -47,9 +52,19 @@ object NetVizPanel {
     // One rendered layer: its activations, its column x, and the y-centre of each node.
     private class Layer(val acts: DoubleArray, val x: Double, val ys: DoubleArray)
 
+    // The sidebar's value cells (updated each frame from the live trace).
+    private class StatsView(
+        val arch: HTMLElement,
+        val fitness: HTMLElement,
+        val drive: HTMLElement,
+        val peakHidden: HTMLElement,
+        val actions: List<HTMLElement>,
+    )
+
     private var built = false
     private val canvases = mutableMapOf<Faction, HTMLCanvasElement>()
     private val blocks = mutableMapOf<Faction, HTMLElement>()
+    private val stats = mutableMapOf<Faction, StatsView>()
     private var hint: HTMLElement? = null
 
     fun update() {
@@ -78,9 +93,9 @@ object NetVizPanel {
         val trace = net.forwardTraced(Observation.observe(faction))
         ctx.clearRect(0.0, 0.0, CW.toDouble(), CH.toDouble())
 
-        val input = Layer(trace.input, 46.0, layerYs(trace.input.size))
+        val input = Layer(trace.input, 104.0, layerYs(trace.input.size))
         val hidden = Layer(trace.hidden, CW * 0.46, layerYs(trace.hidden.size))
-        val output = Layer(trace.output, CW * 0.74, layerYs(trace.output.size))
+        val output = Layer(trace.output, CW * 0.69, layerYs(trace.output.size))
 
         captions(ctx, faction, input.x, hidden.x, output.x)
         edges(ctx, faction, input, hidden) { i, h -> net.inputWeight(i, h) }
@@ -94,26 +109,42 @@ object NetVizPanel {
         nodes(ctx, faction, output, signed = false)
         inputLabels(ctx, faction, input)
         outputLabels(ctx, faction, output, top)
+        updateStats(faction, net, trace, top)
+    }
+
+    private fun updateStats(faction: Faction, net: Net, trace: Net.Trace, top: List<Int>) {
+        val view = stats[faction] ?: return
+        view.arch.textContent = "${Net.INPUTS} → ${net.hidden} → ${Net.OUTPUTS}"
+        view.fitness.textContent = GenomeIO.fitnessOf(NetStore.activeJson())?.let { "+${it.roundToInt()} MU" } ?: "—"
+        val driveIdx = trace.input.indices.maxByOrNull { trace.input[it] } ?: 0
+        view.drive.textContent = "${IN_LABELS.getOrElse(driveIdx) { "f$driveIdx" }} ${pct(trace.input[driveIdx])}"
+        val peakIdx = trace.hidden.indices.maxByOrNull { abs(trace.hidden[it]) } ?: 0
+        view.peakHidden.textContent = "#$peakIdx ${signed(trace.hidden[peakIdx])}"
+        view.actions.forEachIndexed { rank, row ->
+            val o = top.getOrNull(rank)
+            (row.firstChild as? HTMLElement)?.textContent = if (o == null) "" else OUT_LABELS[o]
+            (row.lastChild as? HTMLElement)?.textContent = if (o == null) "" else pct(trace.output[o])
+        }
     }
 
     // y-centre of node [i] of [n], spread evenly down the canvas.
     private fun layerYs(n: Int): DoubleArray = DoubleArray(n) { TOP + (CH - TOP - BOT) * ((it + 0.5) / n) }
 
     private fun captions(ctx: CanvasRenderingContext2D, faction: Faction, inX: Double, hidX: Double, outX: Double) {
-        ctx.globalAlpha = 0.75
+        ctx.globalAlpha = 0.8
         ctx.fillStyle = faction.color
-        ctx.font = "10px '$FONT'"
+        ctx.font = "13px '$FONT'"
         ctx.asDynamic().textAlign = "center"
-        ctx.fillText("observation", inX, 14.0)
-        ctx.fillText("hidden", hidX, 14.0)
-        ctx.fillText("sliders", outX, 14.0)
+        ctx.fillText("observation", inX, 20.0)
+        ctx.fillText("hidden", hidX, 20.0)
+        ctx.fillText("sliders", outX, 20.0)
         ctx.globalAlpha = 1.0
     }
 
     private fun edges(ctx: CanvasRenderingContext2D, faction: Faction, from: Layer, to: Layer, weight: (Int, Int) -> Double) {
         var max = 1e-6
         for (a in from.acts.indices) for (b in to.acts.indices) max = maxOf(max, abs(from.acts[a] * weight(a, b)))
-        ctx.lineWidth = 0.7
+        ctx.lineWidth = 0.9
         for (a in from.acts.indices) {
             for (b in to.acts.indices) {
                 val contribution = from.acts[a] * weight(a, b)
@@ -139,7 +170,7 @@ object NetVizPanel {
         if (topOut < 0) return
         var max = 1e-6
         for (h in hidden.acts.indices) max = maxOf(max, abs(hidden.acts[h] * weight(h, topOut)))
-        ctx.lineWidth = 1.4
+        ctx.lineWidth = 1.8
         ctx.strokeStyle = faction.color
         for (h in hidden.acts.indices) {
             val mag = (abs(hidden.acts[h] * weight(h, topOut)) / max).pow(1.2)
@@ -170,26 +201,26 @@ object NetVizPanel {
     }
 
     private fun inputLabels(ctx: CanvasRenderingContext2D, faction: Faction, layer: Layer) {
-        ctx.font = "8px '$FONT'"
+        ctx.font = "11px '$FONT'"
         ctx.asDynamic().textAlign = "right"
         ctx.fillStyle = faction.color
-        ctx.globalAlpha = 0.65
-        layer.ys.forEachIndexed { i, y -> ctx.fillText(IN_LABELS.getOrElse(i) { "f$i" }, layer.x - NODE_R - 4.0, y + 3.0) }
+        ctx.globalAlpha = 0.7
+        layer.ys.forEachIndexed { i, y -> ctx.fillText(IN_LABELS.getOrElse(i) { "f$i" }, layer.x - NODE_R - 7.0, y + 4.0) }
         ctx.globalAlpha = 1.0
     }
 
     private fun outputLabels(ctx: CanvasRenderingContext2D, faction: Faction, layer: Layer, top: List<Int>) {
-        ctx.font = "9px '$FONT'"
+        ctx.font = "12px '$FONT'"
         ctx.asDynamic().textAlign = "left"
         top.forEach { o ->
             ctx.globalAlpha = 0.95
             ctx.strokeStyle = faction.color
-            ctx.lineWidth = 1.2
+            ctx.lineWidth = 1.4
             ctx.beginPath()
-            ctx.arc(layer.x, layer.ys[o], NODE_R + 2.5, 0.0, TAU)
+            ctx.arc(layer.x, layer.ys[o], NODE_R + 3.0, 0.0, TAU)
             ctx.stroke()
             ctx.fillStyle = faction.color
-            ctx.fillText("${OUT_LABELS[o]}  ${(layer.acts[o] * 100).toInt()}%", layer.x + 9.0, layer.ys[o] + 3.0)
+            ctx.fillText("${OUT_LABELS[o]}  ${pct(layer.acts[o])}", layer.x + 12.0, layer.ys[o] + 4.0)
         }
         ctx.globalAlpha = 1.0
     }
@@ -200,13 +231,9 @@ object NetVizPanel {
         if (built) return true
         if (document.body == null) return false
         val panel = el("div", "netVizPanel")
-        panel.asDynamic().style.display = "flex"
-        panel.asDynamic().style.gap = "20px"
-        panel.asDynamic().style.flexWrap = "wrap"
         Faction.all().forEach { faction -> panel.appendChild(factionBlock(faction)) }
         val hintEl = el("div", "netVizHint")
         hintEl.textContent = "Set a faction's driver to “Neural net” in the AI tab to watch it think."
-        hintEl.asDynamic().style.opacity = "0.7"
         hint = hintEl
         panel.appendChild(hintEl)
         Footer.tab("net").appendChild(panel)
@@ -216,22 +243,69 @@ object NetVizPanel {
 
     private fun factionBlock(faction: Faction): HTMLElement {
         val block = el("div", "netVizCol")
-        val head = el("div", "netVizHead")
-        head.textContent = "${faction.abbr} · neural net"
-        head.asDynamic().style.color = faction.color
+        val head = el("div", "netVizHead").also {
+            it.textContent = "${faction.abbr} · neural net"
+            it.asDynamic().style.color = faction.color
+        }
         block.appendChild(head)
-        val canvas = document.createElement("canvas") as HTMLCanvasElement
-        canvas.width = CW
-        canvas.height = CH
-        block.appendChild(canvas)
-        canvases[faction] = canvas
+        val body = el("div", "netVizBody")
+        body.appendChild(canvasFor(faction))
+        body.appendChild(statsFor(faction))
+        block.appendChild(body)
         blocks[faction] = block
         return block
+    }
+
+    // Device-pixel-resolution canvas → crisp lines/text on HiDPI displays (CSS size CW×CH, backing store ×dpr).
+    private fun canvasFor(faction: Faction): HTMLCanvasElement {
+        val canvas = document.createElement("canvas") as HTMLCanvasElement
+        val dpr = window.devicePixelRatio.takeIf { it > 0.0 } ?: 1.0
+        canvas.width = (CW * dpr).toInt()
+        canvas.height = (CH * dpr).toInt()
+        canvas.style.width = "${CW}px"
+        canvas.style.height = "${CH}px"
+        (canvas.getContext("2d") as? CanvasRenderingContext2D)?.scale(dpr, dpr)
+        canvases[faction] = canvas
+        return canvas
+    }
+
+    private fun statsFor(faction: Faction): HTMLElement {
+        val box = el("div", "netVizStats")
+        val arch = statRow(box, "Network")
+        val fitness = statRow(box, "Champion fitness")
+        val drive = statRow(box, "Driving input")
+        val peakHidden = statRow(box, "Peak hidden")
+        box.appendChild(el("div", "netVizSub").also { it.textContent = "Favoured actions" })
+        val actions = (0 until TOP_ACTIONS).map { actionRow(box, faction) }
+        stats[faction] = StatsView(arch, fitness, drive, peakHidden, actions)
+        return box
+    }
+
+    private fun statRow(parent: HTMLElement, key: String): HTMLElement {
+        val row = el("div", "netVizStatRow")
+        row.appendChild(el("span", "netVizStatKey").also { it.textContent = key })
+        val value = el("span", "netVizStatVal")
+        row.appendChild(value)
+        parent.appendChild(row)
+        return value
+    }
+
+    // A favoured-action row: a faction-coloured name cell (firstChild) + a value cell (lastChild), both set live.
+    private fun actionRow(parent: HTMLElement, faction: Faction): HTMLElement {
+        val row = el("div", "netVizAction")
+        row.appendChild(el("span", "netVizActionName").also { it.asDynamic().style.color = faction.color })
+        row.appendChild(el("span", "netVizStatVal"))
+        parent.appendChild(row)
+        return row
     }
 
     private fun setVisible(e: HTMLElement, visible: Boolean) {
         e.asDynamic().style.display = if (visible) "" else "none"
     }
+
+    private fun pct(value: Double): String = "${(value * 100.0).roundToInt()}%"
+
+    private fun signed(value: Double): String = (if (value >= 0) "+" else "") + (value.asDynamic().toFixed(2) as String)
 
     private fun el(tag: String, cls: String): HTMLElement {
         val e = document.createElement(tag) as HTMLElement

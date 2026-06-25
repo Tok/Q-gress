@@ -16,6 +16,7 @@ object Footer {
     private var active = AGENTS_ID
     private var collapsed = false
     private var expanded = false
+    private var autoExpanded = false // expansion driven by entering a space-hungry tab (NET), not a manual click
     private val tabButtons = mutableMapOf<String, HTMLElement>()
     private var rootEl: HTMLElement? = null
     private var body: HTMLElement? = null
@@ -77,6 +78,7 @@ object Footer {
         max.title = "Expand / restore the panel"
         max.onclick = {
             expanded = !expanded
+            autoExpanded = false // the user took manual control of the size
             if (expanded) collapsed = false // expanding always reveals the body
             applyState()
             null
@@ -112,6 +114,17 @@ object Footer {
             (document.getElementById(id) as? HTMLElement)?.style?.display = if (id == bodyId) "block" else "none"
             tabButtons[id]?.let { if (id == bodyId) it.classList.add("active") else it.classList.remove("active") }
         }
+        // The NET viz wants the whole screen — auto-expand on entry, auto-restore on leave (unless the player
+        // has since taken manual control of the size, in which case we leave their choice alone).
+        if (bodyId == NET_ID) {
+            expanded = true
+            collapsed = false
+            autoExpanded = true
+        } else if (autoExpanded) {
+            expanded = false
+            autoExpanded = false
+        }
+        applyState()
     }
 
     private fun applyState() {
