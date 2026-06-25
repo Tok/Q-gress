@@ -374,13 +374,14 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
   "muffle"), a high-pass, and a **reverb** send (convolver fed a generated decaying-noise impulse). The
   **`#audio` demo** auditions every standalone SFX (incl. the ultra-strike) and exposes live sliders for
   the low/high-pass + reverb mix + a major/minor toggle, to dial the audio in.
-- **Layered XMP explosion** (`SoundUtil.playXmpExplosion`): on top of the kept synthetic boom + noise
-  blast, a (tamed) detonation snap + chest-punch sub at the note + a deep, hard **909-style kick**
-  (`KickDrum`: fast pitch-drop sine + a high-passed beater click) for the punch + a long lowpassed rumble
-  tail whose brightness and amplitude decay over the fireball's life — rising and dissolving with the
-  mushroom. The kick + rumble feed a **reverb send** (`AudioFx` per-voice bus) for space. **Ultra-strike**
-  (`playUltraStrike`) leads with the same kick a touch **higher + tighter**, then its short sharp crack —
-  punchy, no rumble tail. (Both steps toward a wider **303/808/909** palette — see PLAN.)
+- **Layered detonation** (`SoundUtil.playXmpExplosion`, `deep` flag): a detonation snap + chest-punch sub
+  at the note + a deep, hard **909-style kick** (`KickDrum`: fast pitch-drop sine + a high-passed beater
+  click) + a long lowpassed rumble tail whose brightness/amplitude decay over the fireball's life, all
+  feeding a **reverb send** (`AudioFx` per-voice bus) for space. The **XMP** is the *huge, distant* blast —
+  a very deep + long sub-bass kick (~48 Hz), a darker/softer snap and a muffled, long, more reverberant
+  rumble (a giant explosion heard from afar). The **Ultra-strike** (`playUltraStrike`) is the tighter,
+  brighter **medium-deep boom** the XMP used to have. The master limiter runs a slower attack so the kick
+  transient punches through. (Steps toward a wider **303/808/909** palette — see PLAN.)
 
 ## Mods, viruses, items & drop rates
 - **4 mod slots per portal** (`portal/ModSlot`) holding a generic `Mod` (`items/deployable/Mod`):

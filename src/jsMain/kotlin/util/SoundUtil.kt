@@ -48,12 +48,14 @@ object SoundUtil {
     private const val PANNING_MODEL = "HRTF" // front/back + elevation cues (vs cheaper "equalpower")
     private const val MASTER_BOOST = 2.6 // lift the whole bus (3D attenuation made it quiet); limiter guards clipping
 
-    // 909-style kick under the detonations (deep, hard, punchy; see [KickDrum]) — XMP is the deep boom,
-    // the Ultra-Strike is higher + tighter + clickier (the sharp punch).
-    private const val XMP_KICK_HZ = 80.0 // XMP kick start pitch — deep
-    private const val XMP_KICK_DECAY = 0.5 // …and longer (boomy)
-    private const val XMP_KICK_CLICK = 0.18 // …with only a soft beater click (deep, not sharp)
-    private const val US_KICK_HZ = 165.0 // Ultra-Strike kick — a touch higher + tighter than the XMP
+    // 909-style kick under the detonations (deep, hard, punchy; see [KickDrum]). The Ultra-Strike now
+    // carries the old medium-deep XMP boom; the XMP itself goes much deeper + bigger — a huge, distant blast.
+    private const val US_KICK_HZ = 85.0 // Ultra-Strike kick (the old XMP boom)
+    private const val US_KICK_DECAY = 0.5
+    private const val US_KICK_CLICK = 0.18 // a soft beater click
+    private const val XMP_KICK_HZ = 48.0 // XMP kick — very deep (sub-bass "whump" of a huge explosion)
+    private const val XMP_KICK_DECAY = 1.0 // …and long (the boom rolls out)
+    private const val XMP_KICK_CLICK = 0.05 // …with almost no click (a distant blast has no sharp transient)
     private const val BLAST_REVERB_SEND = 0.22 // reverb send for the explosion rumble tail
     private const val MUFFLE_CLOSED_HZ = 600.0 // muffled: distant/underwater (title behind onboarding)
 
@@ -67,10 +69,10 @@ object SoundUtil {
     // voices stack. (DynamicsCompressor configured as a brick-wall-ish limiter.)
     private val limiter: dynamic by lazy {
         val c = audioCtx.asDynamic().createDynamicsCompressor()
-        c.threshold.value = -6.0
+        c.threshold.value = -5.0
         c.knee.value = 6.0
-        c.ratio.value = 12.0
-        c.attack.value = 0.003
+        c.ratio.value = 10.0
+        c.attack.value = 0.009 // slower than a brick-wall so kick/blast transients punch through before it clamps
         c.release.value = 0.12
         c.connect(audioCtx.destination)
         c
@@ -238,20 +240,20 @@ object SoundUtil {
      */
     fun playXmpSound(pos: Pos, level: Int) {
         if (isMuted()) return
-        val amp = 0.5 + level * 0.06
+        val amp = 0.6 + level * 0.06
         val note = noteFor(level) // 65–131 Hz; level 8 is the lowest
-        // (1) Synthetic boom: a sine at the scale note sweeping down, with a longer decay.
-        val dur = 0.5 + level * 0.04
-        val osc = createExponentialRampOscillator(OscillatorType.SINE, note, note * 0.4, dur)
+        // (1) Synthetic boom: a sine at the scale note sweeping deep down, long decay (the body of the blast).
+        val dur = 0.7 + level * 0.05
+        val osc = createExponentialRampOscillator(OscillatorType.SINE, note, note * 0.3, dur)
         val gainNode = audioCtx.createGain()
         val n = now()
         gainNode.gain.setValueAtTime(amp, n)
         gainNode.gain.exponentialRampToValueAtTime(EPS, n + dur)
         connectVoice(osc, createPanner(pos), gainNode, n + dur)
         // Low-passed noise "blast" (a rumble that whoomphs down), not the bright hi-hat-like crack.
-        playNoiseBlast(pos, amp * 0.9, 0.45 + level * 0.05)
-        // (2) Proper explosion on top, tuned to the fireball's life (≈ XmpBurst LIFE_BASE + level·0.1).
-        playXmpExplosion(pos, amp, note, 1.4 + level * 0.1)
+        playNoiseBlast(pos, amp * 0.85, 0.6 + level * 0.06)
+        // (2) The HUGE, distant explosion on top, riding the fireball's life — deep kick + long muffled rumble.
+        playXmpExplosion(pos, amp, note, 1.9 + level * 0.12, deep = true)
     }
 
     /** A short rising 3-note jingle when one of the player's agents levels up (level 5→3→1 on the scale). */
@@ -270,29 +272,41 @@ object SoundUtil {
     }
 
     /**
-     * Ultra-strike: a short, sharp, **punchy** hit — distinct from the XMP's long boom. A tight crack +
-     * a quick high "pew" body + a snappy sub punch, all in ~0.12s (no long rumble tail).
+     * Ultra-strike: a **punchy, medium-deep boom** — the character the XMP used to have (the XMP itself is
+     * now a far bigger, deeper, more distant blast). A deep 909 kick + sub + a tighter, brighter rumble.
      */
     fun playUltraStrike(pos: Pos) {
         if (isMuted()) return
-        KickDrum.play(pos, US_KICK_HZ, 1.0, 0.24) // deep, hard 909 kick — punch first (a touch higher + tighter than the XMP)
-        playNoiseCrack(pos, 0.9, 0.05) // sharp, short crack
-        decayVoice(createExponentialRampOscillator(OscillatorType.SQUARE, 440.0, 90.0, 0.1), pos, 0.5, 0.1) // high→low "pew"
-        decayVoice(createExponentialRampOscillator(OscillatorType.SINE, 150.0, 60.0, 0.12), pos, 0.85, 0.12) // tight sub punch
+        playXmpExplosion(pos, 0.95, noteFor(8), 0.95, deep = false) // deepest scale note; short tight tail
     }
 
     /**
      * Layered detonation that rides the mushroom animation: an initial broadband crack (the snap), a
-     * chest-punch sub at the note, and a long lowpassed rumble tail whose brightness falls + amplitude
-     * decays over [life] (the smoke cooling + dissipating), so the sound rises and fades with the visual.
+     * chest-punch sub at the note, a deep 909 kick, and a long lowpassed rumble tail whose brightness +
+     * amplitude decay over [life] (the smoke cooling + dissipating), so the sound rises + fades with it.
+     *
+     * [deep] = the XMP's HUGE, distant blast: a very deep + long kick, a softer/darker snap, and a more
+     * muffled, longer, more reverberant rumble (a giant explosion heard from afar). `false` = the tighter,
+     * brighter, medium-deep boom now used by the Ultra-Strike.
      */
-    private fun playXmpExplosion(pos: Pos, amplitude: Double, note: Double, life: Double) {
+    private fun playXmpExplosion(pos: Pos, amplitude: Double, note: Double, life: Double, deep: Boolean) {
         val n = now()
-        playNoiseCrack(pos, amplitude * 0.7, 0.5) // (a) detonation snap (tamed — the blast read too bright/high)
-        // (b) sub thump at the note, dropping an octave, quick decay
-        decayVoice(createExponentialRampOscillator(OscillatorType.SINE, note, note * 0.5, 0.4), pos, amplitude * 1.2, 0.4)
-        // (b2) deep, hard 909 kick at the blast front — the boom that lands the XMP with weight.
-        KickDrum.play(pos, XMP_KICK_HZ, amplitude * 1.8, XMP_KICK_DECAY, XMP_KICK_CLICK)
+        // (a) detonation snap — a distant huge blast has little high-end, so it's softer/darker when deep.
+        playNoiseCrack(pos, amplitude * (if (deep) 0.22 else 0.55), if (deep) 0.85 else 0.5)
+        // (b) sub thump at the note, dropping an octave (longer + heavier for the big one)
+        val subDecay = if (deep) 0.7 else 0.4
+        decayVoice(
+            createExponentialRampOscillator(OscillatorType.SINE, note, note * 0.5, subDecay),
+            pos,
+            amplitude * (if (deep) 1.7 else 1.2),
+            subDecay,
+        )
+        // (b2) deep, hard 909 kick at the blast front — the punch/whump that lands the detonation with weight.
+        if (deep) {
+            KickDrum.play(pos, XMP_KICK_HZ, amplitude * 2.2, XMP_KICK_DECAY, XMP_KICK_CLICK)
+        } else {
+            KickDrum.play(pos, US_KICK_HZ, amplitude * 1.9, US_KICK_DECAY, US_KICK_CLICK)
+        }
         // (c) long rumble tail — fast attack, brightness + level fall over the fireball's life
         val sr = audioCtx.sampleRate
         val len = (life * sr).toInt().coerceAtLeast(1)
@@ -307,8 +321,8 @@ object SoundUtil {
         source.buffer = buffer
         val lowpass = audioCtx.createBiquadFilter()
         lowpass.type = "lowpass"
-        lowpass.frequency.setValueAtTime(1500.0, n)
-        lowpass.frequency.exponentialRampToValueAtTime(70.0, n + life) // bright blast → deep cooling rumble
+        lowpass.frequency.setValueAtTime(if (deep) 600.0 else 1500.0, n) // distant huge blast → muffled, no bright crack
+        lowpass.frequency.exponentialRampToValueAtTime(if (deep) 38.0 else 70.0, n + life) // → deep cooling rumble
         val rumbleGain = audioCtx.createGain()
         rumbleGain.gain.setValueAtTime(EPS, n)
         rumbleGain.gain.exponentialRampToValueAtTime(amplitude * 1.3, n + 0.03) // fast attack
@@ -319,7 +333,7 @@ object SoundUtil {
         lowpass.connect(rumbleGain)
         rumbleGain.connect(panNode)
         panNode.connect(masterGain)
-        KickDrum.sendToReverb(rumbleGain, amplitude * BLAST_REVERB_SEND) // a reverberant tail (space on the blast)
+        KickDrum.sendToReverb(rumbleGain, amplitude * (if (deep) 0.45 else BLAST_REVERB_SEND)) // more space on the huge blast
         source.start()
         source.stop(n + life)
     }
