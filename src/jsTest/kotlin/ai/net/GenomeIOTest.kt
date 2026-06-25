@@ -16,8 +16,27 @@ class GenomeIOTest {
         val genome = sampleGenome()
         val net = GenomeIO.decode(GenomeIO.encode(genome, hidden = 4, fitness = 123.5))
 
-        assertEquals(4, net.hidden)
+        assertEquals(listOf(4), net.arch.hiddens)
         assertTrue(genome.contentEquals(net.genome()), "weights survive the JSON round-trip")
+    }
+
+    @Test
+    fun roundTripsADeepArchitecture() {
+        val arch = NetArch(hiddens = listOf(16, 16), bias = true, activation = Activation.RELU)
+        val genome = DoubleArray(arch.genomeSize()) { it * 0.001 }
+        val net = GenomeIO.decode(GenomeIO.encode(genome, arch, fitness = 9.0))
+
+        assertEquals(listOf(16, 16), net.arch.hiddens, "the layer shape survives")
+        assertEquals(Activation.RELU, net.arch.activation, "the activation survives")
+        assertTrue(genome.contentEquals(net.genome()))
+    }
+
+    @Test
+    fun readsLegacySingleHiddenGenomes() {
+        // Pre-multilayer format: a bare "hidden":4 (no "arch") must still decode as one hidden layer.
+        val genome = sampleGenome(4)
+        val legacy = """{"v":1,"hidden":4,"inputs":${Net.INPUTS},"outputs":${Net.OUTPUTS},"weights":[${genome.joinToString(",")}]}"""
+        assertEquals(listOf(4), GenomeIO.decode(legacy).arch.hiddens)
     }
 
     @Test

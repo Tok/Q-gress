@@ -18,7 +18,7 @@ class EvolutionTest {
         populationSize = 6,
         generations = 3,
         elite = 2,
-        hidden = 6,
+        arch = NetArch(listOf(6)),
         matchTicks = 301, // two checkpoints (tick 0 + 300)
         matchesPerEval = 1,
         setup = MatchSetup(npcs = 6),

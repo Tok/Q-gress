@@ -21,8 +21,9 @@ import kotlin.math.roundToInt
 
 /**
  * The **NET** footer tab (PLAN Phase 6.2 payoff): a live activation diagram of the neural-net driver, beside a
- * stats sidebar. For each net-driven faction it draws the three layers as columns of nodes — the
- * [Observation] inputs, the hidden neurons, and the [SliderVector] outputs — wired by edges whose brightness
+ * stats sidebar. For each net-driven faction it draws every layer as a column of nodes — the [Observation]
+ * inputs, each hidden layer (any depth — `net.arch`), and the [SliderVector] outputs — wired by edges whose
+ * brightness
  * tracks each connection's live contribution (weight × upstream activation). Node brightness tracks
  * activation; the strongest outputs (the actions the net favours right now) are ringed + labelled, and the
  * top one's incoming edges are lit as the "chosen path". Recomputed each frame from the current observation,
@@ -30,10 +31,12 @@ import kotlin.math.roundToInt
  * canvas renders at device-pixel resolution for crisp lines; best viewed with the footer maximized.
  */
 object NetVizPanel {
-    private const val CW = 460
+    private const val CW = 540
     private const val CH = 560
     private const val TOP = 46.0
     private const val BOT = 26.0
+    private const val LEFT = 104.0 // room for the input labels on the left
+    private const val RIGHT = 140.0 // room for the output labels on the right
     private const val NODE_R = 5.5
     private const val TOP_ACTIONS = 3 // outputs to ring + label as the favoured actions
     private const val FONT = "Coda" // the HUD number/text face
@@ -93,50 +96,84 @@ object NetVizPanel {
         val trace = net.forwardTraced(Observation.observe(faction))
         ctx.clearRect(0.0, 0.0, CW.toDouble(), CH.toDouble())
 
-        val input = Layer(trace.input, 104.0, layerYs(trace.input.size))
-        val hidden = Layer(trace.hidden, CW * 0.46, layerYs(trace.hidden.size))
-        val output = Layer(trace.output, CW * 0.69, layerYs(trace.output.size))
+        // Column activations: observation, every hidden layer, then the sliders.
+        val acts = buildList {
+            add(trace.input)
+            addAll(trace.hiddens)
+            add(trace.output)
+        }
+        val cols = acts.size
+        val layers = acts.indices.map { Layer(acts[it], colX(it, cols), layerYs(acts[it].size)) }
 
-        captions(ctx, faction, input.x, hidden.x, output.x)
-        edges(ctx, faction, input, hidden) { i, h -> net.inputWeight(i, h) }
-        edges(ctx, faction, hidden, output) { h, o -> net.hiddenWeight(h, o) }
+        captions(ctx, faction, layers)
+        for (c in 0 until cols - 1) {
+            edges(ctx, faction, layers[c], layers[c + 1]) { from, to -> net.weight(c, from, to) }
+        }
 
         val top = topOutputs(trace.output)
-        litPath(ctx, faction, hidden, output, top.firstOrNull() ?: -1) { h, o -> net.hiddenWeight(h, o) }
+        val lastTransition = cols - 2 // last hidden → output
+        litPath(ctx, faction, layers[lastTransition], layers.last(), top.firstOrNull() ?: -1) { h, o ->
+            net.weight(lastTransition, h, o)
+        }
 
-        nodes(ctx, faction, input, signed = false)
-        nodes(ctx, faction, hidden, signed = true)
-        nodes(ctx, faction, output, signed = false)
-        inputLabels(ctx, faction, input)
-        outputLabels(ctx, faction, output, top)
+        val hiddenSigned = net.arch.activation.signed
+        layers.forEachIndexed { i, layer -> nodes(ctx, faction, layer, signed = i != 0 && i != cols - 1 && hiddenSigned) }
+        inputLabels(ctx, faction, layers.first())
+        outputLabels(ctx, faction, layers.last(), top)
         updateStats(faction, net, trace, top)
     }
 
+    // Even horizontal spread of [cols] columns across the canvas (between the label margins).
+    private fun colX(index: Int, cols: Int): Double = if (cols <= 1) LEFT else LEFT + (CW - LEFT - RIGHT) * (index.toDouble() / (cols - 1))
+
     private fun updateStats(faction: Faction, net: Net, trace: Net.Trace, top: List<Int>) {
         val view = stats[faction] ?: return
-        view.arch.textContent = "${Net.INPUTS} → ${net.hidden} → ${Net.OUTPUTS}"
+        view.arch.textContent = net.arch.label()
         view.fitness.textContent = GenomeIO.fitnessOf(NetStore.activeJson())?.let { "+${it.roundToInt()} MU" } ?: "—"
         val driveIdx = trace.input.indices.maxByOrNull { trace.input[it] } ?: 0
         view.drive.textContent = "${IN_LABELS.getOrElse(driveIdx) { "f$driveIdx" }} ${pct(trace.input[driveIdx])}"
-        val peakIdx = trace.hidden.indices.maxByOrNull { abs(trace.hidden[it]) } ?: 0
-        view.peakHidden.textContent = "#$peakIdx ${signed(trace.hidden[peakIdx])}"
+        view.peakHidden.textContent = peakHidden(trace.hiddens)
         view.actions.forEachIndexed { rank, valueEl ->
             val o = top.getOrNull(rank)
             valueEl.textContent = if (o == null) "—" else "${OUT_LABELS[o]} ${pct(trace.output[o])}"
         }
     }
 
+    // The most-active hidden neuron across every hidden layer, labelled "L<layer> #<index> <±value>".
+    private fun peakHidden(hiddens: List<DoubleArray>): String {
+        var bestLayer = 0
+        var bestIndex = 0
+        var bestMag = -1.0
+        hiddens.forEachIndexed { layer, acts ->
+            acts.forEachIndexed { index, v ->
+                if (abs(v) > bestMag) {
+                    bestMag = abs(v)
+                    bestLayer = layer
+                    bestIndex = index
+                }
+            }
+        }
+        if (bestMag < 0) return "—"
+        return "L${bestLayer + 1} #$bestIndex ${signed(hiddens[bestLayer][bestIndex])}"
+    }
+
     // y-centre of node [i] of [n], spread evenly down the canvas.
     private fun layerYs(n: Int): DoubleArray = DoubleArray(n) { TOP + (CH - TOP - BOT) * ((it + 0.5) / n) }
 
-    private fun captions(ctx: CanvasRenderingContext2D, faction: Faction, inX: Double, hidX: Double, outX: Double) {
+    private fun captions(ctx: CanvasRenderingContext2D, faction: Faction, layers: List<Layer>) {
         ctx.globalAlpha = 0.8
         ctx.fillStyle = faction.color
         ctx.font = "13px '$FONT'"
         ctx.asDynamic().textAlign = "center"
-        ctx.fillText("observation", inX, 20.0)
-        ctx.fillText("hidden", hidX, 20.0)
-        ctx.fillText("sliders", outX, 20.0)
+        val last = layers.size - 1
+        layers.forEachIndexed { i, layer ->
+            val caption = when (i) {
+                0 -> "observation"
+                last -> "sliders"
+                else -> "hidden $i"
+            }
+            ctx.fillText(caption, layer.x, 20.0)
+        }
         ctx.globalAlpha = 1.0
     }
 

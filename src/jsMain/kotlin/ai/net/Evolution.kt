@@ -19,16 +19,16 @@ data class EvolutionConfig(
     val mutationRate: Double = 0.15, // fraction of weights perturbed per offspring
     val mutationScale: Double = 0.3, // stddev of the gaussian perturbation
     val initScale: Double = 0.6, // stddev of initial random weights
-    val hidden: Int = Net.DEFAULT_HIDDEN,
+    val arch: NetArch = NetArch.DEFAULT, // the net shape to evolve (default 13 → 16 → 16 → 17)
     val matchTicks: Int = Config.ticksPerCycle, // evaluate over a full scoring cycle
     val matchesPerEval: Int = 3, // seeds averaged per genome (variance reduction)
     val setup: MatchSetup = MatchSetup(),
 )
 
 /** The outcome of training: the winning genome, its fitness, and the best-per-generation curve. */
-class EvolutionResult(val bestGenome: DoubleArray, val bestFitness: Double, val bestPerGeneration: List<Double>) {
+class EvolutionResult(val bestGenome: DoubleArray, val bestFitness: Double, val bestPerGeneration: List<Double>, val arch: NetArch) {
     /** A ready-to-install [NetPolicy] for [faction] from the winning genome. */
-    fun bestPolicy(faction: Faction, hidden: Int = Net.DEFAULT_HIDDEN): NetPolicy = NetPolicy(Net.fromGenome(bestGenome, hidden), faction)
+    fun bestPolicy(faction: Faction): NetPolicy = NetPolicy(Net.fromGenome(bestGenome, arch), faction)
 }
 
 /**
@@ -66,14 +66,14 @@ object Evolution {
             history.add(championFitness)
             population = nextGeneration(ranked, config, rng)
         }
-        return EvolutionResult(bestGenome, bestFitness, history)
+        return EvolutionResult(bestGenome, bestFitness, history, config.arch)
     }
 
     // Mean over [matchesPerEval] seeded matches of (our summed checkpoint MU − the foe's) — the fitness
     // objective: sustain the larger fields across the cycle. Match seeds are fixed across generations so
     // selection compares genomes on the same scenarios.
     private fun evaluate(genome: DoubleArray, grid: Grid, seed: Int, config: EvolutionConfig, opponent: () -> FactionPolicy?): Double {
-        val net = Net.fromGenome(genome, config.hidden)
+        val net = Net.fromGenome(genome, config.arch)
         var total = 0.0
         repeat(config.matchesPerEval) { m ->
             val result = SimRunner.runMatch(
@@ -98,7 +98,7 @@ object Evolution {
     }
 
     private fun randomGenome(config: EvolutionConfig, rng: Rng): DoubleArray =
-        DoubleArray(Net.genomeSize(config.hidden)) { rng.nextGaussian() * config.initScale }
+        DoubleArray(config.arch.genomeSize()) { rng.nextGaussian() * config.initScale }
 
     private fun mutate(genome: DoubleArray, config: EvolutionConfig, rng: Rng): DoubleArray = DoubleArray(genome.size) { i ->
         if (rng.next() < config.mutationRate) genome[i] + rng.nextGaussian() * config.mutationScale else genome[i]

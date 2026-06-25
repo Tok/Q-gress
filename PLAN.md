@@ -190,11 +190,18 @@ area is maximized, and hold it across the cycle. So fitness = the **sum/average 
   real-tile fixtures still need the `?debug=capture` pass.
 
 **6.2 — Track A: custom net + neuroevolution** → [docs/NN.md](docs/NN.md)
-- [x] **Net machinery DONE + tested** (`ai/net/`): `Net` (tiny MLP, `Observation.SIZE`→hidden(tanh)→
-  `SliderVector.SIZE`(sigmoid), flat genome), `NetPolicy` (maps the live `Observation` → sliders, re-evaluated
-  once per checkpoint), `Evolution` (a `(μ+λ)` GA — elitism + gaussian mutation, fitness = mean per-checkpoint
-  MU margin over K seeded `SimRunner` matches, RNG independent of `Util`). Deterministic; `bestPolicy()`
-  installs the winner. `Net`/`NetPolicy`/`Evolution` tests prove determinism + elitism monotonicity.
+- [x] **Net machinery DONE + tested** (`ai/net/`): `Net` (an MLP of arbitrary depth/width, flat genome),
+  `NetPolicy` (maps the live `Observation` → sliders, re-evaluated once per checkpoint), `Evolution` (a `(μ+λ)`
+  GA — elitism + gaussian mutation, fitness = mean per-checkpoint MU margin over K seeded `SimRunner` matches,
+  RNG independent of `Util`). Deterministic; `bestPolicy()` installs the winner. Tests prove determinism +
+  elitism monotonicity.
+- [x] **Flexible architecture (`NetArch`)** — the net shape is configurable for experimentation: any number of
+  hidden layers, any width (**default `13 → 16 → 16 → 17`, two hidden layers of 16**), a `bias` toggle, and a
+  hidden `Activation` (TANH/RELU/SIGMOID/LINEAR; output always sigmoid). `GenomeIO` serializes the full arch
+  (back-compat with old single-`hidden` genomes), `EvolutionConfig.arch` evolves any shape, and the NET viz +
+  `Tournament` work for any arch — so **different nets can be matched head-to-head**. Net machinery + `GenomeIO`
+  tests cover deep nets + the legacy format. (The baked champion is now a 16×16 net; deeper nets need more GA
+  budget to match a single layer — left as the experimentation knob.)
 - [x] **Training signal + balance — RESOLVED via the anti-snowball/comeback pass** (`agent/Balance.kt`).
   A baseline match was static + lopsided (ENL grabbed every portal, RES 0, no fields, MU flat 0). Root cause
   was twofold and both are fixed: **(1) turn-order bias** — agents were processed in insertion order so the ENL
