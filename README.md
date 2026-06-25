@@ -7,8 +7,9 @@
 A browser-based **simulacrum of the mobile game *Ingress*** (modelled on its **~2018-era** mechanics —
 resonators, links, fields, XM, bursters, mods), rebuilt in **3D**. Two factions — **ENL** ("frogs",
 green) and **RES** ("smurfs", blue) — capture portals, link them, and create control fields over a
-**real-world map**. It's a *simulacrum, not a playable map game*: you tune each faction's AI behaviour
-with sliders and watch the two sides play themselves out. **No real Ingress/portal data is used** —
+**real-world map**. It's a *simulacrum, not a playable map game*: each faction's behaviour is a set of
+**sliders**, and an **AI driver's output _is_ those sliders** — so you pick each side's brain and watch
+**AI vs AI** play itself out (or drive a side by hand). **No real Ingress/portal data is used** —
 everything is generated. (Modern additions like drones / Machina are out of scope for now.)
 
 <h2 align="center"><a href="https://tok.github.io/Q-gress/">▶&nbsp; Play Q-Gress live</a></h2>
@@ -30,6 +31,12 @@ instead. Use **Chrome / Brave / Edge** on a desktop with a mouse.
   tint. Physics **shatter**, volumetric **XMP** fireballs, **hack** centrifuge animations.
 - Real **portal names** from map POI/street data; per-terrain movement; **3D positional audio**.
 - A DOM HUD: a live MU "covered area" scoreboard, a per-metric **history dashboard**, an action log.
+- **AI drivers (proof-of-concept).** Each faction's sliders can be driven by a **custom neural net**
+  (a configurable MLP — default **16×16, two hidden layers** — trained headless by **neuroevolution**,
+  with a baked champion shipped), an **adaptive heuristic**, or an **experimental in-browser LLM**
+  (WebLLM / WebGPU). Pick each side's brain from the toolbar; the **NET** tab shows a live **activation
+  diagram + genome heatmap** so you can watch the net think. Headless match harness, deterministic
+  training, JSON genome save/load — see [`PLAN.md`](PLAN.md) Phase 6.
 - **Play any location** (geocoded) and **shareable links** that reproduce a world from
   `lng/lat/size/seed` (the RNG is seedable).
 

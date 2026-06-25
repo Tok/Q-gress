@@ -14,6 +14,12 @@ can play any side; any two brains can be matched. **Desktop-only**; mobile is bl
 the AI layer lands, the slider sim is the substrate we keep hardening.
 
 ## 3D / rendering
+- [x] **Buildings: parallel mode (DONE)** — at some locations (e.g. Red Square) not every MapLibre building
+  meshed, but we hid MapLibre's whole layer → gaps. `OwnBuildings.PARALLEL_MODE` now keeps MapLibre's
+  buildings visible everywhere (look + native shake) and uses our meshes as invisible shadow-casters (+ the
+  colliders/letter-hitboxes already come from the full feature set). _Future refinement:_ per-building
+  replacement (hide only the MapLibre footprints we have a mesh for) so we can show our own look without gaps —
+  needs matching our synthetic keys to MapLibre feature ids (or a custom building layer we fully own).
 - [ ] **Terrain follow-ups** (DEM heights shipped). Terrain-aware **shatter ground** — the cannon-es
   plane is still flat z=0, so shards/pole sink to sea level on high ground; maybe a Menu exaggeration
   slider; resample the height grid if the play area ever moves (ties into the grand-game movable field).
@@ -274,10 +280,28 @@ area is maximized, and hold it across the cycle. So fitness = the **sum/average 
   live `World` singletons (portals/agents/NPCs/drivers/score history/scalars) so an in-game benchmark can run
   the (world-clobbering) eval and resume the player's game untouched. `TournamentTest`/`WorldSnapshotTest`
   cover both.
-- Remaining: **Human/Net/LLM driver selection in onboarding**, and the **in-game leaderboard UI** — a button
-  that wraps `Tournament` in a `WorldSnapshot` capture/restore (and must also pause the render loop + swap
-  `Fx` to `NoOpEffects` for the eval, so the headless matches don't fire 3D FX / render their throwaway
-  portals), then shows the `Standing` table.
+- [ ] **Driver-selection onboarding screen** — a new world-creation step **right after faction selection**:
+  pick each side's brain (Human / Heuristic / Net / LLM), **defaulting to both sides = Net @ 16×16** (the live
+  toolbar pickers already exist via `DriverControls`; this surfaces the choice up front). Per faction, also a
+  net-architecture / variant pick later (ties into the trainer below).
+- [ ] **In-game leaderboard UI** — a button that wraps `Tournament` in a `WorldSnapshot` capture/restore (and
+  must also pause the render loop + swap `Fx` to `NoOpEffects` so the headless matches don't fire 3D FX /
+  render their throwaway portals), then shows the `Standing` table. Lets you **pit net variants** (different
+  `NetArch`) head-to-head and see which wins.
+
+**6.5 — Visual NN trainer** _(after the above lands)_
+- [ ] An in-browser **trainer UI**: define a `NetArch` (layers/widths/bias/activation) + `EvolutionConfig`
+  (pop/gens/mutation), run `Evolution` live with a fitness curve + best-genome preview (the genome heatmap +
+  activation viz already exist), then **save the winner** to `NetStore` / install it as a driver. The headless
+  pieces (`Evolution`, `SimRunner`, `Tournament`, `GenomeIO`, `NetStore`) are all in place; this is the UI +
+  wiring (run training off the main thread / chunked so the sim stays smooth).
+- [ ] **icebox — download / upload trained nets.** `GenomeIO` already JSON-ables a genome+arch (small, ~16 KB
+  at 16×16), so: a "download champion" (Blob → file) + "load from file/paste" path, and a small library of
+  saved nets. Lets nets be shared / versioned outside `localStorage`.
+- [ ] **icebox — genome/action-set versioning.** Once training is serious AND the action set grows (more
+  `QActions`, observation slots, etc.), stamp a **schema version** in the genome JSON and refuse/ migrate
+  incompatible nets (the `inputs`/`outputs` dim check is the seed of this). Not needed while we're pre-release
+  and the layout is churning — revisit when nets are worth keeping across versions.
 
 **Cross-cutting:** desktop-only + **WebGPU** gating; seeds via `?seed=`; **balance risk** — pure
 win-maximizing self-play may rediscover the recruit-rush degenerate (below), so keep tuning `Config`
