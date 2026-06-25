@@ -32,12 +32,15 @@ see PLAN.md).
     driving — null = no AI in control), `SliderVector` (the 17 sliders as one ordered encode/decode vector),
     `HeuristicPolicy` (the first live AI driver — an adaptive `Observation → SliderVector` mapping),
     `ai/net/NetPolicy` (a trained net as a driver), `Observation` (a normalized world feature vector — the
-    NN/LLM input), and `SimRunner` (the **headless match harness** — see *Rendering* below).
+    NN/LLM input), `SimRunner` (the **headless match harness** — see *Rendering* below), and `Tournament`
+    (ranks drivers over seeded `SimRunner` matches → a `Standing` leaderboard; the in-game benchmark wraps it
+    in `system/WorldSnapshot` so it can run without disturbing the live game).
 - **`portal/`** — portals, resonators, links, fields, XM, cooldowns, level/quality.
 - **`items/`** — bursters, power cubes, resonators, mods, levels.
 - **`config/`** — `Config` (balance constants), `Dim`/`Sim` (geometry), `Location` (preset
   places), `Styles`, `Colors`, `Time`.
 - **`system/`** — `Cycle`/`Checkpoint` (scoring/history over time), `Com` (message log),
+  `WorldSnapshot` (capture/restore the live sim singletons so a headless eval can run + the game resume),
   **`system/display/`** (all 3D rendering: `Scene3D` + the shader/effect/material modules), and
   **`system/effect/`** (the `Effects` sink seam — see *Rendering* below).
 - **`util/`** — `HtmlUtil` (DOM/UI construction + the main tick loop), `MapUtil` (MapLibre

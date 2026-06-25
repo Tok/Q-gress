@@ -154,7 +154,7 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
   `currentVector()` (i.e. an AI is in control, not the manual sliders), `TuningPanel` mirrors that vector onto
   the displayed faction's inputs each frame and flips to the auto-moving read-only bars — so the player
   watches the sliders re-tune themselves as the match swings. Manual control is unchanged (interactive). A
-  per-slider **lock** (the 🔒 toggle, shown only while an AI drives) lets the player grab one slider back —
+  per-slider **lock** (a padlock toggle, shown only while an AI drives) lets the player grab one slider back —
   it stays interactive and the AI keeps driving the rest (`ai.OverridePolicy` wraps the driver).
 - **Heuristic AI driver** (`ai/HeuristicPolicy`, PLAN Phase 6): the first live AI driver — an adaptive
   `Observation → SliderVector` mapping re-evaluated per checkpoint (attack when behind, consolidate into

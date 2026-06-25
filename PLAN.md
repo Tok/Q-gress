@@ -39,7 +39,7 @@ footer (`util/ui/Footer`: EVENT LOG / AGENTS). Remaining:
 - [x] **Stage 4 (slider↔AI link) — DONE.** `TuningPanel.refresh()` now reads the displayed faction's
   installed `FactionPolicy.currentVector()` each frame: when an AI policy drives the faction it mirrors that
   vector onto the inputs and flips to the auto-moving read-only bars, so AI-driven sliders animate live. The
-  **manual-lock opt-out** is in too: a per-slider 🔒 (AI-driven only) keeps that one slider interactive and
+  **manual-lock opt-out** is in too: a per-slider lock toggle (AI-driven only) keeps that one slider interactive and
   pins it via `ai.OverridePolicy` (the AI drives the rest). Still open: per-faction tuning presets.
 - [ ] **Stage 5 — a proper, polished UI (the end-state goal).** A cohesive visual theme + layout pass
   over the whole HUD / onboarding / menus building on the dock: consistent typography, spacing, panels
@@ -249,8 +249,18 @@ area is maximized, and hold it across the cycle. So fitness = the **sum/average 
 **6.4 — Mix, match & human-vs-AI**
 - Per-faction driver selection + **AI-driven sliders animate read-only, with a per-slider manual-lock
   override — DONE** (the AI tab's driver picker installs a policy per faction; `TuningPanel` auto-moves under
-  AI control; the 🔒 toggle pins a slider via `OverridePolicy`). Remaining: Human/Net/LLM in onboarding, and a
-  tournament/eval view (round-robin → leaderboard).
+  AI control; the lock toggle pins a slider via `OverridePolicy`).
+- [x] **Tournament/eval substrate — DONE** (`ai/Tournament` + `system/WorldSnapshot`). `Tournament.roundRobin`
+  pits named drivers (Manual baseline / Heuristic / a trained Net / hand vectors) over seeded `SimRunner`
+  matches — every pair plays both faction sides per seed (fair) — and ranks them by average per-checkpoint MU
+  margin into a `Standing` leaderboard; deterministic. `WorldSnapshot.capture/restore` saves + restores the
+  live `World` singletons (portals/agents/NPCs/drivers/score history/scalars) so an in-game benchmark can run
+  the (world-clobbering) eval and resume the player's game untouched. `TournamentTest`/`WorldSnapshotTest`
+  cover both.
+- Remaining: **Human/Net/LLM driver selection in onboarding**, and the **in-game leaderboard UI** — a button
+  that wraps `Tournament` in a `WorldSnapshot` capture/restore (and must also pause the render loop + swap
+  `Fx` to `NoOpEffects` for the eval, so the headless matches don't fire 3D FX / render their throwaway
+  portals), then shows the `Standing` table.
 
 **Cross-cutting:** desktop-only + **WebGPU** gating; seeds via `?seed=`; **balance risk** — pure
 win-maximizing self-play may rediscover the recruit-rush degenerate (below), so keep tuning `Config`
