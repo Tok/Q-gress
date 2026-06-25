@@ -101,6 +101,69 @@ html, body {
     box-sizing: border-box;
     color: #ffffff;
 }
+/* AI footer tab: per-faction driver picker + a live observation (feature-vector) readout. */
+.aiPanel {
+    display: flex;
+    gap: 28px;
+    width: 100%;
+    box-sizing: border-box;
+    font-family: "Coda", monospace;
+    font-size: 11px;
+    color: #b8c4bc;
+}
+.aiCol {
+    flex: 1;
+    min-width: 0;
+}
+.aiColHead {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+}
+.aiFactionName {
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+.aiDriverSelect {
+    background: rgba(0, 0, 0, 0.5);
+    color: #e6ebe8;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 4px;
+    font-family: "Coda", monospace;
+    font-size: 11px;
+    padding: 1px 4px;
+}
+.aiObsRow {
+    display: grid;
+    grid-template-columns: 96px 1fr 40px;
+    align-items: center;
+    gap: 8px;
+    line-height: 1.5;
+}
+.aiObsLabel {
+    color: #9aa6a0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.aiObsTrack {
+    height: 7px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.12);
+    overflow: hidden;
+}
+.aiObsBar {
+    display: block;
+    height: 100%;
+    width: 0;
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+.aiObsValue {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
 .taTable {
     border-collapse: collapse;
     table-layout: fixed;
@@ -304,6 +367,45 @@ html, body {
     background: rgba(255, 255, 255, 0.16);
     border-color: rgba(255, 255, 255, 0.25);
 }
+.footerHeaderRight {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+.footerDriver {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+}
+.footerDriverLabel {
+    font-family: "Chakra Petch", sans-serif;
+    letter-spacing: 1px;
+    font-size: 11px;
+}
+/* The "AI vs AI" driver pickers in the top toolbar. */
+.driverControls {
+    gap: 8px;
+}
+.driverControlsLabel {
+    font-family: "Chakra Petch", sans-serif;
+    letter-spacing: 1px;
+    font-size: 11px;
+    color: #9aa6a0;
+}
+/* The per-slider lock toggle (AI-driven only): white icon, pushed to the right edge of its row. */
+.qLockToggle {
+    color: #ffffff;
+    justify-self: end;
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+}
+.footerControls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
 .footerChevron {
     background: none;
     border: none;
@@ -312,10 +414,134 @@ html, body {
     line-height: 1;
     cursor: pointer;
 }
+.footerMaximize {
+    background: none;
+    border: none;
+    color: #cfd6d2;
+    line-height: 0;
+    padding: 0;
+    cursor: pointer;
+}
+.footerMaximize:hover, .footerChevron:hover {
+    color: #ffffff;
+}
+.footerMaximize svg {
+    display: block;
+}
 .footerBody {
     max-height: 200px;
     overflow: auto;
     padding: 6px 12px;
+}
+/* Expanded: pull the footer up to fill the screen up to just below the top toolbar (which is 100px tall,
+   z-index 100), for space-hungry tabs (NET viz); the sim keeps running behind it. The reserve MUST clear the
+   toolbar so the footer header — with the maximize/collapse buttons — stays clickable (it sits at the top of
+   the footer block). 100px toolbar + ~28px header + a gap → 140px. */
+.footer.expanded .footerBody {
+    max-height: calc(100vh - 140px);
+}
+
+/* AI footer tab: the observation readout + the slider-history sparklines, side by side (wrap when narrow). */
+#footerAi {
+    display: flex;
+    gap: 36px;
+    flex-wrap: wrap;
+    align-items: flex-start;
+}
+.aiSectionTitle {
+    font-family: "Chakra Petch", sans-serif;
+    letter-spacing: 1px;
+    font-size: 12px;
+    text-transform: uppercase;
+    color: #9aa6a0;
+    margin-bottom: 8px;
+}
+.llmBlock {
+    min-width: 260px;
+    max-width: 420px;
+    font-size: 12px;
+    margin-bottom: 10px;
+}
+.llmHead {
+    font-family: "Chakra Petch", sans-serif;
+    letter-spacing: 1px;
+    font-size: 13px;
+    margin-bottom: 4px;
+}
+.llmKey {
+    color: #9aa6a0;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 6px;
+}
+.llmVal {
+    color: #ffffff;
+}
+.llmPre {
+    white-space: pre-wrap;
+    max-height: 140px;
+    overflow: auto;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+    padding: 4px 6px;
+    margin: 2px 0;
+    font-size: 11px;
+    color: #cdd6d0;
+}
+
+/* NET footer tab: the neural-net activation diagram + a stats sidebar (best viewed footer-maximized). */
+.netVizPanel {
+    display: flex;
+    gap: 32px;
+    flex-wrap: wrap;
+    padding: 8px 6px 16px;
+}
+.netVizHead {
+    font-family: "Chakra Petch", sans-serif;
+    letter-spacing: 1px;
+    font-size: 14px;
+    margin-bottom: 8px;
+}
+/* Stats grid above the diagram: compact key/value cells, ~4 per row. */
+.netVizStats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(116px, 1fr));
+    gap: 8px 20px;
+    max-width: 540px;
+    margin-bottom: 12px;
+    font-size: 12.5px;
+}
+.netVizStatCell {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+.netVizStatKey {
+    color: #9aa6a0;
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+.netVizStatVal {
+    color: #ffffff;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.netVizSub {
+    margin: 10px 0 3px;
+    color: #9aa6a0;
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+.netVizHint {
+    opacity: 0.7;
+    padding: 12px;
 }
 
 /* History dashboard (HistoryPanel) — right intel column: per metric, live ENL/RES value + sparkline. */
@@ -601,6 +827,35 @@ html, body {
     background: rgba(255, 255, 255, 0.85);
     color: #000000;
 }
+/* The selected option: a clearly-filled, glowing button. Higher specificity than the later .onboardPreset
+   chrome rule, so the highlight actually shows (the plain .onboardActive lost to it). */
+.onboardPreset.onboardActive {
+    background: #ffffff;
+    color: #11151a;
+    border-color: #ffffff;
+    box-shadow: 0 0 16px rgba(255, 255, 255, 0.7);
+    font-weight: 700;
+}
+/* Driver-selection grid: a faction label per row, then one column per option (aligned). */
+.driverGrid {
+    display: grid;
+    grid-template-columns: auto repeat(4, minmax(108px, 1fr));
+    gap: 12px;
+    align-items: center;
+    margin: 12px auto 4px;
+}
+.driverLabel {
+    font-family: "Chakra Petch", sans-serif;
+    letter-spacing: 1px;
+    font-size: 14px;
+    text-align: right;
+    padding-right: 8px;
+    white-space: nowrap;
+}
+.driverBtn {
+    width: 100%;
+    white-space: nowrap;
+}
 .onboardField {
     display: flex;
     flex-direction: column;
@@ -651,9 +906,9 @@ html, body {
     font-family: "Chakra Petch", sans-serif;
     transition: opacity 0.6s ease;
 }
-/* Seat the panel below dead-centre: split the vertical free space top : bottom = 4 : 1 via grow-only flex
-   spacers, so the panel's centre lands ~80% down the screen. */
-.loadingOverlay::before { content: ""; flex: 4 1 0; }
+/* Seat the panel low: split the vertical free space top : bottom = 9 : 1 via grow-only flex spacers, so
+   the panel's centre lands ~90% down the screen. */
+.loadingOverlay::before { content: ""; flex: 9 1 0; }
 .loadingOverlay::after { content: ""; flex: 1 1 0; }
 .loadingOverlayDone {
     opacity: 0;

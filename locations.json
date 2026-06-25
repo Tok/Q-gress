@@ -17,7 +17,6 @@
   {"name": "TOWER_BRIDGE", "displayName": "Tower Bridge, London, UK", "lng": -0.0754, "lat": 51.5055, "title": false},
   {"name": "BROOKLYN_BRIDGE", "displayName": "Brooklyn Bridge, New York, USA", "lng": -73.9969, "lat": 40.7061, "title": false},
   {"name": "RIALTO", "displayName": "Rialto Bridge, Venice, Italy", "lng": 12.3358, "lat": 45.438, "title": false},
-  {"name": "CHARLES_BRIDGE", "displayName": "Charles Bridge, Prague, Czechia", "lng": 14.4113, "lat": 50.0865, "title": false},
   {"name": "PONTE_VECCHIO", "displayName": "Ponte Vecchio, Florence, Italy", "lng": 11.2531, "lat": 43.768, "title": false},
   {"name": "SYDNEY_HARBOUR", "displayName": "Sydney Harbour Bridge, Sydney, Australia", "lng": 151.2108, "lat": -33.8523, "title": false},
   {"name": "MARINA_BAY", "displayName": "Marina Bay, Singapore", "lng": 103.8607, "lat": 1.2834, "title": false},
