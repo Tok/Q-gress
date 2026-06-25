@@ -210,12 +210,17 @@ object HtmlUtil {
         Onboarding.showFaction { f ->
             World.userFaction = null // clear the title sim's placeholder faction so the real pick takes
             chooseUserFaction(f)
-            onboardMapSize()
+            onboardDrivers()
         }
     }
 
+    // Step 2 — pick each side's brain (default net vs net). Choices ride the start-URL (GameUrl) into the game.
+    private fun onboardDrivers() {
+        Onboarding.showDrivers(World.userFactionOrThrow(), onBack = { onboardFaction() }) { onboardMapSize() }
+    }
+
     private fun onboardMapSize() {
-        Onboarding.showMapSize(Config.startPortals, onBack = { onboardFaction() }) { w, h, portals, quick ->
+        Onboarding.showMapSize(Config.startPortals, onBack = { onboardDrivers() }) { w, h, portals, quick ->
             Sim.setSize(w, h) // size first, so the location screen's play-area box is the real size
             Config.startPortals = portals
             Config.quickStart = quick

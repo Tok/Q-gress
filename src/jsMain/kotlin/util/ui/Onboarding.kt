@@ -235,7 +235,57 @@ object Onboarding {
         )
     }
 
-    /** Step 2 — map size + portal density + quick-start. [onStart] gets w, h, portals, quickStart.
+    /**
+     * Step 2 — **who plays?** Pick a brain per side (Human / Heuristic / Neural net / LLM), defaulting to
+     * **net vs net** (AI vs AI). The picks are stashed in [DriverControls] so the start-URL carries them
+     * across the reload; the live toolbar pickers then install them. [onNext] continues to map size.
+     */
+    fun showDrivers(userFaction: Faction, onBack: () -> Unit, onNext: () -> Unit) {
+        currentBack = onBack // Esc → back to faction pick
+        val screen = screen("WHO PLAYS?")
+        val intro = div("onboardWarn")
+        intro.textContent = "Pick a brain for each side — the default is neural net vs neural net (AI vs AI). " +
+            "Set your side to Human to drive it yourself with the tuning sliders."
+        screen.appendChild(intro)
+        listOf(userFaction to true, userFaction.enemy() to false).forEach { (faction, isYou) ->
+            screen.appendChild(driverRow(faction, isYou))
+        }
+        screen.appendChild(button("Next", "topButton displayFont onboardStart") { onNext() })
+    }
+
+    // One faction's driver picker: a coloured label + a segmented Human/Heuristic/Net/LLM button group.
+    private fun driverRow(faction: Faction, isYou: Boolean): HTMLElement {
+        val row = div("onboardRow")
+        val label = div("onboardSliderLabel")
+        label.textContent = (if (isYou) "You · " else "Enemy · ") + faction.abbr
+        label.style.color = faction.color
+        row.appendChild(label)
+        val current = DriverControls.chosen(faction)
+        DriverControls.select(faction, current) // seed the pick so it rides the URL even with no click
+        val btns = mutableListOf<HTMLButtonElement>()
+        // Only YOUR side offers Human (manual sliders) — there's no second player + no enemy slider UI, so the
+        // opponent is always an AI (Heuristic / Net / LLM).
+        val options = buildList {
+            if (isYou) add("manual" to "Human")
+            add("heuristic" to "Heuristic")
+            add("net" to "Neural net")
+            add("llm" to "LLM")
+        }
+        options.forEach { (value, text) ->
+            lateinit var btn: HTMLButtonElement
+            btn = button(text, "onboardPreset") {
+                DriverControls.select(faction, value)
+                btns.forEach { it.removeClass("onboardActive") }
+                btn.addClass("onboardActive")
+            }
+            if (value == current) btn.addClass("onboardActive")
+            btns.add(btn)
+            row.appendChild(btn)
+        }
+        return row
+    }
+
+    /** Step 3 — map size + portal density + quick-start. [onStart] gets w, h, portals, quickStart.
      *  (NPC population isn't a player choice — it's auto-derived from map size + location; see Config.) */
     fun showMapSize(defaultPortals: Int, onBack: () -> Unit, onStart: (Int, Int, Int, Boolean) -> Unit) {
         currentBack = onBack // Esc → back to faction pick

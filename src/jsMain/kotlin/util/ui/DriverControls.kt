@@ -12,6 +12,7 @@ import kotlinx.browser.document
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLOptionElement
 import org.w3c.dom.HTMLSelectElement
+import util.GameUrl
 
 /**
  * The per-faction **driver picker** (PLAN Phase 6) — lives in the footer header so it's reachable from any
@@ -21,8 +22,17 @@ import org.w3c.dom.HTMLSelectElement
  * the `DomSliderPolicy` default via `FactionPolicies`; this only installs the *live* drivers.)
  */
 object DriverControls {
-    private const val DEFAULT = "net"
+    const val DEFAULT = "net" // default brain: the trained neural net (AI vs AI out of the box)
     private val llmClient by lazy { WebLlmClient() } // shared across factions → one model load
+    private val pending = mutableMapOf<Faction, String>() // the onboarding driver pick, before the start-reload
+
+    /** Record [faction]'s chosen driver (onboarding) so the start-URL carries it across the reload. */
+    fun select(faction: Faction, value: String) {
+        pending[faction] = value
+    }
+
+    /** The driver for [faction]: the onboarding pick, else the start-URL (`?enl=…&res=…`), else the default. */
+    fun chosen(faction: Faction): String = pending[faction] ?: GameUrl.driver(faction) ?: DEFAULT
 
     /** Both faction pickers wrapped as a top-toolbar group (the "AI vs AI" control, reachable from anywhere). */
     fun toolbarGroup(): HTMLElement {
@@ -47,8 +57,9 @@ object DriverControls {
         sel.appendChild(option("heuristic", "Heuristic", disabled = false))
         sel.appendChild(option("net", "Neural net", disabled = false))
         sel.appendChild(option("llm", "LLM (experimental)", disabled = false))
-        sel.value = DEFAULT
-        apply(faction, DEFAULT) // install the default driver up front — the AI plays by default
+        val choice = chosen(faction) // onboarding pick / start-URL / default
+        sel.value = choice
+        apply(faction, choice) // install it up front so the chosen brain plays from the first tick
         sel.onchange = {
             apply(faction, sel.value)
             null

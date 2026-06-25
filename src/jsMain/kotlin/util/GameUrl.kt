@@ -7,6 +7,7 @@ import config.Sim
 import kotlinx.browser.document
 import org.w3c.dom.url.URL
 import util.data.GeoCoords
+import util.ui.DriverControls
 import util.ui.TuningPanel
 
 /**
@@ -30,6 +31,9 @@ object GameUrl {
     fun isReadOnly() = param("readonly")?.toBoolean() ?: false
     fun faction() = Faction.fromString(param("faction"))
 
+    /** The chosen AI/Human driver for [faction] (`?enl=…&res=…`: manual/heuristic/net/llm), or null. */
+    fun driver(faction: Faction): String? = param(if (faction == Faction.ENL) "enl" else "res")
+
     fun size(): Pair<Int, Int>? {
         val w = param("w")?.toIntOrNull()
         val h = param("h")?.toIntOrNull()
@@ -52,9 +56,11 @@ object GameUrl {
         val seedPart = if (seed != null) "&seed=$seed" else ""
         val tune = TuningPanel.exportTuning() // both factions' sliders (empty until the panel is built)
         val tunePart = if (tune.isNotEmpty()) "&tune=${encodeURIComponent(tune)}" else ""
+        // Per-faction driver picks (AI vs AI by default) — carried across the start-reload.
+        val drivers = "&enl=${DriverControls.chosen(Faction.ENL)}&res=${DriverControls.chosen(Faction.RES)}"
         // NPC *count* is auto-derived at world-gen; only the player's density multiplier is carried.
         return "$base?faction=$fact&lng=$lng&lat=$lat&name=${encodeURIComponent(name)}" +
             "&w=${Sim.width}&h=${Sim.height}&portals=${Config.startPortals}&npcmult=${Config.npcMultiplier}" +
-            "&round=${Sim.roundField}&quickstart=${Config.quickStart}$seedPart$tunePart"
+            "&round=${Sim.roundField}&quickstart=${Config.quickStart}$drivers$seedPart$tunePart"
     }
 }

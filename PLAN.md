@@ -280,10 +280,11 @@ area is maximized, and hold it across the cycle. So fitness = the **sum/average 
   live `World` singletons (portals/agents/NPCs/drivers/score history/scalars) so an in-game benchmark can run
   the (world-clobbering) eval and resume the player's game untouched. `TournamentTest`/`WorldSnapshotTest`
   cover both.
-- [ ] **Driver-selection onboarding screen** — a new world-creation step **right after faction selection**:
-  pick each side's brain (Human / Heuristic / Net / LLM), **defaulting to both sides = Net @ 16×16** (the live
-  toolbar pickers already exist via `DriverControls`; this surfaces the choice up front). Per faction, also a
-  net-architecture / variant pick later (ties into the trainer below).
+- [x] **Driver-selection onboarding screen — DONE** (`Onboarding.showDrivers`, step right after faction
+  pick): choose each side's brain — **your** side Human / Heuristic / Net / LLM, the **opponent** AI-only
+  (Heuristic / Net / LLM; no Human — there's no enemy slider UI), **defaulting to net vs net**. The picks ride
+  the start-URL (`?enl=…&res=…` via `GameUrl` + `DriverControls.chosen`) across the reload; the toolbar pickers
+  then install + reflect them. _Later:_ a per-side net-architecture / variant pick (ties into the trainer).
 - [ ] **In-game leaderboard UI** — a button that wraps `Tournament` in a `WorldSnapshot` capture/restore (and
   must also pause the render loop + swap `Fx` to `NoOpEffects` so the headless matches don't fire 3D FX /
   render their throwaway portals), then shows the `Standing` table. Lets you **pit net variants** (different

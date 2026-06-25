@@ -165,9 +165,12 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
   → fills up to just below the top scoreboard, with the sim still running behind it) — so space-hungry tabs
   like NET get room. Normal is a short docked strip; Tab cycles tabs. The **NET** tab **auto-expands** on
   entry and auto-restores on leave (unless you've taken manual control of the size).
-- **Driver picker in the footer header** (`util/ui/DriverControls`): per faction, Manual / **Heuristic** /
-  **Neural net** (LLM pending 6.3), reachable from any tab. **Neural net is the default** — the sim plays
-  itself (AI-vs-AI) out of the box; switch a faction to Manual to drive it with the sliders.
+- **Driver picker in the top toolbar** (`util/ui/DriverControls`): per faction, Manual / **Heuristic** /
+  **Neural net** / **LLM**, reachable from anywhere. **Neural net is the default** — the sim plays itself
+  (AI-vs-AI) out of the box; switch your faction to Manual to drive it with the sliders.
+- **"Who plays?" onboarding step** (`util/ui/Onboarding.showDrivers`, right after faction pick): choose each
+  side's brain — your side Human/Heuristic/Net/LLM, the opponent AI-only — defaulting to **net vs net**. The
+  choice rides the start-URL (`?enl=…&res=…`) into the game.
 - **AI footer tab** (`util/ui/AiPanel` + `util/ui/SliderHistoryPanel`, PLAN Phase 6): the merged
   AI-transparency tab (AGENTS / **AI** / NET / EVENT LOG) — a live **observation** readout (the 13-slot
   `ai.Observation` feature vector a net/LLM receives, as labelled 0–1 bars) beside the **behaviour-sliders-
