@@ -65,8 +65,8 @@ object TuningPanel {
     /**
      * Per-frame sync (called from [util.DrawUtil.redrawUserInterface]). If an **AI policy** drives the
      * displayed faction, mirror its current vector onto the inputs and auto-move the read-only bars — the
-     * player watches the sliders move under AI control. A **locked** slider (the 🔒 toggle, AI-driven only)
-     * stays interactive and the AI doesn't overwrite it. Under manual control this is just the read-only-bar
+     * player watches the sliders move under AI control. A **locked** slider (the padlock toggle, AI-driven
+     * only) stays interactive and the AI doesn't overwrite it. Under manual control this is just the read-only-bar
      * resync (a no-op in interactive mode).
      */
     fun refresh() {
@@ -171,10 +171,21 @@ object TuningPanel {
 
     // The per-row lock toggle: shown only when an AI drives the faction; click to grab/release the slider.
     private fun lockToggle(): HTMLElement = el("span", "qLockToggle").also {
-        it.textContent = "🔓"
+        it.innerHTML = LOCK_OPEN
         it.asDynamic().style.cursor = "pointer"
         it.title = "Lock this slider (override the AI)"
     }
+
+    // Simple monochrome padlock icons (inherit the row's text colour via currentColor) — not the OS emoji.
+    private const val LOCK_BODY =
+        "<rect x='4' y='11' width='16' height='10' rx='2'/>"
+    private val LOCK_CLOSED =
+        svgIcon("$LOCK_BODY<path d='M8 11V7a4 4 0 0 1 8 0v4'/>")
+    private val LOCK_OPEN =
+        svgIcon("$LOCK_BODY<path d='M8 11V7a4 4 0 0 1 7.9-1'/>")
+
+    private fun svgIcon(inner: String): String = "<svg viewBox='0 0 24 24' width='11' height='11' fill='none' stroke='currentColor' " +
+        "stroke-width='2' stroke-linecap='round' stroke-linejoin='round'>$inner</svg>"
 
     // The action icon in its own fixed 16px column → icons line up in a column across all rows.
     private fun iconCell(qValue: QValue): HTMLElement {
@@ -214,7 +225,7 @@ object TuningPanel {
             if (!interactive) r.fill.style.width = pct(r.input)
             // The lock toggle only makes sense while an AI drives and the panel isn't globally locked.
             setVisible(r.lock, aiDriven && !globallyLocked)
-            r.lock.textContent = if (r.locked) "🔒" else "🔓"
+            r.lock.innerHTML = if (r.locked) LOCK_CLOSED else LOCK_OPEN
         }
     }
 
