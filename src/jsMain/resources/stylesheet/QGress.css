@@ -367,6 +367,11 @@ html, body {
     background: rgba(255, 255, 255, 0.16);
     border-color: rgba(255, 255, 255, 0.25);
 }
+.footerControls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
 .footerChevron {
     background: none;
     border: none;
@@ -375,10 +380,28 @@ html, body {
     line-height: 1;
     cursor: pointer;
 }
+.footerMaximize {
+    background: none;
+    border: none;
+    color: #cfd6d2;
+    line-height: 0;
+    padding: 0;
+    cursor: pointer;
+}
+.footerMaximize:hover, .footerChevron:hover {
+    color: #ffffff;
+}
+.footerMaximize svg {
+    display: block;
+}
 .footerBody {
     max-height: 200px;
     overflow: auto;
     padding: 6px 12px;
+}
+/* Expanded: pull the footer up to near-full-screen for space-hungry tabs (NET viz); sim runs behind it. */
+.footer.expanded .footerBody {
+    max-height: 88vh;
 }
 
 /* History dashboard (HistoryPanel) — right intel column: per metric, live ENL/RES value + sparkline. */
