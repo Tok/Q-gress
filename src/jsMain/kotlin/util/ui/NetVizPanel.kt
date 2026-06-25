@@ -64,8 +64,14 @@ object NetVizPanel {
         val actions: List<HTMLElement>,
     )
 
+    private const val GW = 540 // genome heatmap width
+    private const val GH = 96 // genome heatmap height
+    private const val GENOME_COLS = 56 // weights per row in the heatmap
+
     private var built = false
     private val canvases = mutableMapOf<Faction, HTMLCanvasElement>()
+    private val genomeCanvases = mutableMapOf<Faction, HTMLCanvasElement>()
+    private val genomeDrawnFor = mutableMapOf<Faction, Net>() // the net whose genome is currently painted
     private val blocks = mutableMapOf<Faction, HTMLElement>()
     private val stats = mutableMapOf<Faction, StatsView>()
     private var hint: HTMLElement? = null
@@ -121,6 +127,27 @@ object NetVizPanel {
         inputLabels(ctx, faction, layers.first())
         outputLabels(ctx, faction, layers.last(), top)
         updateStats(faction, net, trace, top)
+        drawGenome(faction, net)
+    }
+
+    // The flat genome as a sign/magnitude heatmap (faction colour = positive, grey-blue = negative). Static
+    // per net (weights don't change during a match), so it's painted once and only repainted when the net does.
+    private fun drawGenome(faction: Faction, net: Net) {
+        if (genomeDrawnFor[faction] === net) return
+        genomeDrawnFor[faction] = net
+        val ctx = genomeCanvases[faction]?.getContext("2d") as? CanvasRenderingContext2D ?: return
+        ctx.clearRect(0.0, 0.0, GW.toDouble(), GH.toDouble())
+        val genome = net.genome()
+        val maxAbs = (genome.maxOfOrNull { abs(it) } ?: 1.0).coerceAtLeast(1e-6)
+        val rows = (genome.size + GENOME_COLS - 1) / GENOME_COLS
+        val cellW = GW.toDouble() / GENOME_COLS
+        val cellH = GH.toDouble() / rows
+        genome.forEachIndexed { i, w ->
+            ctx.globalAlpha = (abs(w) / maxAbs).coerceIn(0.05, 1.0)
+            ctx.fillStyle = if (w >= 0) faction.color else NEG_COLOR
+            ctx.fillRect((i % GENOME_COLS) * cellW, (i / GENOME_COLS) * cellH, cellW + 0.5, cellH + 0.5)
+        }
+        ctx.globalAlpha = 1.0
     }
 
     // Even horizontal spread of [cols] columns across the canvas (between the label margins).
@@ -285,21 +312,22 @@ object NetVizPanel {
         }
         block.appendChild(head)
         block.appendChild(statsFor(faction)) // a compact stat grid (≈4 per row) above the diagram
-        block.appendChild(canvasFor(faction))
+        block.appendChild(dprCanvas(CW, CH).also { canvases[faction] = it })
+        block.appendChild(el("div", "netVizSub").also { it.textContent = "genome (weights — sign × magnitude)" })
+        block.appendChild(dprCanvas(GW, GH).also { genomeCanvases[faction] = it })
         blocks[faction] = block
         return block
     }
 
-    // Device-pixel-resolution canvas → crisp lines/text on HiDPI displays (CSS size CW×CH, backing store ×dpr).
-    private fun canvasFor(faction: Faction): HTMLCanvasElement {
+    // A device-pixel-resolution canvas → crisp lines/fills on HiDPI displays (CSS size w×h, backing store ×dpr).
+    private fun dprCanvas(w: Int, h: Int): HTMLCanvasElement {
         val canvas = document.createElement("canvas") as HTMLCanvasElement
         val dpr = window.devicePixelRatio.takeIf { it > 0.0 } ?: 1.0
-        canvas.width = (CW * dpr).toInt()
-        canvas.height = (CH * dpr).toInt()
-        canvas.style.width = "${CW}px"
-        canvas.style.height = "${CH}px"
+        canvas.width = (w * dpr).toInt()
+        canvas.height = (h * dpr).toInt()
+        canvas.style.width = "${w}px"
+        canvas.style.height = "${h}px"
         (canvas.getContext("2d") as? CanvasRenderingContext2D)?.scale(dpr, dpr)
-        canvases[faction] = canvas
         return canvas
     }
 
