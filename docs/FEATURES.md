@@ -56,9 +56,9 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
     name appears as a ring of **extruded 3D letters circling the orb like a ticker** (`system/display/PortalNameTicker`):
     same Coda glyph style as the damage numbers (shared `glyphGeometry`/`addBoldWire`), white and **φ
     smaller**, each letter upright and facing **sideways** (radially outward), the whole ring spinning.
-    **Spin direction follows the script** — Arabic / Hebrew names spin **CCW**, everything else **CW** (those
-    scripts need a non-Coda font to actually draw; latin renders today). Selection-driven, so the **title
-    shows no names**.
+    Latin names spin **CW**; RTL scripts (Arabic / Hebrew) are **suppressed** for now (Coda can't draw them —
+    icebox: add an RTL-capable font, then they render + spin CCW). Selection-driven, so the **title shows no
+    names**.
   - **Resonators** — 8 colour-coded rods in rubber slot-rings, real-time from `resoMap()`, grow
     with the pole. Each rod shows its **energy/health**: a bottom→top glowing **fill bar** (`GlassShader`
     `uFill`) plus a glowing **"energy surface" disc** (`Materials.resonatorCap`, additive) positioned at

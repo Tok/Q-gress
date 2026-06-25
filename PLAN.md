@@ -30,10 +30,6 @@ Q-Gress becomes an **AI-vs-AI sandbox**: each faction (ENL/RES) is driven by an 
 be matched. **Desktop-only**; mobile is blocked.
 
 ## 3D / rendering
-- [ ] **Portal-name ticker — non-latin glyphs.** `PortalNameTicker` reuses the Coda typeface, which only
-  carries latin + digits, so Arabic/Hebrew/CJK names render blank (slots fall back to blanks; the CCW-spin
-  logic is already wired for when they draw). Needs a typeface.json with those ranges (or per-script fonts
-  chosen by `isRtl`/script detection) loaded alongside Coda.
 - [ ] **Buildings — per-building replacement** *(the parallel-mode follow-up).* Today both sets render (ours
   on top, MapLibre filling gaps). Cleaner end-state: hide **only** the MapLibre footprints we have our own
   mesh for, so the gap-fillers and our look match and there's no overlap/z-fight. Needs matching our synthetic
@@ -194,6 +190,10 @@ the board; fair shuffled agent order). Deeper "no single strategy dominates" val
   GeoJSON) and/or a navmesh instead of reading rasterized shadow pixels — decouples the sim from the screen and
   unblocks dynamic zoom + a pitched/3D camera. Natural partner of the functional-core split. (The
   pbf/`@mapbox/vector-tile` decoder in `external/VectorTile.kt` can pull road/water/landcover layers.)
+- **Portal-name ticker — non-latin / RTL font.** `PortalNameTicker` reuses Coda (latin + digits), so
+  Arabic/Hebrew/CJK names can't be drawn — RTL names are currently **suppressed** (`isRtl`), latin renders.
+  To support them: load an RTL/CJK-capable typeface.json (or per-script fonts chosen by script detection)
+  alongside Coda, add Arabic shaping/joining, and re-enable the CCW spin for RTL.
 - **Walkable roofs / per-building destruction** — now that we mesh every building (`OwnBuildings`), agents
   could path over roofs, buildings could be destructible, etc.
 - **Building perf + lifecycle** — (a) a dense streamed city can reach 1000s of shadow-casting meshes; if FPS

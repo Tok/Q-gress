@@ -15,7 +15,8 @@ import kotlin.math.sqrt
  * the over-portal stack. Each letter stands upright and faces **radially outward** (sideways, not up), so
  * the word wraps around a horizontal circle above the orb; the whole ring spins continuously.
  *
- * **Spin direction follows the script**: Arabic / Hebrew names spin **CCW**, everything else **CW**.
+ * Latin names spin **CW**. RTL scripts (Arabic / Hebrew) are **suppressed for now** — Coda can't draw them
+ * (no shaping / glyphs); once an RTL-capable font is added they render and spin **CCW** (see [isRtl]).
  *
  * Selection-driven ([show]/[hide] from `Scene3D.refreshNameTicker`, off the `Scene3D.selected` setter +
  * each `sync`). The title never selects portals, so no names appear there. One portal at a time; while the
@@ -82,8 +83,18 @@ object PortalNameTicker {
             return
         }
         currentId = id
+        // RTL scripts (Arabic/Hebrew) need shaping + a font Coda lacks, so show nothing for now (icebox: add
+        // an RTL-capable typeface, then this becomes the CCW spin again).
+        if (isRtl(name)) {
+            reqName = ""
+            needsBuild = false
+            clearLetters()
+            val g = group
+            if (g != null) g.visible = false
+            return
+        }
         reqName = name
-        spinSign = if (isRtl(name)) 1.0 else -1.0
+        spinSign = -1.0 // LTR → CW (RTL/CCW deferred with the font, see above)
         needsBuild = true
     }
 
