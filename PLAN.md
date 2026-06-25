@@ -2,445 +2,208 @@
 
 Branch: `develop` · Owner: @zirteq
 
-Future TODOs only. For *what's already shipped* see [docs/FEATURES.md](docs/FEATURES.md);
-for *how the system fits together* see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md); for the
-AI-driver design notes see [docs/NN.md](docs/NN.md) + [docs/LLM.md](docs/LLM.md).
+**Future work only.** *Shipped* → [docs/FEATURES.md](docs/FEATURES.md); *how it fits together* →
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md); AI-driver design → [docs/NN.md](docs/NN.md) +
+[docs/LLM.md](docs/LLM.md). Completed work lives in the **git log**, not here — keep this file to the point.
 
-## ⚑ Pending visual verification (do a `./start.sh` pass next session)
+## ★ Next session — start here
+1. **3D portal names** (high priority) — see *3D / rendering*.
+2. **Visual NN trainer** (Phase 6.5) — the full handoff is under *Phase 6*.
 
-Shipped but unverified in-browser (built headless — confirm they read right, then tick off):
-- **Parallel buildings** (`OwnBuildings.PARALLEL_MODE`) — esp. **Red Square**: gaps gone, both sets shake on
-  an XMP (ours + MapLibre gap-fillers)? **Watch for z-fighting / double-look** where our meshes overlap
-  MapLibre's (both visible now) — if it reads badly, do the per-building-replacement refinement (below). Flip
-  `PARALLEL_MODE=false` to compare.
-- **Hack/glyph centrifuge** — do the top o-rings now tilt out *with* the rods, and fall with them on shatter /
-  reso-destroyed?
-- **NET tab** — does maximize/collapse now compact it (toolbar-clearance fix)? Activation diagram + **genome
-  heatmap** legible? Multi-layer (16×16) renders as 4 columns?
-- **"Who plays?" onboarding** — grid aligned, selected option clearly highlighted, opponent has no Human,
-  picks actually take effect in-game (toolbar reflects them)?
-- **LLM driver** (`WebLlmClient`) — does the WebGPU model load + drive a faction? (the only truly unverifiable
-  bit; reasoning panel shows status/prompt/reply).
-- **Misc**: white right-aligned lock icons; slower initial fly-to-Home (2.6 s); AI pickers in the top toolbar.
+## ⚑ Verify in-browser first (`./start.sh`)
+Built headless recently, not yet confirmed on screen — eyeball these, then move on:
+- **Buildings (parallel mode)** — at e.g. **Red Square**: gaps gone; our meshes **and** MapLibre's gap-fillers
+  both bob on an XMP. **Watch for z-fighting / double-look** where the two overlap (both visible now) → if it
+  reads badly, do the per-building-replacement refinement (*3D*). `OwnBuildings.PARALLEL_MODE=false` to compare.
+- **Hack/glyph centrifuge** — top o-rings tilt out *with* the rods and fall with them on shatter / reso-kill.
+- **NET tab** — maximize/collapse compacts it; activation diagram + genome heatmap legible; 16×16 → 4 columns.
+- **"Who plays?" onboarding** — grid aligned, selection clearly highlighted, picks take effect in-game.
+- **LLM driver** (`WebLlmClient`) — the WebGPU model actually loads + drives a faction (only un-headless bit).
 
 ## North star
-
-Q-Gress becomes an **AI-vs-AI sandbox**: each faction (ENL/RES) is driven by an agent whose
-**output layer _is_ the 17 behaviour sliders** — a custom net and/or an in-browser LLM. Human
-can play any side; any two brains can be matched. **Desktop-only**; mobile is blocked. Until
-the AI layer lands, the slider sim is the substrate we keep hardening.
+Q-Gress becomes an **AI-vs-AI sandbox**: each faction (ENL/RES) is driven by an agent whose **output _is_ the
+17 behaviour sliders** — a custom net and/or an in-browser LLM. A human can play any side; any two brains can
+be matched. **Desktop-only**; mobile is blocked.
 
 ## 3D / rendering
-- [ ] **★ 3D portal names (HIGH PRIORITY — next session).** Render each portal's name as a 3D label in the
-  scene (billboarded / above the orb), not just in the DOM HUD. The names already resolve from map POI/street
-  data (`PortalNames`); this is the 3D presentation (a text mesh / sprite per portal, faction-tinted,
-  LOD/cull at distance, kept legible against buildings).
-- [x] **Buildings: parallel mode (DONE)** — at some locations (e.g. Red Square) not every MapLibre building
-  meshed, but we hid MapLibre's whole layer → gaps. `OwnBuildings.PARALLEL_MODE` keeps MapLibre's buildings
-  visible everywhere (fills the gaps) **while our own meshes still render on top, visible** — so they shake
-  (per-mesh, no feature-id needed → works in-game + title) + cast shadows as before; MapLibre just fills where
-  a footprint failed to mesh. Both sets shake on an XMP — ours via `applyBlast`, MapLibre's gap-fillers via
-  `BuildingShake` feature-state (enabled by adding `generateId` to the `openmaptiles` source). (Earlier tried
-  invisible shadow-only meshes + shake-to-MapLibre only, but without `generateId` nothing shook; reverted to
-  visible meshes + dual shake.) _**Watch (next session):** z-fighting / double-look where our meshes overlap
-  MapLibre's now that both are visible._ _Future refinement:_ per-building replacement (hide only the MapLibre
-  footprints we have a mesh for) so the gap-fillers and our look match — needs matching our synthetic keys to
-  MapLibre feature ids.
-- [ ] **Terrain follow-ups** (DEM heights shipped). Terrain-aware **shatter ground** — the cannon-es
-  plane is still flat z=0, so shards/pole sink to sea level on high ground; maybe a Menu exaggeration
-  slider; resample the height grid if the play area ever moves (ties into the grand-game movable field).
-- [ ] **Explosion shader tuning pass (optional).** The new fireball exposes GLSL consts in
-  `XmpShaders.VOLUME_FRAG` (`NOISE_FREQ`, `DISPLACE`, `DENSITY_GAIN`, `STEPS`) + the rise/grow curve in
-  `XmpBurst.update`. If it reads too dense/sparse or too small once seen live, these are the knobs;
-  consider promoting them to uniforms if frequent tuning is wanted.
-- [x] **Stage 2 leftover** — richer link + field-up sounds: linking glissandos between the two
-  portals' notes (deeper/longer for long links); fielding plays a swelling triad from the three side
-  lengths in a register set by the field's area. (`SoundUtil.playLinkingSound` / `playFieldingSound`)
-- [ ] **Stage 3 — pathfinding scalability** — the heat map is now a bucketed Dijkstra (O(cells), all
-  field gen async via `PathUtil.computeFieldAsync`); still **per-portal full-map**. Remaining: multi-mode
-  nav (flow fields near, cheap nav far), coarser `pathResolution` lever, ambient NPCs, field viz.
-- [ ] **Stage 4** — humanoid glTF models (ready: people are head-sized spheres at head height),
-  pairs with the colony-management attributes (icebox).
+- [ ] **★ 3D portal names (high priority).** Render each portal's name as a 3D label in the scene
+  (billboarded sprite / text mesh above the orb), not just in the DOM HUD. Names already resolve from map
+  POI/street data (`PortalNames`) — this is the presentation: faction-tinted, legible against buildings,
+  LOD/cull + fade at distance, and de-cluttered when portals crowd (hide all but the nearest/biggest).
+- [ ] **Buildings — per-building replacement** *(the parallel-mode follow-up).* Today both sets render (ours
+  on top, MapLibre filling gaps). Cleaner end-state: hide **only** the MapLibre footprints we have our own
+  mesh for, so the gap-fillers and our look match and there's no overlap/z-fight. Needs matching our synthetic
+  centroid keys to MapLibre feature ids (now that the `openmaptiles` source carries `generateId`) — or a
+  custom building layer we fully own.
+- [ ] **Terrain-aware shatter ground.** The cannon-es plane is flat z=0, so shards/pole sink to sea level on
+  high ground; sample the DEM under the blast (maybe a Menu exaggeration slider); resample if the play area
+  moves (ties into the grand-game movable field).
+- [ ] **Explosion shader tuning (optional).** GLSL consts in `XmpShaders.VOLUME_FRAG` (`NOISE_FREQ`,
+  `DISPLACE`, `DENSITY_GAIN`, `STEPS`) + the rise/grow curve in `XmpBurst.update`; promote to uniforms if the
+  fireball needs frequent live tuning.
+- [ ] **Pathfinding scalability.** Heat map is a bucketed Dijkstra (O(cells), async via
+  `PathUtil.computeFieldAsync`) but still **per-portal full-map**. Want: multi-mode nav (flow fields near,
+  cheap nav far), a coarser `pathResolution` lever, ambient NPCs, a field viz.
+- [ ] **Humanoid glTF models** — people are head-sized spheres at head height today; swap in real models
+  (pairs with the colony-management attributes, icebox).
 
 ## UI
-The HUD is shipped: tuning controls left (`util/ui/TuningPanel`, with a read-only 0–1 bar mode via
-`?readonly` / Menu "Lock tuning"), history right, scoreboard top, and a full-width tabbed/collapsible
-footer (`util/ui/Footer`: EVENT LOG / AGENTS). Remaining:
-- [ ] **Stage 2** — **Schematic** base view (reuse `SHADOW_STYLE`) + more toggleable info overlays
-  (e.g. movement-penalty heatmap) alongside the existing Terrain/Vectors toggles.
-- [x] **Stage 4 (slider↔AI link) — DONE.** `TuningPanel.refresh()` now reads the displayed faction's
-  installed `FactionPolicy.currentVector()` each frame: when an AI policy drives the faction it mirrors that
-  vector onto the inputs and flips to the auto-moving read-only bars, so AI-driven sliders animate live. The
-  **manual-lock opt-out** is in too: a per-slider lock toggle (AI-driven only) keeps that one slider interactive and
-  pins it via `ai.OverridePolicy` (the AI drives the rest). Still open: per-faction tuning presets.
-- [ ] **Stage 5 — a proper, polished UI (the end-state goal).** A cohesive visual theme + layout pass
-  over the whole HUD / onboarding / menus building on the dock: consistent typography, spacing, panels
-  and states; responsive to window size. This is the "real UI" we want in the end.
+- [ ] **Schematic base view** (reuse `SHADOW_STYLE`) + more toggleable info overlays (e.g. a
+  movement-penalty heatmap) alongside the existing Terrain/Vectors toggles.
+- [ ] **Per-faction tuning presets** — save/recall named slider sets (the slider↔AI auto-move link is done).
+- [ ] **Stage 5 — the polished end-state UI.** A cohesive visual-theme + layout pass over the whole
+  HUD/onboarding/menus building on the dock: consistent typography, spacing, panels and states; responsive to
+  window size. The "real UI" we want to ship behind.
 
-## Onboarding (Phase 7 leftovers)
-- [ ] **Location selection**: Home / nearest city via Geolocation; a curated preset list; Random;
+## Onboarding
+- [ ] **Location selection polish** — Home / nearest city via Geolocation; a curated preset list; Random;
   surface the free-form search on the onboarding screen (it only exists in-game now).
-- [ ] Real **per-stage load %** (especially flow-field computation).
+- [ ] **Real per-stage load %** (especially flow-field computation).
 - [ ] **Initial roster "roll"** — light flavour, not a gacha loop; ties to the icebox rarity tiers.
-- [ ] **`?debug` dev tooling** — _started_: `?debug` now adds a grid connectivity self-check log,
-  stuck/loop agent detection (3D marker + HUD count), and `?debug=capture` (preset fixture export).
-  _Remaining_: timing measurements + console logging to profile the long loads.
-  _Handoff (medium priority):_ run `?debug=capture` once in-browser, drop the downloaded
-  `PresetFixtures.kt` into `src/jsTest/kotlin/util/`, and commit — that flips `PresetConnectivityTest`
-  from a synthetic-only harness into a real per-preset audit gate (currently ships with an empty
-  placeholder). The user will do this capture pass later.
+- [ ] **`?debug` dev tooling** — has the grid self-check + stuck-agent detection + `?debug=capture`. Remaining:
+  load-timing/profiling logs; and the handoff — run `?debug=capture` once in-browser, drop the downloaded
+  `PresetFixtures.kt` into `src/jsTest/kotlin/util/` and commit, flipping `PresetConnectivityTest` from a
+  synthetic harness into a real per-preset audit gate.
 
-## Gameplay mechanics (planned)
-- [ ] **Glyph hacking** — a skill-based alternative to a normal hack: **~3× the rewards**, but it
-  **takes longer**, **requires skill**, and has a **chance to fail** (no / reduced reward on a miss).
-  The agent's glyph skill (+ maybe portal level) sets the success odds + duration. The stronger
-  collar animation (ENL cw / RES ccw, faster/wider/longer) + glassy sound already land
-  (`HackFx`/`SoundUtil`); this is the reward/skill/timing model behind it. Lives in
-  `Glypher`/`Portal.tryGlyph` + a glyph skill on `agent/Skills`; expose it as a high-risk/high-reward
-  QAction the AI weighs (ties into Phase 6 — the net/LLM should learn when glyphing is worth it).
-- [ ] **Recruiting as an agent skill + items.** Recruiting is no longer a tuning slider (retired — it was
-  too snowbally to crank); its rate is now self-balancing (`Recruiter.selectionWeight` × the anti-snowball
-  `Balance.recruitFactor`, so the smaller team recruits more). Next: make recruiting a per-agent **skill**
-  (`agent/Skills`) that some agents are better at, supported by **items** (e.g. *beer* — a temporary recruit
-  boost), instead of a flat faction-wide rate. A richer, more characterful balance lever than a global knob.
-- [ ] **Aim skill (XMP / Ultra Strike accuracy)** — a per-agent skill on `agent/Skills`: a high-aim
-  agent detonates **closer to the portal centre** (max damage); a low-aim agent's blasts land **farther
-  off-centre**, so XMP/Ultra-Strike damage falls off with that miss distance. Models skill spread
-  across the roster + makes Ultra Strike (small radius) reward good aim. Feeds the damage calc + the
-  blast VFX origin; another lever for Phase 6 to learn around.
-- [ ] **Portal-mod follow-ups** (shields / heat sinks / viruses shipped; link amps inactive). Heat-sink
-  **instant cooldown/burnout reset** for the deploying agent on attach; **multi-hack** mod; **activate
-  link amps** (range/outbound-link/SBUL); the **Ultra Strike** weapon + targeted mod-stripping honouring
-  shield `stickiness`; a **3D key** model; a per-game **drop-rate tuning UI** (`DropRates` is already
-  centralized — Menu → Drop rates; `docs/MECHANICS.md`).
+## Gameplay mechanics
+- [ ] **Glyph hacking** — a skill-based hack: **~3× rewards**, but **longer**, **needs skill**, **can fail**.
+  Glyph skill (+ portal level) sets odds + duration. The collar animation + glassy sound already land
+  (`HackFx`/`SoundUtil`); this is the reward/skill/timing model in `Glypher`/`Portal.tryGlyph` + a glyph skill
+  on `agent/Skills`, exposed as a high-risk/high-reward QAction the AI learns to weigh.
+- [ ] **Recruiting as an agent skill + items.** Rate is self-balancing now (`Recruiter.selectionWeight` ×
+  `Balance.recruitFactor`). Next: a per-agent **skill** (`agent/Skills`) some are better at, plus **items**
+  (e.g. *beer* — a temporary recruit boost) — a characterful lever instead of a flat faction rate.
+- [ ] **Aim skill (XMP / Ultra-Strike accuracy)** — a per-agent skill: high-aim detonates **closer to portal
+  centre** (max damage), low-aim lands **off-centre** (damage falls off with miss distance). Makes the
+  small-radius Ultra-Strike reward good aim; feeds the damage calc + blast VFX origin; another AI lever.
+- [ ] **Portal-mod follow-ups** (shields/heat-sinks/viruses ship; link amps inactive): heat-sink **instant
+  cooldown reset** on attach; a **multi-hack** mod; **activate link amps** (range/outbound/SBUL); the
+  **Ultra-Strike** weapon + targeted mod-stripping honouring shield `stickiness`; a **3D key** model; a
+  per-game **drop-rate tuning UI** (`DropRates` is centralized — Menu → Drop rates; `docs/MECHANICS.md`).
 
-## Grand game — multiple locations & a living field (planned, big)
-A core-gameplay direction beyond a single static arena:
-- [ ] **Movable / expandable play field.** The playable area can **grow** or **shift** over a game
-  (the circle/rect isn't fixed at onboarding) — captured territory or objectives push the boundary.
-  The grid + flow-field + border + overlays already key off `Sim.fieldRadius()` / `isInPlayArea`, so
-  the field is the natural seam to make dynamic (re-mask + re-sample on change).
-- [ ] **Multiple linked locations (a campaign / "grand game").** Q-Gress runs at **several real-world
-  locations at once**: **one focused sim** the player actually watches at full fidelity, plus the
-  **off-site locations simulated in a simplified/abstract form** (aggregate MU/portal counts, cheap
-  tick, no 3D) to keep cost bounded. Locations connect (shared roster, cross-site links/objectives).
-- [ ] **Roster management across sites.** The player maintains an **agent roster of ~16–32** spread
-  over the locations, allocating/moving them between the focused sim and the simplified off-sites —
-  a meta layer on top of the per-faction sliders. Ties into Phase 6 (the AI driver should reason at
-  both the local-tactical and the roster/strategic level).
-  - *Open questions:* what the simplified off-site model is (pure stats vs a coarse grid), how
-    travel/relocation between sites works (time/cost), and how cross-site links/fields score.
+## Grand game — multiple locations & a living field *(big, exploratory)*
+- [ ] **Movable / expandable play field** — the playable area can **grow** or **shift** over a game (captured
+  territory / objectives push the boundary). Grid + flow-field + border + overlays already key off
+  `Sim.fieldRadius()` / `isInPlayArea`, so the field is the seam to make dynamic (re-mask + re-sample on change).
+- [ ] **Multiple linked locations (a "grand game")** — run several real-world locations at once: **one focused
+  sim** at full fidelity + **off-site locations in a simplified/abstract form** (aggregate MU/portal counts,
+  cheap tick, no 3D) to bound cost. Locations connect (shared roster, cross-site links/objectives).
+- [ ] **Roster management across sites** — a player **roster of ~16–32** spread over the locations,
+  allocated/moved between the focused sim and the off-sites — a meta layer over the sliders (the AI should
+  reason at both the local-tactical and roster/strategic level). *Open:* the off-site model (pure stats vs
+  coarse grid), travel/relocation cost, and how cross-site links/fields score.
 
 ## Title / faction screen
-The **CHOOSE YOUR FACTION** screen is a showpiece: a **real 3D extruded Q-GRESS wordmark** (brand
-font, camera-locked, springs away from XMP blasts) + a compact ENL/RES menu that fades in ~1s after the
-letters land, over a **real `Scene3D` mini-sim** (`util/ui/TitleSim`) — a round arena with ~8 portals, a
-3-v-3 agent roster (one L3/L5/L8 each side, equipped: level-matched XMPs, resos/cubes, keys, an L8
-shield) and ~30 NPCs, driven by the actual tick loop / AI, with a dramatic fly-in + a slow center-facing
-orbiting camera, 3D terrain, colour fade, and a GitHub footer link. Wiped by the onboarding reload
-(HtmlUtil's reload handoff). It runs the same renderer/FX as the game (no parallel code). Remaining:
-- [ ] **Precompute the title world to cut load time.** Serialize the fixed title location's **grid +
-  portal positions + flow fields** (extend the `GridCapture` fixture pattern) and load them instead of
-  doing the live shadow-readback + async field compute — so the title sim is instant. Pairs with the
-  6.1 grid fixtures.
-- [ ] **FreeCamera flight path** (optional): fly the camera *position* over the terrain while
-  `lookAtPoint(centre)` keeps the action framed (today the cam orbits a fixed centre — MapLibre's
-  default camera can't decouple position from look-at without FreeCamera).
-- [ ] Drifting **particles** + a generative **ambient** bed (the portal-defense thunderbolts + the
-  wordmark's XMP-blast reaction already land — the title inherits the game FX).
+- [ ] **Precompute the title world** — serialize the fixed title location's grid + portal positions + flow
+  fields (extend the `GridCapture` fixture pattern) and load them instead of the live shadow-readback + async
+  field compute, so the title sim is instant. Pairs with the Phase-6 grid fixtures.
+- [ ] **FreeCamera flight path (optional)** — fly the camera *position* over the terrain while
+  `lookAtPoint(centre)` keeps the action framed (today it orbits a fixed centre — MapLibre's default camera
+  can't decouple position from look-at without FreeCamera).
+- [ ] **Drifting particles + a generative ambient bed** (the defense thunderbolts + wordmark XMP-reaction
+  already land — the title inherits the game FX).
 
-## Phase 6 — AI-vs-AI (the Q-gress payoff)
+## Phase 6 — AI-vs-AI (the payoff)
+**Substrate is shipped** (see FEATURES + git log): the policy seam (`FactionPolicy`/`FactionPolicies`), the
+`Observation` → `SliderVector` contract, the deterministic headless `SimRunner` match harness + `WorldSnapshot`,
+the **custom-net track** (`Net`/`NetArch`/`Evolution`/`NetPolicy`, a baked **16×16** champion that beats the
+baseline, JSON genome save/load via `GenomeIO`/`NetStore`, the NET activation + genome viz), the adaptive
+`HeuristicPolicy`, the **in-browser LLM track** (`LlmPolicy`/`WebLlmClient` + reasoning panel, browser-only),
+the `Tournament` eval engine, and per-faction driver selection (top toolbar + the onboarding step).
 
-**Decided:** build **both** AI drivers on **one** shared substrate, so any faction can be Human /
-Net / LLM independently and fight in any combination. Track design lives in [docs/NN.md](docs/NN.md)
-(custom net + neuroevolution) and [docs/LLM.md](docs/LLM.md) (in-browser LLM). The slider vector
-stays the action substrate (the net/LLM only re-tunes the 17 sliders at checkpoint cadence — it does
-**not** replace per-agent `ActionSelector`).
+**Fitness objective:** maximize **summed per-checkpoint MU** (sustained field area), not just final MU — a
+team effort to layer fields across the cycle. The net/LLM only re-tunes the 17 sliders at checkpoint cadence;
+it does **not** replace per-agent `ActionSelector`.
 
-**Fitness objective (what we optimize for):** each faction maximizes its **Mind Units at every
-checkpoint** (and overall) — MU is total controlled **field area**, so the goal is a *team effort to
-create and maintain the largest fields*: use the available portals/space to **layer** fields so total
-area is maximized, and hold it across the cycle. So fitness = the **sum/average of checkpoint MU**
-(rewarding sustained large fields), not just final MU — `Cycle` already snapshots per-checkpoint MU.
-
-**6.0 — Substrate I: programmatic policy API + determinism** _(prereq, no AI yet)_ — **DONE** (`ai/`)
-- [x] **`FactionPolicy`** (`ai/FactionPolicy.kt`) — `ActionSelector.q()` now reads the faction's installed
-  policy × the QValue weight; the registry `FactionPolicies` defaults each faction to `DomSliderPolicy`
-  (the tuning sliders, or `0.1` headless) → zero gameplay change. A driver calls `FactionPolicies.set`.
-- [x] **`Observation` (pure)** (`ai/Observation.kt`) — `observe(faction): DoubleArray`, a fixed 13-slot
-  normalized vector (cycle fraction, MU/link/field share, portal control, roster fill, avg level + XM per
-  side). Read-only over `World`; deterministic. The NN/LLM input.
-- [x] **`SliderVector` (pure)** (`ai/SliderVector.kt`) — **17** named slots (10 `QActions` + 7
-  `QDestinations`, stable `ORDER`) ↔ encode/decode + clamp; `SliderVectorPolicy` wraps one as a
-  `FactionPolicy`. (Was 19; the faction-neutral EXPLORE action was retired — portal discovery is now a
-  density-driven system process, see *Gameplay mechanics*.)
-- Seedable RNG is **done** — `Util.random()` is a seedable mulberry32; same seed reproduces a world
-  (powers shareable "Copy link" + the 6.1 match harness).
-- Also made the Q-value system **headless-safe** (`QActions` skips UI icons, `DomSliderPolicy` skips the
-  DOM read when there's no `window`) so the substrate inits in Node — a prereq for the 6.1 SimRunner.
-
-**6.1 — Substrate II: headless match harness** _(the training engine; pays off the functional-core split)_
-- _Groundwork done:_ the **audio** + Q-value systems are headless-safe (`SoundUtil` self-guards via a
-  lazy graph + `isMuted()`; `QActions`/`DomSliderPolicy` skip DOM/icons headless) — SimRunner needs that.
-- _Functional-core split, Stage 1 **DONE** — the effect-sink seam (`system/effect/`):_ the crash-prone
-  visual effects logic fired inline (XMP burst, hack/deploy/reward FX, retaliation bolt, portal shatter,
-  reso drop, flow-field flash) now route through `Fx.sink` (an installable `Effects` interface, mirroring
-  `FactionPolicies`). `BrowserEffects` forwards 1:1; `NoOpEffects` (headless default) is the no-op, so the
-  tick loop runs in Node without touching three.js (was: `Portal.remove()` → unguarded `Scene3D.shatterPortal`
-  forced a lazy geometry → crash). `EffectsSeamTest` proves it. Zero browser-visible change.
-- _Functional-core split, Stage 2 **DONE** — sync pathfinding (`PathUtil.computeFieldSync`):_ a non-suspend
-  twin of `computeFieldAsync` (same bucketed-Dijkstra heat map + vector field + smoothing, shared pure
-  helpers → deterministic) that returns the field inline, no coroutine / no frame-yield. Headless field
-  compute is opt-in via `Config.headlessFieldCompute` (default off → unit tests unchanged, agents bee-line);
-  when on, `Portal.create` + `NonFaction.getOrCreateVectorField` compute fields synchronously. `PathUtilSyncTest`
-  covers it. Fields are computed once per portal / per unique offscreen destination (cached), not per tick,
-  so the earlier "too slow" worry was really the async coroutine never running in a sync loop — now moot.
-- _Spike finding (resolved by Stages 1–2):_ the original `SimRunner` spike died because the sim wasn't
-  synchronous/headless (renderer crashes + async field gen). Both fixed by Stages 1–2.
-- [x] **`SimRunner`, Stage 3 DONE** — `ai/SimRunner.runMatch(grid, seed, maxTicks, setup, policyEnl, policyRes):
-  MatchResult`: a synchronous match in Node — seeds the RNG, installs the grid, flips
-  `Config.headlessFieldCompute`, seeds portals/agents/NPCs, then ticks the shared `system.Simulation.stepEntities`
-  + `Cycle` scoring, capturing **per-checkpoint MU** (`MatchResult.checkpointMuSum/Avg` = the fitness signal).
-  Effects stay on `NoOpEffects`. `SimRunner.reset()` clears all match state (added `XmMap.clear`/`NonFaction.reset`).
-  `SimRunnerTest` proves it runs headless, captures ≥2 checkpoints, and is deterministic. The tick core is now
-  extracted into `system.Simulation` (the live `HtmlUtil.tick` calls the same `stepEntities`). Also hardened a
-  latent unbounded recursion in `Portal.findRandomPointNearPortal` (the harness surfaced it) and made
-  `Agent.initialActionPortal` reuse a world portal (no per-agent flow-field compute).
-- [x] **Match throughput — SOLVED (it was never pathfinding).** The AI only consumes stats
-  (`ai.Observation`), never cell data, so cell-grid flow-field navigation was never on the AI's critical
-  path. Profiling showed the real cost was `Pos.createRandomPassable` doing an **O(cells) full shuffle +
-  allocation on every spawn/recruit**; cached the passable-key list per grid → O(1). A full-resolution
-  match (180×120 ≈ 23k cells, 300 ticks) dropped **160,000 ms → ~20 ms** (~8000×). Turning flow fields off
-  alone did *nothing* — confirming pathfinding wasn't the bottleneck. So the cell sim is fast enough for
-  training as-is; no abstract/stats-only sim or pathfinding rework needed. `MatchSetup.flowFields` (default
-  off = straight-line movement; on = obstacle-routed) remains a fidelity knob, not a perf lever.
-  - _Spawn realism — FIXED:_ headless `Pos.createRandomPassable` returned grid (shadow) coords as positions,
-    so agents clustered in a corner away from the (sim-space) portals; now returns the cell centre in sim
-    coords. Agents reach + capture portals.
-- [ ] **Grid fixtures** — serialize a built `Grid` (+ portal seeds) to committed JSON so matches
-  reproduce without live tiles / `readPixels`. `GridFixture` already does the RLE serialization; the
-  real-tile fixtures still need the `?debug=capture` pass.
-
-**6.2 — Track A: custom net + neuroevolution** → [docs/NN.md](docs/NN.md)
-- [x] **Net machinery DONE + tested** (`ai/net/`): `Net` (an MLP of arbitrary depth/width, flat genome),
-  `NetPolicy` (maps the live `Observation` → sliders, re-evaluated once per checkpoint), `Evolution` (a `(μ+λ)`
-  GA — elitism + gaussian mutation, fitness = mean per-checkpoint MU margin over K seeded `SimRunner` matches,
-  RNG independent of `Util`). Deterministic; `bestPolicy()` installs the winner. Tests prove determinism +
-  elitism monotonicity.
-- [x] **Flexible architecture (`NetArch`)** — the net shape is configurable for experimentation: any number of
-  hidden layers, any width (**default `13 → 16 → 16 → 17`, two hidden layers of 16**), a `bias` toggle, and a
-  hidden `Activation` (TANH/RELU/SIGMOID/LINEAR; output always sigmoid). `GenomeIO` serializes the full arch
-  (back-compat with old single-`hidden` genomes), `EvolutionConfig.arch` evolves any shape, and the NET viz +
-  `Tournament` work for any arch — so **different nets can be matched head-to-head**. Net machinery + `GenomeIO`
-  tests cover deep nets + the legacy format. (The baked champion is now a 16×16 net; deeper nets need more GA
-  budget to match a single layer — left as the experimentation knob.)
-- [x] **Training signal + balance — RESOLVED via the anti-snowball/comeback pass** (`agent/Balance.kt`).
-  A baseline match was static + lopsided (ENL grabbed every portal, RES 0, no fields, MU flat 0). Root cause
-  was twofold and both are fixed: **(1) turn-order bias** — agents were processed in insertion order so the ENL
-  roster always acted first and took every neutral portal; `Simulation.stepEntities` now **shuffles** the agent
-  order each tick (seeded → deterministic). **(2) attacking ≫ defending** — `Balance.attackBoost` gives the
-  faction *behind on portals* up to `+Config.comebackAttackBonus` reso damage (comeback / "attack beats
-  defend"), `Config.attackXmpThreshold` dropped 30→15 (assaults actually start), and `Balance.recruitFactor`
-  makes the *larger* roster recruit less + the *smaller* more (anti-snowball, esp. when teams are unbalanced).
-  Measured over a match the board now moves both ways (portals 2/1→6/1→5/3→7/3), RES captures + fields, and
-  **MU forms (e.g. 1209/200)** → fitness is no longer flat. `BalanceTest` covers the helper; the knobs are
-  `Config` vars (user-tunable). Quick-start rosters (`MatchSetup.quickStart`, default on) ensure gameplay.
-- [x] **First training run — net beats baseline, training converges cleanly.** `Evolution.train`
-  (NetPolicy=ENL vs the default-slider baseline=RES) evolves genomes that beat the default sliders, and with
-  the determinism fix below the per-generation champion is now **monotonic + improving** (e.g.
-  `214→214→…→848→…→1518`) — elitism works, the retained `bestGenome` is reproducible. The 6.2 substrate
-  is proven end-to-end.
-  - **Cross-match determinism leak — FIXED.** A match that formed fields was not reproducible after another
-    match ran between, because `system/Cycle` used the stdlib **no-arg `shuffled()`** (the global *unseeded*
-    `Random.Default`) in `spawnXm` (XM placement) + `removeAgents` — now `Util.shuffle` (seeded).
-    `SimRunnerTest.reproducibleAfterAnotherMatch` guards it with a *non-vacuous* MU-producing match (the old
-    `EvolutionTest` monotonicity check was vacuous — 301-tick matches make 0 MU). Found via a tick-level
-    divergence hunt over `SimRunner.runMatch(onTick = …)` (the hook stayed in as a debug affordance).
-  - **Eval environment (open):** training with the anti-runaway mechanics OFF (`dominanceDecay`/
-    `leaderDistraction`/`comebackMax` = 0) gives a slightly cleaner gradient — a "clean-eval" flag on
-    `Evolution`/`MatchSetup` is a nice-to-have.
-- [x] **First live AI driver — `HeuristicPolicy` (`ai/HeuristicPolicy.kt`).** A hand-written adaptive policy
-  (the stepping stone before a net is loadable): pure `tune(Observation) → SliderVector` re-evaluated per
-  checkpoint — behind on MU → press the attack + hunt enemy portals; ahead → consolidate into links/fields;
-  low XM → hack/glyph to refuel. Selectable per faction in the **AI** footer tab's driver picker; installing it
-  hands slider control to the AI and the tuning sliders auto-move (above). Doubles as a sane baseline opponent.
-  `HeuristicPolicyTest` covers the mapping. (Net/LLM drivers still gated on genome load / 6.3.)
-- [x] **`FactionPolicy.currentVector()`** — a policy exposes the slider vector it's driving (null for
-  `DomSliderPolicy` = "no AI in control"); the UI uses it to decide auto-move and to graph the slots.
-- [x] **Slider-history sparklines (`util/ui/SliderHistoryPanel`, in the merged AI tab)** — one uPlot per slider
-  slot per faction over the checkpoint window (faction-agnostic overlap blend), so the AI's re-tuning is visible
-  over time (flat lines under Manual). Snapshots via `FactionPolicies.of(f).weight(q)` so manual + AI read uniformly.
-- [x] JSON genome (de)serialization for saving/loading a trained net + loading a winner into the live game
-  (`GenomeIO`/`NetStore`/`Champion`; the **Neural net** driver installs a `NetPolicy`). Done (see 6.2 above).
-- [x] **Live activation + chosen-path visualization — DONE** (`util/ui/NetVizPanel`, the **NET** footer tab).
-  `Net.forwardTraced` captures every layer's activations; the panel draws the net as observation→hidden→slider
-  node columns wired by edges whose brightness = live contribution (weight × upstream activation), node
-  brightness = activation, the top outputs ringed + labelled (the favoured actions) and the top one's incoming
-  edges lit as the "chosen path". Recomputed each frame from the current observation, per net-driven faction.
-  **6.2 exit met:** the champion beats the default-slider baseline, loads into the live game (`NetStore` →
-  the AI tab's Neural-net driver), and its activations are visualized.
-
-**6.3 — Track B: in-browser LLM driver** → [docs/LLM.md](docs/LLM.md)
-- [x] **Substrate DONE** (`ai/llm/`): `LlmClient` (a `suspend complete(prompt)` seam; `MockLlmClient` is the
-  deterministic stand-in), `LlmPrompt` (pure state→prompt builder), `LlmParser` (tolerant reply→`SliderVector`:
-  extracts JSON from prose, clamps, defaults missing keys, null on junk), and `LlmPolicy` (a `FactionPolicy`:
-  one async request per checkpoint, never blocks `weight()`, falls back to `HeuristicPolicy` until/if the reply
-  lands; exposes `lastPrompt`/`lastReply` for a reasoning panel). `LlmParser`/`LlmPrompt`/`LlmPolicy` tested.
-- [x] **Real in-browser model client (experimental)** — `WebLlmClient` lazily loads **WebLLM**
-  (`@mlc-ai/web-llm`, WebGPU) from a CDN via a runtime `import()` (hidden from webpack so the bundle stays
-  clean) and runs a small instruct model; all wrapped so a missing/failed model yields `""` → heuristic
-  fallback. The **LLM** driver is enabled in the picker. **Needs in-browser/WebGPU verification** (can't run
-  headless).
-- [x] **Reasoning panel** — `LlmReasoningPanel` (in the merged AI tab) surfaces each LLM faction's model
-  status, prompt, raw reply, and the parsed favoured actions (or the fallback). Exit (pending browser
-  verification): an LLM drives a faction end-to-end in-browser, sim stays smooth.
-
-**6.4 — Mix, match & human-vs-AI**
-- Per-faction driver selection + **AI-driven sliders animate read-only, with a per-slider manual-lock
-  override — DONE** (the AI tab's driver picker installs a policy per faction; `TuningPanel` auto-moves under
-  AI control; the lock toggle pins a slider via `OverridePolicy`).
-- [x] **Tournament/eval substrate — DONE** (`ai/Tournament` + `system/WorldSnapshot`). `Tournament.roundRobin`
-  pits named drivers (Manual baseline / Heuristic / a trained Net / hand vectors) over seeded `SimRunner`
-  matches — every pair plays both faction sides per seed (fair) — and ranks them by average per-checkpoint MU
-  margin into a `Standing` leaderboard; deterministic. `WorldSnapshot.capture/restore` saves + restores the
-  live `World` singletons (portals/agents/NPCs/drivers/score history/scalars) so an in-game benchmark can run
-  the (world-clobbering) eval and resume the player's game untouched. `TournamentTest`/`WorldSnapshotTest`
-  cover both.
-- [x] **Driver-selection onboarding screen — DONE** (`Onboarding.showDrivers`, step right after faction
-  pick): choose each side's brain — **your** side Human / Heuristic / Net / LLM, the **opponent** AI-only
-  (Heuristic / Net / LLM; no Human — there's no enemy slider UI), **defaulting to net vs net**. The picks ride
-  the start-URL (`?enl=…&res=…` via `GameUrl` + `DriverControls.chosen`) across the reload; the toolbar pickers
-  then install + reflect them. _Later:_ a per-side net-architecture / variant pick (ties into the trainer).
-- [ ] **In-game leaderboard UI** — a button that wraps `Tournament` in a `WorldSnapshot` capture/restore (and
-  must also pause the render loop + swap `Fx` to `NoOpEffects` so the headless matches don't fire 3D FX /
-  render their throwaway portals), then shows the `Standing` table. Lets you **pit net variants** (different
-  `NetArch`) head-to-head and see which wins.
-
-**6.5 — Visual NN trainer** _(NEXT SESSION — start here)_
-- [ ] **In-browser trainer UI, in a new `TRAIN` footer tab.** Define a `NetArch` (layers/widths/bias/
-  activation) + `EvolutionConfig` (pop/gens/mutation), run `Evolution` live with a **fitness curve** + a
-  champion preview (reuse the genome heatmap + activation viz), then **save the winner** to `NetStore` /
-  install it as a driver. The headless pieces (`Evolution`, `SimRunner`, `Tournament`, `GenomeIO`, `NetStore`,
-  `WorldSnapshot`) are all in place — this is the UI + the live-run wiring. **Concrete plan (from this
-  session's scouting):**
-  1. **Make `Evolution` resumable** — add an `Evolution.Session` (constructor `(grid, seed, config, opponent)`)
-     holding the population, with `step(): Double` running ONE generation (returns champion fitness) +
-     `bestGenome`/`bestFitness`/`generation`/`done`. Refactor `train()` to loop `Session.step()` (so the
-     existing `EvolutionTest` still covers it). Add a `SessionTest` (N steps ≡ `train(generations=N)`).
-  2. **Drive it chunked off the UI** — the trainer calls `session.step()` once per `window.setTimeout(…, 0)`
-     and yields between generations (one generation blocks briefly; keep the in-browser default config SMALL —
-     e.g. pop 10–12, short matches — so each step is well under a second; note that serious training stays
-     headless). Update the fitness curve + status each step.
-  3. **Don't clobber the live game** — `SimRunner.reset()` clears the shared `World` singletons, so wrap the
-     whole run in `WorldSnapshot.capture()` → train → `WorldSnapshot.restore()`. **Pause the live loop while
-     training:** `HtmlUtil.tick()` early-returns on `!World.isReady` (HtmlUtil.kt:76) — gate it on a
-     `training` flag too (or hold `isReady=false` for the duration), and the snapshot restores the real state
-     after. (Also install `NoOpEffects` via `Fx` during the run so no 3D FX fire — same as the leaderboard.)
-  4. **Champion actions** — on done: show fitness, "Save to NetStore" (`NetStore.save(GenomeIO.encode(net,
-     fitness))`), and "Install as ENL/RES driver" (`FactionPolicies.set(faction, NetPolicy(net, faction))`).
-- [ ] **Then: the in-game leaderboard UI** (6.4, above) shares this exact run harness (snapshot + pause + Fx
-  no-op) — build it right after the trainer so net variants can be ranked from the same surface.
-- [ ] **icebox — download / upload trained nets.** `GenomeIO` already JSON-ables a genome+arch (small, ~16 KB
-  at 16×16), so: a "download champion" (Blob → file) + "load from file/paste" path, and a small library of
-  saved nets. Lets nets be shared / versioned outside `localStorage`.
+Remaining:
+- [ ] **★ 6.5 — Visual NN trainer** *(next session)* — an in-browser trainer in a new **TRAIN** footer tab:
+  pick a `NetArch` (layers/widths/bias/activation) + `EvolutionConfig` (pop/gens/mutation), run `Evolution`
+  live with a **fitness curve** + champion preview (reuse the genome heatmap + activation viz), then **save**
+  the winner to `NetStore` / install it as a driver. Headless pieces all exist; this is the UI + live-run
+  wiring:
+  1. **Make `Evolution` resumable** — an `Evolution.Session(grid, seed, config, opponent)` holding the
+     population, with `step(): Double` = one generation (returns champion fitness) + `bestGenome`/`bestFitness`/
+     `generation`/`done`; refactor `train()` to loop it (existing tests still cover it); add a `SessionTest`.
+  2. **Chunk it off the UI** — call `session.step()` per `setTimeout(…, 0)`, yielding between generations; keep
+     the in-browser default config **small** (pop ~10–12, short matches) so each step is sub-second (serious
+     training stays headless).
+  3. **Don't clobber the live game** — wrap the run in `WorldSnapshot.capture()` → train → `restore()`, **pause
+     the tick loop** (`HtmlUtil.tick()` early-returns on `!World.isReady`, line 76 — gate it on a `training`
+     flag), and install `NoOpEffects` via `Fx` for the duration (no stray 3D FX).
+  4. **Champion actions** — show fitness; "Save to `NetStore`"; "Install as ENL/RES driver".
+- [ ] **In-game leaderboard UI** — a button wrapping `Tournament` in the **same run harness** as the trainer
+  (snapshot + pause + `Fx` no-op), showing the `Standing` table, so net variants (different `NetArch`) can be
+  ranked head-to-head. Build right after the trainer (shared plumbing).
+- [ ] **Grid fixtures** — serialize a built `Grid` (+ portal seeds) to committed JSON so headless matches
+  reproduce without live tiles / `readPixels`. `GridFixture` does the RLE serialization; the real-tile fixtures
+  still need the `?debug=capture` pass.
+- [ ] **Clean-eval flag** (nice-to-have) — training with the anti-runaway mechanics OFF (`dominanceDecay`/
+  `leaderDistraction`/`comebackMax` = 0) gives a slightly cleaner gradient; a flag on `Evolution`/`MatchSetup`.
+- [ ] **Per-side net-architecture / variant pick in onboarding** — surface `NetArch` choices up front (feeds
+  the trainer + the leaderboard's variant matchups).
+- [ ] **icebox — download / upload trained nets.** `GenomeIO` JSON-ables a genome+arch (~16 KB at 16×16): a
+  "download champion" (Blob → file) + "load from file/paste", and a small saved-net library — share/version
+  nets outside `localStorage`.
 - [ ] **icebox — genome/action-set versioning.** Once training is serious AND the action set grows (more
-  `QActions`, observation slots, etc.), stamp a **schema version** in the genome JSON and refuse/ migrate
-  incompatible nets (the `inputs`/`outputs` dim check is the seed of this). Not needed while we're pre-release
-  and the layout is churning — revisit when nets are worth keeping across versions.
+  `QActions`/observation slots), stamp a **schema version** in the genome JSON and refuse/migrate incompatible
+  nets (the `inputs`/`outputs` dim check is the seed). Not needed pre-release while the layout churns.
 
-**Cross-cutting:** desktop-only + **WebGPU** gating; seeds via `?seed=`; **balance risk** — pure
-win-maximizing self-play may rediscover the recruit-rush degenerate (below), so keep tuning `Config`
-and consider shaping fitness for *interesting* play (follow-up, not v1).
+**Cross-cutting AI risk:** pure win-maximizing self-play may rediscover the recruit-rush degenerate (below) —
+keep tuning `Config` and consider shaping fitness for *interesting* play (a follow-up lever, not v1).
 
-## Open decisions
-- **Coverage tooling.** Kover has no Kotlin/JS support. Real line-coverage arrives with the
-  **functional-core split** (extract pure logic into `commonMain` + a `jvm()` test target, run Kover
-  there). Until then the gates are ktlint + detekt + tests. (6.0/6.1 are the natural place to start
-  the split.)
-- **Tighten max line length 140 → 120.** Line length is now enforced at **140** (`.editorconfig`).
-  Dropping to **120** is deferred: ktlint auto-wraps offenders into more physical lines, which inflates
-  detekt's `LargeClass` count — so it needs to land alongside the class extractions below (`Scene3D`,
-  and any others near the 600-line cap like `HtmlUtil`/`MapUtil`). Do it as a dedicated refactor pass.
+## Open engineering decisions
+- **Coverage tooling.** Kover has no Kotlin/JS support; real line-coverage needs the functional-core split
+  (pure logic → `commonMain` + a `jvm()` test target, run Kover there). Until then: ktlint + detekt + tests.
+- **Tighten max line length 140 → 120.** Deferred: ktlint auto-wrapping inflates detekt's `LargeClass` count,
+  so it must land alongside the class extractions (`Scene3D`, and any near the 600-line cap like
+  `HtmlUtil`/`MapUtil`). A dedicated refactor pass.
+- **Extract the demo/showcase subsystem from `Scene3D`** — most of Scene3D's `LargeClass` bulk is the
+  self-contained sandbox code; move it to a `Showcases` object (build helpers go `internal`), then drop the
+  `LargeClass` suppress.
+- **Null-safety hardening** — audit remaining `!!` → `?.`/`?:`/`requireNotNull`/early return (same hazard
+  class as the empty-collection `max/min` crashes already fixed).
 
-## Balance note (recruit-rush, root cause)
-`ActionSelector` picks by weighted-random over `slider × weight`. Recruiting adds agents (up to a
-cap), and more agents = more actions/tick = a compounding snowball, so rushing recruitment beats
-balanced play. Phase 5 gave recruiting an **XM cost + diminishing returns**; the 6.2 balance pass
-added **`Balance.recruitFactor`** (the larger roster recruits less, the smaller more → team sizes
-self-correct) and **`Balance.attackBoost`** (the side behind on portals attacks harder → the board
-flips instead of a leader running away), plus a lower attack threshold and a fair (shuffled) agent
-order. Measured dynamic + competitive over a `SimRunner` match. Deeper "no strategy dominates"
-validation is still iterative (playtest + the headless harness); self-play fitness shaping is the AI-era lever.
+## Balance risk (recruit-rush)
+`ActionSelector` picks by weighted-random over `slider × weight`; recruiting adds agents (→ more actions/tick →
+a compounding snowball), so a recruit-rush can beat balanced play. Mitigations are in (XM cost + diminishing
+returns; `Balance.recruitFactor` self-corrects roster sizes; `Balance.attackBoost` lets the side behind flip
+the board; fair shuffled agent order). Deeper "no single strategy dominates" validation stays iterative
+(playtest + the headless harness); **self-play fitness shaping** is the AI-era lever.
 
 ## Under consideration (icebox)
-- **Weather simulation (gameplay + atmosphere).** Simulate weather at the location — **rain**, fog,
-  snow, day/night — as both a visual layer (particles / sky + fog tint, building on the new MapLibre
-  sky) and a **gameplay modifier**: e.g. rain makes agent **resolve/battery deplete quicker**, fog cuts
-  hack/attack range, snow slows movement. Could be random per-game, seasonal, or pulled from a real
-  weather API for the chosen location. Pairs with the colony-management battery/accu idea below.
-  - **A directional sun** (with the weather/time-of-day): a real key light so the chrome poles cast a
-    highlight + the terrain gets shading (today there's only ambient + a faint fixed sun → the chrome
-    reflects a static gradient env, not the scene). Together with a **render-to-cubemap / PMREM** of the
-    sky+terrain, the chrome/glass would reflect the *actual* skybox + terrain (currently approximated by
-    a static gradient env map in `Materials`). Sun direction drives time-of-day + shadow mood.
-- **Colony-management / roster (gameplay expansion).** Per-entity attributes (endurance/speed/agility/
-  radius, building on `agent/Skills`+`AgentSize`); **rarity-tiered agents** (randomised attributes but
-  **no gambling UX** — the player *manages* composition, not a gacha loop); **items** (skateboards,
-  **jet-skis** for water traversal → makes marina/bridge presets playable, power-banks, second phones);
-  **battery/accu %** (depleted phone → the player leaves the scene). Pairs with the 3D humanoid work.
-- **Null-safety hardening.** Audit every `!!` and replace with `?.`/`?:`/`requireNotNull`/early return
-  (same NPE/`NoSuchElement` hazard class as the empty-collection `max/min` crashes already fixed).
-- **Rework the movement / pathfinding model.** Derive walkability/penalties from the **vector-tile road
-  geometry** (query features / GeoJSON) and/or a graph/navmesh, instead of reading rasterized shadow
-  pixels. Decouples the sim from the screen and unblocks dynamic zoom — natural partner of the
-  functional-core split + the 6.1 grid fixtures.
-- **Going 3D (gameplay).** A pitched/3D camera breaks the top-down screen→grid mapping; needs a
-  decoupled simulation grid or a 3D pathfinding model. Revisit after the functional-core split. (3D
-  *buildings* in the top-down satellite view already work.)
-- **Walkable roofs / more from our own building meshes.** Now that we mesh every building ourselves
-  (`OwnBuildings`, fed by OSM/Overpass via `BuildingTiles`, streamed by `BuildingStream` — see
-  FEATURES), the door is open for agents to path over roofs, per-building destruction, etc. The
-  pbf/`@mapbox/vector-tile` decoder still in the tree (`external/VectorTile.kt`) can also pull the
-  **road/water/landcover** layers for the movement-model rework below (real geometry instead of
-  rasterized shadow pixels).
-- **Building perf + lifecycle (follow-ups from today's Overpass switch).**
-  - **Many shadow-casters.** Each building is its own mesh (needed for per-mesh shake). A dense city +
-    streaming can reach 1000s of shadow-casting meshes; if FPS suffers, **merge** static buildings into
-    a few `BufferGeometry` batches (keep only the play-area ones individually shakeable).
-  - **Reset wiring.** `OwnBuildings.clear()` + `BuildingStream.reset()` exist but aren't called on
-    world-regen yet, so an old city's meshes/coverage can linger — wire them into the reset path.
-  - **Overpass politeness.** A long fly-around fires repeated Overpass queries; add a per-bbox
-    **response cache** (and/or a fallback mirror) so we don't hammer the public instance / hit limits.
-- **Building-cast shadow polish.** Our meshes cast + receive sun shadows now; revisit shadow-map
-  resolution / cascade once the sun obscurables (clouds) land so crowded blocks read cleanly. The sun's
-  ortho shadow camera is sized to the play area — **streamed** buildings beyond it won't cast/receive
-  until that's widened or made to follow the view.
-- **TTS announcements (low priority).** Speak important events (captures, recruits, new fields, cycle
-  changes) via the Web Speech API (`speechSynthesis`), throttled so it doesn't spam; per-faction
-  voices a nice touch; off by default, behind a toggle + the master volume.
-- **Extract the demo/showcase subsystem from `Scene3D`.** Scene3D keeps hitting detekt `LargeClass`
-  (currently suppressed); the bulk of the remaining size is the self-contained sandbox code (`Showcase`
-  / `DemoLink`, place/click/remove/hack/xmp/step/link/update showcase, demo cursor). Move it to a
-  `Showcases` object (Scene3D build helpers go `internal`), then drop the `LargeClass` suppress.
-- **Modern Ingress (post-2018) — optional/future.** We're keeping the ~2018 scope, but a 2026 vs 2018
-  gap review surfaced a few worth considering, most-aligned first:
-  - **Machina (the red AI "third faction").** Added post-2018; the closest real-Ingress analogue to our
-    AI-vs-AI north star — a rules-driven faction that spawns on a cycle, auto-links/auto-resonates,
-    decays, and is easy to clear, giving ENL/RES something neutral-hostile to react to. (Complexity L.)
-  - **Checkpoint / septicycle scoring** — sample MU at fixed checkpoints and average per cycle (not
-    just live MU); a real objective for the brain. Pure logic, deterministic-testable. (S/M.)
-  - **Ultra Strike + flip cards (ADA/JARVIS)**; the **hacking-economy triad** (heat-sink / multi-hack /
-    Portal Fracker, + ITO transmuter) shaping farm rate + item mix; **drones** (remote hack). Skip the
-    real-world/social bits (media, fireworks, kinetic capsules, battle beacons, CORE sub, Apex).
-- **Evaluate NVIDIA Komodo.** (Per user.) Investigate what it offers and whether it fits Q-Gress
-  (rendering / AI / acceleration?) before committing — scope unknown; an evaluation item.
-- **Legacy 2D gameplay TODOs (from the old README), still open:** smarter agent behaviour (more
-  destinations, **swarming**); an inventory/capacity limit; **ultra-striking** (multi-XMP combo); more
-  items (XM-tanks, quantum capsules — overlaps the colony-management items above); an FPS / perf
-  readout (pairs with `?debug`); unit tests for fielding + deploying. (Shielding is tracked under
-  portal mods / 3D Stage 2; the NN is Phase 6.)
+- **Weather (gameplay + atmosphere).** Rain/fog/snow/day-night as a visual layer **and** a modifier (rain
+  drains agent battery faster, fog cuts hack/attack range, snow slows movement) — random/seasonal or from a
+  real weather API for the location. Pairs with the colony-management battery idea.
+  - **A directional sun** (with time-of-day): a real key light so chrome poles cast highlights + terrain gets
+    shading; plus a render-to-cubemap/PMREM of sky+terrain so chrome/glass reflect the *actual* scene (today a
+    static gradient env in `Materials`). Sun direction drives shadow mood.
+- **Colony-management / roster.** Per-entity attributes (endurance/speed/agility/radius on `agent/Skills` +
+  `AgentSize`); **rarity-tiered agents** (randomised attributes, **no gambling UX** — manage composition, not a
+  gacha); **items** (skateboards, **jet-skis** → makes marina/bridge presets playable, power-banks, second
+  phones); **battery %** (depleted phone → the player leaves). Pairs with the 3D humanoid work.
+- **Movement/pathfinding rework.** Derive walkability/penalties from **vector-tile road geometry** (features /
+  GeoJSON) and/or a navmesh instead of reading rasterized shadow pixels — decouples the sim from the screen and
+  unblocks dynamic zoom + a pitched/3D camera. Natural partner of the functional-core split. (The
+  pbf/`@mapbox/vector-tile` decoder in `external/VectorTile.kt` can pull road/water/landcover layers.)
+- **Walkable roofs / per-building destruction** — now that we mesh every building (`OwnBuildings`), agents
+  could path over roofs, buildings could be destructible, etc.
+- **Building perf + lifecycle** — (a) a dense streamed city can reach 1000s of shadow-casting meshes; if FPS
+  suffers, **merge** static buildings into a few `BufferGeometry` batches (keep play-area ones individually
+  shakeable); (b) wire `OwnBuildings.clear()` + `BuildingStream.reset()` into world-regen (they exist, unused);
+  (c) a per-bbox **Overpass response cache** so a long fly-around doesn't hammer the public instance; (d) widen
+  / view-follow the sun's ortho shadow camera so **streamed** buildings beyond the play area cast/receive.
+- **TTS announcements (low pri)** — speak key events (captures, fields, cycle changes) via `speechSynthesis`,
+  throttled, per-faction voices, off by default behind a toggle + master volume.
+- **Modern Ingress (post-2018), optional** — most-aligned first: **Machina** (the red AI "third faction" — the
+  closest analogue to our AI-vs-AI north star: a rules-driven faction that spawns, auto-links, decays, is easy
+  to clear); the **hacking-economy triad** (heat-sink / multi-hack / Fracker + ITO) shaping farm rate; **drones**
+  (remote hack). Skip the real-world/social bits.
+- **Evaluate NVIDIA Komodo** (per user) — investigate fit (rendering / AI / acceleration?) before committing.
+- **Legacy 2D TODOs still open** — smarter agent behaviour (more destinations, **swarming**); an
+  inventory/capacity limit; an FPS/perf readout (pairs with `?debug`); unit tests for fielding + deploying.
 
 ## Constraints / agreements
 - Commit to `develop`; **no pushing** until something works end-to-end.
-- Keep `CLAUDE.md` + this file + `docs/` current as work lands; no overlapping info between them.
+- Keep `CLAUDE.md` + this file + `docs/` current as work lands; no overlapping info between them (future →
+  here, shipped → FEATURES, how → ARCHITECTURE).
 - Desktop-only; do not invest in mobile support.
