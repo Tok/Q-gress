@@ -4,6 +4,8 @@ import agent.Faction
 import ai.DomSliderPolicy
 import ai.FactionPolicies
 import ai.HeuristicPolicy
+import ai.llm.LlmPolicy
+import ai.llm.WebLlmClient
 import ai.net.NetPolicy
 import ai.net.NetStore
 import kotlinx.browser.document
@@ -20,6 +22,7 @@ import org.w3c.dom.HTMLSelectElement
  */
 object DriverControls {
     private const val DEFAULT = "net"
+    private val llmClient by lazy { WebLlmClient() } // shared across factions → one model load
 
     /** A faction-labelled driver `<select>` that installs (and defaults to) the Neural-net driver. */
     fun picker(faction: Faction): HTMLElement {
@@ -35,7 +38,7 @@ object DriverControls {
         sel.appendChild(option("manual", "Manual", disabled = false))
         sel.appendChild(option("heuristic", "Heuristic", disabled = false))
         sel.appendChild(option("net", "Neural net", disabled = false))
-        sel.appendChild(option("llm", "LLM — soon", disabled = true))
+        sel.appendChild(option("llm", "LLM (experimental)", disabled = false))
         sel.value = DEFAULT
         apply(faction, DEFAULT) // install the default driver up front — the AI plays by default
         sel.onchange = {
@@ -50,6 +53,7 @@ object DriverControls {
         when (value) {
             "heuristic" -> FactionPolicies.set(faction, HeuristicPolicy(faction))
             "net" -> FactionPolicies.set(faction, NetPolicy(NetStore.loadNet(), faction))
+            "llm" -> FactionPolicies.set(faction, LlmPolicy(faction, llmClient))
             else -> FactionPolicies.set(faction, DomSliderPolicy(faction))
         }
     }

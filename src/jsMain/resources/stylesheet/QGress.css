@@ -436,6 +436,40 @@ html, body {
     color: #9aa6a0;
     margin-bottom: 8px;
 }
+.llmBlock {
+    min-width: 260px;
+    max-width: 420px;
+    font-size: 12px;
+    margin-bottom: 10px;
+}
+.llmHead {
+    font-family: "Chakra Petch", sans-serif;
+    letter-spacing: 1px;
+    font-size: 13px;
+    margin-bottom: 4px;
+}
+.llmKey {
+    color: #9aa6a0;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 6px;
+}
+.llmVal {
+    color: #ffffff;
+}
+.llmPre {
+    white-space: pre-wrap;
+    max-height: 140px;
+    overflow: auto;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+    padding: 4px 6px;
+    margin: 2px 0;
+    font-size: 11px;
+    color: #cdd6d0;
+}
 
 /* NET footer tab: the neural-net activation diagram + a stats sidebar (best viewed footer-maximized). */
 .netVizPanel {

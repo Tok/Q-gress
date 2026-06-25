@@ -19,8 +19,7 @@ import kotlinx.coroutines.launch
  * until the first reply lands (and whenever a reply is unparseable). At most one request per checkpoint.
  * Installs like any other driver via [ai.FactionPolicies]; the reasoning surface reads [lastPrompt]/[lastReply].
  */
-class LlmPolicy(private val faction: Faction, private val client: LlmClient, private val scope: CoroutineScope = MainScope()) :
-    FactionPolicy {
+class LlmPolicy(private val faction: Faction, val client: LlmClient, private val scope: CoroutineScope = MainScope()) : FactionPolicy {
     private val fallback = HeuristicPolicy(faction)
     private var vector: SliderVector? = null
     private var requestedCheckpoint = -1

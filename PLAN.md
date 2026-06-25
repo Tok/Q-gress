@@ -247,10 +247,14 @@ area is maximized, and hold it across the cycle. So fitness = the **sum/average 
   extracts JSON from prose, clamps, defaults missing keys, null on junk), and `LlmPolicy` (a `FactionPolicy`:
   one async request per checkpoint, never blocks `weight()`, falls back to `HeuristicPolicy` until/if the reply
   lands; exposes `lastPrompt`/`lastReply` for a reasoning panel). `LlmParser`/`LlmPrompt`/`LlmPolicy` tested.
-- [ ] **Real in-browser model client** — a `WebLlmClient` wrapping transformers.js / WebLLM / MediaPipe
-  (WebGPU) behind `LlmClient`; enable the **LLM** option in the driver picker; needs in-browser verification.
-- [ ] **Reasoning panel** — surface `LlmPolicy.lastPrompt`/`lastReply` + the parsed vector (in the merged AI
-  tab). Exit: an LLM drives a faction end-to-end in-browser, sim stays smooth.
+- [x] **Real in-browser model client (experimental)** — `WebLlmClient` lazily loads **WebLLM**
+  (`@mlc-ai/web-llm`, WebGPU) from a CDN via a runtime `import()` (hidden from webpack so the bundle stays
+  clean) and runs a small instruct model; all wrapped so a missing/failed model yields `""` → heuristic
+  fallback. The **LLM** driver is enabled in the picker. **Needs in-browser/WebGPU verification** (can't run
+  headless).
+- [x] **Reasoning panel** — `LlmReasoningPanel` (in the merged AI tab) surfaces each LLM faction's model
+  status, prompt, raw reply, and the parsed favoured actions (or the fallback). Exit (pending browser
+  verification): an LLM drives a faction end-to-end in-browser, sim stays smooth.
 
 **6.4 — Mix, match & human-vs-AI**
 - Per-faction driver selection + **AI-driven sliders animate read-only, with a per-slider manual-lock
