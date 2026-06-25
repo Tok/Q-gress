@@ -7,14 +7,17 @@ Branch: `develop` · Owner: @zirteq
 [docs/LLM.md](docs/LLM.md). Completed work lives in the **git log**, not here — keep this file to the point.
 
 ## ★ Next session — start here
-1. **3D portal names** (high priority) — see *3D / rendering*.
-2. **Visual NN trainer** (Phase 6.5) — the full handoff is under *Phase 6*.
+1. **Visual NN trainer** (Phase 6.5) — the full handoff is under *Phase 6*.
 
 ## ⚑ Verify in-browser first (`./start.sh`)
 Built headless recently, not yet confirmed on screen — eyeball these, then move on:
+- **3D portal names** (`PortalLabels`) — faction-tinted name+level billboards float above orbs, legible over
+  buildings; they **fade + cull** with distance and **de-clutter** in a crowd (only the nearest/biggest show).
+  Tune `FADE_NEAR`/`FADE_FAR`/`DECLUTTER_PX` if the cull distance reads wrong for the scene scale.
 - **Buildings (parallel mode)** — at e.g. **Red Square**: gaps gone; our meshes **and** MapLibre's gap-fillers
-  both bob on an XMP. **Watch for z-fighting / double-look** where the two overlap (both visible now) → if it
-  reads badly, do the per-building-replacement refinement (*3D*). `OwnBuildings.PARALLEL_MODE=false` to compare.
+  both bob on an XMP. The z-fight + too-dark fixes landed (footprint inset + roof drop + emissive) — confirm
+  **no flicker** where the two overlap and the tone matches MapLibre; tune `EMISSIVE_INTENSITY` /
+  `INSET_FRAC` / `ROOF_DROP_M` in `OwnBuildings` if needed. `OwnBuildings.PARALLEL_MODE=false` to compare.
 - **Hack/glyph centrifuge** — top o-rings tilt out *with* the rods and fall with them on shatter / reso-kill.
 - **NET tab** — maximize/collapse compacts it; activation diagram + genome heatmap legible; 16×16 → 4 columns.
 - **"Who plays?" onboarding** — grid aligned, selection clearly highlighted, picks take effect in-game.
@@ -26,10 +29,6 @@ Q-Gress becomes an **AI-vs-AI sandbox**: each faction (ENL/RES) is driven by an 
 be matched. **Desktop-only**; mobile is blocked.
 
 ## 3D / rendering
-- [ ] **★ 3D portal names (high priority).** Render each portal's name as a 3D label in the scene
-  (billboarded sprite / text mesh above the orb), not just in the DOM HUD. Names already resolve from map
-  POI/street data (`PortalNames`) — this is the presentation: faction-tinted, legible against buildings,
-  LOD/cull + fade at distance, and de-cluttered when portals crowd (hide all but the nearest/biggest).
 - [ ] **Buildings — per-building replacement** *(the parallel-mode follow-up).* Today both sets render (ours
   on top, MapLibre filling gaps). Cleaner end-state: hide **only** the MapLibre footprints we have our own
   mesh for, so the gap-fillers and our look match and there's no overlap/z-fight. Needs matching our synthetic

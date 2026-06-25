@@ -15,9 +15,7 @@ import items.deployable.ModType
 import items.deployable.Shield
 import items.level.LevelColor
 import items.level.XmpLevel
-import kotlinx.browser.document
 import kotlinx.browser.window
-import org.w3c.dom.HTMLCanvasElement
 import portal.Field
 import portal.Link
 import portal.Octant
@@ -83,10 +81,7 @@ object Scene3D {
     // tallest bar (at max XM capacity); coin foreshortens flat so on-screen it reads taller
     private const val ENERGY_BAR_MAX_H = INDICATOR_SIZE * 3.0
     private const val MAX_XM_CAPACITY = 14400 // Agent.xmCapacity at L16+ (where capacity stops growing)
-    private const val LABEL_W = 22.0 // portal name/level billboard width (scene metres)
-    private const val LABEL_GAP = 4.0 // gap above the orb top before the label
-    private const val LABEL_CANVAS_W = 256 // label texture resolution (kept crisp; faction-neutral white)
-    private const val LABEL_CANVAS_H = 96
+    private const val LABEL_GAP = 4.0 // gap above the orb top before the portal-name label (see PortalLabels)
     private const val POLE_R = 2.0
     private const val LINK_R = 0.7 // link pipe radius (metres)
     private const val PORTAL_GROW_S = 0.7 // seconds for a new portal to inflate in (pole rises, orb pops)
@@ -284,6 +279,7 @@ object Scene3D {
         ShatterFx.register(newScene)
         DamageNumberFx.register(newScene)
         OwnBuildings.register(newScene) // our own play-area building meshes (replace MapLibre's after gen)
+        PortalLabels.register(newScene) // 3D portal name/level billboards (own group; groomed each frame)
         BoltFx.register(newScene)
         XmFx.register(newScene)
         showcaseGroup = Three.Group()
@@ -314,6 +310,8 @@ object Scene3D {
             .scale(Three.Vector3(metersScale, -metersScale, metersScale))
         cam.projectionMatrix = mapMatrix.multiply(modelMatrix)
         GlassShader.updateEye(cam.projectionMatrix) // camera-tracking glass rim (orbs + links)
+        val labelCanvas = map.getCanvas()
+        PortalLabels.update(cam.projectionMatrix, GlassShader.eye(), labelCanvas.width as Double, labelCanvas.height as Double)
         val invProj = Three.Matrix4().copy(cam.projectionMatrix).invert()
         updateAudioListener(invProj) // place the Web Audio listener at the live camera
         // Advance the sim-scaled animation clock every frame (so plasma fields shimmer even when no
@@ -386,6 +384,7 @@ object Scene3D {
         modTetras.clear() // rebuilt by buildMods below
         shieldMats.clear() // rebuilt by addShieldShells below
         clear(portalsGroup)
+        PortalLabels.beginSync() // own group → not wiped by clear(indicatorsGroup) below
         World.allPortals.forEach { addPortal(it) }
         syncPoleColliders()
         clear(fieldsGroup)
@@ -1537,45 +1536,10 @@ object Scene3D {
         }
     }
 
-    /** A camera-facing name + level billboard floating just above the portal's orb (cleared each sync). */
+    /** Hand this portal's name/level to [PortalLabels] (faction-tinted billboard above the orb). */
     private fun addPortalLabel(portal: Portal, level: Double) {
         val z = groundZ(portal.location) + orbCenterZ(level) + TOP_R * orbScale(level) + LABEL_GAP
-        val sprite = Three.Sprite(portalLabelMaterial(portal.name, portal.getLevel().toInt()))
-        sprite.asDynamic().position.set(sceneX(portal.location), sceneY(portal.location), z)
-        sprite.asDynamic().scale.set(LABEL_W, LABEL_W * LABEL_CANVAS_H / LABEL_CANVAS_W, 1.0)
-        indicatorsGroup.add(sprite)
-    }
-
-    // Name + level label material, cached by (name, level) so the canvas/texture is drawn once.
-    private fun portalLabelMaterial(name: String, level: Int): dynamic = spriteCache.getOrPut("plabel:$name|$level") {
-        val p: dynamic = js("({})")
-        p.map = Three.CanvasTexture(drawPortalLabel(name, level))
-        p.depthTest = false
-        p.transparent = true
-        Three.SpriteMaterial(p)
-    }
-
-    // White, dark-outlined text on a transparent canvas (label is neutral UI — no faction hue).
-    private fun drawPortalLabel(name: String, level: Int): HTMLCanvasElement {
-        val canvas = document.createElement("canvas") as HTMLCanvasElement
-        canvas.width = LABEL_CANVAS_W
-        canvas.height = LABEL_CANVAS_H
-        val ctx = canvas.getContext("2d").asDynamic()
-        ctx.textAlign = "center"
-        ctx.textBaseline = "middle"
-        ctx.lineJoin = "round"
-        val cx = LABEL_CANVAS_W / 2.0
-        val shown = if (name.length > 18) name.take(17) + "…" else name
-        fun line(text: String, y: Double, px: Int, fill: String) {
-            ctx.font = "600 ${px}px 'Chakra Petch', sans-serif"
-            ctx.lineWidth = 5.0
-            ctx.strokeStyle = "rgba(0, 0, 0, 0.85)"
-            ctx.strokeText(text, cx, y)
-            ctx.fillStyle = fill
-            ctx.fillText(text, cx, y)
-        }
-        line(shown, 30.0, 28, "#ffffff")
-        if (level > 0) line("L$level", 72.0, 34, "#e8e8e8") // neutral portals (no resos) have no level
-        return canvas
+        val color = portal.owner?.faction?.color ?: NEUTRAL_COLOR
+        PortalLabels.add(portal.name, portal.getLevel().toInt(), sceneX(portal.location), sceneY(portal.location), z, color)
     }
 }

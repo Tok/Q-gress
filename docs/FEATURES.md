@@ -52,8 +52,12 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
     camera-tracking rim via `updateEye`).
   - Portals = **metal pole + rubber gasket + glass orb** (φ-scaled by level L1→L8), **grow-on-spawn**
     + **level-up tween**. **Selection** keeps the faction hue and just lights the orb brighter
-    (`GlassShader.SELECT_BRIGHT`) — no more neutral-looking white tint. A faction-neutral **name + level
-    billboard** floats above each portal's orb (cached `CanvasTexture` sprite, Chakra Petch).
+    (`GlassShader.SELECT_BRIGHT`) — no more neutral-looking white tint. A **name + level billboard**
+    floats above each portal's orb (`system/display/PortalLabels`: cached `CanvasTexture` sprite, Chakra
+    Petch) with a **faction-tinted halo** (ENL green / RES blue / neutral grey) over white text, drawn on
+    top of buildings (`depthTest = false`). Groomed every frame: **distance fade + cull** (gone past
+    `FADE_FAR`) and **screen-space de-clutter** — in a crowd the higher-level (then nearer) portal keeps
+    its label and neighbours within `DECLUTTER_PX` are hidden.
   - **Resonators** — 8 colour-coded rods in rubber slot-rings, real-time from `resoMap()`, grow
     with the pole. Each rod shows its **energy/health**: a bottom→top glowing **fill bar** (`GlassShader`
     `uFill`) plus a glowing **"energy surface" disc** (`Materials.resonatorCap`, additive) positioned at
@@ -103,7 +107,9 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
 - **Our own building meshes** (`system/display/OwnBuildings`, fed by `util/BuildingTiles`): the
   play-area buildings are rebuilt as real three.js extruded prisms from a **complete** footprint set —
   we query **OSM directly via the Overpass API** for every building in the area (one keyless,
-  CORS-enabled, browser-cacheable GET → lng/lat polygons with `height`/`building:levels`). MapLibre's
+  CORS-enabled, browser-cacheable GET → lng/lat polygons with `height`/`building:levels`). Overpass can
+  504/rate-limit, so the query **fails over across mirrors** (`overpass-api.de` → `kumi.systems` →
+  `openstreetmap.fr`) before giving up. MapLibre's
   own building layer (and the OpenFreeMap vector tiles behind it) is heavily simplified — a St. Gallen
   tile carried only ~19 of the **1100** buildings OSM actually has there — and its query APIs returned
   even less, so Overpass is the only source with the full set. We control these meshes: they **cast +
@@ -113,8 +119,11 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
   `OwnBuildings.REPLACE_BUILDINGS` falls back to MapLibre's buildings if Overpass is down. **Parallel mode**
   (`OwnBuildings.PARALLEL_MODE`, default on) keeps **both** building sets visible: our meshes (shake + cast
   shadows) on top, MapLibre's underneath only to **fill the gaps** where a footprint failed to mesh (e.g. Red
-  Square). Both shake on an XMP — our meshes via `applyBlast`, MapLibre's gap-fillers via `BuildingShake`
-  feature-state (the `openmaptiles` source carries `generateId` so they're addressable). *(The pbf + `@mapbox/vector-tile` decode of
+  Square). To stop the two coincident sets z-fighting, our meshes are built a hair **smaller** in parallel
+  mode (footprint inset ~1.5%, roof dropped 0.3 m); a modest **emissive** lifts their self-shaded faces so
+  they read at MapLibre's flat tone instead of crushing to black. Both shake on an XMP — our meshes via
+  `applyBlast`, MapLibre's gap-fillers via `BuildingShake` feature-state (the `openmaptiles` source carries
+  `generateId` so they're addressable). *(The pbf + `@mapbox/vector-tile` decode of
   the raw `.pbf` tiles stays in the tree — `external/VectorTile.kt` — for reusing other tile layers.)*
 - **Buildings stream as the camera flies elsewhere** (`util/BuildingStream`): leaving the play area no
   longer shows bare ground — on each map `idle` over a not-yet-covered area, a region (~2.6 km box,
