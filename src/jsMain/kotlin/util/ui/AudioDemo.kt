@@ -29,12 +29,15 @@ object AudioDemo {
         SoundUtil.enableAudio() // first gesture (the page load into the demo) resumes the audio context
         val panel = document.createElement("div") as HTMLDivElement
         panel.id = "demoPanel"
-        panel.addClass("demoPanel", "coda")
+        panel.addClass("demoPanel", "coda", "audioDemo") // audioDemo → wide layout + button grid (see CSS)
         panel.append(heading("AUDIO DEMO"))
         panel.append(link("#demo", "← Demos", "demoBack"))
         panel.append(levelRow())
         panel.append(fxRow())
-        sounds().forEach { (label, action) -> panel.append(button(label, "demoButton", action)) }
+        val grid = document.createElement("div") as HTMLDivElement
+        grid.addClass("demoGrid") // the sound buttons fill the screen in a responsive grid
+        sounds().forEach { (label, action) -> grid.append(button(label, "demoButton", action)) }
+        panel.append(grid)
         document.body?.append(panel)
     }
 
