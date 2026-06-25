@@ -16,7 +16,9 @@ green) and **RES** ("smurfs", blue) — capture portals, link them, and create c
 **AI vs AI** play itself out (or drive a side by hand). **No real Ingress/portal data is used** —
 everything is generated. (Modern additions like drones / Machina are out of scope for now.)
 
-<h2 align="center"><a href="https://tok.github.io/Q-gress/">▶&nbsp; Play Q-Gress live</a></h2>
+<p align="center">
+  <a href="https://tok.github.io/Q-gress/"><img alt="Play Q-Gress live" src="https://img.shields.io/badge/PLAY%20Q--GRESS%20LIVE-2ea043?style=for-the-badge&labelColor=2ea043"></a>
+</p>
 
 The longer-term direction (the project is named for **Q-learning**) is in [`PLAN.md`](PLAN.md).
 
