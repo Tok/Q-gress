@@ -247,42 +247,43 @@ object Onboarding {
         intro.textContent = "Pick a brain for each side — the default is neural net vs neural net (AI vs AI). " +
             "Set your side to Human to drive it yourself with the tuning sliders."
         screen.appendChild(intro)
-        listOf(userFaction to true, userFaction.enemy() to false).forEach { (faction, isYou) ->
-            screen.appendChild(driverRow(faction, isYou))
-        }
+        screen.appendChild(driverGrid(userFaction))
         screen.appendChild(button("Next", "topButton displayFont onboardStart") { onNext() })
     }
 
-    // One faction's driver picker: a coloured label + a segmented Human/Heuristic/Net/LLM button group.
-    private fun driverRow(faction: Faction, isYou: Boolean): HTMLElement {
-        val row = div("onboardRow")
-        val label = div("onboardSliderLabel")
-        label.textContent = (if (isYou) "You · " else "Enemy · ") + faction.abbr
-        label.style.color = faction.color
-        row.appendChild(label)
-        val current = DriverControls.chosen(faction)
-        DriverControls.select(faction, current) // seed the pick so it rides the URL even with no click
-        val btns = mutableListOf<HTMLButtonElement>()
-        // Only YOUR side offers Human (manual sliders) — there's no second player + no enemy slider UI, so the
-        // opponent is always an AI (Heuristic / Net / LLM).
-        val options = buildList {
-            if (isYou) add("manual" to "Human")
-            add("heuristic" to "Heuristic")
-            add("net" to "Neural net")
-            add("llm" to "LLM")
-        }
-        options.forEach { (value, text) ->
-            lateinit var btn: HTMLButtonElement
-            btn = button(text, "onboardPreset") {
-                DriverControls.select(faction, value)
-                btns.forEach { it.removeClass("onboardActive") }
-                btn.addClass("onboardActive")
+    // The driver picker as an aligned grid: a coloured faction label per row, then a column per option
+    // (Human / Heuristic / Neural net / LLM). The opponent's Human cell is left empty so the columns line up.
+    private fun driverGrid(userFaction: Faction): HTMLElement {
+        val grid = div("driverGrid")
+        val options = listOf("manual" to "Human", "heuristic" to "Heuristic", "net" to "Neural net", "llm" to "LLM")
+        listOf(userFaction to true, userFaction.enemy() to false).forEach { (faction, isYou) ->
+            grid.appendChild(
+                div("driverLabel").also {
+                    it.textContent = (if (isYou) "You · " else "Enemy · ") + faction.abbr
+                    it.style.color = faction.color
+                },
+            )
+            val current = DriverControls.chosen(faction)
+            DriverControls.select(faction, current) // seed the pick so it rides the URL even with no click
+            val btns = mutableListOf<HTMLButtonElement>()
+            options.forEach { (value, text) ->
+                // Only YOUR side offers Human (manual sliders) — no enemy slider UI, so the opponent is AI-only.
+                if (value == "manual" && !isYou) {
+                    grid.appendChild(div("driverEmpty")) // keep the column aligned under "Human"
+                    return@forEach
+                }
+                lateinit var btn: HTMLButtonElement
+                btn = button(text, "onboardPreset driverBtn") {
+                    DriverControls.select(faction, value)
+                    btns.forEach { it.removeClass("onboardActive") }
+                    btn.addClass("onboardActive")
+                }
+                if (value == current) btn.addClass("onboardActive")
+                btns.add(btn)
+                grid.appendChild(btn)
             }
-            if (value == current) btn.addClass("onboardActive")
-            btns.add(btn)
-            row.appendChild(btn)
         }
-        return row
+        return grid
     }
 
     /** Step 3 — map size + portal density + quick-start. [onStart] gets w, h, portals, quickStart.

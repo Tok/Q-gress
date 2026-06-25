@@ -827,6 +827,35 @@ html, body {
     background: rgba(255, 255, 255, 0.85);
     color: #000000;
 }
+/* The selected option: a clearly-filled, glowing button. Higher specificity than the later .onboardPreset
+   chrome rule, so the highlight actually shows (the plain .onboardActive lost to it). */
+.onboardPreset.onboardActive {
+    background: #ffffff;
+    color: #11151a;
+    border-color: #ffffff;
+    box-shadow: 0 0 16px rgba(255, 255, 255, 0.7);
+    font-weight: 700;
+}
+/* Driver-selection grid: a faction label per row, then one column per option (aligned). */
+.driverGrid {
+    display: grid;
+    grid-template-columns: auto repeat(4, minmax(108px, 1fr));
+    gap: 12px;
+    align-items: center;
+    margin: 12px auto 4px;
+}
+.driverLabel {
+    font-family: "Chakra Petch", sans-serif;
+    letter-spacing: 1px;
+    font-size: 14px;
+    text-align: right;
+    padding-right: 8px;
+    white-space: nowrap;
+}
+.driverBtn {
+    width: 100%;
+    white-space: nowrap;
+}
 .onboardField {
     display: flex;
     flex-direction: column;
