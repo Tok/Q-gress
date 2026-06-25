@@ -30,6 +30,10 @@ Q-Gress becomes an **AI-vs-AI sandbox**: each faction (ENL/RES) is driven by an 
 be matched. **Desktop-only**; mobile is blocked.
 
 ## 3D / rendering
+- [ ] **Portal-name ticker — non-latin glyphs.** `PortalNameTicker` reuses the Coda typeface, which only
+  carries latin + digits, so Arabic/Hebrew/CJK names render blank (slots fall back to blanks; the CCW-spin
+  logic is already wired for when they draw). Needs a typeface.json with those ranges (or per-script fonts
+  chosen by `isRtl`/script detection) loaded alongside Coda.
 - [ ] **Buildings — per-building replacement** *(the parallel-mode follow-up).* Today both sets render (ours
   on top, MapLibre filling gaps). Cleaner end-state: hide **only** the MapLibre footprints we have our own
   mesh for, so the gap-fillers and our look match and there's no overlap/z-fight. Needs matching our synthetic

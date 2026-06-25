@@ -34,6 +34,7 @@ object PortalNameTicker {
     private const val MAX_ARC_FRAC = 0.8 // a long name auto-widens the ring so it never wraps past this of the circle
     private const val SPIN_SPEED = 0.6 // ticker rotation (rad/s, sim-scaled)
     private const val NAME_MAX = 22 // truncate longer names (…)
+    private val SPACE_W = SIZE * 0.5 // blank advance for a space or a glyph the (latin) Coda font lacks
 
     // Right-to-left scripts (→ spin CCW): Hebrew, Arabic + its supplements/presentation forms.
     private val RTL_RANGES = listOf(0x0590..0x05FF, 0x0600..0x06FF, 0x0750..0x077F, 0x08A0..0x08FF, 0xFB1D..0xFEFF)
@@ -103,28 +104,24 @@ object PortalNameTicker {
         g.rotation.z += spinSign * SPIN_SPEED * dt
     }
 
+    // One layout slot: a real glyph ([geo] set) or a blank advance ([geo] null — space / missing glyph).
+    private class Slot(val geo: dynamic, val width: Double)
+
     // Lay the (truncated) name out around a horizontal circle, each letter upright + facing outward.
     private fun buildRing() {
         val g = group ?: return
         val f = font ?: return
         clearLetters()
         val text = if (reqName.length > NAME_MAX) reqName.take(NAME_MAX - 1) + "…" else reqName
-        if (text.isEmpty()) {
-            g.visible = false
-            return
-        }
-        val geos = text.map { DamageNumberFx.glyphGeometry(f, it.toString(), SIZE, DEPTH) }
-        val widths = geos.map {
-            val bb = it.boundingBox
-            abs((bb.max.x as Double) - (bb.min.x as Double))
-        }
-        val totalL = widths.sum() + GAP * (widths.size - 1)
+        val slots = text.map { slotFor(f, it) }
+        val totalL = slots.sumOf { it.width } + GAP * (slots.size - 1)
         val radius = maxOf(reqRadius + RADIUS_MARGIN, MIN_RADIUS, totalL / (2.0 * PI * MAX_ARC_FRAC))
         var cursor = 0.0
-        geos.forEachIndexed { i, geo ->
+        for (slot in slots) {
+            val centre = cursor + slot.width / 2.0 - totalL / 2.0 // arc-length centre, word centred at angle 0
+            cursor += slot.width + GAP
+            val geo = slot.geo ?: continue // blank advance (space / missing glyph)
             geo.rotateX(PI / 2.0) // stand the glyph upright: local Y (up) → world Z
-            val centre = cursor + widths[i] / 2.0 - totalL / 2.0 // arc-length centre, word centred at angle 0
-            cursor += widths[i] + GAP
             val angle = spinSign * centre / radius // placement dir tracks the spin so it reads under rotation
             val mesh = Three.Mesh(geo, fillMat)
             DamageNumberFx.addBoldWire(mesh, geo, wireMat)
@@ -133,9 +130,26 @@ object PortalNameTicker {
             g.add(mesh)
             letters.add(mesh)
         }
+        if (letters.isEmpty()) { // nothing renderable (e.g. a non-latin name the Coda font can't draw)
+            g.visible = false
+            return
+        }
         g.position.set(reqX, reqY, reqZ)
         g.rotation.z = 0.0
         g.visible = true
+    }
+
+    // Build a slot for [ch]: whitespace and glyphs the font lacks (NaN/zero width) become blank advances.
+    private fun slotFor(f: dynamic, ch: Char): Slot {
+        if (ch.isWhitespace()) return Slot(null, SPACE_W)
+        val geo = DamageNumberFx.glyphGeometry(f, ch.toString(), SIZE, DEPTH)
+        val bb = geo.boundingBox
+        val w = abs((bb.max.x as Double) - (bb.min.x as Double))
+        if (!w.isFinite() || w <= 0.0) {
+            geo.dispose() // missing glyph → empty geometry; drop it, advance a blank
+            return Slot(null, SPACE_W)
+        }
+        return Slot(geo, w)
     }
 
     private fun clearLetters() {
