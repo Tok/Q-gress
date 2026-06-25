@@ -43,7 +43,7 @@ object MapStyles {
                 "maxzoom": 15,
                 "attribution": "Elevation © Mapzen, AWS Terrain Tiles"
             },
-            "openmaptiles": { "type": "vector", "url": "$OPENMAPTILES_URL" }
+            "openmaptiles": { "type": "vector", "url": "$OPENMAPTILES_URL", "generateId": true }
         },
         "layers": [
             { "id": "satellite", "type": "raster", "source": "satellite", "paint": { "raster-saturation": -1 } }
@@ -58,7 +58,7 @@ object MapStyles {
         "sources": {
             "satellite": { "type": "raster", "tiles": ["$ESRI_IMAGERY_TILES"], "tileSize": 256, "maxzoom": $SATELLITE_MAX_NATIVE_ZOOM },
             "$TERRAIN_SOURCE": {"type":"raster-dem","encoding":"terrarium","tiles":["$TERRAIN_DEM_TILES"],"tileSize":256,"maxzoom":15},
-            "openmaptiles": { "type": "vector", "url": "$OPENMAPTILES_URL" }
+            "openmaptiles": { "type": "vector", "url": "$OPENMAPTILES_URL", "generateId": true }
         },
         "layers": [
             { "id": "bg", "type": "background", "paint": { "background-color": "#8c8c8c" } },
@@ -73,7 +73,7 @@ object MapStyles {
     val SHADOW_STYLE = """{
         "version": 8,
         "sources": {
-            "openmaptiles": { "type": "vector", "url": "$OPENMAPTILES_URL" }
+            "openmaptiles": { "type": "vector", "url": "$OPENMAPTILES_URL", "generateId": true }
         },
         "layers": [
             { "id": "bg", "type": "background", "paint": { "background-color": "#555555" } },
