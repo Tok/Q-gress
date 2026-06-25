@@ -482,6 +482,8 @@ object Scene3D {
             ShatterFx.spawnFallingChunk(resoRingGeo, rx, ry, collarZ, 1.0, RESO_RING_R + RESO_RING_TUBE, GROMMET_COLOR)
             resos[octant]?.let { lvl ->
                 ShatterFx.spawnFallingRod(resoRodGeo, rx, ry, collarZ + rodLen / 2.0, RESO_ROD_R, rodLen, LevelColor.map[lvl] ?: "#ffffff")
+                // the top o-ring rides the rod top → tumble it out with the rod
+                ShatterFx.spawnFallingChunk(resoRingGeo, rx, ry, collarZ + rodLen, 1.0, RESO_RING_R + RESO_RING_TUBE, GROMMET_COLOR)
             }
         }
     }
@@ -492,15 +494,20 @@ object Scene3D {
         val rodLen = poleH * RESO_ROD_LEN_FRAC
         val ringR = POLE_R * RESO_RADIUS_FRAC
         val ang = octantIndex * PI / 4.0
+        val rx = sceneX(location) + ringR * cos(ang)
+        val ry = sceneY(location) + ringR * sin(ang)
+        val collarZ = groundZ(location) + poleH * RESO_COLLAR_FRAC
         ShatterFx.spawnFallingRod(
             resoRodGeo,
-            sceneX(location) + ringR * cos(ang),
-            sceneY(location) + ringR * sin(ang),
-            groundZ(location) + poleH * RESO_COLLAR_FRAC + rodLen / 2.0,
+            rx,
+            ry,
+            collarZ + rodLen / 2.0,
             RESO_ROD_R,
             rodLen,
             LevelColor.map[resoLevel] ?: "#ffffff",
         )
+        // the reso's top o-ring rides the rod top → it falls out with the rod
+        ShatterFx.spawnFallingChunk(resoRingGeo, rx, ry, collarZ + rodLen, 1.0, RESO_RING_R + RESO_RING_TUBE, GROMMET_COLOR)
     }
 
     /** Portal defense: a retaliation bolt arcs from the portal orb ([from]/[fromLevel]) to the attacker
@@ -1065,13 +1072,13 @@ object Scene3D {
                 val ring = Three.Mesh(resoRingGeo, Materials.rubber())
                 ring.asDynamic().position.set(0.0, 0.0, -rodLen) // rod bottom, in pivot-local space
                 pivot.asDynamic().add(ring)
-                group.asDynamic().add(pivot)
-                // A second black o-ring at the reso's TOP joint. It's part of the collar group (not the
-                // swinging pivot), so it stays put on a hack and stays with the pole when the portal
-                // shatters (only the base grommet + rod tumble out).
+                // A second black o-ring at the reso's TOP joint. It rides INSIDE the pivot (local origin = the
+                // rod-top joint), so it TILTS with the rod on a hack (stays attached to the rod's top) and
+                // tumbles out with the reso when the portal shatters / the reso is destroyed.
                 val topRing = Three.Mesh(resoRingGeo, Materials.rubber())
-                topRing.asDynamic().position.set(ox, oy, rodLen)
-                group.asDynamic().add(topRing)
+                topRing.asDynamic().position.set(0.0, 0.0, 0.0)
+                pivot.asDynamic().add(topRing)
+                group.asDynamic().add(pivot)
             } else {
                 // Empty slot: a bare grommet sits flat on the collar (nothing to swing).
                 val ring = Three.Mesh(resoRingGeo, Materials.rubber())
