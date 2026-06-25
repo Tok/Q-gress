@@ -111,9 +111,10 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
   `Scene3D.groundZAtLngLat`), seed debris colliders, and (in full-replace mode) MapLibre's own
   fill-extrusion layer is hidden once ours are in. Keyed by footprint centroid (no tile id needed);
   `OwnBuildings.REPLACE_BUILDINGS` falls back to MapLibre's buildings if Overpass is down. **Parallel mode**
-  (`OwnBuildings.PARALLEL_MODE`, default on) keeps MapLibre's buildings visible *everywhere* (the look + the
-  native shake, no gaps where a footprint failed to mesh — e.g. Red Square) and uses our meshes only as
-  **invisible shadow-casters**. *(The pbf + `@mapbox/vector-tile` decode of
+  (`OwnBuildings.PARALLEL_MODE`, default on) keeps **both** building sets visible: our meshes (shake + cast
+  shadows) on top, MapLibre's underneath only to **fill the gaps** where a footprint failed to mesh (e.g. Red
+  Square). Both shake on an XMP — our meshes via `applyBlast`, MapLibre's gap-fillers via `BuildingShake`
+  feature-state (the `openmaptiles` source carries `generateId` so they're addressable). *(The pbf + `@mapbox/vector-tile` decode of
   the raw `.pbf` tiles stays in the tree — `external/VectorTile.kt` — for reusing other tile layers.)*
 - **Buildings stream as the camera flies elsewhere** (`util/BuildingStream`): leaving the play area no
   longer shows bare ground — on each map `idle` over a not-yet-covered area, a region (~2.6 km box,

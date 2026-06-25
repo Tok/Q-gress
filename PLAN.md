@@ -9,8 +9,10 @@ AI-driver design notes see [docs/NN.md](docs/NN.md) + [docs/LLM.md](docs/LLM.md)
 ## ⚑ Pending visual verification (do a `./start.sh` pass next session)
 
 Shipped but unverified in-browser (built headless — confirm they read right, then tick off):
-- **Parallel buildings** (`OwnBuildings.PARALLEL_MODE`) — esp. **Red Square**: gaps gone? MapLibre buildings
-  visible + our shadows look right? (flip `PARALLEL_MODE=false` to compare).
+- **Parallel buildings** (`OwnBuildings.PARALLEL_MODE`) — esp. **Red Square**: gaps gone, both sets shake on
+  an XMP (ours + MapLibre gap-fillers)? **Watch for z-fighting / double-look** where our meshes overlap
+  MapLibre's (both visible now) — if it reads badly, do the per-building-replacement refinement (below). Flip
+  `PARALLEL_MODE=false` to compare.
 - **Hack/glyph centrifuge** — do the top o-rings now tilt out *with* the rods, and fall with them on shatter /
   reso-destroyed?
 - **NET tab** — does maximize/collapse now compact it (toolbar-clearance fix)? Activation diagram + **genome
@@ -37,10 +39,13 @@ the AI layer lands, the slider sim is the substrate we keep hardening.
   meshed, but we hid MapLibre's whole layer → gaps. `OwnBuildings.PARALLEL_MODE` keeps MapLibre's buildings
   visible everywhere (fills the gaps) **while our own meshes still render on top, visible** — so they shake
   (per-mesh, no feature-id needed → works in-game + title) + cast shadows as before; MapLibre just fills where
-  a footprint failed to mesh. (Earlier tried invisible shadow-only meshes + routing the shake to MapLibre, but
-  MapLibre's feature-state shake needs feature ids the tiles lack → nothing shook; reverted to visible meshes.)
-  _Future refinement:_ per-building replacement (hide only the MapLibre footprints we have a mesh for) so the
-  gap-fillers and our look match — needs matching our synthetic keys to MapLibre feature ids.
+  a footprint failed to mesh. Both sets shake on an XMP — ours via `applyBlast`, MapLibre's gap-fillers via
+  `BuildingShake` feature-state (enabled by adding `generateId` to the `openmaptiles` source). (Earlier tried
+  invisible shadow-only meshes + shake-to-MapLibre only, but without `generateId` nothing shook; reverted to
+  visible meshes + dual shake.) _**Watch (next session):** z-fighting / double-look where our meshes overlap
+  MapLibre's now that both are visible._ _Future refinement:_ per-building replacement (hide only the MapLibre
+  footprints we have a mesh for) so the gap-fillers and our look match — needs matching our synthetic keys to
+  MapLibre feature ids.
 - [ ] **Terrain follow-ups** (DEM heights shipped). Terrain-aware **shatter ground** — the cannon-es
   plane is still flat z=0, so shards/pole sink to sea level on high ground; maybe a Menu exaggeration
   slider; resample the height grid if the play area ever moves (ties into the grand-game movable field).
