@@ -242,9 +242,15 @@ area is maximized, and hold it across the cycle. So fitness = the **sum/average 
   the AI tab's Neural-net driver), and its activations are visualized.
 
 **6.3 — Track B: in-browser LLM driver** → [docs/LLM.md](docs/LLM.md)
-- [ ] `LlmPolicy` at checkpoint cadence (state → prompt → JSON slider vector, schema-validated,
-  defensive fallback); transformers.js and/or Gemma/MediaPipe behind one interface; reasoning panel.
-  Exit: an LLM drives a faction end-to-end in-browser, sim stays smooth.
+- [x] **Substrate DONE** (`ai/llm/`): `LlmClient` (a `suspend complete(prompt)` seam; `MockLlmClient` is the
+  deterministic stand-in), `LlmPrompt` (pure state→prompt builder), `LlmParser` (tolerant reply→`SliderVector`:
+  extracts JSON from prose, clamps, defaults missing keys, null on junk), and `LlmPolicy` (a `FactionPolicy`:
+  one async request per checkpoint, never blocks `weight()`, falls back to `HeuristicPolicy` until/if the reply
+  lands; exposes `lastPrompt`/`lastReply` for a reasoning panel). `LlmParser`/`LlmPrompt`/`LlmPolicy` tested.
+- [ ] **Real in-browser model client** — a `WebLlmClient` wrapping transformers.js / WebLLM / MediaPipe
+  (WebGPU) behind `LlmClient`; enable the **LLM** option in the driver picker; needs in-browser verification.
+- [ ] **Reasoning panel** — surface `LlmPolicy.lastPrompt`/`lastReply` + the parsed vector (in the merged AI
+  tab). Exit: an LLM drives a faction end-to-end in-browser, sim stays smooth.
 
 **6.4 — Mix, match & human-vs-AI**
 - Per-faction driver selection + **AI-driven sliders animate read-only, with a per-slider manual-lock
