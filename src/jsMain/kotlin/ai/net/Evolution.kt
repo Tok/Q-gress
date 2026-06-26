@@ -65,6 +65,7 @@ object Evolution {
         private val rng = Rng(seed)
         private var population: List<DoubleArray>
         private val history = mutableListOf<Double>()
+        private val pending = mutableListOf<Pair<DoubleArray, Double>>() // genomes scored in the in-progress generation
 
         var generation: Int = 0
             private set
@@ -80,18 +81,43 @@ object Evolution {
             bestGenome = population.first()
         }
 
-        /** True once every generation has run; [step] then throws. */
+        /** True once every generation has run; [step]/[stepGenome] then throw. */
         val done: Boolean get() = generation >= config.generations
+
+        /** Genomes per generation (for UI progress). */
+        val populationSize: Int get() = config.populationSize
+
+        /** How many genomes of the CURRENT (in-progress) generation have been scored so far (0..[populationSize]). */
+        val evaluatedThisGeneration: Int get() = pending.size
 
         /** The best-per-generation fitness curve so far (one entry per completed [step]). */
         fun history(): List<Double> = history.toList()
 
-        /** Run one generation and return its champion fitness. */
+        /**
+         * Evaluate ONE genome of the current generation — fine-grained so a UI can show live within-generation
+         * progress (a population of 10 scored over 600 ticks is seconds of work; a whole-generation [step] would
+         * freeze the UI for that span). Returns `true` when this evaluation COMPLETED the generation (best /
+         * history / next population updated), `false` if more genomes remain. Order matches [step] exactly, so
+         * the run stays deterministic regardless of which granularity the caller uses.
+         */
+        fun stepGenome(): Boolean {
+            check(!done) { "training already complete ($generation/${config.generations} generations)" }
+            val genome = population[pending.size]
+            pending.add(genome to evaluate(genome, grid, seed, config, opponent))
+            if (pending.size < population.size) return false
+            finishGeneration()
+            return true
+        }
+
+        /** Run one full generation and return its champion fitness. */
         fun step(): Double {
             check(!done) { "training already complete ($generation/${config.generations} generations)" }
-            val ranked = population
-                .map { it to evaluate(it, grid, seed, config, opponent) }
-                .sortedByDescending { it.second }
+            while (!stepGenome()) Unit
+            return history.last()
+        }
+
+        private fun finishGeneration() {
+            val ranked = pending.sortedByDescending { it.second }
             val championFitness = ranked.first().second
             if (championFitness > bestFitness) {
                 bestFitness = championFitness
@@ -100,7 +126,7 @@ object Evolution {
             history.add(championFitness)
             population = nextGeneration(ranked, config, rng)
             generation++
-            return championFitness
+            pending.clear()
         }
 
         fun result(): EvolutionResult = EvolutionResult(bestGenome, bestFitness, history.toList(), config.arch)

@@ -18,6 +18,7 @@ import org.khronos.webgl.set
 import portal.Field
 import portal.Link
 import system.Checkpoint
+import system.HeadlessRun
 import system.display.Scene3D
 import util.data.Pos
 import kotlin.math.PI
@@ -111,10 +112,11 @@ object SoundUtil {
         masterGain.gain.setTargetAtTime(volume * MASTER_BOOST, now(), 0.01)
     }
 
-    // True when muted OR there's simply no audio (headless: Node tests / SimRunner). Every play* method
-    // checks this first, so it's the single gate that keeps ALL sound — and the lazy audio graph — off
-    // outside a browser; no per-call-site guards needed.
-    internal fun isMuted() = masterVolume <= 0.0 || HtmlUtil.isNotRunningInBrowser()
+    // True when muted OR there's simply no audio (headless: Node tests / SimRunner) OR a headless eval is in
+    // flight (in-browser training/leaderboard — the parked matches must be silent). Every play* method checks
+    // this first, so it's the single gate that keeps ALL sound — and the lazy audio graph — off; no per-call
+    // guards needed.
+    internal fun isMuted() = masterVolume <= 0.0 || HtmlUtil.isNotRunningInBrowser() || HeadlessRun.active
     private var preMuteVolume = 0.0
 
     /** Toggle mute, remembering the prior level. Returns the new volume (0 when muted). */

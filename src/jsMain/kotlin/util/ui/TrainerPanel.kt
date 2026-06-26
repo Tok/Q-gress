@@ -70,6 +70,8 @@ object TrainerPanel {
     private var previewCanvas: HTMLCanvasElement? = null
     private var previewCaption: HTMLElement? = null
     private var plot: UPlot? = null
+    private var progressFill: HTMLElement? = null
+    private var progressLabel: HTMLElement? = null
     private val actionButtons = mutableListOf<HTMLButtonElement>()
 
     /** True while a training run is in flight — the tick loop pauses on this so matches don't fight the game. */
@@ -107,6 +109,11 @@ object TrainerPanel {
         row.appendChild(run)
         statusEl = el("div", "trainStatus")
         row.appendChild(statusEl ?: el("div", "trainStatus"))
+        row.appendChild(
+            el("div", "trainWarn").also {
+                it.textContent = "⚠ Training pauses the live game and runs the CPU flat-out — a big run can take many minutes."
+            },
+        )
         return row
     }
 
@@ -120,10 +127,27 @@ object TrainerPanel {
     private fun buildChartCol(): HTMLElement {
         val col = el("div", "trainCol")
         col.appendChild(el("div", "trainColHead").also { it.textContent = "Fitness — summed MU margin per generation" })
+        col.appendChild(buildProgress())
         val chart = el("div", "trainChart")
         col.appendChild(chart)
         plot = makePlot(chart)
         return col
+    }
+
+    private fun buildProgress(): HTMLElement {
+        val wrap = el("div", "trainProgressWrap")
+        progressLabel = el("div", "trainProgressLabel").also { it.textContent = "—" }
+        wrap.appendChild(progressLabel ?: el("div", "trainProgressLabel"))
+        val track = el("div", "trainProgress")
+        progressFill = el("div", "trainProgressFill")
+        track.appendChild(progressFill ?: el("div", "trainProgressFill"))
+        wrap.appendChild(track)
+        return wrap
+    }
+
+    private fun setProgress(fraction: Double, label: String) {
+        progressFill?.style?.width = "${(fraction.coerceIn(0.0, 1.0) * 100.0)}%"
+        progressLabel?.textContent = label
     }
 
     private fun buildChampionCol(): HTMLElement {
@@ -163,6 +187,8 @@ object TrainerPanel {
         fitness.clear()
         plot?.setData(arrayOf(arrayOf<Double>(), arrayOf<Double>()))
         session = Evolution.Session(World.grid, SEED, readConfig()) // opponent = the uniform-slider baseline
+        setProgress(0.0, "Starting…")
+        setStatus("Live game paused — training on the live map.")
         refreshActions()
         scheduleStep()
     }
@@ -171,24 +197,41 @@ object TrainerPanel {
         timeoutId = window.setTimeout({ runStep() }, 0)
     }
 
+    // One genome per tick (not a whole generation) so the progress bar + status advance smoothly and the run
+    // never looks frozen. A generation completes when stepGenome() returns true → fold its champion into the curve.
     private fun runStep() {
         val current = session ?: return
         if (!running) return
-        val champion = runCatching { current.step() }.getOrElse {
+        val generationDone = runCatching { current.stepGenome() }.getOrElse {
             abort(it.message)
             return
         }
-        fitness.add(champion)
-        renderFitness()
-        renderChampion(current)
-        setStatus("Generation ${current.generation} / ${current.config.generations} · best ${muLabel(current.bestFitness)}")
+        if (generationDone) {
+            fitness.add(current.history().last())
+            renderFitness()
+            renderChampion(current)
+        }
+        updateProgress(current)
         if (current.done) finish() else scheduleStep()
+    }
+
+    private fun updateProgress(current: Evolution.Session) {
+        val total = current.config.generations * current.populationSize
+        val done = current.generation * current.populationSize + current.evaluatedThisGeneration
+        setProgress(
+            done.toDouble() / total,
+            "Generation ${current.generation + (if (current.done) 0 else 1)} / ${current.config.generations} · genome ${current.evaluatedThisGeneration}/${current.populationSize}",
+        )
+        setStatus("Training · best ${muLabel(current.bestFitness)} ($done/$total matches)")
     }
 
     private fun finish() {
         val done = session
         teardown()
-        if (done != null) setStatus("Done · ${done.generation} generations · champion ${muLabel(done.bestFitness)}")
+        if (done != null) {
+            setProgress(1.0, "Done — ${done.generation} generations")
+            setStatus("Done · ${done.generation} generations · champion ${muLabel(done.bestFitness)} · live game resumed.")
+        }
         refreshActions()
     }
 
@@ -196,7 +239,10 @@ object TrainerPanel {
         if (!running) return
         val stopped = session
         teardown()
-        if (stopped != null) setStatus("Stopped at generation ${stopped.generation} · best ${muLabel(stopped.bestFitness)}")
+        if (stopped != null) {
+            setProgress(0.0, "Stopped")
+            setStatus("Stopped at generation ${stopped.generation} · best ${muLabel(stopped.bestFitness)} · live game resumed.")
+        }
         refreshActions()
     }
 
@@ -287,6 +333,7 @@ object TrainerPanel {
         opts.cursor = js("({ show: false })")
         opts.legend = js("({ show: false })")
         opts.scales = js("({ x: { time: false } })")
+        opts.axes = arrayOf(whiteAxis(), whiteAxis()) // tick labels white so they read on the dark UI
         val series: dynamic = js("({})")
         series.stroke = PREVIEW_COLOR
         series.width = 2
@@ -295,6 +342,15 @@ object TrainerPanel {
         opts.series = arrayOf(js("({})"), series)
         val empty: dynamic = arrayOf(arrayOf<Double>(), arrayOf<Double>())
         return UPlot(opts, empty, target)
+    }
+
+    // A uPlot axis with white tick labels + faint grid/ticks — legible on the dark trainer panel.
+    private fun whiteAxis(): dynamic {
+        val a: dynamic = js("({})")
+        a.stroke = "#ffffff" // tick-label + axis colour
+        a.grid = js("({ stroke: 'rgba(255,255,255,0.10)', width: 1 })")
+        a.ticks = js("({ stroke: 'rgba(255,255,255,0.25)', width: 1 })")
+        return a
     }
 
     private fun numberField(parent: HTMLElement, label: String, value: String, step: String, min: String, max: String): HTMLInputElement {
