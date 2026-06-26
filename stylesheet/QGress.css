@@ -141,6 +141,10 @@ html, body {
     font-size: 11px;
     padding: 1px 4px;
 }
+.aiModelSelect {
+    margin-left: 3px;
+    max-width: 120px;
+}
 .aiObsRow {
     display: grid;
     grid-template-columns: 80px 1fr 34px;
@@ -452,7 +456,7 @@ html, body {
     display: block;
 }
 .footerBody {
-    max-height: 200px;
+    max-height: 320px; /* a touch taller so the STATS slider-history shows a row or two without maximizing */
     overflow: auto;
     padding: 6px 12px;
 }
@@ -478,6 +482,142 @@ html, body {
     text-transform: uppercase;
     color: #9aa6a0;
     margin-bottom: 8px;
+}
+.brainsSplit {
+    display: flex;
+    gap: 18px;
+    align-items: stretch;
+}
+.brainsSide {
+    flex: 1 1 0;
+    min-width: 0;
+}
+.brainsSideHead {
+    font-family: "Chakra Petch", sans-serif;
+    letter-spacing: 1px;
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 6px;
+}
+.brainsCard {
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+    padding: 10px 12px;
+}
+.brainsDriver {
+    font-family: "Chakra Petch", sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 13px;
+    color: #cfe3ff;
+    margin-bottom: 6px;
+}
+.brainsText {
+    font-size: 12px;
+    color: #b9c2bd;
+    line-height: 1.4;
+    margin-bottom: 8px;
+}
+.brainsKv {
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+    font-size: 12px;
+    margin-bottom: 4px;
+}
+.brainsKvKey {
+    color: #7f8a84;
+    flex: 0 0 128px; /* wide enough that "Driving input" / "Peak hidden" don't wrap */
+    text-align: left;
+}
+.brainsKvVal {
+    color: #e7edea;
+    flex: 1 1 auto;
+    min-width: 0; /* allow the value to wrap inside the flex row instead of being clipped */
+    word-break: break-word;
+}
+.brainsKey {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #7f8a84;
+    margin: 8px 0 2px;
+}
+.brainsPre {
+    font-size: 10px;
+    line-height: 1.3;
+    color: #cfd6d2;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+    padding: 5px;
+    margin: 0;
+    max-height: 64px; /* compact — the raw I/O is secondary to the parsed "chose" headline */
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+.brainsChose {
+    font-size: 15px;
+    font-weight: bold;
+    color: #cfe3ff;
+    line-height: 1.3;
+    margin: 2px 0 8px;
+}
+.brainsHelp {
+    margin: 6px 0;
+    font-size: 12px;
+}
+.brainsHelpSummary {
+    cursor: pointer;
+    color: #7f8a84;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    user-select: none;
+}
+.brainsHelpSummary:hover {
+    color: #cfe3ff;
+}
+.brainsLinks {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin: 4px 0;
+}
+.brainsLink {
+    color: #6db3ff;
+    font-size: 11px;
+    text-decoration: none;
+    word-break: break-all;
+}
+.brainsLink:hover {
+    text-decoration: underline;
+}
+.brainsActivation {
+    display: block;
+    max-width: 100%;
+}
+.brainsGenome {
+    display: block;
+    width: 320px;
+    max-width: 100%;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+.aiSliderGroup {
+    margin-bottom: 12px;
+}
+.aiSliderGroupTitle {
+    font-family: "Chakra Petch", sans-serif;
+    letter-spacing: 1px;
+    font-size: 10px;
+    text-transform: uppercase;
+    color: #7f8a84;
+    margin: 4px 0 6px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding-bottom: 3px;
 }
 .llmBlock {
     min-width: 260px;
@@ -558,7 +698,9 @@ html, body {
 /* A darker, less-transparent off-tint gray pane behind ONLY the activation diagram, so the connection lines
    stand out instead of fighting the blurred map showing through the footer glass. */
 .netVizDiagram {
-    display: inline-block;
+    display: block;
+    width: fit-content;
+    margin: 4px auto; /* centre the activation diagram in the card */
     line-height: 0;
     background: rgba(24, 28, 34, 0.66);
     border: 1px solid rgba(255, 255, 255, 0.08);
@@ -632,6 +774,36 @@ html, body {
     color: #9aa6a0;
     font-size: 12px;
     min-height: 16px;
+}
+.trainWarn {
+    flex-basis: 100%;
+    color: #e8c060;
+    font-size: 11px;
+    min-height: 14px;
+}
+.trainProgressWrap {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+.trainProgressLabel {
+    color: #cfe3ff;
+    font-size: 11px;
+    min-height: 13px;
+}
+.trainProgress {
+    width: 100%;
+    height: 8px;
+    background: rgba(0, 0, 0, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 4px;
+    overflow: hidden;
+}
+.trainProgressFill {
+    height: 100%;
+    width: 0;
+    background: linear-gradient(90deg, #4a8cff, #cfe3ff);
+    transition: width 0.08s linear;
 }
 .trainMain {
     display: flex;
@@ -780,13 +952,18 @@ html, body {
 /* EVENT LOG "only key events" filter row, above the log lines. */
 .logFilter {
     display: flex;
+    justify-content: flex-start;
     align-items: center;
-    gap: 5px;
+    gap: 4px;
     font-size: 11px;
     color: #9aa6a0;
     margin-bottom: 4px;
     cursor: pointer;
     user-select: none;
+}
+.logFilter input[type="checkbox"] {
+    margin: 0; /* drop the browser default so the label sits right next to the box */
+    flex: 0 0 auto;
 }
 .logFilterLabel {
     cursor: pointer;
@@ -1009,6 +1186,23 @@ html, body {
     min-width: 240px; /* fixed, roomy hit-area — the label shouldn't crowd the edges */
     cursor: pointer;
 }
+/* Wizard footer: [← Back | <forward> →] centered as a pair. */
+.onboardNav {
+    display: flex;
+    justify-content: center;
+    align-items: stretch;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+.onboardBack {
+    font-size: 22px;
+    padding: 14px 28px;
+    cursor: pointer;
+    opacity: 0.8; /* a touch quieter than the forward button */
+}
+.onboardBack:hover {
+    opacity: 1;
+}
 .onboardSliderLabel {
     font-family: "Coda", monospace;
     font-size: 13px;
@@ -1046,6 +1240,33 @@ html, body {
     gap: 12px;
     align-items: center;
     margin: 12px auto 4px;
+}
+.driverExperimental {
+    margin: 10px auto 0;
+    max-width: 560px;
+    text-align: left;
+}
+.driverExperimentalLabel {
+    display: inline-flex; /* shrink to content so the box + text sit together, not spread across a centered row */
+    align-items: center;
+    justify-content: flex-start;
+    gap: 4px;
+    cursor: pointer;
+    color: #e6ebe8;
+    font-size: 13px;
+}
+.driverExperimentalLabel input[type="checkbox"] {
+    margin: 0; /* drop the browser default margin so the text sits right next to the box */
+    flex: 0 0 auto;
+}
+.driverExperimentalText {
+    display: inline;
+}
+.driverExperimentalNote {
+    color: #9aa6a0;
+    font-size: 11px;
+    margin-top: 2px;
+    line-height: 1.35;
 }
 .driverLabel {
     font-family: "Chakra Petch", sans-serif;
@@ -1085,8 +1306,15 @@ html, body {
     font-size: 13px;
     color: #d8d8d8;
     display: flex;
+    justify-content: flex-start;
     align-items: center;
     gap: 4px;
+    width: 360px;
+    max-width: 90%; /* a shared, centred block → both rows share a left edge, content left-justified */
+}
+.onboardCheck input[type="checkbox"] {
+    margin: 0; /* label sits right next to the box */
+    flex: 0 0 auto;
 }
 .onboardWarn {
     font-family: "Coda", monospace;
@@ -1331,6 +1559,10 @@ html, body {
 .qSlider {
     height: 8px;
     width: 92px;
+    /* Nudge the slider so its track lines up exactly with the read-only bar that replaces it. */
+    position: relative;
+    left: -5px;
+    top: -2px;
 }
 .qSlider:hover {
     opacity: 1;
