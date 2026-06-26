@@ -45,13 +45,9 @@ object TrainerPanel {
     private const val CHART_H = 220
     private const val PREVIEW_COLOR = "#cfe3ff" // faction-neutral accent for the champion preview / curve
 
-    // Architecture presets offered in the picker (label → hidden-layer widths).
-    private val ARCHES = listOf(
-        "16 × 16" to listOf(16, 16),
-        "16" to listOf(16),
-        "24 × 24" to listOf(24, 24),
-        "8" to listOf(8),
-    )
+    // Per-hidden-layer width choices (two hidden layers, each picked independently → 4×4 … 32×32).
+    private val HIDDEN_WIDTHS = listOf(4, 8, 16, 24, 32)
+    private const val DEFAULT_HIDDEN = 16
 
     private var built = false
     private var running = false
@@ -62,9 +58,11 @@ object TrainerPanel {
     private var popInput: HTMLInputElement? = null
     private var genInput: HTMLInputElement? = null
     private var mutInput: HTMLInputElement? = null
-    private var archSelect: HTMLSelectElement? = null
+    private var hidden1Select: HTMLSelectElement? = null
+    private var hidden2Select: HTMLSelectElement? = null
     private var actSelect: HTMLSelectElement? = null
     private var cleanEvalBox: HTMLInputElement? = null
+    private var loadInput: HTMLInputElement? = null
     private var runButton: HTMLButtonElement? = null
     private var statusEl: HTMLElement? = null
     private var previewCanvas: HTMLCanvasElement? = null
@@ -101,7 +99,9 @@ object TrainerPanel {
         popInput = numberField(row, "Population", "10", "1", "2", "40")
         genInput = numberField(row, "Generations", "15", "1", "1", "200")
         mutInput = numberField(row, "Mutation", "0.15", "0.05", "0", "1")
-        archSelect = selectField(row, "Architecture", ARCHES.map { it.first to it.first })
+        val widthOpts = HIDDEN_WIDTHS.map { it.toString() to it.toString() }
+        hidden1Select = selectField(row, "Hidden 1", widthOpts).also { it.value = DEFAULT_HIDDEN.toString() }
+        hidden2Select = selectField(row, "Hidden 2", widthOpts).also { it.value = DEFAULT_HIDDEN.toString() }
         actSelect = selectField(row, "Activation", Activation.entries.map { it.name to it.name.lowercase() })
         cleanEvalBox = checkboxField(row, "Clean eval", "anti-runaway mechanics off — a cleaner training gradient")
         val run = button("Train", "trainRun") { onRunClick() }
@@ -168,8 +168,70 @@ object TrainerPanel {
         actionButtons += button("Save champion", "trainAction") { saveChampion() }
         actionButtons += button("Install → ${Faction.ENL.abbr}", "trainAction") { install(Faction.ENL) }
         actionButtons += button("Install → ${Faction.RES.abbr}", "trainAction") { install(Faction.RES) }
+        actionButtons += button("Download JSON", "trainAction") { downloadChampion() }
         actionButtons.forEach { box.appendChild(it) }
+        // "Load JSON" is always usable (no champion needed) — it imports a shared net + makes it the net driver.
+        box.appendChild(button("Load JSON", "trainAction") { triggerLoad() })
+        box.appendChild(buildLoadInput())
         return box
+    }
+
+    private fun buildLoadInput(): HTMLElement {
+        val input = document.createElement("input") as HTMLInputElement
+        input.type = "file"
+        input.accept = "application/json,.json"
+        input.classList.add("invisible")
+        input.onchange = {
+            (input.files?.item(0))?.let { loadFile(it) }
+            input.value = "" // allow re-loading the same file
+            null
+        }
+        loadInput = input
+        return input
+    }
+
+    private fun triggerLoad() = loadInput?.click()
+
+    // Read a shared genome JSON, validate it (GenomeIO.decode throws on a bad shape), persist it as the net
+    // driver's net (survives reload, like Save champion), and install it for both factions on the spot.
+    private fun loadFile(file: org.w3c.files.File) {
+        val reader = org.w3c.files.FileReader()
+        reader.onload = {
+            val text = reader.result as? String ?: ""
+            runCatching { GenomeIO.decode(text) }
+                .onSuccess {
+                    NetStore.save(text)
+                    Faction.all().forEach { f ->
+                        FactionPolicies.set(f, NetPolicy(GenomeIO.decode(text), f))
+                        DriverControls.reflect(f, "net")
+                    }
+                    setStatus("Loaded net from ${file.name} — saved + installed for both factions.")
+                }
+                .onFailure { setStatus("Couldn't load that file: ${it.message ?: "not a valid net JSON"}") }
+            null
+        }
+        reader.readAsText(file)
+    }
+
+    // Offer the current champion as a downloadable .json (Blob → object URL → synthetic click) for sharing.
+    private fun downloadChampion() {
+        val json = championJson() ?: return
+        val url = objectUrlFor(json)
+        val a = document.createElement("a") as org.w3c.dom.HTMLAnchorElement
+        a.href = url
+        a.asDynamic().download = "qgress-net.json"
+        a.click()
+        revokeObjectUrl(url)
+        setStatus("Champion downloaded as qgress-net.json — share it; Load JSON imports it back.")
+    }
+
+    @Suppress("UnusedParameter") // referenced inside the js() intrinsic, invisible to detekt
+    private fun objectUrlFor(json: String): String =
+        js("URL.createObjectURL(new Blob([json], { type: 'application/json' }))") as String
+
+    @Suppress("UnusedParameter") // referenced inside the js() intrinsic, invisible to detekt
+    private fun revokeObjectUrl(url: String) {
+        js("URL.revokeObjectURL(url)")
     }
 
     private fun onRunClick() {
@@ -281,7 +343,9 @@ object TrainerPanel {
         val pop = (popInput?.value?.toIntOrNull() ?: 10).coerceIn(2, 40)
         val gens = (genInput?.value?.toIntOrNull() ?: 15).coerceIn(1, 200)
         val mut = (mutInput?.value?.toDoubleOrNull() ?: 0.15).coerceIn(0.0, 1.0)
-        val hiddens = ARCHES.firstOrNull { it.first == archSelect?.value }?.second ?: NetArch.DEFAULT_HIDDENS
+        val h1 = hidden1Select?.value?.toIntOrNull() ?: DEFAULT_HIDDEN
+        val h2 = hidden2Select?.value?.toIntOrNull() ?: DEFAULT_HIDDEN
+        val hiddens = listOf(h1, h2)
         return EvolutionConfig(
             populationSize = pop,
             generations = gens,
@@ -313,7 +377,7 @@ object TrainerPanel {
         val ready = session != null && fitness.isNotEmpty() && !running
         actionButtons.forEach { it.disabled = !ready }
         listOfNotNull(popInput, genInput, mutInput, cleanEvalBox).forEach { it.disabled = running }
-        listOfNotNull(archSelect, actSelect).forEach { it.disabled = running }
+        listOfNotNull(hidden1Select, hidden2Select, actSelect).forEach { it.disabled = running }
     }
 
     private fun setStatus(text: String) {
