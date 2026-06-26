@@ -7,10 +7,61 @@ Branch: `develop` · Owner: @zirteq
 [docs/LLM.md](docs/LLM.md). Completed work lives in the **git log**, not here — keep this file to the point.
 
 ## ★ Next session — start here
-1. **Phase 6 is effectively done** (substrate + trainer + leaderboard + clean-eval). Two loose ends remain, both
-   gated on something external: **grid fixtures** need a one-time `?debug=capture` pass in-browser (manual), and
-   the **per-side NetArch pick in onboarding** is blocked on a trained-net-per-arch library (icebox). Pick a new
-   thread from *3D / rendering*, *UI*, or *Gameplay mechanics*, or do the manual capture.
+**Feature set is at a good resting point; the current focus is the _non-functional track_ below**
+(quality → coverage → perf), not new features. Work it in phase order: **A** safety-net tests → **B** refactor
+(+ incremental functional-core split) → **C** real coverage measurement → **D** profiling & optimization.
+The perf items elsewhere in this file (Pathfinding scalability, Building perf, Map-size profiling) are **phase D**
+inputs — don't pull them forward. Two cheap loose ends to clear opportunistically (not blockers): the grid-fixtures
+`?debug=capture` pass (manual, user-only) and eyeballing the *Verify in-browser* list to confirm a clean baseline
+before refactoring.
+
+## Non-functional track — quality → coverage → perf (CURRENT FOCUS)
+The push to get the code to a state we're comfortable with, *then* make it fast. Strictly phased: each phase
+de-risks the next. "Coverage" means two things and they split across phases — a behavioural **safety net** comes
+first (phase A, in the existing Node harness); real **line-coverage measurement** (Kover) is *blocked on* the
+functional-core split and so lands in phase C, after the refactor.
+
+### Phase A — Safety net (behavioural tests on today's behaviour)
+Lock current behaviour before moving any code, so the refactor can't silently change it. Pure Node/Mocha tests
+(no tooling change). Aim for characterization tests over the functional core as-it-is:
+- [ ] `Balance` — `recruitFactor` / `attackBoost` / dominance erosion across deficit ranges.
+- [ ] `Config` formulas — `npcPopulation`, `targetPortals`, `maxMitigation`, `weaponDropMultiplier`,
+  `attackXmpThreshold`, `comebackAttackBonus` (pin the input→output table at the current consts).
+- [ ] `ActionSelector` weighting + `MovementUtil` / `StuckTracker` (extend the existing seed-sensitive cases).
+- [ ] `Cycle` — `managePortalDensity` churn convergence, checkpoint MU, the recruit-churn replacement.
+- [ ] `Portal` combat — `removeReso` / mitigation / link / field-MU / neutralize transitions.
+- [ ] `Recruiter` (free-recruit + self-balancing weight), `SimRunner` determinism (extend existing).
+- **Exit criterion:** a green net that *fails* if behaviour changes — not maximal coverage, just a tripwire.
+
+### Phase B — Refactor under the net
+Functional core / imperative shell, properly. Do it module-by-module behind phase-A tests:
+- [ ] **Isolate pure logic** — extract decision functions (state in → decision/new-state out) out of
+  `Agent` / `Portal` / `Cycle`; push 3D/DOM/MapLibre/WebGL, audio, timers, RNG and `World` mutation to the edges.
+- [ ] **Incremental functional-core split** — as each pure module is isolated, move it toward `commonMain` (this
+  is what unlocks Kover in phase C). Incremental, not a big-bang migration.
+- [ ] **Reduce magic numbers** — name them / fold into `Config` where it aids clarity (detekt `MagicNumber` is
+  off, so this is a by-hand judgement pass, not a gate-chase).
+- [ ] **SoC / split god-objects** — `Scene3D` (1579 → extract the demo/showcase code to `Showcases`, drop the
+  `LargeClass` suppress), and cut along seams in `MapUtil` (835) / `HtmlUtil` (788) / `SoundUtil` (768) /
+  `Portal` (685) as they're touched.
+- [ ] **Functional patterns** where they fit; **null-safety hardening** (`!!` audit → `?:`/`requireNotNull`/
+  early return); **tighten line length 140 → 120** *alongside* the class extractions (it inflates `LargeClass`
+  otherwise). These are the existing *Open engineering decisions* items — they live here.
+- **Exit criterion:** pure logic is testable in isolation; gate (ktlint/detekt/tests) stays green throughout.
+
+### Phase C — Real coverage measurement (enabled by B)
+- [ ] Stand up **Kover on a `jvm()` test target** over the now-`commonMain` functional core; report real line
+  coverage and drive the core toward the CLAUDE.md target (selection/balance logic near 100%).
+- [ ] Backfill tests for whatever the report shows uncovered in the core (effects/shell stay Node-side).
+
+### Phase D — Profiling & optimization (last)
+Only once we're comfortable with structure + coverage. **Baseline first, then optimize, guarded by the net:**
+- [ ] **Establish a baseline** — an FPS / frame-time readout (ties to `?debug`, also a legacy TODO) + world-gen
+  per-stage timing logs, so regressions are visible and wins are measurable.
+- [ ] **In-game hotspots** — `Scene3D` per-frame draw, pathfinding heat maps, the NPC swarm, shadows/effects.
+- [ ] **World-creation** — grid build, shadow readback, async flow-field compute, building stream.
+- [ ] Fold in the existing perf items as data dictates: **Pathfinding scalability**, **Building perf + lifecycle**,
+  and the **Map-size preset** profiling/tuning (all listed in their sections below).
 
 ## ⚑ Verify in-browser first (`./start.sh`)
 Built headless recently, not yet confirmed on screen — eyeball these, then move on:
@@ -151,16 +202,19 @@ Remaining:
 keep tuning `Config` and consider shaping fitness for *interesting* play (a follow-up lever, not v1).
 
 ## Open engineering decisions
+*These are the concrete items the **Non-functional track** (above) executes — phase B for the refactors, phase C
+for coverage tooling. Kept here for the rationale; the track sequences them.*
 - **Coverage tooling.** Kover has no Kotlin/JS support; real line-coverage needs the functional-core split
   (pure logic → `commonMain` + a `jvm()` test target, run Kover there). Until then: ktlint + detekt + tests.
+  → *phase C.*
 - **Tighten max line length 140 → 120.** Deferred: ktlint auto-wrapping inflates detekt's `LargeClass` count,
   so it must land alongside the class extractions (`Scene3D`, and any near the 600-line cap like
-  `HtmlUtil`/`MapUtil`). A dedicated refactor pass.
+  `HtmlUtil`/`MapUtil`). A dedicated refactor pass. → *phase B.*
 - **Extract the demo/showcase subsystem from `Scene3D`** — most of Scene3D's `LargeClass` bulk is the
   self-contained sandbox code; move it to a `Showcases` object (build helpers go `internal`), then drop the
-  `LargeClass` suppress.
+  `LargeClass` suppress. → *phase B.*
 - **Null-safety hardening** — audit remaining `!!` → `?.`/`?:`/`requireNotNull`/early return (same hazard
-  class as the empty-collection `max/min` crashes already fixed).
+  class as the empty-collection `max/min` crashes already fixed). → *phase B.*
 
 ## Balance risk (recruit-rush)
 `ActionSelector` picks by weighted-random over `slider × weight`; recruiting adds agents (→ more actions/tick →
