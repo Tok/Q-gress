@@ -29,6 +29,12 @@ class LlmPolicy(private val faction: Faction, val client: LlmClient, private val
     var lastReply: String = ""
         private set
 
+    /** The checkpoint a request was last fired at, and the one its reply landed at — for the cadence readout. */
+    var requestedCheckpointPublic: Int = -1
+        private set
+    var lastReplyCheckpoint: Int = -1
+        private set
+
     override fun weight(value: QValue): Double {
         request()
         return vector?.get(value) ?: fallback.weight(value)

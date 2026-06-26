@@ -16,6 +16,7 @@ import ai.net.NetPolicy
 import ai.net.NetStore
 import config.Config
 import kotlinx.browser.document
+import kotlinx.browser.window
 import org.w3c.dom.CanvasRenderingContext2D
 import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.HTMLElement
@@ -26,9 +27,10 @@ import kotlin.math.roundToInt
  * LEFT, the opponent on the RIGHT. Each side renders a card tailored to that faction's current driver:
  * **Manual** (tune-it-yourself note), **Heuristic** (what the adaptive policy is doing + its live stance),
  * **Neural net** (architecture + fitness + the genome heatmap + the actions it favours), or **LLM** (the model
- * + backend + status, and its latest prompt / reply / parsed actions). It complements the NET tab (the live
- * activation diagram) and the AI tab (observation bars + slider history) by putting one clear driver summary
- * per faction in one place. Rebuilt per faction only when its state actually changes (LLM reply / checkpoint).
+ * + backend + status, its latest prompt / reply / parsed actions). For a net it also hosts the **live
+ * activation diagram** (repainted each frame) above the genome heatmap, plus the driving-input / peak-hidden
+ * readouts — the former NET tab folded in here. The card text rebuilds per faction only when its state changes
+ * (LLM reply / checkpoint); the activation canvas repaints every frame.
  */
 object BrainsPanel {
     private const val GENOME_W = 320
@@ -39,10 +41,22 @@ object BrainsPanel {
     private val lastKey = mutableMapOf<Faction, String>()
     private var helpOpen = false // collapsible WebGPU-help state, preserved across card rebuilds
     private var rawOpen = false // collapsible raw prompt/reply state, preserved across card rebuilds
+    private val activationCanvas = mutableMapOf<Faction, HTMLCanvasElement?>() // per NN faction; repainted each frame
 
     fun update() {
         if (!ensure()) return
-        sides().forEach { faction -> renderIfChanged(faction) }
+        sides().forEach { faction ->
+            renderIfChanged(faction)
+            repaintActivation(faction) // live net activation (per frame, between the per-checkpoint card rebuilds)
+        }
+    }
+
+    // Repaint the NN activation diagram each frame so the net is visibly "thinking" as the observation shifts.
+    private fun repaintActivation(faction: Faction) {
+        val canvas = activationCanvas[faction] ?: return
+        val net = (driverOf(faction) as? NetPolicy)?.net ?: return
+        val ctx = canvas.getContext("2d") as? CanvasRenderingContext2D ?: return
+        NetVizPanel.paintActivation(ctx, net, faction, NetVizPanel.CW.toDouble(), NetVizPanel.CH.toDouble())
     }
 
     // Left = the player's faction (fallback ENL), right = the opponent — so the layout reads "us vs them".
@@ -79,6 +93,7 @@ object BrainsPanel {
         if (key == lastKey[faction]) return
         lastKey[faction] = key
         card.innerHTML = ""
+        activationCanvas[faction] = null // dropped on rebuild; renderNet re-creates it when this side is a net
         when (val inner = driverOf(faction)) {
             is NetPolicy -> renderNet(card, faction, inner.net)
             is LlmPolicy -> renderLlm(card, inner)
@@ -132,21 +147,44 @@ object BrainsPanel {
 
     private fun renderNet(card: HTMLElement, faction: Faction, net: Net) {
         card.appendChild(driverTitle("Neural net"))
-        card.appendChild(
-            p(
-                "A trained neural net maps the ${Observation.SIZE} world observations → ${SliderVector.SIZE} behaviour sliders, re-tuned each checkpoint.",
-            ),
-        )
         card.appendChild(kv("Architecture", net.arch.label()))
         card.appendChild(kv("Fitness", GenomeIO.fitnessOf(NetStore.activeJson())?.let { "+${it.roundToInt()} MU" } ?: "—"))
-        val canvas = canvas(GENOME_W, GENOME_H)
+        card.appendChild(kv("Re-tunes", retuneCadence()))
+        val stats = NetVizPanel.stats(net, faction)
+        card.appendChild(kv("Driving input", stats.drivingInput))
+        card.appendChild(kv("Peak hidden", stats.peakHidden))
+        card.appendChild(topActions(faction))
+        // Live activation diagram ABOVE the genome (per-frame repaint in update()).
+        card.appendChild(el("div", "brainsKey").also { it.textContent = "live activation (the net thinking)" })
+        val act = dprCanvas(NetVizPanel.CW, NetVizPanel.CH)
+        activationCanvas[faction] = act
+        card.appendChild(el("div", "netVizDiagram").also { it.appendChild(act) })
+        (act.getContext("2d") as? CanvasRenderingContext2D)?.let {
+            NetVizPanel.paintActivation(it, net, faction, NetVizPanel.CW.toDouble(), NetVizPanel.CH.toDouble())
+        }
+        // …then the genome heatmap.
         card.appendChild(el("div", "brainsKey").also { it.textContent = "genome (weights — sign × magnitude)" })
-        card.appendChild(canvas)
-        (canvas.getContext("2d") as? CanvasRenderingContext2D)?.let {
+        val gen = canvas(GENOME_W, GENOME_H)
+        card.appendChild(gen)
+        (gen.getContext("2d") as? CanvasRenderingContext2D)?.let {
             NetVizPanel.paintGenome(it, net, GENOME_W.toDouble(), GENOME_H.toDouble(), faction.color)
         }
-        card.appendChild(topActions(faction))
-        card.appendChild(p("See the NET tab for the live activation diagram."))
+    }
+
+    // Both the net and the LLM re-tune the sliders once per scoring checkpoint — surface that cadence.
+    private fun retuneCadence(): String = "every checkpoint (${Config.ticksPerCheckpoint} ticks)"
+
+    // A device-pixel-resolution canvas → crisp activation lines/labels on HiDPI (CSS size w×h, store ×dpr).
+    private fun dprCanvas(w: Int, h: Int): HTMLCanvasElement {
+        val c = document.createElement("canvas") as HTMLCanvasElement
+        val dpr = window.devicePixelRatio.takeIf { it > 0.0 } ?: 1.0
+        c.width = (w * dpr).toInt()
+        c.height = (h * dpr).toInt()
+        c.style.width = "${w}px"
+        c.style.height = "${h}px"
+        c.className = "brainsActivation"
+        (c.getContext("2d") as? CanvasRenderingContext2D)?.scale(dpr, dpr)
+        return c
     }
 
     private fun renderLlm(card: HTMLElement, policy: LlmPolicy) {
@@ -208,18 +246,18 @@ object BrainsPanel {
         details.appendChild(
             p(
                 "The LLM needs WebGPU on a real GPU. If the GPU line above shows a software/hidden adapter or " +
-                    "WebGPU errors, it'll fall back to the heuristic. Paste these into the address bar (they can't " +
-                    "be links) and reload:",
+                    "WebGPU errors, it'll fall back to the heuristic. Open these (browsers block clicking a " +
+                    "chrome:// link, so right-click → copy, or paste into the address bar) and reload:",
             ),
         )
-        details.appendChild(
-            pre(
-                "chrome://gpu                                 (check the Vulkan/WebGPU row names your GPU)\n" +
-                    "chrome://flags/#enable-unsafe-webgpu\n" +
-                    "chrome://flags/#enable-vulkan\n" +
-                    "chrome://flags/#ignore-gpu-blocklist",
-            ),
-        )
+        val links = el("div", "brainsLinks")
+        listOf(
+            "chrome://gpu" to "chrome://gpu  — check the Vulkan/WebGPU row names your GPU",
+            "chrome://flags/#enable-unsafe-webgpu" to "chrome://flags/#enable-unsafe-webgpu",
+            "chrome://flags/#enable-vulkan" to "chrome://flags/#enable-vulkan",
+            "chrome://flags/#ignore-gpu-blocklist" to "chrome://flags/#ignore-gpu-blocklist",
+        ).forEach { (url, label) -> links.appendChild(chromeLink(url, label)) }
+        details.appendChild(links)
         details.appendChild(
             p(
                 "On Brave, also turn Shields' fingerprinting off for this page (it can hide the GPU). On " +
@@ -252,6 +290,14 @@ object BrainsPanel {
         row.appendChild(el("span", "brainsKvKey").also { it.textContent = key })
         row.appendChild(el("span", "brainsKvVal").also { it.textContent = value })
         return row
+    }
+
+    private fun chromeLink(url: String, label: String): HTMLElement {
+        val a = document.createElement("a") as org.w3c.dom.HTMLAnchorElement
+        a.className = "brainsLink"
+        a.href = url
+        a.textContent = label
+        return a
     }
 
     private fun pre(text: String): HTMLElement {

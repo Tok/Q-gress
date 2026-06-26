@@ -580,6 +580,25 @@ html, body {
 .brainsHelpSummary:hover {
     color: #cfe3ff;
 }
+.brainsLinks {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin: 4px 0;
+}
+.brainsLink {
+    color: #6db3ff;
+    font-size: 11px;
+    text-decoration: none;
+    word-break: break-all;
+}
+.brainsLink:hover {
+    text-decoration: underline;
+}
+.brainsActivation {
+    display: block;
+    max-width: 100%;
+}
 .brainsGenome {
     display: block;
     width: 320px;

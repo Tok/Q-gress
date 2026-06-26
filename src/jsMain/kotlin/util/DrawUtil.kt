@@ -15,7 +15,6 @@ import util.ui.HistoryPanel
 import util.ui.Inspector
 import util.ui.LeaderboardPanel
 import util.ui.LlmReasoningPanel
-import util.ui.NetVizPanel
 import util.ui.SliderHistoryPanel
 import util.ui.StatsPanel
 import util.ui.TopAgentsPanel
@@ -41,8 +40,7 @@ object DrawUtil {
         HistoryPanel.update()
         TuningPanel.refresh() // mirror an AI driver's vector onto the sliders (no-op under manual control)
         AiPanel.update() // AI footer tab: per-faction driver + live observation readout
-        BrainsPanel.update() // BRAINS footer tab: per-faction driver summary (manual/heuristic/net/LLM), us vs them
-        NetVizPanel.update() // NET footer tab: the net driver's live activation diagram
+        BrainsPanel.update() // BRAINS footer tab: per-faction driver summary + live NN activation / LLM reasoning
         TrainerPanel.update() // TRAIN footer tab: lazy-build the in-browser neuro-evolution trainer
         LeaderboardPanel.update() // TRAIN footer tab: the driver leaderboard (round-robin ranking)
         SliderHistoryPanel.update() // AI tab: each slider's value over the checkpoint window
