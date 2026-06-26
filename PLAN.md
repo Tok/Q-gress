@@ -7,8 +7,9 @@ Branch: `develop` · Owner: @zirteq
 [docs/LLM.md](docs/LLM.md). Completed work lives in the **git log**, not here — keep this file to the point.
 
 ## ★ Next session — start here
-1. **In-game leaderboard UI** (Phase 6) — the trainer shipped; the leaderboard reuses its run harness
-   (snapshot + pause + `Fx` no-op). The full handoff is under *Phase 6*.
+1. **Finish Phase 6** — trainer + leaderboard shipped. Remaining: **grid fixtures** (commit serialized grids so
+   headless runs need no live tiles), **per-side NetArch pick in onboarding**, and the **clean-eval flag**. See
+   *Phase 6*.
 
 ## ⚑ Verify in-browser first (`./start.sh`)
 Built headless recently, not yet confirmed on screen — eyeball these, then move on:
@@ -120,19 +121,16 @@ be matched. **Desktop-only**; mobile is blocked.
 the **custom-net track** (`Net`/`NetArch`/`Evolution`/`NetPolicy`, a baked **16×16** champion that beats the
 baseline, JSON genome save/load via `GenomeIO`/`NetStore`, the NET activation + genome viz), the adaptive
 `HeuristicPolicy`, the **in-browser LLM track** (`LlmPolicy`/`WebLlmClient` + reasoning panel, browser-only),
-the `Tournament` eval engine, per-faction driver selection (top toolbar + the onboarding step), and the
-**visual NN trainer** (the resumable `Evolution.Session` + the **TRAIN** tab `TrainerPanel` — evolve a net
-live, preview the champion, save/install it; the live game pauses + restores around the run).
+per-faction driver selection (top toolbar + the onboarding step), the **visual NN trainer** (resumable
+`Evolution.Session` + the **TRAIN** tab `TrainerPanel`), and the **in-game leaderboard** (resumable
+`Tournament.Session` + `LeaderboardPanel`, a round-robin ranking). Both eval tools share the `HeadlessRun`
+harness (snapshot + tick-pause + `Fx` no-op) so they never disturb the live game.
 
 **Fitness objective:** maximize **summed per-checkpoint MU** (sustained field area), not just final MU — a
 team effort to layer fields across the cycle. The net/LLM only re-tunes the 17 sliders at checkpoint cadence;
 it does **not** replace per-agent `ActionSelector`.
 
 Remaining:
-- [ ] **★ In-game leaderboard UI** *(next session)* — a button wrapping `Tournament` in the **same run harness**
-  the trainer already established (`WorldSnapshot.capture/restore` + the `TrainerPanel.isTraining()` tick pause +
-  `Fx`-noop), showing the `Standing` table, so net variants (different `NetArch`) can be ranked head-to-head.
-  Shares the trainer's plumbing — factor the snapshot/pause/Fx wrapper out of `TrainerPanel` if it helps.
 - [ ] **Grid fixtures** — serialize a built `Grid` (+ portal seeds) to committed JSON so headless matches
   reproduce without live tiles / `readPixels`. `GridFixture` does the RLE serialization; the real-tile fixtures
   still need the `?debug=capture` pass.
