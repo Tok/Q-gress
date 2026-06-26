@@ -46,15 +46,15 @@ Functional core / imperative shell, properly. Do it module-by-module behind phas
   targeting, `World` read inverted to a param). **Remaining candidates:** `Linker.fieldClosingTarget` (a trivial
   set-intersection pick — low value); `Deployer.deployTargetFor` was assessed and **skipped** (it mixes agent-level
   + portal reads — not cleanly pure, and `DeployerTest` already covers it). The cheap, high-signal extractions are
-  largely done; what's left is the **`commonMain` move** and the **Scene3D split** below.
-- [~] **Incremental functional-core split** — move each isolated pure module into `commonMain` (this is what
-  unlocks Kover, now stood up — see phase C). Module-by-module, gate green each step. **Migrated so far:**
-  `util.MathUtil`, `config.Time`, `portal.Cooldown`, `portal.PortalMath`, `config.IngressFacts`,
-  `config.ConfigMath`, `system.ChurnMath`, `agent.BalanceMath`, the geometry core (`util.data.Pos` +
-  `util.data.Line`, with the World/grid/Sim/geo/RNG members split out to `PosExt`/`Positions` in the shell),
-  and `portal.FieldMath` (MU/Heron + point-in-triangle). The World/`Config`-coupled holders now delegate.
-  **Remaining:** `NonFaction.opposingHalf` (now unblocked — operates on `Pos`), `Agent.enemyPortalsInRange`,
-  and the seedable RNG (`Util.random`, via expect/actual `freshSeed`) + `Faction`.
+  largely done; the **`commonMain` move** is complete (below) and the **Scene3D split** remains.
+- [x] **Incremental functional-core split** — the pure logic now lives in `commonMain` (compiled for both JS
+  and the test-only `jvm()` target, Kover-covered ~78%; the World/`Config`/`Portal`-coupled holders delegate).
+  **Migrated:** `util.MathUtil`, `util.Rng` (seedable PRNG + `select`, `freshSeed` via expect/actual),
+  `config.Time`, `config.IngressFacts`, `config.ConfigMath`, `portal.Cooldown`, `portal.PortalMath`,
+  `portal.FieldMath`, `system.ChurnMath`, `agent.BalanceMath`, `agent.Faction`, `agent.NonFactionMath`
+  (`opposingHalf`), and the geometry core (`util.data.Pos` + `util.data.Line`, with grid/geo/RNG members
+  split to `PosExt`/`Positions` in the shell). **Intentionally left in `jsMain`:** `Agent.enemyPortalsInRange`
+  (references `Portal`, a JS-shell type — already a tested pure function there).
 - [ ] **Reduce magic numbers** — name them / fold into `Config` where it aids clarity (detekt `MagicNumber` is
   off, so this is a by-hand judgement pass, not a gate-chase). *(Started opportunistically — e.g. named the
   `LINK_MITIGATION_SCALE`.)*
