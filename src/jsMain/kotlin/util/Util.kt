@@ -3,10 +3,6 @@ package util
 import World
 import portal.Portal
 import util.data.Pos
-import kotlin.math.PI
-import kotlin.math.floor
-import kotlin.math.max
-import kotlin.math.min
 
 object Util {
     private fun findNearestPortals(pos: Pos): Set<Pair<Double, Portal>> =
@@ -17,8 +13,10 @@ object Util {
         return if (nearest.isNotEmpty()) nearest.first().second else null
     }
 
-    fun clip(value: Int, from: Int, to: Int): Int = max(from, min(to, value))
-    fun clipDouble(value: Double, from: Double, to: Double): Double = max(from, min(to, value))
+    // Pure numeric helpers live in the shared core ([MathUtil]); kept here as thin delegates so the many
+    // existing Util.clip(...) call sites are unchanged.
+    fun clip(value: Int, from: Int, to: Int): Int = MathUtil.clip(value, from, to)
+    fun clipDouble(value: Double, from: Double, to: Double): Double = MathUtil.clipDouble(value, from, to)
 
     // Seedable PRNG (mulberry32). random() is the ONLY randomness source in the game, so seeding it
     // makes the whole world (and a fresh playthrough) reproducible — the basis for shareable links
@@ -182,14 +180,8 @@ object Util {
         0.045 to 'Z',
     )
 
-    fun degToRad(degrees: Double): Double = degrees * PI / 180
-    fun radToDeg(radians: Double): Double = radians * 180 / PI
+    fun degToRad(degrees: Double): Double = MathUtil.degToRad(degrees)
+    fun radToDeg(radians: Double): Double = MathUtil.radToDeg(radians)
 
-    private fun fixTime(v: Int): String = if (v.toString().length <= 1) v.toString().padStart(2, '0') else v.toString()
-    fun formatSeconds(absSeconds: Int): String {
-        val seconds: Int = absSeconds % 60
-        val minutes: Int = floor(absSeconds / 60.0).toInt() % 60
-        val hours: Int = floor(absSeconds / 3600.0).toInt()
-        return fixTime(hours) + ":" + fixTime(minutes) + ":" + fixTime(seconds)
-    }
+    fun formatSeconds(absSeconds: Int): String = MathUtil.formatSeconds(absSeconds)
 }

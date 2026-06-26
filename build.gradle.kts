@@ -19,6 +19,9 @@ plugins {
     kotlin("multiplatform") version "2.4.0"
     id("org.jlleitschuh.gradle.ktlint") version "14.2.0"
     id("io.gitlab.arturbosch.detekt") version "1.23.8"
+    // Line-coverage for the pure functional core. Kover instruments JVM bytecode, so coverage is
+    // measured by the `jvm()` test target below (the product still ships only JS). See docs/ARCHITECTURE.md.
+    id("org.jetbrains.kotlinx.kover") version "0.9.8"
 }
 
 group = "zir.teq"
@@ -42,15 +45,21 @@ detekt {
     buildUponDefaultConfig = true
     config.setFrom(files("config/detekt/detekt.yml"))
     baseline = file("config/detekt/baseline.xml")
-    // Multiplatform: point the single `detekt` task at the JS source sets.
-    source.setFrom("src/jsMain/kotlin", "src/jsTest/kotlin")
+    // Multiplatform: point the single `detekt` task at every source set (the shared core + JS shell).
+    source.setFrom("src/commonMain/kotlin", "src/commonTest/kotlin", "src/jsMain/kotlin", "src/jsTest/kotlin")
 }
 
 // Use the single configured `detekt` task as the gate; disable the redundant
 // per-source-set tasks the KMP integration auto-creates (they'd need separate
 // baselines and duplicate the same analysis).
 tasks.matching {
-    it.name in listOf("detektJsMain", "detektJsTest", "detektMetadataMain")
+    it.name in listOf(
+        "detektJsMain",
+        "detektJsTest",
+        "detektJvmMain",
+        "detektJvmTest",
+        "detektMetadataMain",
+    )
 }.configureEach { enabled = false }
 
 // --- Git hooks: point git at the in-repo .githooks dir so the pre-commit gate
@@ -97,6 +106,14 @@ val generateBuildInfo = tasks.register("generateBuildInfo") {
 }
 
 kotlin {
+    // JVM target: NOT shipped. It exists purely so the pure functional core in `commonMain` can be
+    // unit-tested on the JVM and instrumented by Kover for line coverage (Kover can't read Kotlin/JS).
+    // Only `commonMain`/`commonTest`/`jvmTest` compile here — all browser/WebGL/three.js code stays in jsMain.
+    jvm {
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
+        }
+    }
     js {
         // Output bundle is named after the root project: Q-Gress.js
         binaries.executable()
@@ -125,6 +142,10 @@ kotlin {
     }
 
     sourceSets {
+        // Shared pure functional core — must compile for BOTH js and jvm, so NO js()/DOM/WebGL/three.js here.
+        commonTest.dependencies {
+            implementation(kotlin("test"))
+        }
         jsMain {
             kotlin.srcDir(generateBuildInfo) // generated config/BuildInfo (build timestamp + git-sha)
             dependencies {
@@ -145,5 +166,11 @@ kotlin {
         jsTest.dependencies {
             implementation(kotlin("test"))
         }
+        jvmTest.dependencies {
+            implementation(kotlin("test-junit5"))
+        }
     }
 }
+
+// The jvm() target's tests exist only to exercise + measure the shared core; run them on JUnit 5.
+tasks.withType<Test>().configureEach { useJUnitPlatform() }
