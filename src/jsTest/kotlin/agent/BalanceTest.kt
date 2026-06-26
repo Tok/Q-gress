@@ -51,4 +51,31 @@ class BalanceTest {
         assertEquals(1.0, Balance.attackBoost(Faction.ENL))
         assertEquals(1.0, Balance.attackBoost(Faction.RES))
     }
+
+    @Test
+    fun attackBoostGrowsWithTheSquareOfTheDeficit() {
+        // Pin the rubber-band to known coefficients: boost = 1 + comebackMax × dynamism × deficit² = 1 + deficit².
+        val savedMax = Config.comebackMax
+        val savedDyn = Config.combatDynamism
+        try {
+            Config.comebackMax = 2.0
+            Config.combatDynamism = 0.5 // comebackAttackBonus() == combatDynamism
+            addPortals(Faction.RES, 9) // ENL has 0 → deficit = 9/9 = 1.0
+            assertEquals(2.0, Balance.attackBoost(Faction.ENL), 1e-9, "fully shut out: 1 + 1.0²")
+            World.allPortals.clear()
+            addPortals(Faction.ENL, 1)
+            addPortals(Faction.RES, 9) // deficit = (9 − 1)/10 = 0.8
+            assertEquals(1.64, Balance.attackBoost(Faction.ENL), 1e-9, "1 + 0.8² = 1.64 (steeply less than at 1.0)")
+        } finally {
+            Config.comebackMax = savedMax
+            Config.combatDynamism = savedDyn
+        }
+    }
+
+    @Test
+    fun leadShareIsZeroWhenNeitherSideHoldsAnyMu() {
+        // No fields → calcTotalMu == 0 for both → the share-deficit total<=0 guard yields 0 (even, not NaN).
+        assertEquals(0.0, Balance.leadShare(Faction.ENL))
+        assertEquals(0.0, Balance.leadShare(Faction.RES))
+    }
 }
