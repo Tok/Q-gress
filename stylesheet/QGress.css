@@ -115,6 +115,13 @@ html, body {
     flex: 1;
     min-width: 0;
 }
+/* Each faction's metrics flow into as many columns as fit — uses the footer's full width instead of one
+   tall stacked list (a wide/maximized footer → several metric columns per faction). */
+.aiObsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(176px, 1fr));
+    gap: 1px 18px;
+}
 .aiColHead {
     display: flex;
     align-items: center;
@@ -136,10 +143,10 @@ html, body {
 }
 .aiObsRow {
     display: grid;
-    grid-template-columns: 96px 1fr 40px;
+    grid-template-columns: 80px 1fr 34px;
     align-items: center;
-    gap: 8px;
-    line-height: 1.5;
+    gap: 6px;
+    line-height: 1.45;
 }
 .aiObsLabel {
     color: #9aa6a0;
@@ -532,6 +539,16 @@ html, body {
     overflow: hidden;
     text-overflow: ellipsis;
 }
+/* A darker, less-transparent off-tint gray pane behind ONLY the activation diagram, so the connection lines
+   stand out instead of fighting the blurred map showing through the footer glass. */
+.netVizDiagram {
+    display: inline-block;
+    line-height: 0;
+    background: rgba(24, 28, 34, 0.66);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    padding: 4px;
+}
 .netVizSub {
     margin: 10px 0 3px;
     color: #9aa6a0;
@@ -542,6 +559,115 @@ html, body {
 .netVizHint {
     opacity: 0.7;
     padding: 12px;
+}
+
+/* TRAIN tab (TrainerPanel) — in-browser neuro-evolution: a config row, a live fitness curve, a champion preview. */
+.trainPanel {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 10px 8px 16px;
+}
+.trainConfig {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 8px 18px;
+}
+.trainField {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+.trainFieldLabel {
+    color: #9aa6a0;
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+.trainInput,
+.trainSelect {
+    background: rgba(0, 0, 0, 0.5);
+    color: #e6ebe8;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 4px;
+    font-family: "Coda", monospace;
+    font-size: 12px;
+    padding: 2px 5px;
+}
+.trainInput {
+    width: 72px;
+}
+.trainRun {
+    font-family: "Chakra Petch", sans-serif;
+    letter-spacing: 1px;
+    background: rgba(120, 170, 255, 0.16);
+    color: #cfe3ff;
+    border: 1px solid rgba(120, 170, 255, 0.5);
+    border-radius: 4px;
+    padding: 5px 16px;
+    cursor: pointer;
+}
+.trainRun:hover {
+    background: rgba(120, 170, 255, 0.28);
+}
+.trainStatus {
+    flex-basis: 100%;
+    color: #9aa6a0;
+    font-size: 12px;
+    min-height: 16px;
+}
+.trainMain {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 28px;
+    align-items: flex-start;
+}
+.trainCol {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.trainColHead {
+    color: #9aa6a0;
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+.trainChart {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 5px;
+    padding: 4px;
+}
+.trainCaption {
+    font-family: "Coda", monospace;
+    font-size: 12px;
+    color: #cfe3ff;
+    font-variant-numeric: tabular-nums;
+}
+.trainActions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 6px;
+}
+.trainAction {
+    font-family: "Chakra Petch", sans-serif;
+    letter-spacing: 0.5px;
+    background: rgba(0, 0, 0, 0.5);
+    color: #e6ebe8;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 4px;
+    padding: 4px 12px;
+    cursor: pointer;
+}
+.trainAction:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.1);
+}
+.trainAction:disabled {
+    opacity: 0.4;
+    cursor: default;
 }
 
 /* History dashboard (HistoryPanel) — right intel column: per metric, live ENL/RES value + sparkline. */
