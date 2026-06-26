@@ -92,8 +92,11 @@ object HackFx {
             val pivot = kids[i]
             if (pivot.userData.isRodPivot == true) {
                 val ang = pivot.userData.baseAngle as Double
+                // Splay scales with the reso's charge: full energy → full tilt, half → half, dead → none
+                // (the centrifuge only flings a rod with energy in it). Default to full for legacy/demo groups.
+                val energy = (pivot.userData.energyFraction as? Double) ?: 1.0
                 // Joint at the rod top → negative angle swings the loose bottom radially outward.
-                pivot.setRotationFromAxisAngle(Three.Vector3(-sin(ang), cos(ang), 0.0), -tilt)
+                pivot.setRotationFromAxisAngle(Three.Vector3(-sin(ang), cos(ang), 0.0), -tilt * energy)
             }
         }
     }

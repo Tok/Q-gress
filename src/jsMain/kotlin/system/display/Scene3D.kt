@@ -1049,6 +1049,7 @@ object Scene3D {
                 pivot.asDynamic().position.set(ox, oy, rodLen) // joint at the rod top
                 pivot.asDynamic().userData.isRodPivot = true
                 pivot.asDynamic().userData.baseAngle = ang
+                pivot.asDynamic().userData.energyFraction = health // hack splay scales with charge (empty/dead → none)
                 pivot.asDynamic().userData.targetX = ox
                 pivot.asDynamic().userData.targetY = oy
                 // If just deployed, fly the rod in from the agent's position (DeployFx lerps + grows it).
@@ -1092,15 +1093,24 @@ object Scene3D {
                 pivot.asDynamic().add(topRing)
                 group.asDynamic().add(pivot)
             } else {
-                // Empty slot: a bare grommet sits flat on the collar (nothing to swing).
-                val ring = Three.Mesh(resoRingGeo, Materials.rubber())
-                ring.asDynamic().position.set(ox, oy, 0.0)
-                group.asDynamic().add(ring)
+                addEmptySlotRings(group, ox, oy, rodLen)
             }
         }
         group.asDynamic().position.set(x, y, gz + poleH * RESO_COLLAR_FRAC)
         parent.add(group)
         return group
+    }
+
+    // Empty slot: bare grommets at BOTH the lower (collar) and upper (rod-top) heights — like a filled slot's
+    // two o-rings but with no rod between them. Added straight to the group (not a pivot), so a hack spins them
+    // around the pole but they never tilt out (nothing to swing).
+    private fun addEmptySlotRings(group: dynamic, ox: Double, oy: Double, rodLen: Double) {
+        val lower = Three.Mesh(resoRingGeo, Materials.rubber())
+        lower.asDynamic().position.set(ox, oy, 0.0)
+        group.asDynamic().add(lower)
+        val upper = Three.Mesh(resoRingGeo, Materials.rubber())
+        upper.asDynamic().position.set(ox, oy, rodLen)
+        group.asDynamic().add(upper)
     }
 
     /**
