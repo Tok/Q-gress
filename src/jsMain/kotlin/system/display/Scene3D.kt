@@ -226,6 +226,10 @@ object Scene3D {
     private val cubeGeo: dynamic by lazy {
         Three.BoxGeometry(TOP_R * MOD_R_FRAC * 1.1, TOP_R * MOD_R_FRAC * 1.1, TOP_R * MOD_R_FRAC * 1.1)
     } // link amp
+    private val multihackGeo: dynamic by lazy {
+        // A hollow square ring: a torus with a 4-sided cross-section (radialSeg 4) and 4 corners (tubularSeg 4).
+        Three.TorusGeometry(TOP_R * MOD_R_FRAC * 0.95, TOP_R * MOD_R_FRAC * 0.28, 4, 4)
+    } // multi-hack
     private val shieldGeo: dynamic by lazy { Three.SphereGeometry(TOP_R * PHI, 24, 18) } // shield bubble at φ× the orb
     private val gasketGeo: dynamic by lazy { Three.TorusGeometry(POLE_R * 1.15, POLE_R * 0.4, 10, 20) } // rubber donut
     private val linkGeo: dynamic by lazy { Three.CylinderGeometry(LINK_R, LINK_R, 1.0, 8) } // unit pipe (scaled to length)
@@ -1197,6 +1201,7 @@ object Scene3D {
         ModType.SHIELD -> dodecaGeo
         ModType.HEAT_SINK -> pentaGeo
         ModType.LINK_AMP -> cubeGeo
+        ModType.MULTIHACK -> multihackGeo
     }
 
     /** Rise the pole + grow the orb from the ground for the build-in animation ([g] = 0→1). */

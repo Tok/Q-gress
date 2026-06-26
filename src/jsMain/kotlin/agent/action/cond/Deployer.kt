@@ -6,6 +6,7 @@ import agent.action.ActionItem
 import config.Dim
 import items.deployable.HeatSink
 import items.deployable.Mod
+import items.deployable.Multihack
 import items.deployable.Resonator
 import items.deployable.Shield
 import items.level.ResonatorLevel
@@ -32,11 +33,18 @@ object Deployer : ConditionalAction {
         return inventoryResos.toSet().any { canDeployReso(it, ownedInPortal, agent) }
     }
 
-    // The best deployable mod the agent carries (shields before heat sinks; link amps are inactive).
+    // The best deployable mod the agent carries (shields first, then heat sinks, then multi-hacks; link amps
+    // are inactive so they're never deployed).
     private fun deployableMod(agent: Agent): Mod? = agent.inventory.items
         .filterIsInstance<Mod>()
-        .filter { it is Shield || it is HeatSink }
-        .minByOrNull { if (it is Shield) 0 else 1 }
+        .filter { it is Shield || it is HeatSink || it is Multihack }
+        .minByOrNull {
+            when (it) {
+                is Shield -> 0
+                is HeatSink -> 1
+                else -> 2
+            }
+        }
 
     private fun canDeployMod(agent: Agent): Boolean =
         agent.actionPortal.isFriendlyTo(agent) && agent.actionPortal.hasFreeModSlot() && deployableMod(agent) != null

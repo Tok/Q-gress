@@ -13,6 +13,7 @@ import items.UltraStrike
 import items.XmpBurster
 import items.deployable.HeatSink
 import items.deployable.Mod
+import items.deployable.Multihack
 import items.deployable.Resonator
 import items.deployable.Shield
 import items.deployable.Virus
@@ -22,6 +23,7 @@ import items.level.ResonatorLevel
 import items.level.UltraStrikeLevel
 import items.level.XmpLevel
 import items.types.HeatSinkType
+import items.types.MultihackType
 import items.types.ShieldType
 import items.types.VirusType
 import system.Com
@@ -145,6 +147,7 @@ data class Portal(
     private fun modCost(mod: Mod): Int = when (mod) {
         is Shield -> mod.type.deployCostXm
         is HeatSink -> mod.type.deployCostXm
+        is Multihack -> mod.type.deployCostXm
         else -> 0
     }
 
@@ -277,6 +280,7 @@ data class Portal(
         newStuff.addAll(obtainUltraStrikes(hacker, level))
         newStuff.addAll(obtainShields(hacker))
         newStuff.addAll(obtainHeatSinks(hacker))
+        newStuff.addAll(obtainMultihacks(hacker))
         newStuff.addAll(obtainVirus(hacker))
         newStuff.addAll(obtainPowerCubes(level, hacker))
         newStuff.add(PortalKey.tryHack(this, hacker))
@@ -352,6 +356,16 @@ data class Portal(
         return stuff
     }
 
+    private fun obtainMultihacks(hacker: Agent): List<QgressItem> {
+        val stuff = mutableListOf<QgressItem>()
+        MultihackType.values().forEach {
+            if (Util.random() < DropRates.multihackChance.getValue(it)) {
+                stuff.add(Multihack(it, hacker))
+            }
+        }
+        return stuff
+    }
+
     private fun obtainPowerCubes(level: Int, hacker: Agent): List<QgressItem> {
         val stuff = mutableListOf<QgressItem>()
         Quality.values().map { quality ->
@@ -372,6 +386,9 @@ data class Portal(
         }
         return stuff
     }
+
+    /** Hacks allowed before burnout: the base [MAX_HACKS] plus any deployed multi-hacks' bonus. */
+    private fun maxHacks(): Int = MAX_HACKS + Multihack.additionalHacks(mods.values)
 
     private fun handleCooldown(hacker: Agent, readOnly: Boolean): Cooldown {
         // a result of NONE should add a the ticknumber to the list of the last hacks
@@ -404,7 +421,7 @@ data class Portal(
             Cooldown.NONE
         } else {
             val agentsLastHacks: MutableList<Int> = lastHacks.getValue(key)
-            if (agentsLastHacks.count() < MAX_HACKS) {
+            if (agentsLastHacks.count() < maxHacks()) {
                 cool(agentsLastHacks, World.tick)
             } else {
                 burn(agentsLastHacks, World.tick)

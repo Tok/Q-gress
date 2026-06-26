@@ -73,6 +73,9 @@ Functional core / imperative shell, properly. Do it module-by-module behind phas
 - [ ] As more of the core lands in `commonMain` (phase B), drive coverage toward the CLAUDE.md target
   (selection/balance logic near 100%) and backfill whatever the report shows uncovered (effects/shell stay
   Node-side).
+- [ ] **Hook up Codecov via the GitHub pipeline** (at the *end* of the refactor) — emit `koverXmlReport` in a
+  CI workflow and upload to Codecov for a coverage badge + PR coverage diffs. Keeps the `jvm()`/Kover work
+  visible and guards against coverage regressions on the shared core.
 
 ### Phase D — Profiling & optimization (last)
 Only once we're comfortable with structure + coverage. **Baseline first, then optimize, guarded by the net:**

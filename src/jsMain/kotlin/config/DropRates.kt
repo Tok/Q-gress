@@ -1,6 +1,7 @@
 package config
 
 import items.types.HeatSinkType
+import items.types.MultihackType
 import items.types.ShieldType
 import items.types.VirusType
 
@@ -34,6 +35,13 @@ object DropRates {
         HeatSinkType.COMMON to 10.0 / 100,
         HeatSinkType.RARE to 10.0 / 800,
         HeatSinkType.VERY_RARE to 10.0 / 2000,
+    )
+
+    /** Per-multi-hack-type drop chance (rarer = lower), mirroring the heat-sink scale. */
+    val multihackChance: MutableMap<MultihackType, Double> = mutableMapOf(
+        MultihackType.COMMON to 10.0 / 100,
+        MultihackType.RARE to 10.0 / 800,
+        MultihackType.VERY_RARE to 10.0 / 2000,
     )
 
     /** Per-virus drop chance per hack (ADA / JARVIS); defaults from `1 / VirusType.roll`. */

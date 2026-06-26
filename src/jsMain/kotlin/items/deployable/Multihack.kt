@@ -2,27 +2,26 @@ package items.deployable
 
 import agent.Agent
 import items.types.MultihackType
-import portal.ModSlot
-import portal.Portal
+import items.types.Rarity
 
-data class Multihack(val type: MultihackType, val slot: ModSlot?, val owner: Agent) : DeployableItem {
-    fun isDeployed() = slot != null
-    fun deploy(portal: Portal) {
-        console.info("Deploying $this to portal $portal")
-    }
-
+/** A multi-hack portal mod: raises the hacks-before-burnout limit (see [additionalHacks] / Portal.maxHacks). */
+data class Multihack(val type: MultihackType, val owner: Agent) : Mod {
+    override val rarity: Rarity get() = type.rarity
+    override val abbr: String get() = type.abbr
+    override fun modType() = ModType.MULTIHACK
     override fun toString() = type.abbr
     override fun getOwnerId(): String = owner.key()
-    override fun getLevel(): Int = -1 // TODO
+    override fun getLevel(): Int = type.level
 
     companion object {
-        fun calculateImprovedBurnout(allModsInPortal: List<DeployableItem>): Double {
-            val multihacks = allModsInPortal.filter { it is Multihack }.map { it as Multihack }.sortedBy { it.type.order }
-            val first = multihacks.first().type.additionalHacks
-            val second = multihacks[1].type.additionalHacks * 0.5
-            val third = multihacks[2].type.additionalHacks * 0.5
-            val fourth = multihacks[3].type.additionalHacks * 0.5
-            return first + second + third + fourth
+        /** Extra hacks-before-burnout from every multi-hack deployed on a portal: the rarest counts at full
+         *  effect, each additional one at half (authentic Ingress). 0 when none are deployed. */
+        fun additionalHacks(mods: Collection<Mod>): Int {
+            val multihacks = mods.filterIsInstance<Multihack>().sortedByDescending { it.type.additionalHacks }
+            if (multihacks.isEmpty()) return 0
+            val full = multihacks.first().type.additionalHacks
+            val halved = multihacks.drop(1).sumOf { it.type.additionalHacks } / 2
+            return full + halved
         }
     }
 }

@@ -3,7 +3,7 @@ package items.deployable
 import items.types.Rarity
 
 /** The kinds of portal mod (each renders with its own shape; see Scene3D.buildMods). */
-enum class ModType { SHIELD, HEAT_SINK, LINK_AMP }
+enum class ModType { SHIELD, HEAT_SINK, LINK_AMP, MULTIHACK }
 
 /**
  * A portal mod — a slot item (shield / heat sink / link amp). Portals have 4 mod slots; mods are
