@@ -1107,10 +1107,10 @@ object Scene3D {
     private fun addEmptySlotRings(group: dynamic, ox: Double, oy: Double, rodLen: Double) {
         val lower = Three.Mesh(resoRingGeo, Materials.rubber())
         lower.asDynamic().position.set(ox, oy, 0.0)
-        group.asDynamic().add(lower)
+        group.add(lower) // group is already dynamic here — no asDynamic()
         val upper = Three.Mesh(resoRingGeo, Materials.rubber())
         upper.asDynamic().position.set(ox, oy, rodLen)
-        group.asDynamic().add(upper)
+        group.add(upper)
     }
 
     /**
