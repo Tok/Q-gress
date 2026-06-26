@@ -14,12 +14,12 @@ import util.data.Pos
  * deployment range — covers both frozen-in-place and back-and-forth looping (start ≈ end).
  */
 object StuckTracker {
-    private const val WINDOW = 150 // position samples kept per entity (one per tick)
-    private const val MIN_SAMPLES = 120 // need a near-full window before judging
+    private const val WINDOW = 100 // position samples kept per entity (one per tick)
+    private const val MIN_SAMPLES = 60 // judge after this many samples — short so recovery kicks in fast, not after ~2 min
     private val stuckRadius get() = Dim.maxDeploymentRange // net move under this over the window = stuck
 
     /** When flagged stuck, agents/NPCs bee-line straight at their target for this many ticks before re-targeting. */
-    const val RECOVERY_BEELINE_TICKS = 90
+    const val RECOVERY_BEELINE_TICKS = 60
 
     private val history = mutableMapOf<String, ArrayDeque<Pos>>()
     private var stuck: Set<String> = emptySet()

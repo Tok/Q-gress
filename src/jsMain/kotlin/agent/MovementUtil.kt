@@ -69,6 +69,18 @@ object MovementUtil {
     }
 
     fun moveToRandomPortal(agent: Agent): Agent = goToDestinationPortal(agent, World.randomPortal())
+
+    /** The no-action fallback (the no-idle default): head for another portal — prefer the nearest UNCAPTURED
+     *  (discover/capture a neutral) so a no-op agent always makes territorial progress instead of waiting; and
+     *  exclude any portal the agent is already at, so it never re-picks its current spot and idles in place. */
+    fun moveToAnotherPortal(agent: Agent): Agent {
+        val others = World.allPortals.filter { agent.distanceToPortal(it) > Dim.maxDeploymentRange }
+        val pool = others.ifEmpty { World.allPortals }
+        val target = pool.filter { it.isUncaptured() }.minByOrNull { agent.distanceToPortal(it) }
+            ?: pool.minByOrNull { agent.distanceToPortal(it) }
+            ?: World.randomPortal()
+        return goToDestinationPortal(agent, target)
+    }
     /* End All Portals */
 
     private fun goToDestinationPortal(agent: Agent, destination: Portal): Agent {

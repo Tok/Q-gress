@@ -105,7 +105,7 @@ data class Agent(
                 weakEnemyQ to { MovementUtil.attackMostVulnerablePortal(agent) },
                 strongEnemyQ to { MovementUtil.attackMostLinkedPortal(agent) },
             )
-            val newAgent = Util.select(qValues, { MovementUtil.moveToNearestPortal(agent) }).invoke()
+            val newAgent = Util.select(qValues, { MovementUtil.moveToAnotherPortal(agent) }).invoke()
             newAgent.action.start(ActionItem.MOVE)
             return newAgent
         }

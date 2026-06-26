@@ -47,9 +47,9 @@ class StuckTrackerTest {
 
     @Test
     fun notJudgedBeforeMinSamples() {
-        feed(119) { Pos(100, 100) } // frozen, but below the 120-sample warm-up
+        feed(59) { Pos(100, 100) } // frozen, but below the 60-sample warm-up
         assertFalse(StuckTracker.isStuck(key))
-        StuckTracker.sample(listOf(key to Pos(100, 100))) // 120th sample → now judged
+        StuckTracker.sample(listOf(key to Pos(100, 100))) // 60th sample → now judged
         assertTrue(StuckTracker.isStuck(key))
     }
 

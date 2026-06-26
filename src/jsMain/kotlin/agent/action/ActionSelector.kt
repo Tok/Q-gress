@@ -30,13 +30,16 @@ object ActionSelector {
     // sliders, or 0.1 headless), so this is unchanged from the old inline DOM read.
     fun q(faction: Faction, value: QValue): Double = FactionPolicies.of(faction).weight(value) * value.weight
 
-    private fun default(agent: Agent) = { agent.doNothing() }
-    private fun doAnywhereAction(agent: Agent): Agent = Util.select(actionsForAnywhere(agent), default(agent)).invoke()
-    private fun doNeutralPortalAction(agent: Agent): Agent = Util.select(actionsForNeutralPortals(agent), default(agent)).invoke()
+    // No-idle fallback: when nothing productive is eligible (portal on cooldown, empty inventory, capped
+    // roster), the agent heads off to ANOTHER portal — closing on neutrals to discover/capture them — rather
+    // than waiting. Recruiting stays a weighted option in the lists above; there's always something to do.
+    private fun fallback(agent: Agent) = { agent.moveElsewhere() }
+    private fun doAnywhereAction(agent: Agent): Agent = Util.select(actionsForAnywhere(agent), fallback(agent)).invoke()
+    private fun doNeutralPortalAction(agent: Agent): Agent = Util.select(actionsForNeutralPortals(agent), fallback(agent)).invoke()
 
-    private fun doFriendlyPortalAction(agent: Agent): Agent = Util.select(actionsForFriendlyPortals(agent), default(agent)).invoke()
+    private fun doFriendlyPortalAction(agent: Agent): Agent = Util.select(actionsForFriendlyPortals(agent), fallback(agent)).invoke()
 
-    private fun doEnemyPortalAction(agent: Agent): Agent = Util.select(actionsForEnemyPortals(agent), default(agent)).invoke()
+    private fun doEnemyPortalAction(agent: Agent): Agent = Util.select(actionsForEnemyPortals(agent), fallback(agent)).invoke()
 
     private fun actionsForAnywhere(agent: Agent): List<Pair<Double, () -> Agent>> {
         val moveElsewhereQ = q(agent.faction, QActions.MOVE_ELSEWHERE)

@@ -19,7 +19,7 @@ enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>) {
 
     companion object {
         private const val numberOfCheckpoints = 35
-        private fun isUpdateStuck(tick: Int) = tick % 60 == 0
+        private fun isUpdateStuck(tick: Int) = tick % 20 == 0 // react quickly once flagged (not once a minute)
         private fun isNewCheckpoint(tick: Int) = tick % Config.ticksPerCheckpoint == 0
         private fun isNewCycle(tick: Int) = tick % Config.ticksPerCycle == 0
         fun updateCheckpoints(tick: Int, enlMu: Int, resMu: Int) {
