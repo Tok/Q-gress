@@ -545,17 +545,25 @@ html, body {
     margin: 8px 0 2px;
 }
 .brainsPre {
-    font-size: 11px;
+    font-size: 10px;
+    line-height: 1.3;
     color: #cfd6d2;
     background: rgba(0, 0, 0, 0.35);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 4px;
-    padding: 6px;
+    padding: 5px;
     margin: 0;
-    max-height: 120px;
+    max-height: 64px; /* compact — the raw I/O is secondary to the parsed "chose" headline */
     overflow: auto;
     white-space: pre-wrap;
     word-break: break-word;
+}
+.brainsChose {
+    font-size: 15px;
+    font-weight: bold;
+    color: #cfe3ff;
+    line-height: 1.3;
+    margin: 2px 0 8px;
 }
 .brainsHelp {
     margin: 6px 0;

@@ -38,6 +38,7 @@ object BrainsPanel {
     private val cards = mutableMapOf<Faction, HTMLElement>()
     private val lastKey = mutableMapOf<Faction, String>()
     private var helpOpen = false // collapsible WebGPU-help state, preserved across card rebuilds
+    private var rawOpen = false // collapsible raw prompt/reply state, preserved across card rebuilds
 
     fun update() {
         if (!ensure()) return
@@ -150,31 +151,44 @@ object BrainsPanel {
 
     private fun renderLlm(card: HTMLElement, policy: LlmPolicy) {
         card.appendChild(driverTitle("LLM (experimental)"))
-        card.appendChild(p("An in-browser LLM is asked each checkpoint for a slider vector (heuristic fallback until it replies)."))
         val client = policy.client as? WebLlmClient
+        val ready = client?.status == "ready"
         card.appendChild(kv("Model", client?.modelId ?: "mock"))
-        card.appendChild(kv("Backend", "WebLLM (MLC) · WebGPU, in-browser"))
         card.appendChild(kv("Status", client?.status ?: "mock"))
-        // GPU capability readout (one line) — the adapter's max-buffer limits are the closest thing to a VRAM
-        // gauge the web exposes. The verbose troubleshooting lives in the collapsible help below.
         card.appendChild(kv("GPU", WebLlmClient.gpuReport()))
-        card.appendChild(webGpuHelp())
-        card.appendChild(el("div", "brainsKey").also { it.textContent = "prompt" })
-        card.appendChild(pre(policy.lastPrompt))
-        card.appendChild(el("div", "brainsKey").also { it.textContent = "reply" })
-        card.appendChild(pre(policy.lastReply.ifBlank { "(warming up — heuristic fallback meanwhile)" }))
+        // The headline once it's running: what the LLM chose this checkpoint (big + bold = the main readout).
         val parsed = LlmParser.parse(policy.lastReply)
-        card.appendChild(
-            kv(
-                "Chose",
-                if (parsed == null) {
-                    "unparsed → heuristic fallback"
-                } else {
-                    SliderVector.ORDER.sortedByDescending { parsed[it] }.take(3)
-                        .joinToString(", ") { "${it.description} ${(parsed[it] * 100).toInt()}%" }
-                },
-            ),
-        )
+        val chose = when {
+            parsed != null -> SliderVector.ORDER.sortedByDescending { parsed[it] }
+                .take(3).joinToString(", ") { "${it.description} ${(parsed[it] * 100).toInt()}%" }
+            ready -> "(reply not parseable — heuristic fallback)"
+            else -> "warming up — heuristic fallback meanwhile…"
+        }
+        card.appendChild(el("div", "brainsKey").also { it.textContent = "chose" })
+        card.appendChild(el("div", "brainsChose").also { it.textContent = chose })
+        // Raw prompt/reply tucked into a compact collapsed disclosure so they don't dominate the card.
+        card.appendChild(rawIo(policy))
+        // Setup help is only useful until it actually runs — drop it once the model is ready.
+        if (!ready) card.appendChild(webGpuHelp())
+    }
+
+    private fun rawIo(policy: LlmPolicy): HTMLElement {
+        val details = document.createElement("details") as HTMLElement
+        details.className = "brainsHelp"
+        details.asDynamic().open = rawOpen
+        details.asDynamic().ontoggle = {
+            rawOpen = details.asDynamic().open as Boolean
+            null
+        }
+        val summary = document.createElement("summary") as HTMLElement
+        summary.className = "brainsHelpSummary"
+        summary.textContent = "raw prompt / reply"
+        details.appendChild(summary)
+        details.appendChild(el("div", "brainsKey").also { it.textContent = "prompt" })
+        details.appendChild(pre(policy.lastPrompt.ifBlank { "(none yet)" }))
+        details.appendChild(el("div", "brainsKey").also { it.textContent = "reply" })
+        details.appendChild(pre(policy.lastReply.ifBlank { "(none yet)" }))
+        return details
     }
 
     // Collapsible WebGPU troubleshooting — tucked away so the LLM card isn't a wall of help text. The chrome://
