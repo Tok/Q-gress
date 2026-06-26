@@ -56,7 +56,7 @@ object PassabilityOverlay {
         matParams.map = texture
         matParams.transparent = true
         matParams.depthWrite = false
-        matParams.depthTest = true // draped on the terrain now (per-vertex height), so let the ground occlude it
+        matParams.depthTest = false // always draw it on top (no terrain mesh to depth-test against); drapes via geometry
         val mesh = Three.Mesh(terrainGeometry(), Three.MeshBasicMaterial(matParams))
         mesh.asDynamic().position.set(0.0, 0.0, 0.0) // height is baked into the vertices (groundZ + OVERLAY_Z)
         return mesh

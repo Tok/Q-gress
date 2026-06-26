@@ -17,8 +17,8 @@ import kotlin.math.sqrt
  *
  * Driven by [sync] from `Scene3D.refreshNameTicker` (one [Ring] per portal, keyed by id; built once per name,
  * just re-positioned each frame as a portal levels up / the terrain resamples; removed when a portal is gone).
- * [enabled] gates the whole set — **on by default in-game** (the menu "Portal names" toggle), and the title
- * turns it **off** (`PortalNameTicker.enabled = false`). Latin names spin CW; RTL scripts (Arabic / Hebrew)
+ * [enabled] gates the whole set — **off by default**, opt-in via the menu "Portal names" toggle (the title
+ * keeps it off too). Latin names spin CW; RTL scripts (Arabic / Hebrew)
  * are suppressed for now — Coda can't draw them — until an RTL-capable font is added (see [isRtl]).
  */
 object PortalNameTicker {
@@ -39,8 +39,8 @@ object PortalNameTicker {
     // Right-to-left scripts (suppressed for now): Hebrew, Arabic + its supplements/presentation forms.
     private val RTL_RANGES = listOf(0x0590..0x05FF, 0x0600..0x06FF, 0x0750..0x077F, 0x08A0..0x08FF, 0xFB1D..0xFEFF)
 
-    /** Master gate: on by default (in-game); the title turns it off and the menu toggle drives it. */
-    var enabled = true
+    /** Master gate: OFF by default (opt-in via the menu "Portal names" toggle); the title keeps it off too. */
+    var enabled = false
         private set
 
     private var scene: dynamic = null

@@ -730,7 +730,7 @@ object HtmlUtil {
         val dmgNums = createMenuCheckbox("damageNumbersToggle", "Damage numbers") { DamageNumberFx.enabled = it }
         (dmgNums.firstChild as? HTMLInputElement)?.checked = DamageNumberFx.enabled
         menu.append(dmgNums)
-        // 3D portal-name rings on/off (on by default in-game; the title keeps them off).
+        // 3D portal-name rings on/off (off by default; opt-in here).
         val portalNames = createMenuCheckbox("portalNamesToggle", "Portal names") { PortalNameTicker.setEnabled(it) }
         (portalNames.firstChild as? HTMLInputElement)?.checked = PortalNameTicker.enabled
         menu.append(portalNames)
