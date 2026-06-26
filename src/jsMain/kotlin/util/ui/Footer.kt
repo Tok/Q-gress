@@ -23,6 +23,9 @@ object Footer {
     private var chevron: HTMLElement? = null
     private var maximize: HTMLElement? = null
 
+    /** Whether the footer is currently maximized + visible — panels can render fuller detail when it is. */
+    fun isExpanded() = expanded && !collapsed
+
     /** The content element for a footer tab ("log" / "agents" / "ai"); builds the footer on first call. */
     fun tab(id: String): HTMLElement {
         build()

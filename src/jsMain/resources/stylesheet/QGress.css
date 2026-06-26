@@ -180,8 +180,19 @@ html, body {
 .taHeadCell {
     color: #cfd6d2;
     font-weight: bold;
-    padding: 0 6px 3px;
+    padding: 2px 6px 3px;
     text-align: right;
+    /* Stay visible while the (expanded) body scrolls through every agent. */
+    position: sticky;
+    top: 0;
+    background: var(--ui-rubber, rgba(10, 11, 13, 0.92));
+}
+.taSortable {
+    cursor: pointer;
+    user-select: none;
+}
+.taSortable:hover {
+    color: #ffffff;
 }
 .taRow td {
     padding: 1px 6px;
