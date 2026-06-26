@@ -89,6 +89,7 @@ data class ActionItem(val text: String, val durationSeconds: Int, val qName: Str
 
         private fun line(ctx: Ctx, a: Line) = DrawUtil.drawLine(ctx, a, Colors.black, 0.7)
         private fun circ(ctx: Ctx, c: Circle) = DrawUtil.drawCircle(ctx, c, Colors.black, 1.0)
+        private fun dot(ctx: Ctx, c: Pos, r: Double) = DrawUtil.drawCircle(ctx, Circle(c, r), Colors.black, 1.0, Colors.black)
 
         // The per-action glyph drawn over the agent disc (split out of drawTemplate for complexity).
         private fun drawGlyph(ctx: Ctx, item: ActionItem, w: Int, rr: Int) {
@@ -97,18 +98,20 @@ data class ActionItem(val text: String, val durationSeconds: Int, val qName: Str
             val off = 2
             when (item) {
                 MOVE -> circ(ctx, Circle(pos, rr - 2.0))
-                EXPLORE -> {
-                    line(ctx, Line(Pos(off, off), Pos(w - off, h - off)))
-                    line(ctx, Line(Pos(off, h - off), Pos(w - off, off)))
-                    line(ctx, Line(Pos(rr, 0), Pos(rr, h)))
-                    line(ctx, Line(Pos(0, rr), Pos(w, rr)))
-                    circ(ctx, Circle(pos, rr - 2.0))
-                }
+                // Wander (the no-idle roam, reusing the retired EXPLORE action): a single light dot — minimal,
+                // clearly "just ambling", not a heavy action glyph.
+                EXPLORE -> dot(ctx, pos, 1.8)
                 RECRUIT -> {
                     line(ctx, Line(Pos(rr, 0), Pos(rr, h)))
                     line(ctx, Line(Pos(0, rr), Pos(w, rr)))
                 }
-                ATTACK -> line(ctx, Line(Pos(rr, 0), Pos(rr, h)))
+                // ATTACK is an "X" and LINK a single line: in 2D they were the same line rotated 90°, but on the
+                // 3D pill (free billboard orientation) you can't tell horizontal from vertical — so make them
+                // shape-distinct. The X reuses the diagonals freed from the old EXPLORE glyph.
+                ATTACK -> {
+                    line(ctx, Line(Pos(off, off), Pos(w - off, h - off)))
+                    line(ctx, Line(Pos(off, h - off), Pos(w - off, off)))
+                }
                 LINK -> line(ctx, Line(Pos(0, rr), Pos(w, rr)))
                 DEPLOY -> {
                     line(ctx, Line(Pos(0, rr - 1), Pos(w, rr - 1)))
