@@ -214,7 +214,13 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
   matches never disturb the live game — which **resumes untouched** when training ends. The winner can be
   **saved** to `NetStore` (becomes the "Neural net" driver's net, surviving reload) or **installed** straight as
   the ENL/RES driver. In-browser defaults are deliberately small (serious training stays headless via
-  `Evolution.train`).
+  `Evolution.train`). A **Clean eval** toggle runs matches with the anti-runaway mechanics off (`MatchSetup.cleanEval`
+  → `comebackMax`/`dominanceDecay`/`leaderDistraction` = 0, restored after) for a cleaner training gradient.
+- **TRAIN tab — leaderboard** (`util/ui/LeaderboardPanel`, PLAN Phase 6): a second TRAIN-tab section ranks AI
+  drivers head-to-head on the live map. Pick entrants (Baseline / Heuristic / Neural net), **Run ladder**, and a
+  resumable `Tournament.Session` plays a round-robin **one match per `setTimeout`**, showing the live `Standing`
+  table (W-L-T + avg MU margin, sorted). Both eval tools share the **`HeadlessRun`** harness (snapshot + tick-pause
+  + `Fx` no-op) so they never disturb the live game.
 - **Portals are discovered, not placed**: manual portal **placement** and **deletion** are removed
   from the real game (the map click only selects/deselects; the Inspector has no Remove button). The
   `/#demo` sandbox keeps LMB-place / RMB-shatter for showcasing.

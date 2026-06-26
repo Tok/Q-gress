@@ -7,9 +7,10 @@ Branch: `develop` · Owner: @zirteq
 [docs/LLM.md](docs/LLM.md). Completed work lives in the **git log**, not here — keep this file to the point.
 
 ## ★ Next session — start here
-1. **Finish Phase 6** — trainer + leaderboard shipped. Remaining: **grid fixtures** (commit serialized grids so
-   headless runs need no live tiles), **per-side NetArch pick in onboarding**, and the **clean-eval flag**. See
-   *Phase 6*.
+1. **Phase 6 is effectively done** (substrate + trainer + leaderboard + clean-eval). Two loose ends remain, both
+   gated on something external: **grid fixtures** need a one-time `?debug=capture` pass in-browser (manual), and
+   the **per-side NetArch pick in onboarding** is blocked on a trained-net-per-arch library (icebox). Pick a new
+   thread from *3D / rendering*, *UI*, or *Gameplay mechanics*, or do the manual capture.
 
 ## ⚑ Verify in-browser first (`./start.sh`)
 Built headless recently, not yet confirmed on screen — eyeball these, then move on:
@@ -131,13 +132,14 @@ team effort to layer fields across the cycle. The net/LLM only re-tunes the 17 s
 it does **not** replace per-agent `ActionSelector`.
 
 Remaining:
-- [ ] **Grid fixtures** — serialize a built `Grid` (+ portal seeds) to committed JSON so headless matches
-  reproduce without live tiles / `readPixels`. `GridFixture` does the RLE serialization; the real-tile fixtures
-  still need the `?debug=capture` pass.
-- [ ] **Clean-eval flag** (nice-to-have) — training with the anti-runaway mechanics OFF (`dominanceDecay`/
-  `leaderDistraction`/`comebackMax` = 0) gives a slightly cleaner gradient; a flag on `Evolution`/`MatchSetup`.
-- [ ] **Per-side net-architecture / variant pick in onboarding** — surface `NetArch` choices up front (feeds
-  the trainer + the leaderboard's variant matchups).
+- [ ] **Grid fixtures** — infra is built (`GridFixture` RLE + `GridCapture` ?debug=capture + the
+  `PresetConnectivityTest` audit). Only the committed `PresetFixtures.kt` is missing: run `?debug=capture` once
+  in-browser, drop the download into `src/jsTest/kotlin/util/`, commit. (The trainer/leaderboard already run on
+  the live `World.grid`, so this only feeds the offline connectivity audit.)
+- [x] ~~Clean-eval flag~~ — shipped (`MatchSetup.cleanEval`, restored via try/finally; "Clean eval" toggle in TRAIN).
+- [ ] **Per-side net-architecture / variant pick in onboarding** — *blocked*: only meaningful once there's a
+  library of trained nets per `NetArch` (a net driver of an untrained arch just plays randomly). Fold into the
+  icebox "download/upload + saved-net library" item below.
 - [ ] **icebox — download / upload trained nets.** `GenomeIO` JSON-ables a genome+arch (~16 KB at 16×16): a
   "download champion" (Blob → file) + "load from file/paste", and a small saved-net library — share/version
   nets outside `localStorage`.
