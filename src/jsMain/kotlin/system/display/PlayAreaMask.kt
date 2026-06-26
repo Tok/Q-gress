@@ -25,10 +25,13 @@ object PlayAreaMask {
             mesh.asDynamic().position.set(cx, cy, z0 + height / 2.0)
             group.add(mesh)
         }
-        wall(2.0 * hx + thickness, thickness, 0.0, hy) // north
-        wall(2.0 * hx + thickness, thickness, 0.0, -hy) // south
-        wall(thickness, 2.0 * hy, hx, 0.0) // east
-        wall(thickness, 2.0 * hy, -hx, 0.0) // west
+        // Walls sit JUST OUTSIDE the play boundary (inner face at ±hx/±hy), so the playable rect is clear of
+        // the wall and the boundary line marks its inner edge. Long walls overhang by a thickness to meet corners.
+        val out = thickness / 2.0
+        wall(2.0 * hx + 2.0 * thickness, thickness, 0.0, hy + out) // north
+        wall(2.0 * hx + 2.0 * thickness, thickness, 0.0, -(hy + out)) // south
+        wall(thickness, 2.0 * hy, hx + out, 0.0) // east
+        wall(thickness, 2.0 * hy, -(hx + out), 0.0) // west
     }
 
     private fun buildWallMaterial(): dynamic {
@@ -93,14 +96,15 @@ object PlayAreaMask {
         group.add(mask)
     }
 
-    /** A solid annular wall (real thickness, extruded vertically) standing from [base] up by [height]. */
+    /** A solid annular wall (real thickness, extruded vertically) standing from [base] up by [height]. The wall
+     *  sits JUST OUTSIDE [hx]×[hy]: its INNER face is the play radius and it extends a thickness outward. */
     fun buildRoundWall(group: dynamic, hx: Double, hy: Double, base: Double, height: Double) {
         if (wallMat == null) wallMat = buildWallMaterial()
         val thick = minOf(hx, hy) * WALL_THICK_FRAC
         val shape = Three.Shape()
-        shape.asDynamic().absellipse(0.0, 0.0, hx, hy, 0.0, 2.0 * PI) // outer wall
+        shape.asDynamic().absellipse(0.0, 0.0, hx + thick, hy + thick, 0.0, 2.0 * PI) // outer wall (boundary + thickness)
         val hole = Three.Path()
-        hole.asDynamic().absellipse(0.0, 0.0, hx - thick, hy - thick, 0.0, 2.0 * PI) // inner face → thickness
+        hole.asDynamic().absellipse(0.0, 0.0, hx, hy, 0.0, 2.0 * PI) // inner face = the play radius
         shape.asDynamic().holes.push(hole)
         val opts: dynamic = js("({ bevelEnabled: false })")
         opts.depth = height
@@ -113,7 +117,7 @@ object PlayAreaMask {
         if (ringMat == null) ringMat = buildRingMaterial()
         val r = minOf(hx, hy)
         listOf(base, base + height).forEach { z ->
-            val ring = Three.Mesh(Three.RingGeometry(r - thick, r, 64), ringMat)
+            val ring = Three.Mesh(Three.RingGeometry(r, r + thick, 64), ringMat)
             ring.asDynamic().scale.set(hx / r, hy / r, 1.0) // back to the ellipse aspect (1,1 for a circle)
             ring.asDynamic().position.set(0.0, 0.0, z)
             group.add(ring)

@@ -406,20 +406,35 @@ object Scene3D {
         val hy = sceneY(Pos(0, 0))
         val (gMin, gMax) = groundZRange()
         val wallH = (gMax - gMin) + WALL_HEIGHT // span the terrain range so the wall clears it everywhere
+        // The boundary wall sits JUST OUTSIDE the play area now: its INNER edge is the actual radius (the old
+        // outer edge), and it extends a thickness further out. So the white lines are the radius (inner) + the
+        // wall's outer rim, and the dim mask starts beyond the wall.
         if (Sim.roundField) {
             val r = minOf(hx, hy) // true circle = the smaller half-extent (matches the grid mask)
-            PlayAreaMask.buildRoundMask(group, r, r, BORDER_Z - 0.05, OUTSIDE_DIM)
-            PlayAreaMask.buildRoundWall(group, r, r, gMin, wallH)
+            val thick = r * PlayAreaMask.WALL_THICK_FRAC
+            PlayAreaMask.buildRoundMask(group, r + thick, r + thick, BORDER_Z - 0.05, OUTSIDE_DIM) // dim beyond the wall
+            PlayAreaMask.buildRoundWall(group, r, r, gMin, wallH) // inner edge = r, extends outward
             val rad = Sim.fieldRadius()
-            group.add(terrainRing(rad)) // outer edge of the boundary wall
-            group.add(terrainRing(rad * (1.0 - PlayAreaMask.WALL_THICK_FRAC))) // inner edge — same white terrain line
+            group.add(terrainRing(rad)) // inner edge = the actual play radius
+            group.add(terrainRing(rad * (1.0 + PlayAreaMask.WALL_THICK_FRAC))) // outer rim of the wall, further out
             return
         }
-        PlayAreaMask.build(group, hx, hy, OUTSIDE_FAR * maxOf(hx, hy), BORDER_Z - 0.05, OUTSIDE_DIM)
+        PlayAreaMask.build(group, hx + WALL_THICK, hy + WALL_THICK, OUTSIDE_FAR * maxOf(hx, hy), BORDER_Z - 0.05, OUTSIDE_DIM)
         PlayAreaMask.buildWalls(group, hx, hy, wallH, WALL_THICK, gMin)
-        val corners = arrayOf(Pos(0, 0), Pos(Sim.width, 0), Pos(Sim.width, Sim.height), Pos(0, Sim.height), Pos(0, 0))
-        val points = corners.map { Three.Vector3(sceneX(it), sceneY(it), groundZ(it) + BORDER_Z) }.toTypedArray()
-        group.add(Three.Line(Three.BufferGeometry().setFromPoints(points), lineMaterial(BORDER_COLOR)))
+        group.add(rectOutline(0.0)) // inner outline = the actual play boundary
+        group.add(rectOutline(WALL_THICK)) // outer rim of the wall, a thickness further out
+    }
+
+    // The rectangular play-area outline, optionally pushed [offset] scene-metres outward from each edge (0 =
+    // the play boundary; WALL_THICK = the wall's outer rim). Each corner sits on the terrain (groundZ).
+    private fun rectOutline(offset: Double): dynamic {
+        val corners = listOf(Pos(0, 0), Pos(Sim.width, 0), Pos(Sim.width, Sim.height), Pos(0, Sim.height), Pos(0, 0))
+        val pts = corners.map { p ->
+            val sx = sceneX(p)
+            val sy = sceneY(p)
+            Three.Vector3(sx + (if (sx >= 0) offset else -offset), sy + (if (sy >= 0) offset else -offset), groundZ(p) + BORDER_Z)
+        }.toTypedArray()
+        return Three.Line(Three.BufferGeometry().setFromPoints(pts), lineMaterial(BORDER_COLOR))
     }
 
     // A white outline circle of sim-radius [rad] around the play-area centre, each point dropped onto the

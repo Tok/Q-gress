@@ -1176,17 +1176,22 @@ html, body {
     margin: 12px auto 4px;
 }
 .driverExperimental {
-    margin: 6px auto 0;
+    margin: 10px auto 0;
     max-width: 560px;
     text-align: left;
 }
 .driverExperimentalLabel {
     display: flex;
     align-items: center;
-    gap: 6px;
+    justify-content: flex-start;
+    gap: 4px;
     cursor: pointer;
     color: #e6ebe8;
     font-size: 13px;
+}
+.driverExperimentalLabel input[type="checkbox"] {
+    margin: 0; /* drop the browser default margin so the text sits right next to the box */
+    flex: 0 0 auto;
 }
 .driverExperimentalText {
     display: inline;

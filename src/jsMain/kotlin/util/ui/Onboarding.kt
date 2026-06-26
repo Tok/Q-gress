@@ -229,21 +229,21 @@ object Onboarding {
             "Set your side to Human to drive it yourself with the tuning sliders."
         screen.appendChild(intro)
         // LLM is hidden by default so new players don't pick the heavy/experimental driver by accident; an
-        // opt-in checkbox reveals it (and rebuilds the grid).
+        // opt-in checkbox (below the grid, just above Next) reveals it and rebuilds the grid.
         val holder = div("driverGridHolder")
         var showLlm = false
         fun rebuild() {
             holder.innerHTML = ""
             holder.appendChild(driverGrid(userFaction, showLlm))
         }
+        screen.appendChild(holder)
+        rebuild()
         screen.appendChild(
             experimentalToggle { on ->
                 showLlm = on
                 rebuild()
             },
         )
-        screen.appendChild(holder)
-        rebuild()
         screen.appendChild(button("Next", "topButton displayFont onboardStart") { onNext() })
     }
 
