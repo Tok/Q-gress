@@ -1175,6 +1175,28 @@ html, body {
     align-items: center;
     margin: 12px auto 4px;
 }
+.driverExperimental {
+    margin: 6px auto 0;
+    max-width: 560px;
+    text-align: left;
+}
+.driverExperimentalLabel {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    color: #e6ebe8;
+    font-size: 13px;
+}
+.driverExperimentalText {
+    display: inline;
+}
+.driverExperimentalNote {
+    color: #9aa6a0;
+    font-size: 11px;
+    margin-top: 2px;
+    line-height: 1.35;
+}
 .driverLabel {
     font-family: "Chakra Petch", sans-serif;
     letter-spacing: 1px;

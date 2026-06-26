@@ -228,16 +228,60 @@ object Onboarding {
         intro.textContent = "Pick a brain for each side — the default is neural net vs neural net (AI vs AI). " +
             "Set your side to Human to drive it yourself with the tuning sliders."
         screen.appendChild(intro)
-        screen.appendChild(driverGrid(userFaction))
+        // LLM is hidden by default so new players don't pick the heavy/experimental driver by accident; an
+        // opt-in checkbox reveals it (and rebuilds the grid).
+        val holder = div("driverGridHolder")
+        var showLlm = false
+        fun rebuild() {
+            holder.innerHTML = ""
+            holder.appendChild(driverGrid(userFaction, showLlm))
+        }
+        screen.appendChild(
+            experimentalToggle { on ->
+                showLlm = on
+                rebuild()
+            },
+        )
+        screen.appendChild(holder)
+        rebuild()
         screen.appendChild(button("Next", "topButton displayFont onboardStart") { onNext() })
     }
 
+    // Opt-in for the experimental in-browser LLM driver — off by default so it isn't an obvious pick.
+    private fun experimentalToggle(onChange: (Boolean) -> Unit): HTMLElement {
+        val row = div("driverExperimental")
+        val label = document.createElement("label") as HTMLElement
+        label.addClass("driverExperimentalLabel")
+        val box = document.createElement("input") as HTMLInputElement
+        box.type = "checkbox"
+        box.checked = false
+        box.onchange = { onChange(box.checked) }
+        label.appendChild(box)
+        label.appendChild(div("driverExperimentalText").also { it.textContent = "Show experimental LLM driver" })
+        row.appendChild(label)
+        row.appendChild(
+            div("driverExperimentalNote").also {
+                it.textContent = "In-browser LLM — experimental. Needs WebGPU (may require experimental Chrome flags, " +
+                    "e.g. enable-unsafe-webgpu) and a capable GPU; it can be slow or unstable."
+            },
+        )
+        return row
+    }
+
     // The driver picker as an aligned grid: a coloured faction label per row, then a column per option
-    // (Human / Heuristic / Neural net / LLM). The opponent's Human cell is left empty so the columns line up.
-    private fun driverGrid(userFaction: Faction): HTMLElement {
+    // (Human / Heuristic / Neural net [/ LLM]). The opponent's Human cell is left empty so columns line up.
+    private fun driverGrid(userFaction: Faction, showLlm: Boolean): HTMLElement {
         val grid = div("driverGrid")
-        val options = listOf("manual" to "Human", "heuristic" to "Heuristic", "net" to "Neural net", "llm" to "LLM")
+        val options = buildList {
+            add("manual" to "Human")
+            add("heuristic" to "Heuristic")
+            add("net" to "Neural net")
+            if (showLlm) add("llm" to "LLM")
+        }
+        grid.style.setProperty("grid-template-columns", "auto repeat(${options.size}, minmax(108px, 1fr))") // visible count
         listOf(userFaction to true, userFaction.enemy() to false).forEach { (faction, isYou) ->
+            // If LLM was picked then hidden again, don't let that stale pick ride the start URL.
+            if (!showLlm && DriverControls.chosen(faction) == "llm") DriverControls.select(faction, DriverControls.DEFAULT)
             grid.appendChild(
                 div("driverLabel").also {
                     it.textContent = (if (isYou) "You · " else "Enemy · ") + faction.abbr
