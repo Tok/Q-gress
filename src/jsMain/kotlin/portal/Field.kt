@@ -3,8 +3,6 @@ package portal
 import World
 import agent.Agent
 import util.data.Line
-import kotlin.math.max
-import kotlin.math.sqrt
 
 data class Field private constructor(val origin: Portal, val primaryAnchor: Portal, val secondaryAnchor: Portal, val owner: Agent) {
     private val idSet: LinkedHashSet<Portal> = linkedSetOf(origin, primaryAnchor, secondaryAnchor)
@@ -15,35 +13,12 @@ data class Field private constructor(val origin: Portal, val primaryAnchor: Port
     fun isConnectedTo(portal: Portal) = idSet.contains(portal)
 
     fun calculateMu(): Int = calculateArea() // FIXME use noise map
-    fun isCoveringPortal(portal: Portal): Boolean {
-        val isPortalPart = isConnectedTo(portal)
-        if (isPortalPart) {
-            return false
-        }
 
-        val dXtoSecondary = portal.x() - secondaryAnchor.x()
-        val dYtoSecondary = portal.y() - secondaryAnchor.y()
-        val dXSecondaryToPrimary = secondaryAnchor.x() - primaryAnchor.x()
-        val dYPrimaryToSecondary = primaryAnchor.y() - secondaryAnchor.y()
-        val d = (dYPrimaryToSecondary * (origin.x() - secondaryAnchor.x())) +
-            (dXSecondaryToPrimary * (origin.y() - secondaryAnchor.y()))
-        val s = (dYPrimaryToSecondary * dXtoSecondary) +
-            (dXSecondaryToPrimary * dYtoSecondary)
-        val t = ((secondaryAnchor.y() - origin.y()) * dXtoSecondary) +
-            ((origin.x() - secondaryAnchor.x()) * dYtoSecondary)
-        if (d < 0) return s < 0 && t < 0 && s + t > d
-        return s > 0 && t > 0 && s + t < d
-    }
+    /** Whether this field's triangle covers [portal] (and [portal] isn't one of its own anchors). */
+    fun isCoveringPortal(portal: Portal): Boolean = !isConnectedTo(portal) &&
+        FieldMath.isInsideTriangle(portal.location, origin.location, primaryAnchor.location, secondaryAnchor.location)
 
-    fun calculateArea(): Int {
-        // https://en.wikipedia.org/wiki/Heron%27s_formula
-        val a = Line(origin.location, primaryAnchor.location).length()
-        val b = Line(origin.location, secondaryAnchor.location).length()
-        val c = Line(primaryAnchor.location, secondaryAnchor.location).length()
-        val s = (a + b + c) / 2 // semiperimeter
-        val area = sqrt(s * (s - a) * (s - b) * (s - c)).toInt()
-        return max(1, area / 100) // FIXME
-    }
+    fun calculateArea(): Int = FieldMath.triangleAreaMu(origin.location, primaryAnchor.location, secondaryAnchor.location)
 
     override fun toString() = calculateArea().toString() + "MU"
 
