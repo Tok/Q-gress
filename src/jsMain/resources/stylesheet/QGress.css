@@ -544,6 +544,115 @@ html, body {
     padding: 12px;
 }
 
+/* TRAIN tab (TrainerPanel) — in-browser neuro-evolution: a config row, a live fitness curve, a champion preview. */
+.trainPanel {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 10px 8px 16px;
+}
+.trainConfig {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 8px 18px;
+}
+.trainField {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+.trainFieldLabel {
+    color: #9aa6a0;
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+.trainInput,
+.trainSelect {
+    background: rgba(0, 0, 0, 0.5);
+    color: #e6ebe8;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 4px;
+    font-family: "Coda", monospace;
+    font-size: 12px;
+    padding: 2px 5px;
+}
+.trainInput {
+    width: 72px;
+}
+.trainRun {
+    font-family: "Chakra Petch", sans-serif;
+    letter-spacing: 1px;
+    background: rgba(120, 170, 255, 0.16);
+    color: #cfe3ff;
+    border: 1px solid rgba(120, 170, 255, 0.5);
+    border-radius: 4px;
+    padding: 5px 16px;
+    cursor: pointer;
+}
+.trainRun:hover {
+    background: rgba(120, 170, 255, 0.28);
+}
+.trainStatus {
+    flex-basis: 100%;
+    color: #9aa6a0;
+    font-size: 12px;
+    min-height: 16px;
+}
+.trainMain {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 28px;
+    align-items: flex-start;
+}
+.trainCol {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.trainColHead {
+    color: #9aa6a0;
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+.trainChart {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 5px;
+    padding: 4px;
+}
+.trainCaption {
+    font-family: "Coda", monospace;
+    font-size: 12px;
+    color: #cfe3ff;
+    font-variant-numeric: tabular-nums;
+}
+.trainActions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 6px;
+}
+.trainAction {
+    font-family: "Chakra Petch", sans-serif;
+    letter-spacing: 0.5px;
+    background: rgba(0, 0, 0, 0.5);
+    color: #e6ebe8;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 4px;
+    padding: 4px 12px;
+    cursor: pointer;
+}
+.trainAction:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.1);
+}
+.trainAction:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
 /* History dashboard (HistoryPanel) — right intel column: per metric, live ENL/RES value + sparkline. */
 .historyPanel {
     order: 0; /* stays fixed at the top of the right column; the inspector sits below it */

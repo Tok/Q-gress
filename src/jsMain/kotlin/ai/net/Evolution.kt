@@ -46,15 +46,49 @@ object Evolution {
         config: EvolutionConfig = EvolutionConfig(),
         opponent: () -> FactionPolicy? = { null },
     ): EvolutionResult {
-        require(config.populationSize >= 1) { "need at least one genome" }
-        require(config.elite in 1..config.populationSize) { "elite must be in 1..populationSize" }
-        val rng = Rng(seed)
-        var population = List(config.populationSize) { randomGenome(config, rng) }
-        var bestGenome = population.first()
-        var bestFitness = Double.NEGATIVE_INFINITY
-        val history = mutableListOf<Double>()
+        val session = Session(grid, seed, config, opponent)
+        while (!session.done) session.step()
+        return session.result()
+    }
 
-        repeat(config.generations) {
+    /**
+     * A resumable training run: one [step] = one generation, so the caller can drive it from a UI loop
+     * (a `setTimeout(…, 0)` per generation) and read progress between steps. [train] is just a `while`
+     * over this. Deterministic given (grid, seed, config): same inputs → same [bestGenome]/[bestFitness].
+     */
+    class Session(
+        private val grid: Grid,
+        private val seed: Int,
+        val config: EvolutionConfig = EvolutionConfig(),
+        private val opponent: () -> FactionPolicy? = { null },
+    ) {
+        private val rng = Rng(seed)
+        private var population: List<DoubleArray>
+        private val history = mutableListOf<Double>()
+
+        var generation: Int = 0
+            private set
+        var bestGenome: DoubleArray
+            private set
+        var bestFitness: Double = Double.NEGATIVE_INFINITY
+            private set
+
+        init {
+            require(config.populationSize >= 1) { "need at least one genome" }
+            require(config.elite in 1..config.populationSize) { "elite must be in 1..populationSize" }
+            population = List(config.populationSize) { randomGenome(config, rng) }
+            bestGenome = population.first()
+        }
+
+        /** True once every generation has run; [step] then throws. */
+        val done: Boolean get() = generation >= config.generations
+
+        /** The best-per-generation fitness curve so far (one entry per completed [step]). */
+        fun history(): List<Double> = history.toList()
+
+        /** Run one generation and return its champion fitness. */
+        fun step(): Double {
+            check(!done) { "training already complete ($generation/${config.generations} generations)" }
             val ranked = population
                 .map { it to evaluate(it, grid, seed, config, opponent) }
                 .sortedByDescending { it.second }
@@ -65,8 +99,11 @@ object Evolution {
             }
             history.add(championFitness)
             population = nextGeneration(ranked, config, rng)
+            generation++
+            return championFitness
         }
-        return EvolutionResult(bestGenome, bestFitness, history, config.arch)
+
+        fun result(): EvolutionResult = EvolutionResult(bestGenome, bestFitness, history.toList(), config.arch)
     }
 
     // Mean over [matchesPerEval] seeded matches of (our summed checkpoint MU − the foe's) — the fitness

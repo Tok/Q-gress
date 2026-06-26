@@ -205,6 +205,16 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
   and below it a **genome heatmap** — every weight as a sign×magnitude cell. The canvas renders at
   **device-pixel resolution** for crisp lines/text. You watch the net think as the match swings
   (`Net.forwardTraced` exposes the per-layer activations).
+- **TRAIN footer tab — visual NN trainer** (`util/ui/TrainerPanel`, PLAN Phase 6.5): evolve a net **live in the
+  browser**. Pick population / generations / mutation / architecture / activation, hit **Train**, and a
+  resumable `Evolution.Session` runs **one generation per `setTimeout`** (the UI never blocks) on the current
+  live map: the **fitness curve** (summed-MU margin per generation, uPlot) climbs and the **champion genome
+  preview** (the NET tab's reused heatmap) fills in. The run is wrapped in `WorldSnapshot.capture/restore` with
+  the tick loop **paused** (`TrainerPanel.isTraining()`) and effects swapped to `NoOpEffects`, so the headless
+  matches never disturb the live game — which **resumes untouched** when training ends. The winner can be
+  **saved** to `NetStore` (becomes the "Neural net" driver's net, surviving reload) or **installed** straight as
+  the ENL/RES driver. In-browser defaults are deliberately small (serious training stays headless via
+  `Evolution.train`).
 - **Portals are discovered, not placed**: manual portal **placement** and **deletion** are removed
   from the real game (the map click only selects/deselects; the Inspector has no Remove button). The
   `/#demo` sandbox keeps LMB-place / RMB-shatter for showcasing.

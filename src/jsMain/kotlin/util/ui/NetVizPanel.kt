@@ -136,15 +136,24 @@ object NetVizPanel {
         if (genomeDrawnFor[faction] === net) return
         genomeDrawnFor[faction] = net
         val ctx = genomeCanvases[faction]?.getContext("2d") as? CanvasRenderingContext2D ?: return
-        ctx.clearRect(0.0, 0.0, GW.toDouble(), GH.toDouble())
+        paintGenome(ctx, net, GW.toDouble(), GH.toDouble(), faction.color)
+    }
+
+    /**
+     * Paint [net]'s flat genome as a sign/magnitude heatmap into a dpr-scaled [ctx] (so [w]/[h] are CSS px):
+     * [posColor] for positive weights, a cool grey-blue for negative, alpha = magnitude. Reused by the TRAIN
+     * tab's champion preview ([TrainerPanel]) — the same readout the NET tab paints per faction.
+     */
+    fun paintGenome(ctx: CanvasRenderingContext2D, net: Net, w: Double, h: Double, posColor: String) {
+        ctx.clearRect(0.0, 0.0, w, h)
         val genome = net.genome()
         val maxAbs = (genome.maxOfOrNull { abs(it) } ?: 1.0).coerceAtLeast(1e-6)
         val rows = (genome.size + GENOME_COLS - 1) / GENOME_COLS
-        val cellW = GW.toDouble() / GENOME_COLS
-        val cellH = GH.toDouble() / rows
-        genome.forEachIndexed { i, w ->
-            ctx.globalAlpha = (abs(w) / maxAbs).coerceIn(0.05, 1.0)
-            ctx.fillStyle = if (w >= 0) faction.color else NEG_COLOR
+        val cellW = w / GENOME_COLS
+        val cellH = h / rows
+        genome.forEachIndexed { i, weight ->
+            ctx.globalAlpha = (abs(weight) / maxAbs).coerceIn(0.05, 1.0)
+            ctx.fillStyle = if (weight >= 0) posColor else NEG_COLOR
             ctx.fillRect((i % GENOME_COLS) * cellW, (i / GENOME_COLS) * cellH, cellW + 0.5, cellH + 0.5)
         }
         ctx.globalAlpha = 1.0

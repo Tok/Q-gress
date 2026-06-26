@@ -17,6 +17,7 @@ import util.ui.NetVizPanel
 import util.ui.SliderHistoryPanel
 import util.ui.StatsPanel
 import util.ui.TopAgentsPanel
+import util.ui.TrainerPanel
 import util.ui.TuningPanel
 import kotlin.math.PI
 
@@ -39,6 +40,7 @@ object DrawUtil {
         TuningPanel.refresh() // mirror an AI driver's vector onto the sliders (no-op under manual control)
         AiPanel.update() // AI footer tab: per-faction driver + live observation readout
         NetVizPanel.update() // NET footer tab: the net driver's live activation diagram
+        TrainerPanel.update() // TRAIN footer tab: lazy-build the in-browser neuro-evolution trainer
         SliderHistoryPanel.update() // AI tab: each slider's value over the checkpoint window
         LlmReasoningPanel.update() // AI tab: the LLM driver's prompt/reply/parsed reasoning
         if (Styles.isDrawTopAgents) {

@@ -7,7 +7,8 @@ Branch: `develop` · Owner: @zirteq
 [docs/LLM.md](docs/LLM.md). Completed work lives in the **git log**, not here — keep this file to the point.
 
 ## ★ Next session — start here
-1. **Visual NN trainer** (Phase 6.5) — the full handoff is under *Phase 6*.
+1. **In-game leaderboard UI** (Phase 6) — the trainer shipped; the leaderboard reuses its run harness
+   (snapshot + pause + `Fx` no-op). The full handoff is under *Phase 6*.
 
 ## ⚑ Verify in-browser first (`./start.sh`)
 Built headless recently, not yet confirmed on screen — eyeball these, then move on:
@@ -23,6 +24,11 @@ Built headless recently, not yet confirmed on screen — eyeball these, then mov
 - **NET tab** — maximize/collapse compacts it; activation diagram + genome heatmap legible; 16×16 → 4 columns.
 - **"Who plays?" onboarding** — grid aligned, selection clearly highlighted, picks take effect in-game.
 - **LLM driver** (`WebLlmClient`) — the WebGPU model actually loads + drives a faction (only un-headless bit).
+- **TRAIN tab** (`TrainerPanel`) — pick pop/gens/mutation/arch/activation → **Train** evolves a net live (one
+  generation per `setTimeout`): the fitness curve climbs, the champion genome preview fills in, and the live
+  game **pauses + resumes untouched** afterwards. Confirm **Save champion** + **Install → ENL/RES** take
+  effect (the NET tab then shows the installed net thinking). Tune the in-browser defaults
+  (`SEED`/`MATCH_TICKS`, pop/gens) in `TrainerPanel` if a generation feels slow.
 
 ## North star
 Q-Gress becomes an **AI-vs-AI sandbox**: each faction (ENL/RES) is driven by an agent whose **output _is_ the
@@ -114,31 +120,19 @@ be matched. **Desktop-only**; mobile is blocked.
 the **custom-net track** (`Net`/`NetArch`/`Evolution`/`NetPolicy`, a baked **16×16** champion that beats the
 baseline, JSON genome save/load via `GenomeIO`/`NetStore`, the NET activation + genome viz), the adaptive
 `HeuristicPolicy`, the **in-browser LLM track** (`LlmPolicy`/`WebLlmClient` + reasoning panel, browser-only),
-the `Tournament` eval engine, and per-faction driver selection (top toolbar + the onboarding step).
+the `Tournament` eval engine, per-faction driver selection (top toolbar + the onboarding step), and the
+**visual NN trainer** (the resumable `Evolution.Session` + the **TRAIN** tab `TrainerPanel` — evolve a net
+live, preview the champion, save/install it; the live game pauses + restores around the run).
 
 **Fitness objective:** maximize **summed per-checkpoint MU** (sustained field area), not just final MU — a
 team effort to layer fields across the cycle. The net/LLM only re-tunes the 17 sliders at checkpoint cadence;
 it does **not** replace per-agent `ActionSelector`.
 
 Remaining:
-- [ ] **★ 6.5 — Visual NN trainer** *(next session)* — an in-browser trainer in a new **TRAIN** footer tab:
-  pick a `NetArch` (layers/widths/bias/activation) + `EvolutionConfig` (pop/gens/mutation), run `Evolution`
-  live with a **fitness curve** + champion preview (reuse the genome heatmap + activation viz), then **save**
-  the winner to `NetStore` / install it as a driver. Headless pieces all exist; this is the UI + live-run
-  wiring:
-  1. **Make `Evolution` resumable** — an `Evolution.Session(grid, seed, config, opponent)` holding the
-     population, with `step(): Double` = one generation (returns champion fitness) + `bestGenome`/`bestFitness`/
-     `generation`/`done`; refactor `train()` to loop it (existing tests still cover it); add a `SessionTest`.
-  2. **Chunk it off the UI** — call `session.step()` per `setTimeout(…, 0)`, yielding between generations; keep
-     the in-browser default config **small** (pop ~10–12, short matches) so each step is sub-second (serious
-     training stays headless).
-  3. **Don't clobber the live game** — wrap the run in `WorldSnapshot.capture()` → train → `restore()`, **pause
-     the tick loop** (`HtmlUtil.tick()` early-returns on `!World.isReady`, line 76 — gate it on a `training`
-     flag), and install `NoOpEffects` via `Fx` for the duration (no stray 3D FX).
-  4. **Champion actions** — show fitness; "Save to `NetStore`"; "Install as ENL/RES driver".
-- [ ] **In-game leaderboard UI** — a button wrapping `Tournament` in the **same run harness** as the trainer
-  (snapshot + pause + `Fx` no-op), showing the `Standing` table, so net variants (different `NetArch`) can be
-  ranked head-to-head. Build right after the trainer (shared plumbing).
+- [ ] **★ In-game leaderboard UI** *(next session)* — a button wrapping `Tournament` in the **same run harness**
+  the trainer already established (`WorldSnapshot.capture/restore` + the `TrainerPanel.isTraining()` tick pause +
+  `Fx`-noop), showing the `Standing` table, so net variants (different `NetArch`) can be ranked head-to-head.
+  Shares the trainer's plumbing — factor the snapshot/pause/Fx wrapper out of `TrainerPanel` if it helps.
 - [ ] **Grid fixtures** — serialize a built `Grid` (+ portal seeds) to committed JSON so headless matches
   reproduce without live tiles / `readPixels`. `GridFixture` does the RLE serialization; the real-tile fixtures
   still need the `?debug=capture` pass.

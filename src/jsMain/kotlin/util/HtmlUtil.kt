@@ -36,6 +36,7 @@ import util.ui.LoadingOverlay
 import util.ui.MenuControls
 import util.ui.Onboarding
 import util.ui.ShortcutsHelp
+import util.ui.TrainerPanel
 import util.ui.TuningPanel
 import util.ui.VolumeControl
 import kotlin.js.Json
@@ -73,7 +74,7 @@ object HtmlUtil {
     fun isQuickstart() = Config.quickStart
 
     private fun tick() {
-        if (!World.isReady) return
+        if (!World.isReady || TrainerPanel.isTraining()) return // paused while the TRAIN tab evolves a net
         Simulation.stepEntities() // shared functional-core step (agents + NPCs + stuck tracker)
         window.requestAnimationFrame {
             DrawUtil.redraw()

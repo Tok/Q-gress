@@ -25,6 +25,7 @@ object DriverControls {
     const val DEFAULT = "net" // default brain: the trained neural net (AI vs AI out of the box)
     private val llmClient by lazy { WebLlmClient() } // shared across factions → one model load
     private val pending = mutableMapOf<Faction, String>() // the onboarding driver pick, before the start-reload
+    private val selects = mutableMapOf<Faction, HTMLSelectElement>() // live pickers, so others can reflect a change
 
     /** Record [faction]'s chosen driver (onboarding) so the start-URL carries it across the reload. */
     fun select(faction: Faction, value: String) {
@@ -59,6 +60,7 @@ object DriverControls {
         sel.appendChild(option("llm", "LLM (experimental)", disabled = false))
         val choice = chosen(faction) // onboarding pick / start-URL / default
         sel.value = choice
+        selects[faction] = sel
         apply(faction, choice) // install it up front so the chosen brain plays from the first tick
         sel.onchange = {
             apply(faction, sel.value)
@@ -66,6 +68,12 @@ object DriverControls {
         }
         wrap.appendChild(sel)
         return wrap
+    }
+
+    /** Reflect an externally-installed driver in the picker (e.g. the trainer installing a champion) — the
+     *  policy is set by the caller; this just syncs the displayed `<select>` so the UI doesn't read stale. */
+    fun reflect(faction: Faction, value: String) {
+        selects[faction]?.value = value
     }
 
     private fun apply(faction: Faction, value: String) {

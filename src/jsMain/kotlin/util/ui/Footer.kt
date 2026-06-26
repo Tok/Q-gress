@@ -11,7 +11,7 @@ import org.w3c.dom.HTMLElement
  * driven so it survives the panels building in any order.
  */
 object Footer {
-    private val tabs = listOf("AGENTS" to AGENTS_ID, "AI" to AI_ID, "NET" to NET_ID, "EVENT LOG" to LOG_ID)
+    private val tabs = listOf("AGENTS" to AGENTS_ID, "AI" to AI_ID, "NET" to NET_ID, "TRAIN" to TRAIN_ID, "EVENT LOG" to LOG_ID)
     private var built = false
     private var active = AGENTS_ID
     private var collapsed = false
@@ -30,6 +30,7 @@ object Footer {
             "agents" -> AGENTS_ID
             "ai" -> AI_ID
             "net" -> NET_ID
+            "train" -> TRAIN_ID
             else -> LOG_ID
         }
         return document.getElementById(bodyId) as HTMLElement
@@ -113,9 +114,9 @@ object Footer {
             (document.getElementById(id) as? HTMLElement)?.style?.display = if (id == bodyId) "block" else "none"
             tabButtons[id]?.let { if (id == bodyId) it.classList.add("active") else it.classList.remove("active") }
         }
-        // The NET viz wants the whole screen — auto-expand on entry, auto-restore on leave (unless the player
-        // has since taken manual control of the size, in which case we leave their choice alone).
-        if (bodyId == NET_ID) {
+        // The NET viz + TRAIN tab want the whole screen — auto-expand on entry, auto-restore on leave (unless
+        // the player has since taken manual control of the size, in which case we leave their choice alone).
+        if (bodyId == NET_ID || bodyId == TRAIN_ID) {
             expanded = true
             collapsed = false
             autoExpanded = true
@@ -156,4 +157,5 @@ object Footer {
     private const val AGENTS_ID = "footerAgents"
     private const val AI_ID = "footerAi"
     private const val NET_ID = "footerNet"
+    private const val TRAIN_ID = "footerTrain"
 }
