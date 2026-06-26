@@ -39,9 +39,10 @@ object Recruiter : ConditionalAction {
     private fun recruitmentChance(faction: Faction): Double =
         recruitSuccessProbability(World.countAgents(faction).toDouble() / Config.maxFor(faction))
 
-    /** Pure diminishing-returns curve: base chance × the roster's remaining headroom (`1 − fillRatio`), so a
-     *  near-full roster recruits at ~0 and an empty one at the full [Config.recruitmentBaseChance]. */
-    fun recruitSuccessProbability(fillRatio: Double): Double = Config.recruitmentBaseChance * (1.0 - fillRatio)
+    /** Diminishing-returns curve (pure math in [agent.BalanceMath.recruitSuccessProbability]): base chance ×
+     *  the roster's remaining headroom (`1 − fillRatio`), so a near-full roster recruits at ~0. */
+    fun recruitSuccessProbability(fillRatio: Double): Double =
+        agent.BalanceMath.recruitSuccessProbability(fillRatio, Config.recruitmentBaseChance)
 
     /** Start a recruit: pick a random NPC and head over (Agent drives the walk + meeting). Free — no XM cost. */
     override fun performAction(agent: Agent): Agent {

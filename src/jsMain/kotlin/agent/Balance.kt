@@ -15,11 +15,12 @@ object Balance {
      * the SMALLER team — so the bigger faction recruits less and the smaller more, and team sizes
      * self-balance. Clamped to [[Config.recruitFactorMin], [Config.recruitFactorMax]].
      */
-    fun recruitFactor(faction: Faction): Double {
-        val mine = World.countAgents(faction)
-        val theirs = World.countAgents(faction.enemy())
-        return ((theirs + 1).toDouble() / (mine + 1)).coerceIn(Config.recruitFactorMin, Config.recruitFactorMax)
-    }
+    fun recruitFactor(faction: Faction): Double = BalanceMath.recruitFactor(
+        World.countAgents(faction),
+        World.countAgents(faction.enemy()),
+        Config.recruitFactorMin,
+        Config.recruitFactorMax,
+    )
 
     /**
      * Resonator-damage multiplier (`≥ 1`) for an attacker of [faction] — the comeback rubber-band. The side
@@ -30,16 +31,10 @@ object Balance {
      * damage at default). Exactly `1.0` when even or ahead — the underdog is helped, the leader isn't punished.
      */
     fun attackBoost(faction: Faction): Double {
-        val muDeficit = shareDeficit(World.calcTotalMu(faction), World.calcTotalMu(faction.enemy()))
-        val portalDeficit = shareDeficit(World.countPortals(faction), World.countPortals(faction.enemy()))
+        val muDeficit = BalanceMath.shareDeficit(World.calcTotalMu(faction), World.calcTotalMu(faction.enemy()))
+        val portalDeficit = BalanceMath.shareDeficit(World.countPortals(faction), World.countPortals(faction.enemy()))
         val deficit = maxOf(muDeficit, portalDeficit)
-        return 1.0 + Config.comebackMax * Config.comebackAttackBonus() * deficit * deficit
-    }
-
-    // How far [mine] is behind [theirs] as a 0..1 share of the total (0 = even/ahead, 1 = fully shut out).
-    private fun shareDeficit(mine: Int, theirs: Int): Double {
-        val total = (mine + theirs).toDouble()
-        return if (total <= 0.0) 0.0 else ((theirs - mine) / total).coerceIn(0.0, 1.0)
+        return BalanceMath.attackBoost(deficit, Config.comebackMax, Config.comebackAttackBonus())
     }
 
     /**
@@ -48,5 +43,5 @@ object Balance {
      * resonators erode — an over-extended empire crumbles, opening the board so the lead can change.
      */
     fun leadShare(faction: Faction): Double =
-        shareDeficit(World.calcTotalMu(faction.enemy()), World.calcTotalMu(faction)) // enemy's deficit = our lead
+        BalanceMath.shareDeficit(World.calcTotalMu(faction.enemy()), World.calcTotalMu(faction)) // enemy deficit = our lead
 }
