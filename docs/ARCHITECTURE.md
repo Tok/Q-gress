@@ -106,13 +106,13 @@ new regions from Overpass as the camera flies elsewhere. Elevation comes from th
   `XmpShaders`) — grayscale vessel, faction colour as the only tint. Effects (shatter via
   cannon-es, XMP fireball, hack centrifuge, spawn/teardown, **portal-defense lightning** in
   `BoltFx`) live in `ShatterFx`/`XmpBurst`/`HackFx`/`FieldFx`/`BoltFx`/`Spawns`. `Scene3D.render`
-  clears depth **only** when `drawOverBuildings` (the accessibility toggle) is set; by default the
-  3D pass shares the map depth buffer so buildings occlude the sim.
+  shares the map depth buffer so buildings occlude the sim.
 - **HUD → DOM.** `util/ui/`: `StatsPanel` (MU bars + time/tick + action LOG), `HistoryPanel`
   (per-metric uPlot sparklines + live values), `TuningPanel` (behaviour sliders; auto-moves under an AI
-  driver), `AiPanel` (driver picker + observation readout), `NetVizPanel` (the NET tab — the net driver's
-  live activation diagram), `SliderHistoryPanel` (per-slider sparklines over time, in the AI tab),
-  `TopAgentsPanel`, `Inspector`, `LayerView`,
+  driver), `DriverControls` (per-faction brain picker + LLM model picker), `AiPanel` (observation readout),
+  `BrainsPanel` (the **BRAINS** tab — per-faction driver card: NN live activation + genome via `NetVizPanel`,
+  or LLM model/status/prompt/reply), `TrainerPanel` (the **TRAIN** tab — neuroevolution trainer + leaderboard),
+  `SliderHistoryPanel` (per-slider sparklines over time, in the AI tab), `TopAgentsPanel`, `Inspector`, `LayerView`,
   `Onboarding`, `LoadingOverlay`, `MiniMap` (globe inset), `Controls`. Styled by
   `resources/stylesheet/QGress.css` (faction colours via `--enl-color`/`--res-color`;
   **Chakra Petch** title face, **Coda** for text/numbers).

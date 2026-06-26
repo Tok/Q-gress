@@ -1,6 +1,6 @@
 # FEATURES.md — what's shipped
 
-A record of completed work, so [PLAN.md](../PLAN.md) can stay future-only. Grouped by area,
+A record of completed work (the roadmap of what's *next* lives separately). Grouped by area,
 newest themes roughly last. Commit hashes are illustrative pointers, not exhaustive.
 
 ## Toolchain & build (Phase 1)
@@ -170,13 +170,13 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
   Menu "Lock tuning" toggle) swaps the sliders for 0–1 progress bars that mirror the values
   (`refresh()` re-syncs them) — also used live when an **AI driver** is in control (below). Action icons
   render from the **hi-res** (supersampled) canvas + shown small via CSS, so they're crisp.
-- **AI drives the sliders, visibly** (PLAN Phase 6.4): when a faction's installed `FactionPolicy` exposes a
+- **AI drives the sliders, visibly** (Phase 6.4): when a faction's installed `FactionPolicy` exposes a
   `currentVector()` (i.e. an AI is in control, not the manual sliders), `TuningPanel` mirrors that vector onto
   the displayed faction's inputs each frame and flips to the auto-moving read-only bars — so the player
   watches the sliders re-tune themselves as the match swings. Manual control is unchanged (interactive). A
   per-slider **lock** (a padlock toggle, shown only while an AI drives) lets the player grab one slider back —
   it stays interactive and the AI keeps driving the rest (`ai.OverridePolicy` wraps the driver).
-- **Heuristic AI driver** (`ai/HeuristicPolicy`, PLAN Phase 6): the first live AI driver — an adaptive
+- **Heuristic AI driver** (`ai/HeuristicPolicy`, Phase 6): the first live AI driver — an adaptive
   `Observation → SliderVector` mapping re-evaluated per checkpoint (attack when behind, consolidate into
   links/fields when ahead, hack/glyph when low on XM). Selectable per faction in the **AI** tab's driver
   picker; a sane baseline opponent until a trained net is loadable.
@@ -191,7 +191,7 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
 - **"Who plays?" onboarding step** (`util/ui/Onboarding.showDrivers`, right after faction pick): choose each
   side's brain — your side Human/Heuristic/Net/LLM, the opponent AI-only — defaulting to **net vs net**. The
   choice rides the start-URL (`?enl=…&res=…`) into the game.
-- **AI footer tab** (`util/ui/AiPanel` + `util/ui/SliderHistoryPanel`, PLAN Phase 6): the merged
+- **AI footer tab** (`util/ui/AiPanel` + `util/ui/SliderHistoryPanel`, Phase 6): the merged
   AI-transparency tab (AGENTS / **AI** / NET / EVENT LOG) — a live **observation** readout (the 13-slot
   `ai.Observation` feature vector a net/LLM receives, as labelled 0–1 bars) beside the **behaviour-sliders-
   over-time** sparklines (one uPlot per slider slot per faction: the visible record of an AI driver re-tuning
@@ -211,7 +211,7 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
   and below it a **genome heatmap** — every weight as a sign×magnitude cell. The canvas renders at
   **device-pixel resolution** for crisp lines/text. You watch the net think as the match swings
   (`Net.forwardTraced` exposes the per-layer activations).
-- **TRAIN footer tab — visual NN trainer** (`util/ui/TrainerPanel`, PLAN Phase 6.5): evolve a net **live in the
+- **TRAIN footer tab — visual NN trainer** (`util/ui/TrainerPanel`, Phase 6.5): evolve a net **live in the
   browser**. Pick population / generations / mutation / architecture / activation, hit **Train**, and a
   resumable `Evolution.Session` runs **one generation per `setTimeout`** (the UI never blocks) on the current
   live map: the **fitness curve** (summed-MU margin per generation, uPlot) climbs and the **champion genome
@@ -222,7 +222,7 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
   the ENL/RES driver. In-browser defaults are deliberately small (serious training stays headless via
   `Evolution.train`). A **Clean eval** toggle runs matches with the anti-runaway mechanics off (`MatchSetup.cleanEval`
   → `comebackMax`/`dominanceDecay`/`leaderDistraction` = 0, restored after) for a cleaner training gradient.
-- **TRAIN tab — leaderboard** (`util/ui/LeaderboardPanel`, PLAN Phase 6): a second TRAIN-tab section ranks AI
+- **TRAIN tab — leaderboard** (`util/ui/LeaderboardPanel`, Phase 6): a second TRAIN-tab section ranks AI
   drivers head-to-head on the live map. Pick entrants (Baseline / Heuristic / Neural net), **Run ladder**, and a
   resumable `Tournament.Session` plays a round-robin **one match per `setTimeout`**, showing the live `Standing`
   table (W-L-T + avg MU margin, sorted). Both eval tools share the **`HeadlessRun`** harness (snapshot + tick-pause
@@ -403,7 +403,7 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
   a very deep + long sub-bass kick (~48 Hz), a darker/softer snap and a muffled, long, more reverberant
   rumble (a giant explosion heard from afar). The **Ultra-strike** (`playUltraStrike`) is the tighter,
   brighter **medium-deep boom** the XMP used to have. The master limiter runs a slower attack so the kick
-  transient punches through. (Steps toward a wider **303/808/909** palette — see PLAN.)
+  transient punches through. (Steps toward a wider **303/808/909** palette.)
 
 ## Mods, viruses, items & drop rates
 - **4 mod slots per portal** (`portal/ModSlot`) holding a generic `Mod` (`items/deployable/Mod`):
@@ -436,6 +436,47 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
   deployed shield (up to 4), each shell a touch larger than the last; the shader dims the far hemisphere
   (`gl_FrontFacing`) + adds a body sheen so each bubble reads as a 3D shell, not a flat surface.
 - **Keys**: surfaced as counts (leaderboard + inspector); no 3D model yet.
+
+## AI vs AI — the BRAINS tab & the in-browser LLM (Phase 6)
+- **In-browser LLM driver works** (`ai/llm/WebLlmClient` + `LlmPolicy`): **WebLLM (MLC) on WebGPU**, loaded
+  lazily from a CDN; once per checkpoint it's asked for a slider vector (heuristic fallback until it replies).
+  A **per-faction model picker** in the driver dropdown (SmolLM2 360M · Qwen 2.5 0.5B/1.5B · Llama 3.2 1B ·
+  SmolLM2 1.7B · Gemma 2 2B) lets each side run a different model. Robust on weak GPUs: auto-swaps to the
+  **q4f32_1** build when `shader-f16` is missing; missing-WebGPU / device-loss errors are caught (the side
+  stays on the heuristic — no crash) with an actionable status.
+- **Experimental, opt-in.** Neural net is the default driver; the LLM is hidden behind a "Show experimental
+  LLM driver" checkbox in onboarding (carried across the start-reload via `?exp`), and the in-game driver
+  dropdown disables the LLM option unless it was unlocked.
+- **BRAINS footer tab** (`util/ui/BrainsPanel`): the per-faction "who's driving" window — your side vs the
+  opponent, each with a driver-tailored card. **Manual** (tune-it note), **Heuristic** (live stance + favoured
+  sliders), **Neural net** (architecture, fitness, driving-input / peak-hidden, favoured actions, the **live
+  activation diagram** above the **genome heatmap**), **LLM** (model / backend / status, the parsed **chose**
+  as the bold headline, collapsed raw prompt/reply, and a **WebGPU capability readout** — adapter + max-buffer
+  limits + `shader-f16` — with collapsible, Chromium-only `chrome://` troubleshooting links). **The standalone
+  NET tab was folded in here**; `NetVizPanel` is now a pure renderer (`paintActivation` / `paintGenome` /
+  `stats`).
+- **Trainer: per-layer architecture + share** (`util/ui/TrainerPanel`): two hidden-layer width dropdowns
+  ({4, 8, 16, 24, 32} → 4×4 … 32×32), a live per-genome progress bar, white chart axes, and **Download / Load
+  champion JSON** (share nets; `GenomeIO` + `NetStore` persist across reload). Training runs **silent**
+  (`SoundUtil` mutes during a `HeadlessRun`) and **parked** (the live tick pauses), with a full-CPU warning.
+- **Manual is user-only** — the opponent is AI-only (`DomSliderPolicy` reads the visible sliders).
+
+## Recent UI / UX polish
+- **Pause** truly stops everything: the sim tick, the **auto-cam**, the 3D animation clock (sun arc, hack
+  spins…), and audio (an implicit mute that doesn't touch the volume slider). The **sun** obeys the speed
+  buttons and freezes on pause (advances on the sim-scaled clock).
+- **Buildings**: one **"Buildings transparency"** menu slider drives BOTH our own meshes and MapLibre's
+  gap-fillers; our meshes are kept a touch more transparent + brighter, and the two shake slightly out of
+  phase for a busier blast. Removed the old "show through buildings" toggle.
+- **3D border** wall sits just **outside** the play radius (inner edge = the actual radius) for round + rect
+  arenas, with inner + outer terrain-following white lines.
+- **Passability overlay** drapes over the terrain DEM again (it had broken when elevation landed).
+- **3D portal names**: optional per-portal name rings (menu toggle, **off by default**; always off on the
+  title); duplicate portal names are prevented at creation.
+- **AGENTS table** sort is stable (tie-broken on the unique agent name, so equal-AP rows stop jittering).
+- **Sliders**: faction-coloured read-only bars; reversed lock semantics (unlocked = editable, locked = the
+  AI-driven bar); the numeric value is always shown in a fixed column.
+- **NPC population** lowered (cap 1000, density halved).
 
 ## Settled decisions
 - **Modernize Kotlin/JS in place** (not a TS rewrite; not KMP) — keep the ~7k lines of tested logic.

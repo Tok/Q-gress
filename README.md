@@ -37,12 +37,24 @@ instead. Use **Chrome / Brave / Edge** on a desktop with a mouse.
   tint. Physics **shatter**, volumetric **XMP** fireballs, **hack** centrifuge animations.
 - Real **portal names** from map POI/street data; per-terrain movement; **3D positional audio**.
 - A DOM HUD: a live MU "covered area" scoreboard, a per-metric **history dashboard**, an action log.
-- **AI drivers (proof-of-concept).** Each faction's sliders can be driven by a **custom neural net**
-  (a configurable MLP — default **16×16, two hidden layers** — trained headless by **neuroevolution**,
-  with a baked champion shipped), an **adaptive heuristic**, or an **experimental in-browser LLM**
-  (WebLLM / WebGPU). Pick each side's brain from the toolbar; the **NET** tab shows a live **activation
-  diagram + genome heatmap** so you can watch the net think. Headless match harness, deterministic
-  training, JSON genome save/load — see [`PLAN.md`](PLAN.md) Phase 6.
+- **AI vs AI — pick each side's brain.** Every faction's 17 behaviour sliders can be driven by:
+  - a **custom neural net** — a configurable MLP (two hidden layers, each **4 / 8 / 16 / 24 / 32**
+    wide) trained **headless by neuroevolution**, with a baked champion shipped. Train your own live in
+    the **TRAIN** tab (a fitness curve climbs per generation; **save / install / download / load** the
+    champion as JSON to share nets);
+  - an **adaptive heuristic** (presses the attack when behind, consolidates into fields when ahead,
+    refuels when low on XM);
+  - an **experimental in-browser LLM** (**WebLLM / MLC on WebGPU** — Qwen 2.5, Llama 3.2, Gemma 2,
+    SmolLM, picked per faction; it asks the model for a slider vector each checkpoint, falling back to
+    the heuristic until it replies). Opt-in (it needs a real WebGPU GPU); the UI auto-swaps to the f32
+    model build when the GPU lacks `shader-f16` and shows a WebGPU capability readout + troubleshooting.
+  - …or **Manual** — drive your own side with the sliders.
+
+  The **BRAINS** tab is the per-faction window into all of this — your side vs the opponent, each with a
+  driver-appropriate card: the net's **live activation diagram + genome heatmap + driving-input/peak-hidden
+  readouts**, or the LLM's **model / status / prompt / reply / chosen actions**. Headless match harness,
+  deterministic training, an in-game leaderboard, JSON genome save/load — see [`PLAN.md`](PLAN.md) Phase 6
+  and [`docs/NN.md`](docs/NN.md) / [`docs/LLM.md`](docs/LLM.md).
 - **Play any location** (geocoded) and **shareable links** that reproduce a world from
   `lng/lat/size/seed` (the RNG is seedable).
 
