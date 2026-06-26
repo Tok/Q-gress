@@ -1589,7 +1589,7 @@ html, body {
 .topLocation {
     flex: 1; /* stretch across the middle of the top bar */
     min-width: 0; /* allow shrinking so the ellipsis works in a flex item */
-    margin: 12px 14px 0;
+    margin: 0 14px; /* no top margin — the toolbar's align-items:center keeps it level with the rest */
     font-size: 18px;
     color: #f0f0f0;
     /* Black outline so the white name stays readable over any terrain/buildings underneath. */
