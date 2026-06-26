@@ -21,32 +21,41 @@ de-risks the next. "Coverage" means two things and they split across phases — 
 first (phase A, in the existing Node harness); real **line-coverage measurement** (Kover) is *blocked on* the
 functional-core split and so lands in phase C, after the refactor.
 
-### Phase A — Safety net (behavioural tests on today's behaviour)
+### Phase A — Safety net (behavioural tests on today's behaviour) — ✅ essentially done
 Lock current behaviour before moving any code, so the refactor can't silently change it. Pure Node/Mocha tests
-(no tooling change). Aim for characterization tests over the functional core as-it-is:
-- [ ] `Balance` — `recruitFactor` / `attackBoost` / dominance erosion across deficit ranges.
-- [ ] `Config` formulas — `npcPopulation`, `targetPortals`, `maxMitigation`, `weaponDropMultiplier`,
-  `attackXmpThreshold`, `comebackAttackBonus` (pin the input→output table at the current consts).
-- [ ] `ActionSelector` weighting + `MovementUtil` / `StuckTracker` (extend the existing seed-sensitive cases).
-- [ ] `Cycle` — `managePortalDensity` churn convergence, checkpoint MU, the recruit-churn replacement.
-- [ ] `Portal` combat — `removeReso` / mitigation / link / field-MU / neutralize transitions.
-- [ ] `Recruiter` (free-recruit + self-balancing weight), `SimRunner` determinism (extend existing).
-- **Exit criterion:** a green net that *fails* if behaviour changes — not maximal coverage, just a tripwire.
+(no tooling change). Characterization tests over the functional core as-it-is:
+- [x] `Balance` — `recruitFactor` / `attackBoost` (deficit² steepness) / `leadShare` zero-guard.
+- [x] `Config` formulas — `npcPopulation`, `targetPortals`, `maxMitigation`, `weaponDropMultiplier`,
+  `attackXmpThreshold`, `comebackAttackBonus` (`ConfigTest` pins the input→output table at the current consts).
+- [x] `ActionSelector.q` weighting (composition + field-maker ordering); `StuckTracker` already covered.
+- [x] `Util` — the seeded mulberry32 RNG + the weighted `select` contract (`UtilTest`).
+- [x] `Field` MU/area (Heron ÷100 floored) + `isCoveringPortal` (the fitness-objective math).
+- [x] `Recruiter` self-balancing `selectionWeight` + diminishing `recruitSuccessProbability`.
+- [x] `SimRunner` determinism — already covered (`sameSeedIsDeterministic`, `reproducibleAfterAnotherMatch`).
+- [ ] **One gap left:** `MovementUtil.wander` / `openGroundNear` — needs a `GridFixture` + `Sim` play-area set-up
+  (a heavier integration test, not a pure unit; the `GridFixture` infra exists). Round this out, or carry it.
+- **Exit criterion (met):** a green net that fails if behaviour changes. (Suite now **247** tests, all green.)
 
-### Phase B — Refactor under the net
+### Phase B — Refactor under the net — 🔄 in progress
 Functional core / imperative shell, properly. Do it module-by-module behind phase-A tests:
-- [ ] **Isolate pure logic** — extract decision functions (state in → decision/new-state out) out of
-  `Agent` / `Portal` / `Cycle`; push 3D/DOM/MapLibre/WebGL, audio, timers, RNG and `World` mutation to the edges.
+- [~] **Isolate pure logic** — extract decision functions (state in → value/decision out) and push effects to the
+  edges. Done so far (each guarded by a new unit test): `Cycle.churnChances`, `Portal.linkMitigationFor`,
+  `Portal.retaliationDamage`, `Recruiter.recruitSuccessProbability`. **Next candidates** (from the core audit):
+  `Linker.fieldClosingTarget` (set-intersection pick — trivial), `NonFaction.opposingOffscreenDestination`
+  (off-map bearing geometry), `Portal` hack-cooldown/burnout math (`handleCooldown`), `Deployer` slot selection,
+  `Agent.findPortalsInAttackRange` (invert the `World` read to a parameter).
 - [ ] **Incremental functional-core split** — as each pure module is isolated, move it toward `commonMain` (this
-  is what unlocks Kover in phase C). Incremental, not a big-bang migration.
+  is what unlocks Kover in phase C). Incremental, not a big-bang migration. *(Not started — the extractions above
+  are still in `jsMain`; the `commonMain` move is the next structural step once a cluster is pure.)*
 - [ ] **Reduce magic numbers** — name them / fold into `Config` where it aids clarity (detekt `MagicNumber` is
-  off, so this is a by-hand judgement pass, not a gate-chase).
+  off, so this is a by-hand judgement pass, not a gate-chase). *(Started opportunistically — e.g. named the
+  `LINK_MITIGATION_SCALE`.)*
 - [ ] **SoC / split god-objects** — `Scene3D` (1579 → extract the demo/showcase code to `Showcases`, drop the
   `LargeClass` suppress), and cut along seams in `MapUtil` (835) / `HtmlUtil` (788) / `SoundUtil` (768) /
-  `Portal` (685) as they're touched.
-- [ ] **Functional patterns** where they fit; **null-safety hardening** (`!!` audit → `?:`/`requireNotNull`/
-  early return); **tighten line length 140 → 120** *alongside* the class extractions (it inflates `LargeClass`
-  otherwise). These are the existing *Open engineering decisions* items — they live here.
+  `Portal` (685) as they're touched. *(The big one — not started.)*
+- [x] **Null-safety hardening** — `!!` audit complete: **zero** `!!` in `src/jsMain` (the convention has held).
+- [ ] **Functional patterns** where they fit; **tighten line length 140 → 120** *alongside* the class
+  extractions (it inflates `LargeClass` otherwise).
 - **Exit criterion:** pure logic is testable in isolation; gate (ktlint/detekt/tests) stays green throughout.
 
 ### Phase C — Real coverage measurement (enabled by B)
@@ -213,8 +222,7 @@ for coverage tooling. Kept here for the rationale; the track sequences them.*
 - **Extract the demo/showcase subsystem from `Scene3D`** — most of Scene3D's `LargeClass` bulk is the
   self-contained sandbox code; move it to a `Showcases` object (build helpers go `internal`), then drop the
   `LargeClass` suppress. → *phase B.*
-- **Null-safety hardening** — audit remaining `!!` → `?.`/`?:`/`requireNotNull`/early return (same hazard
-  class as the empty-collection `max/min` crashes already fixed). → *phase B.*
+- ~~**Null-safety hardening**~~ — ✅ done (phase B): **zero** `!!` in `src/jsMain`; the convention has held.
 
 ## Balance risk (recruit-rush)
 `ActionSelector` picks by weighted-random over `slider × weight`; recruiting adds agents (→ more actions/tick →
