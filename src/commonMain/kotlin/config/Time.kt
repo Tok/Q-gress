@@ -1,6 +1,6 @@
 package config
 
-import util.Util
+import util.MathUtil
 
 object Time {
     const val minTickInterval = 20 // milliseconds
@@ -9,5 +9,5 @@ object Time {
     fun ticksToSeconds(ticks: Int) = ticks * secondsPerTick
     fun secondsToTicks(seconds: Int) = seconds / secondsPerTick
 
-    fun ticksToTimestamp(ticks: Int) = Util.formatSeconds(ticksToSeconds(ticks))
+    fun ticksToTimestamp(ticks: Int) = MathUtil.formatSeconds(ticksToSeconds(ticks))
 }

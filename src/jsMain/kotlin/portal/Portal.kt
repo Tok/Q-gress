@@ -7,7 +7,6 @@ import agent.action.ActionItem
 import config.Config
 import config.DropRates
 import config.Sim
-import config.Time
 import extension.*
 import items.PowerCube
 import items.QgressItem
@@ -96,7 +95,7 @@ data class Portal(
     fun filledSlots() = slots.map { it.value }.filterNot { it.resonator == null }
     fun resoMap() = slots.mapNotNull { (octant, slot) -> slot.resonator?.let { octant to it } }.toMap()
 
-    private fun linkMitigation(): Int = linkMitigationFor(findIncomingFrom().count() + links.count())
+    private fun linkMitigation(): Int = PortalMath.linkMitigationFor(findIncomingFrom().count() + links.count())
 
     private fun modMitigation(): Int = mods.values.filterIsInstance<Shield>().sumOf { it.type.mitigation }
 
@@ -382,7 +381,7 @@ data class Portal(
         fun cool(agentsLastHacks: MutableList<Int>, tickNr: Int): Cooldown {
             agentsLastHacks.sort()
             val baseCooldownS = (Cooldown.FIVE.seconds * cooldownFactor()).toInt() // heat sinks shorten it
-            val cooldown = cooldownAfter(tickNr - agentsLastHacks.last(), baseCooldownS)
+            val cooldown = PortalMath.cooldownAfter(tickNr - agentsLastHacks.last(), baseCooldownS)
             if (cooldown == Cooldown.NONE && !readOnly) {
                 agentsLastHacks.add(tickNr)
                 lastHacks[key] = mutableListOf(tickNr)
@@ -391,7 +390,7 @@ data class Portal(
         }
 
         fun burn(agentsLastHacks: MutableList<Int>, tickNr: Int): Cooldown {
-            if (isBurnedOut(agentsLastHacks, tickNr)) return Cooldown.BURNOUT
+            if (PortalMath.isBurnedOut(agentsLastHacks, tickNr)) return Cooldown.BURNOUT
             if (!readOnly) {
                 agentsLastHacks.add(tickNr)
                 lastHacks[key] = mutableListOf(tickNr)
@@ -492,7 +491,7 @@ data class Portal(
         val defender = owner ?: return
         if (defender.faction == agent.faction) return
         val level = getLevel().value
-        agent.removeXm(retaliationDamage(level, totalMitigation()))
+        agent.removeXm(PortalMath.retaliationDamage(level, totalMitigation()))
         Fx.sink.fireBolt(location, level, agent.pos, defender.faction.color)
         SoundUtil.playThunderSound((agent.pos.x / Sim.width * 2.0 - 1.0).coerceIn(-1.0, 1.0))
     }
@@ -612,8 +611,6 @@ data class Portal(
         // supply side of "shielded portals barely change". A real multi-hack mod can refine this later.
         const val MAX_HACKS = 6
         private const val NEARBY_POINT_TRIES = 16 // ring-sampling cap in findRandomPointNearPortal (no infinite recursion)
-        private const val ZAP_BASE_XM = 15 // retaliation XM damage per portal level
-        private const val ZAP_SHIELD_XM = 1 // extra retaliation XM per point of mitigation (shields zap harder)
         private const val MOD_DEPLOY_AP = 125
         private const val MOD_DESTROY_AP = 75 // AP for knocking a mod off (cf. resonator destroy)
         private const val MIN_COOLDOWN_FACTOR = 0.05 // heat sinks can't reduce cooldown below 5%
@@ -636,26 +633,8 @@ data class Portal(
             return "$candidate $n"
         }
 
-        // Link-mitigation curve: damage reduction (%) rises with the portal's total link count along an
-        // arctan that saturates near the asymptote 400/9 × π/2 ≈ 69.8% — diminishing returns, so the first
-        // links matter most and a heavily-linked portal can't become invulnerable from links alone. Pure;
-        // the total cap (links + shields) is applied separately in [totalMitigation].
-        private const val LINK_MITIGATION_SCALE = 400.0 / 9.0
-        internal fun linkMitigationFor(linkCount: Int): Int = round(LINK_MITIGATION_SCALE * atan(linkCount / E)).toInt()
-
-        /** Pure retaliation XM damage a defended portal deals: scales with portal [level] and, harder, with its
-         *  total [mitigation] (a shielded portal zaps back more). See [retaliate]. */
-        internal fun retaliationDamage(level: Int, mitigation: Int): Int = ZAP_BASE_XM * level + ZAP_SHIELD_XM * mitigation
-
-        /** Pure hack cooldown: how much of the [baseCooldownS]-second window remains [ticksSinceLastHack] after
-         *  the last hack, bucketed to a [Cooldown] (NONE once the window has elapsed). See [handleCooldown]. */
-        internal fun cooldownAfter(ticksSinceLastHack: Int, baseCooldownS: Int): Cooldown =
-            Cooldown.valueOf(Time.ticksToSeconds(Time.secondsToTicks(baseCooldownS) - ticksSinceLastHack))
-
-        /** Pure burnout check: true once EVERY hack in [lastHackTicks] falls inside the burnout window ending at
-         *  [tickNr] (i.e. none is old enough to have aged out), meaning the agent has hacked too much too fast. */
-        internal fun isBurnedOut(lastHackTicks: List<Int>, tickNr: Int): Boolean =
-            lastHackTicks.none { it < tickNr - Time.secondsToTicks(Cooldown.BURNOUT.seconds) }
+        // The pure link-defense curve, retaliation damage, hack cooldown + burnout math now live in the shared
+        // core ([PortalMath]); callers below use it directly.
 
         // Non-blocking: the portal is built with an empty flow field, then PathUtil.computeFieldAsync
         // fills portal.vectors off-thread (heatMap stays empty — it's never read externally). Agents
