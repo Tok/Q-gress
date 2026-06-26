@@ -411,12 +411,8 @@ object Scene3D {
             PlayAreaMask.buildRoundMask(group, r, r, BORDER_Z - 0.05, OUTSIDE_DIM)
             PlayAreaMask.buildRoundWall(group, r, r, gMin, wallH)
             val rad = Sim.fieldRadius()
-            val pts = (0..ELLIPSE_SEGMENTS).map {
-                val t = it.toDouble() / ELLIPSE_SEGMENTS * 2.0 * PI
-                val sp = Pos((Sim.width / 2.0 + rad * cos(t)).toInt(), (Sim.height / 2.0 + rad * sin(t)).toInt())
-                Three.Vector3(sceneX(sp), sceneY(sp), groundZ(sp) + BORDER_Z) // outline follows the terrain edge
-            }.toTypedArray()
-            group.add(Three.Line(Three.BufferGeometry().setFromPoints(pts), lineMaterial(BORDER_COLOR)))
+            group.add(terrainRing(rad)) // outer edge of the boundary wall
+            group.add(terrainRing(rad * (1.0 - PlayAreaMask.WALL_THICK_FRAC))) // inner edge — same white terrain line
             return
         }
         PlayAreaMask.build(group, hx, hy, OUTSIDE_FAR * maxOf(hx, hy), BORDER_Z - 0.05, OUTSIDE_DIM)
@@ -424,6 +420,17 @@ object Scene3D {
         val corners = arrayOf(Pos(0, 0), Pos(Sim.width, 0), Pos(Sim.width, Sim.height), Pos(0, Sim.height), Pos(0, 0))
         val points = corners.map { Three.Vector3(sceneX(it), sceneY(it), groundZ(it) + BORDER_Z) }.toTypedArray()
         group.add(Three.Line(Three.BufferGeometry().setFromPoints(points), lineMaterial(BORDER_COLOR)))
+    }
+
+    // A white outline circle of sim-radius [rad] around the play-area centre, each point dropped onto the
+    // terrain (groundZ) so the line hugs the ground — used for both the outer + inner edges of the round wall.
+    private fun terrainRing(rad: Double): dynamic {
+        val pts = (0..ELLIPSE_SEGMENTS).map {
+            val t = it.toDouble() / ELLIPSE_SEGMENTS * 2.0 * PI
+            val sp = Pos((Sim.width / 2.0 + rad * cos(t)).toInt(), (Sim.height / 2.0 + rad * sin(t)).toInt())
+            Three.Vector3(sceneX(sp), sceneY(sp), groundZ(sp) + BORDER_Z)
+        }.toTypedArray()
+        return Three.Line(Three.BufferGeometry().setFromPoints(pts), lineMaterial(BORDER_COLOR))
     }
 
     private fun groundZRange(): Pair<Double, Double> {

@@ -130,5 +130,5 @@ object PlayAreaMask {
         return Three.MeshBasicMaterial(p)
     }
 
-    private const val WALL_THICK_FRAC = 0.03 // round-wall thickness as a fraction of the radius
+    const val WALL_THICK_FRAC = 0.03 // round-wall thickness as a fraction of the radius
 }
