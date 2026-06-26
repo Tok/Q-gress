@@ -36,6 +36,21 @@ class SimRunnerTest {
     }
 
     @Test
+    fun cleanEvalSilencesAntiRunawayThenRestoresIt() {
+        val before = config.Config.comebackMax
+        var midMatch = -1.0
+        SimRunner.runMatch(
+            openGrid(),
+            seed = 1,
+            maxTicks = 50,
+            setup = MatchSetup(npcs = 4, cleanEval = true),
+            onTick = { if (it == 1) midMatch = config.Config.comebackMax },
+        )
+        assertEquals(0.0, midMatch, "anti-runaway is off DURING a clean eval")
+        assertEquals(before, config.Config.comebackMax, "…and restored AFTER the match")
+    }
+
+    @Test
     fun sameSeedIsDeterministic() {
         val a = SimRunner.runMatch(openGrid(), seed = 7, maxTicks = 150, setup = MatchSetup(npcs = 8))
         val b = SimRunner.runMatch(openGrid(), seed = 7, maxTicks = 150, setup = MatchSetup(npcs = 8))

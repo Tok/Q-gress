@@ -66,6 +66,10 @@ data class MatchSetup(
     // empty-handed, level-1, 0-AP agents almost never get as far as creating a FIELD in a bounded match —
     // so MU (the fitness signal) stays flat 0 for both sides and there's nothing for the AI to learn from.
     val quickStart: Boolean = true,
+    // Clean-eval: run with the anti-runaway mechanics OFF (comebackMax / dominanceDecay / leaderDistraction = 0).
+    // They deliberately muddy a leader's advantage to keep games close — great for play, but they add noise to
+    // the training/ranking signal, so an eval can ask for a cleaner gradient. SimRunner restores them after.
+    val cleanEval: Boolean = false,
 ) {
     companion object {
         const val DEFAULT_NPCS = 30
@@ -110,22 +114,37 @@ object SimRunner {
         policyEnl?.let { FactionPolicies.set(Faction.ENL, it) }
         policyRes?.let { FactionPolicies.set(Faction.RES, it) }
 
-        seedPortals(setup.portals)
-        seedAgents(setup.frogs, setup.smurfs)
-        seedNpcs(setup.npcs)
-        World.userFaction = Faction.ENL
-        World.tick = 0
-        World.isReady = true
-
-        repeat(maxTicks) {
-            Simulation.stepEntities()
-            Cycle.updateCheckpoints(World.tick, World.calcTotalMu(Faction.ENL), World.calcTotalMu(Faction.RES))
-            onTick?.invoke(World.tick)
-            World.tick++
+        // Clean-eval temporarily silences the anti-runaway knobs; snapshot them so we always restore the live
+        // values (even if a match throws) — they have no in-game UI but we still must not leave them zeroed.
+        val antiRunaway = Triple(Config.comebackMax, Config.dominanceDecay, Config.leaderDistraction)
+        if (setup.cleanEval) {
+            Config.comebackMax = 0.0
+            Config.dominanceDecay = 0.0
+            Config.leaderDistraction = 0.0
         }
 
-        val checkpoints = Cycle.INSTANCE.checkpoints.toList().sortedBy { it.first }.map { it.second }
-        return MatchResult(seed, maxTicks, checkpoints, World.calcTotalMu(Faction.ENL), World.calcTotalMu(Faction.RES))
+        try {
+            seedPortals(setup.portals)
+            seedAgents(setup.frogs, setup.smurfs)
+            seedNpcs(setup.npcs)
+            World.userFaction = Faction.ENL
+            World.tick = 0
+            World.isReady = true
+
+            repeat(maxTicks) {
+                Simulation.stepEntities()
+                Cycle.updateCheckpoints(World.tick, World.calcTotalMu(Faction.ENL), World.calcTotalMu(Faction.RES))
+                onTick?.invoke(World.tick)
+                World.tick++
+            }
+
+            val checkpoints = Cycle.INSTANCE.checkpoints.toList().sortedBy { it.first }.map { it.second }
+            return MatchResult(seed, maxTicks, checkpoints, World.calcTotalMu(Faction.ENL), World.calcTotalMu(Faction.RES))
+        } finally {
+            Config.comebackMax = antiRunaway.first
+            Config.dominanceDecay = antiRunaway.second
+            Config.leaderDistraction = antiRunaway.third
+        }
     }
 
     /** Clear every piece of mutable match state so matches don't bleed into one another. */

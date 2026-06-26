@@ -3,6 +3,7 @@ package util.ui
 import World
 import agent.Faction
 import ai.FactionPolicies
+import ai.MatchSetup
 import ai.net.Activation
 import ai.net.Evolution
 import ai.net.EvolutionConfig
@@ -63,6 +64,7 @@ object TrainerPanel {
     private var mutInput: HTMLInputElement? = null
     private var archSelect: HTMLSelectElement? = null
     private var actSelect: HTMLSelectElement? = null
+    private var cleanEvalBox: HTMLInputElement? = null
     private var runButton: HTMLButtonElement? = null
     private var statusEl: HTMLElement? = null
     private var previewCanvas: HTMLCanvasElement? = null
@@ -99,6 +101,7 @@ object TrainerPanel {
         mutInput = numberField(row, "Mutation", "0.15", "0.05", "0", "1")
         archSelect = selectField(row, "Architecture", ARCHES.map { it.first to it.first })
         actSelect = selectField(row, "Activation", Activation.entries.map { it.name to it.name.lowercase() })
+        cleanEvalBox = checkboxField(row, "Clean eval", "anti-runaway mechanics off — a cleaner training gradient")
         val run = button("Train", "trainRun") { onRunClick() }
         runButton = run
         row.appendChild(run)
@@ -241,6 +244,7 @@ object TrainerPanel {
             arch = NetArch(hiddens, bias = true, activation = Activation.from(actSelect?.value)),
             matchTicks = MATCH_TICKS,
             matchesPerEval = 1,
+            setup = MatchSetup(cleanEval = cleanEvalBox?.checked ?: false),
         )
     }
 
@@ -262,7 +266,7 @@ object TrainerPanel {
         runButton?.textContent = if (running) "Stop" else "Train"
         val ready = session != null && fitness.isNotEmpty() && !running
         actionButtons.forEach { it.disabled = !ready }
-        listOfNotNull(popInput, genInput, mutInput).forEach { it.disabled = running }
+        listOfNotNull(popInput, genInput, mutInput, cleanEvalBox).forEach { it.disabled = running }
         listOfNotNull(archSelect, actSelect).forEach { it.disabled = running }
     }
 
@@ -306,6 +310,16 @@ object TrainerPanel {
         wrap.appendChild(input)
         parent.appendChild(wrap)
         return input
+    }
+
+    private fun checkboxField(parent: HTMLElement, label: String, title: String): HTMLInputElement {
+        val wrap = el("label", "ladderEntrant").also { it.title = title } // reuse the leaderboard checkbox-row style
+        val box = document.createElement("input") as HTMLInputElement
+        box.type = "checkbox"
+        wrap.appendChild(box)
+        wrap.appendChild(el("span", "trainFieldLabel").also { it.textContent = label })
+        parent.appendChild(wrap)
+        return box
     }
 
     private fun selectField(parent: HTMLElement, label: String, options: List<Pair<String, String>>): HTMLSelectElement {
