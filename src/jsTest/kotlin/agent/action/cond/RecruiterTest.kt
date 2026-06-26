@@ -46,6 +46,13 @@ class RecruiterTest {
     }
 
     @Test
+    fun recruitSuccessProbabilityDiminishesAsTheRosterFills() {
+        assertEquals(Config.recruitmentBaseChance, Recruiter.recruitSuccessProbability(0.0), 1e-12, "empty roster → full base")
+        assertEquals(0.0, Recruiter.recruitSuccessProbability(1.0), 1e-12, "a full roster recruits at ~0")
+        assertEquals(Config.recruitmentBaseChance / 2.0, Recruiter.recruitSuccessProbability(0.5), 1e-12, "half full → half")
+    }
+
+    @Test
     fun selectionWeightTracksRecruitFactorExactly() {
         addAgents(Faction.ENL, 5)
         addAgents(Faction.RES, 1)

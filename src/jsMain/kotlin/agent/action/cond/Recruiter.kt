@@ -36,10 +36,12 @@ object Recruiter : ConditionalAction {
 
     // Success chance just diminishes as the faction fills toward its cap (rushing the cap yields ever-smaller
     // returns); the anti-snowball balancing now lives in [selectionWeight], not here, to avoid double-counting.
-    private fun recruitmentChance(faction: Faction): Double {
-        val fillRatio = World.countAgents(faction).toDouble() / Config.maxFor(faction)
-        return Config.recruitmentBaseChance * (1.0 - fillRatio)
-    }
+    private fun recruitmentChance(faction: Faction): Double =
+        recruitSuccessProbability(World.countAgents(faction).toDouble() / Config.maxFor(faction))
+
+    /** Pure diminishing-returns curve: base chance × the roster's remaining headroom (`1 − fillRatio`), so a
+     *  near-full roster recruits at ~0 and an empty one at the full [Config.recruitmentBaseChance]. */
+    fun recruitSuccessProbability(fillRatio: Double): Double = Config.recruitmentBaseChance * (1.0 - fillRatio)
 
     /** Start a recruit: pick a random NPC and head over (Agent drives the walk + meeting). Free — no XM cost. */
     override fun performAction(agent: Agent): Agent {

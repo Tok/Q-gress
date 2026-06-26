@@ -96,11 +96,7 @@ data class Portal(
     fun filledSlots() = slots.map { it.value }.filterNot { it.resonator == null }
     fun resoMap() = slots.mapNotNull { (octant, slot) -> slot.resonator?.let { octant to it } }.toMap()
 
-    private fun linkMitigation(): Int {
-        val incoming = findIncomingFrom()
-        val totalLinkCount = incoming.count() + links.count()
-        return round(400.0 / 9.0 * atan(totalLinkCount / E)).toInt()
-    }
+    private fun linkMitigation(): Int = linkMitigationFor(findIncomingFrom().count() + links.count())
 
     private fun modMitigation(): Int = mods.values.filterIsInstance<Shield>().sumOf { it.type.mitigation }
 
@@ -628,6 +624,13 @@ data class Portal(
         private const val MIN_COOLDOWN_FACTOR = 0.05 // heat sinks can't reduce cooldown below 5%
         private const val VIRUS_AP = 1000 // AP for flipping a portal with a virus
         private fun clipLevel(level: Int): Int = max(1, min(level, 8))
+
+        // Link-mitigation curve: damage reduction (%) rises with the portal's total link count along an
+        // arctan that saturates near the asymptote 400/9 × π/2 ≈ 69.8% — diminishing returns, so the first
+        // links matter most and a heavily-linked portal can't become invulnerable from links alone. Pure;
+        // the total cap (links + shields) is applied separately in [totalMitigation].
+        private const val LINK_MITIGATION_SCALE = 400.0 / 9.0
+        internal fun linkMitigationFor(linkCount: Int): Int = round(LINK_MITIGATION_SCALE * atan(linkCount / E)).toInt()
 
         // Non-blocking: the portal is built with an empty flow field, then PathUtil.computeFieldAsync
         // fills portal.vectors off-thread (heatMap stays empty — it's never read externally). Agents
