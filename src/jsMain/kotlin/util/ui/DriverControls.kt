@@ -24,9 +24,10 @@ import util.GameUrl
  */
 object DriverControls {
     const val DEFAULT = "net" // default brain: the trained neural net (AI vs AI out of the box)
-    private val llmClient by lazy { WebLlmClient() } // shared across factions → one model load
     private val pending = mutableMapOf<Faction, String>() // the onboarding driver pick, before the start-reload
     private val selects = mutableMapOf<Faction, HTMLSelectElement>() // live pickers, so others can reflect a change
+    private val llmModel = mutableMapOf<Faction, String>() // each faction's chosen LLM model id
+    private val llmClients = mutableMapOf<Faction, WebLlmClient>() // one client per faction (its own model load)
 
     /** Record [faction]'s chosen driver (onboarding) so the start-URL carries it across the reload. */
     fun select(faction: Faction, value: String) {
@@ -34,11 +35,7 @@ object DriverControls {
     }
 
     /** The driver for [faction]: the onboarding pick, else the start-URL (`?enl=…&res=…`), else the default. */
-    fun chosen(faction: Faction): String = pending[faction] ?: GameUrl.driver(faction) ?: defaultFor(faction)
-
-    // The user's faction defaults to the trained net; the OPPONENT defaults to the (experimental) LLM, so a
-    // fresh game shows two different brains out of the box. Falls back to net for both until a side is chosen.
-    private fun defaultFor(faction: Faction): String = if (World.userFaction != null && faction != World.userFaction) "llm" else DEFAULT
+    fun chosen(faction: Faction): String = pending[faction] ?: GameUrl.driver(faction) ?: DEFAULT
 
     // Manual only works for the user's own faction — DomSliderPolicy reads the visible tuning sliders, which
     // only drive the chosen faction. Offer it just for that side (mirrors the onboarding driver grid).
@@ -70,13 +67,41 @@ object DriverControls {
         val choice = chosen(faction) // onboarding pick / start-URL / default
         sel.value = choice
         selects[faction] = sel
+        val modelSel = modelPicker(faction)
         apply(faction, choice) // install it up front so the chosen brain plays from the first tick
         sel.onchange = {
             apply(faction, sel.value)
+            setVisible(modelSel, sel.value == "llm") // the model picker only matters for the LLM driver
             null
         }
+        setVisible(modelSel, choice == "llm")
         wrap.appendChild(sel)
+        wrap.appendChild(modelSel)
         return wrap
+    }
+
+    // Per-faction LLM model picker (shown only while the LLM driver is selected) — pick a different model per
+    // side for varied LLM-vs-LLM matches. Changing it reinstalls the LLM driver with a fresh client.
+    private fun modelPicker(faction: Faction): HTMLSelectElement {
+        val sel = document.createElement("select") as HTMLSelectElement
+        sel.className = "aiDriverSelect aiModelSelect"
+        WebLlmClient.MODELS.forEach { (label, id) ->
+            val o = document.createElement("option") as HTMLOptionElement
+            o.value = id
+            o.textContent = label
+            sel.appendChild(o)
+        }
+        sel.value = llmModel[faction] ?: WebLlmClient.DEFAULT_MODEL
+        sel.onchange = {
+            llmModel[faction] = sel.value
+            if (selects[faction]?.value == "llm") apply(faction, "llm") // swap to the new model live
+            null
+        }
+        return sel
+    }
+
+    private fun setVisible(el: HTMLElement, visible: Boolean) {
+        el.asDynamic().style.display = if (visible) "" else "none"
     }
 
     /** Reflect an externally-installed driver in the picker (e.g. the trainer installing a champion) — the
@@ -89,9 +114,17 @@ object DriverControls {
         when (value) {
             "heuristic" -> FactionPolicies.set(faction, HeuristicPolicy(faction))
             "net" -> FactionPolicies.set(faction, NetPolicy(NetStore.loadNet(), faction))
-            "llm" -> FactionPolicies.set(faction, LlmPolicy(faction, llmClient))
+            "llm" -> FactionPolicies.set(faction, LlmPolicy(faction, llmClientFor(faction)))
             else -> FactionPolicies.set(faction, DomSliderPolicy(faction))
         }
+    }
+
+    // One WebLlmClient per faction, recreated when its chosen model changes (each loads its own weights).
+    private fun llmClientFor(faction: Faction): WebLlmClient {
+        val model = llmModel.getOrPut(faction) { WebLlmClient.DEFAULT_MODEL }
+        val existing = llmClients[faction]
+        if (existing != null && existing.requestedModel == model) return existing
+        return WebLlmClient(model).also { llmClients[faction] = it }
     }
 
     private fun option(value: String, label: String, disabled: Boolean): HTMLOptionElement {

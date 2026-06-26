@@ -20,7 +20,6 @@ import system.Cycle
 import system.HeadlessRun
 import system.Simulation
 import system.display.DamageNumberFx
-import system.display.OwnBuildings
 import system.display.PassabilityOverlay
 import system.display.PortalNameTicker
 import system.display.Scene3D
@@ -53,25 +52,6 @@ object HtmlUtil {
     private const val LOCATION_LABEL_ID = "locationLabel"
     private const val MIN_SPEED = 0.25
     private const val MAX_SPEED = 4.0
-
-    // Buildings-transparency menu slider (0 = solid, 1 = fully see-through). Drives BOTH building sets so the
-    // two stay consistent (they render together — our meshes on top, MapLibre filling gaps). Our own meshes
-    // are kept a touch more transparent so the action behind them reads better.
-    private const val BUILDING_TRANSPARENCY_DEFAULT = 0.15
-    private const val OWN_BUILDING_EXTRA_TRANSPARENCY = 0.2
-
-    private fun setBuildingTransparency(transparency: Double) = applyBuildingOpacity((1.0 - transparency).coerceIn(0.0, 1.0))
-
-    // Shared sink: set MapLibre's gap-fillers + our own meshes (a touch more transparent) from one opacity.
-    private fun applyBuildingOpacity(mapOpacity: Double) {
-        MapUtil.setBuildingOpacity(mapOpacity)
-        OwnBuildings.setOpacity((mapOpacity - OWN_BUILDING_EXTRA_TRANSPARENCY).coerceIn(0.0, 1.0))
-    }
-
-    private fun nudgeBuildingTransparency(deltaOpacity: Double) {
-        MapUtil.nudgeBuildingOpacity(deltaOpacity)
-        applyBuildingOpacity(MapUtil.currentBuildingOpacity())
-    }
 
     // Sim-speed presets behind the toolbar buttons (mult, label, button id). "Max" = MAX_SPEED.
     private val SPEED_PRESETS = listOf(
@@ -440,6 +420,7 @@ object HtmlUtil {
     // so also park the auto-cam (restoring it on resume) and implicitly mute, so a paused game is truly still.
     private fun applyPauseSideEffects(paused: Boolean) {
         SoundUtil.setPausedMute(paused)
+        applyAnimationSpeed() // freeze (or restore) the 3D animation clock — sun arc, hack spins, etc.
         if (paused) {
             autoCamBeforePause = MapUtil.isAutoCamOn()
             if (autoCamBeforePause) MapUtil.setAutoCam(false)
@@ -453,7 +434,7 @@ object HtmlUtil {
             command = { onShortcutCommand(it) },
             zoom = { MapUtil.zoomBy(it) },
             pan = { dx, dy -> MapUtil.panBy(dx, dy) },
-            buildingOpacity = { nudgeBuildingTransparency(it) },
+            buildingOpacity = { BuildingTransparency.nudge(it) },
             speedDelta = { setSpeed(speedMult + it) },
         ),
     )
@@ -494,12 +475,18 @@ object HtmlUtil {
      *  animations. Walking/actions follow automatically — they run per tick, which now ticks faster. */
     private fun setSpeed(mult: Double) {
         speedMult = mult.coerceIn(MIN_SPEED, MAX_SPEED)
-        Scene3D.animationSpeed = speedMult // visual FX (hack spin, deploy, shatter, build-in) track the speed
+        applyAnimationSpeed() // visual FX (hack spin, deploy, shatter, build-in, sun) track the speed
         if (intervalID != -1) {
             document.defaultView?.clearInterval(intervalID)
             intervalID = document.defaultView?.setInterval({ tick() }, currentTickMs()) ?: 0
         }
         refreshSpeedButtons()
+    }
+
+    // The 3D render loop runs independently of the sim tick, so drive its animation clock from here: the live
+    // speed multiplier normally, 0 while paused (freezes hack spins, the sun's arc, etc. — a true pause).
+    private fun applyAnimationSpeed() {
+        Scene3D.animationSpeed = if (intervalID == -1) 0.0 else speedMult
     }
 
     private fun pauseHandler(intervalID: Int, tickFunction: () -> Unit): Int {
@@ -740,7 +727,7 @@ object HtmlUtil {
         // Fade BOTH building sets (our own meshes + MapLibre's, which fill the gaps) when they hide the action.
         // 0 = solid, 1 = fully see-through; our own meshes are a touch more transparent than MapLibre's.
         menu.append(
-            MenuControls.slider("Buildings transparency", BUILDING_TRANSPARENCY_DEFAULT) { setBuildingTransparency(it) },
+            MenuControls.slider("Buildings transparency", BuildingTransparency.default()) { BuildingTransparency.set(it) },
         )
         // Building-shake intensity (0 = off … 2 = 200%).
         menu.append(

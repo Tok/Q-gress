@@ -141,6 +141,10 @@ html, body {
     font-size: 11px;
     padding: 1px 4px;
 }
+.aiModelSelect {
+    margin-left: 3px;
+    max-width: 120px;
+}
 .aiObsRow {
     display: grid;
     grid-template-columns: 80px 1fr 34px;
@@ -518,15 +522,20 @@ html, body {
 .brainsKv {
     display: flex;
     gap: 8px;
+    align-items: baseline;
     font-size: 12px;
     margin-bottom: 4px;
 }
 .brainsKvKey {
     color: #7f8a84;
-    min-width: 92px;
+    flex: 0 0 64px; /* fixed, narrow, left-justified label column */
+    text-align: left;
 }
 .brainsKvVal {
     color: #e7edea;
+    flex: 1 1 auto;
+    min-width: 0; /* allow the value to wrap inside the flex row instead of being clipped */
+    word-break: break-word;
 }
 .brainsKey {
     font-size: 10px;

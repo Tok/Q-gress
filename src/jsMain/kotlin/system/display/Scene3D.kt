@@ -317,8 +317,8 @@ object Scene3D {
         val nowMs = js("performance.now()") as Double
         val rawDt = if (lastFrameMs <= 0.0) 0.016 else ((nowMs - lastFrameMs) / 1000.0).coerceIn(0.0, 0.1)
         lastFrameMs = nowMs
-        SunController.advance(rawDt) // real-time sun arc (independent of sim speed); speed set by Title/Html
         val dt = rawDt * animationSpeed
+        SunController.advance(dt) // arc on the sim-scaled clock too → obeys speed + freezes on pause (animationSpeed 0)
         animClockMs += dt * 1000.0
         PlasmaShader.setTime(animClockMs / 1000.0) // animate control fields (on the scaled clock)
         updateShields(animClockMs / 1000.0) // shield hex/rim animation + per-portal blast-absorb ripple
