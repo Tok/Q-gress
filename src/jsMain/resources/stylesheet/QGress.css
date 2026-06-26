@@ -207,18 +207,18 @@ html, body {
 .taInv {
     text-align: right;
 }
-/* Fixed column widths so the table layout never shifts with content. */
-.taTable th:nth-child(1), .taTable td:nth-child(1) { width: 22px; }
-.taTable th:nth-child(2), .taTable td:nth-child(2) { width: 52px; }
-.taTable th:nth-child(3), .taTable td:nth-child(3) { width: 44px; }
-.taTable th:nth-child(4), .taTable td:nth-child(4) { width: 112px; }
+/* Fixed column widths so the table layout never shifts with content (XM, AP, Agent, XMPs, Resos, Cubes,
+   Shields, Keys, Action, Portal — the rank # column was removed). */
+.taTable th:nth-child(1), .taTable td:nth-child(1) { width: 52px; }
+.taTable th:nth-child(2), .taTable td:nth-child(2) { width: 44px; }
+.taTable th:nth-child(3), .taTable td:nth-child(3) { width: 112px; }
+.taTable th:nth-child(4), .taTable td:nth-child(4),
 .taTable th:nth-child(5), .taTable td:nth-child(5),
-.taTable th:nth-child(6), .taTable td:nth-child(6),
-.taTable th:nth-child(7), .taTable td:nth-child(7) { width: 58px; }
-.taTable th:nth-child(8), .taTable td:nth-child(8) { width: 42px; }
-.taTable th:nth-child(9), .taTable td:nth-child(9) { width: 30px; }
-.taTable th:nth-child(10), .taTable td:nth-child(10) { width: 84px; }
-.taTable th:nth-child(11), .taTable td:nth-child(11) { width: 132px; }
+.taTable th:nth-child(6), .taTable td:nth-child(6) { width: 58px; }
+.taTable th:nth-child(7), .taTable td:nth-child(7) { width: 42px; }
+.taTable th:nth-child(8), .taTable td:nth-child(8) { width: 30px; }
+.taTable th:nth-child(9), .taTable td:nth-child(9) { width: 84px; }
+.taTable th:nth-child(10), .taTable td:nth-child(10) { width: 132px; }
 .taInvBars {
     display: inline-flex;
     align-items: flex-end;

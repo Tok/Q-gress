@@ -21,41 +21,39 @@ object TopAgentsPanel {
     private const val MAX_DEPLOY_LEVEL = 8
     private const val MAX_SHIELD_LEVEL = 4
     private const val BAR_MAX_PX = 11
-    private const val DEFAULT_SORT = 2 // AP
 
-    // A column: a header, an optional numeric/string sort key (null → not sortable, e.g. the rank #), and how
-    // to render its cell for an agent at rank [i].
+    // A column: a header, an optional numeric/string sort key (null → not sortable), and how to render its cell.
     private class Col(
         val header: String,
         val num: ((Agent) -> Double)? = null,
         val str: ((Agent) -> String)? = null,
-        val render: (Agent, Int) -> HTMLElement,
+        val render: (Agent) -> HTMLElement,
     ) {
         val sortable get() = num != null || str != null
     }
 
     private val COLS = listOf(
-        Col("#", render = { _, i -> cell((i + 1).toString(), "taNum") }),
-        Col("XM", num = { it.xm.toDouble() }, render = { a, _ -> cell(a.xm.toString(), "taNum") }),
-        Col("AP", num = { it.ap.toDouble() }, render = { a, _ -> cell(a.ap.toString(), "taNum") }),
-        Col("Agent", str = { it.faction.abbr + it.name }, render = { a, _ -> nameCell(a) }),
+        Col("XM", num = { it.xm.toDouble() }, render = { a -> cell(a.xm.toString(), "taNum") }),
+        Col("AP", num = { it.ap.toDouble() }, render = { a -> cell(a.ap.toString(), "taNum") }),
+        Col("Agent", str = { it.faction.abbr + it.name }, render = { a -> nameCell(a) }),
         Col("XMPs", num = {
             it.inventory.findXmps().size.toDouble()
-        }, render = { a, _ -> invCell(a.inventory.findXmps(), MAX_DEPLOY_LEVEL, ::deployColor) }),
+        }, render = { a -> invCell(a.inventory.findXmps(), MAX_DEPLOY_LEVEL, ::deployColor) }),
         Col("Resos", num = {
             it.inventory.findResonators().size.toDouble()
-        }, render = { a, _ -> invCell(a.inventory.findResonators(), MAX_DEPLOY_LEVEL, ::deployColor) }),
+        }, render = { a -> invCell(a.inventory.findResonators(), MAX_DEPLOY_LEVEL, ::deployColor) }),
         Col("Cubes", num = {
             it.inventory.findPowerCubes().size.toDouble()
-        }, render = { a, _ -> invCell(a.inventory.findPowerCubes(), MAX_DEPLOY_LEVEL, ::deployColor) }),
+        }, render = { a -> invCell(a.inventory.findPowerCubes(), MAX_DEPLOY_LEVEL, ::deployColor) }),
         Col("Shields", num = {
             it.inventory.findShields().size.toDouble()
-        }, render = { a, _ -> invCell(a.inventory.findShields(), MAX_SHIELD_LEVEL, ShieldType::getColorForLevel) }),
-        Col("Keys", num = { it.inventory.keyCount().toDouble() }, render = { a, _ -> cell(a.inventory.keyCount().toString(), "taNum") }),
-        Col("Action", str = { it.action.item.text }, render = { a, _ -> cell(a.action.item.text, "taCell") }),
-        Col("Portal", str = { it.actionPortal.name }, render = { a, _ -> cell(a.actionPortal.name, "taCell") }),
+        }, render = { a -> invCell(a.inventory.findShields(), MAX_SHIELD_LEVEL, ShieldType::getColorForLevel) }),
+        Col("Keys", num = { it.inventory.keyCount().toDouble() }, render = { a -> cell(a.inventory.keyCount().toString(), "taNum") }),
+        Col("Action", str = { it.action.item.text }, render = { a -> cell(a.action.item.text, "taCell") }),
+        Col("Portal", str = { it.actionPortal.name }, render = { a -> cell(a.actionPortal.name, "taCell") }),
     )
 
+    private val DEFAULT_SORT = COLS.indexOfFirst { it.header == "AP" }.coerceAtLeast(0) // sort by AP by default
     private var sortIndex = DEFAULT_SORT
     private var sortAsc = false // AP descending by default
 
@@ -70,9 +68,9 @@ object TopAgentsPanel {
         body.textContent = ""
         val ordered = sortedAgents()
         val limit = if (Footer.isExpanded()) ordered.size else ROWS // expanded → every agent (the body scrolls)
-        ordered.take(limit).forEachIndexed { i, agent ->
+        ordered.take(limit).forEach { agent ->
             val row = el("tr", "taRow")
-            COLS.forEach { row.appendChild(it.render(agent, i)) }
+            COLS.forEach { row.appendChild(it.render(agent)) }
             body.appendChild(row)
         }
     }

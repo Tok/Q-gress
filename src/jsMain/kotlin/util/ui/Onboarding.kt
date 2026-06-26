@@ -278,6 +278,7 @@ object Onboarding {
 
         val presets = div("onboardRow")
         val presetBtns = mutableListOf<HTMLButtonElement>()
+        val applyPreset = mutableListOf<() -> Unit>()
         // Portal count scales with map size (Small 5 · Normal 8 · Large 13); people scale automatically.
         listOf(
             Triple("Small", Sim.SMALL_SCALE, 5),
@@ -285,18 +286,23 @@ object Onboarding {
             Triple("Large", Sim.LARGE_SCALE, 13),
         ).forEach { (label, sc, portals) ->
             lateinit var btn: HTMLButtonElement
-            btn = button(label, "onboardPreset") {
+            val apply: () -> Unit = {
                 widthInput.value = Sim.presetWidth(sc).toString()
                 heightInput.value = Sim.presetHeight(sc).toString()
                 portalsInput.value = portals.toString()
                 presetBtns.forEach { it.removeClass("onboardActive") }
                 btn.addClass("onboardActive")
             }
+            btn = button(label, "onboardPreset") { apply() }
             presetBtns.add(btn)
+            applyPreset.add(apply)
             presets.appendChild(btn)
         }
-        presetBtns.getOrNull(1)?.addClass("onboardActive") // default to Normal — just hit Start to accept
         screen.appendChild(presets)
+        // Default to Normal: actually APPLY its size/portals to the inputs (not just highlight it) so hitting
+        // Next without touching a preset uses Normal — the old code only added the highlight class, so the
+        // inputs kept their initial (Small) values and Next silently submitted Small.
+        applyPreset.getOrNull(1)?.invoke()
 
         val fields = div("onboardRow")
         fields.appendChild(labeledInput("Width", widthInput))
