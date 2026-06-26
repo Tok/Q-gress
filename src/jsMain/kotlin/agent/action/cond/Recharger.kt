@@ -5,7 +5,7 @@ import agent.action.ActionItem
 import portal.Portal
 
 object Recharger : ConditionalAction {
-    override val actionItem = ActionItem.RECYCLE
+    override val actionItem = ActionItem.RECHARGE
 
     override fun isActionPossible(agent: Agent) = agent.isXmFilled() &&
         chargeableKeys(agent).isNotEmpty() &&
