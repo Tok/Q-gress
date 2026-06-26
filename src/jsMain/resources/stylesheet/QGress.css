@@ -479,6 +479,19 @@ html, body {
     color: #9aa6a0;
     margin-bottom: 8px;
 }
+.aiSliderGroup {
+    margin-bottom: 12px;
+}
+.aiSliderGroupTitle {
+    font-family: "Chakra Petch", sans-serif;
+    letter-spacing: 1px;
+    font-size: 10px;
+    text-transform: uppercase;
+    color: #7f8a84;
+    margin: 4px 0 6px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding-bottom: 3px;
+}
 .llmBlock {
     min-width: 260px;
     max-width: 420px;

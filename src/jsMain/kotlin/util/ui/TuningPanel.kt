@@ -142,7 +142,11 @@ object TuningPanel {
         val enemyInput = slider(qValue, userFaction.enemy()).also { it.classList.add("invisible") }
         val valueLabel = el("span", "qSliderLabel").also { it.textContent = display(userInput.value) }
         val bar = el("div", "qBar")
-        val fill = el("div", "qBarFill").also { bar.appendChild(it) }
+        // The read-only bar mirrors the AI-driven value for the displayed faction → tint it that faction's colour.
+        val fill = el("div", "qBarFill").also {
+            bar.appendChild(it)
+            it.asDynamic().style.background = userFaction.color
+        }
         val lock = lockToggle()
         val builtRow = Row(qValue, userInput, valueLabel, bar, fill, lock)
         userInput.oninput = {
@@ -170,10 +174,11 @@ object TuningPanel {
     }
 
     // The per-row lock toggle: shown only when an AI drives the faction; click to grab/release the slider.
+    // Player-facing semantics: LOCKED (🔒) = the AI holds it (read-only bar); UNLOCKED (🔓) = you've taken it
+    // over (editable slider). [applyMode] sets the live icon + title per row.
     private fun lockToggle(): HTMLElement = el("span", "qLockToggle").also {
-        it.innerHTML = LOCK_OPEN
+        it.innerHTML = LOCK_CLOSED
         it.asDynamic().style.cursor = "pointer"
-        it.title = "Lock this slider (override the AI)"
     }
 
     // Simple monochrome padlock icons (inherit the row's text colour via currentColor) — not the OS emoji.
@@ -220,12 +225,16 @@ object TuningPanel {
             val interactive = !globallyLocked && (!aiDriven || r.locked)
             r.input.disabled = !interactive
             setVisible(r.input, interactive)
-            setVisible(r.valueLabel, interactive)
             setVisible(r.bar, !interactive)
+            // The numeric value is shown in BOTH modes (slider + bar) and always sits in its own fixed grid
+            // column, so the lock never shifts into the value's cell when the bar is showing.
             if (!interactive) r.fill.style.width = pct(r.input)
             // The lock toggle only makes sense while an AI drives and the panel isn't globally locked.
             setVisible(r.lock, aiDriven && !globallyLocked)
-            r.lock.innerHTML = if (r.locked) LOCK_CLOSED else LOCK_OPEN
+            // Player-facing: unlocked (open) = you're editing it; locked (closed) = the AI holds it.
+            r.lock.innerHTML = if (r.locked) LOCK_OPEN else LOCK_CLOSED
+            r.lock.title =
+                if (r.locked) "You're editing this slider — click to hand it back to the AI" else "AI-controlled — click to unlock and edit"
         }
     }
 

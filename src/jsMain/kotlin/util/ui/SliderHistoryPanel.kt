@@ -1,6 +1,7 @@
 package util.ui
 
 import agent.Faction
+import agent.qvalue.QActions
 import agent.qvalue.QValue
 import ai.FactionPolicies
 import ai.SliderVector
@@ -18,8 +19,8 @@ import system.Cycle
  * row style; rebuilt lazily, fed only when a checkpoint changes.
  */
 object SliderHistoryPanel {
-    private const val CONTAINER_ID = "sliderHistoryPanel"
     private const val WINDOW = 35 // mirror the checkpoint rolling window (Cycle.numberOfCheckpoints)
+    private val ACTION_COUNT = QActions.values().size // first N slots are actions, the rest are targets
     private const val COLS = 4 // lay the slots out in 4 columns (was 2) to use the footer width
     private const val CHART_W = 240 // initial chart width; resizeCharts() then stretches each to its cell
     private const val CHART_H = 40
@@ -78,36 +79,45 @@ object SliderHistoryPanel {
         if (built) return true
         if (document.body == null) return false
         if (js("typeof uPlot === 'undefined'").unsafeCast<Boolean>()) return false // CDN not ready
-        val container = el("sliderHistoryPanel")
-        container.id = CONTAINER_ID
-        val st = container.asDynamic().style
-        st.display = "grid"
-        st.gridTemplateColumns = "repeat($COLS, minmax(0, 1fr))" // COLS equal columns across the footer width
-        st.columnGap = "16px"
-        SLOTS.forEachIndexed { i, q ->
-            val row = el("historyRow")
-            val head = el("historyHead")
-            val title = el("historyTitle").also { it.textContent = q.description }
-            head.appendChild(title)
-            val enl = el("historyVal").also { it.style.color = Faction.ENL.color }
-            head.appendChild(enl)
-            enlVals[i] = enl
-            val res = el("historyVal").also { it.style.color = Faction.RES.color }
-            head.appendChild(res)
-            resVals[i] = res
-            row.appendChild(head)
-            val chart = el("historyChart")
-            row.appendChild(chart)
-            container.appendChild(row)
-            chartDivs[i] = chart
-            plots[i] = makePlot(chart)
-        }
         val section = el("aiSection")
         section.appendChild(el("aiSectionTitle").also { it.textContent = "Behaviour sliders over time" })
-        section.appendChild(container)
+        // Grouped like the tuning sliders: the 10 agent "actions" first, then the 7 "targets" (destinations).
+        section.appendChild(buildGroup("Actions", 0 until ACTION_COUNT))
+        section.appendChild(buildGroup("Targets", ACTION_COUNT until SLOTS.size))
         Footer.tab("ai").appendChild(section)
         built = true
         return true
+    }
+
+    private fun buildGroup(title: String, range: IntRange): HTMLElement {
+        val group = el("aiSliderGroup")
+        group.appendChild(el("aiSliderGroupTitle").also { it.textContent = title })
+        val grid = el("sliderHistoryGrid")
+        val st = grid.asDynamic().style
+        st.display = "grid"
+        st.gridTemplateColumns = "repeat($COLS, minmax(0, 1fr))" // COLS equal columns across the footer width
+        st.columnGap = "16px"
+        for (i in range) buildSlot(grid, i)
+        group.appendChild(grid)
+        return group
+    }
+
+    private fun buildSlot(grid: HTMLElement, i: Int) {
+        val row = el("historyRow")
+        val head = el("historyHead")
+        head.appendChild(el("historyTitle").also { it.textContent = SLOTS[i].description })
+        val enl = el("historyVal").also { it.style.color = Faction.ENL.color }
+        head.appendChild(enl)
+        enlVals[i] = enl
+        val res = el("historyVal").also { it.style.color = Faction.RES.color }
+        head.appendChild(res)
+        resVals[i] = res
+        row.appendChild(head)
+        val chart = el("historyChart")
+        row.appendChild(chart)
+        grid.appendChild(row)
+        chartDivs[i] = chart
+        plots[i] = makePlot(chart)
     }
 
     // Stretch every sparkline to its grid cell's current width (so they fill the 4 columns and follow the
