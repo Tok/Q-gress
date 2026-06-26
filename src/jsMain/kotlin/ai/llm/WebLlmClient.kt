@@ -98,6 +98,11 @@ class WebLlmClient(private val model: String = DEFAULT_MODEL) : LlmClient {
         /** True if the browser exposes the WebGPU API (`navigator.gpu`). False → the LLM can't run. */
         fun webGpuAvailable(): Boolean = js("typeof navigator !== 'undefined' && !!navigator.gpu") as Boolean
 
+        /** True on Chromium-based browsers (Chrome/Brave/Edge/Opera…) — where the `chrome://` flag tips apply. */
+        fun isChromiumLike(): Boolean = js(
+            "typeof navigator !== 'undefined' && (!!navigator.userAgentData || /Chrome|Chromium/i.test(navigator.userAgent || ''))",
+        ) as Boolean
+
         private var gpuReportCache: String? = null
         private var gpuQuerying = false
 

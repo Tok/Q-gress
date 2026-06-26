@@ -243,28 +243,38 @@ object BrainsPanel {
         summary.className = "brainsHelpSummary"
         summary.textContent = "WebGPU won't run? (troubleshooting)"
         details.appendChild(summary)
-        details.appendChild(
-            p(
-                "The LLM needs WebGPU on a real GPU. If the GPU line above shows a software/hidden adapter or " +
-                    "WebGPU errors, it'll fall back to the heuristic. Open these (browsers block clicking a " +
-                    "chrome:// link, so right-click → copy, or paste into the address bar) and reload:",
-            ),
-        )
-        val links = el("div", "brainsLinks")
-        listOf(
-            "chrome://gpu" to "chrome://gpu  — check the Vulkan/WebGPU row names your GPU",
-            "chrome://flags/#enable-unsafe-webgpu" to "chrome://flags/#enable-unsafe-webgpu",
-            "chrome://flags/#enable-vulkan" to "chrome://flags/#enable-vulkan",
-            "chrome://flags/#ignore-gpu-blocklist" to "chrome://flags/#ignore-gpu-blocklist",
-        ).forEach { (url, label) -> links.appendChild(chromeLink(url, label)) }
-        details.appendChild(links)
-        details.appendChild(
-            p(
-                "On Brave, also turn Shields' fingerprinting off for this page (it can hide the GPU). On " +
-                    "Linux/NVIDIA, if WebGPU is stuck on \"SwiftShader\", launching the browser with " +
-                    "--disable-gpu-sandbox often forces hardware Vulkan.",
-            ),
-        )
+        if (WebLlmClient.isChromiumLike()) {
+            details.appendChild(
+                p(
+                    "The LLM needs WebGPU on a real GPU. If the GPU line above shows a software/hidden adapter " +
+                        "or WebGPU errors, it falls back to the heuristic. Open these (browsers block clicking a " +
+                        "chrome:// link, so right-click → copy, or paste into the address bar) and reload:",
+                ),
+            )
+            val links = el("div", "brainsLinks")
+            listOf(
+                "chrome://gpu" to "chrome://gpu  — check the Vulkan/WebGPU row names your GPU",
+                "chrome://flags/#enable-unsafe-webgpu" to "chrome://flags/#enable-unsafe-webgpu",
+                "chrome://flags/#enable-vulkan" to "chrome://flags/#enable-vulkan",
+                "chrome://flags/#ignore-gpu-blocklist" to "chrome://flags/#ignore-gpu-blocklist",
+            ).forEach { (url, label) -> links.appendChild(chromeLink(url, label)) }
+            details.appendChild(links)
+            details.appendChild(
+                p(
+                    "On Brave, also turn Shields' fingerprinting off for this page (it can hide the GPU). On " +
+                        "Linux/NVIDIA, if WebGPU is stuck on \"SwiftShader\", launching the browser with " +
+                        "--disable-gpu-sandbox often forces hardware Vulkan.",
+                ),
+            )
+        } else {
+            details.appendChild(
+                p(
+                    "The LLM needs WebGPU on a real GPU, which works best in a recent Chromium-based browser " +
+                        "(Chrome / Brave / Edge). Enable WebGPU in your browser's settings, or switch to one of " +
+                        "those for the in-browser LLM; otherwise this side stays on the heuristic.",
+                ),
+            )
+        }
         return details
     }
 
