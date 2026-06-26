@@ -45,7 +45,8 @@ class WebLlmClient(private val model: String = DEFAULT_MODEL) : LlmClient {
             (response.choices[0].message.content as? String).orEmpty()
         }.getOrElse {
             // A GPU/driver failure often reads as a generic error — point at the flag that usually fixes it.
-            status = "error: ${it.message} · try $WEBGPU_FLAG"
+            console.warn("WebLLM failed (model=$activeModel): ${it.message}") // detail for debugging
+            status = "error: ${it.message} · try a tinier model / $WEBGPU_FLAG"
             "" // → LlmPolicy keeps using its heuristic fallback
         }
     }
@@ -83,7 +84,8 @@ class WebLlmClient(private val model: String = DEFAULT_MODEL) : LlmClient {
         // DIFFERENT model per faction makes for more interesting LLM-vs-LLM matches — but each loads its own
         // few-hundred-MB-to-~2GB weights into VRAM, so two large models at once can exceed a modest GPU.
         val MODELS: List<Pair<String, String>> = listOf(
-            "Qwen2.5 0.5B (smallest)" to "Qwen2.5-0.5B-Instruct-q4f16_1-MLC",
+            "SmolLM2 360M (tiniest)" to "SmolLM2-360M-Instruct-q4f16_1-MLC",
+            "Qwen2.5 0.5B" to "Qwen2.5-0.5B-Instruct-q4f16_1-MLC",
             "Llama 3.2 1B" to "Llama-3.2-1B-Instruct-q4f16_1-MLC",
             "Qwen2.5 1.5B" to "Qwen2.5-1.5B-Instruct-q4f16_1-MLC",
             "SmolLM2 1.7B" to "SmolLM2-1.7B-Instruct-q4f16_1-MLC",
