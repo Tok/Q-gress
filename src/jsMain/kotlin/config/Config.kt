@@ -64,7 +64,7 @@ object Config {
 
     const val MIN_NONFACTION = 30 // floor: always enough to recruit, even on a tiny/dense map (or a low multiplier)
     const val MAX_NONFACTION_CAP = 1000 // ceiling: keep huge/dense maps from spawning a perf-killing crowd
-    private const val NPC_DENSITY = 360.0 // NPCs per one screenful (Dim.width × Dim.height) of walkable area
+    private const val NPC_DENSITY = 180.0 // NPCs per one screenful (Dim.width × Dim.height) of walkable area
     private const val CITY_GAIN = 1.2 // built-up (low-walkable) areas pack in more people
     private const val TOURIST_MUL = 1.6 // famous tourist spots draw extra crowds
 
