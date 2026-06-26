@@ -1038,11 +1038,6 @@ object Scene3D {
             val ang = i * PI / 4.0
             val ox = ringR * cos(ang)
             val oy = ringR * sin(ang)
-            // Both o-rings are the pole's fixed "cage" (part of the portal, NOT the reso): they stay put while
-            // a rod deploys into them and never tilt on a hack — only the rod itself lerps/tilts/falls. Always
-            // present, filled or empty, so a destroyed reso just leaves its empty cage behind (no pop).
-            addRing(group, ox, oy, 0.0) // lower socket (collar)
-            addRing(group, ox, oy, rodLen) // upper guide ring (at the rod-top height)
             val resoInfo = resos[octant]
             if (resoInfo != null) {
                 val lvl = resoInfo.first
@@ -1084,9 +1079,12 @@ object Scene3D {
                 cap.asDynamic().position.set(0.0, 0.0, -rodLen * (1.0 - shownFill))
                 cap.asDynamic().renderOrder = 1
                 pivot.asDynamic().add(cap)
-                // Only the rod (+ its energy cap) lives in the pivot — the o-rings are the fixed pole cage added
-                // above. So deploy lerps just the rod into the rings, and a hack hinges the rod within them.
+                // Slotted reso → rings ride the pivot (tilt with the rod on hack/glyph); mid-deploy → rings stay
+                // at the pole so only the rod lerps in.
+                addSlotRings(group, pivot.takeIf { from == null }, ox, oy, rodLen)
                 group.asDynamic().add(pivot)
+            } else {
+                addSlotRings(group, null, ox, oy, rodLen) // empty slot → both rings fixed at the pole (no tilt)
             }
         }
         group.asDynamic().position.set(x, y, gz + poleH * RESO_COLLAR_FRAC)
@@ -1094,13 +1092,25 @@ object Scene3D {
         return group
     }
 
-    // A bare rubber o-ring parented straight to the reso group (not a rod pivot) at local ([ox], [oy], [z]):
-    // the pole socket (z=0) and the empty-slot upper ring. It spins around the pole with the group on a hack
-    // but never tilts out (no rod to swing).
-    private fun addRing(group: dynamic, ox: Double, oy: Double, z: Double) {
+    // A bare rubber o-ring at [parent]-local ([x], [y], [z]). [parent] is the reso group for a pole-fixed ring
+    // (empty slot / mid-deploy) or a rod pivot for a slotted reso's rings (so they tilt with the rod on a hack).
+    private fun addRing(parent: dynamic, x: Double, y: Double, z: Double) {
         val ring = Three.Mesh(resoRingGeo, Materials.rubber())
-        ring.asDynamic().position.set(ox, oy, z)
-        group.add(ring)
+        ring.asDynamic().position.set(x, y, z)
+        parent.add(ring)
+    }
+
+    // A slot's lower + upper o-rings. With [pivot] non-null (a slotted reso) they ride the rod pivot at its
+    // bottom + top joint, so they tilt with the rod on a hack/glyph; otherwise they're fixed at the pole
+    // ([ox], [oy]) — the collar socket + an upper guide ring — for empty slots and resos mid-deploy.
+    private fun addSlotRings(group: dynamic, pivot: dynamic?, ox: Double, oy: Double, rodLen: Double) {
+        if (pivot != null) {
+            addRing(pivot, 0.0, 0.0, -rodLen)
+            addRing(pivot, 0.0, 0.0, 0.0)
+        } else {
+            addRing(group, ox, oy, 0.0)
+            addRing(group, ox, oy, rodLen)
+        }
     }
 
     /**
