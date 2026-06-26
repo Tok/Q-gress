@@ -1186,6 +1186,23 @@ html, body {
     min-width: 240px; /* fixed, roomy hit-area — the label shouldn't crowd the edges */
     cursor: pointer;
 }
+/* Wizard footer: [← Back | <forward> →] centered as a pair. */
+.onboardNav {
+    display: flex;
+    justify-content: center;
+    align-items: stretch;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+.onboardBack {
+    font-size: 22px;
+    padding: 14px 28px;
+    cursor: pointer;
+    opacity: 0.8; /* a touch quieter than the forward button */
+}
+.onboardBack:hover {
+    opacity: 1;
+}
 .onboardSliderLabel {
     font-family: "Coda", monospace;
     font-size: 13px;

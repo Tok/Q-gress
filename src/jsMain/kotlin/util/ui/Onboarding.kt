@@ -177,17 +177,16 @@ object Onboarding {
         hint.textContent = "Pan/zoom to position the white play-area box, then confirm."
         screen.appendChild(hint)
 
-        screen.appendChild(
-            button("Confirm location", "topButton displayFont onboardStart") {
-                MiniMap.confirmCenter()?.let { (lng, lat) ->
-                    // Keep the selected name only if the confirmed centre is still near it; a preset that the
-                    // centre snapped onto wins; otherwise it's a custom spot — don't mislabel it.
-                    val kept = abs(lng - selectedLng) < NAME_KEEP_EPS && abs(lat - selectedLat) < NAME_KEEP_EPS
-                    val name = Locations.byCoords(lng, lat)?.displayName ?: if (kept) currentName else "Custom location"
-                    onStart(lng, lat, name)
-                }
-            },
-        )
+        val confirm = button("Confirm location →", "topButton displayFont onboardStart") {
+            MiniMap.confirmCenter()?.let { (lng, lat) ->
+                // Keep the selected name only if the confirmed centre is still near it; a preset that the
+                // centre snapped onto wins; otherwise it's a custom spot — don't mislabel it.
+                val kept = abs(lng - selectedLng) < NAME_KEEP_EPS && abs(lat - selectedLat) < NAME_KEEP_EPS
+                val name = Locations.byCoords(lng, lat)?.displayName ?: if (kept) currentName else "Custom location"
+                onStart(lng, lat, name)
+            }
+        }
+        screen.appendChild(navRow(onBack, confirm))
 
         // Default mode: Random — open the globe on a random preset.
         val initial = Locations.random()
@@ -245,7 +244,7 @@ object Onboarding {
                 rebuild()
             },
         )
-        screen.appendChild(button("Next", "topButton displayFont onboardStart") { onNext() })
+        screen.appendChild(navRow(onBack, button("Next →", "topButton displayFont onboardStart") { onNext() }))
     }
 
     // Opt-in for the experimental in-browser LLM driver — off by default so it isn't an obvious pick.
@@ -364,23 +363,30 @@ object Onboarding {
         warn.textContent = "Larger maps take longer to generate and use more processing whenever portals spawn."
         screen.appendChild(warn)
 
-        screen.appendChild(
-            button("Next", "topButton displayFont onboardStart") {
-                Sim.roundField = roundCheck.checked
-                Config.npcMultiplier = npcSlider.valueAsNumber // carried into the game via the reload URL
-                val w = widthInput.value.toIntOrNull() ?: Sim.width
-                val h = heightInput.value.toIntOrNull() ?: Sim.height
-                // Round → square the map so the inscribed circle is large (≈ doubles the radius vs a
-                // wide rectangle) and the round arena actually fills the space.
-                val side = maxOf(w, h)
-                onStart(
-                    if (roundCheck.checked) side else w,
-                    if (roundCheck.checked) side else h,
-                    portalsInput.value.toIntOrNull() ?: defaultPortals,
-                    quickCheck.checked,
-                )
-            },
-        )
+        val next = button("Next →", "topButton displayFont onboardStart") {
+            Sim.roundField = roundCheck.checked
+            Config.npcMultiplier = npcSlider.valueAsNumber // carried into the game via the reload URL
+            val w = widthInput.value.toIntOrNull() ?: Sim.width
+            val h = heightInput.value.toIntOrNull() ?: Sim.height
+            // Round → square the map so the inscribed circle is large (≈ doubles the radius vs a
+            // wide rectangle) and the round arena actually fills the space.
+            val side = maxOf(w, h)
+            onStart(
+                if (roundCheck.checked) side else w,
+                if (roundCheck.checked) side else h,
+                portalsInput.value.toIntOrNull() ?: defaultPortals,
+                quickCheck.checked,
+            )
+        }
+        screen.appendChild(navRow(onBack, next))
+    }
+
+    // The wizard footer: a [← Back | <forward> →] row. Back invokes the screen's onBack (same as Esc).
+    private fun navRow(onBack: () -> Unit, forward: HTMLButtonElement): HTMLElement {
+        val row = div("onboardNav")
+        row.appendChild(button("← Back", "topButton displayFont onboardBack") { onBack() })
+        row.appendChild(forward)
+        return row
     }
 
     private fun button(label: String, classes: String, onClick: () -> Unit): HTMLButtonElement {
