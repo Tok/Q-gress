@@ -29,9 +29,7 @@ class LlmPolicy(private val faction: Faction, val client: LlmClient, private val
     var lastReply: String = ""
         private set
 
-    /** The checkpoint a request was last fired at, and the one its reply landed at — for the cadence readout. */
-    var requestedCheckpointPublic: Int = -1
-        private set
+    /** The checkpoint the last reply landed at — for the BRAINS "last turn" readout (-1 until the first reply). */
     var lastReplyCheckpoint: Int = -1
         private set
 
@@ -55,6 +53,7 @@ class LlmPolicy(private val faction: Faction, val client: LlmClient, private val
         scope.launch {
             val reply = client.complete(prompt)
             lastReply = reply
+            lastReplyCheckpoint = checkpoint
             LlmParser.parse(reply)?.let { vector = it }
         }
     }

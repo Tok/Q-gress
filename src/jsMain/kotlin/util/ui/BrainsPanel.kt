@@ -110,7 +110,7 @@ object BrainsPanel {
         val checkpoint = World.tick / Config.ticksPerCheckpoint
         return when (val d = driverOf(faction)) {
             is NetPolicy -> "net:${d.net.arch.label()}:$checkpoint"
-            is LlmPolicy -> "llm:${(d.client as? WebLlmClient)?.status}:${d.lastReply}:${WebLlmClient.gpuReport()}"
+            is LlmPolicy -> "llm:${(d.client as? WebLlmClient)?.status}:${d.lastReply}:${d.lastReplyCheckpoint}:${WebLlmClient.gpuReport()}"
             is HeuristicPolicy -> "heuristic:$checkpoint"
             else -> "manual"
         }
@@ -174,6 +174,14 @@ object BrainsPanel {
     // Both the net and the LLM re-tune the sliders once per scoring checkpoint — surface that cadence.
     private fun retuneCadence(): String = "every checkpoint (${Config.ticksPerCheckpoint} ticks)"
 
+    // The LLM asks the model once per checkpoint; show the cadence + which checkpoint last actually replied
+    // (inference is slow + async, so it can lag the current checkpoint) — so the turn frequency is visible.
+    private fun turnCadence(policy: LlmPolicy): String {
+        val now = World.tick / Config.ticksPerCheckpoint
+        val last = if (policy.lastReplyCheckpoint < 0) "none yet" else "checkpoint ${policy.lastReplyCheckpoint}"
+        return "1 / checkpoint (${Config.ticksPerCheckpoint} ticks) · now at $now · last reply: $last"
+    }
+
     // A device-pixel-resolution canvas → crisp activation lines/labels on HiDPI (CSS size w×h, store ×dpr).
     private fun dprCanvas(w: Int, h: Int): HTMLCanvasElement {
         val c = document.createElement("canvas") as HTMLCanvasElement
@@ -193,6 +201,7 @@ object BrainsPanel {
         val ready = client?.status == "ready"
         card.appendChild(kv("Model", client?.modelId ?: "mock"))
         card.appendChild(kv("Status", client?.status ?: "mock"))
+        card.appendChild(kv("Turns", turnCadence(policy)))
         card.appendChild(kv("GPU", WebLlmClient.gpuReport()))
         // The headline once it's running: what the LLM chose this checkpoint (big + bold = the main readout).
         val parsed = LlmParser.parse(policy.lastReply)
