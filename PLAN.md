@@ -21,7 +21,7 @@ de-risks the next. "Coverage" means two things and they split across phases — 
 first (phase A, in the existing Node harness); real **line-coverage measurement** (Kover) is *blocked on* the
 functional-core split and so lands in phase C, after the refactor.
 
-### Phase A — Safety net (behavioural tests on today's behaviour) — ✅ essentially done
+### Phase A — Safety net (behavioural tests on today's behaviour) — ✅ done
 Lock current behaviour before moving any code, so the refactor can't silently change it. Pure Node/Mocha tests
 (no tooling change). Characterization tests over the functional core as-it-is:
 - [x] `Balance` — `recruitFactor` / `attackBoost` (deficit² steepness) / `leadShare` zero-guard.
@@ -32,18 +32,20 @@ Lock current behaviour before moving any code, so the refactor can't silently ch
 - [x] `Field` MU/area (Heron ÷100 floored) + `isCoveringPortal` (the fitness-objective math).
 - [x] `Recruiter` self-balancing `selectionWeight` + diminishing `recruitSuccessProbability`.
 - [x] `SimRunner` determinism — already covered (`sameSeedIsDeterministic`, `reproducibleAfterAnotherMatch`).
-- [ ] **One gap left:** `MovementUtil.wander` / `openGroundNear` — needs a `GridFixture` + `Sim` play-area set-up
-  (a heavier integration test, not a pure unit; the `GridFixture` infra exists). Round this out, or carry it.
-- **Exit criterion (met):** a green net that fails if behaviour changes. (Suite now **247** tests, all green.)
+- [x] `MovementUtil` — `headingTo` (pure) + the **wander never leaves the map** invariant (passable + in-play-area
+  destination, from centre and edge), via a rectangle field + a passable `GridFixture` (restored per test).
+- **Exit criterion (met):** a green net that fails if behaviour changes. (Suite now **260** tests, all green.)
 
 ### Phase B — Refactor under the net — 🔄 in progress
 Functional core / imperative shell, properly. Do it module-by-module behind phase-A tests:
 - [~] **Isolate pure logic** — extract decision functions (state in → value/decision out) and push effects to the
   edges. Done so far (each guarded by a new unit test): `Cycle.churnChances`, `Portal.linkMitigationFor`,
-  `Portal.retaliationDamage`, `Recruiter.recruitSuccessProbability`. **Next candidates** (from the core audit):
-  `Linker.fieldClosingTarget` (set-intersection pick — trivial), `NonFaction.opposingOffscreenDestination`
-  (off-map bearing geometry), `Portal` hack-cooldown/burnout math (`handleCooldown`), `Deployer` slot selection,
-  `Agent.findPortalsInAttackRange` (invert the `World` read to a parameter).
+  `Portal.retaliationDamage`, `Recruiter.recruitSuccessProbability`, `NonFaction.opposingHalf` (off-map bearing),
+  `Portal.cooldownAfter` + `Portal.isBurnedOut` (hack cooldown/burnout), `Agent.enemyPortalsInRange` (attack
+  targeting, `World` read inverted to a param). **Remaining candidates:** `Linker.fieldClosingTarget` (a trivial
+  set-intersection pick — low value); `Deployer.deployTargetFor` was assessed and **skipped** (it mixes agent-level
+  + portal reads — not cleanly pure, and `DeployerTest` already covers it). The cheap, high-signal extractions are
+  largely done; what's left is the **`commonMain` move** and the **Scene3D split** below.
 - [ ] **Incremental functional-core split** — as each pure module is isolated, move it toward `commonMain` (this
   is what unlocks Kover in phase C). Incremental, not a big-bang migration. *(Not started — the extractions above
   are still in `jsMain`; the `commonMain` move is the next structural step once a cluster is pure.)*
