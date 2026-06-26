@@ -21,4 +21,41 @@ class CooldownTest {
             assertTrue("$it must not be hackable.") { !it.isHackable() }
         }
     }
+
+    // --- Portal.cooldownAfter (pure hack-cooldown math, phase B) --------------
+
+    @Test
+    fun aFreshHackIsOnFullCooldown() {
+        assertEquals(Cooldown.FIVE, Portal.cooldownAfter(ticksSinceLastHack = 0, baseCooldownS = 300), "just hacked")
+        assertTrue(!Portal.cooldownAfter(0, 300).isHackable())
+    }
+
+    @Test
+    fun cooldownClearsOnceTheWindowElapses() {
+        assertEquals(Cooldown.NONE, Portal.cooldownAfter(ticksSinceLastHack = 300, baseCooldownS = 300), "window done")
+        assertEquals(Cooldown.NONE, Portal.cooldownAfter(ticksSinceLastHack = 9999, baseCooldownS = 300), "long past")
+        assertTrue(Portal.cooldownAfter(300, 300).isHackable())
+    }
+
+    @Test
+    fun cooldownDecaysThroughTheBucketsAsTimePasses() {
+        // Halfway through a 300s window → bucketed to the next-lower cooldown tier (still not hackable).
+        val mid = Portal.cooldownAfter(ticksSinceLastHack = 150, baseCooldownS = 300)
+        assertTrue(!mid.isHackable(), "still cooling at the halfway point")
+        assertTrue(mid.seconds < Cooldown.FIVE.seconds, "but less than a fresh full cooldown")
+    }
+
+    // --- Portal.isBurnedOut (pure burnout check) ------------------------------
+
+    @Test
+    fun burnoutTriggersWhenEveryRecentHackIsInsideTheWindow() {
+        val tick = 20000
+        assertTrue(Portal.isBurnedOut(listOf(tick - 1, tick - 50), tick), "all hacks recent → burnt out")
+    }
+
+    @Test
+    fun noBurnoutWhileAnOldHackHasAgedOut() {
+        val tick = 20000 // BURNOUT window is 14400 ticks; a hack at tick 100 has aged out
+        assertTrue(!Portal.isBurnedOut(listOf(100, tick - 1), tick), "an aged-out hack means not burnt out")
+    }
 }

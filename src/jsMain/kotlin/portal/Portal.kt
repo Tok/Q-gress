@@ -381,11 +381,8 @@ data class Portal(
         val key = hacker.key()
         fun cool(agentsLastHacks: MutableList<Int>, tickNr: Int): Cooldown {
             agentsLastHacks.sort()
-            val lastHack = agentsLastHacks.last()
-            val ticksSinceLastHack: Int = tickNr - lastHack
             val baseCooldownS = (Cooldown.FIVE.seconds * cooldownFactor()).toInt() // heat sinks shorten it
-            val timeDiff = Time.secondsToTicks(baseCooldownS) - ticksSinceLastHack
-            val cooldown = Cooldown.valueOf(Time.ticksToSeconds(timeDiff))
+            val cooldown = cooldownAfter(tickNr - agentsLastHacks.last(), baseCooldownS)
             if (cooldown == Cooldown.NONE && !readOnly) {
                 agentsLastHacks.add(tickNr)
                 lastHacks[key] = mutableListOf(tickNr)
@@ -394,18 +391,12 @@ data class Portal(
         }
 
         fun burn(agentsLastHacks: MutableList<Int>, tickNr: Int): Cooldown {
-            val maxBurnoutTicks = Time.secondsToTicks(Cooldown.BURNOUT.seconds)
-            val maxTickDifference = tickNr - maxBurnoutTicks
-            val isBurnout = agentsLastHacks.toList().filter { it < maxTickDifference }.count() <= 0
-            if (isBurnout) {
-                return Cooldown.BURNOUT
-            } else {
-                if (!readOnly) {
-                    agentsLastHacks.add(tickNr)
-                    lastHacks[key] = mutableListOf(tickNr)
-                }
-                return Cooldown.NONE // reset
+            if (isBurnedOut(agentsLastHacks, tickNr)) return Cooldown.BURNOUT
+            if (!readOnly) {
+                agentsLastHacks.add(tickNr)
+                lastHacks[key] = mutableListOf(tickNr)
             }
+            return Cooldown.NONE // reset
         }
 
         val isFirstHack = !lastHacks.containsKey(key)
@@ -635,6 +626,16 @@ data class Portal(
         /** Pure retaliation XM damage a defended portal deals: scales with portal [level] and, harder, with its
          *  total [mitigation] (a shielded portal zaps back more). See [retaliate]. */
         internal fun retaliationDamage(level: Int, mitigation: Int): Int = ZAP_BASE_XM * level + ZAP_SHIELD_XM * mitigation
+
+        /** Pure hack cooldown: how much of the [baseCooldownS]-second window remains [ticksSinceLastHack] after
+         *  the last hack, bucketed to a [Cooldown] (NONE once the window has elapsed). See [handleCooldown]. */
+        internal fun cooldownAfter(ticksSinceLastHack: Int, baseCooldownS: Int): Cooldown =
+            Cooldown.valueOf(Time.ticksToSeconds(Time.secondsToTicks(baseCooldownS) - ticksSinceLastHack))
+
+        /** Pure burnout check: true once EVERY hack in [lastHackTicks] falls inside the burnout window ending at
+         *  [tickNr] (i.e. none is old enough to have aged out), meaning the agent has hacked too much too fast. */
+        internal fun isBurnedOut(lastHackTicks: List<Int>, tickNr: Int): Boolean =
+            lastHackTicks.none { it < tickNr - Time.secondsToTicks(Cooldown.BURNOUT.seconds) }
 
         // Non-blocking: the portal is built with an empty flow field, then PathUtil.computeFieldAsync
         // fills portal.vectors off-thread (heatMap stays empty — it's never read externally). Agents

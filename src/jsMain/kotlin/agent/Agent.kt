@@ -285,12 +285,8 @@ data class Agent(
         return this
     }
 
-    private fun findPortalsInAttackRange(level: XmpLevel): List<Portal> {
-        val attackDistance = (level.rangeM * 0.5) + Dim.portalRadius
-        val enemyPortals = World.allPortals.filter { it.owner?.faction != this.faction }
-        return enemyPortals.filter { it.location.distanceTo(this.pos) <= attackDistance }
-            .sortedBy { it.location.distanceTo(this.pos) }
-    }
+    private fun findPortalsInAttackRange(level: XmpLevel): List<Portal> =
+        enemyPortalsInRange(World.allPortals, faction, pos, (level.rangeM * 0.5) + Dim.portalRadius)
 
     fun findResosInAttackRange(level: XmpLevel): List<Resonator> {
         val attackDistance = level.rangeM * 0.5
@@ -308,6 +304,13 @@ data class Agent(
     companion object {
         private val BEELINE_DURATION = StuckTracker.RECOVERY_BEELINE_TICKS // ticks to bee-line before re-targeting
         private const val RECRUIT_HOLD_TICKS = 8 // re-applied each tick → the target NPC waits while approached + met
+
+        /** Pure: enemy (non-[faction]) portals within [attackDistance] of [from], nearest first. Takes the
+         *  portal list as a parameter (not the `World` singleton) so the targeting filter is unit-testable. */
+        internal fun enemyPortalsInRange(portals: List<Portal>, faction: Faction, from: Pos, attackDistance: Double): List<Portal> =
+            portals.filter { it.owner?.faction != faction }
+                .filter { it.location.distanceTo(from) <= attackDistance }
+                .sortedBy { it.location.distanceTo(from) }
 
         private fun xmCapacity(level: Int): Int = when (level) {
             1 -> 3000
