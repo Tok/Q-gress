@@ -20,6 +20,7 @@ import org.w3c.dom.HTMLElement
 import portal.Portal
 import portal.PortalKey
 import portal.XmMap
+import system.display.PortalNameTicker
 import system.display.Scene3D
 import system.display.SunController
 import system.display.VectorFieldOverlay
@@ -66,6 +67,7 @@ object TitleSim {
         started = true
         World.userFaction = Faction.ENL
         Scene3D.showBorder = false // no boundary wall/mask on the title
+        PortalNameTicker.setEnabled(false) // the title never shows portal names (re-enabled by default in-game)
         Scene3D.titleWordmarkOnReady = {
             // fires once the 3D letters are in the scene
             hideDomWordmark()

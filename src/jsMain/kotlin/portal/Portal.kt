@@ -616,6 +616,22 @@ data class Portal(
         private const val VIRUS_AP = 1000 // AP for flipping a portal with a virus
         private fun clipLevel(level: Int): Int = max(1, min(level, 8))
 
+        private const val UNIQUE_NAME_TRIES = 8 // regen a fresh natural name this many times before suffixing
+
+        /** A portal name not already in use on the board: prefer a freshly-generated natural name; if the board
+         *  is dense enough that several collide, fall back to a numeral suffix (`Foo 2`). */
+        private fun uniqueName(candidate: String): String {
+            val taken = World.allPortals.mapTo(HashSet()) { it.name }
+            if (candidate !in taken) return candidate
+            repeat(UNIQUE_NAME_TRIES) {
+                val fresh = Util.generatePortalName()
+                if (fresh !in taken) return fresh
+            }
+            var n = 2
+            while ("$candidate $n" in taken) n++
+            return "$candidate $n"
+        }
+
         // Link-mitigation curve: damage reduction (%) rises with the portal's total link count along an
         // arctan that saturates near the asymptote 400/9 × π/2 ≈ 69.8% — diminishing returns, so the first
         // links matter most and a heavily-linked portal can't become invulnerable from links alone. Pure;
@@ -643,7 +659,7 @@ data class Portal(
         fun create(location: Pos): Portal {
             val slots: Slots = Octant.values().map { it to ResonatorSlot.create() }.toMap().toMutableMap()
             val portal = Portal(
-                PortalNames.nameFor(location) ?: Util.generatePortalName(),
+                uniqueName(PortalNames.nameFor(location) ?: Util.generatePortalName()),
                 location,
                 emptyMap(),
                 emptyMap(),

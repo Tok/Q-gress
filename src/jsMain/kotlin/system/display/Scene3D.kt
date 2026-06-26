@@ -1550,30 +1550,27 @@ object Scene3D {
         }
     }
 
-    // Show the spinning name ticker for the selected portal (or hide it if nothing/an agent is selected).
-    // Driven by the [selected] setter (immediate on click) and re-run each [sync] (keeps it positioned as
-    // the portal levels up / terrain resamples). The title never selects portals, so no names appear there.
+    // Spin a name ring above EVERY portal (re-run each [sync] so rings track level-ups / terrain resamples and
+    // new/removed portals are reconciled). Gated by PortalNameTicker.enabled — the menu "Portal names" toggle,
+    // off on the title. The ticker only rebuilds a ring's letters when its name changes, so this is cheap.
     private fun refreshNameTicker() {
-        val sel = selected
-        val portal = if (sel != null && sel.startsWith("portal:")) {
-            World.allPortals.firstOrNull { "portal:${it.id}" == sel }
-        } else {
-            null
-        }
-        if (portal == null) {
-            PortalNameTicker.hide()
+        if (!PortalNameTicker.enabled) {
+            PortalNameTicker.sync(emptyList())
             return
         }
-        val level = portal.getLevel().toInt().toDouble()
-        val orbR = TOP_R * orbScale(level)
-        val z = groundZ(portal.location) + orbCenterZ(level) + orbR + NAME_RING_GAP // top of the over-portal stack
-        PortalNameTicker.show(
-            "portal:${portal.id}",
-            portal.name,
-            sceneX(portal.location),
-            sceneY(portal.location),
-            z,
-            orbR,
-        )
+        val views = World.allPortals.map { portal ->
+            val level = portal.getLevel().toInt().toDouble()
+            val orbR = TOP_R * orbScale(level)
+            val z = groundZ(portal.location) + orbCenterZ(level) + orbR + NAME_RING_GAP // top of the over-portal stack
+            PortalNameTicker.NameView(
+                "portal:${portal.id}",
+                portal.name,
+                sceneX(portal.location),
+                sceneY(portal.location),
+                z,
+                orbR,
+            )
+        }
+        PortalNameTicker.sync(views)
     }
 }

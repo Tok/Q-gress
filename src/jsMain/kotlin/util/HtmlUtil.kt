@@ -22,6 +22,7 @@ import system.Simulation
 import system.display.DamageNumberFx
 import system.display.OwnBuildings
 import system.display.PassabilityOverlay
+import system.display.PortalNameTicker
 import system.display.Scene3D
 import system.display.SunController
 import util.data.GeoCoords
@@ -714,6 +715,10 @@ object HtmlUtil {
         val dmgNums = createMenuCheckbox("damageNumbersToggle", "Damage numbers") { DamageNumberFx.enabled = it }
         (dmgNums.firstChild as? HTMLInputElement)?.checked = DamageNumberFx.enabled
         menu.append(dmgNums)
+        // 3D portal-name rings on/off (on by default in-game; the title keeps them off).
+        val portalNames = createMenuCheckbox("portalNamesToggle", "Portal names") { PortalNameTicker.setEnabled(it) }
+        (portalNames.firstChild as? HTMLInputElement)?.checked = PortalNameTicker.enabled
+        menu.append(portalNames)
         // The single combat-dynamics knob (0 = realistic/tanky, slow board … 1 = portals flip very easily).
         // Drives shield mitigation + weapon drops + attack eagerness + the underdog comeback. Live-tunable.
         menu.append(MenuControls.slider("Combat dynamics", Config.combatDynamism) { Config.combatDynamism = it })
