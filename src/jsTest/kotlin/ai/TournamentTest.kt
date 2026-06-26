@@ -33,14 +33,16 @@ class TournamentTest {
             Driver("builder") { SliderVectorPolicy(builder()) },
             Driver("idle") { SliderVectorPolicy(idle()) },
         )
-        // Seeds chosen so fields actually form (headless field formation is seed-sensitive) — otherwise the
-        // match is a vacuous 0–0 tie that proves nothing about ranking.
-        val table = Tournament.roundRobin(grid(), drivers, seeds = listOf(3, 5))
+        // Headless field formation is seed-sensitive, so aggregate over several seeds: the active builder's
+        // edge over an idle driver is robust in the mean even if any single seed is a vacuous 0–0 tie (any
+        // sim tweak shifts which seeds form fields, so don't pin the property to one or two).
+        val seeds = listOf(1, 2, 3, 4, 5, 6, 7, 8)
+        val table = Tournament.roundRobin(grid(), drivers, seeds = seeds)
 
         assertEquals(2, table.size)
         assertEquals("builder", table.first().name, "the active builder ranks above the idle driver")
         val builderStanding = table.first { it.name == "builder" }
-        assertEquals(4, builderStanding.matches, "one pair, both faction sides, 2 seeds = 4 matches")
+        assertEquals(seeds.size * 2, builderStanding.matches, "one pair, both faction sides, per seed")
         assertTrue(builderStanding.avgMargin() > 0.0, "the builder has a positive MU margin")
         assertTrue(builderStanding.wins >= 1, "and actually wins")
     }

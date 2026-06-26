@@ -176,10 +176,13 @@ data class Portal(
     }
 
     fun findStrongestResoPos(): Pos? = findStrongestReso()?.position
+
+    // Health is over ALL 8 octants: an empty slot contributes no energy, so a portal only reads 100% when
+    // every octant holds a full resonator. Each resonator's % is already relative to its level's max energy
+    // (so health is level-aware), and a half-deployed portal reads as half-health.
     fun calcHealth(): Int {
-        val resos = getAllResos()
-        if (resos.isEmpty()) return 0 // neutral portal — no resonators
-        val health = resos.map { it.calcHealthPercent() }.sum() / resos.count()
+        if (getAllResos().isEmpty()) return 0 // neutral portal — no resonators
+        val health = getAllResos().sumOf { it.calcHealthPercent() } / Octant.values().size
         return Util.clip(health, 0, 100)
     }
 

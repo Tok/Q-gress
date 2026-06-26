@@ -133,10 +133,14 @@ kotlin {
                 }
             }
         }
-        // Unit tests run fast & headless in Node (mirrors the original Mocha setup).
+        // Unit tests run fast & headless in Node (mirrors the original Mocha setup). The default 2 s Mocha
+        // timeout is too tight for the headless AI-match tests (SimRunner/Tournament run full sims over
+        // thousands of ticks), so give them room.
         nodejs {
             testTask {
-                useMocha()
+                useMocha {
+                    timeout = "60s"
+                }
             }
         }
     }
