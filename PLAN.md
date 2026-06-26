@@ -133,6 +133,10 @@ be matched. **Desktop-only**; mobile is blocked.
   are the keepers) — confirm and remove.
 - [ ] **Location selection polish** — Home / nearest city via Geolocation; a curated preset list; Random;
   surface the free-form search on the onboarding screen (it only exists in-game now).
+- [ ] **Location list import / export** — let the player export the current location catalogue (the
+  `Locations` registry / `resources/locations.json`) to a file and import a custom one, so curated place
+  sets can be shared without a rebuild. Builds on the already-externalized JSON catalogue + pure parser
+  (`Locations.parse`); pairs with the shareable-scenario seam.
 - [ ] **Real per-stage load %** (especially flow-field computation).
 - [ ] **Initial roster "roll"** — light flavour, not a gacha loop; ties to the icebox rarity tiers.
 - [ ] **`?debug` dev tooling** — has the grid self-check + stuck-agent detection + `?debug=capture`. Remaining:

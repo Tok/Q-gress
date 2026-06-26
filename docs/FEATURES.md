@@ -1,9 +1,10 @@
-# FEATURES.md — what's shipped
+# FEATURES.md — the feature set
 
-A record of completed work (the roadmap of what's *next* lives separately). Grouped by area,
-newest themes roughly last. Commit hashes are illustrative pointers, not exhaustive.
+What Q-Gress does today, grouped by area (the roadmap of what's *next* lives in `PLAN.md`). Some
+sections are written newest-last, so where an area evolved the later entry is the current behaviour.
+Commit hashes are illustrative pointers, not exhaustive.
 
-## Toolchain & build (Phase 1)
+## Toolchain & build
 - Migrated the dead 2018 build to **Kotlin 2.4 → JS (IR)**, **Gradle 9.5**, build JVM **JDK 21**
   (detekt can't run on JDK 25). Sources under `src/jsMain` / `src/jsTest`.
 - Replaced removed/relocated APIs (`kotlin.browser.*`/`kotlin.dom.*` → `kotlinx-browser`,
@@ -13,7 +14,7 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
   (`.githooks/`, `core.hooksPath`) enforces the **full gate** — ktlintFormat (auto-fix + restage)
   then compile + ktlintCheck + detekt + jsNodeTest. Gradle config cache on.
 
-## Maps & the zoom bug (Phase 2)
+## Maps & the zoom bug
 - Dropped the dead rawgit OpenLayers include; **Mapbox GL → MapLibre GL 5.24**
   (`external/MapLibre.kt`), no token. Keyless tiles: OpenFreeMap (street/vector) + Esri imagery.
 - Authored open styles: positron street, satellite (+ openmaptiles 3D buildings), and the
@@ -23,7 +24,7 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
   `max/min` crashes. Web assets → `src/jsMain/resources`; webpack bundle serves `index.html`
   (`start.sh`); retired `published/*.js`.
 
-## Locations & navigation (Phases 3–4, 3D nav)
+## Locations & navigation
 - **"Play your hometown"**: free-form geocoding via keyless **Nominatim/OSM** → `?lng=&lat=&name=`
   recenter, works on any host.
 - Navigation handed to **MapLibre's own handlers** (left-drag pan, right-drag rotate+tilt, wheel
@@ -170,13 +171,13 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
   Menu "Lock tuning" toggle) swaps the sliders for 0–1 progress bars that mirror the values
   (`refresh()` re-syncs them) — also used live when an **AI driver** is in control (below). Action icons
   render from the **hi-res** (supersampled) canvas + shown small via CSS, so they're crisp.
-- **AI drives the sliders, visibly** (Phase 6.4): when a faction's installed `FactionPolicy` exposes a
+- **AI drives the sliders, visibly**: when a faction's installed `FactionPolicy` exposes a
   `currentVector()` (i.e. an AI is in control, not the manual sliders), `TuningPanel` mirrors that vector onto
   the displayed faction's inputs each frame and flips to the auto-moving read-only bars — so the player
   watches the sliders re-tune themselves as the match swings. Manual control is unchanged (interactive). A
   per-slider **lock** (a padlock toggle, shown only while an AI drives) lets the player grab one slider back —
   it stays interactive and the AI keeps driving the rest (`ai.OverridePolicy` wraps the driver).
-- **Heuristic AI driver** (`ai/HeuristicPolicy`, Phase 6): the first live AI driver — an adaptive
+- **Heuristic AI driver** (`ai/HeuristicPolicy`): the first live AI driver — an adaptive
   `Observation → SliderVector` mapping re-evaluated per checkpoint (attack when behind, consolidate into
   links/fields when ahead, hack/glyph when low on XM). Selectable per faction in the **AI** tab's driver
   picker; a sane baseline opponent until a trained net is loadable.
@@ -191,7 +192,7 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
 - **"Who plays?" onboarding step** (`util/ui/Onboarding.showDrivers`, right after faction pick): choose each
   side's brain — your side Human/Heuristic/Net/LLM, the opponent AI-only — defaulting to **net vs net**. The
   choice rides the start-URL (`?enl=…&res=…`) into the game.
-- **AI footer tab** (`util/ui/AiPanel` + `util/ui/SliderHistoryPanel`, Phase 6): the merged
+- **AI footer tab** (`util/ui/AiPanel` + `util/ui/SliderHistoryPanel`): the merged
   AI-transparency tab (AGENTS / **AI** / NET / EVENT LOG) — a live **observation** readout (the 13-slot
   `ai.Observation` feature vector a net/LLM receives, as labelled 0–1 bars) beside the **behaviour-sliders-
   over-time** sparklines (one uPlot per slider slot per faction: the visible record of an AI driver re-tuning
@@ -211,7 +212,7 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
   and below it a **genome heatmap** — every weight as a sign×magnitude cell. The canvas renders at
   **device-pixel resolution** for crisp lines/text. You watch the net think as the match swings
   (`Net.forwardTraced` exposes the per-layer activations).
-- **TRAIN footer tab — visual NN trainer** (`util/ui/TrainerPanel`, Phase 6.5): evolve a net **live in the
+- **TRAIN footer tab — visual NN trainer** (`util/ui/TrainerPanel`): evolve a net **live in the
   browser**. Pick population / generations / mutation / architecture / activation, hit **Train**, and a
   resumable `Evolution.Session` runs **one generation per `setTimeout`** (the UI never blocks) on the current
   live map: the **fitness curve** (summed-MU margin per generation, uPlot) climbs and the **champion genome
@@ -222,7 +223,7 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
   the ENL/RES driver. In-browser defaults are deliberately small (serious training stays headless via
   `Evolution.train`). A **Clean eval** toggle runs matches with the anti-runaway mechanics off (`MatchSetup.cleanEval`
   → `comebackMax`/`dominanceDecay`/`leaderDistraction` = 0, restored after) for a cleaner training gradient.
-- **TRAIN tab — leaderboard** (`util/ui/LeaderboardPanel`, Phase 6): a second TRAIN-tab section ranks AI
+- **TRAIN tab — leaderboard** (`util/ui/LeaderboardPanel`): a second TRAIN-tab section ranks AI
   drivers head-to-head on the live map. Pick entrants (Baseline / Heuristic / Neural net), **Run ladder**, and a
   resumable `Tournament.Session` plays a round-robin **one match per `setTimeout`**, showing the live `Standing`
   table (W-L-T + avg MU margin, sorted). Both eval tools share the **`HeadlessRun`** harness (snapshot + tick-pause
@@ -276,12 +277,13 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
   to fit the science-vs-luddite theme. Coda for text.
 
 ## Gameplay, balance & map playability
-- **Balance (Phase 5)**: recruiting now **costs XM** + has **diminishing returns** near the cap, so
-  recruit-rush is no longer a free snowball. Fixed a recruiting CME (`World.pendingAgents` buffer).
-- **Auto NPC population** (`Config.npcPopulation`): the NPC count is derived from **map area + location
-  walkability** at world-gen, **clamped to [30, 2000]** (always recruits, never a perf-killing crowd on a
-  huge map), and held constant by **1-for-1 replacement** when an NPC is recruited (`Recruiter`), so a
-  game can't run dry. The onboarding **NPC-density slider** scales it from **×0.1 to ×3.0** (thin the
+- **Anti-snowball balance**: recruiting is **free** (no XM cost) but has **diminishing returns** near the
+  roster cap, and the **smaller faction recruits more often** (`Balance.recruitFactor`), so recruit-rush is
+  no longer a runaway snowball. (See `docs/MECHANICS.md` for the recruiting + combat rubber-band details.)
+- **Auto NPC population** (`Config.npcPopulation` / `ConfigMath`): the NPC count is derived from **map area
+  + location walkability** at world-gen, **clamped to [30, 1000]** (always recruits, never a perf-killing
+  crowd on a huge map), and held constant by **1-for-1 replacement** when an NPC is recruited (`Recruiter`),
+  so a game can't run dry. The onboarding **NPC-density slider** scales it from **×0.1 to ×3.0** (thin the
   crowd or pack it in; the ×30 floor still applies).
 - **Off-map NPC destinations** (`NonFaction.offscreenDestinations`): ~8–14 hidden targets spaced evenly
   **just outside the play field** that ambient NPCs walk toward, so they stream across the whole map
@@ -336,7 +338,7 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
   zaps/deploys, refilled from stray XM + power cubes (the Ingress model; researched). Shatter blast
   energy also scales with XMP level.
 
-## Onboarding (Phase 7, partial)
+## Onboarding
 - **Ordered onboarding** faction → map-size → location → load (`util/ui/Onboarding`), in-memory
   (no reloads); `?local=true` auto-starts; deep links load directly.
 - **Map size + portal density** presets (Small/Normal/Large, editable W/H + portal count).
@@ -437,7 +439,7 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
   (`gl_FrontFacing`) + adds a body sheen so each bubble reads as a 3D shell, not a flat surface.
 - **Keys**: surfaced as counts (leaderboard + inspector); no 3D model yet.
 
-## AI vs AI — the BRAINS tab & the in-browser LLM (Phase 6)
+## AI vs AI — the BRAINS tab & the in-browser LLM
 - **In-browser LLM driver works** (`ai/llm/WebLlmClient` + `LlmPolicy`): **WebLLM (MLC) on WebGPU**, loaded
   lazily from a CDN; once per checkpoint it's asked for a slider vector (heuristic fallback until it replies).
   A **per-faction model picker** in the driver dropdown (SmolLM2 360M · Qwen 2.5 0.5B/1.5B · Llama 3.2 1B ·

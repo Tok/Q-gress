@@ -1,6 +1,6 @@
 # ARCHITECTURE.md — how Q-Gress is put together
 
-How the running system fits together. For *what's shipped* see [FEATURES.md](FEATURES.md);
+How the running system fits together. For the *feature list* see [FEATURES.md](FEATURES.md);
 for *what's next* see [../PLAN.md](../PLAN.md).
 
 ## Entry & top-level shape
@@ -27,7 +27,7 @@ see PLAN.md).
   - **`agent/qvalue/`** — `QActions` (10) and `QDestinations` (7) define the tunable
     behaviours. Each `QValue` has a base `weight`; the **slider value (0..1) × weight** is the
     selection probability. Sliders exist per faction (`…SliderFrog` / `…SliderSmurf`).
-  - **`ai/`** — the AI substrate (PLAN Phase 6): `FactionPolicy` (the per-faction source of slider
+  - **`ai/`** — the AI substrate: `FactionPolicy` (the per-faction source of slider
     weightings; default `DomSliderPolicy` reads the DOM, and `currentVector()` exposes the vector an AI is
     driving — null = no AI in control), `SliderVector` (the 17 sliders as one ordered encode/decode vector),
     `HeuristicPolicy` (the first live AI driver — an adaptive `Observation → SliderVector` mapping),
@@ -37,8 +37,8 @@ see PLAN.md).
     in `system/WorldSnapshot` so it can run without disturbing the live game).
 - **`portal/`** — portals, resonators, links, fields, XM, cooldowns, level/quality.
 - **`items/`** — bursters, power cubes, resonators, mods, levels.
-- **`config/`** — `Config` (balance constants), `Dim`/`Sim` (geometry), `Location` (preset
-  places), `Styles`, `Colors`, `Time`.
+- **`config/`** — `Config` (balance constants), `ConfigMath` (the pure tuning formulas), `Dim`/`Sim`
+  (geometry), `Location`/`Locations` (the JSON-backed place catalogue), `Styles`, `Colors`, `Time`.
 - **`system/`** — `Cycle`/`Checkpoint` (scoring/history over time), `Com` (message log),
   `WorldSnapshot` (capture/restore the live sim singletons so a headless eval can run + the game resume),
   **`system/display/`** (all 3D rendering: `Scene3D` + the shader/effect/material modules), and
@@ -56,7 +56,7 @@ see PLAN.md).
 and feeds that into `Util.select` (cumulative-probability weighted random). The default policy
 (`DomSliderPolicy`) reads the slider straight from the DOM
 (`getElementById("${id}Slider${nick}").valueAsNumber`, or `0.1` headless), so behaviour is unchanged —
-but **this policy seam is where the AI drivers plug in** (PLAN.md Phase 6: a driver installs a
+but **this policy seam is where the AI drivers plug in** (a driver installs a
 `SliderVectorPolicy` / `HeuristicPolicy` / `NetPolicy` via `FactionPolicies.set`, re-tuning the 17 sliders
 at checkpoint cadence). When a faction is AI-driven, `FactionPolicy.currentVector()` is non-null, so the
 `TuningPanel` mirrors that vector onto the live sliders each frame (they auto-move) and the **AI** footer
@@ -131,7 +131,7 @@ inline (XMP bursts, hack/deploy animations, reward motes, retaliation bolts, por
 resonators, the flow-field flash) go through `Fx.sink` — an installable `Effects` interface, mirroring
 `FactionPolicies`. `BrowserEffects` forwards 1:1 to the `system/display/` renderer; `NoOpEffects` (the
 headless default) does nothing, so the whole tick loop runs in Node without touching three.js — the
-imperative-shell boundary that unblocks the headless `SimRunner` (PLAN Phase 6.1). Audio (`SoundUtil`)
+imperative-shell boundary that unblocks the headless `SimRunner`. Audio (`SoundUtil`)
 and the message log (`Com`) already self-guard / are pure, so they stay outside this seam.
 
 **Headless matches (`ai/SimRunner`).** With the effect sink (no renderer crashes), `PathUtil.computeFieldSync`
@@ -139,7 +139,7 @@ and the message log (`Com`) already self-guard / are pure, so they stay outside 
 `Simulation.stepEntities`, a whole match runs in Node: `SimRunner.runMatch(grid, seed, maxTicks, …)` seeds
 the RNG + a `GridFixture` grid, seeds portals/agents/NPCs, ticks, and returns a `MatchResult` of
 per-checkpoint MU (the AI fitness signal). `SimRunner.reset()` clears all match state between runs. This is
-the training/eval engine for Phase 6.2+. A full-resolution match runs in ~tens of ms (the AI consumes only
+the training/eval engine. A full-resolution match runs in ~tens of ms (the AI consumes only
 `Observation` stats, never cell data, so flow-field navigation isn't on its critical path); `MatchSetup.flowFields`
 toggles obstacle-routed vs straight-line movement for fidelity, not speed.
 
@@ -157,9 +157,13 @@ on `MainScope`, yielding every ~2000 cells, and writes the result back into `Por
 
 ## Locations
 
-`config/Location.kt` is a fixed `enum` of preset places (lng/lat). Selecting one (onboarding
-or in-game) routes through `?lng=&lat=&name=` URL params. Free-form geocoding (Nominatim) is
-available in onboarding/search history; arbitrary coordinates work.
+The preset-place catalogue is **externalized to `resources/locations.json`** (edit it without a Kotlin
+build) and loaded at startup via `Locations.load` into the `Locations` registry (`config/Location.kt`). A
+`Location` is a `data class` (`name`, `displayName`, `lng`, `lat`, `title`); `title = true` flags a place as
+a title-screen showpiece. Only a single hardcoded `Locations.DEFAULT` exists — the synchronous startup value
+and the fallback if the JSON can't be fetched (which shouldn't happen). Selecting a place (onboarding or
+in-game) routes through `?lng=&lat=&name=` URL params. Free-form geocoding (Nominatim) is available in
+onboarding/search history; arbitrary coordinates work.
 
 ## Build & toolchain
 

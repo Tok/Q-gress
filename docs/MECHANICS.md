@@ -7,6 +7,17 @@ in-app via **Menu → Drop rates**. A future "game setup" can override `DropRate
 > Q-Gress is a simulation, not the real game. Numbers below are our current values (close to Ingress
 > where known); tune them in `DropRates` / the type enums.
 
+## The goal: links, fields & Mind Units (MU) — `portal/Field.kt`, `World.calcTotalMu`
+Everything else (hacking for gear, capturing, recruiting) is in service of one objective: **cover area with
+control fields**. A captured portal can **link** to another the agent holds a **key** for; three portals
+mutually linked into a triangle form a **control field** (`Field`), whose area in **Mind Units (MU)** is the
+triangle's area (Heron's formula). A faction's score is its **total MU** (`World.calcTotalMu` = sum of its
+fields' areas), and fields can be **layered** (nested/overlapping triangles) to stack MU over the same
+ground. So the optimal play is to **field aggressively and maximise MU each turn**: capture → fully deploy →
+link → field, then layer more fields on top. The AI drivers are scored on exactly this — the summed
+per-checkpoint MU margin over the opponent (see `docs/NN.md`, `ai/Evolution`) — so an agent "consolidates
+into links/fields when ahead and presses the attack to tear down the leader's fields when behind".
+
 ## Mod slots
 Each portal has **4 mod slots** (`portal/ModSlot.kt`), holding any mix of **shields**, **heat sinks**,
 and **link amps** (`items/deployable/Mod.kt`). Mods are deployed one-per-action by agents (`Deployer`),
@@ -35,6 +46,12 @@ Boost link range / outbound-link count. **Inactive in Q-Gress** (linking range i
 yet): defined + drawable (**diagonal cube**) but **never dropped** and with no gameplay effect. ~2018:
 standard Rare + Very Rare (VR never drops — passcode only), plus the SoftBank Ultra Link (SBUL).
 
+### Multihacks — `items/types/MultihackType.kt`  *(inactive)*
+Would raise the **hacks-before-burnout** limit (Common **+4**, Rare **+8**, Very Rare **+12**).
+**Inactive in Q-Gress**: defined (with values) but **never dropped or deployed**, and they don't modify the
+limit — `Portal.MAX_HACKS` is a flat **6** for everyone (see *Hacking, cooldown & glyphing* below). Wiring
+the mod in is future work; for now the raised flat limit + glyphing cover the "hack more" need.
+
 ## Viruses — `items/types/VirusType.kt`
 **ADA Refactor** (→ ENL) and **JARVIS Virus** (→ RES) flip an **enemy** portal to the user's faction
 (`Portal.refactor` via the `Refactorer` action): resonators are reassigned, mods dropped. The colour
@@ -44,10 +61,39 @@ change animates through `CaptureFx`; a `playVirusSound` plays.
 Per-agent inventory; used to link to a portal. Surfaced as counts (leaderboard + inspector); no 3D
 model yet.
 
+## Hacking, cooldown & glyphing — `portal/Portal.kt`, `agent/action/cond/{Hacker,Glypher}.kt`
+A **hack** is the supply action: an agent in range of a portal pulls items + XM from it.
+- **Yield (`Portal.hack`):** resonators, XMP bursters, Ultra-Strikes, shields, heat sinks, power cubes,
+  viruses and portal keys, rolled per `config/DropRates.kt` (see *Drop rates* below). Hacking an **enemy**
+  portal also awards **AP** and costs more XM than a friendly hack.
+- **Cooldown (`portal/Cooldown.kt`, `portal/PortalMath.cooldownAfter`):** after a hack the same portal is on
+  cooldown for that agent, bucketed `FIVE` (5 min, the base) → … → `NONE`, shortened by deployed **heat
+  sinks** (`Portal.cooldownFactor`).
+- **Burnout (`PortalMath.isBurnedOut`):** an agent may hack a portal **`MAX_HACKS = 6`** times within the
+  burnout window before it locks them out with `BURNOUT` (a long cooldown). 6 is above the authentic 4 so
+  agents can restock fast enough to mount an assault.
+- **Glyphing (`Portal.tryGlyph`, `Glypher`):** a glyph hack yields **2×** a normal hack always, and **3×**
+  when the agent's `glyphSkill` (default **0.8**) passes — pure item-volume bonus (no extra AP/XM). It's how
+  agents refuel quickly; the heuristic/AI drivers "hack/glyph to refuel when XM runs low".
+
+## Recruiting — `agent/action/cond/Recruiter.kt`, `agent/Balance.kt`
+Growing a faction's roster by persuading a bystander **NPC** to join. It is the *team-size* lever, kept
+deliberately gentle so neither faction snowballs.
+- **Free:** recruiting costs **no XM** (it's persuasion, not an energy action). The old XM cost was removed.
+- **How:** an agent walks to a random NPC; on meeting it rolls success
+  `recruitmentBaseChance × (1 − rosterFill)` (`Config.recruitmentBaseChance = 0.05`), so an empty roster
+  recruits at ~5% and a full one at ~0 (diminishing returns toward `Config.maxFor(faction)`).
+- **Anti-snowball (`Balance.recruitFactor`):** how *often* an agent even tries to recruit scales by
+  `(enemyRoster + 1) / (myRoster + 1)`, clamped to `[0.3, 3.0]` — the **smaller** team recruits more, the
+  **larger** less, so sizes self-correct.
+- **Population is constant:** each recruited NPC is **replaced 1-for-1** (`Recruiter` spawns a fresh NPC),
+  so the map never runs out of people to recruit. There is **no `RECRUIT` behaviour slider** (retired —
+  too snowbally to hand anyone a crank).
+
 ## Portal discovery & removal — `system/Cycle.managePortalDensity`
 Portals are **discovered and removed** by a neutral, density-driven *system* process (every checkpoint),
-not an agent action — discovering a portal helps no faction, so it made a dull behaviour slider (the old
-`EXPLORE` action + slider are **retired**; the AI's `SliderVector` is now 18, not 19). The count converges
+not an agent action — discovering a portal helps no faction, so it made a dull behaviour slider (there is no
+`EXPLORE` action). The count converges
 toward `Config.targetPortals()` (≈ 2.5 × the onboarding `startPortals`, capped at `maxPortals` 89):
 - `d = count / target` (1.0 at target). `createChance ∝ (1 − d/2)`, `removeChance ∝ (d/2)` (× `Config.
   portalChurnRate`) — so well below target discovery dominates (~4:1 near empty), at target it's ~1:1, and

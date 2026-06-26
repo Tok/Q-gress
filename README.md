@@ -39,7 +39,7 @@ instead. Use **Chrome / Brave / Edge** on a desktop with a mouse.
 - A DOM HUD: a live MU "covered area" scoreboard, a per-metric **history dashboard**, an action log.
 - **AI vs AI — pick each side's brain.** Every faction's 17 behaviour sliders can be driven by:
   - a **custom neural net** — a configurable MLP (two hidden layers, each **4 / 8 / 16 / 24 / 32**
-    wide) trained **headless by neuroevolution**, with a baked champion shipped. Train your own live in
+    wide) trained **headless by neuroevolution**, with a baked champion bundled. Train your own live in
     the **TRAIN** tab (a fitness curve climbs per generation; **save / install / download / load** the
     champion as JSON to share nets);
   - an **adaptive heuristic** (presses the attack when behind, consolidates into fields when ahead,
@@ -53,8 +53,8 @@ instead. Use **Chrome / Brave / Edge** on a desktop with a mouse.
   The **BRAINS** tab is the per-faction window into all of this — your side vs the opponent, each with a
   driver-appropriate card: the net's **live activation diagram + genome heatmap + driving-input/peak-hidden
   readouts**, or the LLM's **model / status / prompt / reply / chosen actions**. Headless match harness,
-  deterministic training, an in-game leaderboard, JSON genome save/load — see [`PLAN.md`](PLAN.md) Phase 6
-  and [`docs/NN.md`](docs/NN.md) / [`docs/LLM.md`](docs/LLM.md).
+  deterministic training, an in-game leaderboard, JSON genome save/load — see
+  [`docs/NN.md`](docs/NN.md) / [`docs/LLM.md`](docs/LLM.md).
 - **Play any location** (geocoded) and **shareable links** that reproduce a world from
   `lng/lat/size/seed` (the RNG is seedable).
 
@@ -88,11 +88,11 @@ then the badge just reflects the test job.
 
 ## Project docs
 
-- [`PLAN.md`](PLAN.md) — roadmap / what's next (incl. the Phase 6 AI plan).
+- [`PLAN.md`](PLAN.md) — roadmap / what's next.
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — how the system fits together.
-- [`docs/FEATURES.md`](docs/FEATURES.md) — what's shipped.
+- [`docs/FEATURES.md`](docs/FEATURES.md) — the feature set.
 - [`docs/RELEASE.md`](docs/RELEASE.md) — the release / deployment plan.
-- [`docs/NN.md`](docs/NN.md) · [`docs/LLM.md`](docs/LLM.md) — the two AI-driver tracks.
+- [`docs/NN.md`](docs/NN.md) · [`docs/LLM.md`](docs/LLM.md) — the two AI drivers.
 - [`CLAUDE.md`](CLAUDE.md) — how to work in this repo (conventions + standards).
 
 ## The original 2D version

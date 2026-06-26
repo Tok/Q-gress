@@ -1,9 +1,9 @@
-# NN.md — custom neural-net faction driver (Track A)
+# NN.md — custom neural-net faction driver
 
-> **Status: shipped + trainable.** `ai/net/` provides `Net` / `NetArch` / `NetPolicy` / `Evolution`
-> (all tested + deterministic); a baked champion ships and beats the baseline. You can **train one live**
-> in the **TRAIN** tab and watch any net **think** in the **BRAINS** tab. Remaining work is refinement
-> (fitness shaping, self-play league) — see the roadmap.
+> `ai/net/` provides `Net` / `NetArch` / `NetPolicy` / `Evolution` (all tested + deterministic); a baked
+> champion is bundled and beats the baseline. You can **train one live** in the **TRAIN** tab and watch any
+> net **think** in the **BRAINS** tab. Possible refinements (fitness shaping, self-play league) are in the
+> roadmap.
 
 ## The idea (the original "Q-gress")
 
@@ -28,7 +28,7 @@ slider vector stays the action substrate — the net does **not** replace per-ag
   match) → fully deterministic given (grid, seed, config). `Evolution.Session.stepGenome()` scores one
   genome at a time so a UI can show live progress; `train()` loops it.
 - **`GenomeIO` / `NetStore` / `Champion`** — JSON encode/decode of genome + arch + fitness; persistence in
-  `localStorage` (survives reload); a baked default champion as the shipped net.
+  `localStorage` (survives reload); a baked default champion as the bundled net.
 
 ## Where to see it
 

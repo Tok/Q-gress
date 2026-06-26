@@ -1,9 +1,9 @@
-# LLM.md — in-browser LLM faction driver (Track B)
+# LLM.md — in-browser LLM faction driver
 
-> **Status: shipped, experimental.** A real **WebLLM (MLC) on WebGPU** driver runs entirely in the browser
-> (`ai/llm/`). It's **off by default** (neural net is the default) and gated behind an onboarding opt-in,
-> because it needs a capable WebGPU GPU. Shares the substrate (policy API, `Observation` schema) with the
-> custom net — see [NN.md](NN.md).
+> **Experimental.** A real **WebLLM (MLC) on WebGPU** driver runs entirely in the browser (`ai/llm/`). It's
+> **off by default** (the neural net is the default) and gated behind an onboarding opt-in, because it needs
+> a capable WebGPU GPU. Shares the substrate (policy API, `Observation` schema) with the custom net — see
+> [NN.md](NN.md).
 
 ## The idea ("Gemma-vs-Gemma")
 
