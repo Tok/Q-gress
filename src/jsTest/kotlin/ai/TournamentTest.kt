@@ -46,6 +46,31 @@ class TournamentTest {
     }
 
     @Test
+    fun sessionSteppingMatchesRoundRobin() {
+        // Driving the resumable Session one match at a time must equal the all-at-once roundRobin (which is
+        // literally a while-loop over step()).
+        val g = grid()
+        val drivers = listOf(
+            Driver("builder") { SliderVectorPolicy(builder()) },
+            Driver("idle") { SliderVectorPolicy(idle()) },
+        )
+        val viaRoundRobin = Tournament.roundRobin(g, drivers, seeds = listOf(3))
+        SimRunner.reset()
+        val session = Tournament.Session(g, drivers, listOf(3))
+        var steps = 0
+        while (!session.done) {
+            session.step()
+            steps++
+        }
+        assertEquals(session.total, steps, "stepped through every scheduled match")
+        assertEquals(
+            viaRoundRobin.map { it.name to it.avgMargin() },
+            session.standings().map { it.name to it.avgMargin() },
+            "stepping a Session ≡ roundRobin",
+        )
+    }
+
+    @Test
     fun isDeterministic() {
         val drivers = listOf(Driver("a") { SliderVectorPolicy(builder()) }, Driver("b") { null })
         val first = Tournament.roundRobin(grid(), drivers, seeds = listOf(5))

@@ -55,28 +55,57 @@ object Tournament {
         ticks: Int = Config.ticksPerCycle,
         setup: MatchSetup = MatchSetup(),
     ): List<Standing> {
-        val round = Round(grid, ticks, setup, drivers.associate { it.name to Standing(it.name) })
-        for (i in drivers.indices) {
-            for (j in i + 1 until drivers.size) {
-                val a = drivers[i]
-                val b = drivers[j]
-                seeds.forEach { seed ->
-                    play(round, a, b, seed) // a = ENL, b = RES
-                    play(round, b, a, seed) // swapped, same seed → fair
+        val session = Session(grid, drivers, seeds, ticks, setup)
+        while (!session.done) session.step()
+        return session.standings()
+    }
+
+    /**
+     * A resumable round-robin: one [step] = one match, so the in-game leaderboard can drive it from a UI loop
+     * (a `setTimeout` per match) and show progress between matches. [roundRobin] is just a `while` over this.
+     * Every unordered pair plays both faction assignments per seed; deterministic given (grid, drivers, seeds).
+     */
+    class Session(
+        private val grid: Grid,
+        drivers: List<Driver>,
+        seeds: List<Int>,
+        private val ticks: Int = Config.ticksPerCycle,
+        private val setup: MatchSetup = MatchSetup(),
+    ) {
+        // The full match list up front: each pair, both colour assignments, per seed (fair + order-independent).
+        private val schedule: List<Match> = buildList {
+            for (i in drivers.indices) {
+                for (j in i + 1 until drivers.size) {
+                    seeds.forEach { seed ->
+                        add(Match(drivers[i], drivers[j], seed))
+                        add(Match(drivers[j], drivers[i], seed))
+                    }
                 }
             }
         }
-        return round.standings.values.sortedWith(compareByDescending<Standing> { it.avgMargin() }.thenByDescending { it.wins })
-    }
+        private val standings = drivers.associate { it.name to Standing(it.name) }
 
-    // The invariants shared by every match of one round-robin (so [play] stays a small signature).
-    private class Round(val grid: Grid, val ticks: Int, val setup: MatchSetup, val standings: Map<String, Standing>)
+        var played = 0
+            private set
+        val total get() = schedule.size
+        val done get() = played >= schedule.size
 
-    private fun play(round: Round, enl: Driver, res: Driver, seed: Int) {
-        val result = SimRunner.runMatch(round.grid, seed, round.ticks, round.setup, enl.policy(Faction.ENL), res.policy(Faction.RES))
-        val enlMu = result.checkpointMuSum(Faction.ENL)
-        val resMu = result.checkpointMuSum(Faction.RES)
-        round.standings.getValue(enl.name).record(enlMu, resMu)
-        round.standings.getValue(res.name).record(resMu, enlMu)
+        /** Play the next scheduled match (recording both drivers' results); a no-op once [done]. */
+        fun step() {
+            if (done) return
+            val m = schedule[played]
+            val result = SimRunner.runMatch(grid, m.seed, ticks, setup, m.enl.policy(Faction.ENL), m.res.policy(Faction.RES))
+            val enlMu = result.checkpointMuSum(Faction.ENL)
+            val resMu = result.checkpointMuSum(Faction.RES)
+            standings.getValue(m.enl.name).record(enlMu, resMu)
+            standings.getValue(m.res.name).record(resMu, enlMu)
+            played++
+        }
+
+        /** The current standings, ranked by average MU margin (ties broken by wins). */
+        fun standings(): List<Standing> =
+            standings.values.sortedWith(compareByDescending<Standing> { it.avgMargin() }.thenByDescending { it.wins })
+
+        private class Match(val enl: Driver, val res: Driver, val seed: Int)
     }
 }

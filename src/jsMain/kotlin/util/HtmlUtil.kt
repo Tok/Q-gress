@@ -17,6 +17,7 @@ import org.w3c.dom.*
 import org.w3c.dom.events.Event
 import portal.Portal
 import system.Cycle
+import system.HeadlessRun
 import system.Simulation
 import system.display.DamageNumberFx
 import system.display.PassabilityOverlay
@@ -36,7 +37,6 @@ import util.ui.LoadingOverlay
 import util.ui.MenuControls
 import util.ui.Onboarding
 import util.ui.ShortcutsHelp
-import util.ui.TrainerPanel
 import util.ui.TuningPanel
 import util.ui.VolumeControl
 import kotlin.js.Json
@@ -74,7 +74,7 @@ object HtmlUtil {
     fun isQuickstart() = Config.quickStart
 
     private fun tick() {
-        if (!World.isReady || TrainerPanel.isTraining()) return // paused while the TRAIN tab evolves a net
+        if (!World.isReady || HeadlessRun.active) return // paused during an in-browser headless eval (trainer / leaderboard)
         Simulation.stepEntities() // shared functional-core step (agents + NPCs + stuck tracker)
         window.requestAnimationFrame {
             DrawUtil.redraw()

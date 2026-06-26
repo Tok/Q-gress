@@ -12,6 +12,7 @@ import util.ui.AiPanel
 import util.ui.DebugHud
 import util.ui.HistoryPanel
 import util.ui.Inspector
+import util.ui.LeaderboardPanel
 import util.ui.LlmReasoningPanel
 import util.ui.NetVizPanel
 import util.ui.SliderHistoryPanel
@@ -41,6 +42,7 @@ object DrawUtil {
         AiPanel.update() // AI footer tab: per-faction driver + live observation readout
         NetVizPanel.update() // NET footer tab: the net driver's live activation diagram
         TrainerPanel.update() // TRAIN footer tab: lazy-build the in-browser neuro-evolution trainer
+        LeaderboardPanel.update() // TRAIN footer tab: the driver leaderboard (round-robin ranking)
         SliderHistoryPanel.update() // AI tab: each slider's value over the checkpoint window
         LlmReasoningPanel.update() // AI tab: the LLM driver's prompt/reply/parsed reasoning
         if (Styles.isDrawTopAgents) {

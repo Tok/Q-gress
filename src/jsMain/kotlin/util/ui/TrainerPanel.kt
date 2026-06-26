@@ -3,7 +3,6 @@ package util.ui
 import World
 import agent.Faction
 import ai.FactionPolicies
-import ai.SimRunner
 import ai.net.Activation
 import ai.net.Evolution
 import ai.net.EvolutionConfig
@@ -22,17 +21,16 @@ import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLOptionElement
 import org.w3c.dom.HTMLSelectElement
-import system.WorldSnapshot
-import system.effect.Fx
+import system.HeadlessRun
 import kotlin.math.roundToInt
 
 /**
  * The **TRAIN** footer tab (PLAN Phase 6.5) — an in-browser neuro-evolution trainer. Pick a [NetArch] +
  * [EvolutionConfig], hit **Train**, and an [Evolution.Session] runs one generation per `setTimeout(…, 0)`
- * (so the UI never blocks), drawing a live fitness curve and a champion-genome preview. The run is wrapped in
- * [WorldSnapshot.capture]/[WorldSnapshot.restore] with the tick loop paused ([isTraining]) and effects swapped
- * to [NoOpEffects], so the headless matches it spins up never disturb the live game — which resumes untouched
- * when the run ends. The winner can be **saved** to [NetStore] or **installed** as either faction's driver.
+ * (so the UI never blocks), drawing a live fitness curve and a champion-genome preview. The run is bracketed by
+ * [HeadlessRun] (parks the live world + silences FX; the tick loop pauses while it's active), so the headless
+ * matches it spins up never disturb the live game — which resumes untouched when the run ends. The winner can be
+ * **saved** to [NetStore] or **installed** as either faction's driver.
  *
  * Serious training stays headless (`Evolution.train`); the in-browser defaults are deliberately small so each
  * generation is sub-second on the live map.
@@ -57,7 +55,6 @@ object TrainerPanel {
     private var built = false
     private var running = false
     private var session: Evolution.Session? = null
-    private var snapshot: WorldSnapshot.Snapshot? = null
     private var timeoutId = 0
     private val fitness = mutableListOf<Double>()
 
@@ -158,8 +155,7 @@ object TrainerPanel {
             setStatus("Start a game first — training evolves a net on the live map.")
             return
         }
-        snapshot = WorldSnapshot.capture() // park the live game; matches clobber the World singletons
-        Fx.headless = true // headless-eval FX (NoOp) — survives SimRunner's per-match Fx.reset()
+        HeadlessRun.begin() // park the live game + silence FX for the duration (shared with the leaderboard)
         running = true
         fitness.clear()
         plot?.setData(arrayOf(arrayOf<Double>(), arrayOf<Double>()))
@@ -211,11 +207,7 @@ object TrainerPanel {
     private fun teardown() {
         running = false
         window.clearTimeout(timeoutId)
-        SimRunner.reset() // clear the throwaway match state…
-        snapshot?.let { WorldSnapshot.restore(it) } // …then put the live game back exactly as it was
-        snapshot = null
-        Fx.headless = false // restore the live renderer
-        Fx.reset()
+        HeadlessRun.end() // clear the throwaway match state + restore the live world & renderer
     }
 
     private fun saveChampion() {
