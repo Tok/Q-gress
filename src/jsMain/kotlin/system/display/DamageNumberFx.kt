@@ -293,6 +293,14 @@ object DamageNumberFx {
         params.bevelSize = 0.06
         params.bevelSegments = 1
         val geo = TextGeometry(ch, params)
+        // A space or a glyph the font lacks yields ZERO vertices → computeBoundingBox() returns NaN (and three
+        // logs a warning), and translating by NaN poisons the geometry. Detect the empty case and hand back a
+        // zero-extent bounding box instead, which callers read as a blank advance (width 0).
+        val vertexCount = (geo.asDynamic().attributes?.position?.count as? Int) ?: 0
+        if (vertexCount == 0) {
+            geo.asDynamic().boundingBox = js("({ min: { x: 0, y: 0, z: 0 }, max: { x: 0, y: 0, z: 0 } })")
+            return geo
+        }
         geo.computeBoundingBox()
         val bb = geo.boundingBox
         geo.asDynamic().translate(

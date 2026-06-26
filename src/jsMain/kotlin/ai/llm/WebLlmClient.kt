@@ -15,9 +15,10 @@ import kotlin.js.json
  */
 class WebLlmClient(private val model: String = DEFAULT_MODEL) : LlmClient {
     private var engine: dynamic = null
+    private var activeModel: String = model // the build actually loaded (may swap f16 → f32, see [engine])
 
     /** The MLC model id being run (for the reasoning / brains panels). */
-    val modelId: String get() = model
+    val modelId: String get() = activeModel
 
     var status: String = "idle"
         private set
@@ -45,19 +46,32 @@ class WebLlmClient(private val model: String = DEFAULT_MODEL) : LlmClient {
     }
 
     // Lazily load WebLLM from the CDN + create the engine, once. `new Function` hides the import() from
-    // webpack's static analysis so it stays a true runtime import (the CDN URL isn't bundled).
+    // webpack's static analysis so it stays a true runtime import (the CDN URL isn't bundled). Picks the f16
+    // build only when the GPU supports the WGSL `shader-f16` feature; otherwise swaps to the q4f32_1 build
+    // (many setups — Linux / Brave / software adapters — reject `enable f16;` and the f16 shaders won't compile).
     private suspend fun engine(): dynamic {
         if (engine != null) return engine
-        status = "loading model…"
+        activeModel = if (supportsF16()) model else model.replace("q4f16_1", "q4f32_1")
+        status = "loading $activeModel…"
         val import = js("(new Function('u', 'return import(u)'))")
         val module = import(CDN).unsafeCast<Promise<dynamic>>().await()
-        engine = module.CreateMLCEngine(model).unsafeCast<Promise<dynamic>>().await()
+        engine = module.CreateMLCEngine(activeModel).unsafeCast<Promise<dynamic>>().await()
         return engine
     }
 
+    // Whether the WebGPU adapter exposes the `shader-f16` feature (the `enable f16;` WGSL extension). Without
+    // it, f16-quantized MLC models fail shader compilation, so we fall back to the f32 build.
+    private suspend fun supportsF16(): Boolean = runCatching {
+        val adapter = js("navigator.gpu.requestAdapter()").unsafeCast<Promise<dynamic>>().await()
+        adapter != null && (adapter.features.has("shader-f16") as Boolean)
+    }.getOrDefault(false)
+
     companion object {
         private const val CDN = "https://esm.run/@mlc-ai/web-llm"
-        const val DEFAULT_MODEL = "Qwen2.5-0.5B-Instruct-q4f16_1-MLC" // small + fast; swap for a stronger one
+
+        // Small + fast; the f16 build is preferred but [engine] auto-swaps to the q4f32_1 build when the GPU
+        // lacks the `shader-f16` feature (else its shaders fail to compile). Swap for a stronger model freely.
+        const val DEFAULT_MODEL = "Qwen2.5-0.5B-Instruct-q4f16_1-MLC"
 
         /** The Chromium flag that enables WebGPU where it's gated (esp. Linux / Brave). Shown in the brains UI. */
         const val WEBGPU_FLAG = "chrome://flags/#enable-unsafe-webgpu"
