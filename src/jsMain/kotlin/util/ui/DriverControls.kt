@@ -1,5 +1,6 @@
 package util.ui
 
+import World
 import agent.Faction
 import ai.DomSliderPolicy
 import ai.FactionPolicies
@@ -33,7 +34,15 @@ object DriverControls {
     }
 
     /** The driver for [faction]: the onboarding pick, else the start-URL (`?enl=…&res=…`), else the default. */
-    fun chosen(faction: Faction): String = pending[faction] ?: GameUrl.driver(faction) ?: DEFAULT
+    fun chosen(faction: Faction): String = pending[faction] ?: GameUrl.driver(faction) ?: defaultFor(faction)
+
+    // The user's faction defaults to the trained net; the OPPONENT defaults to the (experimental) LLM, so a
+    // fresh game shows two different brains out of the box. Falls back to net for both until a side is chosen.
+    private fun defaultFor(faction: Faction): String = if (World.userFaction != null && faction != World.userFaction) "llm" else DEFAULT
+
+    // Manual only works for the user's own faction — DomSliderPolicy reads the visible tuning sliders, which
+    // only drive the chosen faction. Offer it just for that side (mirrors the onboarding driver grid).
+    private fun manualAllowed(faction: Faction): Boolean = World.userFaction == null || faction == World.userFaction
 
     /** Both faction pickers wrapped as a top-toolbar group (the "AI vs AI" control, reachable from anywhere). */
     fun toolbarGroup(): HTMLElement {
@@ -54,7 +63,7 @@ object DriverControls {
         )
         val sel = document.createElement("select") as HTMLSelectElement
         sel.className = "aiDriverSelect"
-        sel.appendChild(option("manual", "Manual", disabled = false))
+        sel.appendChild(option("manual", "Manual", disabled = !manualAllowed(faction)))
         sel.appendChild(option("heuristic", "Heuristic", disabled = false))
         sel.appendChild(option("net", "Neural net", disabled = false))
         sel.appendChild(option("llm", "LLM (experimental)", disabled = false))

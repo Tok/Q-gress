@@ -61,7 +61,10 @@ object OwnBuildings {
 
     // XMP/US shake (mirrors util.BuildingShake's feel, but applied to our meshes in scene space).
     private const val SHAKE_DURATION = 2.0 // seconds to settle back to rest
-    private const val SHAKE_FREQ = 12.0 // wobble speed (rad/s)
+
+    // Deliberately a touch FASTER than MapLibre's gap-filler shake (util.BuildingShake.FREQ = 12.0): where
+    // both meshes exist for one building they drift out of phase, reading as a busier, more violent shake.
+    private const val SHAKE_FREQ = 13.8 // wobble speed (rad/s)
     private const val SHAKE_BASE_AMP_M = 7.0 // peak bob (m) at point-blank (clamped to the building's own height)
     private const val SHAKE_REF_HEIGHT_M = 12.0 // taller than this → progressively less bob ("more mass")
     private const val SHAKE_BOB_MAX_FRAC = 0.5 // never bob more than this × the building's height (no sinking)

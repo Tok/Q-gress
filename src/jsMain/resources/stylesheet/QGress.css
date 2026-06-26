@@ -1374,6 +1374,10 @@ html, body {
 .qSlider {
     height: 8px;
     width: 92px;
+    /* Nudge the slider so its track lines up exactly with the read-only bar that replaces it. */
+    position: relative;
+    left: -5px;
+    top: -2px;
 }
 .qSlider:hover {
     opacity: 1;
