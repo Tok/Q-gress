@@ -115,6 +115,13 @@ html, body {
     flex: 1;
     min-width: 0;
 }
+/* Each faction's metrics flow into as many columns as fit — uses the footer's full width instead of one
+   tall stacked list (a wide/maximized footer → several metric columns per faction). */
+.aiObsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(176px, 1fr));
+    gap: 1px 18px;
+}
 .aiColHead {
     display: flex;
     align-items: center;
@@ -136,10 +143,10 @@ html, body {
 }
 .aiObsRow {
     display: grid;
-    grid-template-columns: 96px 1fr 40px;
+    grid-template-columns: 80px 1fr 34px;
     align-items: center;
-    gap: 8px;
-    line-height: 1.5;
+    gap: 6px;
+    line-height: 1.45;
 }
 .aiObsLabel {
     color: #9aa6a0;

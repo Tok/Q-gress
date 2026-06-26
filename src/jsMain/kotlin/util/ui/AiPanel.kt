@@ -60,6 +60,9 @@ object AiPanel {
         head.appendChild(name)
         col.appendChild(head)
 
+        // The metrics flow into a responsive multi-column grid (auto-fill) so they fill the available width
+        // instead of one tall stacked column — a wide footer shows several metric columns per faction.
+        val grid = el("div", "aiObsGrid")
         val barArr = arrayOfNulls<HTMLElement>(Observation.SIZE)
         val valArr = arrayOfNulls<HTMLElement>(Observation.SIZE)
         for (i in 0 until Observation.SIZE) {
@@ -71,10 +74,11 @@ object AiPanel {
             row.appendChild(track)
             val value = el("span", "aiObsValue")
             row.appendChild(value)
-            col.appendChild(row)
+            grid.appendChild(row)
             barArr[i] = bar
             valArr[i] = value
         }
+        col.appendChild(grid)
         bars[faction] = barArr
         values[faction] = valArr
         return col
