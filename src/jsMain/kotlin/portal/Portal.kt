@@ -501,7 +501,7 @@ data class Portal(
         val defender = owner ?: return
         if (defender.faction == agent.faction) return
         val level = getLevel().value
-        agent.removeXm(ZAP_BASE_XM * level + ZAP_SHIELD_XM * totalMitigation())
+        agent.removeXm(retaliationDamage(level, totalMitigation()))
         Fx.sink.fireBolt(location, level, agent.pos, defender.faction.color)
         SoundUtil.playThunderSound((agent.pos.x / Sim.width * 2.0 - 1.0).coerceIn(-1.0, 1.0))
     }
@@ -631,6 +631,10 @@ data class Portal(
         // the total cap (links + shields) is applied separately in [totalMitigation].
         private const val LINK_MITIGATION_SCALE = 400.0 / 9.0
         internal fun linkMitigationFor(linkCount: Int): Int = round(LINK_MITIGATION_SCALE * atan(linkCount / E)).toInt()
+
+        /** Pure retaliation XM damage a defended portal deals: scales with portal [level] and, harder, with its
+         *  total [mitigation] (a shielded portal zaps back more). See [retaliate]. */
+        internal fun retaliationDamage(level: Int, mitigation: Int): Int = ZAP_BASE_XM * level + ZAP_SHIELD_XM * mitigation
 
         // Non-blocking: the portal is built with an empty flow field, then PathUtil.computeFieldAsync
         // fills portal.vectors off-thread (heatMap stays empty — it's never read externally). Agents

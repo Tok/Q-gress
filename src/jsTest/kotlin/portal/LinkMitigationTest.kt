@@ -38,4 +38,20 @@ class LinkMitigationTest {
         }
         assertEquals(70, Portal.linkMitigationFor(1000), "saturates at the rounded asymptote for huge link counts")
     }
+
+    // --- retaliation damage --------------------------------------------------
+    // retaliationDamage = ZAP_BASE_XM(15) × level + ZAP_SHIELD_XM(1) × mitigation.
+
+    @Test
+    fun retaliationScalesWithPortalLevel() {
+        assertEquals(15, Portal.retaliationDamage(level = 1, mitigation = 0), "L1 unshielded zaps 15 XM")
+        assertEquals(120, Portal.retaliationDamage(level = 8, mitigation = 0), "L8 unshielded zaps 8 × 15 = 120 XM")
+    }
+
+    @Test
+    fun shieldsMakeRetaliationHurtMore() {
+        val bare = Portal.retaliationDamage(level = 4, mitigation = 0)
+        val shielded = Portal.retaliationDamage(level = 4, mitigation = 50)
+        assertEquals(bare + 50, shielded, "each point of mitigation adds 1 XM of zap-back")
+    }
 }
