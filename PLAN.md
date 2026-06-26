@@ -50,11 +50,11 @@ Functional core / imperative shell, properly. Do it module-by-module behind phas
 - [~] **Incremental functional-core split** — move each isolated pure module into `commonMain` (this is what
   unlocks Kover, now stood up — see phase C). Module-by-module, gate green each step. **Migrated so far:**
   `util.MathUtil`, `config.Time`, `portal.Cooldown`, `portal.PortalMath`, `config.IngressFacts`,
-  `config.ConfigMath`, `system.ChurnMath`, `agent.BalanceMath` (the World/`Config`-coupled holders now
-  delegate). **Remaining (blocked on the `Pos` decoupling):** the geometry core (`Pos`/`Line` — extract the
-  pure x/y math out of the `World`/grid/Sim/geo/RNG tangle), then `portal.Field` (MU/Heron),
-  `NonFaction.opposingHalf`, `Agent.enemyPortalsInRange`, and the seedable RNG (`Util.random`, via
-  expect/actual `freshSeed`) + `Faction`.
+  `config.ConfigMath`, `system.ChurnMath`, `agent.BalanceMath`, the geometry core (`util.data.Pos` +
+  `util.data.Line`, with the World/grid/Sim/geo/RNG members split out to `PosExt`/`Positions` in the shell),
+  and `portal.FieldMath` (MU/Heron + point-in-triangle). The World/`Config`-coupled holders now delegate.
+  **Remaining:** `NonFaction.opposingHalf` (now unblocked — operates on `Pos`), `Agent.enemyPortalsInRange`,
+  and the seedable RNG (`Util.random`, via expect/actual `freshSeed`) + `Faction`.
 - [ ] **Reduce magic numbers** — name them / fold into `Config` where it aids clarity (detekt `MagicNumber` is
   off, so this is a by-hand judgement pass, not a gate-chase). *(Started opportunistically — e.g. named the
   `LINK_MITIGATION_SCALE`.)*
