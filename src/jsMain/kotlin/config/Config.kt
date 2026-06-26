@@ -19,10 +19,9 @@ object Config {
     // target, discovery ≫ removal (~4:1) so the board fills; at target, ~1:1; above, removal wins. Replaces
     // the old agent EXPLORE action + cycle-end removePortals.
     var portalChurnRate = 0.5 // per-checkpoint activity (chance scale for a create/remove)
-    private const val PORTAL_TARGET_GROWTH = 2.5 // equilibrium density ≈ this × the onboarding startPortals
 
     /** Equilibrium portal count the churn converges toward — grows from [startPortals], capped at [maxPortals]. */
-    fun targetPortals(): Int = (startPortals * PORTAL_TARGET_GROWTH).toInt().coerceIn(startPortals, maxPortals)
+    fun targetPortals(): Int = ConfigMath.targetPortals(startPortals, maxPortals)
 
     // --- Recruitment balance (Phase 5) ---------------------------------------
     // Recruiting is FREE (it's persuading a bystander, not an energy field action). The anti-snowball
@@ -62,31 +61,19 @@ object Config {
         else -> maxNonFaction
     }
 
-    const val MIN_NONFACTION = 30 // floor: always enough to recruit, even on a tiny/dense map (or a low multiplier)
-    const val MAX_NONFACTION_CAP = 1000 // ceiling: keep huge/dense maps from spawning a perf-killing crowd
-    private const val NPC_DENSITY = 180.0 // NPCs per one screenful (Dim.width × Dim.height) of walkable area
-    private const val CITY_GAIN = 1.2 // built-up (low-walkable) areas pack in more people
-    private const val TOURIST_MUL = 1.6 // famous tourist spots draw extra crowds
+    // Floors/ceilings for the auto NPC population — the pure values live in [ConfigMath]; re-exported here so
+    // existing Config.MIN_NONFACTION / MAX_NONFACTION_CAP call sites are unchanged.
+    val MIN_NONFACTION = ConfigMath.MIN_NONFACTION
+    val MAX_NONFACTION_CAP = ConfigMath.MAX_NONFACTION_CAP
 
     /** Player NPC-density multiplier (0.1–3.0), chosen at onboarding — scales the auto population. */
     var npcMultiplier = 1.0
 
-    /**
-     * Appropriate NPC population for a [width]×[height] map at a location of the given [walkability]
-     * (fraction of passable cells). Driven by the **walkable area** (where NPCs can roam), boosted by
-     * **city density** (built-up = low-walkable ≈ denser city → more people; a proxy until we read real
-     * building coverage) and, for a [tourist] hotspot, a crowd bonus. Scaled by [npcMultiplier], then
-     * clamped to [[MIN_NONFACTION], [MAX_NONFACTION_CAP]] — always enough to recruit, never a perf-killing
-     * crowd on a huge map. Grows with the play area.
-     */
+    /** Auto NPC population for a [width]×[height] map at the given [walkability] (and optional [tourist]
+     *  hotspot bonus), scaled by [npcMultiplier]. Pure model in [ConfigMath.npcPopulation]. */
     fun npcPopulation(width: Int, height: Int, walkability: Double, tourist: Boolean = false): Int {
-        val walk = walkability.coerceIn(0.0, 1.0)
         val areaRatio = (width.toDouble() * height) / (Dim.width.toDouble() * Dim.height)
-        val walkableArea = areaRatio * walk // NPCs roam open ground → the primary driver
-        val cityDensity = 1.0 - walk // proxy: the less walkable a (playable) area is, the more built-up
-        val touristMul = if (tourist) TOURIST_MUL else 1.0
-        val pop = NPC_DENSITY * walkableArea * (1.0 + CITY_GAIN * cityDensity) * touristMul * npcMultiplier
-        return pop.toInt().coerceIn(MIN_NONFACTION, MAX_NONFACTION_CAP)
+        return ConfigMath.npcPopulation(areaRatio, walkability, tourist, npcMultiplier)
     }
 
     /** Building-shake intensity multiplier (0–2), tunable live from the menu "Building shake" slider. */
@@ -118,20 +105,19 @@ object Config {
     var combatDynamism = 0.6
 
     /** Gameplay shield/link mitigation cap for the current dynamism: higher dynamism → lower cap → flips. */
-    fun maxMitigation(): Int =
-        (IngressFacts.MITIGATION_CAP_PCT - combatDynamism * 75.0).toInt().coerceIn(15, IngressFacts.MITIGATION_CAP_PCT)
+    fun maxMitigation(): Int = ConfigMath.maxMitigation(combatDynamism)
 
     /** Weapon-drop multiplier (XMP + Ultra-Strike yield per hack) vs the base [DropRates] rate: `1×` … `20×`
      *  as dynamism rises, so a dynamic sim hands out the firepower needed to flip defended portals. */
-    fun weaponDropMultiplier(): Double = 1.0 + combatDynamism * 19.0
+    fun weaponDropMultiplier(): Double = ConfigMath.weaponDropMultiplier(combatDynamism)
 
     /** XMPs an agent hoards before committing to an assault: `30` (cautious) … `8` (trigger-happy) as
      *  dynamism rises — lower means assaults start sooner and portals flip more often. */
-    fun attackXmpThreshold(): Int = (30 - combatDynamism * 22).toInt().coerceAtLeast(8)
+    fun attackXmpThreshold(): Int = ConfigMath.attackXmpThreshold(combatDynamism)
 
     /** Comeback bonus (`Balance.attackBoost`): the faction behind on portals deals up to this fraction MORE
      *  resonator damage at a full deficit, so a losing side can turn the board. Scales with dynamism. */
-    fun comebackAttackBonus(): Double = combatDynamism
+    fun comebackAttackBonus(): Double = ConfigMath.comebackAttackBonus(combatDynamism)
 
     const val apMultiplier = 10
 

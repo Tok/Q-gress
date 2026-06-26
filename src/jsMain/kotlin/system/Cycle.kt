@@ -77,28 +77,15 @@ enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>) {
         // [Config.targetPortals]: discovery dominates when sparse (~4:1 near empty), evens to ~1:1 at target,
         // and removal dominates above it. d = count / target (1.0 at target); create fades as d rises, remove
         // grows — they cross at the target. Helps no faction directly; it just keeps the map alive + bounded.
-        /** The create/remove probabilities for one churn tick — see [churnChances]. */
-        data class ChurnChances(val create: Double, val remove: Double)
-
-        /**
-         * Pure density-churn math: at portal [count] against [target] (with churn [rate]), discovery fades and
-         * removal grows as the board fills (they cross at the target). When there's no [hasSpace] to place a
-         * non-clipping portal, the would-be discovery budget rolls into removal so a packed board thins out
-         * instead of stalling. Caller fires `create` only when `hasSpace` (it's the removal top-up otherwise).
-         */
-        internal fun churnChances(count: Int, target: Int, rate: Double, hasSpace: Boolean): ChurnChances {
-            val d = count / target.toDouble()
-            val create = rate * (1.0 - d / 2.0).coerceIn(0.0, 1.0)
-            val remove = rate * (d / 2.0).coerceIn(0.0, 1.0) + if (hasSpace) 0.0 else create
-            return ChurnChances(create, remove)
-        }
+        // The pure math lives in [ChurnMath]; this just supplies live World/Config state and acts on the result.
 
         private fun managePortalDensity() {
             val count = World.countPortals()
             // No room to place a non-clipping portal → don't even try (no wasted attempt); roll the would-be
             // discovery budget into REMOVAL instead, so a packed board thins out rather than stalling.
             val hasSpace = count < Config.maxPortals && Pos.hasPortalSpace()
-            val (createChance, removeChance) = churnChances(count, Config.targetPortals(), Config.portalChurnRate, hasSpace)
+            val (createChance, removeChance) =
+                ChurnMath.churnChances(count, Config.targetPortals(), Config.portalChurnRate, hasSpace)
             if (hasSpace && Util.random() < createChance) {
                 val discovered = Portal.createRandom()
                 World.allPortals.add(discovered)
