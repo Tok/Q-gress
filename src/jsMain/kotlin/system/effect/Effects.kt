@@ -26,8 +26,8 @@ interface Effects {
     /** The portal collar hack/glyph spin animation (ENL cw / RES ccw; [glyph] = the stronger glyph spin). */
     fun recordHack(id: String, faction: Faction, glyph: Boolean, durationS: Double)
 
-    /** Reward motes flying from a hacked portal to the agent. */
-    fun rewardFx(portalLocation: Pos, level: Int, to: Pos, count: Int)
+    /** Reward drops flying from a hacked portal to the agent — one item-coloured cube per [colors] entry. */
+    fun rewardFx(portalLocation: Pos, level: Int, to: Pos, colors: List<String>)
 
     /** A deployed resonator rod flying into [octant] from the agent at [from]. */
     fun recordDeploy(id: String, octant: Octant, from: Pos)

@@ -18,7 +18,8 @@ object BrowserEffects : Effects {
     override fun playXmpBurst(location: Pos, level: Int, sound: Boolean) = Scene3D.playXmpBurst(location, level, sound)
     override fun showDamageNumber(portal: Portal, amount: Int) = Scene3D.showDamageNumber(portal, amount)
     override fun recordHack(id: String, faction: Faction, glyph: Boolean, durationS: Double) = HackFx.record(id, faction, glyph, durationS)
-    override fun rewardFx(portalLocation: Pos, level: Int, to: Pos, count: Int) = Scene3D.rewardFx(portalLocation, level, to, count)
+    override fun rewardFx(portalLocation: Pos, level: Int, to: Pos, colors: List<String>) =
+        Scene3D.rewardFx(portalLocation, level, to, colors)
     override fun recordDeploy(id: String, octant: Octant, from: Pos) = DeployFx.record(id, octant, from)
     override fun collectXmFx(from: Pos, to: Pos) = Scene3D.collectXmFx(from, to)
     override fun fireBolt(from: Pos, fromLevel: Int, to: Pos, color: String) = Scene3D.fireBolt(from, fromLevel, to, color)

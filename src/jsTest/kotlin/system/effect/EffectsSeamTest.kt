@@ -96,7 +96,7 @@ private class CountingEffects : Effects {
         recordHack++
     }
 
-    override fun rewardFx(portalLocation: Pos, level: Int, to: Pos, count: Int) {
+    override fun rewardFx(portalLocation: Pos, level: Int, to: Pos, colors: List<String>) {
         rewardFx++
     }
 

@@ -3,6 +3,7 @@ package agent.action.cond
 import agent.Agent
 import agent.action.ActionItem
 import items.QgressItem
+import items.rewardColor
 import system.display.HackFx
 import system.display.Scene3D
 import system.effect.Fx
@@ -29,7 +30,12 @@ object Hacker : ConditionalAction {
         if (newStuff != null) {
             agent.inventory.items.addAll(newStuff)
             if (newStuff.isNotEmpty()) {
-                Fx.sink.rewardFx(agent.actionPortal.location, agent.actionPortal.getLevel().toInt(), agent.pos, newStuff.size)
+                Fx.sink.rewardFx(
+                    agent.actionPortal.location,
+                    agent.actionPortal.getLevel().toInt(),
+                    agent.pos,
+                    newStuff.map { it.rewardColor(agent.faction) },
+                )
             }
         }
         agent.actionPortal.retaliate(agent) // an enemy portal zaps the intruder (no-op on friendly/neutral)

@@ -90,6 +90,8 @@ object Scene3D {
     private const val RESO_POP_DELAY = 0.3 // resonators start popping in once the pole is ~30% up
     private const val CAPTURE_SHATTER_WEIGHT = 0.22 // glass-shatter heaviness on capture (light — only the orb)
     private const val FIELD_FILL_S = 0.4 // seconds for a new control field to fill in
+    private const val MAX_REWARD_CUBES = 12 // cap the hack-loot cubes so a big haul doesn't swarm the screen
+    private const val REWARD_STAGGER_S = 0.07 // stagger between reward cubes leaving the orb
     private const val LEVEL_TWEEN_RATE = 0.18 // per-sync ease of the rendered level toward the real one
     private const val POLE_H = 22.5 // base pole height at L1; scales by φ per level
     private const val TOP_R = 7.0 // base orb radius
@@ -287,6 +289,7 @@ object Scene3D {
         PortalNameTicker.register(newScene) // hovered-portal name ring (own group; spun each frame)
         BoltFx.register(newScene)
         XmFx.register(newScene)
+        RewardFx.register(newScene)
         showcaseGroup = Three.Group()
         newScene.add(showcaseGroup)
         scene = newScene
@@ -355,6 +358,7 @@ object Scene3D {
         HackFx.hasActive() ||
         DeployFx.hasActive() ||
         XmFx.hasActive() ||
+        RewardFx.hasActive() ||
         XmpBurst.hasActive() ||
         FieldFx.hasActive() ||
         BoltFx.hasActive()
@@ -369,6 +373,7 @@ object Scene3D {
         if (HackFx.hasActive()) HackFx.update()
         if (DeployFx.hasActive()) DeployFx.update()
         if (XmFx.hasActive()) XmFx.update()
+        if (RewardFx.hasActive()) RewardFx.update()
         if (FieldFx.hasActive()) FieldFx.update(dt)
         if (XmpBurst.hasActive()) {
             val canvas = map.getCanvas()
@@ -559,8 +564,8 @@ object Scene3D {
         )
     }
 
-    /** Hack/glyph loot: [count] motes drop from the portal's orb top down to the hacking agent. */
-    fun rewardFx(portalLocation: Pos, level: Int, to: Pos, count: Int) {
+    /** Hack/glyph loot: one item-coloured cube per [colors] entry arcs from the portal's orb to the agent. */
+    fun rewardFx(portalLocation: Pos, level: Int, to: Pos, colors: List<String>) {
         scene ?: return
         val top = doubleArrayOf(
             sceneX(portalLocation),
@@ -568,7 +573,7 @@ object Scene3D {
             groundZ(portalLocation) + orbCenterZ(level.coerceAtLeast(1).toDouble()),
         )
         val dst = doubleArrayOf(sceneX(to), sceneY(to), groundZ(to) + HEAD_Z)
-        repeat(count.coerceAtMost(8)) { XmFx.spawn(top, dst) }
+        colors.take(MAX_REWARD_CUBES).forEachIndexed { i, c -> RewardFx.spawn(top, dst, c, i * REWARD_STAGGER_S) }
     }
 
     /** Drop the deployed mods out of the orb when a portal is neutralized / removed. */
