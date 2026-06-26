@@ -154,6 +154,14 @@ object BrainsPanel {
         card.appendChild(kv("Model", client?.modelId ?: "mock"))
         card.appendChild(kv("Backend", "WebLLM (MLC) · WebGPU, in-browser"))
         card.appendChild(kv("Status", client?.status ?: "mock"))
+        if (!WebLlmClient.webGpuAvailable()) {
+            card.appendChild(
+                p(
+                    "No WebGPU in this browser — the LLM can't run (it falls back to the heuristic). On Chrome/Brave, enable this flag and reload:",
+                ),
+            )
+            card.appendChild(pre(WebLlmClient.WEBGPU_FLAG))
+        }
         card.appendChild(el("div", "brainsKey").also { it.textContent = "prompt" })
         card.appendChild(pre(policy.lastPrompt))
         card.appendChild(el("div", "brainsKey").also { it.textContent = "reply" })

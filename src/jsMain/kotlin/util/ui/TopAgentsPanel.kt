@@ -78,11 +78,14 @@ object TopAgentsPanel {
     private fun sortedAgents(): List<Agent> {
         val agents = World.allAgents.toList()
         val col = COLS[sortIndex]
-        val sorted = when {
-            col.num != null -> agents.sortedBy { col.num.invoke(it) }
-            col.str != null -> agents.sortedBy { col.str.invoke(it) }
-            else -> agents.sortedBy { it.ap.toDouble() }
+        // Tie-break on the unique, stable agent name so equal-key rows (e.g. everyone at 0 AP early on) keep a
+        // fixed order instead of jittering with World.allAgents' iteration order frame to frame.
+        val byCol = when {
+            col.num != null -> compareBy<Agent> { col.num.invoke(it) }
+            col.str != null -> compareBy<Agent> { col.str.invoke(it) }
+            else -> compareBy<Agent> { it.ap.toDouble() }
         }
+        val sorted = agents.sortedWith(byCol.thenBy { it.name })
         return if (sortAsc) sorted else sorted.asReversed()
     }
 

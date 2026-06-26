@@ -22,19 +22,26 @@ class WebLlmClient(private val model: String = DEFAULT_MODEL) : LlmClient {
     var status: String = "idle"
         private set
 
-    override suspend fun complete(prompt: String): String = runCatching {
-        val eng = engine()
-        val request = json(
-            "messages" to arrayOf(json("role" to "user", "content" to prompt)),
-            "temperature" to 0.7,
-            "max_tokens" to 200,
-        )
-        val response = eng.chat.completions.create(request).unsafeCast<Promise<dynamic>>().await()
-        status = "ready"
-        (response.choices[0].message.content as? String).orEmpty()
-    }.getOrElse {
-        status = "error: ${it.message}"
-        "" // → LlmPolicy keeps using its heuristic fallback
+    override suspend fun complete(prompt: String): String {
+        if (!webGpuAvailable()) { // the #1 failure ("Unable to find a compatible GPU") — give the actionable fix
+            status = "WebGPU unavailable — enable $WEBGPU_FLAG (Chrome/Brave), then reload"
+            return "" // → LlmPolicy keeps using its heuristic fallback
+        }
+        return runCatching {
+            val eng = engine()
+            val request = json(
+                "messages" to arrayOf(json("role" to "user", "content" to prompt)),
+                "temperature" to 0.7,
+                "max_tokens" to 200,
+            )
+            val response = eng.chat.completions.create(request).unsafeCast<Promise<dynamic>>().await()
+            status = "ready"
+            (response.choices[0].message.content as? String).orEmpty()
+        }.getOrElse {
+            // A GPU/driver failure often reads as a generic error — point at the flag that usually fixes it.
+            status = "error: ${it.message} · try $WEBGPU_FLAG"
+            "" // → LlmPolicy keeps using its heuristic fallback
+        }
     }
 
     // Lazily load WebLLM from the CDN + create the engine, once. `new Function` hides the import() from
@@ -51,5 +58,11 @@ class WebLlmClient(private val model: String = DEFAULT_MODEL) : LlmClient {
     companion object {
         private const val CDN = "https://esm.run/@mlc-ai/web-llm"
         const val DEFAULT_MODEL = "Qwen2.5-0.5B-Instruct-q4f16_1-MLC" // small + fast; swap for a stronger one
+
+        /** The Chromium flag that enables WebGPU where it's gated (esp. Linux / Brave). Shown in the brains UI. */
+        const val WEBGPU_FLAG = "chrome://flags/#enable-unsafe-webgpu"
+
+        /** True if the browser exposes the WebGPU API (`navigator.gpu`). False → the LLM can't run. */
+        fun webGpuAvailable(): Boolean = js("typeof navigator !== 'undefined' && !!navigator.gpu") as Boolean
     }
 }
