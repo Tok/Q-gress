@@ -3,13 +3,20 @@ package agent
 import World
 import agent.action.ActionItem
 import config.Dim
+import config.Sim
 import items.level.PortalLevel
 import portal.Portal
 import util.Util
 import util.data.Complex
 import util.data.Pos
+import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.sin
 
 object MovementUtil {
+    private const val WANDER_RADIUS = 220.0 // px — a regional stroll to collect stray XM, not a map-wide teleport
+    private const val WANDER_TRIES = 12 // samples to find a wanderable point before falling back
+
     // Flow-field cells read empty while the field computes async (see PathUtil.computeFieldAsync).
     // Until it lands, head straight for the destination at unit magnitude so the agent keeps moving
     // (never stalls on Complex.ZERO → stuck → never re-targets) and re-samples the real field later.
@@ -69,19 +76,37 @@ object MovementUtil {
     }
 
     fun moveToRandomPortal(agent: Agent): Agent = goToDestinationPortal(agent, World.randomPortal())
-
-    /** The no-action fallback (the no-idle default): head for another portal — prefer the nearest UNCAPTURED
-     *  (discover/capture a neutral) so a no-op agent always makes territorial progress instead of waiting; and
-     *  exclude any portal the agent is already at, so it never re-picks its current spot and idles in place. */
-    fun moveToAnotherPortal(agent: Agent): Agent {
-        val others = World.allPortals.filter { agent.distanceToPortal(it) > Dim.maxDeploymentRange }
-        val pool = others.ifEmpty { World.allPortals }
-        val target = pool.filter { it.isUncaptured() }.minByOrNull { agent.distanceToPortal(it) }
-            ?: pool.minByOrNull { agent.distanceToPortal(it) }
-            ?: World.randomPortal()
-        return goToDestinationPortal(agent, target)
-    }
     /* End All Portals */
+
+    /**
+     * The no-idle fallback — a portal-independent action. With nothing productive to do (portal on cooldown,
+     * empty inventory, capped roster), the agent strolls to nearby open ground rather than waiting: it covers
+     * the area and sweeps up stray XM (energy) faster than standing still, which is exactly what it needs to
+     * act again. Genuine roaming (no portal target) — discovery/recruiting happen wherever the agent ends up.
+     */
+    fun wander(agent: Agent): Agent {
+        agent.action.start(ActionItem.EXPLORE)
+        return agent.copy(destination = openGroundNear(agent.pos))
+    }
+
+    // A "wanderable" point a short stroll from [from] — passable AND inside the play area (same grid + field
+    // bounds the rest of the sim uses, so a wandering agent never strays off-map / off-field the way loose NPCs
+    // can). Samples the ring around [from]; falls back to anywhere wanderable, then to staying put (re-evaluate).
+    private fun openGroundNear(from: Pos): Pos {
+        repeat(WANDER_TRIES) {
+            val angle = Util.random() * 2.0 * PI
+            val dist = Dim.maxDeploymentRange + Util.random() * WANDER_RADIUS
+            val point = Pos((from.x + dist * cos(angle)).toInt(), (from.y + dist * sin(angle)).toInt())
+            if (isWanderable(point)) return point
+        }
+        repeat(WANDER_TRIES) {
+            val point = Pos.createRandomPassable(World.grid)
+            if (isWanderable(point)) return point
+        }
+        return from
+    }
+
+    private fun isWanderable(p: Pos) = p.isPassable() && Sim.isInPlayArea(p.x, p.y)
 
     private fun goToDestinationPortal(agent: Agent, destination: Portal): Agent {
         val distance = agent.skills.deployPrecision * Dim.maxDeploymentRange

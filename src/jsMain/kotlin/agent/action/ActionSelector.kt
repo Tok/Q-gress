@@ -3,6 +3,7 @@ package agent.action
 import agent.Agent
 import agent.Balance
 import agent.Faction
+import agent.MovementUtil
 import agent.action.cond.*
 import agent.qvalue.QActions
 import agent.qvalue.QValue
@@ -31,9 +32,9 @@ object ActionSelector {
     fun q(faction: Faction, value: QValue): Double = FactionPolicies.of(faction).weight(value) * value.weight
 
     // No-idle fallback: when nothing productive is eligible (portal on cooldown, empty inventory, capped
-    // roster), the agent heads off to ANOTHER portal — closing on neutrals to discover/capture them — rather
-    // than waiting. Recruiting stays a weighted option in the lists above; there's always something to do.
-    private fun fallback(agent: Agent) = { agent.moveElsewhere() }
+    // roster), the agent ROAMS open ground — a portal-independent stroll that sweeps up stray XM faster than
+    // standing still, so it can act again sooner. Recruiting stays a weighted option in the lists above.
+    private fun fallback(agent: Agent) = { MovementUtil.wander(agent) }
     private fun doAnywhereAction(agent: Agent): Agent = Util.select(actionsForAnywhere(agent), fallback(agent)).invoke()
     private fun doNeutralPortalAction(agent: Agent): Agent = Util.select(actionsForNeutralPortals(agent), fallback(agent)).invoke()
 

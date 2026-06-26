@@ -75,6 +75,7 @@ data class Agent(
             action.item == ActionItem.ATTACK -> attackPortal(false)
             action.item == ActionItem.DEPLOY -> deployPortal(false)
             action.item == ActionItem.MOVE -> moveCloserToDestinationPortal()
+            action.item == ActionItem.EXPLORE -> wanderStep() // roam toward open ground (the no-idle fallback)
             action.isBusy() -> this
             else -> ActionSelector.doSomethingElse(this)
         }
@@ -83,6 +84,16 @@ data class Agent(
     }
 
     fun moveElsewhere(): Agent {
+        // Last-resort default is a non-portal wander (roam open ground); everything else seeks a portal.
+        val newAgent = Util.select(moveOptions(), { MovementUtil.wander(this) }).invoke()
+        // Force MOVE for the portal-seeking picks (incl. their no-op paths), but leave a wander fallback on its
+        // own EXPLORE action so it actually roams open ground instead of heading to a portal.
+        if (newAgent.action.item != ActionItem.EXPLORE) newAgent.action.start(ActionItem.MOVE)
+        return newAgent
+    }
+
+    // The weighted destination options for [moveElsewhere] — each gated by what's reachable/possible.
+    private fun moveOptions(): List<Pair<Double, () -> Agent>> {
         val agent = this
         val hasEnemyPortals = MovementUtil.hasEnemyPortals(agent)
         with(QDestinations) {
@@ -96,7 +107,7 @@ data class Agent(
             val weakEnemyQ = if (hasXmps() && hasEnemyPortals) ActionSelector.q(faction, MOVE_TO_WEAK_ENEMY) else -1.0
             val strongEnemyQ =
                 if (hasXmps() && hasEnemyPortals) ActionSelector.q(faction, MOVE_TO_STRONG_ENEMY) else -1.0
-            val qValues = listOf(
+            return listOf(
                 randomQ to { MovementUtil.moveToRandomPortal(agent) },
                 nearQ to { MovementUtil.moveToNearestPortal(agent) },
                 uncapturedQ to { MovementUtil.moveToUncapturedPortal(agent) },
@@ -105,9 +116,6 @@ data class Agent(
                 weakEnemyQ to { MovementUtil.attackMostVulnerablePortal(agent) },
                 strongEnemyQ to { MovementUtil.attackMostLinkedPortal(agent) },
             )
-            val newAgent = Util.select(qValues, { MovementUtil.moveToAnotherPortal(agent) }).invoke()
-            newAgent.action.start(ActionItem.MOVE)
-            return newAgent
         }
     }
 
@@ -154,6 +162,17 @@ data class Agent(
             actionPortal.vectors[pos.toShadow()] ?: MovementUtil.headingTo(pos, actionPortal.location)
         }
         velocity = MovementUtil.move(velocity, force, skills.speed)
+        return this.copy(pos = Pos((pos.x + velocity.re).toInt(), (pos.y + velocity.im).toInt()))
+    }
+
+    // The no-idle stroll (ActionItem.EXPLORE): roam straight toward a nearby open-ground [destination],
+    // sweeping up stray XM on the way; end on arrival so the agent re-evaluates (likely able to act again).
+    private fun wanderStep(): Agent {
+        if (!World.isReady || distanceToDestination() <= skills.inRangeSpeed()) {
+            action.end()
+            return this
+        }
+        velocity = MovementUtil.move(velocity, MovementUtil.headingTo(pos, destination), skills.speed)
         return this.copy(pos = Pos((pos.x + velocity.re).toInt(), (pos.y + velocity.im).toInt()))
     }
 
@@ -206,7 +225,7 @@ data class Agent(
                 if (Attacker.isActionPossible(this)) {
                     Attacker.performAction(this)
                 } else {
-                    doNothing()
+                    doNothing() // brief rest at the portal to regain XM, then re-attack (roaming away abandons the assault)
                 }
             }
         }
@@ -228,13 +247,17 @@ data class Agent(
                 if (Deployer.isActionPossible(this)) {
                     Deployer.performAction(this)
                 } else {
-                    doNothing()
+                    doNothing() // brief rest at the portal to regain XM, then resume the build (roaming away abandons it)
                 }
             }
         }
     }
 
-    fun doNothing(): Agent {
+    // A brief WAIT — NOT aimless idle (an agent with nothing to do anywhere roams via the wander fallback).
+    // Two uses: the not-ready guard (init/teardown), and a short rest AT a portal to regain XM so the agent
+    // can finish its build/assault (capture→deploy→link needs the agent to stay put; roaming away abandons it
+    // and collapses field formation). A future roster game may add an explicit "recharge / stand down" instead.
+    private fun doNothing(): Agent {
         action.start(ActionItem.WAIT)
         return this
     }
