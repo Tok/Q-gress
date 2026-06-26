@@ -1181,7 +1181,7 @@ html, body {
     text-align: left;
 }
 .driverExperimentalLabel {
-    display: flex;
+    display: inline-flex; /* shrink to content so the box + text sit together, not spread across a centered row */
     align-items: center;
     justify-content: flex-start;
     gap: 4px;

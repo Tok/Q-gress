@@ -29,6 +29,18 @@ object DriverControls {
     private val llmModel = mutableMapOf<Faction, String>() // each faction's chosen LLM model id
     private val llmClients = mutableMapOf<Faction, WebLlmClient>() // one client per faction (its own model load)
 
+    /** Whether the experimental LLM driver is unlocked (the onboarding opt-in; carried in the start URL). */
+    var experimentalLlm = false
+        private set
+
+    /** Onboarding sets this from the "Show experimental LLM driver" checkbox; it rides the URL via [GameUrl]. */
+    fun setExperimentalLlm(on: Boolean) {
+        experimentalLlm = on
+    }
+
+    // The LLM option is offered only when unlocked — the onboarding flag (pre-reload) or `?exp=true` (in-game).
+    private fun llmEnabled(): Boolean = experimentalLlm || GameUrl.experimentalLlm()
+
     /** Record [faction]'s chosen driver (onboarding) so the start-URL carries it across the reload. */
     fun select(faction: Faction, value: String) {
         pending[faction] = value
@@ -63,7 +75,7 @@ object DriverControls {
         sel.appendChild(option("manual", "Manual", disabled = !manualAllowed(faction)))
         sel.appendChild(option("heuristic", "Heuristic", disabled = false))
         sel.appendChild(option("net", "Neural net", disabled = false))
-        sel.appendChild(option("llm", "LLM (experimental)", disabled = false))
+        sel.appendChild(option("llm", "LLM (experimental)", disabled = !llmEnabled())) // unlocked only via the opt-in
         val choice = chosen(faction) // onboarding pick / start-URL / default
         sel.value = choice
         selects[faction] = sel

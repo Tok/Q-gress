@@ -122,14 +122,18 @@ class WebLlmClient(private val model: String = DEFAULT_MODEL) : LlmClient {
         }
 
         private suspend fun buildGpuReport(): String {
-            val adapter = js("navigator.gpu.requestAdapter()").unsafeCast<Promise<dynamic>>().await()
+            val adapter = js("navigator.gpu.requestAdapter({ powerPreference: 'high-performance' })")
+                .unsafeCast<Promise<dynamic>>().await()
                 ?: return "no WebGPU adapter (software-only?)"
             val lim = adapter.limits
             val info = adapter.info
             val desc = ((info?.description ?: info?.architecture ?: info?.vendor) as? String)?.takeIf { it.isNotBlank() }
-                ?: "unknown adapter"
             val f16 = adapter.features.has("shader-f16") as Boolean
-            return "$desc · max buffer ${mb(lim.maxBufferSize)} · max storage-binding ${mb(lim.maxStorageBufferBindingSize)} · " +
+            // An empty adapter name + clamped default limits + no f16 on a real GPU = the browser is masking it
+            // (Brave's fingerprinting protection does exactly this) — call it out so the fix is obvious.
+            val masked = desc == null && !f16
+            val name = desc ?: if (masked) "hidden adapter (Brave fingerprinting? lower Shields for this site)" else "unknown adapter"
+            return "$name · max buffer ${mb(lim.maxBufferSize)} · max storage-binding ${mb(lim.maxStorageBufferBindingSize)} · " +
                 "shader-f16 ${if (f16) "yes" else "no"}"
         }
 

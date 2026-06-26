@@ -241,6 +241,7 @@ object Onboarding {
         screen.appendChild(
             experimentalToggle { on ->
                 showLlm = on
+                DriverControls.setExperimentalLlm(on) // unlock it in-game too (rides the start URL as ?exp)
                 rebuild()
             },
         )
