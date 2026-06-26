@@ -401,9 +401,14 @@ html, body {
     letter-spacing: 1px;
     font-size: 11px;
 }
-/* The "AI vs AI" driver pickers in the top toolbar. */
+/* The "AI vs AI" driver pickers in the top toolbar — on their own glass pane (slider-pane style) so the
+   labels/selects read clearly against the map, with a bit more vertical breathing room. */
 .driverControls {
     gap: 8px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 5px;
+    padding: 6px 10px;
 }
 .driverControlsLabel {
     font-family: "Chakra Petch", sans-serif;
@@ -923,7 +928,8 @@ html, body {
    gameplay. z above the onboarding (9998) + loading (9999) overlays so it's always clickable. */
 .persistentVolume {
     position: fixed;
-    top: 18px;
+    top: 0;
+    height: 100px; /* span the toolbar band so align-items centres it with the rest of the header */
     right: 22px;
     z-index: 10001;
     display: flex;
@@ -1250,7 +1256,7 @@ html, body {
     box-sizing: border-box;
     padding-right: 165px; /* clear the fixed .persistentVolume widget in the top-right corner */
     display: flex;
-    align-items: flex-start; /* hug the top edge, not vertically centred in the 100px band */
+    align-items: center; /* vertically centre the toolbar in the 100px band */
     justify-content: space-between;
 }
 /* Top-bar clusters: left group hugs the left edge, right group the right edge. */
@@ -1539,8 +1545,10 @@ html, body {
     filter: brightness(0.95);
 }
 
-/* Glass + black-rubber panels with a faint faction-laser edge — the always-on dark surfaces. */
-.gameMenu, .footer, .loadingPanel, .historyPanel, .factionCta, .popup {
+/* Glass + black-rubber panels with a faint faction-laser edge — the always-on dark surfaces. (The right
+   intel column / history pane is intentionally NOT here: it uses the same flat neutral-border, no-blur style
+   as the left slider pane — see .historyPanel / .tuneList.) */
+.gameMenu, .footer, .loadingPanel, .factionCta, .popup {
     backdrop-filter: blur(7px);
     -webkit-backdrop-filter: blur(7px);
     border: 1px solid var(--ui-faction-edge);

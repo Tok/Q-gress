@@ -35,12 +35,13 @@ object PlayAreaMask {
         val p: dynamic = js("({})")
         p.color = "#ffffff"
         p.transparent = true
-        p.opacity = 0.22 // a touch more solid so the thicker 3D wall reads as a boundary, not a film
+        p.opacity = 0.2 // a touch more solid so the thicker 3D wall reads as a boundary, not a film
         p.depthWrite = false
-        // FrontSide (backface cull): the extruded ring is double-sided otherwise, so from inside the
-        // arena you'd see each arc's near + far faces overlapping → an inside-out look. Cull backfaces
-        // so each arc shows only the surface facing the camera.
-        p.side = 0 // FrontSide
+        // DoubleSide: cull-backface (FrontSide) left each wall showing only the faces pointing at the camera,
+        // so the far side of every box / the inside of the ring just vanished — the boundary read as a thin,
+        // inside-out film. Rendering both faces makes it read as a real translucent wall from any angle (the
+        // slight extra blend where you look through both layers is what a glass wall actually does).
+        p.side = 2 // DoubleSide
         return Three.MeshBasicMaterial(p)
     }
 
