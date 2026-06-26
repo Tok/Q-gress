@@ -557,6 +557,21 @@ html, body {
     white-space: pre-wrap;
     word-break: break-word;
 }
+.brainsHelp {
+    margin: 6px 0;
+    font-size: 12px;
+}
+.brainsHelpSummary {
+    cursor: pointer;
+    color: #7f8a84;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    user-select: none;
+}
+.brainsHelpSummary:hover {
+    color: #cfe3ff;
+}
 .brainsGenome {
     display: block;
     width: 320px;

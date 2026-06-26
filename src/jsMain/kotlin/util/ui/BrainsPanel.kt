@@ -37,6 +37,7 @@ object BrainsPanel {
     private var built = false
     private val cards = mutableMapOf<Faction, HTMLElement>()
     private val lastKey = mutableMapOf<Faction, String>()
+    private var helpOpen = false // collapsible WebGPU-help state, preserved across card rebuilds
 
     fun update() {
         if (!ensure()) return
@@ -154,25 +155,10 @@ object BrainsPanel {
         card.appendChild(kv("Model", client?.modelId ?: "mock"))
         card.appendChild(kv("Backend", "WebLLM (MLC) · WebGPU, in-browser"))
         card.appendChild(kv("Status", client?.status ?: "mock"))
-        if (!WebLlmClient.webGpuAvailable()) {
-            card.appendChild(
-                p(
-                    "No WebGPU in this browser — the LLM can't run (it falls back to the heuristic). On Chrome/Brave, enable this flag and reload:",
-                ),
-            )
-            card.appendChild(pre(WebLlmClient.WEBGPU_FLAG))
-        }
-        // GPU capability readout. The web exposes no free-VRAM figure, so we show the adapter's max-buffer
-        // limits (the ceiling on what a model can allocate) — the closest thing to a VRAM gauge available.
-        card.appendChild(el("div", "brainsKey").also { it.textContent = "GPU (WebGPU limits — no free-VRAM API exists)" })
-        card.appendChild(p(WebLlmClient.gpuReport()))
-        card.appendChild(
-            p(
-                "If that shows a software adapter or tiny limits, the LLM will likely exhaust the GPU and crash the " +
-                    "renderer. Check chrome://gpu (is WebGPU hardware-accelerated?), and try chrome://flags " +
-                    "→ enable-vulkan + ignore-gpu-blocklist (alongside enable-unsafe-webgpu), then reload.",
-            ),
-        )
+        // GPU capability readout (one line) — the adapter's max-buffer limits are the closest thing to a VRAM
+        // gauge the web exposes. The verbose troubleshooting lives in the collapsible help below.
+        card.appendChild(kv("GPU", WebLlmClient.gpuReport()))
+        card.appendChild(webGpuHelp())
         card.appendChild(el("div", "brainsKey").also { it.textContent = "prompt" })
         card.appendChild(pre(policy.lastPrompt))
         card.appendChild(el("div", "brainsKey").also { it.textContent = "reply" })
@@ -189,6 +175,45 @@ object BrainsPanel {
                 },
             ),
         )
+    }
+
+    // Collapsible WebGPU troubleshooting — tucked away so the LLM card isn't a wall of help text. The chrome://
+    // entries are copy-paste only (browsers block navigating to chrome:// from a page, so they can't be links).
+    private fun webGpuHelp(): HTMLElement {
+        val details = document.createElement("details") as HTMLElement
+        details.className = "brainsHelp"
+        details.asDynamic().open = helpOpen
+        details.asDynamic().ontoggle = {
+            helpOpen = details.asDynamic().open as Boolean
+            null
+        }
+        val summary = document.createElement("summary") as HTMLElement
+        summary.className = "brainsHelpSummary"
+        summary.textContent = "WebGPU won't run? (troubleshooting)"
+        details.appendChild(summary)
+        details.appendChild(
+            p(
+                "The LLM needs WebGPU on a real GPU. If the GPU line above shows a software/hidden adapter or " +
+                    "WebGPU errors, it'll fall back to the heuristic. Paste these into the address bar (they can't " +
+                    "be links) and reload:",
+            ),
+        )
+        details.appendChild(
+            pre(
+                "chrome://gpu                                 (check the Vulkan/WebGPU row names your GPU)\n" +
+                    "chrome://flags/#enable-unsafe-webgpu\n" +
+                    "chrome://flags/#enable-vulkan\n" +
+                    "chrome://flags/#ignore-gpu-blocklist",
+            ),
+        )
+        details.appendChild(
+            p(
+                "On Brave, also turn Shields' fingerprinting off for this page (it can hide the GPU). On " +
+                    "Linux/NVIDIA, if WebGPU is stuck on \"SwiftShader\", launching the browser with " +
+                    "--disable-gpu-sandbox often forces hardware Vulkan.",
+            ),
+        )
+        return details
     }
 
     // Top-3 sliders the driver currently favours (its installed vector) — the "what it's doing now" line.
