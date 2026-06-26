@@ -207,18 +207,18 @@ html, body {
 .taInv {
     text-align: right;
 }
-/* Fixed column widths so the table layout never shifts with content. */
-.taTable th:nth-child(1), .taTable td:nth-child(1) { width: 22px; }
-.taTable th:nth-child(2), .taTable td:nth-child(2) { width: 52px; }
-.taTable th:nth-child(3), .taTable td:nth-child(3) { width: 44px; }
-.taTable th:nth-child(4), .taTable td:nth-child(4) { width: 112px; }
+/* Fixed column widths so the table layout never shifts with content (XM, AP, Agent, XMPs, Resos, Cubes,
+   Shields, Keys, Action, Portal — the rank # column was removed). */
+.taTable th:nth-child(1), .taTable td:nth-child(1) { width: 52px; }
+.taTable th:nth-child(2), .taTable td:nth-child(2) { width: 44px; }
+.taTable th:nth-child(3), .taTable td:nth-child(3) { width: 112px; }
+.taTable th:nth-child(4), .taTable td:nth-child(4),
 .taTable th:nth-child(5), .taTable td:nth-child(5),
-.taTable th:nth-child(6), .taTable td:nth-child(6),
-.taTable th:nth-child(7), .taTable td:nth-child(7) { width: 58px; }
-.taTable th:nth-child(8), .taTable td:nth-child(8) { width: 42px; }
-.taTable th:nth-child(9), .taTable td:nth-child(9) { width: 30px; }
-.taTable th:nth-child(10), .taTable td:nth-child(10) { width: 84px; }
-.taTable th:nth-child(11), .taTable td:nth-child(11) { width: 132px; }
+.taTable th:nth-child(6), .taTable td:nth-child(6) { width: 58px; }
+.taTable th:nth-child(7), .taTable td:nth-child(7) { width: 42px; }
+.taTable th:nth-child(8), .taTable td:nth-child(8) { width: 30px; }
+.taTable th:nth-child(9), .taTable td:nth-child(9) { width: 84px; }
+.taTable th:nth-child(10), .taTable td:nth-child(10) { width: 132px; }
 .taInvBars {
     display: inline-flex;
     align-items: flex-end;
@@ -401,9 +401,14 @@ html, body {
     letter-spacing: 1px;
     font-size: 11px;
 }
-/* The "AI vs AI" driver pickers in the top toolbar. */
+/* The "AI vs AI" driver pickers in the top toolbar — on their own glass pane (slider-pane style) so the
+   labels/selects read clearly against the map, with a bit more vertical breathing room. */
 .driverControls {
     gap: 8px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 5px;
+    padding: 6px 10px;
 }
 .driverControlsLabel {
     font-family: "Chakra Petch", sans-serif;
@@ -681,6 +686,47 @@ html, body {
     cursor: default;
 }
 
+/* Leaderboard (LeaderboardPanel) — driver entrant toggles + a round-robin standings table. */
+.ladderEntrant {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-family: "Coda", monospace;
+    font-size: 12px;
+    color: #e6ebe8;
+    cursor: pointer;
+}
+.ladderTable {
+    border-collapse: collapse;
+    font-family: "Coda", monospace;
+    font-size: 12px;
+    margin-top: 8px;
+    min-width: 360px;
+}
+.ladderHeadCell {
+    color: #9aa6a0;
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    text-align: right;
+    padding: 2px 12px 4px;
+}
+.ladderHeadCell:first-child {
+    text-align: left;
+}
+.ladderRow td {
+    padding: 2px 12px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+.ladderName {
+    text-align: left;
+    color: #cfe3ff;
+}
+.ladderRow:first-child .ladderName {
+    font-weight: bold; /* the leader (table is pre-sorted by avg MU margin) */
+}
+
 /* History dashboard (HistoryPanel) — right intel column: per metric, live ENL/RES value + sparkline. */
 .historyPanel {
     order: 0; /* stays fixed at the top of the right column; the inspector sits below it */
@@ -724,8 +770,26 @@ html, body {
 }
 .statsComLine {
     font-size: 11px;
-    line-height: 1.45;
+    line-height: 1.5;
     white-space: nowrap;
+}
+/* Key (MAJOR) events stand out from the routine ones. */
+.statsComMajor {
+    font-weight: bold;
+}
+/* EVENT LOG "only key events" filter row, above the log lines. */
+.logFilter {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    color: #9aa6a0;
+    margin-bottom: 4px;
+    cursor: pointer;
+    user-select: none;
+}
+.logFilterLabel {
+    cursor: pointer;
 }
 /* Pre-load onboarding screens (faction → location); see util/ui/Onboarding. */
 .onboardScreen {
@@ -882,7 +946,8 @@ html, body {
    gameplay. z above the onboarding (9998) + loading (9999) overlays so it's always clickable. */
 .persistentVolume {
     position: fixed;
-    top: 18px;
+    top: 0;
+    height: 52px; /* match the toolbar row so align-items centres it level with the rest of the header */
     right: 22px;
     z-index: 10001;
     display: flex;
@@ -1204,12 +1269,12 @@ html, body {
     font-family: "Coda", "Lucida Console";
 }
 .buttonDiv {
-    height: 100px;
+    height: 52px; /* a compact row at the very top — items centre within it, scoreboard sits just below */
     width: 100%;
     box-sizing: border-box;
     padding-right: 165px; /* clear the fixed .persistentVolume widget in the top-right corner */
     display: flex;
-    align-items: flex-start; /* hug the top edge, not vertically centred in the 100px band */
+    align-items: center; /* vertically centre the toolbar items relative to each other */
     justify-content: space-between;
 }
 /* Top-bar clusters: left group hugs the left edge, right group the right edge. */
@@ -1498,8 +1563,10 @@ html, body {
     filter: brightness(0.95);
 }
 
-/* Glass + black-rubber panels with a faint faction-laser edge — the always-on dark surfaces. */
-.gameMenu, .footer, .loadingPanel, .historyPanel, .factionCta, .popup {
+/* Glass + black-rubber panels with a faint faction-laser edge — the always-on dark surfaces. (The right
+   intel column / history pane is intentionally NOT here: it uses the same flat neutral-border, no-blur style
+   as the left slider pane — see .historyPanel / .tuneList.) */
+.gameMenu, .footer, .loadingPanel, .factionCta, .popup {
     backdrop-filter: blur(7px);
     -webkit-backdrop-filter: blur(7px);
     border: 1px solid var(--ui-faction-edge);
@@ -1540,7 +1607,7 @@ html, body {
 .topLocation {
     flex: 1; /* stretch across the middle of the top bar */
     min-width: 0; /* allow shrinking so the ellipsis works in a flex item */
-    margin: 12px 14px 0;
+    margin: 0 14px; /* no top margin — the toolbar's align-items:center keeps it level with the rest */
     font-size: 18px;
     color: #f0f0f0;
     /* Black outline so the white name stays readable over any terrain/buildings underneath. */
