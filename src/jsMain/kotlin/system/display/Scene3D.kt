@@ -473,8 +473,8 @@ object Scene3D {
         dropResonators(location, lv, resos)
     }
 
-    /** Drop the resonator parts when the portal shatters: every slot's rubber grommet o-ring + the
-     *  colour-coded rod in each filled slot, each as a brief rigid body (like the glass shards). */
+    /** Drop the resonator parts when the portal shatters: EVERY slot's two rubber o-rings (the lower pole
+     *  socket + the upper ring) plus the colour-coded rod in each filled slot, each a brief rigid body. */
     private fun dropResonators(location: Pos, level: Double, resos: Map<Octant, Int>) {
         val poleH = poleHeight(level)
         val collarZ = groundZ(location) + poleH * RESO_COLLAR_FRAC
@@ -486,16 +486,17 @@ object Scene3D {
             val ang = i * PI / 4.0
             val rx = x + ringR * cos(ang)
             val ry = y + ringR * sin(ang)
+            // Both o-rings fall for every slot (filled or empty): the lower socket and the upper ring.
             ShatterFx.spawnFallingChunk(resoRingGeo, rx, ry, collarZ, 1.0, RESO_RING_R + RESO_RING_TUBE, GROMMET_COLOR)
+            ShatterFx.spawnFallingChunk(resoRingGeo, rx, ry, collarZ + rodLen, 1.0, RESO_RING_R + RESO_RING_TUBE, GROMMET_COLOR)
             resos[octant]?.let { lvl ->
                 ShatterFx.spawnFallingRod(resoRodGeo, rx, ry, collarZ + rodLen / 2.0, RESO_ROD_R, rodLen, LevelColor.map[lvl] ?: "#ffffff")
-                // the top o-ring rides the rod top → tumble it out with the rod
-                ShatterFx.spawnFallingChunk(resoRingGeo, rx, ry, collarZ + rodLen, 1.0, RESO_RING_R + RESO_RING_TUBE, GROMMET_COLOR)
             }
         }
     }
 
-    /** Drop a single resonator rod from its slot — used as each reso is destroyed during an attack. */
+    /** Drop a single resonator rod from its slot — used as each reso is destroyed during an attack. Only the
+     *  ROD falls; the pole's o-ring cage stays (the slot just reverts to empty, still showing its two rings). */
     fun dropResonator(location: Pos, level: Int, octantIndex: Int, resoLevel: Int) {
         val poleH = poleHeight(level.toDouble())
         val rodLen = poleH * RESO_ROD_LEN_FRAC
@@ -513,8 +514,6 @@ object Scene3D {
             rodLen,
             LevelColor.map[resoLevel] ?: "#ffffff",
         )
-        // the reso's top o-ring rides the rod top → it falls out with the rod
-        ShatterFx.spawnFallingChunk(resoRingGeo, rx, ry, collarZ + rodLen, 1.0, RESO_RING_R + RESO_RING_TUBE, GROMMET_COLOR)
     }
 
     /** Portal defense: a retaliation bolt arcs from the portal orb ([from]/[fromLevel]) to the attacker
@@ -1039,6 +1038,11 @@ object Scene3D {
             val ang = i * PI / 4.0
             val ox = ringR * cos(ang)
             val oy = ringR * sin(ang)
+            // Both o-rings are the pole's fixed "cage" (part of the portal, NOT the reso): they stay put while
+            // a rod deploys into them and never tilt on a hack — only the rod itself lerps/tilts/falls. Always
+            // present, filled or empty, so a destroyed reso just leaves its empty cage behind (no pop).
+            addRing(group, ox, oy, 0.0) // lower socket (collar)
+            addRing(group, ox, oy, rodLen) // upper guide ring (at the rod-top height)
             val resoInfo = resos[octant]
             if (resoInfo != null) {
                 val lvl = resoInfo.first
@@ -1080,20 +1084,9 @@ object Scene3D {
                 cap.asDynamic().position.set(0.0, 0.0, -rodLen * (1.0 - shownFill))
                 cap.asDynamic().renderOrder = 1
                 pivot.asDynamic().add(cap)
-                // The grommet is part of the reso: it rides INSIDE the pivot at the rod's bottom, so it
-                // centrifuges out with the rod on a hack instead of staying stuck to the pole collar.
-                val ring = Three.Mesh(resoRingGeo, Materials.rubber())
-                ring.asDynamic().position.set(0.0, 0.0, -rodLen) // rod bottom, in pivot-local space
-                pivot.asDynamic().add(ring)
-                // A second black o-ring at the reso's TOP joint. It rides INSIDE the pivot (local origin = the
-                // rod-top joint), so it TILTS with the rod on a hack (stays attached to the rod's top) and
-                // tumbles out with the reso when the portal shatters / the reso is destroyed.
-                val topRing = Three.Mesh(resoRingGeo, Materials.rubber())
-                topRing.asDynamic().position.set(0.0, 0.0, 0.0)
-                pivot.asDynamic().add(topRing)
+                // Only the rod (+ its energy cap) lives in the pivot — the o-rings are the fixed pole cage added
+                // above. So deploy lerps just the rod into the rings, and a hack hinges the rod within them.
                 group.asDynamic().add(pivot)
-            } else {
-                addEmptySlotRings(group, ox, oy, rodLen)
             }
         }
         group.asDynamic().position.set(x, y, gz + poleH * RESO_COLLAR_FRAC)
@@ -1101,16 +1094,13 @@ object Scene3D {
         return group
     }
 
-    // Empty slot: bare grommets at BOTH the lower (collar) and upper (rod-top) heights — like a filled slot's
-    // two o-rings but with no rod between them. Added straight to the group (not a pivot), so a hack spins them
-    // around the pole but they never tilt out (nothing to swing).
-    private fun addEmptySlotRings(group: dynamic, ox: Double, oy: Double, rodLen: Double) {
-        val lower = Three.Mesh(resoRingGeo, Materials.rubber())
-        lower.asDynamic().position.set(ox, oy, 0.0)
-        group.add(lower) // group is already dynamic here — no asDynamic()
-        val upper = Three.Mesh(resoRingGeo, Materials.rubber())
-        upper.asDynamic().position.set(ox, oy, rodLen)
-        group.add(upper)
+    // A bare rubber o-ring parented straight to the reso group (not a rod pivot) at local ([ox], [oy], [z]):
+    // the pole socket (z=0) and the empty-slot upper ring. It spins around the pole with the group on a hack
+    // but never tilts out (no rod to swing).
+    private fun addRing(group: dynamic, ox: Double, oy: Double, z: Double) {
+        val ring = Three.Mesh(resoRingGeo, Materials.rubber())
+        ring.asDynamic().position.set(ox, oy, z)
+        group.add(ring)
     }
 
     /**
