@@ -44,12 +44,12 @@ object OwnBuildings {
     const val PARALLEL_MODE = true
 
     const val COLOR = "#333333"
-    const val OPACITY = 0.9
+    const val OPACITY = 0.65 // a touch more see-through than MapLibre's by default (the action reads better)
 
     // Self-shading under the sun + 0.5 ambient crushes our unlit faces toward black (MapLibre's flat-lit
-    // extrusion never darkens). A modest emissive of the same gray lifts the shaded-face floor back toward
-    // MapLibre's tone while keeping cast + received shadows and the 3D depth.
-    private const val EMISSIVE_INTENSITY = 0.4
+    // extrusion never darkens). A generous emissive of the same gray lifts the shaded-face floor back toward
+    // (and a little above) MapLibre's tone while keeping cast + received shadows and the 3D depth.
+    private const val EMISSIVE_INTENSITY = 0.6
     private const val MAX_BUILDINGS = 8000 // safety cap (separate mesh per building; perf is fine at our scale)
     private const val DEFAULT_HEIGHT = 8.0 // when a footprint has no render_height
 
@@ -98,6 +98,12 @@ object OwnBuildings {
     }
 
     fun hasAny() = keys.isNotEmpty()
+
+    /** Live-set the shared building-material opacity (the "Buildings transparency" menu slider). */
+    fun setOpacity(opacity: Double) {
+        val m = material ?: return
+        m.opacity = opacity.coerceIn(0.0, 1.0)
+    }
 
     /** Drop every meshed building (e.g. a fresh world). */
     fun clear() {

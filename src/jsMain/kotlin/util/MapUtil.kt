@@ -629,7 +629,7 @@ object MapUtil {
                 "fill-extrusion-color": "#333333",
                 "fill-extrusion-height": ["+", ["coalesce", ["get", "render_height"], 8], ${BuildingShake.SHAKE_TERM}],
                 "fill-extrusion-base": ["+", ["coalesce", ["get", "render_min_height"], 0], ${BuildingShake.SHAKE_TERM}],
-                "fill-extrusion-opacity": 0.9
+                "fill-extrusion-opacity": 0.85
             }
         }""",
     )
@@ -828,7 +828,8 @@ object MapUtil {
         initMap?.setPaintProperty("3d-buildings", "fill-extrusion-opacity", buildingOpacity)
     }
 
-    private var buildingOpacity = 0.9
+    private var buildingOpacity = 0.85
+    fun currentBuildingOpacity() = buildingOpacity
 
     /** Nudge building transparency by [delta] (keyboard -/+); clamped to 0..1. */
     fun nudgeBuildingOpacity(delta: Double) = setBuildingOpacity(buildingOpacity + delta)

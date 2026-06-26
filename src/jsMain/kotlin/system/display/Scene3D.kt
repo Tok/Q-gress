@@ -169,11 +169,6 @@ object Scene3D {
     /** Draw the play-area boundary (wall + outline + dim mask). Off for the title scene. */
     var showBorder = true
 
-    // false (default): the sim shares the map depth buffer, so 3D buildings occlude portals/agents
-    // (realistic). true (accessibility): clear depth first → the whole sim draws over buildings so
-    // actions are never hidden. XMP/explosions stay depthTest=false either way (always on top).
-    var drawOverBuildings = false
-
     // Set by TitleSim before the layer is added → onAdd loads the 3D wordmark + calls this once it's in
     // (e.g. to hide the DOM wordmark). Null in-game (no 3D wordmark there).
     var titleWordmarkOnReady: (() -> Unit)? = null
@@ -341,10 +336,8 @@ object Scene3D {
         updateTitleWordmark(invProj, dt) // camera-lock the 3D title letters (no-op until loaded)
         VectorFieldOverlay.sync() // paced flow-field sweep; driven here (continuous loop) so it animates through world-gen too
         activeRenderer.resetState()
-        // Realistic by default: keep the depth the map layers wrote so 3D buildings occlude the sim.
-        // The accessibility toggle clears it first so portals/agents/links draw over buildings + terrain
-        // (XMP/indicators that opt out with depthTest=false stay on top in both modes).
-        if (drawOverBuildings) activeRenderer.clearDepth()
+        // Keep the depth the map layers wrote so 3D buildings occlude the sim (XMP/indicators that opt out
+        // with depthTest=false stay on top regardless).
         activeRenderer.render(activeScene, cam)
         TitleWordmark.renderOverlay(activeRenderer, cam) // title letters: own pass, depth cleared → in front + self-occluding
         map.triggerRepaint()

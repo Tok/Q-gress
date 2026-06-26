@@ -20,6 +20,7 @@ import system.Cycle
 import system.HeadlessRun
 import system.Simulation
 import system.display.DamageNumberFx
+import system.display.OwnBuildings
 import system.display.PassabilityOverlay
 import system.display.Scene3D
 import system.display.SunController
@@ -51,6 +52,25 @@ object HtmlUtil {
     private const val LOCATION_LABEL_ID = "locationLabel"
     private const val MIN_SPEED = 0.25
     private const val MAX_SPEED = 4.0
+
+    // Buildings-transparency menu slider (0 = solid, 1 = fully see-through). Drives BOTH building sets so the
+    // two stay consistent (they render together — our meshes on top, MapLibre filling gaps). Our own meshes
+    // are kept a touch more transparent so the action behind them reads better.
+    private const val BUILDING_TRANSPARENCY_DEFAULT = 0.15
+    private const val OWN_BUILDING_EXTRA_TRANSPARENCY = 0.2
+
+    private fun setBuildingTransparency(transparency: Double) = applyBuildingOpacity((1.0 - transparency).coerceIn(0.0, 1.0))
+
+    // Shared sink: set MapLibre's gap-fillers + our own meshes (a touch more transparent) from one opacity.
+    private fun applyBuildingOpacity(mapOpacity: Double) {
+        MapUtil.setBuildingOpacity(mapOpacity)
+        OwnBuildings.setOpacity((mapOpacity - OWN_BUILDING_EXTRA_TRANSPARENCY).coerceIn(0.0, 1.0))
+    }
+
+    private fun nudgeBuildingTransparency(deltaOpacity: Double) {
+        MapUtil.nudgeBuildingOpacity(deltaOpacity)
+        applyBuildingOpacity(MapUtil.currentBuildingOpacity())
+    }
 
     // Sim-speed presets behind the toolbar buttons (mult, label, button id). "Max" = MAX_SPEED.
     private val SPEED_PRESETS = listOf(
@@ -417,7 +437,7 @@ object HtmlUtil {
             command = { onShortcutCommand(it) },
             zoom = { MapUtil.zoomBy(it) },
             pan = { dx, dy -> MapUtil.panBy(dx, dy) },
-            buildingOpacity = { MapUtil.nudgeBuildingOpacity(it) },
+            buildingOpacity = { nudgeBuildingTransparency(it) },
             speedDelta = { setSpeed(speedMult + it) },
         ),
     )
@@ -690,11 +710,6 @@ object HtmlUtil {
         // no longer toggled — they flash automatically for ~a second when a portal is created.
         // The "passability" map (greyscale walkability the grid is read from) — this is NOT the terrain.
         menu.append(createMenuCheckbox("passabilityToggle", "Passability") { PassabilityOverlay.setVisible(it) })
-        // Accessibility: draw the whole sim over buildings so actions are never hidden (default off →
-        // the realistic order where buildings can occlude portals/agents).
-        val xray = createMenuCheckbox("xrayToggle", "Show through buildings") { Scene3D.drawOverBuildings = it }
-        (xray.firstChild as? HTMLInputElement)?.checked = Scene3D.drawOverBuildings
-        menu.append(xray)
         // Damage-number animations on/off (on by default).
         val dmgNums = createMenuCheckbox("damageNumbersToggle", "Damage numbers") { DamageNumberFx.enabled = it }
         (dmgNums.firstChild as? HTMLInputElement)?.checked = DamageNumberFx.enabled
@@ -702,8 +717,11 @@ object HtmlUtil {
         // The single combat-dynamics knob (0 = realistic/tanky, slow board … 1 = portals flip very easily).
         // Drives shield mitigation + weapon drops + attack eagerness + the underdog comeback. Live-tunable.
         menu.append(MenuControls.slider("Combat dynamics", Config.combatDynamism) { Config.combatDynamism = it })
-        // Fade the 3D buildings when crowded areas hide the action.
-        menu.append(MenuControls.slider("Buildings", 0.9) { MapUtil.setBuildingOpacity(it) })
+        // Fade BOTH building sets (our own meshes + MapLibre's, which fill the gaps) when they hide the action.
+        // 0 = solid, 1 = fully see-through; our own meshes are a touch more transparent than MapLibre's.
+        menu.append(
+            MenuControls.slider("Buildings transparency", BUILDING_TRANSPARENCY_DEFAULT) { setBuildingTransparency(it) },
+        )
         // Building-shake intensity (0 = off … 2 = 200%).
         menu.append(
             MenuControls.slider("Building shake", Config.buildingShakeMultiplier, 0.0, 2.0, 0.1) {
