@@ -18,75 +18,19 @@ object Util {
     fun clip(value: Int, from: Int, to: Int): Int = MathUtil.clip(value, from, to)
     fun clipDouble(value: Double, from: Double, to: Double): Double = MathUtil.clipDouble(value, from, to)
 
-    // Seedable PRNG (mulberry32). random() is the ONLY randomness source in the game, so seeding it
-    // makes the whole world (and a fresh playthrough) reproducible — the basis for shareable links
-    // and, later, deterministic AI matches (PLAN Phase 6.0). A fresh seed is rolled if none is set,
-    // and captured so it can be shared. (Kotlin Int arithmetic wraps mod 2^32 = uint32 semantics.)
-    private var rngState = 0
-    private var theSeed = 0
-    private var seeded = false
-
-    /** Seed the RNG (resets the sequence). Call before world generation to reproduce a world. */
-    fun seed(value: Int) {
-        theSeed = value
-        rngState = value
-        seeded = true
-    }
-
-    /** The seed driving the current world (for sharing). */
-    fun currentSeed(): Int = theSeed
-
-    /** A fresh random 32-bit seed (used when no seed is supplied). */
-    fun freshSeed(): Int = js("(Math.random() * 4294967296) | 0") as Int
-
-    fun random(): Double {
-        if (!seeded) seed(freshSeed())
-        val a = rngState + 0x6D2B79F5
-        rngState = a
-        var t = (a xor (a ushr 15)) * (1 or a)
-        t = (t + ((t xor (t ushr 7)) * (61 or t))) xor t
-        return (t xor (t ushr 14)).toUInt().toDouble() / 4294967296.0
-    }
-
-    fun randomBool() = random() <= 0.5
-
-    private fun randomDouble(max: Double) = random() * max
-    fun randomInt(max: Int) = randomInt(0, max)
-    fun randomInt(min: Int, max: Int): Int {
-        val list = IntRange(min, max).toList()
-        return list[(random() * list.size).toInt()]
-    }
-
-    fun <T> shuffle(items: Set<T>): Set<T> = shuffle(items.toList()).toSet()
-    fun <T> shuffle(items: List<T>): List<T> {
-        val result = mutableListOf<T>()
-        result.addAll(items)
-        for (i in 0 until result.size) {
-            val pos = randomInt(result.size - 1)
-            val temp: T = result[i]
-            result[i] = result[pos]
-            result[pos] = temp
-        }
-        return result.toList()
-    }
-
-    fun <T> select(probabilityList: List<Pair<Double, T>>, default: T): T {
-        val list = probabilityList.filterNot { it.first <= 0.0 }
-        if (list.isEmpty()) {
-            return default
-        }
-        val total = list.sumByDouble { it.first }
-        val rand = randomDouble(total)
-        var accu = 0.0
-        list.sortedBy { it.first }.forEach {
-            accu += it.first
-            check(it.first > 0.0)
-            if (accu >= rand) {
-                return it.second
-            }
-        }
-        throw IllegalArgumentException("Invalid Q-values: $probabilityList")
-    }
+    // The seedable mulberry32 PRNG + weighted picker now live in the shared core ([Rng]); these are thin
+    // delegates so the ~150 Util.random()/seed()/select() call sites are unchanged. random() is the game's
+    // ONLY randomness source — seeding it makes a whole world (and AI match) reproducible.
+    fun seed(value: Int) = Rng.seed(value)
+    fun currentSeed(): Int = Rng.currentSeed()
+    fun freshSeed(): Int = util.freshSeed()
+    fun random(): Double = Rng.random()
+    fun randomBool() = Rng.randomBool()
+    fun randomInt(max: Int) = Rng.randomInt(max)
+    fun randomInt(min: Int, max: Int): Int = Rng.randomInt(min, max)
+    fun <T> shuffle(items: Set<T>): Set<T> = Rng.shuffle(items)
+    fun <T> shuffle(items: List<T>): List<T> = Rng.shuffle(items)
+    fun <T> select(probabilityList: List<Pair<Double, T>>, default: T): T = Rng.select(probabilityList, default)
 
     fun generatePortalName(): String {
         val separator = if (random() < 0.3) "-" else " "

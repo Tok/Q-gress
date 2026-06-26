@@ -1,6 +1,6 @@
 package agent
 
-import util.Util
+import util.Rng
 
 enum class Faction(val abbr: String, val nickName: String, val color: String, val fieldStyle: String) {
     ENL("ENL", "Frog", "#03DC03", "rgba(3, 220, 3, "),
@@ -23,6 +23,6 @@ enum class Faction(val abbr: String, val nickName: String, val color: String, va
         }
 
         fun all() = listOf(ENL, RES)
-        fun random() = if (Util.random() < 0.5) ENL else RES
+        fun random() = if (Rng.random() < 0.5) ENL else RES
     }
 }

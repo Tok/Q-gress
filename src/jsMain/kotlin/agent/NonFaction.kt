@@ -13,7 +13,6 @@ import util.ui.LoadingOverlay
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
-import kotlin.math.sqrt
 
 data class NonFaction(
     var pos: Pos,
@@ -212,25 +211,10 @@ data class NonFaction(
             val cx = World.simW() / 2.0
             val cy = World.simH() / 2.0
             val nearCentre = minOf(World.simW(), World.simH()) * NEAR_CENTRE_FRAC
-            return Util.shuffle(opposingHalf(offscreenDestinations(), from, cx, cy, nearCentre)).first()
+            return Util.shuffle(NonFactionMath.opposingHalf(offscreenDestinations(), from, cx, cy, nearCentre)).first()
         }
 
         private const val NEAR_CENTRE_FRAC = 0.15 // within this fraction of the field, "opposite" is meaningless
-
-        /**
-         * Pure directional pick: from [all] off-map points, the half whose bearing from the centre ([cx], [cy])
-         * most OPPOSES [from]'s bearing (ascending dot product), so an NPC heads clear across the field instead
-         * of to the nearest edge. Within [nearCentre] of the centre there's no meaningful opposite → return all.
-         */
-        internal fun opposingHalf(all: List<Pos>, from: Pos, cx: Double, cy: Double, nearCentre: Double): List<Pos> {
-            val dx = from.x - cx
-            val dy = from.y - cy
-            val dist = sqrt(dx * dx + dy * dy)
-            if (dist < nearCentre) return all // anywhere is "across" from the middle → don't bias a direction
-            val ux = dx / dist
-            val uy = dy / dist
-            return all.sortedBy { (it.x - cx) * ux + (it.y - cy) * uy }.take((all.size / 2).coerceAtLeast(1))
-        }
 
         private val fields = mutableMapOf<Pos, VectorField>()
         private val pending = mutableSetOf<Pos>() // destinations whose field is computing async
