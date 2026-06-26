@@ -1,6 +1,8 @@
 package ai.llm
 
+import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.await
+import kotlinx.coroutines.launch
 import kotlin.js.Promise
 import kotlin.js.json
 
@@ -93,5 +95,42 @@ class WebLlmClient(private val model: String = DEFAULT_MODEL) : LlmClient {
 
         /** True if the browser exposes the WebGPU API (`navigator.gpu`). False → the LLM can't run. */
         fun webGpuAvailable(): Boolean = js("typeof navigator !== 'undefined' && !!navigator.gpu") as Boolean
+
+        private var gpuReportCache: String? = null
+        private var gpuQuerying = false
+
+        /**
+         * A best-effort WebGPU capability line: the adapter description + its **max buffer / storage-binding
+         * limits** + whether `shader-f16` is supported. NOTE: browsers expose NO free-VRAM figure (privacy), so
+         * these limits are the practical ceiling on what a model can allocate — the closest thing to a "VRAM
+         * readout" the web allows. Cached; the first call kicks off the async query and returns a placeholder.
+         */
+        fun gpuReport(): String {
+            gpuReportCache?.let { return it }
+            queryGpu()
+            return if (webGpuAvailable()) "querying GPU…" else "no WebGPU — enable $WEBGPU_FLAG"
+        }
+
+        private fun queryGpu() {
+            if (gpuQuerying || gpuReportCache != null || !webGpuAvailable()) return
+            gpuQuerying = true
+            MainScope().launch {
+                gpuReportCache = runCatching { buildGpuReport() }.getOrElse { "GPU query failed: ${it.message}" }
+            }
+        }
+
+        private suspend fun buildGpuReport(): String {
+            val adapter = js("navigator.gpu.requestAdapter()").unsafeCast<Promise<dynamic>>().await()
+                ?: return "no WebGPU adapter (software-only?)"
+            val lim = adapter.limits
+            val info = adapter.info
+            val desc = ((info?.description ?: info?.architecture ?: info?.vendor) as? String)?.takeIf { it.isNotBlank() }
+                ?: "unknown adapter"
+            val f16 = adapter.features.has("shader-f16") as Boolean
+            return "$desc · max buffer ${mb(lim.maxBufferSize)} · max storage-binding ${mb(lim.maxStorageBufferBindingSize)} · " +
+                "shader-f16 ${if (f16) "yes" else "no"}"
+        }
+
+        private fun mb(bytes: dynamic): String = "${(((bytes as? Double) ?: 0.0) / (1024.0 * 1024.0)).toInt()} MB"
     }
 }

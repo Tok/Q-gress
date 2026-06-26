@@ -93,7 +93,7 @@ object BrainsPanel {
         val checkpoint = World.tick / Config.ticksPerCheckpoint
         return when (val d = driverOf(faction)) {
             is NetPolicy -> "net:${d.net.arch.label()}:$checkpoint"
-            is LlmPolicy -> "llm:${(d.client as? WebLlmClient)?.status}:${d.lastReply}"
+            is LlmPolicy -> "llm:${(d.client as? WebLlmClient)?.status}:${d.lastReply}:${WebLlmClient.gpuReport()}"
             is HeuristicPolicy -> "heuristic:$checkpoint"
             else -> "manual"
         }
@@ -162,6 +162,17 @@ object BrainsPanel {
             )
             card.appendChild(pre(WebLlmClient.WEBGPU_FLAG))
         }
+        // GPU capability readout. The web exposes no free-VRAM figure, so we show the adapter's max-buffer
+        // limits (the ceiling on what a model can allocate) — the closest thing to a VRAM gauge available.
+        card.appendChild(el("div", "brainsKey").also { it.textContent = "GPU (WebGPU limits — no free-VRAM API exists)" })
+        card.appendChild(p(WebLlmClient.gpuReport()))
+        card.appendChild(
+            p(
+                "If that shows a software adapter or tiny limits, the LLM will likely exhaust the GPU and crash the " +
+                    "renderer. Check chrome://gpu (is WebGPU hardware-accelerated?), and try chrome://flags " +
+                    "→ enable-vulkan + ignore-gpu-blocklist (alongside enable-unsafe-webgpu), then reload.",
+            ),
+        )
         card.appendChild(el("div", "brainsKey").also { it.textContent = "prompt" })
         card.appendChild(pre(policy.lastPrompt))
         card.appendChild(el("div", "brainsKey").also { it.textContent = "reply" })
