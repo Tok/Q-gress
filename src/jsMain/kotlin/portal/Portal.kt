@@ -1,5 +1,4 @@
 package portal
-
 import World
 import agent.Agent
 import agent.Balance
@@ -28,8 +27,7 @@ import items.types.VirusType
 import system.Com
 import system.effect.Fx
 import util.*
-import util.data.Line
-import util.data.Pos
+import util.data.*
 import kotlin.math.*
 
 data class Portal(
@@ -670,9 +668,9 @@ data class Portal(
         // centre clusters). Each candidate already respects the min-distance gate (createRandomForPortal).
         // Used for the initial spawns AND the Explore action.
         fun createRandom(): Portal {
-            if (!HtmlUtil.isRunningInBrowser()) return create(Pos.createRandomForPortal())
-            val candidates = Pos.portalCandidates() // ONE grid scan; sample from it (cheap)
-            if (candidates.isEmpty()) return create(Pos.createRandomForPortal())
+            if (!HtmlUtil.isRunningInBrowser()) return create(Positions.createRandomForPortal())
+            val candidates = Positions.portalCandidates() // ONE grid scan; sample from it (cheap)
+            if (candidates.isEmpty()) return create(Positions.createRandomForPortal())
             fun pick() = candidates[(Util.random() * candidates.size).toInt()]
             val existing = World.allPortals.map { it.location }
             if (existing.isEmpty()) return create(pick())

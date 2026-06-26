@@ -1,5 +1,4 @@
 package util
-
 import World
 import agent.Agent
 import agent.Faction
@@ -24,9 +23,7 @@ import system.display.PassabilityOverlay
 import system.display.PortalNameTicker
 import system.display.Scene3D
 import system.display.SunController
-import util.data.GeoCoords
-import util.data.Line
-import util.data.Pos
+import util.data.*
 import util.ui.AudioDemo
 import util.ui.Controls
 import util.ui.Demo

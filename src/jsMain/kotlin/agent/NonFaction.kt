@@ -1,5 +1,4 @@
 package agent
-
 import World
 import config.Config
 import config.Dim
@@ -9,8 +8,7 @@ import extension.Grid
 import extension.VectorField
 import portal.Portal
 import util.*
-import util.data.Complex
-import util.data.Pos
+import util.data.*
 import util.ui.LoadingOverlay
 import kotlin.math.PI
 import kotlin.math.cos
@@ -290,7 +288,7 @@ data class NonFaction(
         }
 
         fun create(grid: Grid): NonFaction {
-            val position = Pos.createRandomPassable(grid)
+            val position = Positions.createRandomPassable(grid)
             val size = AgentSize.createRandom()
             val speed = Skills.randomNpcSpeed()
             val newNonFaction = if (Util.random() < OFFSCREEN_DEST_CHANCE) { // mostly cross the map edge-to-edge

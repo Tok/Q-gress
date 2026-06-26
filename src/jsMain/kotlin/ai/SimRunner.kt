@@ -54,7 +54,7 @@ data class MatchResult(
  * ([ai.Observation]), never cell data, so obstacle-routed navigation doesn't change what it learns; off is
  * the right default for training. Set true to spot-check against the live game's exact movement (pays an
  * O(cells) flow-field compute per portal). Note: match speed comes from the O(1) spawn pick in
- * `Pos.createRandomPassable`, not this toggle — a full match runs in ~tens of ms either way.
+ * `Positions.createRandomPassable`, not this toggle — a full match runs in ~tens of ms either way.
  */
 data class MatchSetup(
     val portals: Int = Config.startPortals,

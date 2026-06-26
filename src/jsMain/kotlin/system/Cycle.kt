@@ -1,5 +1,4 @@
 package system
-
 import World
 import agent.Agent
 import agent.Faction
@@ -11,7 +10,7 @@ import portal.XmHeap
 import portal.XmMap
 import util.SoundUtil
 import util.Util
-import util.data.Pos
+import util.data.*
 
 enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>) {
     INSTANCE(mutableMapOf()),
@@ -83,7 +82,7 @@ enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>) {
             val count = World.countPortals()
             // No room to place a non-clipping portal → don't even try (no wasted attempt); roll the would-be
             // discovery budget into REMOVAL instead, so a packed board thins out rather than stalling.
-            val hasSpace = count < Config.maxPortals && Pos.hasPortalSpace()
+            val hasSpace = count < Config.maxPortals && Positions.hasPortalSpace()
             val (createChance, removeChance) =
                 ChurnMath.churnChances(count, Config.targetPortals(), Config.portalChurnRate, hasSpace)
             if (hasSpace && Util.random() < createChance) {

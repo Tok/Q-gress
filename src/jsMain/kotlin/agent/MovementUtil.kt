@@ -1,5 +1,4 @@
 package agent
-
 import World
 import agent.action.ActionItem
 import config.Dim
@@ -7,8 +6,7 @@ import config.Sim
 import items.level.PortalLevel
 import portal.Portal
 import util.Util
-import util.data.Complex
-import util.data.Pos
+import util.data.*
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
@@ -100,7 +98,7 @@ object MovementUtil {
             if (isWanderable(point)) return point
         }
         repeat(WANDER_TRIES) {
-            val point = Pos.createRandomPassable(World.grid)
+            val point = Positions.createRandomPassable(World.grid)
             if (isWanderable(point)) return point
         }
         return from

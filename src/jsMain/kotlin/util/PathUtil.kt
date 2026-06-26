@@ -1,5 +1,4 @@
 package util
-
 import World
 import config.Config
 import config.Sim
@@ -9,8 +8,7 @@ import extension.VectorField
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import util.data.Complex
-import util.data.Pos
+import util.data.*
 
 object PathUtil {
     const val MIN_HEAT = 35

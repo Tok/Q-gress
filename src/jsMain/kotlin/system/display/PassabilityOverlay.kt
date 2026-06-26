@@ -1,10 +1,9 @@
 package system.display
-
 import World
 import config.Sim
 import external.Three
 import kotlinx.browser.document
-import util.data.Pos
+import util.data.*
 
 /**
  * The walkability/terrain overlay: a ground quad textured one texel per grid cell, coloured by

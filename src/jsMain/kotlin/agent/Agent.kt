@@ -372,7 +372,7 @@ data class Agent(
         private fun create(grid: Grid, faction: Faction): Agent {
             val ap = Config.initialAp()
             val initialXm = xmCapacity(getLevel(ap))
-            val coords = Pos.createRandomPassable(grid)
+            val coords = Positions.createRandomPassable(grid)
             val actionPortal = initialActionPortal(coords)
             val agent = Agent(
                 faction, NameGen.handle(faction, HtmlUtil.locationName()), coords, Skills.createRandom(),
