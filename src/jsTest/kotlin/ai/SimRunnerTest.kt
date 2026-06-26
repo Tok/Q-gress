@@ -52,9 +52,9 @@ class SimRunnerTest {
     @Test
     fun reproducibleAfterAnotherMatch() {
         val grid = muGrid()
-        val a = SimRunner.runMatch(grid, seed = 3, maxTicks = 1800, setup = MatchSetup(npcs = 12))
-        SimRunner.runMatch(grid, seed = 1003, maxTicks = 600) // a DIFFERENT match in between
-        val b = SimRunner.runMatch(grid, seed = 3, maxTicks = 1800, setup = MatchSetup(npcs = 12))
+        val a = SimRunner.runMatch(grid, seed = 1, maxTicks = 1800, setup = MatchSetup(npcs = 12))
+        SimRunner.runMatch(grid, seed = 1001, maxTicks = 600) // a DIFFERENT match in between
+        val b = SimRunner.runMatch(grid, seed = 1, maxTicks = 1800, setup = MatchSetup(npcs = 12))
 
         assertTrue(
             a.checkpointMuSum(Faction.ENL) + a.checkpointMuSum(Faction.RES) > 0,

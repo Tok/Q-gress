@@ -6,6 +6,7 @@ import agent.action.ActionItem
 import agent.action.ActionSelector
 import agent.action.cond.Attacker
 import agent.action.cond.Deployer
+import agent.action.cond.Recruiter
 import agent.qvalue.QDestinations
 import config.Config
 import config.Dim
@@ -37,6 +38,7 @@ data class Agent(
     var velocity: Complex = Complex.ZERO,
     private var beelineTicks: Int = 0, // >0 = temporarily bee-line straight at the target, ignoring the (looping) field
     private var triedBeeline: Boolean = false, // a bee-line was already spent this stuck episode → escalate to re-target
+    var recruitTargetId: Int? = null, // the NPC being recruited (walk up → meet → resolve); null = not recruiting
 ) {
     // STABLE identity for equals/hashCode + Scene3D keys. Must NOT include mutable state: toString()
     // embeds getLevel() (from the var ap), so keying on it changed an agent's hashCode when it levelled
@@ -76,6 +78,7 @@ data class Agent(
             action.item == ActionItem.DEPLOY -> deployPortal(false)
             action.item == ActionItem.MOVE -> moveCloserToDestinationPortal()
             action.item == ActionItem.EXPLORE -> wanderStep() // roam toward open ground (the no-idle fallback)
+            action.item == ActionItem.RECRUIT -> recruitStep() // walk up to the NPC, then meet (handled even while "busy")
             action.isBusy() -> this
             else -> ActionSelector.doSomethingElse(this)
         }
@@ -174,6 +177,26 @@ data class Agent(
         }
         velocity = MovementUtil.move(velocity, MovementUtil.headingTo(pos, destination), skills.speed)
         return this.copy(pos = Pos((pos.x + velocity.re).toInt(), (pos.y + velocity.im).toInt()))
+    }
+
+    // Recruiting (ActionItem.RECRUIT): walk straight up to the target NPC (holding it in place), then stand
+    // together for the meeting (the action timer); when it runs out, [Recruiter.resolve] rolls success + sound.
+    private fun recruitStep(): Agent {
+        val npc = recruitTargetId?.let { id -> World.allNonFaction.firstOrNull { it.id == id } }
+        if (npc == null) { // target recruited by someone else / churned away → abort, re-select next tick
+            recruitTargetId = null
+            action.end()
+            return this
+        }
+        destination = npc.pos
+        npc.holdInPlace(World.tick + RECRUIT_HOLD_TICKS) // keep them waiting while we approach + meet
+        if (distanceToDestination() > Dim.maxDeploymentRange) {
+            action.start(ActionItem.RECRUIT) // keep the meeting timer fresh until we actually arrive
+            velocity = MovementUtil.move(velocity, MovementUtil.headingTo(pos, destination), skills.speed)
+            return this.copy(pos = Pos((pos.x + velocity.re).toInt(), (pos.y + velocity.im).toInt()))
+        }
+        if (action.isBusy()) return this // standing together — the meeting (the head bobs in the render)
+        return Recruiter.resolve(this, npc) // meeting over → roll the result
     }
 
     private fun hasXmps() = inventory.findXmps().isNotEmpty()
@@ -284,6 +307,7 @@ data class Agent(
 
     companion object {
         private val BEELINE_DURATION = StuckTracker.RECOVERY_BEELINE_TICKS // ticks to bee-line before re-targeting
+        private const val RECRUIT_HOLD_TICKS = 8 // re-applied each tick → the target NPC waits while approached + met
 
         private fun xmCapacity(level: Int): Int = when (level) {
             1 -> 3000

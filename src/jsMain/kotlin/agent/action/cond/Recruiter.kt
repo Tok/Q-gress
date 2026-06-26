@@ -8,8 +8,16 @@ import agent.NonFaction
 import agent.action.ActionItem
 import config.Config
 import system.Com
+import util.SoundUtil
 import util.Util
 
+/**
+ * Recruiting — a portal-INDEPENDENT action: the agent walks up to a *random* NPC, the two stand together for a
+ * short "meeting" ([ActionItem.RECRUIT] duration), then it resolves. [performAction] only *starts* it (picks
+ * the target, pays the XM, heads off); [Agent] drives the walk-up + meeting per tick and calls [resolve] at the
+ * end. Success rolls [recruitmentChance] (diminishing as the roster fills) and, with the anti-snowball
+ * [selectionWeight], helps the SMALLER team grow faster.
+ */
 object Recruiter : ConditionalAction {
     override val actionItem = ActionItem.RECRUIT
 
@@ -32,10 +40,22 @@ object Recruiter : ConditionalAction {
         return Config.recruitmentBaseChance * (1.0 - fillRatio)
     }
 
+    /** Start a recruit: pick a random NPC, pay the XM up front, and head over (Agent drives the walk + meeting). */
     override fun performAction(agent: Agent): Agent {
-        agent.action.start(actionItem)
+        val npc = NonFaction.findRandom() ?: return agent // no NPCs (never, given MIN_NONFACTION) → caller re-selects
         agent.removeXm(Config.recruitmentXmCost)
-        val npc = NonFaction.findNearestTo(agent.pos)
+        agent.recruitTargetId = npc.id
+        agent.destination = npc.pos
+        agent.action.start(actionItem)
+        return agent
+    }
+
+    /**
+     * Finish a recruit once the agent has stood with [npc] for the meeting: roll success (diminishing as the
+     * roster fills), spawn a teammate + replace the NPC on success, and play the success / fail sound. Clears
+     * the agent's recruit state and ends the action either way.
+     */
+    fun resolve(agent: Agent, npc: NonFaction): Agent {
         if (Util.random() < recruitmentChance(agent.faction)) {
             World.allNonFaction.remove(npc)
             World.allNonFaction.add(NonFaction.create(World.grid)) // 1-for-1 replacement → population never depletes
@@ -45,8 +65,13 @@ object Recruiter : ConditionalAction {
             }
             Com.addMessage("$newAgent has completed the training.")
             World.pendingAgents.add(newAgent) // flushed after the agent loop (avoids CME)
+            SoundUtil.playRecruitSuccess(agent.pos)
+        } else {
+            Com.addMessage("A recruit turned down the ${agent.faction.nickName}s.")
+            SoundUtil.playRecruitFail(agent.pos)
         }
-        agent.destination = NonFaction.findNearestTo(agent.pos).pos
+        agent.recruitTargetId = null
+        agent.action.end()
         return agent
     }
 }

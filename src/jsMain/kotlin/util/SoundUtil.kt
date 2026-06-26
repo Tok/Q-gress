@@ -454,6 +454,22 @@ object SoundUtil {
         playSound(oscNode, createStaticPan(pan), 0.5, duration)
     }
 
+    /** Recruiting succeeded: a cheerful rising two-step chirp at the agent — a new teammate signs on. */
+    fun playRecruitSuccess(pos: Pos) {
+        if (isMuted()) return
+        val dur = 0.26
+        val osc = createExponentialRampOscillator(OscillatorType.TRIANGLE, 520.0, 880.0, dur) // upbeat rise
+        playSound(osc, createPanner(pos), 0.12, dur)
+    }
+
+    /** Recruiting failed: a short, gentle descending blip — the NPC declined the pitch. */
+    fun playRecruitFail(pos: Pos) {
+        if (isMuted()) return
+        val dur = 0.2
+        val osc = createExponentialRampOscillator(OscillatorType.SINE, 340.0, 190.0, dur) // a soft "no thanks"
+        playSound(osc, createPanner(pos), 0.09, dur)
+    }
+
     /** A marble "tok": a short triangle with a quick downward pitch drop — the NPC dropping in. */
     fun playNpcCreationSound(npc: NonFaction) {
         if (isMuted()) return

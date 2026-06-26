@@ -1344,7 +1344,9 @@ object Scene3D {
         val id = "agent:${agent.name}"
         val color = if (selected == id) HIGHLIGHT_COLOR else agent.faction.color
         val sphere = Three.Mesh(headGeo, Materials.solid(color))
-        place(sphere.asDynamic(), x, y, gz + HEAD_Z)
+        // While recruiting (standing with an NPC), the head bobs up/down — a little "jumping" exchange.
+        val bob = if (agent.action.item == ActionItem.RECRUIT) abs(sin(animMs() / 130.0)) * HEAD_R * 1.2 else 0.0
+        place(sphere.asDynamic(), x, y, gz + HEAD_Z + bob)
         tag(sphere.asDynamic(), id)
         agentsGroup.add(sphere)
         // Action indicator: a 3D coin/wheel (icon on the round faces) hovering above the head.

@@ -49,6 +49,11 @@ data class NonFaction(
     // ?debug stuck detection feeds only entities actively trying to travel (see StuckTracker).
     fun isStuckCandidate(tick: Int) = !isBusy(tick) && !isAtDestination()
 
+    /** Rest in place until at least [untilTick] — used while a recruiter walks up to + meets this NPC. */
+    fun holdInPlace(untilTick: Int) {
+        busyUntil = maxOf(busyUntil, untilTick)
+    }
+
     fun act() {
         if (isBusy(World.tick)) return // resting at a spot — stay put until the rest timer expires
 
@@ -271,6 +276,13 @@ data class NonFaction(
         fun findNearestTo(pos: Pos) = World.allNonFaction.minByOrNull {
             it.pos.distanceTo(pos)
         } ?: throw IllegalStateException("Unable to find nearest to $pos")
+
+        /** A random NPC to recruit (the recruiter walks up to whoever — recruiting isn't tied to a portal). */
+        fun findRandom(): NonFaction? {
+            val all = World.allNonFaction
+            if (all.isEmpty()) return null
+            return all.elementAt((Util.random() * all.size).toInt().coerceIn(0, all.size - 1))
+        }
 
         fun create(grid: Grid): NonFaction {
             val position = Pos.createRandomPassable(grid)
