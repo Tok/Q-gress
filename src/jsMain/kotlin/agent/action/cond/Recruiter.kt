@@ -21,9 +21,10 @@ import util.Util
 object Recruiter : ConditionalAction {
     override val actionItem = ActionItem.RECRUIT
 
-    // Recruiting now costs XM, so an agent must have energy to spare — this makes
-    // growing the roster compete with linking/deploying instead of being free.
-    override fun isActionPossible(agent: Agent) = World.canRecruitMore(agent.faction) && agent.xm >= Config.recruitmentXmCost
+    // Recruiting is free — it's persuading a bystander to join, not an energy-spending field action. The
+    // anti-snowball balancing lives in [selectionWeight] (smaller team recruits more) + the diminishing
+    // [recruitmentChance], not an XM gate. Only condition: there's still roster room.
+    override fun isActionPossible(agent: Agent) = World.canRecruitMore(agent.faction)
 
     /**
      * How strongly an agent weighs recruiting this tick — NO LONGER a tuning slider (it was too snowbally to
@@ -40,10 +41,9 @@ object Recruiter : ConditionalAction {
         return Config.recruitmentBaseChance * (1.0 - fillRatio)
     }
 
-    /** Start a recruit: pick a random NPC, pay the XM up front, and head over (Agent drives the walk + meeting). */
+    /** Start a recruit: pick a random NPC and head over (Agent drives the walk + meeting). Free — no XM cost. */
     override fun performAction(agent: Agent): Agent {
         val npc = NonFaction.findRandom() ?: return agent // no NPCs (never, given MIN_NONFACTION) → caller re-selects
-        agent.removeXm(Config.recruitmentXmCost)
         agent.recruitTargetId = npc.id
         agent.destination = npc.pos
         agent.action.start(actionItem)

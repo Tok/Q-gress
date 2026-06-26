@@ -25,11 +25,9 @@ object Config {
     fun targetPortals(): Int = (startPortals * PORTAL_TARGET_GROWTH).toInt().coerceIn(startPortals, maxPortals)
 
     // --- Recruitment balance (Phase 5) ---------------------------------------
-    // Recruiting used to be free, making "recruit-rush" a strictly-positive
-    // throughput multiplier. Now it costs XM (competing with linking/deploying,
-    // which also cost XM) and yields diminishing returns as the faction fills
-    // toward its cap — so growing the roster is a real tradeoff, not free.
-    const val recruitmentXmCost = 250 // XM spent per recruit attempt (cf. link = 250)
+    // Recruiting is FREE (it's persuading a bystander, not an energy field action). The anti-snowball
+    // balancing is the per-faction selection weight (smaller team recruits more, Balance.recruitFactor)
+    // plus diminishing returns as the faction fills toward its cap — not an XM cost.
     const val recruitmentBaseChance = 0.05 // success chance at an empty roster; scales →0 at the cap
 
     // Base recruit selection weight (Recruiter.selectionWeight × Balance.recruitFactor) — recruiting is no
