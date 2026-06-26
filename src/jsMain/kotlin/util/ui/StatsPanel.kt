@@ -130,7 +130,7 @@ object StatsPanel {
         row.appendChild(box)
         row.appendChild(
             el("logFilterLabel").also {
-                it.textContent = " Only key events (fields, captures, checkpoints, recruiting, portals)"
+                it.textContent = "Only key events (fields, captures, checkpoints, recruiting, portals)"
             },
         )
         return row

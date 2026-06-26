@@ -14,7 +14,7 @@ object Footer {
     private val tabs = listOf(
         "AGENTS" to AGENTS_ID,
         "BRAINS" to BRAINS_ID,
-        "AI" to AI_ID,
+        "STATS" to AI_ID,
         "TRAIN" to TRAIN_ID,
         "EVENT LOG" to LOG_ID,
     )

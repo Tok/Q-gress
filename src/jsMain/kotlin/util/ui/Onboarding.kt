@@ -357,8 +357,8 @@ object Onboarding {
 
         val npcSlider = npcDensityRow(screen) // ×1.0–×3.0 multiplier on the auto-derived population
 
-        val quickCheck = checkRow(screen, " Quick start (full roster + AP for a fast early game)", true)
-        val roundCheck = checkRow(screen, " Round field (play inside an inscribed ellipse)", Sim.roundField)
+        val quickCheck = checkRow(screen, "Quick start (full roster + AP for a fast early game)", true)
+        val roundCheck = checkRow(screen, "Round field (play inside an inscribed ellipse)", Sim.roundField)
 
         val warn = div("onboardWarn")
         warn.textContent = "Larger maps take longer to generate and use more processing whenever portals spawn."

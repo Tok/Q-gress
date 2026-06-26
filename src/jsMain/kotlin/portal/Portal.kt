@@ -546,7 +546,11 @@ data class Portal(
         val leftResos = numberOfResosLeft()
         when {
             leftResos <= 0 -> {
-                Com.addMessage("$destroyer neutralized $this.", Com.Importance.MAJOR, destroyer?.faction?.color ?: Com.NEUTRAL)
+                // No destroyer → the last resonator drained on its own (cycle decay / dominance erosion), not an
+                // attack. Phrase it passively and colour it by the faction that lost the portal, never red.
+                val color = (destroyer?.faction ?: owner?.faction)?.color ?: Com.NEUTRAL
+                val message = if (destroyer != null) "$destroyer neutralized $this." else "$this decayed to neutral."
+                Com.addMessage(message, Com.Importance.MAJOR, color)
                 destroy(destroyer)
             }
             leftResos <= 2 -> destroyAllLinksAndFields(destroyer)

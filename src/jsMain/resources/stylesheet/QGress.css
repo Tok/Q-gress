@@ -456,7 +456,7 @@ html, body {
     display: block;
 }
 .footerBody {
-    max-height: 200px;
+    max-height: 320px; /* a touch taller so the STATS slider-history shows a row or two without maximizing */
     overflow: auto;
     padding: 6px 12px;
 }
@@ -528,7 +528,7 @@ html, body {
 }
 .brainsKvKey {
     color: #7f8a84;
-    flex: 0 0 64px; /* fixed, narrow, left-justified label column */
+    flex: 0 0 128px; /* wide enough that "Driving input" / "Peak hidden" don't wrap */
     text-align: left;
 }
 .brainsKvVal {
@@ -698,7 +698,9 @@ html, body {
 /* A darker, less-transparent off-tint gray pane behind ONLY the activation diagram, so the connection lines
    stand out instead of fighting the blurred map showing through the footer glass. */
 .netVizDiagram {
-    display: inline-block;
+    display: block;
+    width: fit-content;
+    margin: 4px auto; /* centre the activation diagram in the card */
     line-height: 0;
     background: rgba(24, 28, 34, 0.66);
     border: 1px solid rgba(255, 255, 255, 0.08);
@@ -950,13 +952,18 @@ html, body {
 /* EVENT LOG "only key events" filter row, above the log lines. */
 .logFilter {
     display: flex;
+    justify-content: flex-start;
     align-items: center;
-    gap: 5px;
+    gap: 4px;
     font-size: 11px;
     color: #9aa6a0;
     margin-bottom: 4px;
     cursor: pointer;
     user-select: none;
+}
+.logFilter input[type="checkbox"] {
+    margin: 0; /* drop the browser default so the label sits right next to the box */
+    flex: 0 0 auto;
 }
 .logFilterLabel {
     cursor: pointer;
@@ -1282,8 +1289,15 @@ html, body {
     font-size: 13px;
     color: #d8d8d8;
     display: flex;
+    justify-content: flex-start;
     align-items: center;
     gap: 4px;
+    width: 360px;
+    max-width: 90%; /* a shared, centred block → both rows share a left edge, content left-justified */
+}
+.onboardCheck input[type="checkbox"] {
+    margin: 0; /* label sits right next to the box */
+    flex: 0 0 auto;
 }
 .onboardWarn {
     font-family: "Coda", monospace;
