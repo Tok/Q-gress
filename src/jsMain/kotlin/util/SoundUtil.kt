@@ -116,7 +116,13 @@ object SoundUtil {
     // flight (in-browser training/leaderboard — the parked matches must be silent). Every play* method checks
     // this first, so it's the single gate that keeps ALL sound — and the lazy audio graph — off; no per-call
     // guards needed.
-    internal fun isMuted() = masterVolume <= 0.0 || HtmlUtil.isNotRunningInBrowser() || HeadlessRun.active
+    internal fun isMuted() = masterVolume <= 0.0 || HtmlUtil.isNotRunningInBrowser() || HeadlessRun.active || pausedMute
+
+    // Implicit mute while the sim is paused — silences sound without touching the user's volume/mute setting.
+    private var pausedMute = false
+    fun setPausedMute(on: Boolean) {
+        pausedMute = on
+    }
     private var preMuteVolume = 0.0
 
     /** Toggle mute, remembering the prior level. Returns the new volume (0 when muted). */

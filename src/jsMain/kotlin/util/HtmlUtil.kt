@@ -428,9 +428,24 @@ object HtmlUtil {
         intervalID = document.defaultView?.setInterval({ tick() }, currentTickMs()) ?: 0
     }
 
+    private var autoCamBeforePause = false
+
     private fun togglePause() {
         intervalID = pauseHandler(intervalID) { tick() }
+        applyPauseSideEffects(paused = intervalID == -1)
         refreshSpeedButtons()
+    }
+
+    // Pausing the tick interval freezes the sim logic, but the 3D render + auto-cam run on their own loop —
+    // so also park the auto-cam (restoring it on resume) and implicitly mute, so a paused game is truly still.
+    private fun applyPauseSideEffects(paused: Boolean) {
+        SoundUtil.setPausedMute(paused)
+        if (paused) {
+            autoCamBeforePause = MapUtil.isAutoCamOn()
+            if (autoCamBeforePause) MapUtil.setAutoCam(false)
+        } else if (autoCamBeforePause) {
+            MapUtil.setAutoCam(true)
+        }
     }
 
     private fun bindKeyboardShortcuts() = Shortcuts.bind(
