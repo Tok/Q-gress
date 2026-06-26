@@ -479,6 +479,82 @@ html, body {
     color: #9aa6a0;
     margin-bottom: 8px;
 }
+.brainsSplit {
+    display: flex;
+    gap: 18px;
+    align-items: stretch;
+}
+.brainsSide {
+    flex: 1 1 0;
+    min-width: 0;
+}
+.brainsSideHead {
+    font-family: "Chakra Petch", sans-serif;
+    letter-spacing: 1px;
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 6px;
+}
+.brainsCard {
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+    padding: 10px 12px;
+}
+.brainsDriver {
+    font-family: "Chakra Petch", sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 13px;
+    color: #cfe3ff;
+    margin-bottom: 6px;
+}
+.brainsText {
+    font-size: 12px;
+    color: #b9c2bd;
+    line-height: 1.4;
+    margin-bottom: 8px;
+}
+.brainsKv {
+    display: flex;
+    gap: 8px;
+    font-size: 12px;
+    margin-bottom: 4px;
+}
+.brainsKvKey {
+    color: #7f8a84;
+    min-width: 92px;
+}
+.brainsKvVal {
+    color: #e7edea;
+}
+.brainsKey {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #7f8a84;
+    margin: 8px 0 2px;
+}
+.brainsPre {
+    font-size: 11px;
+    color: #cfd6d2;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+    padding: 6px;
+    margin: 0;
+    max-height: 120px;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+.brainsGenome {
+    display: block;
+    width: 320px;
+    max-width: 100%;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
 .aiSliderGroup {
     margin-bottom: 12px;
 }

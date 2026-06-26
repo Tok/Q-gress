@@ -16,6 +16,9 @@ import kotlin.js.json
 class WebLlmClient(private val model: String = DEFAULT_MODEL) : LlmClient {
     private var engine: dynamic = null
 
+    /** The MLC model id being run (for the reasoning / brains panels). */
+    val modelId: String get() = model
+
     var status: String = "idle"
         private set
 

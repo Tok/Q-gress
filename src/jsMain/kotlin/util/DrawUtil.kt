@@ -9,6 +9,7 @@ import util.data.Circle
 import util.data.Line
 import util.data.Pos
 import util.ui.AiPanel
+import util.ui.BrainsPanel
 import util.ui.DebugHud
 import util.ui.HistoryPanel
 import util.ui.Inspector
@@ -40,6 +41,7 @@ object DrawUtil {
         HistoryPanel.update()
         TuningPanel.refresh() // mirror an AI driver's vector onto the sliders (no-op under manual control)
         AiPanel.update() // AI footer tab: per-faction driver + live observation readout
+        BrainsPanel.update() // BRAINS footer tab: per-faction driver summary (manual/heuristic/net/LLM), us vs them
         NetVizPanel.update() // NET footer tab: the net driver's live activation diagram
         TrainerPanel.update() // TRAIN footer tab: lazy-build the in-browser neuro-evolution trainer
         LeaderboardPanel.update() // TRAIN footer tab: the driver leaderboard (round-robin ranking)
