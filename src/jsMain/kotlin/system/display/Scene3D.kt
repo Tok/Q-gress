@@ -16,6 +16,8 @@ import items.deployable.Shield
 import items.level.LevelColor
 import items.level.XmpLevel
 import kotlinx.browser.window
+import org.khronos.webgl.Float32Array
+import org.khronos.webgl.set
 import portal.Field
 import portal.Link
 import portal.Octant
@@ -1458,6 +1460,12 @@ object Scene3D {
         val fid = fieldId(field)
         fieldRecords[fid] = FieldRecord(cx, cy, cz, rel, color) // remembered for the teardown dissolve
         val geo = Three.BufferGeometry().setFromPoints(rel.map { Three.Vector3(it[0], it[1], it[2]) }.toTypedArray())
+        // Per-vertex health (0..1): the plasma fades toward a low-health portal corner (PlasmaShader.aHealth).
+        val health = Float32Array(3)
+        health[0] = (field.origin.calcHealth() / 100.0).toFloat()
+        health[1] = (field.primaryAnchor.calcHealth() / 100.0).toFloat()
+        health[2] = (field.secondaryAnchor.calcHealth() / 100.0).toFloat()
+        geo.asDynamic().setAttribute("aHealth", Three.Float32BufferAttribute(health, 1))
         val mesh = Three.Mesh(geo, PlasmaShader.material(color))
         mesh.asDynamic().position.set(cx, cy, cz)
         val g = Spawns.appear(fid, FIELD_FILL_S)
