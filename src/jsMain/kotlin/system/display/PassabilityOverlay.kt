@@ -13,7 +13,8 @@ import util.data.Pos
  * [setVisible] to toggle.
  */
 object PassabilityOverlay {
-    private const val OVERLAY_Z = 0.2 // just above the ground plane
+    private const val OVERLAY_Z = 0.4 // sits this far above the terrain surface (per-vertex), clear of z-fighting
+    private const val SEG = 96 // plane subdivisions per axis — enough to follow the DEM smoothly
     private var group: dynamic = null
     private var visible = false
 
@@ -55,12 +56,30 @@ object PassabilityOverlay {
         matParams.map = texture
         matParams.transparent = true
         matParams.depthWrite = false
-        matParams.depthTest = false // a flat quad sits under the 3D terrain — draw it on top instead
-        val mesh = Three.Mesh(
-            Three.PlaneGeometry(Sim.width * Scene3D.metersPerPixel, Sim.height * Scene3D.metersPerPixel),
-            Three.MeshBasicMaterial(matParams),
-        )
-        mesh.asDynamic().position.set(0.0, 0.0, OVERLAY_Z)
+        matParams.depthTest = true // draped on the terrain now (per-vertex height), so let the ground occlude it
+        val mesh = Three.Mesh(terrainGeometry(), Three.MeshBasicMaterial(matParams))
+        mesh.asDynamic().position.set(0.0, 0.0, 0.0) // height is baked into the vertices (groundZ + OVERLAY_Z)
         return mesh
+    }
+
+    // A subdivided ground plane whose vertices are lifted onto the terrain DEM (Scene3D.groundZ), so the
+    // overlay drapes over hills/valleys instead of floating as a flat quad. UVs are PlaneGeometry's defaults,
+    // so the per-cell texture maps exactly as it did when flat — only z changes. Falls back to flat (groundZ
+    // returns 0) until the terrain heights are ready.
+    private fun terrainGeometry(): dynamic {
+        val mpp = Scene3D.metersPerPixel
+        val geo = Three.asDynamic().PlaneGeometry(Sim.width * mpp, Sim.height * mpp, SEG, SEG) // 4-arg ctor (segments)
+        val pos = geo.asDynamic().attributes.position
+        val count = pos.count as Int
+        for (i in 0 until count) {
+            val sx = pos.getX(i) as Double
+            val sy = pos.getY(i) as Double
+            // Invert Scene3D.sceneX/sceneY (mesh sits at the origin, unrotated) → sim coords → DEM height.
+            val simX = sx / mpp + Sim.width / 2.0
+            val simY = -sy / mpp + Sim.height / 2.0
+            pos.setZ(i, Scene3D.groundZ(Pos(simX, simY)) + OVERLAY_Z)
+        }
+        pos.needsUpdate = true
+        return geo
     }
 }
