@@ -2,6 +2,7 @@ package util.ui
 
 import World
 import agent.Faction
+import config.Config
 import config.Time
 import kotlinx.browser.document
 import org.w3c.dom.HTMLElement
@@ -27,6 +28,7 @@ object StatsPanel {
     private var xmEl: HTMLElement? = null
     private var comPanel: HTMLElement? = null
     private var lastComKey = ""
+    private var onlyKey = false // EVENT LOG filter: when on, show only MAJOR ("key") events
 
     /** Refresh the panels from current world state (faction MU passed in, like the old draw). */
     fun update(firstMu: Int, secondMu: Int, factions: Pair<Faction, Faction>) {
@@ -61,14 +63,24 @@ object StatsPanel {
 
     private fun updateCom() {
         val panel = comPanel ?: return
-        val msgs = Com.currentMessages()
-        val key = "${msgs.size}:${msgs.lastOrNull() ?: ""}"
+        val all = Com.entries()
+        val filtered = if (onlyKey) all.filter { it.importance == Com.Importance.MAJOR } else all
+        val expanded = Footer.isExpanded()
+        // Collapsed → just the last few lines; expanded → the whole (scrolling) backlog.
+        val shown = if (expanded) filtered else filtered.takeLast(Config.comMessageLimit)
+        val key = "$onlyKey:$expanded:${all.size}:${all.lastOrNull()?.segments?.joinToString { it.text } ?: ""}"
         if (key == lastComKey) return // unchanged — skip the rebuild
         lastComKey = key
         panel.textContent = "" // clear, then re-add oldest→newest (newest sits at the bottom)
-        msgs.forEach { m ->
+        shown.forEach { entry ->
             val line = el("statsComLine")
-            line.textContent = m
+            if (entry.importance == Com.Importance.MAJOR) line.classList.add("statsComMajor")
+            entry.segments.forEach { seg ->
+                val span = document.createElement("span") as HTMLElement
+                span.textContent = seg.text
+                seg.color?.let { span.style.color = it }
+                line.appendChild(span)
+            }
             panel.appendChild(line)
         }
     }
@@ -98,8 +110,30 @@ object StatsPanel {
         panel.appendChild(footer)
         Hud.top().appendChild(panel)
 
-        // Action log lines — the bottom footer's EVENT LOG tab provides the label + collapse chevron.
-        comPanel = el("statsComLines").also { Footer.tab("log").appendChild(it) }
+        // Action log — the footer's EVENT LOG tab provides the label + collapse chevron. A filter row lets the
+        // player hide the routine (MINOR) events and keep only the key (MAJOR) ones.
+        val logTab = Footer.tab("log")
+        logTab.appendChild(buildLogFilter())
+        comPanel = el("statsComLines").also { logTab.appendChild(it) }
+    }
+
+    private fun buildLogFilter(): HTMLElement {
+        val row = el("logFilter")
+        val box = document.createElement("input") as org.w3c.dom.HTMLInputElement
+        box.type = "checkbox"
+        box.checked = onlyKey
+        box.onchange = {
+            onlyKey = box.checked
+            lastComKey = "" // force a rebuild on the next frame
+            null
+        }
+        row.appendChild(box)
+        row.appendChild(
+            el("logFilterLabel").also {
+                it.textContent = " Only key events (fields, captures, checkpoints, recruiting, portals)"
+            },
+        )
+        return row
     }
 
     private fun el(cls: String): HTMLElement {

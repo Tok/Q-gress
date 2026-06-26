@@ -63,11 +63,11 @@ object Recruiter : ConditionalAction {
                 Faction.ENL -> Agent.createFrog(World.grid)
                 Faction.RES -> Agent.createSmurf(World.grid)
             }
-            Com.addMessage("$newAgent has completed the training.")
+            Com.addMessage("$newAgent has completed the training.", Com.Importance.MAJOR, newAgent.faction.color)
             World.pendingAgents.add(newAgent) // flushed after the agent loop (avoids CME)
             SoundUtil.playRecruitSuccess(agent.pos)
         } else {
-            Com.addMessage("A recruit turned down the ${agent.faction.nickName}s.")
+            Com.addMessage("A recruit turned down the ${agent.faction.nickName}s.", Com.Importance.MINOR, agent.faction.color)
             SoundUtil.playRecruitFail(agent.pos)
         }
         agent.recruitTargetId = null

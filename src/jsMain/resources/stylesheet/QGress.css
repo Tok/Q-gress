@@ -770,8 +770,26 @@ html, body {
 }
 .statsComLine {
     font-size: 11px;
-    line-height: 1.45;
+    line-height: 1.5;
     white-space: nowrap;
+}
+/* Key (MAJOR) events stand out from the routine ones. */
+.statsComMajor {
+    font-weight: bold;
+}
+/* EVENT LOG "only key events" filter row, above the log lines. */
+.logFilter {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    color: #9aa6a0;
+    margin-bottom: 4px;
+    cursor: pointer;
+    user-select: none;
+}
+.logFilterLabel {
+    cursor: pointer;
 }
 /* Pre-load onboarding screens (faction → location); see util/ui/Onboarding. */
 .onboardScreen {

@@ -40,6 +40,7 @@ enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>) {
                 INSTANCE.checkpoints.clear()
                 INSTANCE.checkpoints.putAll(old)
                 INSTANCE.checkpoints[tick] = cp
+                logCheckpoint(enlMu, resMu)
                 spawnXm() // every checkpoint (not just cycle end) so agent XM is replenished mid-cycle
                 World.allPortals.toList().forEach { it.erodeByDominance() } // the leader's empire erodes → board reopens
                 managePortalDensity() // neutral portal discovery + removal, density-driven toward the target
@@ -53,6 +54,23 @@ enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>) {
                     SoundUtil.playCheckpointSound(cp)
                 }
             }
+        }
+
+        // The headline scoreboard line: both factions' MU at this checkpoint, each in its own colour (MAJOR
+        // so it survives the "only key events" filter — the sustained-MU race is the whole game).
+        private fun logCheckpoint(enlMu: Int, resMu: Int) {
+            Com.addMessage(
+                Com.Entry(
+                    Com.Importance.MAJOR,
+                    listOf(
+                        Com.Segment("◆ Checkpoint — "),
+                        Com.Segment("ENL $enlMu", Faction.ENL.color),
+                        Com.Segment("  ·  "),
+                        Com.Segment("RES $resMu", Faction.RES.color),
+                        Com.Segment(" MU"),
+                    ),
+                ),
+            )
         }
 
         // Neutral, density-driven portal churn (run every checkpoint). The board's portal count converges to
@@ -70,12 +88,12 @@ enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>) {
             if (hasSpace && Util.random() < createChance) {
                 val discovered = Portal.createRandom()
                 World.allPortals.add(discovered)
-                Com.addMessage("A new portal $discovered was discovered.")
+                Com.addMessage("A new portal $discovered was discovered.", Com.Importance.MAJOR, Com.NEUTRAL)
             }
             if (count > Config.minPortals && Util.random() < removeChance) {
                 val gone = World.randomPortal()
                 gone.remove()
-                Com.addMessage("Portal $gone no longer exists.")
+                Com.addMessage("Portal $gone no longer exists.", Com.Importance.MAJOR, Com.NEUTRAL)
             }
         }
 
@@ -87,9 +105,9 @@ enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>) {
                     val selection = agents.sortedBy { it.getLevel() }.takeLast(count - maxCount)
                     val removed = Util.shuffle(selection).first() // seeded — NOT stdlib shuffled() (unseeded → nondeterministic)
                     if (fc) {
-                        Com.addMessage("Portal $removed quit the game.")
+                        Com.addMessage("Portal $removed quit the game.", Com.Importance.MINOR, Com.NEUTRAL)
                     } else {
-                        Com.addMessage("Portal $removed has left ${removed.faction.abbr}.")
+                        Com.addMessage("Portal $removed has left ${removed.faction.abbr}.", Com.Importance.MINOR, removed.faction.color)
                     }
                 }
             }
@@ -116,7 +134,7 @@ enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>) {
                     removeAgents(World.smurfs, Config.minFrogs, Config.maxFrogs, true)
                     Agent.createFrog(World.grid)
                 }
-                Com.addMessage("${xfAgent.name} restarted as ${xfAgent.faction.abbr}.")
+                Com.addMessage("${xfAgent.name} restarted as ${xfAgent.faction.abbr}.", Com.Importance.MINOR, xfAgent.faction.color)
                 World.allAgents.add(xfAgent)
             }
         }

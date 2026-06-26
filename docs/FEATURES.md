@@ -149,10 +149,16 @@ newest themes roughly last. Commit hashes are illustrative pointers, not exhaust
   or — with the **"Fire XMP on click"** toggle on — detonates at the map click point (chosen X-level).
 
 ## UI / HUD (canvas → DOM)
-- The **entire HUD is DOM** and themeable. `StatsPanel` (MU "covered area" bars + time/tick +
-  action **LOG**), **history dashboard** `HistoryPanel` (per-metric uPlot sparklines — MU + Portals
+- The **entire HUD is DOM** and themeable. `StatsPanel` (MU "covered area" bars + time/tick + the event
+  **LOG**), **history dashboard** `HistoryPanel` (per-metric uPlot sparklines — MU + Portals
   + Links + Fields + Agents over time, with live ENL/RES values; `Checkpoint` snapshots all of them),
   `TopAgentsPanel` leaderboard, `Inspector` (selected entity), `Controls` legend + desktop-only gate.
+- **Event LOG** (`system.Com` → the EVENT LOG footer tab): structured, **colour-coded, importance-tagged**
+  entries. Faction events read in the faction colour (fields `+MU`, captures, refactors, recruiting, links,
+  mods), faction-agnostic world events (portal discovery/removal/neutralize) in a neutral red, and each
+  **checkpoint** logs both factions' MU in their own colours (a key, multi-segment line). Every event is
+  `MINOR` or `MAJOR`; an **"only key events"** filter hides the routine ones. The tab shows the last few lines
+  collapsed and the **whole scrolling backlog when expanded** (`Com.CAP` = 250).
 - **Unified tabbed dock** (`util/ui/Dock`): the scattered corner panes are consolidated into one
   right-docked panel with **NOW / HISTORY / TUNE** tabs (one view at a time) — NOW holds the
   scoreboard + leaderboard + LOG, HISTORY the sparklines, TUNE the sliders. It's the only

@@ -135,7 +135,7 @@ data class Portal(
         destroyer?.addAp(MOD_DESTROY_AP)
         // Subtle "plop" as the item pops out of its slot (any mod — shield, heat sink, …).
         if (HtmlUtil.isRunningInBrowser()) SoundUtil.playKnockOutSound(location)
-        Com.addMessage("$destroyer knocked a ${mod.abbr} off $this.")
+        Com.addMessage("$destroyer knocked a ${mod.abbr} off $this.", Com.Importance.MINOR, destroyer?.faction?.color)
         return mod
     }
 
@@ -146,7 +146,7 @@ data class Portal(
         deployer.removeXm(modCost(mod))
         deployer.addAp(MOD_DEPLOY_AP)
         deployer.inventory.items.remove(mod)
-        Com.addMessage("$deployer deployed a ${mod.abbr} on $this.")
+        Com.addMessage("$deployer deployed a ${mod.abbr} on $this.", Com.Importance.MINOR, deployer.faction.color)
     }
 
     private fun modCost(mod: Mod): Int = when (mod) {
@@ -167,7 +167,7 @@ data class Portal(
         destroyAllLinksAndFields()
         agent.addAp(VIRUS_AP)
         if (strippedShield != null && HtmlUtil.isRunningInBrowser()) SoundUtil.playShieldRemoveSound(location, strippedShield.getLevel())
-        Com.addMessage("$agent refactored $this to ${agent.faction}.")
+        Com.addMessage("$agent refactored $this to ${agent.faction}.", Com.Importance.MAJOR, agent.faction.color)
     }
 
     private fun findStrongestReso(): Resonator? {
@@ -229,7 +229,7 @@ data class Portal(
             // create link
             links.add(newLink)
             linker.inventory.consumeKeyToPortal(target)
-            Com.addMessage("$linker created a link from $this to $target")
+            Com.addMessage("$linker created a link from $this to $target", Com.Importance.MINOR, linker.faction.color)
             SoundUtil.playLinkingSound(newLink)
             linker.addAp(187)
             linker.removeXm(250)
@@ -242,7 +242,7 @@ data class Portal(
                 if (Field.isPossible(this, target, anchor)) {
                     val newField = Field.create(this, target, anchor, linker)
                     if (newField != null) {
-                        Com.addMessage("$linker created a field at $this. +$newField")
+                        Com.addMessage("$linker created a field at $this. +$newField", Com.Importance.MAJOR, linker.faction.color)
                         SoundUtil.playFieldingSound(newField)
                         fields.add(newField)
                         linker.addAp(1250)
@@ -435,7 +435,7 @@ data class Portal(
         val isCapture = owner == null
         if (isCapture) {
             owner = deployer
-            Com.addMessage("$deployer captured $this.")
+            Com.addMessage("$deployer captured $this.", Com.Importance.MAJOR, deployer.faction.color)
         }
 
         val initialResoCount = slots.count { it.value.resonator != null }
@@ -558,7 +558,10 @@ data class Portal(
         }
         val leftResos = numberOfResosLeft()
         when {
-            leftResos <= 0 -> destroy(destroyer)
+            leftResos <= 0 -> {
+                Com.addMessage("$destroyer neutralized $this.", Com.Importance.MAJOR, destroyer?.faction?.color ?: Com.NEUTRAL)
+                destroy(destroyer)
+            }
             leftResos <= 2 -> destroyAllLinksAndFields(destroyer)
         }
     }
