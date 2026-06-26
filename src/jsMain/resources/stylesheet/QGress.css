@@ -539,6 +539,16 @@ html, body {
     overflow: hidden;
     text-overflow: ellipsis;
 }
+/* A darker, less-transparent off-tint gray pane behind ONLY the activation diagram, so the connection lines
+   stand out instead of fighting the blurred map showing through the footer glass. */
+.netVizDiagram {
+    display: inline-block;
+    line-height: 0;
+    background: rgba(24, 28, 34, 0.66);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    padding: 4px;
+}
 .netVizSub {
     margin: 10px 0 3px;
     color: #9aa6a0;

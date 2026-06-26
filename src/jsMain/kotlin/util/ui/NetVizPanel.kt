@@ -321,7 +321,11 @@ object NetVizPanel {
         }
         block.appendChild(head)
         block.appendChild(statsFor(faction)) // a compact stat grid (≈4 per row) above the diagram
-        block.appendChild(dprCanvas(CW, CH).also { canvases[faction] = it })
+        // The activation diagram sits on its own darker off-tint glass pane (vs the busy blurred map showing
+        // through the footer) so the faction-coloured connection lines read clearly.
+        val diagram = el("div", "netVizDiagram")
+        diagram.appendChild(dprCanvas(CW, CH).also { canvases[faction] = it })
+        block.appendChild(diagram)
         block.appendChild(el("div", "netVizSub").also { it.textContent = "genome (weights — sign × magnitude)" })
         block.appendChild(dprCanvas(GW, GH).also { genomeCanvases[faction] = it })
         blocks[faction] = block

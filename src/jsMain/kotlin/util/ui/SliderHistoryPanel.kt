@@ -20,8 +20,9 @@ import system.Cycle
 object SliderHistoryPanel {
     private const val CONTAINER_ID = "sliderHistoryPanel"
     private const val WINDOW = 35 // mirror the checkpoint rolling window (Cycle.numberOfCheckpoints)
-    private const val CHART_W = 168
-    private const val CHART_H = 30
+    private const val COLS = 4 // lay the slots out in 4 columns (was 2) to use the footer width
+    private const val CHART_W = 240 // initial chart width; resizeCharts() then stretches each to its cell
+    private const val CHART_H = 40
     private const val FILL_ALPHA = "0.16)" // appended to a faction's "rgba(r, g, b, " prefix
 
     private val OVERLAP_COLOR = blendHex(Faction.ENL.color, Faction.RES.color)
@@ -29,6 +30,8 @@ object SliderHistoryPanel {
 
     private var built = false
     private val plots = arrayOfNulls<UPlot>(SLOTS.size)
+    private val chartDivs = arrayOfNulls<HTMLElement>(SLOTS.size)
+    private var lastChartW = 0
     private val enlVals = arrayOfNulls<HTMLElement>(SLOTS.size)
     private val resVals = arrayOfNulls<HTMLElement>(SLOTS.size)
 
@@ -39,6 +42,7 @@ object SliderHistoryPanel {
 
     fun update() {
         if (!ensure()) return
+        resizeCharts() // stretch each sparkline to its (4-col) cell width, tracking footer maximize / resize
         SLOTS.forEachIndexed { i, q ->
             enlVals[i]?.textContent = pct(FactionPolicies.of(Faction.ENL).weight(q))
             resVals[i]?.textContent = pct(FactionPolicies.of(Faction.RES).weight(q))
@@ -78,7 +82,7 @@ object SliderHistoryPanel {
         container.id = CONTAINER_ID
         val st = container.asDynamic().style
         st.display = "grid"
-        st.gridTemplateColumns = "repeat(2, minmax(240px, 1fr))" // two compact columns fit all the slots
+        st.gridTemplateColumns = "repeat($COLS, minmax(0, 1fr))" // COLS equal columns across the footer width
         st.columnGap = "16px"
         SLOTS.forEachIndexed { i, q ->
             val row = el("historyRow")
@@ -95,6 +99,7 @@ object SliderHistoryPanel {
             val chart = el("historyChart")
             row.appendChild(chart)
             container.appendChild(row)
+            chartDivs[i] = chart
             plots[i] = makePlot(chart)
         }
         val section = el("aiSection")
@@ -103,6 +108,21 @@ object SliderHistoryPanel {
         Footer.tab("ai").appendChild(section)
         built = true
         return true
+    }
+
+    // Stretch every sparkline to its grid cell's current width (so they fill the 4 columns and follow the
+    // footer being maximized / the window resizing). uPlot needs an explicit pixel size, so we measure + setSize
+    // only when the cell width actually changes.
+    private fun resizeCharts() {
+        val w = chartDivs[0]?.clientWidth ?: 0
+        if (w <= 0 || w == lastChartW) return
+        lastChartW = w
+        plots.forEach { plot ->
+            val size: dynamic = js("({})")
+            size.width = w
+            size.height = CHART_H
+            plot?.setSize(size)
+        }
     }
 
     private fun makePlot(target: HTMLElement): UPlot {
