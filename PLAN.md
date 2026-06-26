@@ -18,8 +18,9 @@ before refactoring.
 ## Non-functional track — quality → coverage → perf (CURRENT FOCUS)
 The push to get the code to a state we're comfortable with, *then* make it fast. Strictly phased: each phase
 de-risks the next. "Coverage" means two things and they split across phases — a behavioural **safety net** comes
-first (phase A, in the existing Node harness); real **line-coverage measurement** (Kover) is *blocked on* the
-functional-core split and so lands in phase C, after the refactor.
+first (phase A, in the existing Node harness); real **line-coverage measurement** (Kover) needs the
+functional-core split, so it rides along with phase B — the `commonMain` + `jvm()` + Kover scaffolding is now
+up (phase C) and grows as each pure module migrates.
 
 ### Phase A — Safety net (behavioural tests on today's behaviour) — ✅ done
 Lock current behaviour before moving any code, so the refactor can't silently change it. Pure Node/Mocha tests
@@ -46,9 +47,14 @@ Functional core / imperative shell, properly. Do it module-by-module behind phas
   set-intersection pick — low value); `Deployer.deployTargetFor` was assessed and **skipped** (it mixes agent-level
   + portal reads — not cleanly pure, and `DeployerTest` already covers it). The cheap, high-signal extractions are
   largely done; what's left is the **`commonMain` move** and the **Scene3D split** below.
-- [ ] **Incremental functional-core split** — as each pure module is isolated, move it toward `commonMain` (this
-  is what unlocks Kover in phase C). Incremental, not a big-bang migration. *(Not started — the extractions above
-  are still in `jsMain`; the `commonMain` move is the next structural step once a cluster is pure.)*
+- [~] **Incremental functional-core split** — move each isolated pure module into `commonMain` (this is what
+  unlocks Kover, now stood up — see phase C). Module-by-module, gate green each step. **Migrated so far:**
+  `util.MathUtil`, `config.Time`, `portal.Cooldown`, `portal.PortalMath`, `config.IngressFacts`,
+  `config.ConfigMath`, `system.ChurnMath`, `agent.BalanceMath` (the World/`Config`-coupled holders now
+  delegate). **Remaining (blocked on the `Pos` decoupling):** the geometry core (`Pos`/`Line` — extract the
+  pure x/y math out of the `World`/grid/Sim/geo/RNG tangle), then `portal.Field` (MU/Heron),
+  `NonFaction.opposingHalf`, `Agent.enemyPortalsInRange`, and the seedable RNG (`Util.random`, via
+  expect/actual `freshSeed`) + `Faction`.
 - [ ] **Reduce magic numbers** — name them / fold into `Config` where it aids clarity (detekt `MagicNumber` is
   off, so this is a by-hand judgement pass, not a gate-chase). *(Started opportunistically — e.g. named the
   `LINK_MITIGATION_SCALE`.)*
@@ -61,9 +67,12 @@ Functional core / imperative shell, properly. Do it module-by-module behind phas
 - **Exit criterion:** pure logic is testable in isolation; gate (ktlint/detekt/tests) stays green throughout.
 
 ### Phase C — Real coverage measurement (enabled by B)
-- [ ] Stand up **Kover on a `jvm()` test target** over the now-`commonMain` functional core; report real line
-  coverage and drive the core toward the CLAUDE.md target (selection/balance logic near 100%).
-- [ ] Backfill tests for whatever the report shows uncovered in the core (effects/shell stay Node-side).
+- [x] Stand up **Kover on a `jvm()` test target** over the `commonMain` functional core (`build.gradle.kts`:
+  `jvm()` + `kotlinx-kover` 0.9.8 + JUnit5; `koverHtmlReport` / `koverLog`). The shared-core tests run on
+  **both** jsNodeTest and jvmTest.
+- [ ] As more of the core lands in `commonMain` (phase B), drive coverage toward the CLAUDE.md target
+  (selection/balance logic near 100%) and backfill whatever the report shows uncovered (effects/shell stay
+  Node-side).
 
 ### Phase D — Profiling & optimization (last)
 Only once we're comfortable with structure + coverage. **Baseline first, then optimize, guarded by the net:**
@@ -219,9 +228,9 @@ keep tuning `Config` and consider shaping fitness for *interesting* play (a foll
 ## Open engineering decisions
 *These are the concrete items the **Non-functional track** (above) executes — phase B for the refactors, phase C
 for coverage tooling. Kept here for the rationale; the track sequences them.*
-- **Coverage tooling.** Kover has no Kotlin/JS support; real line-coverage needs the functional-core split
-  (pure logic → `commonMain` + a `jvm()` test target, run Kover there). Until then: ktlint + detekt + tests.
-  → *phase C.*
+- **Coverage tooling.** ✅ resolved: Kover has no Kotlin/JS support, so the pure core moves to `commonMain` and
+  is line-covered via a test-only `jvm()` target (`kotlinx-kover` 0.9.8). Scaffolding is up; coverage grows as
+  the split proceeds. → *phase C (stood up); ongoing with phase B.*
 - **Tighten max line length 140 → 120.** Deferred: ktlint auto-wrapping inflates detekt's `LargeClass` count,
   so it must land alongside the class extractions (`Scene3D`, and any near the 600-line cap like
   `HtmlUtil`/`MapUtil`). A dedicated refactor pass. → *phase B.*
