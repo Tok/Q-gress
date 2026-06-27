@@ -19,6 +19,7 @@ import system.Cycle
 import system.HeadlessRun
 import system.Simulation
 import system.display.Scene3D
+import system.display.Showcases
 import system.display.SunController
 import util.data.*
 import util.ui.AudioDemo
@@ -324,18 +325,18 @@ object HtmlUtil {
                         Scene3D.playXmpBurst(pos, Demo.xmpLevel()) // detonate at the click point (plays the XMP sound)
                         return
                     }
-                    if (Scene3D.clickShowcase(pos, Demo.portalLevel(), Demo.portalColorValue())) {
+                    if (Showcases.click(pos, Demo.portalLevel(), Demo.portalColorValue())) {
                         SoundUtil.playPortalCreationSound(pos)
                     }
                 },
                 fun(event: dynamic) {
                     val pos = MapUtil.eventToSimPos(event) ?: return
                     SoundUtil.enableAudio()
-                    Scene3D.removeShowcaseNear(pos)
+                    Showcases.removeNear(pos)
                     SoundUtil.playGlassShatterSound(pos, 0.4, 0.9)
                 },
                 fun(event: dynamic) {
-                    Scene3D.updateDemoCursor(MapUtil.eventToSimPos(event))
+                    Showcases.moveCursor(MapUtil.eventToSimPos(event))
                 },
             )
             intervalID = document.defaultView?.setInterval({ demoTick() }, Time.minTickInterval) ?: 0

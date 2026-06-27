@@ -89,7 +89,7 @@ object Scene3D {
     private const val NAME_RING_GAP = 2.0 // gap above the orb top for the hovered-portal name ring (PortalNameTicker)
     private const val POLE_R = 2.0
     private const val LINK_R = 0.7 // link pipe radius (metres)
-    private const val PORTAL_GROW_S = 0.7 // seconds for a new portal to inflate in (pole rises, orb pops)
+    internal const val PORTAL_GROW_S = 0.7 // seconds for a new portal to inflate in (pole rises, orb pops)
     private const val RESO_POP_DELAY = 0.3 // resonators start popping in once the pole is ~30% up
     private const val CAPTURE_SHATTER_WEIGHT = 0.22 // glass-shatter heaviness on capture (light — only the orb)
     private const val FIELD_FILL_S = 0.4 // seconds for a new control field to fill in
@@ -110,7 +110,7 @@ object Scene3D {
     private const val RESO_RADIUS_FRAC = 1.7 // slot distance from pole axis (× POLE_R) — spread so slots read distinct top-down
     private const val RESO_COLLAR_FRAC = 0.78 // collar height as a fraction of the pole height
     private const val RESO_ROD_LEN_FRAC = 0.22 // rod length as a fraction of the pole height
-    private const val NEUTRAL_COLOR = "#bbbbbb"
+    internal const val NEUTRAL_COLOR = "#bbbbbb"
     private const val MOD_R_FRAC = 0.16 // chrome mod radius (× orb radius)
     private const val MOD_SCALE = 1.2 // scale the mod solids up a touch (they read bland at base size)
     private val MOD_WIRE_SCALES = doubleArrayOf(1.01, 1.05) // two concentric edge cages → a bolder glowing wire
@@ -130,11 +130,9 @@ object Scene3D {
         doubleArrayOf(-1.0, 1.0, -1.0),
         doubleArrayOf(-1.0, -1.0, 1.0),
     )
-    private const val HIGHLIGHT_COLOR = "#f0f0f0" // selection: off-tint grayscale (no new hues)
-    private const val OVERLAY_Z = 0.2 // passability quad just above ground
+    internal const val HIGHLIGHT_COLOR = "#f0f0f0" // selection: off-tint grayscale (no new hues)
+    internal const val OVERLAY_Z = 0.2 // passability quad just above ground
     private const val MARKER_R = 10.0 // build-preview marker radius (metres)
-    private const val SHOWCASE_SELECT_R = 55.0 // demo: click within this (sim px) selects a portal / min place gap
-    private const val SHOWCASE_FLIP_S = 1.0 // demo: seconds for a virus-flip orb colour morph
     private const val BORDER_COLOR = "#ffffff" // playable-area boundary (white — no non-faction hues)
     private const val BORDER_Z = 0.3
     private const val OUTSIDE_DIM = 0.4 // opacity of the dark mask greying out everything beyond the border
@@ -184,25 +182,6 @@ object Scene3D {
     // Glass-orb shatter fracture variants (loaded once from the GLB via ShardAssets).
     private var flaskVariants: List<List<dynamic>> = emptyList()
     private var flaskScale = 1.0 // scale a flask variant to ≈ the portal top sphere
-    private var showcaseGroup: dynamic = null // demo-scene placed portals (not cleared by sync)
-    private class Showcase(
-        val group: dynamic,
-        val parts: Array<dynamic>,
-        val pos: Pos,
-        var level: Int,
-        var color: String, // mutable: a virus flip morphs it to the new faction colour
-        var hackAge: Double,
-        var growAge: Double,
-    ) {
-        var hackGlyph: Boolean = false // the active hack is a (stronger) glyph hack
-        var flipAge: Double = 0.0 // seconds left in a virus-flip colour morph (counts down)
-        var flipFrom: String? = null // the colour the orb is morphing FROM during a flip
-    }
-    private val showcases = mutableListOf<Showcase>()
-    private class DemoLink(val a: Showcase, val b: Showcase, val pipe: dynamic)
-    private val demoLinks = mutableListOf<DemoLink>() // demo link pipes, so they can't outlive their portals
-    private var selectedShowcase: Showcase? = null // demo: the portal the action buttons act on
-    private var demoCursor: dynamic = null // demo: ground ring under the mouse (place vs select)
     private var lastFrameMs = 0.0 // for per-frame effect dt
     private var animClockMs = 0.0 // sim-scaled animation clock (advances by dt × animationSpeed each frame)
 
@@ -240,7 +219,7 @@ object Scene3D {
     } // multi-hack
     private val shieldGeo: dynamic by lazy { Three.SphereGeometry(TOP_R * PHI, 24, 18) } // shield bubble at φ× the orb
     private val gasketGeo: dynamic by lazy { Three.TorusGeometry(POLE_R * 1.15, POLE_R * 0.4, 10, 20) } // rubber donut
-    private val linkGeo: dynamic by lazy { Three.CylinderGeometry(LINK_R, LINK_R, 1.0, 8) } // unit pipe (scaled to length)
+    internal val linkGeo: dynamic by lazy { Three.CylinderGeometry(LINK_R, LINK_R, 1.0, 8) } // unit pipe (scaled to length)
     private val linkJointGeo: dynamic by lazy { Three.SphereGeometry(LINK_R * 1.5, 12, 12) } // ball-joint, a bit fatter than the pipe
     private val resoRingGeo: dynamic by lazy { Three.TorusGeometry(RESO_RING_R, RESO_RING_TUBE, 8, 14) } // rubber slot grommet
     private val indicatorGeo: dynamic by lazy {
@@ -297,8 +276,7 @@ object Scene3D {
         XmFx.register(newScene)
         RewardFx.register(newScene)
         SmokeFx.register(newScene)
-        showcaseGroup = Three.Group()
-        newScene.add(showcaseGroup)
+        Showcases.register(newScene)
         scene = newScene
         buildBorder()
         loadShatterAssets()
@@ -361,7 +339,7 @@ object Scene3D {
 
     private fun hasActiveEffects() = ShatterFx.hasActive() ||
         DamageNumberFx.hasActive() ||
-        showcasesAnimating() ||
+        Showcases.animating() ||
         HackFx.hasActive() ||
         DeployFx.hasActive() ||
         XmFx.hasActive() ||
@@ -377,7 +355,7 @@ object Scene3D {
         if (ShatterFx.hasActive()) ShatterFx.update(dt)
         if (DamageNumberFx.hasActive()) DamageNumberFx.update(dt)
         if (BoltFx.hasActive()) BoltFx.update(dt)
-        if (showcasesAnimating()) updateShowcases(dt)
+        if (Showcases.animating()) Showcases.update(dt)
         if (HackFx.hasActive()) HackFx.update()
         if (DeployFx.hasActive()) DeployFx.update()
         if (XmFx.hasActive()) XmFx.update()
@@ -777,7 +755,7 @@ object Scene3D {
         group.add(mesh)
     }
 
-    private fun markerMaterial(color: String): dynamic = materialCache.getOrPut("m$color") {
+    internal fun markerMaterial(color: String): dynamic = materialCache.getOrPut("m$color") {
         val p: dynamic = js("({})")
         p.color = color
         p.transparent = true
@@ -788,7 +766,7 @@ object Scene3D {
     }
 
     /** Lerp [from]→[to] (both "#rrggbb") component-wise in RGB at [t] (0..1), returning a "#rrggbb" string. */
-    private fun blendColor(from: String, to: String, t: Double): String {
+    internal fun blendColor(from: String, to: String, t: Double): String {
         val a = from.removePrefix("#")
         val b = to.removePrefix("#")
         fun chan(i: Int): String {
@@ -970,7 +948,7 @@ object Scene3D {
     private fun orbScale(level: Double) = 0.45 + (level.coerceIn(1.0, 8.0) - 1.0) / 7.0 * 1.15 // orb radius
     private fun poleScale(level: Double) = 1.0 + (level.coerceIn(1.0, 8.0) - 1.0) / 7.0 * 1.2 // pole height: 1 → 2.2
     private fun poleHeight(level: Double) = POLE_H * poleScale(level)
-    private fun orbCenterZ(level: Double) = poleHeight(level) + TOP_R * orbScale(level) // orb rests on the pole top
+    internal fun orbCenterZ(level: Double) = poleHeight(level) + TOP_R * orbScale(level) // orb rests on the pole top
 
     /** Per-portal rendered level, eased toward the real level each sync so a level-up tweens smoothly. */
     private fun tweenedLevel(id: String, target: Int): Double {
@@ -1040,7 +1018,7 @@ object Scene3D {
      * touch the glass, and a round glass orb on top (bigger with [level]). [id] tags it for picking
      * (null = demo). Returns [orb, gasket] so the demo can drop them when the portal shatters.
      */
-    private fun buildPortal(
+    internal fun buildPortal(
         parent: dynamic,
         location: Pos,
         level: Double,
@@ -1248,7 +1226,7 @@ object Scene3D {
     }
 
     /** Rise the pole + grow the orb from the ground for the build-in animation ([g] = 0→1). */
-    private fun applyBuildGrow(level: Double, g: Double, parts: Array<dynamic>, reform: Double = 1.0, gz: Double = 0.0) {
+    internal fun applyBuildGrow(level: Double, g: Double, parts: Array<dynamic>, reform: Double = 1.0, gz: Double = 0.0) {
         val gg = g.coerceIn(0.0, 1.0)
         val poleP = easeOutCubic(gg) // the pole shoots up and settles
         val orbP = easeOutBack(gg) // the orb inflates past full size, then settles (juicy pop)
@@ -1272,167 +1250,6 @@ object Scene3D {
         val u = t - 1.0
         return 1.0 + (c1 + 1.0) * u * u * u + c1 * u * u
     }
-
-    private fun activeShowcase() = selectedShowcase ?: showcases.lastOrNull()
-
-    private fun showcaseNear(location: Pos): Showcase? = showcases.minByOrNull { it.pos.distanceTo(location) }?.takeIf {
-        it.pos.distanceTo(location) <
-            SHOWCASE_SELECT_R
-    }
-
-    /** Demo LMB: select the portal under the cursor, or place a new one if the spot is clear (so two
-     *  portals can't be stacked and existing ones can be picked, not replaced). Returns true if it
-     *  placed a new portal (the caller plays the create sound). */
-    fun clickShowcase(location: Pos, level: Int, color: String): Boolean {
-        val near = showcaseNear(location)
-        if (near != null) {
-            selectedShowcase = near
-            return false
-        }
-        placeShowcase(location, level, color)
-        return true
-    }
-
-    /** Place a portal at [location]/[level] in the sync-immune demo group, and select it. */
-    fun placeShowcase(location: Pos, level: Int, color: String) {
-        val grp = showcaseGroup ?: return
-        val group = Three.Group()
-        val resos = Octant.values().associateWith { Pair(level, 1.0) } // demo: a full set, full health
-        val parts = buildPortal(group, location, level.toDouble(), color, null, resos)
-        applyBuildGrow(level.toDouble(), 0.0, parts) // start collapsed; grows in via updateShowcases
-        grp.add(group)
-        val sc = Showcase(group, parts, location, level, color, 0.0, 0.0)
-        showcases.add(sc)
-        selectedShowcase = sc
-    }
-
-    /** Demo RMB: shatter + remove the placed portal nearest [location]. */
-    fun removeShowcaseNear(location: Pos) {
-        val target = showcases.minByOrNull { it.pos.distanceTo(location) } ?: return
-        showcaseGroup?.remove(target.group)
-        showcases.remove(target)
-        dropDemoLinksFor(target)
-        if (target === selectedShowcase) selectedShowcase = null
-        val resos = Octant.values().associateWith { target.level } // demo shows a full set → all fall
-        shatterPortal(target.pos, target.color, target.level, resos)
-    }
-
-    /** Demo (Hack button): spin the active (selected, else last) portal's resonator collar. */
-    fun hackActiveShowcase(glyph: Boolean = false) {
-        activeShowcase()?.let {
-            it.hackAge = if (glyph) HackFx.GLYPH_SPIN_S else HackFx.HACK_S
-            it.hackGlyph = glyph
-        }
-    }
-
-    /** Demo (XMP buttons): detonate a level-[level] XMP fireball at the active portal. */
-    fun xmpActiveShowcase(level: Int) {
-        activeShowcase()?.let { playXmpBurst(it.pos, level) }
-    }
-
-    /** Demo (Burnout button): vent the white steam puff + hiss from the active portal's flask top. */
-    fun burnoutActiveShowcase() {
-        activeShowcase()?.let { steamPuff(it.pos, it.level) }
-    }
-
-    /** Demo (Upgrade/Downgrade): re-place the active portal at level±[delta] (grows in at the new size). */
-    fun stepLastShowcaseLevel(delta: Int) {
-        val target = activeShowcase() ?: return
-        val newLevel = (target.level + delta).coerceIn(1, 8)
-        if (newLevel == target.level) return
-        val pos = target.pos
-        val up = newLevel > target.level
-        showcaseGroup?.remove(target.group)
-        showcases.remove(target)
-        dropDemoLinksFor(target) // the old showcase object is gone — drop its link pipes
-        placeShowcase(pos, newLevel, target.color) // re-places + re-selects
-        if (up) SoundUtil.playUpgradeSound(pos, newLevel) else SoundUtil.playDowngradeSound(pos, newLevel)
-    }
-
-    /** Demo: move the ground cursor ring to [location] (null hides it); colour shows select vs place. */
-    fun updateDemoCursor(location: Pos?) {
-        val grp = showcaseGroup ?: return
-        val cursor = demoCursor ?: run {
-            val r = SHOWCASE_SELECT_R * metersPerPixel
-            Three.Mesh(Three.RingGeometry(r * 0.82, r, 28), markerMaterial(NEUTRAL_COLOR)).also {
-                demoCursor = it
-                grp.add(it)
-            }
-        }
-        if (location == null) {
-            cursor.visible = false
-            return
-        }
-        cursor.visible = true
-        cursor.asDynamic().position.set(sceneX(location), sceneY(location), OVERLAY_Z)
-        cursor.asDynamic().material.color.set(if (showcaseNear(location) != null) HIGHLIGHT_COLOR else NEUTRAL_COLOR)
-    }
-
-    /** Demo (Link): glass-pipe the two most recently placed portals' orbs. */
-    fun linkLastShowcases() {
-        val grp = showcaseGroup ?: return
-        if (showcases.size < 2) return
-        val a = showcases[showcases.size - 1]
-        val b = showcases[showcases.size - 2]
-        val pa = doubleArrayOf(sceneX(a.pos), sceneY(a.pos), orbCenterZ(a.level.toDouble()))
-        val pb = doubleArrayOf(sceneX(b.pos), sceneY(b.pos), orbCenterZ(b.level.toDouble()))
-        val pipe = Three.Mesh(linkGeo, Materials.linkGlass(a.color))
-        orientTube(pipe.asDynamic(), pa, pb)
-        grp.add(pipe)
-        demoLinks.add(DemoLink(a, b, pipe)) // tracked so it's removed if either portal goes
-    }
-
-    /** Demo: remove any link pipes touching [sc] — no link may dangle without both end portals. */
-    private fun dropDemoLinksFor(sc: Showcase) {
-        demoLinks.filter { it.a === sc || it.b === sc }.forEach {
-            showcaseGroup?.remove(it.pipe)
-        }
-        demoLinks.removeAll { it.a === sc || it.b === sc }
-    }
-
-    /** Demo (ADA / JARVIS): flip the active showcase portal to [targetColor], morphing the orb (no shatter)
-     *  the same way a live virus flip does, and play [faction]'s virus sound once. */
-    fun refactorActiveShowcase(targetColor: String, faction: Faction) {
-        val sc = activeShowcase() ?: return
-        if (sc.color != targetColor) {
-            sc.flipFrom = sc.color
-            sc.flipAge = SHOWCASE_FLIP_S
-            sc.color = targetColor
-        }
-        SoundUtil.playVirusSound(sc.pos, faction)
-    }
-
-    private fun updateShowcases(dt: Double) {
-        showcases.forEach { sc ->
-            if (sc.growAge < PORTAL_GROW_S) { // build-in: pole rises + orb grows from the ground
-                sc.growAge += dt
-                applyBuildGrow(sc.level.toDouble(), (sc.growAge / PORTAL_GROW_S).coerceIn(0.0, 1.0), sc.parts)
-            }
-            if (sc.hackAge > 0.0) { // hack: collar spins + rods centrifuge (same as live portals)
-                sc.hackAge = (sc.hackAge - dt).coerceAtLeast(0.0)
-                val dir = if (sc.color == Faction.ENL.color) -1.0 else 1.0 // ENL cw, else ccw
-                val dur = if (sc.hackGlyph) HackFx.GLYPH_SPIN_S else HackFx.HACK_S
-                HackFx.spinShowcase(sc.parts[3], dur - sc.hackAge, dir, sc.hackGlyph)
-            }
-            sc.flipFrom?.let { from ->
-                // virus flip: morph the orb glass from old→new faction colour
-                sc.flipAge = (sc.flipAge - dt).coerceAtLeast(0.0)
-                val p = ((SHOWCASE_FLIP_S - sc.flipAge) / SHOWCASE_FLIP_S).coerceIn(0.0, 1.0)
-                val mat = Materials.glass(blendColor(from, sc.color, p * p * (3.0 - 2.0 * p))) // smoothstep
-                setOrbMaterial(sc.parts[0], mat)
-                if (sc.flipAge <= 0.0) sc.flipFrom = null
-            }
-        }
-    }
-
-    /** Re-skin a showcase orb (outer shell + the concentric inner shell child) to [mat]. */
-    private fun setOrbMaterial(orb: dynamic, mat: dynamic) {
-        orb.material = mat
-        val inner = orb.children[0] // the inner double-shell, added as the orb's child
-        if (inner != null) inner.material = mat
-    }
-
-    private fun showcasesAnimating() = showcases.any { it.growAge < PORTAL_GROW_S || it.hackAge > 0.0 || it.flipFrom != null }
 
     private fun addAgent(agent: Agent) {
         val x = sceneX(agent.pos)
@@ -1512,7 +1329,7 @@ object Scene3D {
     }
 
     /** Place a unit (Y-axis) cylinder so it spans [a]→[b]: midpoint, Y-scaled to length, Y rotated to dir. */
-    private fun orientTube(mesh: dynamic, a: DoubleArray, b: DoubleArray) {
+    internal fun orientTube(mesh: dynamic, a: DoubleArray, b: DoubleArray) {
         val dx = b[0] - a[0]
         val dy = b[1] - a[1]
         val dz = b[2] - a[2]

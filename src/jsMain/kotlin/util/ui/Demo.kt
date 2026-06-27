@@ -8,7 +8,7 @@ import org.w3c.dom.HTMLButtonElement
 import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLLabelElement
-import system.display.Scene3D
+import system.display.Showcases
 import util.MapUtil
 import util.data.Pos
 
@@ -113,15 +113,15 @@ object Demo {
         panel.append(
             rowOf(
                 listOf(
-                    button("Upgrade", "demoButton") { Scene3D.stepLastShowcaseLevel(1) },
-                    button("Downgrade", "demoButton") { Scene3D.stepLastShowcaseLevel(-1) },
-                    button("Link", "demoButton") { Scene3D.linkLastShowcases() },
-                    button("Hack", "demoButton") { Scene3D.hackActiveShowcase(false) },
-                    button("Glyph", "demoButton") { Scene3D.hackActiveShowcase(true) },
-                    button("Burnout", "demoButton") { Scene3D.burnoutActiveShowcase() },
+                    button("Upgrade", "demoButton") { Showcases.stepLevel(1) },
+                    button("Downgrade", "demoButton") { Showcases.stepLevel(-1) },
+                    button("Link", "demoButton") { Showcases.linkLast() },
+                    button("Hack", "demoButton") { Showcases.hackActive(false) },
+                    button("Glyph", "demoButton") { Showcases.hackActive(true) },
+                    button("Burnout", "demoButton") { Showcases.burnoutActive() },
                     // Virus flips: ADA → RES (blue), JARVIS → ENL (green) — the orb morphs colour, no shatter.
-                    button("ADA", "demoButton") { Scene3D.refactorActiveShowcase(Faction.RES.color, Faction.RES) },
-                    button("JARVIS", "demoButton") { Scene3D.refactorActiveShowcase(Faction.ENL.color, Faction.ENL) },
+                    button("ADA", "demoButton") { Showcases.refactorActive(Faction.RES.color, Faction.RES) },
+                    button("JARVIS", "demoButton") { Showcases.refactorActive(Faction.ENL.color, Faction.ENL) },
                 ),
             ),
         )
@@ -132,14 +132,14 @@ object Demo {
         val xmpRow = (1..8).map { level ->
             button("X$level", "demoButton demoMini") {
                 selectXmpLevel(level)
-                Scene3D.xmpActiveShowcase(level)
+                Showcases.xmpActive(level)
             }
         }
         panel.append(rowOf(xmpRow))
         xmpButtons = xmpRow
         selectXmpLevel(xmpBlastLevel)
 
-        Scene3D.placeShowcase(center, demoLevel, portalColor) // a starter portal in the middle
+        Showcases.place(center, demoLevel, portalColor) // a starter portal in the middle
     }
 
     /** Lay buttons out in a horizontal wrapping row (compact — for the L1-8 / X1-8 selectors). */
