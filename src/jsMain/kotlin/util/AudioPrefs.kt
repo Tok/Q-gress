@@ -16,18 +16,29 @@ object AudioPrefs {
         runCatching {
             val raw = localStorage.getItem(KEY) ?: return
             val o = JSON.parse<dynamic>(raw)
-            apply(o.lowpassHz) { AudioFx.setLowpass(it) }
-            apply(o.lowpassQ) { AudioFx.setLowpassQ(it) }
-            apply(o.reverbMix) { AudioFx.setReverbMix(it) }
-            apply(o.delayTimeS) { AudioFx.setDelayTime(it) }
-            apply(o.delayFeedback) { AudioFx.setDelayFeedback(it) }
-            apply(o.delayMix) { AudioFx.setDelayMix(it) }
-            apply(o.compressAmount) { AudioFx.setCompress(it) }
-            apply(o.envAttackS) { AudioFx.setEnvAttack(it) }
-            apply(o.envDecayS) { AudioFx.setEnvDecay(it) }
-            apply(o.envSustain) { AudioFx.setEnvSustain(it) }
-            apply(o.envReleaseMult) { AudioFx.setEnvRelease(it) }
+            applyFx(o)
+            applyEnv(o)
         }
+    }
+
+    private fun applyFx(o: dynamic) {
+        apply(o.lowpassHz) { AudioFx.setLowpass(it) }
+        apply(o.lowpassQ) { AudioFx.setLowpassQ(it) }
+        apply(o.distortion) { AudioFx.setDistortion(it) }
+        apply(o.lfoRateHz) { AudioFx.setLfoRate(it) }
+        apply(o.lfoDepth) { AudioFx.setLfoDepth(it) }
+        apply(o.reverbMix) { AudioFx.setReverbMix(it) }
+        apply(o.delayTimeS) { AudioFx.setDelayTime(it) }
+        apply(o.delayFeedback) { AudioFx.setDelayFeedback(it) }
+        apply(o.delayMix) { AudioFx.setDelayMix(it) }
+        apply(o.compressAmount) { AudioFx.setCompress(it) }
+    }
+
+    private fun applyEnv(o: dynamic) {
+        apply(o.envAttackS) { AudioFx.setEnvAttack(it) }
+        apply(o.envDecayS) { AudioFx.setEnvDecay(it) }
+        apply(o.envSustain) { AudioFx.setEnvSustain(it) }
+        apply(o.envReleaseMult) { AudioFx.setEnvRelease(it) }
     }
 
     fun save() {
@@ -40,6 +51,9 @@ object AudioPrefs {
         val o: dynamic = js("({})")
         o.lowpassHz = AudioFx.lowpassHz
         o.lowpassQ = AudioFx.lowpassQ
+        o.distortion = AudioFx.distortionAmount
+        o.lfoRateHz = AudioFx.lfoRateHz
+        o.lfoDepth = AudioFx.lfoDepth
         o.reverbMix = AudioFx.reverbMix
         o.delayTimeS = AudioFx.delayTimeS
         o.delayFeedback = AudioFx.delayFeedback01

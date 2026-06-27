@@ -428,8 +428,9 @@ Commit hashes are illustrative pointers, not exhaustive.
   **filter pad** (canvas XY: low-pass cutoff × resonance), big **knobs** for reverb / echo (delay time +
   feedback + mix) / compression, a master **ADSR** (envelope display + A/D/S/R knobs; attack + release wired
   into the shared one-shot voice via `AudioFx.shapeDecay`, default-neutral so SFX are unchanged until dialled),
-  and a live **scope + spectrum** off an `AudioFx` analyser tap. The `AudioFx` bus now also carries a
-  resonant low-pass, a delay/echo send, and a master compressor. Every change **persists** (`util/AudioPrefs`,
+  and a live **scope + spectrum** off an `AudioFx` analyser tap. The `AudioFx` bus carries a resonant low-pass,
+  **waveshaper distortion**, a delay/echo send, a master compressor, and an **LFO** modulating the cutoff
+  (rate + depth). Every change **persists** (`util/AudioPrefs`,
   restored at startup before the graph builds); the TUNING LAB exports + resets the values.
 - **Layered detonation** (`SoundUtil.playXmpExplosion`, `deep` flag): a detonation snap + chest-punch sub
   at the note + a deep, hard **909-style kick** (`KickDrum`: fast pitch-drop sine + a high-passed beater

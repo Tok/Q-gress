@@ -90,8 +90,19 @@ object AudioPanel {
         val row = el("div", "audioControls")
         row.appendChild(filterSection())
         row.appendChild(fxKnobs())
+        row.appendChild(lfoSection())
         row.appendChild(adsrSection())
         return row
+    }
+
+    private fun lfoSection(): HTMLElement {
+        val box = el("div", "audioSection")
+        box.appendChild(el("div", "audioHead").also { it.textContent = "LFO → cutoff" })
+        val grid = el("div", "audioKnobs")
+        grid.appendChild(knob("Rate", AudioFx.LFO_MIN_HZ..AudioFx.LFO_MAX_HZ, 1.0, { AudioFx.lfoRateHz }, { AudioFx.setLfoRate(it) }, ::hz))
+        grid.appendChild(knob("Depth", 0.0..1.0, 0.0, { AudioFx.lfoDepth }, { AudioFx.setLfoDepth(it) }, ::pct))
+        box.appendChild(grid)
+        return box
     }
 
     private fun filterSection(): HTMLElement {
@@ -122,6 +133,7 @@ object AudioPanel {
         grid.appendChild(knob("Echo", 0.0..1.0, 0.0, { AudioFx.delayMix }, { AudioFx.setDelayMix(it) }, ::pct))
         grid.appendChild(knob("Echo time", 0.0..AudioFx.MAX_DELAY_S, 0.25, { AudioFx.delayTimeS }, { AudioFx.setDelayTime(it) }, ::ms))
         grid.appendChild(knob("Feedback", 0.0..0.95, 0.3, { AudioFx.delayFeedback01 }, { AudioFx.setDelayFeedback(it) }, ::pct))
+        grid.appendChild(knob("Distort", 0.0..1.0, 0.0, { AudioFx.distortionAmount }, { AudioFx.setDistortion(it) }, ::pct))
         grid.appendChild(knob("Compress", 0.0..1.0, 0.0, { AudioFx.compressAmount }, { AudioFx.setCompress(it) }, ::pct))
         box.appendChild(grid)
         return box
@@ -406,6 +418,7 @@ object AudioPanel {
 
     private fun pct(v: Double): String = "${(v * 100).toInt()}%"
     private fun ms(v: Double): String = "${(v * 1000).toInt()} ms"
+    private fun hz(v: Double): String = if (v < 1.0) "${(v * 100).toInt() / 100.0} Hz" else "${(v * 10).toInt() / 10.0} Hz"
     private fun mult(v: Double): String = "${(v * 100).toInt() / 100.0}×"
 
     private fun el(tag: String, cls: String): HTMLDivElement {
