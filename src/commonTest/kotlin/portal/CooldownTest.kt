@@ -16,6 +16,14 @@ class CooldownTest {
     }
 
     @Test
+    fun valueOfBucketsSecondsToTiers() {
+        assertEquals(Cooldown.MIN, Cooldown.valueOf(5), "5s → smallest non-zero tier (MIN=10)")
+        assertEquals(Cooldown.HALF, Cooldown.valueOf(11), "just past MIN → HALF=30")
+        assertEquals(Cooldown.BURNOUT, Cooldown.valueOf(14400), "exactly the largest tier")
+        assertEquals(Cooldown.NONE, Cooldown.valueOf(15000), "beyond the largest tier → no match → NONE")
+    }
+
+    @Test
     fun onlyNoCooldownIsHackable() {
         Cooldown.values().filterNot { it == Cooldown.NONE }.forEach {
             assertTrue("$it must not be hackable.") { !it.isHackable() }

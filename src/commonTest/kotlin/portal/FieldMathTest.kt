@@ -39,4 +39,16 @@ class FieldMathTest {
         assertEquals(cw, ccw, "the sign test handles either vertex winding")
         assertTrue(cw)
     }
+
+    @Test
+    fun ccwWindingInsideAndOutsideEachEdge() {
+        // Reversed vertices drive the d<0 arm of the sign test; outside points fail each sub-condition.
+        val a = Pos(0, 0)
+        val b = Pos(0, 100)
+        val c = Pos(100, 0)
+        assertTrue(FieldMath.isInsideTriangle(Pos(20, 20), a, b, c), "well inside (ccw)")
+        assertFalse(FieldMath.isInsideTriangle(Pos(90, 90), a, b, c), "past the hypotenuse (ccw)")
+        assertFalse(FieldMath.isInsideTriangle(Pos(-5, 20), a, b, c), "left of an edge (ccw)")
+        assertFalse(FieldMath.isInsideTriangle(Pos(20, -5), a, b, c), "below an edge (ccw)")
+    }
 }

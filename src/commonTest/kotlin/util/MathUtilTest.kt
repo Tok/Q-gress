@@ -33,4 +33,12 @@ class MathUtilTest {
         assertEquals("01:00:00", MathUtil.formatSeconds(3600))
         assertEquals("01:01:01", MathUtil.formatSeconds(3661))
     }
+
+    @Test
+    fun formatSecondsLeavesTwoDigitFieldsUnpadded() {
+        // Two-digit h/m/s exercise the non-padding branch of the internal width fix (the padded branch is above).
+        assertEquals("00:00:45", MathUtil.formatSeconds(45), "two-digit seconds")
+        assertEquals("00:45:00", MathUtil.formatSeconds(2700), "two-digit minutes")
+        assertEquals("11:11:11", MathUtil.formatSeconds(11 * 3600 + 11 * 60 + 11), "two-digit across all fields")
+    }
 }
