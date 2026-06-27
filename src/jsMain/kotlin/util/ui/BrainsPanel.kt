@@ -146,15 +146,18 @@ object BrainsPanel {
     }
 
     private fun renderNet(card: HTMLElement, faction: Faction, net: Net) {
-        card.appendChild(driverTitle("Neural net"))
-        card.appendChild(kv("Architecture", net.arch.label()))
-        card.appendChild(kv("Fitness", GenomeIO.fitnessOf(NetStore.activeJson())?.let { "+${it.roundToInt()} MU" } ?: "—"))
-        card.appendChild(kv("Re-tunes", retuneCadence()))
+        card.appendChild(driverTitle("Neural net")) // title outside the pane (consistent across tabs)
+        // The NN summary readout in its own glass pane (the part that needs to read clearly over the map).
+        val summary = el("div", "footerGlass")
+        summary.appendChild(kv("Architecture", net.arch.label()))
+        summary.appendChild(kv("Fitness", GenomeIO.fitnessOf(NetStore.activeJson())?.let { "+${it.roundToInt()} MU" } ?: "—"))
+        summary.appendChild(kv("Re-tunes", retuneCadence()))
         val stats = NetVizPanel.stats(net, faction)
-        card.appendChild(kv("Driving input", stats.drivingInput))
-        card.appendChild(kv("Peak hidden", stats.peakHidden))
-        card.appendChild(topActions(faction))
-        // Live activation diagram ABOVE the genome (per-frame repaint in update()).
+        summary.appendChild(kv("Driving input", stats.drivingInput))
+        summary.appendChild(kv("Peak hidden", stats.peakHidden))
+        summary.appendChild(topActions(faction))
+        card.appendChild(summary)
+        // Live activation diagram ABOVE the genome (per-frame repaint in update()) — no pane (label is a title).
         card.appendChild(el("div", "brainsKey").also { it.textContent = "live activation (the net thinking)" })
         val act = dprCanvas(NetVizPanel.CW, NetVizPanel.CH)
         activationCanvas[faction] = act
@@ -162,10 +165,10 @@ object BrainsPanel {
         (act.getContext("2d") as? CanvasRenderingContext2D)?.let {
             NetVizPanel.paintActivation(it, net, faction, NetVizPanel.CW.toDouble(), NetVizPanel.CH.toDouble())
         }
-        // …then the genome heatmap.
+        // …then the genome heatmap in its own small glass pane (the label stays outside it).
         card.appendChild(el("div", "brainsKey").also { it.textContent = "genome (weights — sign × magnitude)" })
         val gen = canvas(GENOME_W, GENOME_H)
-        card.appendChild(gen)
+        card.appendChild(el("div", "footerGlass brainsGenomePane").also { it.appendChild(gen) })
         (gen.getContext("2d") as? CanvasRenderingContext2D)?.let {
             NetVizPanel.paintGenome(it, net, GENOME_W.toDouble(), GENOME_H.toDouble(), faction.color)
         }

@@ -102,7 +102,10 @@ html, body {
 }
 /* Top-agents leaderboard table (UI Stage 3: canvas→DOM). */
 .topAgents {
-    width: 100%;
+    /* Hug the table + sit centered, so the glass pane (below) blurs only the centre, not the whole bar. */
+    width: fit-content;
+    max-width: 100%;
+    margin-inline: auto;
     box-sizing: border-box;
     color: #ffffff;
 }
@@ -473,13 +476,14 @@ html, body {
     max-height: calc(100vh - 140px);
 }
 
-/* Glass panes INSIDE the (now unblurred) footer — only the content that needs to read clearly over the map
-   gets the blur. AGENTS/PORTALS: the whole table (.topAgents). STATS: each individual stat group
-   (#footerAi > *). TRAIN: the whole tab (#footerTrain). EVENT LOG: just the text column (.statsComLines).
-   BRAINS opts out (fine flat). */
+/* Glass panes INSIDE the (now unblurred) footer — only the CONTENT that needs to read over the map gets the
+   blur, never the section titles (consistent across tabs; TRAIN is the exception — it panes everything).
+   AGENTS/PORTALS: the table (.topAgents, centered). STATS: the stat bars only (.aiPanel) — the title sits
+   outside. BRAINS: the NN summary + genome (.footerGlass, set in BrainsPanel). TRAIN: the whole tab
+   (#footerTrain). EVENT LOG: just the text column (.statsComLines). */
 .footerGlass,
 .topAgents,
-#footerAi > *,
+.aiPanel,
 #footerTrain,
 .statsComLines {
     backdrop-filter: blur(7px);
@@ -493,6 +497,10 @@ html, body {
 /* TRAIN is one pane around everything; give its inner sections room to breathe. */
 #footerTrain {
     padding: 10px 12px;
+}
+/* The genome pane hugs its canvas (a small pane behind the heatmap, not the whole card). */
+.brainsGenomePane {
+    width: fit-content;
 }
 
 /* AI footer tab: the observation readout + the slider-history sparklines, side by side (wrap when narrow). */
@@ -961,8 +969,9 @@ html, body {
 /* Action log lines — live in the footer's EVENT LOG tab (the footer owns the label + collapse). The glass
    pane (above) hugs the text (fit-content) rather than the whole footer width, so only the text is blurred. */
 .statsComLines {
-    width: fit-content;
-    max-width: 100%;
+    /* A STABLE width (viewport-relative, not content-relative) so the pane doesn't jitter as messages scroll;
+       left-anchored so the play-by-play reads left-justified. */
+    width: min(720px, 100%);
     display: flex;
     flex-direction: column;
     align-items: flex-start;
