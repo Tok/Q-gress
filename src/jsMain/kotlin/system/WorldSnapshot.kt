@@ -37,7 +37,7 @@ object WorldSnapshot {
         val checkpoints: Map<Int, Checkpoint>,
         val policies: Map<Faction, FactionPolicy>,
         val headlessFieldCompute: Boolean,
-        val quickStart: Boolean,
+        val startStage: config.StartStage,
     )
 
     /** Snapshot the live world. Requires [World.grid] to be initialised (a running game always has it). */
@@ -53,7 +53,7 @@ object WorldSnapshot {
         checkpoints = Cycle.INSTANCE.checkpoints.toMap(),
         policies = Faction.all().associateWith { FactionPolicies.of(it) },
         headlessFieldCompute = Config.headlessFieldCompute,
-        quickStart = Config.quickStart,
+        startStage = Config.startStage,
     )
 
     /** Restore a [capture]d world (after an eval reset/ran on the shared singletons). */
@@ -71,7 +71,7 @@ object WorldSnapshot {
         FactionPolicies.reset()
         snapshot.policies.forEach { (faction, policy) -> FactionPolicies.set(faction, policy) }
         Config.headlessFieldCompute = snapshot.headlessFieldCompute
-        Config.quickStart = snapshot.quickStart
+        Config.startStage = snapshot.startStage
     }
 
     private fun <T> replace(target: MutableCollection<T>, source: List<T>) {

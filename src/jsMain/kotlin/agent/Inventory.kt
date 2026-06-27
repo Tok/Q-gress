@@ -55,6 +55,26 @@ data class Inventory(val items: MutableList<QgressItem> = mutableListOf()) {
 
     companion object {
         fun empty() = Inventory()
+
+        /** Starting gear for the chosen [config.StartStage]: none at START, a light kit at MID, the full
+         *  loadout at END. Scaled to the agent's level. */
+        fun startingGear(agent: Agent, stage: config.StartStage): List<QgressItem> = when (stage) {
+            config.StartStage.START -> emptyList()
+            config.StartStage.MID -> lightGear(agent)
+            config.StartStage.END -> quickStart(agent)
+        }
+
+        // A modest kit: enough to capture + field a few portals, not a full L8 arsenal.
+        private fun lightGear(agent: Agent): List<QgressItem> {
+            val level = agent.getLevel()
+            return listOf(
+                (1..10).map { XmpBurster.create(agent, level) },
+                (1..8).map { Resonator.create(agent, level) },
+                (1..6).map { Resonator.create(agent, level - 1) },
+                (1..6).map { PowerCube.create(agent, level) },
+            ).flatten()
+        }
+
         fun quickStart(agent: Agent): List<QgressItem> {
             val level = agent.getLevel()
             return listOf(

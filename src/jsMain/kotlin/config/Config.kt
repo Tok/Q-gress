@@ -46,10 +46,10 @@ object Config {
     var linkMinResos = 1
 
     var startPortals = 8 // initial portal count (chosen at onboarding — the "portal density"); scales by map size
-    var quickStart = false // onboarding option: start with a full roster + AP so the early game moves
-    fun startFrogs() = if (quickStart) 8 else minFrogs
-    fun startSmurfs() = if (quickStart) 8 else minSmurfs
-    fun initialAp() = if (quickStart) 2000000 else 0
+    var startStage = StartStage.MID // onboarding pick: how far along the game starts (roster + level + gear)
+    fun startFrogs() = startStage.agentsPerFaction
+    fun startSmurfs() = startStage.agentsPerFaction
+    fun initialAp() = startStage.initialAp
 
     // NPC population is NOT a player setting — it's auto-derived from map area + location (see
     // [npcPopulation]) at world-gen, and held constant by 1-for-1 replacement on recruit (Recruiter),

@@ -6,6 +6,7 @@ import agent.Faction
 import agent.NonFaction
 import agent.StuckTracker
 import config.Config
+import config.StartStage
 import extension.Grid
 import portal.Portal
 import portal.XmMap
@@ -109,7 +110,9 @@ object SimRunner {
         reset()
         Util.seed(seed)
         Config.headlessFieldCompute = setup.flowFields // off by default → cheap abstract (straight-line) movement
-        Config.quickStart = setup.quickStart
+        // END = full L8 gear + AP (what "quick start" meant); the roster COUNT is setup.frogs/smurfs, not the
+        // stage, so this only sets each seeded agent's level + loadout.
+        Config.startStage = if (setup.quickStart) StartStage.END else StartStage.START
         World.grid = grid
         policyEnl?.let { FactionPolicies.set(Faction.ENL, it) }
         policyRes?.let { FactionPolicies.set(Faction.RES, it) }
@@ -165,7 +168,7 @@ object SimRunner {
         FactionPolicies.reset()
         Fx.reset()
         Config.headlessFieldCompute = false
-        Config.quickStart = false
+        Config.startStage = StartStage.START
     }
 
     private fun seedPortals(count: Int) {

@@ -4,6 +4,7 @@ import agent.Faction
 import config.Config
 import config.Locations
 import config.Sim
+import config.StartStage
 import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.dom.addClass
@@ -311,9 +312,9 @@ object Onboarding {
         return grid
     }
 
-    /** Step 3 — map size + portal density + quick-start. [onStart] gets w, h, portals, quickStart.
+    /** Step 3 — map size + portal density + start stage. [onStart] gets w, h, portals, startStage.
      *  (NPC population isn't a player choice — it's auto-derived from map size + location; see Config.) */
-    fun showMapSize(defaultPortals: Int, onBack: () -> Unit, onStart: (Int, Int, Int, Boolean) -> Unit) {
+    fun showMapSize(defaultPortals: Int, onBack: () -> Unit, onStart: (Int, Int, Int, StartStage) -> Unit) {
         currentBack = onBack // Esc → back to faction pick
         val screen = screen("MAP SIZE & PORTALS")
         val widthInput = numberInput(Sim.width)
@@ -356,7 +357,7 @@ object Onboarding {
 
         val npcSlider = npcDensityRow(screen) // ×1.0–×3.0 multiplier on the auto-derived population
 
-        val quickCheck = checkRow(screen, "Quick start (full roster + AP for a fast early game)", true)
+        val stagePick = stageRow(screen, Config.startStage)
         val roundCheck = checkRow(screen, "Round field (play inside an inscribed ellipse)", Sim.roundField)
 
         val warn = div("onboardWarn")
@@ -375,7 +376,7 @@ object Onboarding {
                 if (roundCheck.checked) side else w,
                 if (roundCheck.checked) side else h,
                 portalsInput.value.toIntOrNull() ?: defaultPortals,
-                quickCheck.checked,
+                stagePick(),
             )
         }
         screen.appendChild(navRow(onBack, next))
@@ -435,6 +436,28 @@ object Onboarding {
         wrap.appendChild(l)
         wrap.appendChild(input)
         return wrap
+    }
+
+    /** A 3-button start-stage selector [Start | Mid | End] appended to [screen]; returns a getter for the
+     *  current pick (default [initial]). Start = lean cold open, Mid = a game in motion, End = full late game. */
+    private fun stageRow(screen: HTMLElement, initial: StartStage): () -> StartStage {
+        var selected = initial
+        val row = div("onboardRow")
+        row.appendChild(div("onboardStageLabel").also { it.textContent = "Start at" })
+        val btns = mutableListOf<HTMLButtonElement>()
+        listOf(StartStage.START to "Start", StartStage.MID to "Mid", StartStage.END to "End").forEach { (stage, text) ->
+            lateinit var btn: HTMLButtonElement
+            btn = button(text, "onboardPreset") {
+                selected = stage
+                btns.forEach { it.removeClass("onboardActive") }
+                btn.addClass("onboardActive")
+            }
+            if (stage == initial) btn.addClass("onboardActive")
+            btns.add(btn)
+            row.appendChild(btn)
+        }
+        screen.appendChild(row)
+        return { selected }
     }
 
     private fun checkRow(screen: HTMLElement, label: String, checked: Boolean): HTMLInputElement {

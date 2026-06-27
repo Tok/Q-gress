@@ -379,9 +379,7 @@ data class Agent(
                 Inventory.empty(), Action.create(), actionPortal, actionPortal.location,
                 ap, initialXm,
             )
-            if (HtmlUtil.isQuickstart()) {
-                agent.inventory.items.addAll(Inventory.quickStart(agent))
-            }
+            agent.inventory.items.addAll(Inventory.startingGear(agent, Config.startStage))
             return agent
         }
     }

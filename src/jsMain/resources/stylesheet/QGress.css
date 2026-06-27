@@ -1084,6 +1084,11 @@ html, body {
     display: flex;
     gap: 28px;
 }
+/* "Start at" label sitting before the [Start|Mid|End] stage buttons; vertically centred with them. */
+.onboardStageLabel {
+    align-self: center;
+    opacity: 0.85;
+}
 .onboardRow .popupButton {
     width: 88px;
     height: 42px;

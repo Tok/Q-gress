@@ -69,7 +69,6 @@ object HtmlUtil {
     fun isRunningInBrowser() = jsTypeOf(document) != "undefined"
     fun isNotRunningInBrowser() = !isRunningInBrowser()
     fun isLocal() = isRunningInBrowser() && document.location?.href?.contains("localhost") ?: false
-    fun isQuickstart() = Config.quickStart
 
     private fun tick() {
         if (!World.isReady || HeadlessRun.active) return // paused during an in-browser headless eval (trainer / leaderboard)
@@ -221,10 +220,10 @@ object HtmlUtil {
     }
 
     private fun onboardMapSize() {
-        Onboarding.showMapSize(Config.startPortals, onBack = { onboardDrivers() }) { w, h, portals, quick ->
+        Onboarding.showMapSize(Config.startPortals, onBack = { onboardDrivers() }) { w, h, portals, stage ->
             Sim.setSize(w, h) // size first, so the location screen's play-area box is the real size
             Config.startPortals = portals
-            Config.quickStart = quick
+            Config.startStage = stage
             onboardLocation()
         }
     }
@@ -370,7 +369,7 @@ object HtmlUtil {
         // Apply the rest of the onboarding settings if present in the URL (deep link / reload handoff).
         GameUrl.portals()?.let { Config.startPortals = it }
         GameUrl.npcMultiplier()?.let { Config.npcMultiplier = it }
-        GameUrl.quickstart()?.let { Config.quickStart = it }
+        GameUrl.startStage()?.let { Config.startStage = it }
         GameUrl.round()?.let { Sim.roundField = it }
         Util.seed(GameUrl.seed() ?: Util.freshSeed())
         Onboarding.close() // dismiss the onboarding screen (it loads without a reload)

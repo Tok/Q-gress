@@ -25,7 +25,7 @@ object GameUrl {
     fun tune(): String? = param("tune")
     fun portals(): Int? = param("portals")?.toIntOrNull()
     fun npcMultiplier(): Double? = param("npcmult")?.toDoubleOrNull()
-    fun quickstart(): Boolean? = param("quickstart")?.toBoolean()
+    fun startStage(): config.StartStage? = config.StartStage.fromString(param("start"))
     fun round(): Boolean? = param("round")?.toBoolean()
     fun isAutoStart() = param("local")?.toBoolean() ?: false
     fun isReadOnly() = param("readonly")?.toBoolean() ?: false
@@ -66,6 +66,6 @@ object GameUrl {
         // NPC *count* is auto-derived at world-gen; only the player's density multiplier is carried.
         return "$base?faction=$fact&lng=$lng&lat=$lat&name=${encodeURIComponent(name)}" +
             "&w=${Sim.width}&h=${Sim.height}&portals=${Config.startPortals}&npcmult=${Config.npcMultiplier}" +
-            "&round=${Sim.roundField}&quickstart=${Config.quickStart}$drivers$seedPart$tunePart"
+            "&round=${Sim.roundField}&start=${Config.startStage.name.lowercase()}$drivers$seedPart$tunePart"
     }
 }
