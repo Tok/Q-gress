@@ -12,7 +12,6 @@ import external.MapLibre
 import external.Three
 import items.RewardMote
 import items.deployable.Mod
-import items.deployable.ModType
 import items.deployable.Shield
 import items.level.LevelColor
 import items.level.XmpLevel
@@ -69,10 +68,10 @@ import kotlin.math.sqrt
  * The simulation stays 2D; [sync] is called each tick to (re)place 3D objects
  * from world state. Rendering happens continuously via the custom layer.
  */
-// LargeClass suppressed: Scene3D is the renderer hub; subsystems are already extracted (ShatterFx,
-// HackFx, FieldFx, CaptureFx, PortalChangeSound, Spawns, ShardAssets, GlassShader). The remaining
-// size is mostly the self-contained demo/showcase code — extracting that is the tracked follow-up
-// (PLAN.md → "extract the demo/showcase subsystem from Scene3D").
+// LargeClass suppressed (temporarily): Scene3D is the renderer hub. The god-object split is in progress —
+// already out: the demo sandbox (Showcases) and portal-mesh construction (PortalBuilder). Remaining to
+// extract before the suppress can drop: the effects dispatch, the entity-sync builders, and the
+// coordinate/terrain helpers (PLAN.md → phase B "split god-objects").
 @Suppress("TooManyFunctions", "LargeClass")
 object Scene3D {
     // Metres per CSS pixel at zoom 0 on the equator, for MapLibre's 512-px tiles
@@ -89,7 +88,7 @@ object Scene3D {
     private const val XM_Z = 1.2 // stray-XM floats just above the ground
     private const val NPC_DROP_S = 1.7 // seconds for an NPC to fall in from the sky on first appearance
     private const val NPC_DROP_HEIGHT = 650.0 // metres an NPC drops from (well off-screen → a long plunge in)
-    private const val INDICATOR_Z = 5.0 // raised to clear the head now the indicator is ~3× bigger
+    internal const val INDICATOR_Z = 5.0 // raised to clear the head now the indicator is ~3× bigger
     private const val INDICATOR_SIZE = 4.8 // action label above an agent (was 1.6 — barely visible)
     private const val INDICATOR_THICK = 1.2 // action-coin thickness (the extruded "wheel" depth)
     private const val COIN_BODY_OPACITY = 0.5 // the coin body (rim + underside) is see-through; the top icon stays solid
@@ -103,19 +102,17 @@ object Scene3D {
     private const val ENERGY_BAR_MAX_H = INDICATOR_SIZE * 3.0
     private const val MAX_XM_CAPACITY = 14400 // Agent.xmCapacity at L16+ (where capacity stops growing)
     private const val NAME_RING_GAP = 2.0 // gap above the orb top for the hovered-portal name ring (PortalNameTicker)
-    private const val POLE_R = 2.0
+    internal const val POLE_R = 2.0
     private const val LINK_R = 0.7 // link pipe radius (metres)
     internal const val PORTAL_GROW_S = 0.7 // seconds for a new portal to inflate in (pole rises, orb pops)
-    private const val RESO_POP_DELAY = 0.3 // resonators start popping in once the pole is ~30% up
     private const val CAPTURE_SHATTER_WEIGHT = 0.22 // glass-shatter heaviness on capture (light — only the orb)
     private const val FIELD_FILL_S = 0.4 // seconds for a new control field to fill in
     private const val MAX_REWARD_CUBES = 12 // cap the hack-loot cubes so a big haul doesn't swarm the screen
     private const val REWARD_STAGGER_S = 0.07 // stagger between reward cubes leaving the orb
     private const val LEVEL_TWEEN_RATE = 0.18 // per-sync ease of the rendered level toward the real one
-    private const val POLE_H = 22.5 // base pole height at L1; scales by φ per level
-    private const val TOP_R = 7.0 // base orb radius
-    private const val INNER_SHELL_FRAC = 0.89 // inner glass shell radius (× orb) — a thin wall (~2.5× thinner) matching the shards
-    private const val PHI = 1.618 // golden ratio — used for the shield bubble radius
+    internal const val POLE_H = 22.5 // base pole height at L1; scales by φ per level
+    internal const val TOP_R = 7.0 // base orb radius
+    internal const val PHI = 1.618 // golden ratio — used for the shield bubble radius
 
     // Resonators: 8 rubber slot-rings around the pole collar (just below the gasket), each holding a
     // colour-coded rod (the resonator) when filled.
@@ -123,29 +120,14 @@ object Scene3D {
     private const val RESO_RING_TUBE = POLE_R * 0.13
     private const val GROMMET_COLOR = "#0a0a0a" // black rubber grommet (matches the gasket) when it falls
     private const val RESO_ROD_R = POLE_R * 0.26
-    private const val RESO_RADIUS_FRAC = 1.7 // slot distance from pole axis (× POLE_R) — spread so slots read distinct top-down
-    private const val RESO_COLLAR_FRAC = 0.78 // collar height as a fraction of the pole height
-    private const val RESO_ROD_LEN_FRAC = 0.22 // rod length as a fraction of the pole height
+    internal const val RESO_RADIUS_FRAC = 1.7 // slot distance from pole axis (× POLE_R) — spread so slots read distinct top-down
+    internal const val RESO_COLLAR_FRAC = 0.78 // collar height as a fraction of the pole height
+    internal const val RESO_ROD_LEN_FRAC = 0.22 // rod length as a fraction of the pole height
     internal const val NEUTRAL_COLOR = "#bbbbbb"
-    private const val MOD_R_FRAC = 0.16 // chrome mod radius (× orb radius)
-    private const val MOD_SCALE = 1.2 // scale the mod solids up a touch (they read bland at base size)
-    private val MOD_WIRE_SCALES = doubleArrayOf(1.01, 1.05) // two concentric edge cages → a bolder glowing wire
-    private const val MAX_SHIELD_SHELLS = 4 // up to 4 shields per portal → 4 concentric bubbles
-    private const val SHIELD_SHELL_STEP = 0.09 // each shield shell sits this much larger than the last (× radius)
+    internal const val MOD_R_FRAC = 0.16 // chrome mod radius (× orb radius)
     private const val SHIELD_WAVE_RANGE_FRAC = 0.6 // a blast ripples shields within this × the XMP's range
     private const val DAMAGE_NUMBER_GAP = 2.0 // start the damage number this far above the flask top
     private const val MAX_BUILDING_COLLIDERS = 1500 // cap on static building boxes added to the FX worlds
-
-    // tetrahedron vertex distance from orb centre (× orb radius); nudged out so mods clear the link joint
-    private const val MOD_RING_FRAC = 0.55
-
-    // Unit regular-tetrahedron vertices (magnitude √3); the 4 mod slots sit at these inside the orb.
-    private val TETRA = arrayOf(
-        doubleArrayOf(1.0, 1.0, 1.0),
-        doubleArrayOf(1.0, -1.0, -1.0),
-        doubleArrayOf(-1.0, 1.0, -1.0),
-        doubleArrayOf(-1.0, -1.0, 1.0),
-    )
     internal const val HIGHLIGHT_COLOR = "#f0f0f0" // selection: off-tint grayscale (no new hues)
     internal const val OVERLAY_Z = 0.2 // passability quad just above ground
     private const val MARKER_R = 10.0 // build-preview marker radius (metres)
@@ -216,34 +198,17 @@ object Scene3D {
     // Shared geometries (created lazily once three.js is loaded).
     private val headGeo: dynamic by lazy { Three.SphereGeometry(HEAD_R, 10, 10) }
     private val xmGeo: dynamic by lazy { Three.SphereGeometry(XM_R, 8, 8) } // stray-XM mote
-    private val poleGeo: dynamic by lazy { Three.CylinderGeometry(POLE_R, POLE_R, POLE_H, 12) } // metal pole
-    private val topGeo: dynamic by lazy { Three.SphereGeometry(TOP_R, 20, 16) } // glass orb (scaled per level)
-    private val dodecaGeo: dynamic by lazy { Three.DodecahedronGeometry(TOP_R * MOD_R_FRAC) } // shield mod
-
-    // EdgesGeometry per mod shape (cached): only the real polygon edges, not the triangulation.
-    private val modEdgesCache = mutableMapOf<ModType, dynamic>()
-    private fun modEdges(type: ModType): dynamic = modEdgesCache.getOrPut(type) { Three.EdgesGeometry(modGeoFor(type)) }
-    private val pentaGeo: dynamic by lazy {
-        Three.CylinderGeometry(TOP_R * MOD_R_FRAC, TOP_R * MOD_R_FRAC, TOP_R * MOD_R_FRAC * 0.55, 5)
-    } // heat-sink radiator
-    private val cubeGeo: dynamic by lazy {
-        Three.BoxGeometry(TOP_R * MOD_R_FRAC * 1.1, TOP_R * MOD_R_FRAC * 1.1, TOP_R * MOD_R_FRAC * 1.1)
-    } // link amp
-    private val multihackGeo: dynamic by lazy {
-        // A hollow square ring: a torus with a 4-sided cross-section (radialSeg 4) and 4 corners (tubularSeg 4).
-        Three.TorusGeometry(TOP_R * MOD_R_FRAC * 0.95, TOP_R * MOD_R_FRAC * 0.28, 4, 4)
-    } // multi-hack
-    private val shieldGeo: dynamic by lazy { Three.SphereGeometry(TOP_R * PHI, 24, 18) } // shield bubble at φ× the orb
-    private val gasketGeo: dynamic by lazy { Three.TorusGeometry(POLE_R * 1.15, POLE_R * 0.4, 10, 20) } // rubber donut
+    internal val poleGeo: dynamic by lazy { Three.CylinderGeometry(POLE_R, POLE_R, POLE_H, 12) } // metal pole
+    internal val gasketGeo: dynamic by lazy { Three.TorusGeometry(POLE_R * 1.15, POLE_R * 0.4, 10, 20) } // rubber donut
     internal val linkGeo: dynamic by lazy { Three.CylinderGeometry(LINK_R, LINK_R, 1.0, 8) } // unit pipe (scaled to length)
     private val linkJointGeo: dynamic by lazy { Three.SphereGeometry(LINK_R * 1.5, 12, 12) } // ball-joint, a bit fatter than the pipe
-    private val resoRingGeo: dynamic by lazy { Three.TorusGeometry(RESO_RING_R, RESO_RING_TUBE, 8, 14) } // rubber slot grommet
+    internal val resoRingGeo: dynamic by lazy { Three.TorusGeometry(RESO_RING_R, RESO_RING_TUBE, 8, 14) } // rubber slot grommet
     private val indicatorGeo: dynamic by lazy {
         // action coin: a short cylinder (icon on the round faces)
         Three.CylinderGeometry(INDICATOR_SIZE / 2.0, INDICATOR_SIZE / 2.0, INDICATOR_THICK, 28)
     }
-    private val resoRodGeo: dynamic by lazy { Three.CylinderGeometry(RESO_ROD_R, RESO_ROD_R, 1.0, 8) } // unit rod, scaled to length
-    private val resoCapGeo: dynamic by lazy { Three.CircleGeometry(RESO_ROD_R * 0.92, 16) } // energy "surface" disc on the rod top
+    internal val resoRodGeo: dynamic by lazy { Three.CylinderGeometry(RESO_ROD_R, RESO_ROD_R, 1.0, 8) } // unit rod, scaled to length
+    internal val resoCapGeo: dynamic by lazy { Three.CircleGeometry(RESO_ROD_R * 0.92, 16) } // energy "surface" disc on the rod top
     private val materialCache = mutableMapOf<String, dynamic>()
     private val spriteCache = mutableMapOf<String, dynamic>()
 
@@ -342,7 +307,7 @@ object Scene3D {
         }
         updateEffects(map, dt, invProj)
         PortalNameTicker.update(dt) // spin the hovered portal's name ring (no-op when nothing is hovered)
-        tumbleModTetras() // gentle continuous tumble of the mod tetrahedra
+        PortalBuilder.tumbleModTetras() // gentle continuous tumble of the mod tetrahedra
         updateTitleWordmark(invProj, dt) // camera-lock the 3D title letters (no-op until loaded)
         VectorFieldOverlay.sync() // paced flow-field sweep; driven here (continuous loop) so it animates through world-gen too
         activeRenderer.resetState()
@@ -391,8 +356,7 @@ object Scene3D {
         Spawns.beginSync()
         HackFx.resetBindings() // re-bound below as each portal's reso group is rebuilt
         DeployFx.resetBindings()
-        modTetras.clear() // rebuilt by buildMods below
-        shieldMats.clear() // rebuilt by addShieldShells below
+        PortalBuilder.resetSyncState() // mod tetras + shield mats are rebuilt by PortalBuilder.buildMods below
         clear(portalsGroup)
         World.allPortals.forEach { addPortal(it) }
         syncPoleColliders()
@@ -496,7 +460,13 @@ object Scene3D {
     fun shatterPortal(location: Pos, color: String, level: Int, resos: Map<Octant, Int> = emptyMap()) {
         val lv = level.toDouble()
         ShatterFx.shatter(
-            sceneX(location), sceneY(location), poleHeight(lv), poleScale(lv), orbCenterZ(lv), orbScale(lv),
+            sceneX(
+                location,
+            ),
+            sceneY(
+                location,
+            ),
+            PortalBuilder.poleHeight(lv), PortalBuilder.poleScale(lv), PortalBuilder.orbCenterZ(lv), PortalBuilder.orbScale(lv),
             color, flaskVariants, flaskScale, poleGeo, gasketGeo,
         )
         dropResonators(location, lv, resos)
@@ -505,7 +475,7 @@ object Scene3D {
     /** Drop the resonator parts when the portal shatters: EVERY slot's two rubber o-rings (the lower pole
      *  socket + the upper ring) plus the colour-coded rod in each filled slot, each a brief rigid body. */
     private fun dropResonators(location: Pos, level: Double, resos: Map<Octant, Int>) {
-        val poleH = poleHeight(level)
+        val poleH = PortalBuilder.poleHeight(level)
         val collarZ = groundZ(location) + poleH * RESO_COLLAR_FRAC
         val rodLen = poleH * RESO_ROD_LEN_FRAC
         val ringR = POLE_R * RESO_RADIUS_FRAC
@@ -527,7 +497,7 @@ object Scene3D {
     /** Drop a single resonator rod from its slot — used as each reso is destroyed during an attack. Only the
      *  ROD falls; the pole's o-ring cage stays (the slot just reverts to empty, still showing its two rings). */
     fun dropResonator(location: Pos, level: Int, octantIndex: Int, resoLevel: Int) {
-        val poleH = poleHeight(level.toDouble())
+        val poleH = PortalBuilder.poleHeight(level.toDouble())
         val rodLen = poleH * RESO_ROD_LEN_FRAC
         val ringR = POLE_R * RESO_RADIUS_FRAC
         val ang = octantIndex * PI / 4.0
@@ -549,7 +519,11 @@ object Scene3D {
      *  ([to], at head height), coloured by the owning faction. */
     fun fireBolt(from: Pos, fromLevel: Int, to: Pos, color: String) {
         scene ?: return
-        val start = doubleArrayOf(sceneX(from), sceneY(from), groundZ(from) + orbCenterZ(fromLevel.coerceAtLeast(1).toDouble()))
+        val start = doubleArrayOf(
+            sceneX(from),
+            sceneY(from),
+            groundZ(from) + PortalBuilder.orbCenterZ(fromLevel.coerceAtLeast(1).toDouble()),
+        )
         val end = doubleArrayOf(sceneX(to), sceneY(to), groundZ(to) + HEAD_Z)
         BoltFx.fire(start, end, color)
     }
@@ -573,7 +547,7 @@ object Scene3D {
         val top = doubleArrayOf(
             sceneX(portalLocation),
             sceneY(portalLocation),
-            groundZ(portalLocation) + orbCenterZ(level.coerceAtLeast(1).toDouble()),
+            groundZ(portalLocation) + PortalBuilder.orbCenterZ(level.coerceAtLeast(1).toDouble()),
         )
         val dst = doubleArrayOf(sceneX(to), sceneY(to), groundZ(to) + HEAD_Z)
         motes.take(MAX_REWARD_CUBES).forEachIndexed { i, m -> RewardFx.spawn(top, dst, m, i * REWARD_STAGGER_S) }
@@ -586,7 +560,7 @@ object Scene3D {
         val flaskTop = doubleArrayOf(
             sceneX(portalLocation),
             sceneY(portalLocation),
-            groundZ(portalLocation) + orbCenterZ(lvl) + TOP_R * orbScale(lvl),
+            groundZ(portalLocation) + PortalBuilder.orbCenterZ(lvl) + TOP_R * PortalBuilder.orbScale(lvl),
         )
         SmokeFx.puff(flaskTop)
         SteamSound.play(portalLocation)
@@ -596,15 +570,15 @@ object Scene3D {
     fun dropMods(location: Pos, level: Int, mods: List<Mod>) {
         if (mods.isEmpty()) return
         val lv = level.toDouble()
-        val s = orbScale(lv)
+        val s = PortalBuilder.orbScale(lv)
         val half = TOP_R * MOD_R_FRAC * s
         val gz = groundZ(location)
         mods.forEach { mod ->
             ShatterFx.spawnFallingChunk(
-                modGeoFor(mod.modType()),
+                PortalBuilder.modGeoFor(mod.modType()),
                 sceneX(location),
                 sceneY(location),
-                gz + orbCenterZ(lv),
+                gz + PortalBuilder.orbCenterZ(lv),
                 s,
                 half,
                 mod.rarity.color,
@@ -733,7 +707,7 @@ object Scene3D {
     fun showDamageNumber(portal: Portal, amount: Int) {
         scene ?: return
         val level = portal.getLevel().value.toDouble()
-        val flaskTop = groundZ(portal.location) + orbCenterZ(level) + TOP_R * orbScale(level)
+        val flaskTop = groundZ(portal.location) + PortalBuilder.orbCenterZ(level) + TOP_R * PortalBuilder.orbScale(level)
         DamageNumberFx.spawn(sceneX(portal.location), sceneY(portal.location), flaskTop + DAMAGE_NUMBER_GAP, portal.location, amount)
     }
 
@@ -750,10 +724,10 @@ object Scene3D {
     }
 
     private fun updateShields(seconds: Double) {
-        if (shieldMats.isEmpty()) return
+        if (PortalBuilder.shieldMats.isEmpty()) return
         ShieldShader.setTime(seconds) // animate the hex lattice / pulse (was never driven before)
         ShieldShader.setEye(GlassShader.eye()) // camera-tracking Fresnel rim
-        shieldMats.forEach { (mat, id) -> ShieldShader.setWave(mat, ShieldWave.amplitudeFor(id, seconds)) }
+        PortalBuilder.shieldMats.forEach { (mat, id) -> ShieldShader.setWave(mat, ShieldWave.amplitudeFor(id, seconds)) }
     }
 
     /** Place (or clear, when pos is null) the build-preview marker on the ground. */
@@ -949,11 +923,11 @@ object Scene3D {
         return doubleArrayOf(v.x as Double, v.y as Double, v.z as Double)
     }
 
-    private fun place(obj: dynamic, x: Double, y: Double, z: Double) {
+    internal fun place(obj: dynamic, x: Double, y: Double, z: Double) {
         obj.position.set(x, y, z)
     }
 
-    private fun tag(obj: dynamic, id: String) {
+    internal fun tag(obj: dynamic, id: String) {
         val data: dynamic = js("({})")
         data.qid = id
         obj.userData = data
@@ -961,10 +935,6 @@ object Scene3D {
 
     // Level is a Double so a level-up can ease between integer levels (see tweenedLevel).
     // Generous per-level growth so the level difference reads clearly: orb 0.45→1.6, pole 1.0→2.2×.
-    private fun orbScale(level: Double) = 0.45 + (level.coerceIn(1.0, 8.0) - 1.0) / 7.0 * 1.15 // orb radius
-    private fun poleScale(level: Double) = 1.0 + (level.coerceIn(1.0, 8.0) - 1.0) / 7.0 * 1.2 // pole height: 1 → 2.2
-    private fun poleHeight(level: Double) = POLE_H * poleScale(level)
-    internal fun orbCenterZ(level: Double) = poleHeight(level) + TOP_R * orbScale(level) // orb rests on the pole top
 
     /** Per-portal rendered level, eased toward the real level each sync so a level-up tweens smoothly. */
     private fun tweenedLevel(id: String, target: Int): Double {
@@ -990,8 +960,8 @@ object Scene3D {
             ShatterFx.shatterOrb(
                 sceneX(portal.location),
                 sceneY(portal.location),
-                gz + orbCenterZ(lv),
-                orbScale(lv),
+                gz + PortalBuilder.orbCenterZ(lv),
+                PortalBuilder.orbScale(lv),
                 old,
                 flaskVariants,
                 flaskScale,
@@ -1006,15 +976,15 @@ object Scene3D {
         val resos = portal.resoMap().mapValues { Pair(it.value.getLevel(), it.value.calcHealthPercent() / 100.0) }
         // Selection keeps the faction hue but lights the orb brighter (no neutral-looking white tint);
         // buildPortal derives that from id == selected.
-        val parts = buildPortal(portalsGroup, portal.location, level, orbColor, id, resos)
-        buildMods(parts[0], portal) // chrome mods + shield bubble inside/around the orb (if shielded)
+        val parts = PortalBuilder.buildPortal(portalsGroup, portal.location, level, orbColor, id, resos)
+        PortalBuilder.buildMods(parts[0], portal) // chrome mods + shield bubble inside/around the orb (if shielded)
         HackFx.bind(id, parts[3]) // spin the collar if this portal is being hacked
         // Build-in: the pole rises and the orb grows from the ground; [reform] re-pops the orb only.
         val g = Spawns.appear(id, PORTAL_GROW_S)
         if (g < 1.0) {
-            applyBuildGrow(level, g, parts, reform, gz)
+            PortalBuilder.applyBuildGrow(level, g, parts, reform, gz)
         } else if (reform < 1.0) {
-            applyBuildGrow(level, 1.0, parts, reform, gz) // orb pops back in after a capture
+            PortalBuilder.applyBuildGrow(level, 1.0, parts, reform, gz) // orb pops back in after a capture
         }
     }
 
@@ -1022,249 +992,11 @@ object Scene3D {
     private fun syncPoleColliders() {
         val specs = World.allPortals.map { p ->
             val gz = groundZ(p.location)
-            val topZ = gz + poleHeight(p.getLevel().toInt().toDouble())
+            val topZ = gz + PortalBuilder.poleHeight(p.getLevel().toInt().toDouble())
             doubleArrayOf(sceneX(p.location), sceneY(p.location), gz, topZ, POLE_R)
         }.toTypedArray()
         ShatterFx.setPoleColliders(specs)
         DamageNumberFx.setPoleColliders(specs)
-    }
-
-    /**
-     * A portal: a metallic pole (taller with [level]), a black rubber gasket so the metal doesn't
-     * touch the glass, and a round glass orb on top (bigger with [level]). [id] tags it for picking
-     * (null = demo). Returns [orb, gasket] so the demo can drop them when the portal shatters.
-     */
-    internal fun buildPortal(
-        parent: dynamic,
-        location: Pos,
-        level: Double,
-        color: String,
-        id: String?,
-        resos: Map<Octant, Pair<Int, Double>> = emptyMap(),
-    ): Array<dynamic> {
-        val x = sceneX(location)
-        val y = sceneY(location)
-        val gz = groundZ(location) // sit the whole portal on the terrain
-        val poleH = poleHeight(level)
-        val s = orbScale(level)
-        // Selection lights the orb brighter (faction hue kept). Demo portals (id == null) never highlight.
-        val glassMat = if (id != null && id == selected) Materials.glassBright(color) else Materials.glass(color)
-        val pole = Three.Mesh(poleGeo, Materials.metal())
-        pole.asDynamic().castShadow = true // the metal pole throws a real shadow (sun)
-        pole.asDynamic().rotation.x = PI / 2 // Y-axis cylinder → vertical (Z up)
-        pole.asDynamic().scale.set(1.0, poleScale(level), 1.0) // grow height (local Y) only
-        place(pole.asDynamic(), x, y, gz + poleH / 2)
-        val gasket = Three.Mesh(gasketGeo, Materials.rubber()) // torus in XY → flat ring around the pole top
-        place(gasket.asDynamic(), x, y, gz + poleH)
-        val orb = Three.Mesh(topGeo, glassMat)
-        place(orb.asDynamic(), x, y, gz + orbCenterZ(level))
-        orb.asDynamic().scale.set(s, s, s)
-        // Double-shell: a concentric inner glass surface gives the orb real wall thickness — its
-        // rim sits inside the outer rim, so the orb reads as a thick blown-glass vessel, not a film.
-        // (Child of the orb, so it inherits the per-level scale + the grow-in tween for free.)
-        val inner = Three.Mesh(topGeo, glassMat)
-        inner.asDynamic().scale.set(INNER_SHELL_FRAC, INNER_SHELL_FRAC, INNER_SHELL_FRAC)
-        orb.asDynamic().add(inner)
-        id?.let {
-            tag(pole.asDynamic(), it)
-            tag(gasket.asDynamic(), it)
-            tag(orb.asDynamic(), it)
-        }
-        parent.add(pole)
-        parent.add(gasket)
-        parent.add(orb)
-        val resoGroup = buildResonators(parent, location, level, resos, id)
-        return arrayOf(orb, gasket, pole, resoGroup)
-    }
-
-    /** 8 rubber slot-rings around the pole collar; a colour-coded rod stands in each filled slot. */
-    private fun buildResonators(
-        parent: dynamic,
-        location: Pos,
-        level: Double,
-        resos: Map<Octant, Pair<Int, Double>>,
-        id: String? = null,
-    ): dynamic {
-        val x = sceneX(location)
-        val y = sceneY(location)
-        val gz = groundZ(location)
-        val group = Three.Group()
-        val poleH = poleHeight(level)
-        val rodLen = poleH * RESO_ROD_LEN_FRAC
-        val ringR = POLE_R * RESO_RADIUS_FRAC
-        Octant.values().forEachIndexed { i, octant ->
-            val ang = i * PI / 4.0
-            val ox = ringR * cos(ang)
-            val oy = ringR * sin(ang)
-            val resoInfo = resos[octant]
-            if (resoInfo != null) {
-                val lvl = resoInfo.first
-                val health = resoInfo.second
-                // Rod hangs from a pivot/joint at its TOP, so a hack swings its loose bottom end
-                // radially outward (centrifuge) while the top stays put. Tagged for the hack update.
-                val pivot = Three.Group()
-                pivot.asDynamic().position.set(ox, oy, rodLen) // joint at the rod top
-                pivot.asDynamic().userData.isRodPivot = true
-                pivot.asDynamic().userData.baseAngle = ang
-                pivot.asDynamic().userData.energyFraction = health // hack splay scales with charge (empty/dead → none)
-                pivot.asDynamic().userData.targetX = ox
-                pivot.asDynamic().userData.targetY = oy
-                // If just deployed, fly the rod in from the agent's position (DeployFx lerps + grows it).
-                val from = id?.let { DeployFx.fromOf(it, octant) }
-                if (id != null && from != null) {
-                    pivot.asDynamic().userData.flyStartX = sceneX(from) - x // agent pos in the reso group's frame
-                    pivot.asDynamic().userData.flyStartY = sceneY(from) - y
-                    // Emerge from the agent's energy bar (above its head), not the ground — DeployFx then
-                    // rises the rod straight up out of the bar before peeling off to the slot.
-                    pivot.asDynamic().userData.flyStartZ = groundZ(from) + INDICATOR_Z - gz - poleH * RESO_COLLAR_FRAC
-                    pivot.asDynamic().userData.targetZ = rodLen
-                    DeployFx.bind(id, octant, pivot.asDynamic())
-                }
-                val rodMat = Materials.resonator(LevelColor.map[lvl] ?: "#ffffff", health)
-                val rod = Three.Mesh(resoRodGeo, rodMat)
-                rod.asDynamic().rotation.x = PI / 2 // unit Y-cylinder → vertical
-                rod.asDynamic().scale.set(1.0, rodLen, 1.0)
-                rod.asDynamic().position.set(0.0, 0.0, -rodLen / 2.0) // hangs down to the grommet
-                pivot.asDynamic().add(rod)
-                // A glowing "energy surface" disc sitting at the current FILL LEVEL, so the reso reads as
-                // filled to that height (not just a fill line on the outside). The rod spans pivot-local
-                // z ∈ [-rodLen, 0] (bottom→top), so the charged surface is at -rodLen·(1-fill). Use the rod
-                // material's ACTUAL (stepped) uFill so the disc lines up with the bar exactly. renderOrder 1
-                // draws it AFTER the now-non-depth-writing rods, so its glow sits on top instead of being
-                // painted over or hidden behind a nearer resonator; depthTest still lets the pole hide it.
-                val shownFill = (rodMat.uniforms.uFill.value as Double).coerceIn(0.0, 1.0)
-                val cap = Three.Mesh(resoCapGeo, Materials.resonatorCap(LevelColor.map[lvl] ?: "#ffffff"))
-                cap.asDynamic().position.set(0.0, 0.0, -rodLen * (1.0 - shownFill))
-                cap.asDynamic().renderOrder = 1
-                pivot.asDynamic().add(cap)
-                // Slotted reso → rings ride the pivot (tilt with the rod on hack/glyph); mid-deploy → rings stay
-                // at the pole so only the rod lerps in.
-                addSlotRings(group, pivot.takeIf { from == null }, ox, oy, rodLen)
-                group.asDynamic().add(pivot)
-            } else {
-                addSlotRings(group, null, ox, oy, rodLen) // empty slot → both rings fixed at the pole (no tilt)
-            }
-        }
-        group.asDynamic().position.set(x, y, gz + poleH * RESO_COLLAR_FRAC)
-        parent.add(group)
-        return group
-    }
-
-    // A bare rubber o-ring at [parent]-local ([x], [y], [z]). [parent] is the reso group for a pole-fixed ring
-    // (empty slot / mid-deploy) or a rod pivot for a slotted reso's rings (so they tilt with the rod on a hack).
-    private fun addRing(parent: dynamic, x: Double, y: Double, z: Double) {
-        val ring = Three.Mesh(resoRingGeo, Materials.rubber())
-        ring.asDynamic().position.set(x, y, z)
-        parent.add(ring)
-    }
-
-    // A slot's lower + upper o-rings. With [pivot] non-null (a slotted reso) they ride the rod pivot at its
-    // bottom + top joint, so they tilt with the rod on a hack/glyph; otherwise they're fixed at the pole
-    // ([ox], [oy]) — the collar socket + an upper guide ring — for empty slots and resos mid-deploy.
-    private fun addSlotRings(group: dynamic, pivot: dynamic?, ox: Double, oy: Double, rodLen: Double) {
-        if (pivot != null) {
-            addRing(pivot, 0.0, 0.0, -rodLen)
-            addRing(pivot, 0.0, 0.0, 0.0)
-        } else {
-            addRing(group, ox, oy, 0.0)
-            addRing(group, ox, oy, rodLen)
-        }
-    }
-
-    /**
-     * Deployed shields: chrome mods in a tetrahedron inside the orb + a sci-fi shield bubble at φ× the
-     * orb radius. Added as children of the [orb] so they inherit its per-level scale + grow-in tween.
-     */
-    private fun buildMods(orb: dynamic, portal: Portal) {
-        val mods = portal.mods.values.toList()
-        if (mods.isEmpty()) return
-        val r = TOP_R * MOD_RING_FRAC / sqrt(3.0) // normalize the √3-magnitude tetra verts to the ring radius
-        val tetra = Three.Group() // the whole mod tetrahedron — slowly tumbled per frame (see tumbleModTetras)
-        mods.forEachIndexed { i, mod ->
-            val v = TETRA[i % TETRA.size]
-            val geo = modGeoFor(mod.modType())
-            val mesh = Three.Mesh(geo, Materials.modSolid(mod.rarity.color)) // translucent + luminous (not chrome)
-            mesh.asDynamic().position.set(v[0] * r, v[1] * r, v[2] * r)
-            mesh.asDynamic().scale.set(MOD_SCALE, MOD_SCALE, MOD_SCALE) // a touch bigger so the mods read
-            if (mod.modType() == ModType.LINK_AMP) mesh.asDynamic().rotation.set(0.62, 0.62, 0.0) // cube on its diagonal
-            // Bold glowing edge cage: two concentric wire copies fake a thicker line (WebGL caps linewidth).
-            MOD_WIRE_SCALES.forEach { ws ->
-                val wire = Three.LineSegments(modEdges(mod.modType()), Materials.modWire(mod.rarity.color))
-                wire.asDynamic().scale.set(ws, ws, ws)
-                mesh.asDynamic().add(wire)
-            }
-            tetra.asDynamic().add(mesh)
-        }
-        orb.add(tetra) // orb is already dynamic (no .asDynamic())
-        modTetras.add(tetra)
-        addShieldShells(orb, portal, mods)
-    }
-
-    // Up to MAX_SHIELD_SHELLS concentric energy bubbles (one per deployed shield), each a touch larger
-    // than the last → a layered shield that also reads with depth. Stay put (not in the mod tumble).
-    private fun addShieldShells(orb: dynamic, portal: Portal, mods: List<Mod>) {
-        val shells = mods.count { it is Shield }.coerceIn(0, MAX_SHIELD_SHELLS)
-        if (shells == 0) return
-        val color = portal.owner?.faction?.color ?: NEUTRAL_COLOR
-        val baseIntensity = portal.totalMitigation() / 100.0
-        repeat(shells) { i ->
-            val mat = ShieldShader.material(color, baseIntensity * (1.0 - i * 0.12))
-            val bubble = Three.Mesh(shieldGeo, mat)
-            val s = 1.0 + i * SHIELD_SHELL_STEP
-            bubble.asDynamic().scale.set(s, s, s)
-            orb.add(bubble)
-            shieldMats.add(Pair(mat, portal.id)) // so ShieldWave can ripple it; Pair() not `to` (dynamic receiver)
-        }
-    }
-
-    private val modTetras = mutableListOf<dynamic>() // mod tetrahedra, rebuilt each sync, tumbled each frame
-
-    // Shield bubble materials + their portal id, rebuilt each sync → driven per frame by ShieldWave (ripple).
-    private val shieldMats = mutableListOf<Pair<dynamic, String>>()
-
-    // Slowly tumble each mod tetrahedron on incommensurate sine drifts → a gentle, never-repeating spin
-    // that keeps changing direction. Time-driven so it's smooth across the per-sync rebuild.
-    private fun tumbleModTetras() {
-        if (modTetras.isEmpty()) return
-        val t = animClockMs / 1000.0
-        modTetras.forEach { g ->
-            g.rotation.x = sin(t * 0.11) * PI
-            g.rotation.y = sin(t * 0.13 + 1.3) * PI
-            g.rotation.z = sin(t * 0.17 + 2.6) * PI
-        }
-    }
-
-    private fun modGeoFor(type: ModType): dynamic = when (type) {
-        ModType.SHIELD -> dodecaGeo
-        ModType.HEAT_SINK -> pentaGeo
-        ModType.LINK_AMP -> cubeGeo
-        ModType.MULTIHACK -> multihackGeo
-    }
-
-    /** Rise the pole + grow the orb from the ground for the build-in animation ([g] = 0→1). */
-    internal fun applyBuildGrow(level: Double, g: Double, parts: Array<dynamic>, reform: Double = 1.0, gz: Double = 0.0) {
-        val gg = g.coerceIn(0.0, 1.0)
-        val poleP = easeOutCubic(gg) // the pole shoots up and settles
-        val orbP = easeOutBack(gg) // the orb inflates past full size, then settles (juicy pop)
-        val resoP = easeOutBack(((gg - RESO_POP_DELAY) / (1.0 - RESO_POP_DELAY)).coerceIn(0.0, 1.0)) // pop in after the pole
-        val poleH = poleHeight(level)
-        val s = orbScale(level) * orbP * easeOutBack(reform.coerceIn(0.0, 1.0)) // capture re-pop also overshoots
-        parts[2].scale.set(1.0, poleScale(level) * poleP, 1.0) // pole
-        parts[2].position.z = gz + poleH * poleP / 2.0
-        parts[1].position.z = gz + poleH * poleP // gasket
-        parts[0].scale.set(s, s, s) // orb
-        parts[0].position.z = gz + poleH * poleP + TOP_R * s
-        parts[3].scale.set(resoP, resoP, resoP) // resonators grow in with the collar
-        parts[3].position.z = gz + poleH * poleP * RESO_COLLAR_FRAC
-    }
-
-    private fun easeOutCubic(t: Double) = 1.0 - (1.0 - t).pow(3)
-
-    // Back-ease: overshoots ~10% past 1.0 before settling — the classic "pop/inflate" feel.
-    private fun easeOutBack(t: Double): Double {
-        val c1 = 1.70158
-        val u = t - 1.0
-        return 1.0 + (c1 + 1.0) * u * u * u + c1 * u * u
     }
 
     private fun addAgent(agent: Agent) {
@@ -1409,7 +1141,7 @@ object Scene3D {
     private fun orbPos(portal: Portal): DoubleArray = doubleArrayOf(
         sceneX(portal.location),
         sceneY(portal.location),
-        groundZ(portal.location) + orbCenterZ(displayedOrbLevel(portal)),
+        groundZ(portal.location) + PortalBuilder.orbCenterZ(displayedOrbLevel(portal)),
     )
 
     /** Stable id for a field, independent of which corner is "origin" (its three portals, sorted). */
@@ -1498,8 +1230,8 @@ object Scene3D {
         }
         val views = World.allPortals.map { portal ->
             val level = portal.getLevel().toInt().toDouble()
-            val orbR = TOP_R * orbScale(level)
-            val z = groundZ(portal.location) + orbCenterZ(level) + orbR + NAME_RING_GAP // top of the over-portal stack
+            val orbR = TOP_R * PortalBuilder.orbScale(level)
+            val z = groundZ(portal.location) + PortalBuilder.orbCenterZ(level) + orbR + NAME_RING_GAP // top of the over-portal stack
             PortalNameTicker.NameView(
                 "portal:${portal.id}",
                 portal.name,

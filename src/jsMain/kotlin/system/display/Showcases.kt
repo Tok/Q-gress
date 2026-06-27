@@ -75,8 +75,8 @@ object Showcases {
         val grp = group ?: return
         val obj = Three.Group()
         val resos = Octant.values().associateWith { Pair(level, 1.0) } // demo: a full set, full health
-        val parts = Scene3D.buildPortal(obj, location, level.toDouble(), color, null, resos)
-        Scene3D.applyBuildGrow(level.toDouble(), 0.0, parts) // start collapsed; grows in via update
+        val parts = PortalBuilder.buildPortal(obj, location, level.toDouble(), color, null, resos)
+        PortalBuilder.applyBuildGrow(level.toDouble(), 0.0, parts) // start collapsed; grows in via update
         grp.add(obj)
         val sc = Showcase(obj, parts, location, level, color, 0.0, 0.0)
         placed.add(sc)
@@ -151,8 +151,8 @@ object Showcases {
         if (placed.size < 2) return
         val a = placed[placed.size - 1]
         val b = placed[placed.size - 2]
-        val pa = doubleArrayOf(Scene3D.sceneX(a.pos), Scene3D.sceneY(a.pos), Scene3D.orbCenterZ(a.level.toDouble()))
-        val pb = doubleArrayOf(Scene3D.sceneX(b.pos), Scene3D.sceneY(b.pos), Scene3D.orbCenterZ(b.level.toDouble()))
+        val pa = doubleArrayOf(Scene3D.sceneX(a.pos), Scene3D.sceneY(a.pos), PortalBuilder.orbCenterZ(a.level.toDouble()))
+        val pb = doubleArrayOf(Scene3D.sceneX(b.pos), Scene3D.sceneY(b.pos), PortalBuilder.orbCenterZ(b.level.toDouble()))
         val pipe = Three.Mesh(Scene3D.linkGeo, Materials.linkGlass(a.color))
         Scene3D.orientTube(pipe.asDynamic(), pa, pb)
         grp.add(pipe)
@@ -183,7 +183,7 @@ object Showcases {
         placed.forEach { sc ->
             if (sc.growAge < Scene3D.PORTAL_GROW_S) { // build-in: pole rises + orb grows from the ground
                 sc.growAge += dt
-                Scene3D.applyBuildGrow(sc.level.toDouble(), (sc.growAge / Scene3D.PORTAL_GROW_S).coerceIn(0.0, 1.0), sc.parts)
+                PortalBuilder.applyBuildGrow(sc.level.toDouble(), (sc.growAge / Scene3D.PORTAL_GROW_S).coerceIn(0.0, 1.0), sc.parts)
             }
             if (sc.hackAge > 0.0) { // hack: collar spins + rods centrifuge (same as live portals)
                 sc.hackAge = (sc.hackAge - dt).coerceAtLeast(0.0)
