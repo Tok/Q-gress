@@ -76,12 +76,14 @@ object AmbientBed {
         var totalArea = 0.0
         var cx = 0.0
         var cy = 0.0
+        var healthSum = 0.0
         fields.forEach { f ->
             val a = f.calculateArea().toDouble()
             totalArea += a
             val c = centroid(f)
             cx += c.x * a
             cy += c.y * a
+            healthSum += fieldHealth(f) * a
         }
         if (totalArea <= 0.0) { // no fields → silent
             if (built) ramp(0.0)
@@ -101,7 +103,15 @@ object AmbientBed {
         // Stereo-pan toward the field centroid's horizontal position.
         val panX = ((ccx - Sim.width / 2.0) / (Sim.width / 2.0)).coerceIn(-1.0, 1.0)
         panner?.pan?.asDynamic()?.setTargetAtTime(panX, SoundUtil.audioCtx.asDynamic().currentTime, 0.2)
+        // Field health (mean of each field's 3 portals, area-weighted) shifts the timbre: healthy fields hum
+        // brighter/fuller (the base cutoff opens up); weak/decaying fields read duller.
+        val health = (healthSum / totalArea).coerceIn(0.0, 1.0)
+        filter?.frequency?.asDynamic()?.setTargetAtTime(cutoffHz * (0.55 + 0.9 * health), SoundUtil.audioCtx.asDynamic().currentTime, 0.25)
     }
+
+    // A field's health = the mean resonator health of its three portals (0..1).
+    private fun fieldHealth(f: Field): Double =
+        (f.origin.calcHealth() + f.primaryAnchor.calcHealth() + f.secondaryAnchor.calcHealth()) / 300.0
 
     private fun ramp(target: Double) {
         master?.gain?.asDynamic()?.setTargetAtTime(target, SoundUtil.audioCtx.asDynamic().currentTime, RAMP_S)
