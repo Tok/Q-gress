@@ -1,4 +1,4 @@
-package util
+package system.grid
 
 import config.Location
 import config.Locations

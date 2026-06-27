@@ -20,11 +20,11 @@ import system.building.BuildingStream
 import system.building.BuildingTiles
 import system.display.OwnBuildings
 import system.display.Scene3D
+import system.grid.GridCapture
+import system.grid.GridConnectivity
+import system.grid.PathUtil
 import util.Debug
-import util.GridCapture
-import util.GridConnectivity
 import util.HtmlUtil
-import util.PathUtil
 import util.PortalNames
 import util.Util
 import util.data.Cell

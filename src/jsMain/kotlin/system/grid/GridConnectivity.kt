@@ -1,4 +1,4 @@
-package util
+package system.grid
 
 import extension.Grid
 import util.data.Cell

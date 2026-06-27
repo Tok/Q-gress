@@ -1,7 +1,7 @@
 package ai
 
 import agent.Faction
-import util.GridFixture
+import system.grid.GridFixture
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals

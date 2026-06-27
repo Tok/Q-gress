@@ -1,7 +1,7 @@
 package ai
 
 import config.Config
-import util.GridFixture
+import system.grid.GridFixture
 import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertTrue

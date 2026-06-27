@@ -2,7 +2,7 @@ package agent
 import Factory
 import World
 import config.Sim
-import util.GridFixture
+import system.grid.GridFixture
 import util.data.*
 import kotlin.math.sqrt
 import kotlin.test.AfterTest

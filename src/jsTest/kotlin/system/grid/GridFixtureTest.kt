@@ -1,4 +1,4 @@
-package util
+package system.grid
 
 import util.data.Pos
 import kotlin.test.Test

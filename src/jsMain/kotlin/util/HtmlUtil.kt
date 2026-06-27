@@ -22,6 +22,8 @@ import system.building.BuildingTransparency
 import system.display.Scene3D
 import system.display.Showcases
 import system.display.SunController
+import system.grid.GridCapture
+import system.grid.GridConnectivity
 import system.map.Attribution
 import system.map.MapUtil
 import system.map.Navigation

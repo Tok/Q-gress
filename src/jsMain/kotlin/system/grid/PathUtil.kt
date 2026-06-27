@@ -1,4 +1,4 @@
-package util
+package system.grid
 import World
 import config.Config
 import config.Sim

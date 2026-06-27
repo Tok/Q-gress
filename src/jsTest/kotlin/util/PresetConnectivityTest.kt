@@ -1,5 +1,7 @@
 package util
 
+import system.grid.GridConnectivity
+import system.grid.GridFixture
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue

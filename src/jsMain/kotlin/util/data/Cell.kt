@@ -1,6 +1,6 @@
 package util.data
 
-import util.PathUtil
+import system.grid.PathUtil
 
 data class Cell(val position: Pos, val isPassable: Boolean, val movementPenalty: Int) {
     /**

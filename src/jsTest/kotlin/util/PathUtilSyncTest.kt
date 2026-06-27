@@ -3,6 +3,8 @@ package util
 import World
 import config.Config
 import portal.Portal
+import system.grid.GridFixture
+import system.grid.PathUtil
 import util.data.Pos
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest

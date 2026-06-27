@@ -7,7 +7,7 @@ import ai.FactionPolicies
 import ai.HeuristicPolicy
 import ai.SimRunner
 import portal.Portal
-import util.GridFixture
+import system.grid.GridFixture
 import util.data.Pos
 import kotlin.test.AfterTest
 import kotlin.test.Test
