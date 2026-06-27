@@ -95,17 +95,9 @@ logic moves into the testable core (see `PLAN.md`), the covered surface grows.
 - [`PLAN.md`](PLAN.md) — roadmap / what's next.
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — how the system fits together.
 - [`docs/FEATURES.md`](docs/FEATURES.md) — the feature set.
-- [`docs/RELEASE.md`](docs/RELEASE.md) — the release / deployment plan.
+- [`docs/RELEASE.md`](docs/RELEASE.md) — the release / deployment plan (incl. the preserved original 2D version).
 - [`docs/NN.md`](docs/NN.md) · [`docs/LLM.md`](docs/LLM.md) — the two AI drivers.
 - [`CLAUDE.md`](CLAUDE.md) — how to work in this repo (conventions + standards).
-
-## The original 2D version
-
-The original ~2018 **2D** build (untouched for ~7 years; also preserved in GitHub's 2020 **Arctic Code
-Vault**) lives on as **archived source** on the **`archive/q-gress-2D`** branch — it depends on
-long-dead tooling and isn't rebuildable. The keyless 3D rewrite replaces it as the primary site; the
-old 2D may optionally still be served at `/2D/`. Its inlined Mapbox token should be revoked — see
-[`docs/RELEASE.md`](docs/RELEASE.md).
 
 ## Third-party / copyright
 
