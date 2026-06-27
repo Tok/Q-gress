@@ -6,6 +6,8 @@ import kotlinx.browser.window
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLTextAreaElement
+import util.AmbientBed
+import util.AmbientPrefs
 import util.AudioFx
 import util.AudioPrefs
 import util.GameplayPrefs
@@ -58,9 +60,11 @@ object TuningLab {
     fun resetToDefaults() {
         AudioFx.resetToDefaults()
         KickDrum.resetTuning()
+        AmbientBed.resetTuning()
         AudioPrefs.save()
         InstrumentPrefs.save()
-        AudioPanel.syncFromState() // refresh the AUDIO tab's knobs/pad/adsr
+        AmbientPrefs.save()
+        AudioPanel.syncFromState() // refresh the AUDIO tab's knobs/pad/adsr + ambient toggle
         GameplayPrefs.resetToDefaults()
         syncMenuSlider("combatDynSlider", config.Config.combatDynamism)
         syncMenuSlider("progressSlider", config.Config.progressSpeed)
@@ -73,6 +77,7 @@ object TuningLab {
         o.audio = AudioPrefs.json()
         o.mixer = MixerPrefs.json()
         o.instruments = InstrumentPrefs.json()
+        o.ambient = AmbientPrefs.json()
         o.gameplay = GameplayPrefs.json()
         o.dropRates = dropRatesJson()
         return JSON.stringify(o, null, 2)

@@ -11,6 +11,8 @@ import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.events.Event
 import org.w3c.dom.events.MouseEvent
+import util.AmbientBed
+import util.AmbientPrefs
 import util.AudioFx
 import util.AudioPrefs
 import util.InstrumentPrefs
@@ -74,6 +76,7 @@ object AudioPanel {
         panes["fx"] = fxPane as HTMLElement
         panes["mixer"] = mixerSubtab()
         panes["instruments"] = instrumentsSubtab()
+        panes["ambient"] = ambientSubtab()
         panes.values.forEach { glass.appendChild(it) }
         glass.appendChild(TuningLab.section()) // collapsed copy-paste JSON export (audio + gameplay) at the bottom
         Footer.tab("audio").appendChild(glass)
@@ -87,6 +90,7 @@ object AudioPanel {
         strip.appendChild(subTabButton("Master FX", "fx"))
         strip.appendChild(subTabButton("Mixer", "mixer"))
         strip.appendChild(subTabButton("Instruments", "instruments"))
+        strip.appendChild(subTabButton("Ambient", "ambient"))
         val reset = document.createElement("button") as HTMLButtonElement
         reset.className = "audioReset" // far right: restore audio + gameplay defaults
         reset.textContent = "Reset to defaults"
@@ -185,6 +189,38 @@ object AudioPanel {
         grid.appendChild(knob("Decay", 0.3..3.0, 1.0, { KickDrum.decayMult }, { KickDrum.setDecayMult(it) }, ::mult))
         grid.appendChild(knob("Click", 0.0..3.0, 1.0, { KickDrum.clickMult }, { KickDrum.setClickMult(it) }, ::mult))
         grid.appendChild(knob("Drive", 0.0..1.0, 0.0, { KickDrum.drive }, { KickDrum.setDrive(it) }, ::pct))
+        box.appendChild(grid)
+        pane.appendChild(box)
+        return pane
+    }
+
+    // --- Ambient sub-tab: the generative atmospheric bed (on/off + level + cutoff) -----------------
+    private var ambientRepaint: (() -> Unit)? = null
+
+    private fun ambientSubtab(): HTMLElement {
+        val pane = el("div", "audioPane")
+        val box = el("div", "audioSection")
+        val head = el("div", "audioLeadRow")
+        head.appendChild(el("div", "audioHead").also { it.textContent = "Ambient bed" })
+        val toggle = document.createElement("button") as HTMLButtonElement
+        toggle.className = "audioMute"
+        fun paint() {
+            toggle.textContent = if (AmbientBed.on) "on" else "off"
+            toggle.classList.toggle("on", AmbientBed.on)
+        }
+        ambientRepaint = ::paint
+        paint()
+        toggle.onclick = {
+            AmbientBed.setOn(!AmbientBed.on)
+            paint()
+            AmbientPrefs.save()
+            null
+        }
+        head.appendChild(toggle)
+        box.appendChild(head)
+        val grid = el("div", "audioKnobs")
+        grid.appendChild(knob("Level", 0.0..1.0, 0.5, { AmbientBed.level }, { AmbientBed.setLevel(it) }, ::pct))
+        grid.appendChild(knob("Cutoff", 80.0..2000.0, 320.0, { AmbientBed.cutoffHz }, { AmbientBed.setCutoff(it) }, ::khz))
         box.appendChild(grid)
         pane.appendChild(box)
         return pane
@@ -375,6 +411,7 @@ object AudioPanel {
         }
         drawPad()
         drawAdsr()
+        ambientRepaint?.invoke() // the ambient on/off toggle isn't a knob — repaint it after a global reset
     }
 
     // --- Canvas drawing ------------------------------------------------------------------------------
@@ -624,10 +661,11 @@ object AudioPanel {
         return c
     }
 
-    // Persist whatever a knob/pad/ADSR change touched — master FX + instrument tuning (both cheap localStorage writes).
+    // Persist whatever a knob/pad/ADSR change touched — master FX + instrument + ambient tuning (cheap writes).
     private fun persist() {
         AudioPrefs.save()
         InstrumentPrefs.save()
+        AmbientPrefs.save()
     }
 
     private fun pct(v: Double): String = "${(v * 100).toInt()}%"

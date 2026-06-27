@@ -27,6 +27,9 @@ object Mixer {
     /** The gain bus for the [current] role — voices connect here instead of straight to `masterGain`. */
     fun currentBus(): GainNode = busFor(current)
 
+    /** The gain bus for a specific role — for continuous sources (the ambient bed) that don't use [current]. */
+    fun bus(g: Group): GainNode = busFor(g)
+
     fun setVolume(g: Group, v: Double) {
         vol[g] = v.coerceIn(0.0, 1.0)
         apply(g)
