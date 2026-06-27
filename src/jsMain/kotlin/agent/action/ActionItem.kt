@@ -4,6 +4,7 @@ import agent.Faction
 import config.Colors
 import config.Dim
 import extension.Canvas
+import extension.CanvasFactory
 import extension.Ctx
 import system.ui.Bootstrap
 import system.ui.HudRenderer
@@ -79,7 +80,7 @@ data class ActionItem(val text: String, val durationSeconds: Int, val qName: Str
             if (Bootstrap.isNotRunningInBrowser()) return null
             val rr = Dim.agentRadius + Dim.agentLineWidth
             val w = rr * 2
-            return Bootstrap.preRender(w * scale, w * scale, fun(ctx: Ctx) {
+            return CanvasFactory.preRender(w * scale, w * scale, fun(ctx: Ctx) {
                 ctx.scale(scale.toDouble(), scale.toDouble()) // vector redraw at higher res (1 = no-op)
                 val circle = Circle(Pos(rr, rr), Dim.agentRadius.toDouble() + 1)
                 HudRenderer.drawCircle(ctx, circle, Colors.black, Dim.agentLineWidth.toDouble(), faction?.color ?: Colors.white)

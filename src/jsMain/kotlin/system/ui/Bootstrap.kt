@@ -5,8 +5,7 @@ import agent.Faction
 import agent.StuckTracker
 import config.*
 import config.Sim
-import extension.Canvas
-import extension.Ctx
+import extension.CanvasFactory
 import extension.Grid
 import kotlinx.browser.document
 import kotlinx.browser.window
@@ -126,7 +125,7 @@ object Bootstrap {
         // Offscreen ImageData factory for the passability-grid readback (never displayed). No
         // on-screen 2D canvas layer remains — the world renders in the three.js custom layer and
         // the HUD is DOM.
-        World.bgCan = createOffscreenCanvas(Dim.width, Dim.height)
+        World.bgCan = CanvasFactory.createOffscreenCanvas(Dim.width, Dim.height)
 
         // /demo harness (hash-routed): a menu of effect demo scenes, separate from the game.
         // Reload on any hash change so switching game ⇄ demo (or between scenes) re-bootstraps.
@@ -561,29 +560,6 @@ object Bootstrap {
         button.onclick = callback
         button.innerText = text
         return button
-    }
-
-    private fun createOffscreenCanvas(w: Int, h: Int): Canvas {
-        val canvas = document.createElement("canvas") as Canvas
-        canvas.width = w
-        canvas.height = h
-        return canvas
-    }
-
-    fun preRender(w: Int, h: Int, drawFun: (CanvasRenderingContext2D) -> Unit): Canvas {
-        val offscreen = createOffscreenCanvas(w, h)
-        val offscreenCtx = getContext2D(offscreen)
-        drawFun(offscreenCtx)
-        return offscreen
-    }
-
-    fun getContext2D(canvas: Canvas): Ctx = canvas.getContext("2d") as Ctx
-
-    // A 2D context flagged for frequent readback (getImageData) — tells the browser to keep the buffer
-    // CPU-side, avoiding the GPU→CPU round-trip and the "willReadFrequently" performance warning.
-    fun readbackCtx(canvas: Canvas): Ctx {
-        val opts: dynamic = js("({ willReadFrequently: true })")
-        return canvas.asDynamic().getContext("2d", opts) as Ctx
     }
 
     private fun createPortals(callback: () -> Unit) {

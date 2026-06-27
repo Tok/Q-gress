@@ -23,7 +23,6 @@ import system.display.Scene3D
 import system.grid.GridCapture
 import system.grid.GridConnectivity
 import system.grid.Pathfinding
-import system.ui.Bootstrap
 import system.ui.LoadingOverlay
 import util.Debug
 import util.PortalNames
@@ -702,7 +701,7 @@ object MapController {
 
         // Crisp downsample → the hard passable/impassable test (walls + water stay sharp).
         val passCan = document.createElement("canvas") as Canvas
-        val passCtx = Bootstrap.readbackCtx(passCan)
+        val passCtx = CanvasFactory.readbackCtx(passCan)
         passCan.width = w
         passCan.height = h
         passCtx.drawImage(unscaledCan, 0, 0, w, h)
@@ -711,7 +710,7 @@ object MapController {
         // zig-zagging around blocky building edges. (The old `tempCan.blur()` was the DOM focus method —
         // a no-op; this uses a real canvas blur filter.)
         val costCan = document.createElement("canvas") as Canvas
-        val costCtx = Bootstrap.readbackCtx(costCan)
+        val costCtx = CanvasFactory.readbackCtx(costCan)
         costCan.width = w
         costCan.height = h
         costCtx.asDynamic().filter = "blur(${Config.shadowBlurCount}px)"

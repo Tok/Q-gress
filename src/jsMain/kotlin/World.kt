@@ -5,6 +5,7 @@ import config.Config
 import config.Dim
 import config.Sim
 import extension.Canvas
+import extension.CanvasFactory
 import extension.Grid
 import extension.clear
 import kotlinx.browser.document
@@ -31,7 +32,7 @@ object World {
     // grid readback (see createStreetImage). Never displayed — the world renders in the three.js
     // custom layer and the HUD is DOM, so the old on-screen main/UI canvases are gone.
     lateinit var bgCan: Canvas
-    fun bgCtx() = Bootstrap.getContext2D(bgCan)
+    fun bgCtx() = CanvasFactory.getContext2D(bgCan)
 
     // var center: JSON = MapController.INITIAL_MAP_CENTER
     var mousePos: Pos? = null
