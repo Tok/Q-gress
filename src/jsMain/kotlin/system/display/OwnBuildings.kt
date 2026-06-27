@@ -3,6 +3,7 @@ package system.display
 import config.Config
 import external.Three
 import items.Combat
+import util.Debug
 import kotlin.math.PI
 import kotlin.math.hypot
 import kotlin.math.sin
@@ -252,7 +253,7 @@ object OwnBuildings {
         opts.depth = if (PARALLEL_MODE) (depth - ROOF_DROP_M).coerceAtLeast(0.5) else depth
         val geo = Three.ExtrudeGeometry(shape, opts)
         val mesh = Three.Mesh(geo, mat)
-        if (!sampled) { // one-time diagnostic: compare to where portals/the map sit
+        if (!sampled && Debug.enabled) { // one-time position diagnostic (only under ?debug)
             sampled = true
             console.log(
                 "OwnBuildings sample: lnglat=${ring[0][0]},${ring[0][1]} → sceneXY=${xs[0]},${ys[0]} baseZ=$baseZ depth=${opts.depth}",
