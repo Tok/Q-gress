@@ -8,12 +8,16 @@ Branch: `develop` · Owner: @zirteq
 
 ## ★ Next session — start here
 **Phase B continues — pick from the remaining refactor items:** the **140 → 120 line-length** pass, the
-**magic-numbers** naming pass, cutting along seams in `MapController` (835) / `Bootstrap` (788) / `Sound`
-(768) / `Portal` (685) as they're touched, and **migrating more pure logic into `commonMain`** (the lever for
-higher coverage). Optional small win: the **CSS design-token dedup** (below). Don't pull the **phase D** perf
-items (Pathfinding scalability, Building perf, Map-size profiling) forward. One gameplay item is queued:
-**field-layering tests + tuning investigation** (under *Gameplay mechanics* — the rules are sound, but agents
-layer too rarely).
+**magic-numbers** naming pass, and cutting along seams in `MapController` (835) / `Bootstrap` (788) / `Sound`
+(768) / `Portal` (685) as they're touched. The **commonMain pure-logic migration** has had a deep pass and the
+cleanly-liftable core is now moved + tested (`SimMath`, the `Cell` pure/presentation split → `Grid` +
+`GridConnectivity` + `GridFixture`, `NameGen`, `Octant`, `MovementMath`, the `QValue`/`QActions`/
+`QDestinations`/`SliderVector` model behind a `QIcons` UI split, `HeuristicTune`); **what's left is blocked by
+deeper coupling** — `Config` (a big jsMain object) gates `Tournament`/`Observation`/`Cycle`, and `Portal`/
+`World`/`Agent` gate `Field`/`Inventory`/`knockMods`. Pull more pure logic over only as those god-objects are
+split (it rides the SoC work, not a separate pass). Don't pull the **phase D** perf items (Pathfinding
+scalability, Building perf, Map-size profiling) forward. One gameplay item is queued: **field-layering tests +
+tuning investigation** (under *Gameplay mechanics* — the rules are sound, but agents layer too rarely).
 
 Optional small wins: a **CSS design-token dedup** (hoist the repeated glass/button magic values — `blur(7px)`,
 the `rgba(255,255,255,.06/.12/.18)` button fills, `rgba(0,0,0,.45)`, `border-radius:6px` — into `:root` custom
