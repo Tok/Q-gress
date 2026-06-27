@@ -269,6 +269,7 @@ html, body {
     display: flex;
     flex-direction: column;
     gap: 10px;
+    padding-top: 32px; /* clear the fixed collapse toggle pinned at the column's top corner */
     max-height: calc(100vh - 230px);
 }
 #hudLeft {
@@ -317,6 +318,12 @@ html, body {
     font-variant-numeric: tabular-nums; /* equal-width digits — no jitter as values change */
     color: #ffffff;
     text-shadow: 0 0 3px #000, 0 0 3px #000;
+}
+/* The two MU rows (ENL + RES) sit side by side; in the header they share one glass pane (see .toolbarCentre). */
+.scoreMu {
+    display: flex;
+    align-items: center;
+    gap: 16px;
 }
 .scoreRow {
     display: grid;
@@ -370,6 +377,46 @@ html, body {
     width: 76px;
     text-align: left;
 }
+/* Header centre: the live scoreboard fills the space between the left button cluster and the right edge,
+   centred. min-width:0 lets it shrink (and the value columns ellipsis) on a narrow window. */
+.toolbarCentre {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+/* In the header the scoreboard drops its outer frame; instead the two MU rows and the time/tick/XM strip each
+   sit in their own standard glass pane (matching .footerGlass) so they read over the map as deliberate panels. */
+.toolbarCentre .scorePanel {
+    background: none;
+    border: none;
+    padding: 0;
+    gap: 12px;
+}
+/* One glass pane behind both MU rows (ENL + RES). */
+.toolbarCentre .scoreMu {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 4px 12px;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.45);
+    -webkit-backdrop-filter: blur(7px);
+    backdrop-filter: blur(7px);
+    border: 1px solid var(--ui-glass-border);
+    box-sizing: border-box;
+}
+/* …and the time / tick / stray-XM strip gets its own matching pane (no left divider as a standalone pill). */
+.toolbarCentre .scoreFooter {
+    border-left: none;
+    padding: 4px 12px;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.45);
+    -webkit-backdrop-filter: blur(7px);
+    backdrop-filter: blur(7px);
+    border: 1px solid var(--ui-glass-border);
+}
 /* Full-width tabbed + collapsible footer (EVENT LOG / AGENTS). */
 .footer {
     position: fixed;
@@ -387,7 +434,9 @@ html, body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 3px 12px;
+    /* ~1.5× taller than before so the collapsed footer reads as a deliberate bar and the MapLibre (i)
+       attribution sits beside it rather than cutting into it. */
+    padding: 7px 12px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 .footerTabs {
@@ -396,10 +445,13 @@ html, body {
 }
 .footerTab {
     font-family: "Chakra Petch", sans-serif;
-    font-size: 11px;
+    font-size: 14px;
+    font-weight: 600;
     letter-spacing: 1px;
-    padding: 3px 10px;
+    padding: 5px 12px;
     background: rgba(255, 255, 255, 0.06);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
     color: #a0a0a0;
     border: 1px solid transparent;
     border-radius: 3px;
@@ -456,7 +508,7 @@ html, body {
     /* Pin to the footer's top-right corner (the footer is position:fixed = the containing block), so the
        expand/collapse icons sit at the far right regardless of the header's flex flow / content width. */
     position: absolute;
-    top: 4px;
+    top: 9px;
     right: 14px;
     display: flex;
     align-items: center;
@@ -466,7 +518,7 @@ html, body {
     background: none;
     border: none;
     color: #d2d2d2;
-    font-size: 14px;
+    font-size: 21px; /* ~1.5× — easier to hit / read in the taller footer header */
     line-height: 1;
     cursor: pointer;
 }
@@ -483,6 +535,8 @@ html, body {
 }
 .footerMaximize svg {
     display: block;
+    width: 20px; /* ~1.5× the 13px the icon is authored at (CSS overrides the width/height attrs) */
+    height: 20px;
 }
 .footerBody {
     max-height: 320px; /* a touch taller so the STATS slider-history shows a row or two without maximizing */
@@ -1176,8 +1230,8 @@ html, body {
     font-size: 10px;
     letter-spacing: 1px;
     text-transform: uppercase;
-    margin: 6px 0 2px;
-    padding-top: 5px;
+    margin: 6px 4px 2px; /* inset to match the buttons/rows below so the label doesn't touch the edge */
+    padding: 5px 0 0 5px;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -1420,7 +1474,8 @@ html, body {
 .onboardTitle {
     font-family: "Coda", monospace; /* subtitle in Coda — different font from the Chakra Petch brand */
     font-size: 40px;
-    letter-spacing: 5px;
+    font-weight: 700;
+    letter-spacing: 2px; /* tighter — 5px read as too loose/spaced-out */
     margin-bottom: 8px;
 }
 .onboardRow {
@@ -1471,13 +1526,18 @@ html, body {
    gameplay. z above the onboarding (9998) + loading (9999) overlays so it's always clickable. */
 .persistentVolume {
     position: fixed;
-    top: 0;
-    height: 52px; /* match the toolbar row so align-items centres it level with the rest of the header */
+    top: 11px; /* a snug pill centred in the 52px header band (top:0..52) */
     right: 22px;
     z-index: 10001;
     display: flex;
     align-items: center;
     gap: 8px;
+    padding: 4px 12px;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.45);
+    -webkit-backdrop-filter: blur(7px);
+    backdrop-filter: blur(7px);
+    border: 1px solid var(--ui-glass-border);
     font-family: "Coda", monospace;
     font-size: 13px;
     color: #cccccc;
@@ -1572,16 +1632,15 @@ html, body {
     border-radius: 3px;
 }
 .onboardActive {
-    background: rgba(255, 255, 255, 0.85);
-    color: #000000;
+    background: rgba(255, 255, 255, 0.16);
+    color: #ffffff;
 }
-/* The selected option: a clearly-filled, glowing button. Higher specificity than the later .onboardPreset
-   chrome rule, so the highlight actually shows (the plain .onboardActive lost to it). */
+/* The selected option: the same brighter-fill + white-border highlight the footer tabs use (it inherits the
+   shared button face + blur). Higher specificity than the later shared rule so the highlight actually shows. */
 .onboardPreset.onboardActive {
-    background: #ffffff;
-    color: #151515;
-    border-color: #ffffff;
-    box-shadow: 0 0 16px rgba(255, 255, 255, 0.7);
+    background: rgba(255, 255, 255, 0.18);
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.4);
     font-weight: 700;
 }
 /* Driver-selection grid: a faction label per row, then one column per option (aligned). */
@@ -2003,12 +2062,13 @@ html, body {
 }
 /* Required tile attribution: collapsed to a small ⓘ (compact) + dimmed so it's unobtrusive;
    full opacity on hover/expand. (MapLibre 5 uses the maplibregl- prefix.) */
-/* Keep the bottom-right ⓘ above the footer (z 60) and clickable. The map (.initialMap) sets z-index:8 +
-   position:relative, forming a stacking context that traps this control BELOW the body-level footer no matter
-   how high its own z-index is. position:fixed lifts it out to the viewport so its z-index actually beats the
-   footer's; it stays pinned to the same bottom-right corner (the map fills the viewport). Everything is
-   !important because MapLibre's own stylesheet (position:absolute on this control) loads AFTER ours and would
-   otherwise win the same-specificity tie, dropping it back into the trapped stacking context. */
+/* Keep the bottom-right control cluster (zoom / compass + ⓘ attribution) above the footer (z 60) and
+   clickable. .initialMap sets z-index:8 + position:relative → a stacking context that traps this control
+   BELOW the body-level footer no matter how high its own z-index (position:fixed changes geometry, not
+   stacking-context membership, so CSS alone can't escape it). MapUtil.liftMapControls() reparents this element
+   to <body> at map setup so the rules below finally compete at root level: fixed + z-index:999 floats it over
+   the footer, pinned to the bottom-right corner. Everything is !important because MapLibre's own stylesheet
+   (position:absolute on this control) loads AFTER ours and would otherwise win the same-specificity tie. */
 .maplibregl-ctrl-bottom-right, .mapboxgl-ctrl-bottom-right {
     position: fixed !important;
     right: 0 !important;
@@ -2092,8 +2152,9 @@ html, body {
     width: 80px; /* wider than the ×N buttons so "Resume" fits */
 }
 .speedBtn.active {
-    background: #d4d4d4;
-    box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.55);
+    background: rgba(255, 255, 255, 0.18);
+    border-color: rgba(255, 255, 255, 0.32);
+    color: #ffffff;
 }
 
 /* Auto cam toggle (icon-only, rightmost in the toolbar); .active when the drift is running. */
@@ -2103,9 +2164,11 @@ html, body {
     line-height: 0;
 }
 .autoCamBtn.active {
-    background: #d4d4d4;
-    box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.55);
+    background: rgba(255, 255, 255, 0.18);
+    border-color: rgba(255, 255, 255, 0.32);
+    color: #ffffff;
 }
+
 /* A toolbar label that holds an icon instead of text (e.g. the Volume speaker). vertical-align middle
    so it lines up with the adjacent slider (also middle-aligned) instead of sitting on the text baseline. */
 .topIcon {
@@ -2123,14 +2186,18 @@ html, body {
     cursor: pointer;
 }
 
-/* Chrome buttons: light brushed-metal face + dark text (the faction-choice .enl/.res buttons keep
-   their faction colour). Pairs with the glow/lift below. */
+/* One shared button face — the footer-tab look (neutral translucent fill, white border, no text outline)
+   plus a touch of blur so labels read over the map. Used everywhere (top bar, footer header, onboarding/init)
+   so every button matches; the faction-choice .enl/.res buttons keep their colour. Selection brightens the
+   fill + border (see the per-state rules). */
 .topButton, .topDrop, .menuItem, .onboardPreset, .speedBtn, .autoCamBtn,
 .gateNewGame, .onboardStart, .popupButton:not(.enl):not(.res) {
-    background: var(--ui-chrome);
-    color: #181818;
-    border: 1px solid rgba(0, 0, 0, 0.45);
-    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.06);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    color: #cccccc;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    text-shadow: none;
 }
 
 /* Game-y interactive controls: a subtle lift + faction "laser" glow on hover, a press-in on click.
@@ -2144,11 +2211,13 @@ html, body {
     box-shadow: var(--ui-faction-glow);
     filter: brightness(1.06);
 }
-/* Brighten the brushed metal on hover (faction-coloured choose buttons keep their colour). */
+/* Brighten the glass on hover (faction-coloured choose buttons keep their colour). */
 .topButton:hover, .topDrop:hover, .menuItem:hover, .onboardPreset:hover,
 .speedBtn:hover, .autoCamBtn:hover, .gateNewGame:hover, .onboardStart:hover,
 .popupButton:not(.enl):not(.res):hover {
-    background: var(--ui-chrome-hi);
+    background: rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.28);
 }
 .topButton:active, .topDrop:active, .menuItem:active, .popupButton:active,
 .onboardPreset:active, .speedBtn:active, .autoCamBtn:active {
@@ -2202,11 +2271,11 @@ html, body {
     cursor: pointer;
 }
 
-/* Loaded-location name (replaces the old preset dropdown). */
+/* Loaded-location name — now centred on the slim strip just below the header (#hudTop), not in the bar.
+   Inherits #hudTop's pointer-events:none so map drags pass through the text. */
 .topLocation {
-    flex: 1; /* stretch across the middle of the top bar */
-    min-width: 0; /* allow shrinking so the ellipsis works in a flex item */
-    margin: 0 14px; /* no top margin — the toolbar's align-items:center keeps it level with the rest */
+    max-width: 60vw; /* keep long names from spanning the screen; ellipsis past this */
+    text-align: center;
     font-size: 18px;
     color: #f0f0f0;
     /* Black outline so the white name stays readable over any terrain/buildings underneath. */
@@ -2229,6 +2298,7 @@ html, body {
     z-index: 50;
     display: flex;
     flex-direction: column;
+    min-width: 210px; /* a roomy fixed-ish width so the stretched rows/buttons read as one column */
     background: rgba(18, 18, 18, 0.96);
     border: 1px solid black;
     border-radius: 3px;
@@ -2243,13 +2313,20 @@ html, body {
     padding: 5px;
     cursor: pointer;
 }
+/* Inside the menu, buttons + checkbox rows stretch to the full menu width (the flex column already stretches
+   items; these just drop their fixed widths and use border-box so padding/border fit). */
+.gameMenu .menuItem {
+    width: auto;
+    box-sizing: border-box;
+}
 
 /* Overlay toggles (Terrain / Vectors) shown as rows inside the menu dropdown. */
 .gameMenu .menuCheck {
     display: flex;
     align-items: center;
     gap: 6px;
-    width: 110px;
+    width: auto;
+    box-sizing: border-box;
     margin: 4px;
     padding: 5px;
     border: 1px solid black;
@@ -2266,14 +2343,67 @@ html, body {
     width: auto;
 }
 .menuSlider {
-    width: 84px;
+    flex: 1; /* fill the now full-width row (label sits left, slider takes the rest) */
+    width: auto;
+    min-width: 0;
     margin: 0;
+}
+/* Live numeric readout beside a menu slider (e.g. 0.60 / 1.00). Fixed width + tabular figures so the row
+   doesn't reflow as the value changes. */
+.menuSliderVal {
+    flex: none;
+    width: 34px;
+    text-align: right;
+    font-family: "Coda", monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 13px;
+    color: #d0d0d0;
 }
 .menuVersion {
     font-size: 10px;
     color: #888888;
     padding: 5px 5px 1px;
     text-align: center;
+}
+
+/* Collapse toggles for the two side HUD columns (left tuning sliders / right stats). The "–"/"+" button is
+   pinned with position:fixed to the column's own corner (top:108px = the columns' top; left/right:14px = their
+   left/right inset) rather than living in the flex flow — so it sits in the EXACT same screen spot whether the
+   column is open or collapsed, no centre drift. The columns reserve room for it with padding-top. */
+.panelCollapse {
+    position: fixed;
+    top: 108px;
+    z-index: 61;
+    pointer-events: auto; /* the column is pointer-events:none; the toggle opts back in */
+    width: 22px;
+    height: 22px;
+    line-height: 20px;
+    text-align: center;
+    border-radius: 4px;
+    /* A proper little button — darker than the toolbar glass + a touch of blur so the lone toggle reads
+       clearly when the column is collapsed. */
+    background: rgba(0, 0, 0, 0.5);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    color: #cccccc;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    cursor: pointer;
+}
+.panelCollapse-left {
+    left: 14px;
+}
+.panelCollapse-right {
+    right: 14px;
+}
+.panelCollapse:hover {
+    color: #ffffff;
+    background: rgba(0, 0, 0, 0.65);
+    border-color: rgba(255, 255, 255, 0.28);
+}
+/* Collapsed: hide the column's content, keep only the fixed "–"/"+" toggle. */
+#hudLeft.collapsed > *:not(.panelCollapse),
+#hudRight.collapsed > *:not(.panelCollapse) {
+    display: none;
 }
 
 /* On-screen controls legend (bottom-left). */
