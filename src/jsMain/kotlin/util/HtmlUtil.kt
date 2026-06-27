@@ -26,6 +26,7 @@ import util.ui.Controls
 import util.ui.Demo
 import util.ui.DropRatesPanel
 import util.ui.Footer
+import util.ui.Hud
 import util.ui.Icons
 import util.ui.Inspector
 import util.ui.LoadingOverlay
@@ -139,23 +140,24 @@ object HtmlUtil {
         // Recenter top-down over the play area (find your way back after panning/rotating away).
         leftGroup.append(createButton("homeButton", "topButton displayFont", "Home") { MapUtil.goHome() })
         leftGroup.append(createSpeedControls()) // Pause + ×1/×3/Max (Space toggles pause; -/+ keys nudge speed)
+        leftGroup.append(createAutoCamToggle()) // Auto cam sits right after the speed controls (camera ≈ playback)
         bindKeyboardShortcuts() // Space=pause · Home=recenter · zoom/pan/speed/mute/Esc
 
-        // Right group, far right: the Auto cam toggle (volume is now a persistent fixed widget, see load()).
-        val rightGroup = document.createElement("div") as HTMLDivElement
-        rightGroup.addClass("toolbarGroup")
-        rightGroup.append(createAutoCamToggle())
         // Keep the toggle's highlight in sync — incl. when a manual move snaps the drift (and toggle) out.
         MapUtil.onAutoCamChanged = { on -> syncAutoCamToggle(on) }
         MapUtil.setAutoCam(true)
+        // Install the chosen AI drivers up front (the visible "AI vs AI" pickers now live in the BRAINS tab).
+        util.ui.DriverControls.installDefaults()
 
-        // The loaded-location name stretches across the middle (flex-grows between the two groups). The
-        // per-faction AI driver pickers ("AI vs AI") sit just left of the right group, up in the header.
+        // Header centre: the live ENL-vs-RES scoreboard (StatsPanel fills #toolbarCentre). The loaded-location
+        // name moves to the slim strip just below the header (Hud.top(), centred) — see createLocationLabel().
+        val centre = document.createElement("div") as HTMLDivElement
+        centre.id = "toolbarCentre"
+        centre.addClass("toolbarCentre")
         buttonDiv.append(leftGroup)
-        buttonDiv.append(createLocationLabel())
-        buttonDiv.append(util.ui.DriverControls.toolbarGroup())
-        buttonDiv.append(rightGroup)
+        buttonDiv.append(centre)
         controlDiv.append(buttonDiv)
+        Hud.top().append(createLocationLabel())
 
         rootDiv.append(controlDiv)
 

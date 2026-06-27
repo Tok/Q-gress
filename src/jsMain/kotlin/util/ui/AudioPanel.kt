@@ -673,7 +673,7 @@ object AudioPanel {
     }
 
     private const val PAD_W = 150
-    private const val PAD_H = 110
+    private const val PAD_H = 150 // square cutoff × resonance pad
     private const val ADSR_W = 150
     private const val ADSR_H = 70
     private const val ADSR_A_MAX = 0.5 // attack knob max (s) — also the envelope display's attack span

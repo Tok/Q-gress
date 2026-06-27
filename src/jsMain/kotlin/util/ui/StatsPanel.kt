@@ -108,7 +108,9 @@ object StatsPanel {
         tickEl = el("scoreTick").also { footer.appendChild(it) }
         xmEl = el("scoreXm").also { footer.appendChild(it) }
         panel.appendChild(footer)
-        Hud.top().appendChild(panel)
+        // The scoreboard now lives in the top toolbar's centre (#toolbarCentre); fall back to the slim strip
+        // under the header (Hud.top()) if the toolbar isn't up yet (e.g. title/demo screens).
+        (document.getElementById("toolbarCentre") as? HTMLElement ?: Hud.top()).appendChild(panel)
 
         // Action log — the footer's EVENT LOG tab provides the label + collapse chevron. A filter row lets the
         // player hide the routine (MINOR) events and keep only the key (MAJOR) ones.

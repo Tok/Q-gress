@@ -49,6 +49,11 @@ object DriverControls {
     /** The driver for [faction]: the onboarding pick, else the start-URL (`?enl=…&res=…`), else the default. */
     fun chosen(faction: Faction): String = pending[faction] ?: GameUrl.driver(faction) ?: DEFAULT
 
+    /** Install each faction's chosen driver up front so the picked brains play from the first tick — the
+     *  visible pickers now live in the BRAINS tab ([toolbarGroup]) and build lazily, so this decouples the
+     *  policy install from the DOM. Safe to re-run; [picker] re-applies on (re)build. */
+    fun installDefaults() = Faction.all().forEach { apply(it, chosen(it)) }
+
     // Manual only works for the user's own faction — DomSliderPolicy reads the visible tuning sliders, which
     // only drive the chosen faction. Offer it just for that side (mirrors the onboarding driver grid).
     private fun manualAllowed(faction: Faction): Boolean = World.userFaction == null || faction == World.userFaction

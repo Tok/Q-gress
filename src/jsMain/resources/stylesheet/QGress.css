@@ -370,6 +370,23 @@ html, body {
     width: 76px;
     text-align: left;
 }
+/* Header centre: the live scoreboard fills the space between the left button cluster and the right edge,
+   centred. min-width:0 lets it shrink (and the value columns ellipsis) on a narrow window. */
+.toolbarCentre {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+/* In the header the scoreboard drops its standalone glass frame so it reads as part of the bar, not a
+   panel floating inside it. */
+.toolbarCentre .scorePanel {
+    background: none;
+    border: none;
+    padding: 0;
+    gap: 14px;
+}
 /* Full-width tabbed + collapsible footer (EVENT LOG / AGENTS). */
 .footer {
     position: fixed;
@@ -387,7 +404,9 @@ html, body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 3px 12px;
+    /* ~1.5× taller than before so the collapsed footer reads as a deliberate bar and the MapLibre (i)
+       attribution sits beside it rather than cutting into it. */
+    padding: 7px 12px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 .footerTabs {
@@ -396,9 +415,10 @@ html, body {
 }
 .footerTab {
     font-family: "Chakra Petch", sans-serif;
-    font-size: 11px;
+    font-size: 14px;
+    font-weight: 600;
     letter-spacing: 1px;
-    padding: 3px 10px;
+    padding: 5px 12px;
     background: rgba(255, 255, 255, 0.06);
     color: #a0a0a0;
     border: 1px solid transparent;
@@ -456,7 +476,7 @@ html, body {
     /* Pin to the footer's top-right corner (the footer is position:fixed = the containing block), so the
        expand/collapse icons sit at the far right regardless of the header's flex flow / content width. */
     position: absolute;
-    top: 4px;
+    top: 9px;
     right: 14px;
     display: flex;
     align-items: center;
@@ -2106,6 +2126,36 @@ html, body {
     background: #d4d4d4;
     box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.55);
 }
+
+/* Header buttons wear the footer's translucent "glass" look (not brushed metal) so the top bar and the
+   footer header match. Scoped to .buttonDiv so the Menu dropdown items, onboarding + popups keep chrome.
+   Specificity (.buttonDiv .topButton = 0,2,0) beats the shared chrome rules (0,1,0). */
+.buttonDiv .topButton,
+.buttonDiv .speedBtn,
+.buttonDiv .autoCamBtn {
+    background: rgba(255, 255, 255, 0.06);
+    color: #d2d2d2;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    text-shadow: none;
+}
+.buttonDiv .topButton:hover,
+.buttonDiv .speedBtn:hover,
+.buttonDiv .autoCamBtn:hover {
+    background: rgba(255, 255, 255, 0.16);
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.28);
+    filter: none;
+}
+.buttonDiv .speedBtn.active,
+.buttonDiv .autoCamBtn.active {
+    background: rgba(255, 255, 255, 0.22);
+    color: #ffffff;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+}
+/* Re-collapse the inner borders of the segmented speed control under the glass treatment. */
+.buttonDiv .speedBtn:not(:first-child) {
+    border-left: none;
+}
 /* A toolbar label that holds an icon instead of text (e.g. the Volume speaker). vertical-align middle
    so it lines up with the adjacent slider (also middle-aligned) instead of sitting on the text baseline. */
 .topIcon {
@@ -2202,11 +2252,11 @@ html, body {
     cursor: pointer;
 }
 
-/* Loaded-location name (replaces the old preset dropdown). */
+/* Loaded-location name — now centred on the slim strip just below the header (#hudTop), not in the bar.
+   Inherits #hudTop's pointer-events:none so map drags pass through the text. */
 .topLocation {
-    flex: 1; /* stretch across the middle of the top bar */
-    min-width: 0; /* allow shrinking so the ellipsis works in a flex item */
-    margin: 0 14px; /* no top margin — the toolbar's align-items:center keeps it level with the rest */
+    max-width: 60vw; /* keep long names from spanning the screen; ellipsis past this */
+    text-align: center;
     font-size: 18px;
     color: #f0f0f0;
     /* Black outline so the white name stays readable over any terrain/buildings underneath. */
@@ -2274,6 +2324,54 @@ html, body {
     color: #888888;
     padding: 5px 5px 1px;
     text-align: center;
+}
+
+/* Collapse toggles for the two side HUD columns (left tuning sliders / right stats). The "–" button sits at
+   the top of its column; when collapsed a round restore bubble appears where the column sat. */
+.panelBar {
+    pointer-events: auto;
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 4px;
+}
+.panelCollapse {
+    width: 20px;
+    height: 20px;
+    line-height: 18px;
+    text-align: center;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.06);
+    color: #a0a0a0;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    cursor: pointer;
+}
+.panelCollapse:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.16);
+    border-color: rgba(255, 255, 255, 0.28);
+}
+/* The restore bubble — same idiom as the "?" controls legend, pinned where its column lives. */
+.panelBubble {
+    position: fixed;
+    top: 108px;
+    width: 24px;
+    height: 24px;
+    line-height: 24px;
+    text-align: center;
+    border-radius: 50%;
+    background: #000000aa;
+    color: #ffffff;
+    border: 1px solid #888888;
+    font-size: 13px;
+    cursor: pointer;
+    z-index: 151;
+    pointer-events: auto;
+}
+.panelBubble-left {
+    left: 14px;
+}
+.panelBubble-right {
+    right: 14px;
 }
 
 /* On-screen controls legend (bottom-left). */

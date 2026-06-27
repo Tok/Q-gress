@@ -68,6 +68,9 @@ object BrainsPanel {
     private fun ensure(): Boolean {
         if (built) return true
         if (document.body == null) return false
+        // The per-faction driver pickers ("AI vs AI") moved here from the top toolbar — you pick each side's
+        // brain in the same tab that explains what each brain is doing.
+        Footer.tab("brains").appendChild(DriverControls.toolbarGroup())
         val split = el("div", "brainsSplit")
         sides().forEach { faction ->
             val side = el("div", "brainsSide")

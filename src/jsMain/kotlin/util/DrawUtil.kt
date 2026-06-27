@@ -17,6 +17,7 @@ import util.ui.Inspector
 import util.ui.LeaderboardPanel
 import util.ui.LlmReasoningPanel
 import util.ui.PortalsPanel
+import util.ui.SidePanelCollapse
 import util.ui.SliderHistoryPanel
 import util.ui.StatsPanel
 import util.ui.TopAgentsPanel
@@ -39,6 +40,7 @@ object DrawUtil {
         // dashboard (HistoryPanel/uPlot — MU + Portals/Links/Fields/Agents over time, with live
         // values), and the top-agents table (TopAgentsPanel).
         StatsPanel.update(firstMu, secondMu, factions)
+        SidePanelCollapse.ensure() // wire the left-sliders / right-stats collapse toggles once each column exists
         HistoryPanel.update()
         TuningPanel.refresh() // mirror an AI driver's vector onto the sliders (no-op under manual control)
         AiPanel.update() // AI footer tab: per-faction driver + live observation readout
