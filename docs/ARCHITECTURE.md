@@ -5,7 +5,7 @@ for *what's next* see [../PLAN.md](../PLAN.md).
 
 ## Entry & top-level shape
 
-`Main.kt` → `window.onload` → `HtmlUtil.load()`. The simulation lives in a fixed pixel
+`Main.kt` → `window.onload` → `Bootstrap.load()`. The simulation lives in a fixed pixel
 space (`config/Dim.kt`, `config/Sim.kt` — Sim is a scaled-up multiple of the screen). The
 world is **rendered in 3D** by a three.js scene mounted as a **MapLibre custom layer**; the
 HUD is **DOM**. There is no on-screen 2D game canvas anymore (see *Rendering* below).
@@ -17,11 +17,15 @@ see PLAN.md).
 
 ## Source layout (`src/jsMain/kotlin/`, tests mirror under `src/jsTest/kotlin/`)
 
+The packages split along one line: **`agent`/`portal`/`items`/`ai`/`config` are the Ingress domain**
+(abstract game objects), while **everything that runs and presents the sim is engine, grouped under
+`system/`**, kept away from the domain. `util/` holds only genuine cross-cutting helpers.
+
 - **`World.kt`** — global mutable game state.
 - **`agent/`** — the AI. `Agent` (faction members), `NonFaction` (recruitable NPCs),
   movement, skills, inventory, and:
   - **`agent/action/`** — `ActionSelector` is the brain: each tick every agent picks an
-    action by **weighted-random selection** (`Util.select`) over candidate actions.
+    action by **weighted-random selection** (`Rng.select`) over candidate actions.
   - **`agent/action/cond/`** — one object per action (`Recruiter`, `Hacker`, `Linker`,
     `Deployer`, `Attacker`, `Recharger`, `Glypher`, `Explorer`, `Recycler`).
   - **`agent/qvalue/`** — `QActions` (10) and `QDestinations` (7) define the tunable
@@ -39,21 +43,30 @@ see PLAN.md).
 - **`items/`** — bursters, power cubes, resonators, mods, levels.
 - **`config/`** — `Config` (balance constants), `ConfigMath` (the pure tuning formulas), `Dim`/`Sim`
   (geometry), `Location`/`Locations` (the JSON-backed place catalogue), `Styles`, `Colors`, `Time`.
-- **`system/`** — `Cycle`/`Checkpoint` (scoring/history over time), `Com` (message log),
-  `WorldSnapshot` (capture/restore the live sim singletons so a headless eval can run + the game resume),
-  **`system/display/`** (all 3D rendering: `Scene3D` + the shader/effect/material modules), and
-  **`system/effect/`** (the `Effects` sink seam — see *Rendering* below).
-- **`util/`** — `HtmlUtil` (DOM/UI construction + the main tick loop), `MapUtil` (MapLibre
-  lifecycle + grid build + camera), `PathUtil` (vector-field pathfinding), `Navigation`,
-  `SoundUtil`, `GridConnectivity`, `DrawUtil` (canvas-icon prerender helpers), geometry under
-  `util/data/`, DOM panels under `util/ui/`.
+- **`system/`** — the **engine/runtime**: `Cycle`/`Checkpoint` (scoring/history over time), `Com`
+  (message log), `Simulation` (the shared tick step), `WorldSnapshot` (capture/restore the live sim
+  singletons so a headless eval can run + the game resume), plus the presentation/IO subsystems:
+  - **`system/display/`** — all 3D rendering: `Scene3D` + materials/overlays, with **`display/shader/`**
+    (GLSL: `GlassShader`/`PlasmaShader`/`ShieldShader`/`XmpShaders`/`Glsl`) and **`display/fx/`** (the
+    one-shot effects: `ShatterFx`/`XmpBurst`/`HackFx`/`BoltFx`/`FieldFx`/…).
+  - **`system/effect/`** — the `Effects` sink seam (headless vs browser; see *Rendering* below).
+  - **`system/audio/`** — the synth/mixer sound engine (`Sound`, `Mixer`, `AudioFx`, `KickDrum`, …).
+  - **`system/map/`** — MapLibre integration (`MapController`, `MapStyles`, `GeoLocator`, `Navigation`).
+  - **`system/building/`** — own-mesh buildings (`BuildingTiles`/`BuildingStream`/`BuildingShake`).
+  - **`system/grid/`** — the spatial substrate (`Pathfinding`, `GridConnectivity`, `GridFixture`).
+  - **`system/ui/`** — the DOM HUD: `Bootstrap` (entry/DOM construction + the main tick loop),
+    `HudRenderer`, `Footer`/`Hud`/`Dom`, `Onboarding`/`TitleSim`, with the panels under **`system/ui/panel/`**.
+- **`util/`** — genuine cross-cutting helpers only (no longer a home for subsystems): `ColorUtil`,
+  `ImprovedNoise`, `NameGen`, `PortalNames`, `Prefs`/`GameplayPrefs`, `Debug`, `GameUrl`,
+  `VersionCheck`; geometry under `util/data/`. The pure, seedable core (`Rng`, `MathUtil`, `Time`, …)
+  lives in **`commonMain` `util/`** (Kover-covered; see *Build & toolchain*).
 - **`external/`** — thin `external` declarations: `MapLibre`, `Three`, `GLTFLoader`, `UPlot`,
   the Web Audio API, cannon-es.
 
 ## The selection brain (sliders → behaviour)
 
 `ActionSelector.q(faction, qValue)` returns `FactionPolicies.of(faction).weight(qValue) × qValue.weight`
-and feeds that into `Util.select` (cumulative-probability weighted random). The default policy
+and feeds that into `Rng.select` (cumulative-probability weighted random). The default policy
 (`DomSliderPolicy`) reads the slider straight from the DOM
 (`getElementById("${id}Slider${nick}").valueAsNumber`, or `0.1` headless), so behaviour is unchanged —
 but **this policy seam is where the AI drivers plug in** (a driver installs a
@@ -69,7 +82,7 @@ feeds the HUD history dashboard.
 
 ## How the map becomes a playfield
 
-`MapUtil` instantiates **three MapLibre maps** over divs:
+`MapController` instantiates **three MapLibre maps** over divs:
 - **`initMap`** (satellite, Esri + openmaptiles for 3D buildings) — the **visible** map; it
   hosts the three.js custom layer and receives all navigation gestures.
 - **`map`** (street, OpenFreeMap positron) — the alternate base layer (View dropdown toggle).
@@ -78,10 +91,10 @@ feeds the HUD history dashboard.
   **`Grid`** (bright = walkable, dark = impassable; landcover class → movement penalty). Hidden
   after the grid + POI/street names are read.
 
-`MapUtil.addGrid` reads the shadow pixels into an `ImageData` (allocated via a **detached
+`MapController.addGrid` reads the shadow pixels into an `ImageData` (allocated via a **detached
 offscreen `World.bgCan`** — the only surviving use of a 2D canvas), `createGrid` turns it into
 the cell grid, and `GridConnectivity.connectIslands` carves corridors so no area is sealed off.
-`PathUtil` computes per-portal vector fields over that grid (flow magnitude scaled by terrain
+`Pathfinding` computes per-portal vector fields over that grid (flow magnitude scaled by terrain
 penalty). `util/PortalNames` queries the shadow map's vector source for real POI/street names.
 
 **Zoom is calibrated to 18**: the grid, the pixel-to-metre factor, portal sizes, and ranges
@@ -90,10 +103,10 @@ the grid anchor stays at 18. Dynamic-zoom would require rebuilding the grid + re
 the "rework movement model" / "going 3D" icebox notes in PLAN.md.
 
 **Buildings are our own meshes, sourced from OSM.** MapLibre's openmaptiles building layer is
-heavily simplified (a city tile may hold ~19 of 1000+ real buildings), so `util/BuildingTiles`
+heavily simplified (a city tile may hold ~19 of 1000+ real buildings), so `system/building/BuildingTiles`
 queries **OSM via Overpass** for the full footprints in the play-area bbox; `system/display/
 OwnBuildings` extrudes them into three.js prisms (sun shadows, grow-in, per-mesh blast shake,
-debris colliders) and hides MapLibre's fill-extrusion. `util/BuildingStream` keeps streaming
+debris colliders) and hides MapLibre's fill-extrusion. `system/building/BuildingStream` keeps streaming
 new regions from Overpass as the camera flies elsewhere. Elevation comes from the live DEM
 (`Scene3D.groundZAtLngLat`) so buildings sit right even outside the play-area height grid.
 
@@ -107,7 +120,7 @@ new regions from Overpass as the camera flies elsewhere. Elevation comes from th
   cannon-es, XMP fireball, hack centrifuge, spawn/teardown, **portal-defense lightning** in
   `BoltFx`) live in `ShatterFx`/`XmpBurst`/`HackFx`/`FieldFx`/`BoltFx`/`Spawns`. `Scene3D.render`
   shares the map depth buffer so buildings occlude the sim.
-- **HUD → DOM.** `util/ui/`: `StatsPanel` (MU bars + time/tick + action LOG), `HistoryPanel`
+- **HUD → DOM.** `system/ui/`: `StatsPanel` (MU bars + time/tick + action LOG), `HistoryPanel`
   (per-metric uPlot sparklines + live values), `TuningPanel` (behaviour sliders; auto-moves under an AI
   driver), `DriverControls` (per-faction brain picker + LLM model picker), `AiPanel` (observation readout),
   `BrainsPanel` (the **BRAINS** tab — per-faction driver card: NN live activation + genome via `NetVizPanel`,
@@ -116,13 +129,13 @@ new regions from Overpass as the camera flies elsewhere. Elevation comes from th
   `Onboarding`, `LoadingOverlay`, `MiniMap` (globe inset), `Controls`. Styled by
   `resources/stylesheet/QGress.css` (faction colours via `--enl-color`/`--res-color`;
   **Chakra Petch** title face, **Coda** for text/numbers).
-- **No 2D game canvas.** The old `mainCanvas`/`uiCanvas` layers are gone; `DrawUtil` keeps only
+- **No 2D game canvas.** The old `mainCanvas`/`uiCanvas` layers are gone; `HudRenderer` keeps only
   the offscreen prerender of agent action icons (→ 3D textures). `World.bgCan` survives solely
   as a detached `ImageData` factory for the grid readback.
 
-The tick loop (`HtmlUtil.tick`) calls the shared functional-core step `system/Simulation.stepEntities`
+The tick loop (`Bootstrap.tick`) calls the shared functional-core step `system/Simulation.stepEntities`
 (advance every agent on a snapshot — recruits buffer in `World.pendingAgents`, flushed after — then every
-NPC, then feed the stuck tracker), then a `requestAnimationFrame` drives `DrawUtil.redraw`
+NPC, then feed the stuck tracker), then a `requestAnimationFrame` drives `HudRenderer.redraw`
 (→ `Scene3D.sync`) + the DOM HUD update + `Cycle` scoring. The headless harness (`ai/SimRunner`) calls the
 *same* `Simulation.stepEntities` with synchronous `Cycle` scoring instead — no rendering loop.
 
@@ -131,10 +144,10 @@ inline (XMP bursts, hack/deploy animations, reward motes, retaliation bolts, por
 resonators, the flow-field flash) go through `Fx.sink` — an installable `Effects` interface, mirroring
 `FactionPolicies`. `BrowserEffects` forwards 1:1 to the `system/display/` renderer; `NoOpEffects` (the
 headless default) does nothing, so the whole tick loop runs in Node without touching three.js — the
-imperative-shell boundary that unblocks the headless `SimRunner`. Audio (`SoundUtil`)
+imperative-shell boundary that unblocks the headless `SimRunner`. Audio (`Sound`)
 and the message log (`Com`) already self-guard / are pure, so they stay outside this seam.
 
-**Headless matches (`ai/SimRunner`).** With the effect sink (no renderer crashes), `PathUtil.computeFieldSync`
+**Headless matches (`ai/SimRunner`).** With the effect sink (no renderer crashes), `Pathfinding.computeFieldSync`
 (deterministic inline flow fields, opt-in via `Config.headlessFieldCompute`) and the shared
 `Simulation.stepEntities`, a whole match runs in Node: `SimRunner.runMatch(grid, seed, maxTicks, …)` seeds
 the RNG + a `GridFixture` grid, seeds portals/agents/NPCs, ticks, and returns a `MatchResult` of
@@ -143,7 +156,7 @@ the training/eval engine. A full-resolution match runs in ~tens of ms (the AI co
 `Observation` stats, never cell data, so flow-field navigation isn't on its critical path); `MatchSetup.flowFields`
 toggles obstacle-routed vs straight-line movement for fidelity, not speed.
 
-**Title screen reuses this whole pipeline.** `util/ui/TitleSim` runs a small *real* `Scene3D` sim
+**Title screen reuses this whole pipeline.** `system/ui/TitleSim` runs a small *real* `Scene3D` sim
 (real grid, ~8 portals, a 3-v-3 levelled roster + ~30 NPCs, the real tick loop) behind the faction
 menu — no parallel rendering code. The wordmark is real 3D extruded text (`system/display/
 TitleWordmark`, camera-locked each frame from the recovered eye/forward/up, reacting to XMP blasts);
@@ -152,7 +165,7 @@ brand `typeface.json`. Picking a faction **reloads** into the game (URL handoff 
 map/Scene3D teardown).
 
 Flow fields (the per-portal navigation heat maps) are generated **off the synchronous path**:
-`PathUtil.computeFieldAsync` runs a bucketed-Dijkstra heat map + vector field as a `suspend` coroutine
+`Pathfinding.computeFieldAsync` runs a bucketed-Dijkstra heat map + vector field as a `suspend` coroutine
 on `MainScope`, yielding every ~2000 cells, and writes the result back into `Portal.vectors` when ready.
 
 ## Locations
@@ -180,5 +193,5 @@ browser/WebGL/three.js shell in `jsMain` isn't counted — coverage tracks the f
 grows as more logic migrates into `commonMain` (see PLAN phase B/C).
 
 Small **shared helpers** keep the shell DRY: `util.ColorUtil` (hex↔rgb / blend), `util.Prefs`
-(localStorage load/save), `util.ui.Dom.el()` (DOM-div factory for the footer panels), and in
-`system.display` the `Vec3` vector kit + `ShaderUtil.glsl()` float-literal helper.
+(localStorage load/save), `system.ui.Dom.el()` (DOM-div factory for the footer panels), and in
+`system.display` the `Vec3` vector kit + `Glsl.glsl()` float-literal helper.

@@ -32,7 +32,7 @@ the net, so any side can be Human / Heuristic / Net / LLM independently — and 
 
 - **Onboarding** has a "Show experimental LLM driver" checkbox (off by default); it unlocks the LLM option
   and rides the start URL as `?exp`. The per-faction driver dropdown then offers **LLM** + a **model picker**.
-- **BRAINS tab** (`util/ui/BrainsPanel`) — the LLM card shows model / backend / status, the parsed **chose**
+- **BRAINS tab** (`system/ui/panel/BrainsPanel`) — the LLM card shows model / backend / status, the parsed **chose**
   as the headline, a collapsed raw prompt/reply, the **WebGPU capability readout**, and (on Chromium only) a
   collapsible `chrome://` troubleshooting help.
 

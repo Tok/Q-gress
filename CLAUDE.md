@@ -57,9 +57,9 @@ Requires **JDK 21** on `JAVA_HOME`. The app is desktop-only and needs WebGL.
 - Kotlin official style (`kotlin.code.style=official`), 4-space indent.
 - Game state lives in the `World` singleton; the AI brain is `agent/action/ActionSelector`;
   rendering is 3D (`system/display/Scene3D` + shader/effect modules) with a **DOM HUD**
-  (`util/ui/`). There is no 2D game canvas.
-- Randomness goes through `Util.random()` (not `kotlin.random`) — being migrated to an
-  injectable/seedable RNG for deterministic tests (PLAN Phase 6.0).
+  (`system/ui/`). There is no 2D game canvas.
+- Randomness goes through `Rng` (the seedable mulberry32 PRNG in `commonMain`, not `kotlin.random`);
+  seed it for deterministic tests/worlds. The old `Util.random` facade is gone — call `Rng` directly.
 - No `!!`; prefer `?:` / `requireNotNull` / `getValue` / early return.
 - **No off-tint grayscales.** UI grays must be neutral (`R == G == B`, e.g. `#a0a0a0`, `rgba(0,0,0,…)`),
   never a greenish/bluish cast (`#9aa6a0`, `rgba(24,28,34,…)`) — unless there's a deliberate reason

@@ -7,15 +7,22 @@ Branch: `develop` · Owner: @zirteq
 [docs/LLM.md](docs/LLM.md). Completed work lives in the **git log**, not here — keep this file to the point.
 
 ## ★ Next session — start here
-**Resume phase B — the `Scene3D` → `Showcases` split.** `Scene3D` (~1579 lines) carries a `LargeClass`
-suppress; most of its bulk is the self-contained demo/showcase sandbox. Extract that to a `Showcases` object
-(build helpers go `internal`), then drop the suppress. After it: the **140 → 120 line-length** pass (lands
-*with* the class extractions — auto-wrapping inflates `LargeClass` otherwise), and cut along seams in
-`MapUtil` (835) / `HtmlUtil` (788) / `SoundUtil` (768) / `Portal` (685) as they're touched. Migrating more pure
-logic into `commonMain` is the lever for higher coverage (it gets `commonTest` + Kover for free). Don't pull
-the **phase D** perf items (Pathfinding scalability, Building perf, Map-size profiling) forward. One gameplay
-item is queued: **field-layering tests + tuning investigation** (under *Gameplay mechanics* — the rules are
-sound, but agents layer too rarely).
+**Resume phase B — finish the `Scene3D` god-object split.** Demo/showcase is already extracted to
+`Showcases` (Scene3D 1681→1499); to drop the `LargeClass` suppress it must clear 600 lines, so more cuts
+follow: a `PortalBuilder` (the portal/resonator/mod mesh construction), the effects dispatch, and the
+entity-sync helpers — each to its own file under `system/display`. Then the **140 → 120 line-length** pass
+(lands *with* the class extractions — auto-wrapping inflates `LargeClass` otherwise), and cut along seams in
+`MapController` (835) / `Bootstrap` (788) / `Sound` (768) / `Portal` (685) as they're touched. Migrating more
+pure logic into `commonMain` is the lever for higher coverage. Don't pull the **phase D** perf items
+(Pathfinding scalability, Building perf, Map-size profiling) forward. One gameplay item is queued:
+**field-layering tests + tuning investigation** (under *Gameplay mechanics* — the rules are sound, but agents
+layer too rarely).
+
+The **domain-vs-engine package reorg + `*Util` naming overhaul landed**: engine subsystems are grouped under
+`system/` (`audio`/`map`/`building`/`grid`/`ui` + `display/shader`+`display/fx`), the Ingress domain stays in
+`agent`/`portal`/`items`/`ai`/`config`, `util/` is slimmed to cross-cutting helpers, and the `Util` facade is
+dissolved into `Rng`/`MathUtil`/`PortalNames`/`Portal.nearestTo`. An optional **CSS design-token dedup**
+remains (below).
 
 Optional small wins: a **CSS design-token dedup** (hoist the repeated glass/button magic values — `blur(7px)`,
 the `rgba(255,255,255,.06/.12/.18)` button fills, `rgba(0,0,0,.45)`, `border-radius:6px` — into `:root` custom
@@ -30,18 +37,9 @@ over `commonMain`, uploaded to Codecov) are **done**; **phase B** (refactor unde
 
 ### Phase B — Refactor under the net — 🔄 in progress
 Functional core / imperative shell, properly. Module-by-module, behind the phase-A tests.
-- [~] **Package reorg — domain vs engine.** `agent`/`portal`/`items`/`ai`/`config` are the **Ingress domain**
-  (abstract core objects); everything that *runs and presents* the sim is **engine**, grouped under `system/`,
-  kept away from the domain. `util/` slims back to its original intent (near-pure cross-cutting helpers). Moves
-  (all via `git mv`, compiler-driven import fixes, one package per commit, gate green each):
-  `util` audio→`system/audio` · map→`system/map` · buildings→`system/building` · grid/path→`system/grid`;
-  `system/display` → add `display/shader/` + `display/fx/`; `util/ui` (the DOM HUD) → `system/ui/` (+ `ui/panel/`).
-  Edge cases settled while moving: `display/PortalChangeSound`→`system/audio`; presentation bootstrap
-  (`HtmlUtil`/`DrawUtil`/`Shortcuts`)→`system/ui`. *(Do this BEFORE resuming the Scene3D split below — Scene3D
-  lives in `system/display`.)*
 - [~] **SoC / split god-objects** — `Scene3D` (1681→1499): demo/showcase **extracted to `Showcases` ✅** (1/n);
   more cuts needed to clear the 600-line `LargeClass` cap (`PortalBuilder`, effects dispatch, entity sync). Then
-  cut along seams in `MapUtil` (835) / `HtmlUtil` (788) / `SoundUtil` (768) / `Portal` (685) as they're touched.
+  cut along seams in `MapController` (835) / `Bootstrap` (788) / `Sound` (768) / `Portal` (685) as they're touched.
 - [ ] **Reduce magic numbers** — name them / fold into `Config` where it aids clarity (detekt `MagicNumber` is
   off, so this is a by-hand judgement pass, not a gate-chase). *(Started opportunistically — e.g. named the
   `LINK_MITIGATION_SCALE`.)*
@@ -50,7 +48,7 @@ Functional core / imperative shell, properly. Module-by-module, behind the phase
 - **Done:** the high-signal pure-logic extractions; the **`commonMain` move** (the pure core — math/RNG/time/
   geometry/portal/field/balance/faction — now compiles for both JS and the test-only `jvm()` target, with the
   World/`Config`/`Portal`-coupled holders delegating); the **`!!` audit** (zero in `src/jsMain`); the
-  **de-duplication pass** (shared `ColorUtil`/`Vec3`/`ShaderUtil`/`Dom.el()`/`Prefs`). Remaining extraction
+  **de-duplication pass** (shared `ColorUtil`/`Vec3`/`Glsl`/`Dom.el()`/`Prefs`). Remaining extraction
   candidates are low-value (`Linker.fieldClosingTarget`, a trivial set-intersection; `Deployer.deployTargetFor`
   deliberately skipped — mixes agent + portal reads, already covered by `DeployerTest`).
 - **Exit criterion:** pure logic is testable in isolation; gate (ktlint/detekt/tests) stays green throughout.
@@ -107,7 +105,7 @@ be matched. **Desktop-only**; mobile is blocked.
   `DISPLACE`, `DENSITY_GAIN`, `STEPS`) + the rise/grow curve in `XmpBurst.update`; promote to uniforms if the
   fireball needs frequent live tuning.
 - [ ] **Pathfinding scalability.** Heat map is a bucketed Dijkstra (O(cells), async via
-  `PathUtil.computeFieldAsync`) but still **per-portal full-map**. Want: multi-mode nav (flow fields near,
+  `Pathfinding.computeFieldAsync`) but still **per-portal full-map**. Want: multi-mode nav (flow fields near,
   cheap nav far), a coarser `pathResolution` lever, ambient NPCs, a field viz.
 - [ ] **Humanoid glTF models** — people are head-sized spheres at head height today; swap in real models
   (pairs with the colony-management attributes, icebox).
@@ -157,7 +155,7 @@ be matched. **Desktop-only**; mobile is blocked.
   tune the `Linker`/weights so layering actually emerges.
 - [ ] **Glyph hacking** — a skill-based hack: **~3× rewards**, but **longer**, **needs skill**, **can fail**.
   Glyph skill (+ portal level) sets odds + duration. The collar animation + glassy sound already land
-  (`HackFx`/`SoundUtil`); this is the reward/skill/timing model in `Glypher`/`Portal.tryGlyph` + a glyph skill
+  (`HackFx`/`Sound`); this is the reward/skill/timing model in `Glypher`/`Portal.tryGlyph` + a glyph skill
   on `agent/Skills`, exposed as a high-risk/high-reward QAction the AI learns to weigh.
 - [ ] **Recruiting as an agent skill + items.** Rate is self-balancing now (`Recruiter.selectionWeight` ×
   `Balance.recruitFactor`). Next: a per-agent **skill** (`agent/Skills`) some are better at, plus **items**
@@ -229,7 +227,7 @@ keep tuning `Config` and consider shaping fitness for *interesting* play (a foll
 *Rationale for the pending **Non-functional track** items (above); the track sequences them.*
 - **Tighten max line length 140 → 120.** Deferred: ktlint auto-wrapping inflates detekt's `LargeClass` count,
   so it must land alongside the class extractions (`Scene3D`, and any near the 600-line cap like
-  `HtmlUtil`/`MapUtil`). A dedicated refactor pass. → *phase B.*
+  `Bootstrap`/`MapController`). A dedicated refactor pass. → *phase B.*
 - **Extract the demo/showcase subsystem from `Scene3D`** — most of Scene3D's `LargeClass` bulk is the
   self-contained sandbox code; move it to a `Showcases` object (build helpers go `internal`), then drop the
   `LargeClass` suppress. → *phase B.*

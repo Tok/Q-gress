@@ -32,7 +32,7 @@ Commit hashes are illustrative pointers, not exhaustive.
   recenter, works on any host.
 - Navigation handed to **MapLibre's own handlers** (left-drag pan, right-drag rotate+tilt, wheel
   zoom, unrestricted; NavigationControl block). Optional WASD / Q-E / R-F keys (`Navigation`).
-- **Mini-globe inset** (`util/ui/MiniMap`) — circular synced overview with a FLAT/GLOBE toggle.
+- **Mini-globe inset** (`system/ui/MiniMap`) — circular synced overview with a FLAT/GLOBE toggle.
 - Presets are labelled **"Name, City, Country"**; POI labels follow the same form. The catalogue is
   **externalized to `resources/locations.json`** (edit freely — no Kotlin build needed), loaded at
   startup into the `Locations` registry (`config/Location`: a `Location` data class + a pure, unit-tested
@@ -45,7 +45,7 @@ Commit hashes are illustrative pointers, not exhaustive.
   (NPC population isn't carried — it's auto-derived from map size + location at world-gen.)
   Menu **"Copy link"** copies a link reproducing the exact world, and **"Save"** downloads a small JSON
   (that link + a stats snapshot) — a seed-based save. Backed by a **seedable mulberry32 RNG**
-  (`Util.random`, the sole randomness source) so the same seed → the same world (rosters included; the
+  (`Rng.random`, the sole randomness source) so the same seed → the same world (rosters included; the
   live map grid is the one non-seed input).
 
 ## 3D rendering & the glass visual overhaul
@@ -163,18 +163,18 @@ Commit hashes are illustrative pointers, not exhaustive.
   **checkpoint** logs both factions' MU in their own colours (a key, multi-segment line). Every event is
   `MINOR` or `MAJOR`; an **"only key events"** filter hides the routine ones. The tab shows the last few lines
   collapsed and the **whole scrolling backlog when expanded** (`Com.CAP` = 250).
-- **AGENTS & PORTALS tables** (`util/ui/TopAgentsPanel`, `util/ui/PortalsPanel`): two sortable DOM tables as
+- **AGENTS & PORTALS tables** (`system/ui/panel/TopAgentsPanel`, `system/ui/panel/PortalsPanel`): two sortable DOM tables as
   footer tabs. **AGENTS** lists every agent with XM/AP, faction colour, and per-item count+level-bar columns
   (XMPs, US, Resos, Cubes, Shields, Heat sinks, Multi-hacks) plus Keys / unique Keys. **PORTALS** lists every
   portal — owner-faction-coloured name, Faction, Level, Health, Resos (n/8), Mods (n/4), Links, Fields, Owner.
   Click any header to sort (toggles asc/desc; stable, tie-broken on name); collapsed shows the top rows,
   expanded scrolls the full roster.
-- **Unified tabbed dock** (`util/ui/Dock`): the scattered corner panes are consolidated into one
+- **Unified tabbed dock** (`system/ui/Dock`): the scattered corner panes are consolidated into one
   right-docked panel with **NOW / HISTORY / TUNE** tabs (one view at a time) — NOW holds the
   scoreboard + leaderboard + LOG, HISTORY the sparklines, TUNE the sliders. It's the only
   pointer-interactive HUD surface (rest stays click-through for map gestures). The `Inspector` stays a
   separate contextual panel (top-left, clear of the dock), unified to the same glass frame.
-- **Merged tuning panel** (`util/ui/TuningPanel`): the two slider panes (Actions + Destinations) are
+- **Merged tuning panel** (`system/ui/panel/TuningPanel`): the two slider panes (Actions + Destinations) are
   now one flat list (Actions, a divider, then Destinations). The DOM `<input>` per (q-value × faction)
   is still the value store `ActionSelector.q` reads. A **read-only mode** (`?readonly=true` or the
   Menu "Lock tuning" toggle) swaps the sliders for 0–1 progress bars that mirror the values
@@ -190,18 +190,18 @@ Commit hashes are illustrative pointers, not exhaustive.
   `Observation → SliderVector` mapping re-evaluated per checkpoint (attack when behind, consolidate into
   links/fields when ahead, hack/glyph when low on XM). Selectable per faction in the **AI** tab's driver
   picker; a sane baseline opponent until a trained net is loadable.
-- **Collapsible + expandable footer** (`util/ui/Footer`): the full-width bottom tab bar has three body
+- **Collapsible + expandable footer** (`system/ui/Footer`): the full-width bottom tab bar has three body
   heights via two header controls — **collapse** (chevron: hide → just the tab bar) and **maximize** (expand
   → fills up to just below the top scoreboard, with the sim still running behind it) — so space-hungry tabs
   like NET get room. Normal is a short docked strip; Tab cycles tabs. The **NET** tab **auto-expands** on
   entry and auto-restores on leave (unless you've taken manual control of the size).
-- **Driver picker in the top toolbar** (`util/ui/DriverControls`): per faction, Manual / **Heuristic** /
+- **Driver picker in the top toolbar** (`system/ui/DriverControls`): per faction, Manual / **Heuristic** /
   **Neural net** / **LLM**, reachable from anywhere. **Neural net is the default** — the sim plays itself
   (AI-vs-AI) out of the box; switch your faction to Manual to drive it with the sliders.
-- **"Who plays?" onboarding step** (`util/ui/Onboarding.showDrivers`, right after faction pick): choose each
+- **"Who plays?" onboarding step** (`system/ui/Onboarding.showDrivers`, right after faction pick): choose each
   side's brain — your side Human/Heuristic/Net/LLM, the opponent AI-only — defaulting to **net vs net**. The
   choice rides the start-URL (`?enl=…&res=…`) into the game.
-- **AI footer tab** (`util/ui/AiPanel` + `util/ui/SliderHistoryPanel`): the merged
+- **AI footer tab** (`system/ui/panel/AiPanel` + `system/ui/panel/SliderHistoryPanel`): the merged
   AI-transparency tab (AGENTS / **AI** / NET / EVENT LOG) — a live **observation** readout (the 13-slot
   `ai.Observation` feature vector a net/LLM receives, as labelled 0–1 bars) beside the **behaviour-sliders-
   over-time** sparklines (one uPlot per slider slot per faction: the visible record of an AI driver re-tuning
@@ -212,7 +212,7 @@ Commit hashes are illustrative pointers, not exhaustive.
   hidden activation (TANH/RELU/SIGMOID/LINEAR; output always sigmoid). `GenomeIO` serializes the whole arch
   (back-compatible with old single-layer genomes); `Evolution`, the NET viz, and the `Tournament` all work for
   any shape — so different nets can be matched head-to-head.
-- **NET footer tab** (`util/ui/NetVizPanel`): a live **activation diagram** of the neural-net driver. Per
+- **NET footer tab** (`system/ui/panel/NetVizPanel`): a live **activation diagram** of the neural-net driver. Per
   net-driven faction it draws the net as node columns — observation inputs, **each hidden layer**, slider
   outputs — wired by edges whose brightness tracks each connection's live contribution (weight × upstream
   activation). Node brightness = activation; the strongest outputs (the actions the net favours now) are
@@ -221,7 +221,7 @@ Commit hashes are illustrative pointers, not exhaustive.
   and below it a **genome heatmap** — every weight as a sign×magnitude cell. The canvas renders at
   **device-pixel resolution** for crisp lines/text. You watch the net think as the match swings
   (`Net.forwardTraced` exposes the per-layer activations).
-- **TRAIN footer tab — visual NN trainer** (`util/ui/TrainerPanel`): evolve a net **live in the
+- **TRAIN footer tab — visual NN trainer** (`system/ui/panel/TrainerPanel`): evolve a net **live in the
   browser**. Pick population / generations / mutation / architecture / activation, hit **Train**, and a
   resumable `Evolution.Session` runs **one generation per `setTimeout`** (the UI never blocks) on the current
   live map: the **fitness curve** (summed-MU margin per generation, uPlot) climbs and the **champion genome
@@ -232,7 +232,7 @@ Commit hashes are illustrative pointers, not exhaustive.
   the ENL/RES driver. In-browser defaults are deliberately small (serious training stays headless via
   `Evolution.train`). A **Clean eval** toggle runs matches with the anti-runaway mechanics off (`MatchSetup.cleanEval`
   → `comebackMax`/`dominanceDecay`/`leaderDistraction` = 0, restored after) for a cleaner training gradient.
-- **TRAIN tab — leaderboard** (`util/ui/LeaderboardPanel`): a second TRAIN-tab section ranks AI
+- **TRAIN tab — leaderboard** (`system/ui/panel/LeaderboardPanel`): a second TRAIN-tab section ranks AI
   drivers head-to-head on the live map. Pick entrants (Baseline / Heuristic / Neural net), **Run ladder**, and a
   resumable `Tournament.Session` plays a round-robin **one match per `setTimeout`**, showing the live `Standing`
   table (W-L-T + avg MU margin, sorted). Both eval tools share the **`HeadlessRun`** harness (snapshot + tick-pause
@@ -257,12 +257,12 @@ Commit hashes are illustrative pointers, not exhaustive.
   (`Agent.addAp` → agents level faster), so the game ramps early→endgame quicker. Gameplay knobs persist
   (`util/GameplayPrefs`), audio FX persist (`util/AudioPrefs`); both load at startup. A **Reset to defaults**
   button at the top of the AUDIO tab restores audio + gameplay (re-syncing the AUDIO knobs + Menu sliders),
-  and a slim **collapsed "Tuning" section** at the bottom of the AUDIO tab (`util/ui/TuningLab`) shows every
+  and a slim **collapsed "Tuning" section** at the bottom of the AUDIO tab (`system/ui/TuningLab`) shows every
   tunable (audio + gameplay + drop rates) as one **click-to-copy JSON** block for baking new defaults.
 - **Top toolbar** reorganized: Menu far-left (with overlay toggles + Lock-tuning inside it), Home, and a
   seamless **sim-speed segmented control** — Pause / ×1 / ×3 / Max butted together (active speed
   highlighted; Pause is Space-bound; `-`/`+` still nudge) replacing the old pause button + slider. Far
-  right: the **Auto cam** toggle, **icon-only** (`util/ui/Icons`). Toolbar stays hidden until the world is
+  right: the **Auto cam** toggle, **icon-only** (`system/ui/Icons`). Toolbar stays hidden until the world is
   ready (the **Volume** widget is separate and always visible — see Audio).
 - **UI theme — glass, chrome & lasers, faction-branded.** One `--faction` CSS variable (set from the
   chosen faction in `LoadingOverlay.setAccent`) is the **only** chrome accent — a RES player never sees
@@ -276,14 +276,14 @@ Commit hashes are illustrative pointers, not exhaustive.
   through around them; titles stay outside the panes (TRAIN panes everything). All UI grays are **neutral**
   (no greenish/bluish cast — see CLAUDE.md). Volume/Speed sliders stay deliberately grayscale.
 - **Auto cam** (icon toggle, rightmost; **on by default**): a slow, slightly-randomized cinematic camera
-  drift around the arena — the title-screen orbit reused in-game (`MapUtil.setAutoCam`/`autoCamLeg`), but
+  drift around the arena — the title-screen orbit reused in-game (`MapController.setAutoCam`/`autoCamLeg`), but
   much slower (~2.6× the title leg) and framing the whole arena (may pull a touch wider or push a little
   closer, but holds the picture; the title can push in for detail). **Wall-clock** (chained
   `setTimeout`/`easeTo`) → same pace at any sim speed. A manual **pan/rotate/tilt snaps it back out**
   (the toggle de-highlights via `onAutoCamChanged`); **zoom is exempt** (zooming while it drifts is fine).
 - **Keyboard controls + sim speed** (`util/Shortcuts`): Space pause, Home recenter, PageUp/Down (and
   `-`/`+`) zoom, WASD pan, `,`/`.` building transparency, `-`/`+` sim **speed**, Tab cycles the footer, M
-  mute, C auto-camera, Esc closes popups. A single **bottom-left "?" legend** (`util/ui/Controls`) is the one
+  mute, C auto-camera, Esc closes popups. A single **bottom-left "?" legend** (`system/ui/Controls`) is the one
   controls reference — mouse interactions **and** the full keyboard list; **Menu → Shortcuts** reveals it, Esc
   hides it, "?" toggles it. The sim **speed buttons/keys** drive `Time` tick interval **and** `Scene3D.animationSpeed`, so
   every animation (hack spin, deploy/shatter, build-in, field shimmer) tracks the sim speed. (The
@@ -323,7 +323,7 @@ Commit hashes are illustrative pointers, not exhaustive.
   two areas that both touch the off-screen ring no longer connect only via a long map-edge detour (the
   cause of agents wandering/looking stuck). `World.walkability` gate blocks mostly-water maps;
   `LocationTest` guards all presets; per-terrain movement penalties (landcover-graded shadow style →
-  `PathUtil` flow magnitude) + Terrain overlay.
+  `Pathfinding` flow magnitude) + Terrain overlay.
 - **Stuck/loop recovery** (`StuckTracker`, always on): an agent/NPC whose **net displacement stays
   under one deployment range over a full sample window** (frozen against geometry, or caught in a
   vector-field spiral / off-screen-detour loop) is flagged, then un-stuck on the ~minute checkpoint
@@ -335,7 +335,7 @@ Commit hashes are illustrative pointers, not exhaustive.
   self-check log (islands / on-screen islands / walkability, warns when unhealthy);
   **`?debug=capture`** sweeps every preset and downloads a `GridFixture` snapshot file, which
   `PresetConnectivityTest` audits offline in Node (single component + on-screen-connected + walkable).
-- **Non-blocking flow fields** (`PathUtil.computeFieldAsync`): the per-portal heat map is a **bucketed
+- **Non-blocking flow fields** (`Pathfinding.computeFieldAsync`): the per-portal heat map is a **bucketed
   Dijkstra** (cost = wave + terrain penalty, one frontier bucket per cost level → each cell touched
   once, O(cells) instead of the old re-scan-everything wavefront) + vector field, both `suspend` and
   yielding (`delay(0)`) every ~2000 cells / between smooth passes, computed on a `MainScope` and written
@@ -363,14 +363,14 @@ Commit hashes are illustrative pointers, not exhaustive.
   energy also scales with XMP level.
 
 ## Onboarding
-- **Ordered onboarding** faction → map-size → location → load (`util/ui/Onboarding`), in-memory
+- **Ordered onboarding** faction → map-size → location → load (`system/ui/Onboarding`), in-memory
   (no reloads); `?local=true` auto-starts; deep links load directly.
 - **Map size + portal density** presets (Small/Normal/Large, editable W/H + portal count).
 - **Staged loading overlay** (`LoadingOverlay`) — map tiles → tracing roads/water/terrain (+ walkable %)
   → place names → grid → deploying agents → spawning people → routes, faction-tinted, translucent at
   build to reveal the spawning world. Compact pane (no Q-GRESS wordmark — the player just came from the
   title), faction-laser bars on a black-rubber glass panel.
-- **Title / faction screen is a real `Scene3D` mini-sim** (`util/ui/TitleSim`): a round arena with a
+- **Title / faction screen is a real `Scene3D` mini-sim** (`system/ui/TitleSim`): a round arena with a
   3-v-3 levelled roster (L3/L5/L8 each side) + ~30 NPCs running the actual tick loop / AI behind the
   menu, fronted by a real **3D extruded Q-GRESS wordmark** (brand font via `FontLoader`/`TextGeometry`,
   camera-locked, letters spring away from XMP blasts), a dramatic fly-in + slow center-facing orbit,
@@ -392,7 +392,7 @@ Commit hashes are illustrative pointers, not exhaustive.
     title size** (e.g. a home over open water — a player on a ship) fails the same walkability gate as
     the live game (`GridConnectivity.MIN_WALKABILITY`, checked after the live readback) and **falls back**
     to an iconic location, forcing the known-good default on the final retry.
-- **World-build framing** (`MapUtil.startBuildCinematic`): the build camera keeps its 3D tilt but a
+- **World-build framing** (`MapController.startBuildCinematic`): the build camera keeps its 3D tilt but a
   viewport bottom-padding lift (`liftViewToCentre`, stable under the bearing spin) raises the
   play-area centre to mid-screen from the start — so the first portals / flow-field vectors read
   centre-frame instead of sinking to the bottom; cleared on `goHome`.
@@ -400,7 +400,7 @@ Commit hashes are illustrative pointers, not exhaustive.
 ## Audio
 - **True 3D positional audio** (`ba82492`): every positional sound routes through a `PannerNode` at
   its sim-space metre position, with an `AudioListener` driven by the live camera each frame
-  (`Scene3D.render` → `SoundUtil.updateListener`; eye from `GlassShader.eye()`, forward/up by
+  (`Scene3D.render` → `Sound.updateListener`; eye from `GlassShader.eye()`, forward/up by
   unprojecting the inverse projection). Distance attenuation + front/back + elevation that track
   rotate/pitch/zoom (HRTF, inverse distance model). Replaced the screen-projected stereo pan.
   Because the listener rides the (far) camera, a large reference distance + gentle rolloff + a **master
@@ -422,7 +422,7 @@ Commit hashes are illustrative pointers, not exhaustive.
   "muffle"), a high-pass, and a **reverb** send (convolver fed a generated decaying-noise impulse). The
   **`#audio` demo** auditions every standalone SFX (incl. the ultra-strike) and exposes live sliders for
   the low/high-pass + reverb mix + a major/minor toggle, to dial the audio in.
-- **AUDIO footer tab — live master-FX control surface + mixer + instrument tuners** (`util/ui/AudioPanel`):
+- **AUDIO footer tab — live master-FX control surface + mixer + instrument tuners** (`system/ui/panel/AudioPanel`):
   sub-tabs **Master FX**, **Mixer** (a per-role channel — Weapons / Portal / Field / World / Ambient — each
   with volume + mute, routed through per-role gain buses in `util/Mixer`, persisted via `util/MixerPrefs`),
   **Instruments** (a synth tuner per sound — the **explosion basskick** so far: pitch / decay / click / drive
@@ -434,7 +434,7 @@ Commit hashes are illustrative pointers, not exhaustive.
   `util/AmbientPrefs`. Every knob has a
   small bottom-right reset "o"; all of it feeds the global **Reset to defaults** + the TUNING LAB JSON export.
   Reshape the audio
-  **while the sim runs** (the sound *triggers* stay in the `#audio` demo, palette shared via `util/ui/AudioSounds`). A
+  **while the sim runs** (the sound *triggers* stay in the `#audio` demo, palette shared via `system/ui/AudioSounds`). A
   read-only **key** display (major/minor follows whoever leads on MU — `Scale.isLeading`, not player-set), a
   **filter pad** (canvas XY: low-pass cutoff × resonance), big **knobs** for reverb / echo (delay time +
   feedback + mix) / compression, a master **ADSR** (envelope display + A/D/S/R knobs; attack + release wired
@@ -443,7 +443,7 @@ Commit hashes are illustrative pointers, not exhaustive.
   **waveshaper distortion**, a delay/echo send, a master compressor, and an **LFO** modulating the cutoff
   (rate + depth). Every change **persists** (`util/AudioPrefs`,
   restored at startup before the graph builds); the TUNING LAB exports + resets the values.
-- **Layered detonation** (`SoundUtil.playXmpExplosion`, `deep` flag): a detonation snap + chest-punch sub
+- **Layered detonation** (`Sound.playXmpExplosion`, `deep` flag): a detonation snap + chest-punch sub
   at the note + a deep, hard **909-style kick** (`KickDrum`: fast pitch-drop sine + a high-passed beater
   click) + a long lowpassed rumble tail whose brightness/amplitude decay over the fireball's life, all
   feeding a **reverb send** (`AudioFx` per-voice bus) for space. The **XMP** is the *huge, distant* blast —
@@ -499,7 +499,7 @@ Commit hashes are illustrative pointers, not exhaustive.
 - **Experimental, opt-in.** Neural net is the default driver; the LLM is hidden behind a "Show experimental
   LLM driver" checkbox in onboarding (carried across the start-reload via `?exp`), and the in-game driver
   dropdown disables the LLM option unless it was unlocked.
-- **BRAINS footer tab** (`util/ui/BrainsPanel`): the per-faction "who's driving" window — your side vs the
+- **BRAINS footer tab** (`system/ui/panel/BrainsPanel`): the per-faction "who's driving" window — your side vs the
   opponent, each with a driver-tailored card. **Manual** (tune-it note), **Heuristic** (live stance + favoured
   sliders), **Neural net** (architecture, fitness, driving-input / peak-hidden, favoured actions, the **live
   activation diagram** above the **genome heatmap**), **LLM** (model / backend / status, the parsed **chose**
@@ -507,10 +507,10 @@ Commit hashes are illustrative pointers, not exhaustive.
   limits + `shader-f16` — with collapsible, Chromium-only `chrome://` troubleshooting links). **The standalone
   NET tab was folded in here**; `NetVizPanel` is now a pure renderer (`paintActivation` / `paintGenome` /
   `stats`).
-- **Trainer: per-layer architecture + share** (`util/ui/TrainerPanel`): two hidden-layer width dropdowns
+- **Trainer: per-layer architecture + share** (`system/ui/panel/TrainerPanel`): two hidden-layer width dropdowns
   ({4, 8, 16, 24, 32} → 4×4 … 32×32), a live per-genome progress bar, white chart axes, and **Download / Load
   champion JSON** (share nets; `GenomeIO` + `NetStore` persist across reload). Training runs **silent**
-  (`SoundUtil` mutes during a `HeadlessRun`) and **parked** (the live tick pauses), with a full-CPU warning.
+  (`Sound` mutes during a `HeadlessRun`) and **parked** (the live tick pauses), with a full-CPU warning.
 - **Manual is user-only** — the opponent is AI-only (`DomSliderPolicy` reads the visible sliders).
 
 ## Recent UI / UX polish

@@ -24,7 +24,8 @@ slider vector stays the action substrate — the net does **not** replace per-ag
   re-evaluated **once per checkpoint** (installing it costs no more per-action than a slider read).
 - **`Evolution`** — a resumable `(μ+λ)` GA (elitism + gaussian mutation; the env is non-differentiable and
   the reward episodic, so ES, not gradient RL). Fitness = mean **summed per-checkpoint MU margin** (own −
-  foe) over K seeded `SimRunner` matches. Its RNG is independent of `Util` (which `SimRunner` reseeds per
+  foe) over K seeded `SimRunner` matches. Its RNG (a trainer-local instance) is independent of the global
+  `Rng` (which `SimRunner` reseeds per
   match) → fully deterministic given (grid, seed, config). `Evolution.Session.stepGenome()` scores one
   genome at a time so a UI can show live progress; `train()` loops it.
 - **`GenomeIO` / `NetStore` / `Champion`** — JSON encode/decode of genome + arch + fitness; persistence in
@@ -32,12 +33,12 @@ slider vector stays the action substrate — the net does **not** replace per-ag
 
 ## Where to see it
 
-- **TRAIN tab** (`util/ui/TrainerPanel`) — pick population / generations / mutation / per-layer widths /
+- **TRAIN tab** (`system/ui/panel/TrainerPanel`) — pick population / generations / mutation / per-layer widths /
   activation, hit **Train**: one genome per `setTimeout` (UI never blocks), a fitness curve that climbs,
   a champion genome preview. **Save** to `NetStore`, **Install** as a faction driver, or **Download / Load**
   the champion JSON to share. A second section runs a **leaderboard** (round-robin over the live grid). The
   whole run is bracketed by `HeadlessRun` (snapshot + tick-pause + silenced FX) so the live game is untouched.
-- **BRAINS tab** (`util/ui/BrainsPanel` + `util/ui/NetVizPanel`) — per faction: the **live activation
+- **BRAINS tab** (`system/ui/panel/BrainsPanel` + `system/ui/panel/NetVizPanel`) — per faction: the **live activation
   diagram** (layers as node columns, edges lit by contribution, the top output's "chosen path") above the
   **genome heatmap**, plus arch / fitness / driving-input / peak-hidden / favoured actions.
 
