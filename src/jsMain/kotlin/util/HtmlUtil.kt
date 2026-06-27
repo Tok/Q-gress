@@ -97,6 +97,7 @@ object HtmlUtil {
         rootDiv.addClass("container")
         // Master volume + mute live in their own fixed widget so they stay visible across every phase
         // (title, onboarding, world-gen, gameplay) — not bound to a screen/toolbar that comes and goes.
+        SoundUtil.restoreVolume() // re-read the saved volume/mute BEFORE the widget builds (survives reloads)
         document.body?.appendChild(createPersistentVolume())
 
         // Offscreen ImageData factory for the passability-grid readback (never displayed). No
@@ -268,7 +269,7 @@ object HtmlUtil {
         slider.min = "0.0"
         slider.max = "1.0"
         slider.step = "0.05"
-        slider.value = SoundUtil.DEFAULT_VOLUME.toString()
+        slider.value = SoundUtil.displayVolume().toString() // reflect the restored/saved level (+ mute glyph)
         slider.addClass("slider", "volumeSlider")
         VolumeControl.build(label, slider) // speaker icon (click = mute) + slider
         wrap.append(label)
@@ -711,7 +712,6 @@ object HtmlUtil {
         menu.append(createButton("menuShare", "menuItem displayFont", "Copy link") { copyShareLink() })
         menu.append(createButton("menuSave", "menuItem displayFont", "Save") { saveGame() })
         menu.append(createButton("menuDropRates", "menuItem displayFont", "Drop rates") { DropRatesPanel.toggle() })
-        menu.append(createButton("menuShortcuts", "menuItem displayFont", "Shortcuts") { Controls.showLegend() })
         // Overlay toggle lives in the menu now (no longer always-visible in the top bar). Vectors are
         // no longer toggled — they flash automatically for ~a second when a portal is created.
         // The "passability" map (greyscale walkability the grid is read from) — this is NOT the terrain.

@@ -70,8 +70,7 @@ object Controls {
         document.body?.append(info)
     }
 
-    /** Reveal / hide / toggle the bottom-left legend (Menu → Shortcuts reveals it; Esc hides it; "?" toggles). */
-    fun showLegend() = document.getElementById(LEGEND_ID)?.classList?.remove("invisible")
+    /** Hide / toggle the bottom-left legend ("?" toggles it; Esc hides it). */
     fun hideLegend() = document.getElementById(LEGEND_ID)?.classList?.add("invisible")
     fun toggleLegend() = document.getElementById(LEGEND_ID)?.classList?.toggle("invisible")
 

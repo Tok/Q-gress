@@ -98,19 +98,32 @@ object SoundUtil {
     // policy needs one). The volume slider drives it too. [userMuted] is the EXPLICIT mute intent, tracked
     // separately from the level so "muted (0)" and "not enabled yet (0)" don't get conflated — without it, any
     // later gesture / world-gen would un-mute a user who muted before audio was first enabled.
-    private var masterVolume = 0.0
-    private var audioEnabled = false // the first gesture has raised the volume to default once
+    private var masterVolume = 0.0 // actual live level — 0 until the first gesture (autoplay), or when muted
+    private var savedVolume = DEFAULT_VOLUME // the user's chosen non-mute level; applied on the first gesture
+    private var audioEnabled = false // the first gesture has raised the volume once
     private var userMuted = false // the user explicitly chose mute (vs just not-enabled-yet)
+
+    /** Restore the saved level + mute intent ([VolumePrefs]) — call once at startup, BEFORE the volume widget
+     *  builds. Sets vars only (silent until the first gesture, per autoplay). This is what makes a mute survive
+     *  the title→onboarding→world-gen reloads (each re-inits this object, losing in-memory state). */
+    fun restoreVolume() {
+        val (vol, muted) = VolumePrefs.load()
+        savedVolume = vol ?: DEFAULT_VOLUME
+        userMuted = muted
+    }
+
+    /** What the volume widget should show before the first gesture: 0 when muted, else the saved level. */
+    fun displayVolume(): Double = if (userMuted) 0.0 else savedVolume
 
     /** Resume the audio context and turn sound on. Idempotent; call on a user gesture. */
     fun enableAudio() {
         if (HtmlUtil.isNotRunningInBrowser()) return
         if (audioCtx.state != "running") audioCtx.resume()
-        // The first gesture brings the volume up to default — UNLESS the user has already muted. Afterwards the
+        // The first gesture brings the volume up — to the SAVED level — UNLESS the user has muted. Afterwards the
         // level is left alone, so a gesture / world-gen never un-mutes them.
         if (!audioEnabled) {
             audioEnabled = true
-            if (!userMuted) setMasterVolume(DEFAULT_VOLUME)
+            if (!userMuted) setMasterVolume(savedVolume)
         }
     }
 
@@ -119,7 +132,9 @@ object SoundUtil {
         if (audioCtx.state != "running") audioCtx.resume()
         masterVolume = volume
         userMuted = volume <= 0.0 // dragging the slider to 0 IS a mute; any positive level un-mutes
+        if (volume > 0.0) savedVolume = volume // remember the chosen non-mute level (for unmute / reload restore)
         masterGain.gain.setTargetAtTime(volume * MASTER_BOOST, now(), 0.01)
+        VolumePrefs.save(savedVolume, userMuted) // survive the title→onboarding→game reloads
     }
 
     // True when muted OR there's simply no audio (headless: Node tests / SimRunner) OR a headless eval is in
@@ -133,22 +148,14 @@ object SoundUtil {
     fun setPausedMute(on: Boolean) {
         pausedMute = on
     }
-    private var preMuteVolume = 0.0
 
-    /** Toggle mute, remembering the prior level. Returns the new volume (0 when muted). Keys off the explicit
-     *  [userMuted] intent (NOT the live volume), so it works the same before and after audio is first enabled —
-     *  clicking the speaker on the title/onboarding mutes for real and stays muted into the game. */
+    /** Toggle mute. Returns the new volume (0 when muted). Keys off the explicit [userMuted] intent (NOT the
+     *  live volume), so it works the same before and after audio is first enabled — clicking the speaker on the
+     *  title/onboarding mutes for real and (via [persist]) stays muted across the reloads into the game. */
     fun toggleMute(): Double {
-        if (userMuted) {
-            setMasterVolume(if (preMuteVolume > 0.0) preMuteVolume else DEFAULT_VOLUME)
-        } else {
-            preMuteVolume = if (masterVolume > 0.0) masterVolume else DEFAULT_VOLUME
-            setMasterVolume(0.0)
-        }
+        setMasterVolume(if (userMuted) savedVolume else 0.0)
         return masterVolume
     }
-
-    fun masterVolume() = masterVolume
 
     /**
      * Place the Web Audio listener at the camera (sim-space metres) — called every frame from
