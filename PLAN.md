@@ -8,12 +8,15 @@ Branch: `develop` · Owner: @zirteq
 
 ## ★ Next session — start here
 **Line-coverage target met (phase C) — backfill the rest of `commonMain`, then resume phase B.** The Kover
-report over the shared core now reads **~97.6% line coverage** (was ~78%): a `commonTest` backfill pinned the
+report over the shared core now reads **~99% line coverage** (was ~78%): a `commonTest` backfill pinned the
 previously-uncovered pure data/enums — `config.IngressFacts` (0→100%, a "DO-NOT-EDIT reference table" pin),
 `agent.Faction` (3→100%, migrated `FactionTest` jsTest→commonTest so Kover counts it), `config.Time` (54→100%),
-plus the last `Rng` overloads. Codecov should flip from the red ~71% toward green on the next CI run. The
-remaining ~2% is auto-generated data-class members (`Pos`/`Line`) and the platform `freshSeed` actual — low
-value, leave it. **From here:** the lever for *more* coverage is **migrating more pure logic into `commonMain`**
+plus the last `Rng` overloads. A follow-up **branch-gap pass** (Codecov counts partial branches as misses, so
+the live number had read ~91%) closed the flagged branches in `Pos`/`Line` (→100%), `FieldMath`, `Cooldown` and
+`MathUtil.formatSeconds`. The residual ~5 lines are the platform `freshSeed` actual + two `Rng` defensive
+`check`/`throw` guards + two dense barycentric/`findLast` expressions already at majority branch coverage —
+low value, leave them. (CI compiler warnings — no-cast / unused-expr / `data`-class `copy()` exposing a private
+ctor — are also cleared.) **From here:** the lever for *more* coverage is **migrating more pure logic into `commonMain`**
 (phase B's functional-core split), which then gets `commonTest` + Kover for free. The **`Scene3D` → `Showcases`
 split** (phase B) is the next big structural piece, then the 140 → 120 line-length pass. Work in phase order:
 **A** safety-net tests (done) → **B** refactor (+ functional-core split, ← resume here) → **C** coverage to
@@ -88,11 +91,13 @@ Functional core / imperative shell, properly. Do it module-by-module behind phas
 - [x] **Hook up Codecov via the GitHub pipeline** — CI emits `koverXmlReport` and uploads via
   `codecov/codecov-action@v5` (`CODECOV_TOKEN` set; `codecov.yml` keeps status informational); README carries
   the badge. **Live and reporting ~71%.**
-- [x] **Drive coverage past 90%** — Kover over `commonMain` now reads **~97.6%** (was ~78%). `commonTest`
+- [x] **Drive coverage past 90%** — Kover over `commonMain` now reads **~99% line** (was ~78%). `commonTest`
   backfill pinned the last uncovered pure data: `IngressFacts` (0→100%), `Faction` (3→100%, `FactionTest` moved
-  jsTest→commonTest so Kover counts it), `Time` (54→100%), + the remaining `Rng` overloads. The leftover ~2% is
-  auto-generated data-class members + the `freshSeed` actual (left intentionally). Codecov flips red→green next
-  CI run. Pushing *higher* now means migrating more pure logic into `commonMain` (phase B) — it then gets
+  jsTest→commonTest so Kover counts it), `Time` (54→100%), + the remaining `Rng` overloads; a **branch-gap pass**
+  then closed the partial branches Codecov was scoring as misses (`Pos`/`Line`→100%, `FieldMath`, `Cooldown`,
+  `MathUtil.formatSeconds`), taking the live Codecov number from ~91% up with it. The leftover ~5 lines are the
+  `freshSeed` actual + `Rng` defensive guards + two dense expressions at majority branch coverage (left
+  intentionally). Pushing *higher* now means migrating more pure logic into `commonMain` (phase B) — it then gets
   `commonTest` + Kover for free. Effects/shell stay Node-side and aren't counted.
 
 ### Phase D — Profiling & optimization (last)
