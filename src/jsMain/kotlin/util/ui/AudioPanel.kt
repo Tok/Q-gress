@@ -1,8 +1,6 @@
 package util.ui
 
 import kotlinx.browser.document
-import org.khronos.webgl.Uint8Array
-import org.khronos.webgl.get
 import org.w3c.dom.CanvasRenderingContext2D
 import org.w3c.dom.HTMLButtonElement
 import org.w3c.dom.HTMLCanvasElement
@@ -36,6 +34,7 @@ import kotlin.math.sin
  */
 object AudioPanel {
     private const val CUTOFF_MIN = 200.0
+    private val BIG_KNOBS = setOf("Reverb", "Distort") // the headline FX — φ-larger + ticked to draw the eye
     private val knobs = mutableListOf<Knob>()
     private var built = false
     private var lead: HTMLElement? = null
@@ -43,8 +42,6 @@ object AudioPanel {
     private var scope: HTMLCanvasElement? = null
     private var spectrum: HTMLCanvasElement? = null
     private var adsr: HTMLCanvasElement? = null
-    private var timeData: Uint8Array? = null
-    private var freqData: Uint8Array? = null
     private var glassEl: HTMLElement? = null
     private var fxPane: HTMLElement? = null
     private val panes = mutableMapOf<String, HTMLElement>()
@@ -55,8 +52,8 @@ object AudioPanel {
         if (glassEl?.offsetParent == null) return // tab hidden — skip the per-frame redraws
         if (fxPane?.offsetParent != null) { // only the Master FX sub-tab has the live viz/lead
             refreshLead()
-            drawScope()
-            drawSpectrum()
+            scope?.let { AudioViz.scope(it) }
+            spectrum?.let { AudioViz.spectrum(it) }
         }
         TuningLab.refresh() // live-update the collapsed JSON export (no-op while collapsed/focused)
     }
@@ -356,7 +353,14 @@ object AudioPanel {
         val read: () -> Double,
         val write: (Double) -> Unit,
         val fmt: (Double) -> String,
-    )
+    ) {
+        var reset: HTMLElement? = null // the per-knob reset nub (highlights when off-default)
+    }
+
+    // Light the reset nub when the knob differs from its default, so changed settings are obvious at a glance.
+    private fun markChanged(k: Knob) {
+        k.reset?.classList?.toggle("changed", abs(k.read() - k.default) > 1e-6)
+    }
 
     private fun knob(
         label: String,
@@ -366,8 +370,10 @@ object AudioPanel {
         write: (Double) -> Unit,
         fmt: (Double) -> String,
     ): HTMLElement {
-        val cell = el("div", "audioKnob")
-        val canvas = makeCanvas("audioKnobDial", KNOB_PX, KNOB_PX)
+        val big = label in BIG_KNOBS // a couple of headline knobs are φ-larger (with ticks) to draw the eye
+        val cell = el("div", if (big) "audioKnob big" else "audioKnob")
+        val px = if (big) KNOB_BIG_PX else KNOB_PX
+        val canvas = makeCanvas("audioKnobDial", px, px)
         val value = el("div", "audioKnobVal").also { it.textContent = fmt(read()) }
         val k = Knob(canvas, value, range, default, read, write, fmt)
         knobs.add(k)
@@ -377,6 +383,7 @@ object AudioPanel {
             write(v)
             value.textContent = fmt(read())
             drawKnob(k)
+            markChanged(k)
             persist()
         }
         drag(canvas) { e ->
@@ -391,14 +398,16 @@ object AudioPanel {
         cell.appendChild(el("div", "audioKnobLabel").also { it.textContent = label })
         cell.appendChild(value)
         val reset = document.createElement("button") as HTMLButtonElement
-        reset.className = "audioKnobReset" // tiny unlabelled dot: snap the knob back to its default
+        reset.className = "audioKnobReset" // tiny rubbery nub: snap the knob back to its default
         reset.title = "Reset to default"
         reset.onclick = {
             commit(default)
             null
         }
         cell.appendChild(reset)
+        k.reset = reset
         drawKnob(k)
+        markChanged(k)
         return cell
     }
 
@@ -408,6 +417,7 @@ object AudioPanel {
         knobs.forEach {
             it.valueLabel.textContent = it.fmt(it.read())
             drawKnob(it)
+            markChanged(it)
         }
         drawPad()
         drawAdsr()
@@ -420,21 +430,50 @@ object AudioPanel {
         val w = k.canvas.width.toDouble()
         val cx = w / 2
         val r = w / 2 - 5.0
+        val cap = r - 4.0 // the chrome cap sits inside the value ring
         val v = ((k.read() - k.range.start) / (k.range.endInclusive - k.range.start)).coerceIn(0.0, 1.0)
         val a0 = PI * 0.75
         val a1 = PI * 2.25
         val a = a0 + (a1 - a0) * v
         ctx.clearRect(0.0, 0.0, w, w)
+        // Scale ticks (headline knobs only) — small marks around the 270° sweep.
+        if (k.canvas.width > KNOB_PX) {
+            ctx.lineWidth = 1.0
+            ctx.strokeStyle = "rgba(255,255,255,0.3)"
+            for (t in 0..10) {
+                val ta = a0 + (a1 - a0) * (t / 10.0)
+                ctx.beginPath()
+                ctx.moveTo(cx + cos(ta) * (r + 1.0), cx + sin(ta) * (r + 1.0))
+                ctx.lineTo(cx + cos(ta) * (r + 4.0), cx + sin(ta) * (r + 4.0))
+                ctx.stroke()
+            }
+        }
+        // Value ring on the rim.
         ctx.lineWidth = 4.0
         ctx.strokeStyle = "rgba(255,255,255,0.16)"
         strokeArc(ctx, cx, r, a0, a1)
         ctx.strokeStyle = "#cfd6e6"
         strokeArc(ctx, cx, r, a0, a)
+        // Chrome cap: a vertical neutral-gray gradient (light top, dark bottom, bright reflection band) + rim.
+        val grad = ctx.createLinearGradient(0.0, cx - cap, 0.0, cx + cap)
+        grad.addColorStop(0.0, "#e6e6e6")
+        grad.addColorStop(0.42, "#8c8c8c")
+        grad.addColorStop(0.5, "#d2d2d2")
+        grad.addColorStop(0.58, "#6e6e6e")
+        grad.addColorStop(1.0, "#343434")
+        ctx.beginPath()
+        ctx.arc(cx, cx, cap, 0.0, PI * 2)
+        ctx.fillStyle = grad
+        ctx.fill()
+        ctx.lineWidth = 1.0
+        ctx.strokeStyle = "rgba(255,255,255,0.28)" // bright rim highlight
+        strokeArc(ctx, cx, cap, 0.0, PI * 2)
+        // Pointer notch — dark so it reads against the chrome.
         ctx.beginPath()
         ctx.lineWidth = 2.5
-        ctx.strokeStyle = "#ffffff"
-        ctx.moveTo(cx, cx)
-        ctx.lineTo(cx + cos(a) * r, cx + sin(a) * r)
+        ctx.strokeStyle = "#222222"
+        ctx.moveTo(cx + cos(a) * cap * 0.35, cx + sin(a) * cap * 0.35)
+        ctx.lineTo(cx + cos(a) * cap * 0.92, cx + sin(a) * cap * 0.92)
         ctx.stroke()
     }
 
@@ -563,53 +602,6 @@ object AudioPanel {
         persist()
     }
 
-    private fun drawScope() {
-        val canvas = scope ?: return
-        val ctx = ctx(canvas) ?: return
-        val an = AudioFx.analyser()
-        val w = canvas.width.toDouble()
-        val h = canvas.height.toDouble()
-        ctx.clearRect(0.0, 0.0, w, h)
-        ctx.fillStyle = "rgba(0,0,0,0.35)"
-        ctx.fillRect(0.0, 0.0, w, h)
-        if (an == null) return
-        val n = an.frequencyBinCount as Int
-        val data = timeData ?: Uint8Array(n).also { timeData = it }
-        an.getByteTimeDomainData(data)
-        ctx.beginPath()
-        ctx.lineWidth = 1.5
-        ctx.strokeStyle = "#6cf0c2"
-        for (i in 0 until n) {
-            val x = i.toDouble() / n * w
-            val y = (data[i].toInt() and 0xff) / 255.0 * h
-            if (i == 0) ctx.moveTo(x, y) else ctx.lineTo(x, y)
-        }
-        ctx.stroke()
-    }
-
-    private fun drawSpectrum() {
-        val canvas = spectrum ?: return
-        val ctx = ctx(canvas) ?: return
-        val an = AudioFx.analyser()
-        val w = canvas.width.toDouble()
-        val h = canvas.height.toDouble()
-        ctx.clearRect(0.0, 0.0, w, h)
-        ctx.fillStyle = "rgba(0,0,0,0.35)"
-        ctx.fillRect(0.0, 0.0, w, h)
-        if (an == null) return
-        val n = an.frequencyBinCount as Int
-        val data = freqData ?: Uint8Array(n).also { freqData = it }
-        an.getByteFrequencyData(data)
-        val bars = 48
-        val step = n / bars
-        ctx.fillStyle = "#6c9cf0"
-        for (b in 0 until bars) {
-            val v = (data[b * step].toInt() and 0xff) / 255.0
-            val bw = w / bars
-            ctx.fillRect(b * bw, h - v * h, bw - 1.0, v * h)
-        }
-    }
-
     // Stroke a centred arc (knob dial); colour + lineWidth are set by the caller. cx == cy (square canvas).
     private fun strokeArc(ctx: CanvasRenderingContext2D, c: Double, r: Double, a0: Double, a1: Double) {
         ctx.beginPath()
@@ -690,4 +682,5 @@ object AudioPanel {
     private const val VIZ_W = 280
     private const val VIZ_H = 70
     private const val KNOB_PX = 54
+    private const val KNOB_BIG_PX = 87 // 54 × φ — the headline knobs
 }

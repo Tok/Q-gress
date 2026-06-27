@@ -1072,22 +1072,41 @@ html, body {
     font-size: 10px;
     font-variant-numeric: tabular-nums;
 }
-/* Tiny unlabelled reset "o" at the dial's bottom-right corner — click to snap the knob back to its default. */
+/* Per-knob reset — a tiny rubbery 3D nub at the dial's bottom-right corner. Click to snap the knob to its
+   default. Neutral-gray dome (radial highlight + drop shadow); lights to a brighter neutral gray when the knob
+   is OFF its default, so changed settings are obvious at a glance. */
 .audioKnobReset {
     position: absolute;
-    top: 40px;
-    right: 3px;
-    width: 9px;
-    height: 9px;
+    top: 41px;
+    right: 1px;
+    width: 10px;
+    height: 10px;
     padding: 0;
-    border: 1px solid rgba(255, 255, 255, 0.45);
+    border: none;
     border-radius: 50%;
-    background: transparent; /* hollow → reads like an "o" */
+    background: radial-gradient(circle at 35% 30%, #707070, #2a2a2a 72%);
+    box-shadow: 0 1px 1.5px rgba(0, 0, 0, 0.55), inset 0 1px 1px rgba(255, 255, 255, 0.22);
     cursor: pointer;
 }
 .audioKnobReset:hover {
-    background: #cfd6e6;
-    border-color: #cfd6e6;
+    background: radial-gradient(circle at 35% 30%, #8c8c8c, #3a3a3a 72%);
+}
+.audioKnobReset:active {
+    box-shadow: 0 0 1px rgba(0, 0, 0, 0.5), inset 0 1px 2px rgba(0, 0, 0, 0.55); /* pressed in */
+}
+.audioKnobReset.changed {
+    background: radial-gradient(circle at 35% 30%, #f0f0f0, #9c9c9c 72%);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.55), inset 0 1px 1px rgba(255, 255, 255, 0.55);
+}
+/* Headline knobs (Reverb / Distort) are φ-larger — give the cell room + move the nub to the bigger corner. */
+.audioKnob.big {
+    width: 95px;
+}
+.audioKnob.big .audioKnobReset {
+    top: 72px;
+    right: 6px;
+    width: 12px;
+    height: 12px;
 }
 .audioViz {
     display: flex;
