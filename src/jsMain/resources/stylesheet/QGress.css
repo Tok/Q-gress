@@ -1455,7 +1455,8 @@ html, body {
 .onboardTitle {
     font-family: "Coda", monospace; /* subtitle in Coda — different font from the Chakra Petch brand */
     font-size: 40px;
-    letter-spacing: 5px;
+    font-weight: 700;
+    letter-spacing: 2px; /* tighter — 5px read as too loose/spaced-out */
     margin-bottom: 8px;
 }
 .onboardRow {
@@ -2335,19 +2336,23 @@ html, body {
     justify-content: flex-end;
 }
 .panelCollapse {
-    width: 20px;
-    height: 20px;
-    line-height: 18px;
+    width: 22px;
+    height: 22px;
+    line-height: 20px;
     text-align: center;
     border-radius: 4px;
-    background: rgba(255, 255, 255, 0.06);
+    /* A proper little button — darker than the toolbar glass + a touch of blur so the lone toggle reads
+       clearly when the column is collapsed. */
+    background: rgba(0, 0, 0, 0.5);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
     color: #cccccc;
     border: 1px solid rgba(255, 255, 255, 0.18);
     cursor: pointer;
 }
 .panelCollapse:hover {
     color: #ffffff;
-    background: rgba(255, 255, 255, 0.12);
+    background: rgba(0, 0, 0, 0.65);
     border-color: rgba(255, 255, 255, 0.28);
 }
 /* Collapsed: hide the column's content, keep only the "–"/"+" toggle bar. */

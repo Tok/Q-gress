@@ -138,7 +138,7 @@ object HtmlUtil {
         leftGroup.addClass("toolbarGroup")
         leftGroup.append(createMenuSpan()) // New Game / Reset + overlay toggles
         // Recenter top-down over the play area (find your way back after panning/rotating away).
-        leftGroup.append(createButton("homeButton", "topButton displayFont", "Home") { MapUtil.goHome() })
+        leftGroup.append(createButton("homeButton", "topButton displayFont", "HOME") { MapUtil.goHome() })
         leftGroup.append(createSpeedControls()) // Pause + ×1/×3/Max (Space toggles pause; -/+ keys nudge speed)
         leftGroup.append(createAutoCamToggle()) // Auto cam sits right after the speed controls (camera ≈ playback)
         bindKeyboardShortcuts() // Space=pause · Home=recenter · zoom/pan/speed/mute/Esc
@@ -446,6 +446,7 @@ object HtmlUtil {
         }
         Controls.hideLegend()
         DropRatesPanel.close()
+        document.querySelector(".gameMenu")?.classList?.add("invisible") // close the Menu dropdown if open
         closePopup()
     }
 
@@ -703,7 +704,7 @@ object HtmlUtil {
         version.addClass("menuVersion")
         version.textContent = BuildInfo.LABEL
         menu.append(version)
-        val button = createButton("menuButton", "topButton displayFont", "Menu") {
+        val button = createButton("menuButton", "topButton displayFont", "MENU") {
             menu.classList.toggle("invisible")
         }
         span.append(button)
