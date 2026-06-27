@@ -1,4 +1,4 @@
-package system.display
+package system.display.fx
 
 /**
  * Per-portal "energy absorbed" ripple state for shield bubbles. When an XMP/ultra-strike detonates

@@ -5,11 +5,11 @@ import items.RewardMote
 import items.deployable.Mod
 import portal.Octant
 import portal.Portal
-import system.display.CaptureFx
-import system.display.DeployFx
-import system.display.HackFx
 import system.display.Scene3D
 import system.display.VectorFieldOverlay
+import system.display.fx.CaptureFx
+import system.display.fx.DeployFx
+import system.display.fx.HackFx
 import util.data.Pos
 
 /**

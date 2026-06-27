@@ -1,7 +1,10 @@
-package system.display
+package system.display.fx
 
 import external.Cannon
 import external.Three
+import system.display.BlastModel
+import system.display.Materials
+import system.display.Scene3D
 import system.display.shader.GlassShader
 import util.Util
 import kotlin.math.PI

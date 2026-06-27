@@ -1,6 +1,8 @@
-package system.display
+package system.display.fx
 
 import external.Three
+import system.display.Materials
+import system.display.Scene3D
 
 /**
  * Stray-XM pickup: when an agent collects an XM heap, a glowing mote **lerps from the heap to the

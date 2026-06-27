@@ -5,8 +5,8 @@ import agent.action.ActionItem
 import items.QgressItem
 import items.rewardMote
 import system.audio.HackSound
-import system.display.HackFx
 import system.display.Scene3D
+import system.display.fx.HackFx
 import system.effect.Fx
 
 object Hacker : ConditionalAction {

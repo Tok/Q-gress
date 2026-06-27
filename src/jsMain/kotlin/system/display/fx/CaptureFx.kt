@@ -1,4 +1,5 @@
-package system.display
+package system.display.fx
+import system.display.Scene3D
 
 /**
  * Capture animation state: detects when a portal's faction colour changes (a capture or a

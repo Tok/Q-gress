@@ -1,8 +1,10 @@
-package system.display
+package system.display.fx
 
 import external.Three
 import items.RewardMote
 import items.RewardShape
+import system.display.Materials
+import system.display.Scene3D
 import kotlin.math.PI
 import kotlin.math.sin
 

@@ -1,6 +1,7 @@
-package system.display
+package system.display.fx
 
 import portal.Octant
+import system.display.Scene3D
 import util.data.Pos
 
 /**

@@ -1,4 +1,4 @@
-package system.display
+package system.display.fx
 
 import external.Three
 import system.display.shader.PlasmaShader

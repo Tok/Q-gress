@@ -6,7 +6,7 @@ import system.Checkpoint
 import system.audio.HackSound
 import system.audio.SoundUtil
 import system.audio.SteamSound
-import system.display.HackFx
+import system.display.fx.HackFx
 import util.data.Pos
 
 /**

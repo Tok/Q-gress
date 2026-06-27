@@ -1,9 +1,19 @@
-package system.display
+package system.display.fx
 
 import external.Three
 import org.khronos.webgl.Float32Array
 import org.khronos.webgl.set
+import system.display.add
+import system.display.cross
+import system.display.dist
+import system.display.lenSq
+import system.display.lerp
+import system.display.lerp1
+import system.display.norm
+import system.display.rotate
+import system.display.scale
 import system.display.shader.GlassShader
+import system.display.sub
 import util.Util
 
 /**

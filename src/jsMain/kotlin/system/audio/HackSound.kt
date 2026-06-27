@@ -3,7 +3,7 @@ package system.audio
 import agent.Faction
 import config.OscillatorType
 import org.khronos.webgl.set
-import system.display.HackFx
+import system.display.fx.HackFx
 import util.Util
 import util.data.Pos
 import kotlin.math.PI
