@@ -28,6 +28,7 @@ object Simulation {
         World.flushPendingAgents()
 
         World.allNonFaction.forEach { it.act() }
+        World.pruneInvalidLinksAndFields() // safety net: a same-tick flip/removal must never leave a link dangling
         sampleStuck() // always on: drives stuck-recovery (Agent.recoverIfStuck / NonFaction); also the ?debug viz
     }
 

@@ -100,6 +100,29 @@ object World {
 
     fun allLines() = allLinks().map { it.getLine() }
 
+    /**
+     * Safety net for link/field integrity: drop any link or field that has become invalid — an endpoint
+     * portal vanished from the board, went neutral, or no longer shares the others' faction (e.g. it was
+     * virus-flipped the same moment a link was being made). The normal teardown
+     * ([portal.Portal.destroy]/[portal.Portal.refactor]) already does this; this guards against any path
+     * that slips past it, so a link can never dangle to a portal that's gone or now enemy. Run each tick.
+     */
+    fun pruneInvalidLinksAndFields() {
+        val present = allPortals.toHashSet()
+        allPortals.forEach { portal ->
+            portal.links.retainAll { sameFactionPresent(it.origin, it.destination, present) }
+            portal.fields.retainAll {
+                sameFactionPresent(it.origin, it.primaryAnchor, present) && sameFactionPresent(it.origin, it.secondaryAnchor, present)
+            }
+        }
+    }
+
+    // Both portals are still on the board AND owned by the same (non-null) faction — the link/field invariant.
+    private fun sameFactionPresent(a: Portal, b: Portal, present: Set<Portal>): Boolean {
+        val factionA = a.owner?.faction
+        return a in present && b in present && factionA != null && factionA == b.owner?.faction
+    }
+
     fun calcTotalMu(fact: Faction) = allFields().filter { it.owner.faction == fact }.map { it.calculateMu() }.sum()
 
     private fun imageDataIndex(x: Int, y: Int, w: Int) = (x + (y * w)) * 4

@@ -185,4 +185,56 @@ class LinkFieldIntegrityTest {
         assertTrue(a.links.isEmpty(), "neutralised portal keeps no links")
         assertTrue(a.fields.isEmpty(), "neutralised portal keeps no fields")
     }
+
+    // --- the defensive sweep: World.pruneInvalidLinksAndFields drops anything an endpoint change left invalid ---
+
+    @Test
+    fun pruneDropsLinkToNeutralisedEndpoint() {
+        val a = portalAt(0, 0).also { it.owner = Factory.frog() }
+        val b = portalAt(100, 0).also { it.owner = Factory.frog() }
+        link(a, b)
+        b.owner = null // b went neutral without the normal teardown
+        World.pruneInvalidLinksAndFields()
+        assertTrue(a.links.isEmpty(), "a link to a now-neutral portal must be pruned")
+    }
+
+    @Test
+    fun pruneDropsCrossFactionLink() {
+        val a = portalAt(0, 0).also { it.owner = Factory.frog() }
+        val b = portalAt(100, 0).also { it.owner = Factory.frog() }
+        link(a, b)
+        b.owner = Factory.smurf() // b flipped to the enemy faction without teardown
+        World.pruneInvalidLinksAndFields()
+        assertTrue(a.links.isEmpty(), "a cross-faction link must be pruned")
+    }
+
+    @Test
+    fun pruneDropsLinkToRemovedPortal() {
+        val a = portalAt(0, 0).also { it.owner = Factory.frog() }
+        val b = portalAt(100, 0).also { it.owner = Factory.frog() }
+        link(a, b)
+        World.allPortals.remove(b) // b gone from the board, but the link survived on a
+        World.pruneInvalidLinksAndFields()
+        assertTrue(a.links.isEmpty(), "a link to a portal no longer on the board must be pruned")
+    }
+
+    @Test
+    fun pruneKeepsValidSameFactionLink() {
+        val a = portalAt(0, 0).also { it.owner = Factory.frog() }
+        val b = portalAt(100, 0).also { it.owner = Factory.frog() }
+        link(a, b)
+        World.pruneInvalidLinksAndFields()
+        assertEquals(1, a.links.size, "a valid same-faction link between present portals is kept")
+    }
+
+    @Test
+    fun pruneDropsFieldWithFlippedAnchor() {
+        val o = portalAt(0, 0).also { it.owner = Factory.frog() }
+        val p1 = portalAt(100, 0).also { it.owner = Factory.frog() }
+        val p2 = portalAt(0, 100).also { it.owner = Factory.frog() }
+        field(o, p1, p2)
+        p1.owner = Factory.smurf() // an anchor flipped without teardown
+        World.pruneInvalidLinksAndFields()
+        assertTrue(o.fields.isEmpty(), "a field with a flipped anchor must be pruned")
+    }
 }
