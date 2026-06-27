@@ -7,18 +7,20 @@ Branch: `develop` · Owner: @zirteq
 [docs/LLM.md](docs/LLM.md). Completed work lives in the **git log**, not here — keep this file to the point.
 
 ## ★ Next session — start here
-**Push line-coverage toward >90% (phase C).** Codecov is now **wired into CI and live** (`koverXmlReport` →
-`codecov/codecov-action`, badge in the README) but reads **~71% — a red badge**, because it only covers the
-pure core in `commonMain`. The next focus is driving that **up past 90%**: migrate more pure logic into
-`commonMain` (phase B's functional-core split is the enabler) and **backfill `commonTest` tests** for whatever
-the Kover report shows uncovered (run `./gradlew koverHtmlReport` and read `build/reports/kover/html/index.html`).
-The selection/balance logic should land near 100% (CLAUDE.md target); effects/shell stay Node-side and aren't
-counted. The **`Scene3D` → `Showcases` split** (phase B) stays queued behind/alongside this, then the 140 → 120
-line-length pass. Work in phase order: **A** safety-net tests (done) → **B** refactor (+ functional-core split)
-→ **C** coverage to target (← here) → **D** profiling & optimization. The perf items elsewhere (Pathfinding
-scalability, Building perf, Map-size profiling) are **phase D** inputs — don't pull them forward. One gameplay
-item also queued: **field-layering tests + tuning investigation** (under *Gameplay mechanics* — the rules are
-sound, but agents layer too rarely).
+**Line-coverage target met (phase C) — backfill the rest of `commonMain`, then resume phase B.** The Kover
+report over the shared core now reads **~97.6% line coverage** (was ~78%): a `commonTest` backfill pinned the
+previously-uncovered pure data/enums — `config.IngressFacts` (0→100%, a "DO-NOT-EDIT reference table" pin),
+`agent.Faction` (3→100%, migrated `FactionTest` jsTest→commonTest so Kover counts it), `config.Time` (54→100%),
+plus the last `Rng` overloads. Codecov should flip from the red ~71% toward green on the next CI run. The
+remaining ~2% is auto-generated data-class members (`Pos`/`Line`) and the platform `freshSeed` actual — low
+value, leave it. **From here:** the lever for *more* coverage is **migrating more pure logic into `commonMain`**
+(phase B's functional-core split), which then gets `commonTest` + Kover for free. The **`Scene3D` → `Showcases`
+split** (phase B) is the next big structural piece, then the 140 → 120 line-length pass. Work in phase order:
+**A** safety-net tests (done) → **B** refactor (+ functional-core split, ← resume here) → **C** coverage to
+target (met) → **D** profiling & optimization. The perf items elsewhere (Pathfinding scalability, Building perf,
+Map-size profiling) are **phase D** inputs — don't pull them forward. One gameplay item also queued:
+**field-layering tests + tuning investigation** (under *Gameplay mechanics* — the rules are sound, but agents
+layer too rarely).
 
 A **code-duplication pass** just landed (shared `util.ColorUtil` hex helpers, `system.display.Vec3` +
 `ShaderUtil`, `util.ui.Dom` `el()` factory, `util.Prefs` localStorage plumbing). Minor dupes still open if
@@ -86,10 +88,12 @@ Functional core / imperative shell, properly. Do it module-by-module behind phas
 - [x] **Hook up Codecov via the GitHub pipeline** — CI emits `koverXmlReport` and uploads via
   `codecov/codecov-action@v5` (`CODECOV_TOKEN` set; `codecov.yml` keeps status informational); README carries
   the badge. **Live and reporting ~71%.**
-- [ ] **Drive coverage past 90%** (← current focus) — the badge is **red at ~71%** because only `commonMain` is
-  measured. As more of the core lands in `commonMain` (phase B), backfill `commonTest` for whatever
-  `koverHtmlReport` shows uncovered and push toward the CLAUDE.md target (selection/balance logic near 100%).
-  Effects/shell stay Node-side and aren't counted, so the realistic ceiling is "the pure core, ~fully covered."
+- [x] **Drive coverage past 90%** — Kover over `commonMain` now reads **~97.6%** (was ~78%). `commonTest`
+  backfill pinned the last uncovered pure data: `IngressFacts` (0→100%), `Faction` (3→100%, `FactionTest` moved
+  jsTest→commonTest so Kover counts it), `Time` (54→100%), + the remaining `Rng` overloads. The leftover ~2% is
+  auto-generated data-class members + the `freshSeed` actual (left intentionally). Codecov flips red→green next
+  CI run. Pushing *higher* now means migrating more pure logic into `commonMain` (phase B) — it then gets
+  `commonTest` + Kover for free. Effects/shell stay Node-side and aren't counted.
 
 ### Phase D — Profiling & optimization (last)
 Only once we're comfortable with structure + coverage. **Baseline first, then optimize, guarded by the net:**

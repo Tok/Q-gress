@@ -58,6 +58,26 @@ class RngTest {
         assertEquals(input.size, shuffled.size, "shuffle preserves the count (no drops/dupes)")
     }
 
+    @Test
+    fun shuffleOfASetPreservesTheMembers() {
+        Rng.seed(9)
+        val input = (1..50).toSet()
+        assertEquals(input, Rng.shuffle(input), "the Set overload preserves the exact membership")
+    }
+
+    @Test
+    fun randomBoolIsBalancedAndBounded() {
+        Rng.seed(77)
+        val draws = (1..1000).map { Rng.randomBool() }
+        assertTrue(draws.contains(true) && draws.contains(false), "both outcomes occur")
+    }
+
+    @Test
+    fun randomIntSingleArgStartsAtZero() {
+        Rng.seed(55)
+        assertTrue((1..1000).all { Rng.randomInt(5) in 0..5 }, "randomInt(max) is inclusive [0, max]")
+    }
+
     // --- the weighted picker -------------------------------------------------
 
     @Test
