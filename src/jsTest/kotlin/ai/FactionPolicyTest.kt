@@ -35,4 +35,13 @@ class FactionPolicyTest {
             "RES still on its default DOM policy",
         )
     }
+
+    @Test
+    fun currentVectorMarksWhoIsInControl() {
+        // A SliderVectorPolicy exposes its driven vector (an AI is in control → the tuning UI mirrors it);
+        // a DomSliderPolicy returns null (the manual sliders ARE the source, so the UI stays interactive).
+        val vector = SliderVector.uniform(0.42)
+        assertEquals(0.42, SliderVectorPolicy(vector).currentVector()[QActions.LINK], "currentVector mirrors the driven vector")
+        assertEquals(null, DomSliderPolicy(Faction.ENL).currentVector(), "the manual policy is NOT an AI in control")
+    }
 }
