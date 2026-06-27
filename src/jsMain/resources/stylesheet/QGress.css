@@ -220,8 +220,11 @@ html, body {
 .taInv {
     text-align: right;
 }
-/* Fixed column widths so the table layout never shifts with content (XM, AP, Agent, XMPs, Resos, Cubes,
-   Shields, Keys, Action, Portal — the rank # column was removed). */
+/* Fixed column widths so the table layout never shifts with content. Every column is pinned: the Action
+   and Portal cells (the last two) inherit the `.taRow td` ellipsis, so changing actions and long portal
+   names never resize the table — overlong portal names just truncate.
+   Columns: 1 XM, 2 AP, 3 Agent, 4 XMPs, 5 US, 6 Resos, 7 Cubes, 8 Shields, 9 Heat, 10 MHack,
+   11 Keys, 12 Uniq, 13 Action, 14 Portal. */
 .taTable th:nth-child(1), .taTable td:nth-child(1) { width: 52px; }
 .taTable th:nth-child(2), .taTable td:nth-child(2) { width: 44px; }
 .taTable th:nth-child(3), .taTable td:nth-child(3) { width: 112px; }
@@ -232,6 +235,10 @@ html, body {
 .taTable th:nth-child(8), .taTable td:nth-child(8) { width: 30px; }
 .taTable th:nth-child(9), .taTable td:nth-child(9) { width: 84px; }
 .taTable th:nth-child(10), .taTable td:nth-child(10) { width: 132px; }
+.taTable th:nth-child(11), .taTable td:nth-child(11),
+.taTable th:nth-child(12), .taTable td:nth-child(12) { width: 42px; }
+.taTable th:nth-child(13), .taTable td:nth-child(13) { width: 88px; }
+.taTable th:nth-child(14), .taTable td:nth-child(14) { width: 150px; }
 .taInvBars {
     display: inline-flex;
     align-items: flex-end;
