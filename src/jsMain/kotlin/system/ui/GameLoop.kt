@@ -93,6 +93,7 @@ object GameLoop {
         if (paused) {
             autoCamBeforePause = MapController.isAutoCamOn()
             if (autoCamBeforePause) MapController.setAutoCam(false)
+            MapController.stopCamera() // halt the in-flight camera ease at once (else a 27 s auto-cam leg glides on)
         } else if (autoCamBeforePause) {
             MapController.setAutoCam(true)
         }

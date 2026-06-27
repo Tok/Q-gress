@@ -337,6 +337,16 @@ object MapController {
         if (autoCamActive) setAutoCam(false)
     }
 
+    /**
+     * Halt any in-flight camera animation (an auto-cam ease, a goHome fly, …) immediately. Turning the
+     * auto-cam off only stops the *next* leg from chaining; the current [AUTOCAM_LEG_MS] (27 s) ease keeps
+     * gliding. Pause calls this so the view freezes at once instead of drifting on for up to ~27 s.
+     */
+    fun stopCamera() {
+        initMap?.asDynamic()?.stop()
+        map?.asDynamic()?.stop()
+    }
+
     // One in-game auto-cam leg: like the title drift but slower/wider — hold the play-area centre framed,
     // ease to a new yaw/pitch/zoom, chain another. Wall-clock (setTimeout/easeTo) → sim-speed-independent;
     // drives both maps like goHome; [gen] guards a stale chain (toggled off→on) outliving its turn.
