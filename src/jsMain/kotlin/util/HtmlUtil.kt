@@ -18,6 +18,12 @@ import portal.Portal
 import system.Cycle
 import system.HeadlessRun
 import system.Simulation
+import system.audio.AmbientPrefs
+import system.audio.AudioPrefs
+import system.audio.InstrumentPrefs
+import system.audio.MixerPrefs
+import system.audio.Scale
+import system.audio.SoundUtil
 import system.building.BuildingTransparency
 import system.display.Scene3D
 import system.display.Showcases

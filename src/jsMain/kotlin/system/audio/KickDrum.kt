@@ -1,9 +1,10 @@
-package util
+package system.audio
 
 import config.OscillatorType
 import config.Sim
 import org.khronos.webgl.Float32Array
 import org.khronos.webgl.set
+import util.Util
 import util.data.Pos
 import kotlin.math.PI
 import kotlin.math.abs

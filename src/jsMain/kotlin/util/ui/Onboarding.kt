@@ -15,8 +15,8 @@ import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLOptionElement
 import org.w3c.dom.HTMLSelectElement
+import system.audio.SoundUtil
 import system.display.TitleWordmark
-import util.SoundUtil
 import kotlin.math.abs
 
 /**

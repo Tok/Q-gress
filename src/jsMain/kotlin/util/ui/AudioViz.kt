@@ -4,7 +4,7 @@ import org.khronos.webgl.Uint8Array
 import org.khronos.webgl.get
 import org.w3c.dom.CanvasRenderingContext2D
 import org.w3c.dom.HTMLCanvasElement
-import util.AudioFx
+import system.audio.AudioFx
 
 /** The AUDIO-tab live visualisers — a waveform **scope** and a **spectrum**, drawn each frame off the
  *  [AudioFx.analyser] tap. Split out of [AudioPanel] (size). */

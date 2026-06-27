@@ -4,7 +4,7 @@ import external.Cannon
 import external.FontLoader
 import external.TextGeometry
 import external.Three
-import util.SoundUtil
+import system.audio.SoundUtil
 import util.Util
 import util.data.Pos
 import kotlin.math.abs

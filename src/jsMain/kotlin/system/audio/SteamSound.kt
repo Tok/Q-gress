@@ -1,6 +1,7 @@
-package util
+package system.audio
 
 import org.khronos.webgl.set
+import util.Util
 import util.data.Pos
 import kotlin.math.exp
 

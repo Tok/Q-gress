@@ -1,7 +1,8 @@
-package util
+package system.audio
 
 import org.khronos.webgl.Float32Array
 import org.khronos.webgl.set
+import util.Util
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.pow

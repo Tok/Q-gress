@@ -8,7 +8,7 @@ import config.Dim
 import portal.Portal
 import portal.XmHeap
 import portal.XmMap
-import util.SoundUtil
+import system.audio.SoundUtil
 import util.Util
 import util.data.*
 

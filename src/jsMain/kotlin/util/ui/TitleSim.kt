@@ -20,6 +20,7 @@ import org.w3c.dom.HTMLElement
 import portal.Portal
 import portal.PortalKey
 import portal.XmMap
+import system.audio.SoundUtil
 import system.display.PortalNameTicker
 import system.display.Scene3D
 import system.display.SunController
@@ -27,7 +28,6 @@ import system.display.VectorFieldOverlay
 import system.grid.GridConnectivity
 import system.map.GeoLocator
 import system.map.MapUtil
-import util.SoundUtil
 import util.data.Pos
 import kotlin.js.Json
 

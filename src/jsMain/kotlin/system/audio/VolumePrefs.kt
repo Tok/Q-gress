@@ -1,6 +1,7 @@
-package util
+package system.audio
 
 import kotlinx.browser.localStorage
+import util.HtmlUtil
 
 /**
  * Persists the master-volume level + mute intent to `localStorage`, so they survive the page reloads on the

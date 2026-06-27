@@ -1,4 +1,5 @@
-package util
+package system.audio
+import util.Prefs
 
 /**
  * Persists the per-instrument tuning (currently the explosion [KickDrum]) across reloads, mirroring

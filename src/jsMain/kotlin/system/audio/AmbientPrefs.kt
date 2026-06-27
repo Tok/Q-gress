@@ -1,4 +1,5 @@
-package util
+package system.audio
+import util.Prefs
 
 /**
  * Persists the [AmbientBed] state (on / level / cutoff) across reloads, mirroring [VolumePrefs] / [AudioPrefs].

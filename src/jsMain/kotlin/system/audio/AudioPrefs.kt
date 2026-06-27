@@ -1,4 +1,5 @@
-package util
+package system.audio
+import util.Prefs
 
 /**
  * Persists the master [AudioFx] tuning (filter, resonance, reverb, delay, compressor, master ADSR) across

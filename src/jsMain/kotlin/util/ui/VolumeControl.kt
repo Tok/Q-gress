@@ -2,7 +2,7 @@ package util.ui
 
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLInputElement
-import util.SoundUtil
+import system.audio.SoundUtil
 
 /**
  * Wires a speaker [icon] + volume [slider] to behave identically on the title screen ([Onboarding]) and

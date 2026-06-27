@@ -6,9 +6,9 @@ import org.w3c.dom.HTMLAnchorElement
 import org.w3c.dom.HTMLButtonElement
 import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HTMLInputElement
-import util.AudioFx
-import util.Scale
-import util.SoundUtil
+import system.audio.AudioFx
+import system.audio.Scale
+import system.audio.SoundUtil
 
 /**
  * Audio demo (`#audio`): a panel of buttons that trigger every (standalone) game sound, so the SFX

@@ -1,6 +1,7 @@
-package util
+package system.audio
 
-import util.Mixer.Group
+import system.audio.Mixer.Group
+import util.Prefs
 
 /**
  * Persists the per-role mixer (volume + mute for each [Group]) across reloads, mirroring [VolumePrefs] /

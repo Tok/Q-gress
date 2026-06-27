@@ -6,14 +6,14 @@ import kotlinx.browser.window
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLTextAreaElement
-import util.AmbientBed
-import util.AmbientPrefs
-import util.AudioFx
-import util.AudioPrefs
+import system.audio.AmbientBed
+import system.audio.AmbientPrefs
+import system.audio.AudioFx
+import system.audio.AudioPrefs
+import system.audio.InstrumentPrefs
+import system.audio.KickDrum
+import system.audio.MixerPrefs
 import util.GameplayPrefs
-import util.InstrumentPrefs
-import util.KickDrum
-import util.MixerPrefs
 
 /**
  * The **tuning export** — a small, slim collapsible section at the bottom of the AUDIO tab ([AudioPanel]):

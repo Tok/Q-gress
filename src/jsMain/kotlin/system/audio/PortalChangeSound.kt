@@ -1,7 +1,7 @@
-package system.display
+package system.audio
 
 import portal.Portal
-import util.SoundUtil
+import system.audio.SoundUtil
 
 /**
  * Plays the portal upgrade / downgrade / neutralize sounds by diffing each portal against the
