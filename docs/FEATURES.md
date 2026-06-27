@@ -19,6 +19,9 @@ Commit hashes are illustrative pointers, not exhaustive.
   (`external/MapLibre.kt`), no token. Keyless tiles: OpenFreeMap (street/vector) + Esri imagery.
 - Authored open styles: positron street, satellite (+ openmaptiles 3D buildings), and the
   **black-bg / white-streets shadow mask** for the passability grid.
+- Required tile **attribution** is a compact "ⓘ" (`attributionControl: { compact: true }`); it loads expanded
+  but **auto-collapses to the ⓘ once the game starts** (`util/Attribution.collapse` in `onMapload`) so it
+  doesn't sit open over the play area — clicking the ⓘ re-expands it (stays terms-compliant).
 - Fixed grid/zoom reliability: `preserveDrawingBuffer`, wait for `idle` before `readPixels`,
   select the shadow canvas by container query. Fixed `[0,0]` center sentinel + empty-collection
   `max/min` crashes. Web assets → `src/jsMain/resources`; webpack bundle serves `index.html`
@@ -256,18 +259,23 @@ Commit hashes are illustrative pointers, not exhaustive.
   ENL green in the UI (and vice versa); it drives the loading bars/title, `accent-color` on all native
   controls (checkboxes, the buildings slider), tuning-slider thumbs, and the button hover glow. Buttons
   are **brushed-chrome** with a subtle hover lift + faction "laser" glow + press-in (it's a game); the
-  always-on panels (menu, footer, loading, history, popup) are **black-rubber glass** (blur + faint
-  faction-laser edge). Volume/Speed sliders stay deliberately grayscale.
+  always-on panels (menu, loading, history, popup) are **black-rubber glass** (blur + faint faction-laser
+  edge). The **footer** is NOT blanket-blurred (it sat over the moving map) — it keeps a flat dark tint +
+  faction edge, and only the content that needs to read clearly is wrapped in per-tab `.footerGlass` panes
+  that **hug their content** (the table, the stat bars, each slider graph, the log text), so the scene shows
+  through around them; titles stay outside the panes (TRAIN panes everything). All UI grays are **neutral**
+  (no greenish/bluish cast — see CLAUDE.md). Volume/Speed sliders stay deliberately grayscale.
 - **Auto cam** (icon toggle, rightmost; **on by default**): a slow, slightly-randomized cinematic camera
   drift around the arena — the title-screen orbit reused in-game (`MapUtil.setAutoCam`/`autoCamLeg`), but
   much slower (~2.6× the title leg) and framing the whole arena (may pull a touch wider or push a little
   closer, but holds the picture; the title can push in for detail). **Wall-clock** (chained
   `setTimeout`/`easeTo`) → same pace at any sim speed. A manual **pan/rotate/tilt snaps it back out**
   (the toggle de-highlights via `onAutoCamChanged`); **zoom is exempt** (zooming while it drifts is fine).
-- **Keyboard controls + sim speed** (`util/Shortcuts`, `util/ui/ShortcutsHelp`): Space pause, Home
-  recenter, PageUp/Down (and `-`/`+`) zoom, WASD pan, `,`/`.` building transparency, `-`/`+` sim
-  **speed**, Tab cycles the footer, M mute, Esc closes popups; a **"?" shortcuts help** popup lists
-  them. The sim **speed buttons/keys** drive `Time` tick interval **and** `Scene3D.animationSpeed`, so
+- **Keyboard controls + sim speed** (`util/Shortcuts`): Space pause, Home recenter, PageUp/Down (and
+  `-`/`+`) zoom, WASD pan, `,`/`.` building transparency, `-`/`+` sim **speed**, Tab cycles the footer, M
+  mute, C auto-camera, Esc closes popups. A single **bottom-left "?" legend** (`util/ui/Controls`) is the one
+  controls reference — mouse interactions **and** the full keyboard list; **Menu → Shortcuts** reveals it, Esc
+  hides it, "?" toggles it. The sim **speed buttons/keys** drive `Time` tick interval **and** `Scene3D.animationSpeed`, so
   every animation (hack spin, deploy/shatter, build-in, field shimmer) tracks the sim speed. (The
   **Auto cam** drift is the deliberate exception — wall-clock, decoupled from sim speed.)
 - Map visuals: grayscale-terrain default (the satellite layer starts desaturated in-style → no colour
