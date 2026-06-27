@@ -246,13 +246,16 @@ data class Agent(
 
         return when {
             !isArrived() && action.isBusy() -> moveCloserInRange()
-            else -> {
-                if (Attacker.isActionPossible(this)) {
-                    Attacker.performAction(this)
-                } else {
-                    doNothing() // brief rest at the portal to regain XM, then re-attack (roaming away abandons the assault)
-                }
+            // Target fell (resos gone — incl. our own takedown) or flipped friendly: stop attacking nothing.
+            // End the action so act() re-selects next tick, instead of re-firing forever on a dead portal.
+            !Attacker.isTargetValid(this) -> {
+                action.end()
+                this
             }
+            Attacker.isActionPossible(this) -> Attacker.performAction(this)
+            // Worthy target but too few XMPs right now — brief rest at the portal (roaming away abandons the
+            // assault); the WAIT lets act() re-select, and with no XMPs it won't re-pick attack.
+            else -> doNothing()
         }
     }
 

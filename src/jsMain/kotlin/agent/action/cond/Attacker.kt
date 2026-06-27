@@ -35,12 +35,19 @@ object Attacker : ConditionalAction {
         return agent
     }
 
-    // Worth firing while the target is still an enemy portal that has resonators left to destroy.
-    private fun isWorthAttacking(agent: Agent): Boolean {
+    // Worth firing while the target is still valid AND the agent still has XMPs to fire.
+    private fun isWorthAttacking(agent: Agent) = agent.inventory.findXmps().isNotEmpty() && isTargetValid(agent)
+
+    /**
+     * The target is still a worthwhile assault: an enemy-held (or neutral) portal that still has resonators
+     * to destroy. Goes false the moment the portal falls (resos gone — including right after this agent
+     * takes it down) or flips to our own faction. The committed ATTACK action must then be abandoned (see
+     * [Agent.attackPortal]) so the agent re-selects, instead of re-firing forever on a dead target while
+     * still holding XMPs (the "stuck attacking nothing" symptom).
+     */
+    fun isTargetValid(agent: Agent): Boolean {
         val portal = agent.actionPortal
-        return agent.inventory.findXmps().isNotEmpty() &&
-            portal.owner?.faction != agent.faction &&
-            portal.numberOfResosLeft() > 0
+        return portal.owner?.faction != agent.faction && portal.numberOfResosLeft() > 0
     }
 
     // Spend Ultra-Strikes up front to knock the portal's mods (shields) off. US barely dent resonators but
