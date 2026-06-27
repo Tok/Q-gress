@@ -133,48 +133,48 @@ object TopAgentsPanel {
     // Distinct portals an agent holds keys to (vs total Keys, which counts duplicates).
     private fun uniqueKeys(agent: Agent): Int = agent.inventory.findUniqueKeys()?.size ?: 0
 
-    /** A count + a per-level bar strip (height = count, colour = level via [colorFor]). */
+    /** A per-level bar strip (height = count, colour = level via [colorFor]) + a trailing right-justified count. */
     private fun invCell(items: List<DeployableItem>, maxLevel: Int, colorFor: (Int) -> String): HTMLElement {
+        val byLevel = items.groupBy { it.getLevel() }.mapValues { it.value.size }
+        val maxCount = byLevel.values.maxOrNull() ?: 1
         val td = el("td", "taInv")
+        // Always render the full strip (zero-height bars when empty) so the graph keeps a constant width.
+        val bars = el("span", "taInvBars")
+        for (lvl in 1..maxLevel) {
+            val c = byLevel[lvl] ?: 0
+            val bar = el("span", "taInvBar")
+            bar.style.height = "${(c.toDouble() / maxCount * BAR_MAX_PX).toInt()}px"
+            if (c > 0) bar.style.background = colorFor(lvl)
+            bars.appendChild(bar)
+        }
+        td.appendChild(bars)
+        // Number last + fixed width so it pins to the cell's right edge and never shifts the bars when it changes.
         val count = el("span", "taInvCount")
         count.textContent = items.size.toString()
         td.appendChild(count)
-        if (items.isNotEmpty()) {
-            val byLevel = items.groupBy { it.getLevel() }.mapValues { it.value.size }
-            val maxCount = byLevel.values.maxOrNull() ?: 1
-            val bars = el("span", "taInvBars")
-            for (lvl in 1..maxLevel) {
-                val c = byLevel[lvl] ?: 0
-                val bar = el("span", "taInvBar")
-                bar.style.height = "${(c.toDouble() / maxCount * BAR_MAX_PX).toInt()}px"
-                if (c > 0) bar.style.background = colorFor(lvl)
-                bars.appendChild(bar)
-            }
-            td.appendChild(bars)
-        }
         return td
     }
 
-    /** Viruses an agent carries: a count + a two-bar strip (JARVIS green, ADA blue) in each type's colour. */
+    /** Viruses an agent carries: a two-bar strip (JARVIS green, ADA blue) in each type's colour + a trailing count. */
     private fun virusCell(agent: Agent): HTMLElement {
         val viruses = agent.inventory.findViruses()
+        val byType = viruses.groupBy { it.type }.mapValues { it.value.size }
+        val maxCount = byType.values.maxOrNull() ?: 1
         val td = el("td", "taInv")
+        // Always render the strip (zero-height bars when empty) so the graph keeps a constant width.
+        val bars = el("span", "taInvBars")
+        VirusType.values().forEach { type ->
+            val c = byType[type] ?: 0
+            val bar = el("span", "taInvBar")
+            bar.style.height = "${(c.toDouble() / maxCount * BAR_MAX_PX).toInt()}px"
+            if (c > 0) bar.style.background = type.color
+            bars.appendChild(bar)
+        }
+        td.appendChild(bars)
+        // Number last + fixed width so it right-justifies and never shifts the bars when it changes.
         val count = el("span", "taInvCount")
         count.textContent = viruses.size.toString()
         td.appendChild(count)
-        if (viruses.isNotEmpty()) {
-            val byType = viruses.groupBy { it.type }.mapValues { it.value.size }
-            val maxCount = byType.values.maxOrNull() ?: 1
-            val bars = el("span", "taInvBars")
-            VirusType.values().forEach { type ->
-                val c = byType[type] ?: 0
-                val bar = el("span", "taInvBar")
-                bar.style.height = "${(c.toDouble() / maxCount * BAR_MAX_PX).toInt()}px"
-                if (c > 0) bar.style.background = type.color
-                bars.appendChild(bar)
-            }
-            td.appendChild(bars)
-        }
         return td
     }
 

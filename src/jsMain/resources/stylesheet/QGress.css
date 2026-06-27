@@ -220,6 +220,13 @@ html, body {
 .taInv {
     text-align: right;
 }
+/* Trailing count: fixed-width + right-aligned so a 1↔2 digit change never shifts the bar strip to its left. */
+.taInvCount {
+    display: inline-block;
+    min-width: 15px;
+    text-align: right;
+    vertical-align: bottom;
+}
 /* Fixed column widths so the table layout never shifts with content. Every column is pinned: the Action
    and Portal cells (the last two) inherit the `.taRow td` ellipsis, so changing actions and long portal
    names never resize the table — overlong portal names just truncate.
@@ -245,7 +252,7 @@ html, body {
     align-items: flex-end;
     height: 11px;
     gap: 1px;
-    margin-left: 3px;
+    margin-right: 3px;
     vertical-align: bottom;
 }
 .taInvBar {
