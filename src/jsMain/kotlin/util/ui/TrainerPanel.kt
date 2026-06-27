@@ -43,7 +43,7 @@ object TrainerPanel {
     private const val PREVIEW_H = 96
     private const val CHART_W = 560
     private const val CHART_H = 220
-    private const val PREVIEW_COLOR = "#cfe3ff" // faction-neutral accent for the champion preview / curve
+    private const val PREVIEW_COLOR = "#e8e8e8" // faction-neutral accent for the champion preview / curve
 
     // Per-hidden-layer width choices (two hidden layers, each picked independently → 4×4 … 32×32).
     private val HIDDEN_WIDTHS = listOf(4, 8, 16, 24, 32)

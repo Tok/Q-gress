@@ -95,8 +95,10 @@ object SliderHistoryPanel {
         val grid = el("sliderHistoryGrid")
         val st = grid.asDynamic().style
         st.display = "grid"
-        st.gridTemplateColumns = "repeat($COLS, minmax(0, 1fr))" // COLS equal columns across the footer width
-        st.columnGap = "16px"
+        // Fixed-width columns so each graph's glass pane hugs the chart (the grid contracts to content) instead
+        // of stretching across the footer — more of the scene shows through between the per-graph panes.
+        st.gridTemplateColumns = "repeat($COLS, ${CHART_W}px)"
+        st.columnGap = "28px" // h-space between the per-graph panes (plenty of room to breathe)
         for (i in range) buildSlot(grid, i)
         group.appendChild(grid)
         return group

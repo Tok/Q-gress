@@ -344,10 +344,9 @@ object Onboarding {
             presets.appendChild(btn)
         }
         screen.appendChild(presets)
-        // Default to Normal: actually APPLY its size/portals to the inputs (not just highlight it) so hitting
-        // Next without touching a preset uses Normal — the old code only added the highlight class, so the
-        // inputs kept their initial (Small) values and Next silently submitted Small.
-        applyPreset.getOrNull(1)?.invoke()
+        // Default to Small: actually APPLY its size/portals to the inputs (not just highlight it) so hitting
+        // Next without touching a preset uses Small (the lightest/fastest default).
+        applyPreset.getOrNull(0)?.invoke()
 
         val fields = div("onboardRow")
         fields.appendChild(labeledInput("Width", widthInput))

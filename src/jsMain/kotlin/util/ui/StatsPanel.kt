@@ -29,7 +29,6 @@ object StatsPanel {
     private var comPanel: HTMLElement? = null
     private var lastComKey = ""
     private var onlyKey = false // EVENT LOG filter: when on, show only MAJOR ("key") events
-    private val FACTION_COLORS = setOf(Faction.ENL.color, Faction.RES.color) // a line with one of these = faction play-by-play
 
     /** Refresh the panels from current world state (faction MU passed in, like the old draw). */
     fun update(firstMu: Int, secondMu: Int, factions: Pair<Faction, Faction>) {
@@ -76,9 +75,6 @@ object StatsPanel {
         shown.forEach { entry ->
             val line = el("statsComLine")
             if (entry.importance == Com.Importance.MAJOR) line.classList.add("statsComMajor")
-            // Non-faction (neutral world) lines carry no faction colour → they may stay centered; faction
-            // play-by-play reads left-justified.
-            if (entry.segments.none { it.color in FACTION_COLORS }) line.classList.add("statsComNeutral")
             entry.segments.forEach { seg ->
                 val span = document.createElement("span") as HTMLElement
                 span.textContent = seg.text
