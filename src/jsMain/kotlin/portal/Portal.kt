@@ -5,6 +5,7 @@ import agent.Balance
 import agent.action.ActionItem
 import config.Config
 import config.DropRates
+import config.IngressFacts
 import config.Sim
 import extension.*
 import items.PowerCube
@@ -230,7 +231,7 @@ data class Portal(
             linker.inventory.consumeKeyToPortal(target)
             Com.addMessage("$linker created a link from $this to $target", Com.Importance.MINOR, linker.faction.color)
             SoundUtil.playLinkingSound(newLink)
-            linker.addAp(187)
+            linker.addAp(IngressFacts.AP_CREATE_LINK) // 313 (was 187 — that's the DESTROY-link value)
             linker.removeXm(250)
 
             // create fields
@@ -244,7 +245,7 @@ data class Portal(
                         Com.addMessage("$linker created a field at $this. +$newField", Com.Importance.MAJOR, linker.faction.color)
                         SoundUtil.playFieldingSound(newField)
                         fields.add(newField)
-                        linker.addAp(1250)
+                        linker.addAp(IngressFacts.AP_CREATE_FIELD) // 1250, flat (size drives MU, not AP)
                     }
                 }
             }

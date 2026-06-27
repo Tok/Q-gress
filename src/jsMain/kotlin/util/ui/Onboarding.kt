@@ -284,7 +284,7 @@ object Onboarding {
             if (!showLlm && DriverControls.chosen(faction) == "llm") DriverControls.select(faction, DriverControls.DEFAULT)
             grid.appendChild(
                 div("driverLabel").also {
-                    it.textContent = (if (isYou) "You · " else "Enemy · ") + faction.abbr
+                    it.textContent = (if (isYou) "You · " else "Against · ") + faction.abbr
                     it.style.color = faction.color
                 },
             )
