@@ -5,14 +5,17 @@ import agent.Agent
 import config.Config
 import items.deployable.DeployableItem
 import items.level.LevelColor
+import items.types.HeatSinkType
+import items.types.MultihackType
 import items.types.ShieldType
 import kotlinx.browser.document
 import org.w3c.dom.HTMLElement
 
 /**
  * The **AGENTS** footer tab: a leaderboard of agents (both factions mixed) as a DOM table. Columns: #, XM, AP,
- * Agent (faction colour), XMPs/Resos/Cubes/Shields (count + a per-level bar strip in rarity/level colours),
- * Keys, Action, Portal. **Sortable** — click any column header to sort by it (toggles asc/desc). Collapsed it
+ * Agent (faction colour), then each carried item as a count + per-level bar strip in rarity/level colours
+ * (XMPs, US, Resos, Cubes, Shields, Heat sinks, Multi-hacks), Keys + Unique keys, Action, Portal. **Sortable**
+ * — click any column header to sort by it (toggles asc/desc). Collapsed it
  * shows the top [ROWS]; when the footer is **expanded** ([Footer.isExpanded]) it lists **every** agent (the
  * body scrolls). Rebuilt each frame from the sorted roster.
  */
@@ -20,6 +23,7 @@ object TopAgentsPanel {
     private const val ROWS = Config.topAgentsMessageLimit
     private const val MAX_DEPLOY_LEVEL = 8
     private const val MAX_SHIELD_LEVEL = 4
+    private const val MAX_MOD_LEVEL = 3 // heat sinks / multi-hacks: Common / Rare / Very Rare
     private const val BAR_MAX_PX = 11
 
     // A column: a header, an optional numeric/string sort key (null → not sortable), and how to render its cell.
@@ -39,6 +43,9 @@ object TopAgentsPanel {
         Col("XMPs", num = {
             it.inventory.findXmps().size.toDouble()
         }, render = { a -> invCell(a.inventory.findXmps(), MAX_DEPLOY_LEVEL, ::deployColor) }),
+        Col("US", num = {
+            it.inventory.findUltraStrikes().size.toDouble()
+        }, render = { a -> invCell(a.inventory.findUltraStrikes(), MAX_DEPLOY_LEVEL, ::deployColor) }),
         Col("Resos", num = {
             it.inventory.findResonators().size.toDouble()
         }, render = { a -> invCell(a.inventory.findResonators(), MAX_DEPLOY_LEVEL, ::deployColor) }),
@@ -48,7 +55,14 @@ object TopAgentsPanel {
         Col("Shields", num = {
             it.inventory.findShields().size.toDouble()
         }, render = { a -> invCell(a.inventory.findShields(), MAX_SHIELD_LEVEL, ShieldType::getColorForLevel) }),
+        Col("Heat", num = {
+            it.inventory.findHeatSinks().size.toDouble()
+        }, render = { a -> invCell(a.inventory.findHeatSinks(), MAX_MOD_LEVEL, HeatSinkType::getColorForLevel) }),
+        Col("MHack", num = {
+            it.inventory.findMultihacks().size.toDouble()
+        }, render = { a -> invCell(a.inventory.findMultihacks(), MAX_MOD_LEVEL, MultihackType::getColorForLevel) }),
         Col("Keys", num = { it.inventory.keyCount().toDouble() }, render = { a -> cell(a.inventory.keyCount().toString(), "taNum") }),
+        Col("Uniq", num = { uniqueKeys(it).toDouble() }, render = { a -> cell(uniqueKeys(a).toString(), "taNum") }),
         Col("Action", str = { it.action.item.text }, render = { a -> cell(a.action.item.text, "taCell") }),
         Col("Portal", str = { it.actionPortal.name }, render = { a -> cell(a.actionPortal.name, "taCell") }),
     )
@@ -113,6 +127,9 @@ object TopAgentsPanel {
     private fun nameCell(agent: Agent): HTMLElement = cell(agent.name, "taName").also { it.style.color = agent.faction.color }
 
     private fun deployColor(level: Int): String = LevelColor.map[level] ?: "#ffffff"
+
+    // Distinct portals an agent holds keys to (vs total Keys, which counts duplicates).
+    private fun uniqueKeys(agent: Agent): Int = agent.inventory.findUniqueKeys()?.size ?: 0
 
     /** A count + a per-level bar strip (height = count, colour = level via [colorFor]). */
     private fun invCell(items: List<DeployableItem>, maxLevel: Int, colorFor: (Int) -> String): HTMLElement {

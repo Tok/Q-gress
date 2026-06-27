@@ -12,4 +12,8 @@ enum class MultihackType(val level: Int, val abbr: String, val rarity: Rarity, v
     ;
 
     val color: String get() = rarity.color
+
+    companion object {
+        fun getColorForLevel(level: Int) = values().firstOrNull { it.level == level }?.color ?: "#FFFFFF"
+    }
 }

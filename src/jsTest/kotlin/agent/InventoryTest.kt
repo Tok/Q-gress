@@ -3,6 +3,7 @@ package agent
 import Factory
 import config.Config
 import items.deployable.Resonator
+import portal.PortalKey
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -39,8 +40,19 @@ class InventoryTest {
         val before = inv.size()
         val xm = inv.recycleForSpace(5)
         assertEquals(before - 5, inv.size(), "5 items recycled away")
-        assertTrue(inv.findKeys().contains(key), "keys are kept (needed for linking)")
+        assertTrue(inv.findKeys().contains(key), "a lone key is kept (needed for linking)")
         assertTrue(xm > 0, "recycled resonators hand back some XM")
+    }
+
+    @Test
+    fun recycleDumpsSurplusDuplicateKeysFirstKeepingAFew() = with(Factory) {
+        val inv = inventory()
+        val portal = portal()
+        repeat(6) { inv.addItem(portal.let { p -> PortalKey(p, owner()) }) } // 6 keys to the SAME portal
+        repeat(4) { inv.addItem(Resonator.create(owner(), 1)) }
+        inv.recycleForSpace(2) // only enough to clear the 2 surplus keys (6 − MAX_KEYS_PER_PORTAL=4)
+        assertEquals(Inventory.MAX_KEYS_PER_PORTAL, inv.findKeys().count(), "surplus dupes go first; a few kept")
+        assertEquals(4, inv.findResonators().count(), "resonators untouched — dupe keys were higher priority")
     }
 
     @Test

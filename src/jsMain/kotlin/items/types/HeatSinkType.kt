@@ -14,4 +14,11 @@ enum class HeatSinkType(
     COMMON(1, "CHS", Rarity.COMMON, 20, 500),
     RARE(2, "RHS", Rarity.RARE, 50, 750),
     VERY_RARE(3, "VRHS", Rarity.VERY_RARE, 70, 1000),
+    ;
+
+    val color: String get() = rarity.color
+
+    companion object {
+        fun getColorForLevel(level: Int) = values().firstOrNull { it.level == level }?.color ?: "#FFFFFF"
+    }
 }
