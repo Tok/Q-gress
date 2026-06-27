@@ -59,19 +59,8 @@ import kotlin.js.Json
 external fun encodeURIComponent(uri: String): String
 
 object Bootstrap {
-    private var intervalID = 0
     private var coloredMap = true // terrain colour on (eases in after world-gen); Menu toggle flips it
-    private const val PAUSE_BUTTON_ID = "pauseButton"
     private const val LOCATION_LABEL_ID = "locationLabel"
-    private const val MIN_SPEED = 0.25
-    private const val MAX_SPEED = 4.0
-
-    // Sim-speed presets behind the toolbar buttons (mult, label, button id). "Max" = MAX_SPEED.
-    private val SPEED_PRESETS = listOf(
-        Triple(1.0, "×1", "speedBtnX1"),
-        Triple(3.0, "×3", "speedBtnX3"),
-        Triple(MAX_SPEED, "Max", "speedBtnMax"),
-    )
 
     // The actually-loaded location (set by setLoadedLocation) — named in the top bar, and the target
     // a Reset reloads onto.
@@ -286,11 +275,11 @@ object Bootstrap {
     private fun createSpeedControls(): HTMLSpanElement {
         val span = document.createElement("span") as HTMLSpanElement
         span.addClass("toolbarGroup", "speedControls")
-        span.append(createButton(PAUSE_BUTTON_ID, "topButton displayFont speedBtn", "Pause") { togglePause() })
-        SPEED_PRESETS.forEach { (mult, label, id) ->
-            span.append(createButton(id, "topButton displayFont speedBtn", label) { selectSpeed(mult) })
+        span.append(createButton(GameLoop.PAUSE_BUTTON_ID, "topButton displayFont speedBtn", "Pause") { GameLoop.togglePause() })
+        GameLoop.SPEED_PRESETS.forEach { (mult, label, id) ->
+            span.append(createButton(id, "topButton displayFont speedBtn", label) { GameLoop.selectSpeed(mult) })
         }
-        refreshSpeedButtons()
+        GameLoop.refreshSpeedButtons()
         return span
     }
 
@@ -301,20 +290,6 @@ object Bootstrap {
         btn.innerHTML = Icons.CAM
         btn.title = "Auto cam"
         return btn
-    }
-
-    /** Pick a sim-speed preset; resumes first if currently paused (so a speed button always plays). */
-    private fun selectSpeed(mult: Double) {
-        if (intervalID == -1) togglePause() // -1 == paused
-        setSpeed(mult)
-    }
-
-    // Highlight the preset matching the live speed (none while paused, i.e. intervalID == -1).
-    private fun refreshSpeedButtons() {
-        SPEED_PRESETS.forEach { (mult, _, id) ->
-            val active = intervalID != -1 && mult == speedMult
-            (document.getElementById(id) as? HTMLElement)?.let { if (active) it.addClass("active") else it.removeClass("active") }
-        }
     }
 
     private fun createControlDiv(): HTMLDivElement {
@@ -358,7 +333,7 @@ object Bootstrap {
                     Showcases.moveCursor(MapController.eventToSimPos(event))
                 },
             )
-            intervalID = document.defaultView?.setInterval({ demoTick() }, Time.minTickInterval) ?: 0
+            GameLoop.start { demoTick() }
             Demo.showControls(center)
         })
     }
@@ -405,38 +380,13 @@ object Bootstrap {
         LoadingOverlay.setAccent(fact.color) // tint the loading screen with the chosen faction
     }
 
-    private fun resetInterval() {
-        intervalID = document.defaultView?.setInterval({ tick() }, currentTickMs()) ?: 0
-    }
-
-    private var autoCamBeforePause = false
-
-    private fun togglePause() {
-        intervalID = pauseHandler(intervalID) { tick() }
-        applyPauseSideEffects(paused = intervalID == -1)
-        refreshSpeedButtons()
-    }
-
-    // Pausing the tick interval freezes the sim logic, but the 3D render + auto-cam run on their own loop —
-    // so also park the auto-cam (restoring it on resume) and implicitly mute, so a paused game is truly still.
-    private fun applyPauseSideEffects(paused: Boolean) {
-        Sound.setPausedMute(paused)
-        applyAnimationSpeed() // freeze (or restore) the 3D animation clock — sun arc, hack spins, etc.
-        if (paused) {
-            autoCamBeforePause = MapController.isAutoCamOn()
-            if (autoCamBeforePause) MapController.setAutoCam(false)
-        } else if (autoCamBeforePause) {
-            MapController.setAutoCam(true)
-        }
-    }
-
     private fun bindKeyboardShortcuts() = Shortcuts.bind(
         Shortcuts.Handlers(
             command = { onShortcutCommand(it) },
             zoom = { MapController.zoomBy(it) },
             pan = { dx, dy -> MapController.panBy(dx, dy) },
             buildingOpacity = { BuildingTransparency.nudge(it) },
-            speedDelta = { setSpeed(speedMult + it) },
+            speedDelta = { GameLoop.nudgeSpeed(it) },
         ),
     )
 
@@ -444,7 +394,7 @@ object Bootstrap {
         (document.getElementById("autoCamToggle") as? HTMLElement)?.let { if (on) it.addClass("active") else it.removeClass("active") }
 
     private fun onShortcutCommand(c: Shortcuts.Command) = when (c) {
-        Shortcuts.Command.PAUSE -> togglePause()
+        Shortcuts.Command.PAUSE -> GameLoop.togglePause()
         Shortcuts.Command.HOME -> MapController.goHome()
         Shortcuts.Command.CYCLE_TAB -> Footer.cycleTab()
         Shortcuts.Command.MUTE -> toggleMuteUi()
@@ -468,39 +418,6 @@ object Bootstrap {
         DropRatesPanel.close()
         document.querySelector(".gameMenu")?.classList?.add("invisible") // close the Menu dropdown if open
         closePopup()
-    }
-
-    private var speedMult = 1.0
-    private fun currentTickMs() = (Time.minTickInterval / speedMult).toInt().coerceAtLeast(1)
-
-    /** Set the sim speed multiplier; restarts the tick interval (paused stays paused) and scales
-     *  animations. Walking/actions follow automatically — they run per tick, which now ticks faster. */
-    private fun setSpeed(mult: Double) {
-        speedMult = mult.coerceIn(MIN_SPEED, MAX_SPEED)
-        applyAnimationSpeed() // visual FX (hack spin, deploy, shatter, build-in, sun) track the speed
-        if (intervalID != -1) {
-            document.defaultView?.clearInterval(intervalID)
-            intervalID = document.defaultView?.setInterval({ tick() }, currentTickMs()) ?: 0
-        }
-        refreshSpeedButtons()
-    }
-
-    // The 3D render loop runs independently of the sim tick, so drive its animation clock from here: the live
-    // speed multiplier normally, 0 while paused (freezes hack spins, the sun's arc, etc. — a true pause).
-    private fun applyAnimationSpeed() {
-        Scene3D.animationSpeed = if (intervalID == -1) 0.0 else speedMult
-    }
-
-    private fun pauseHandler(intervalID: Int, tickFunction: () -> Unit): Int {
-        val pauseButton = document.getElementById(PAUSE_BUTTON_ID) as HTMLButtonElement
-        return if (intervalID != -1) {
-            pauseButton.innerText = "Resume"
-            document.defaultView?.clearInterval(intervalID)
-            -1
-        } else {
-            pauseButton.innerText = "Pause"
-            document.defaultView?.setInterval({ tickFunction() }, currentTickMs()) ?: 0
-        }
     }
 
     private fun onMapClick(event: dynamic) {
@@ -627,7 +544,7 @@ object Bootstrap {
                 chooseUserFaction(Faction.random())
             }
             createQSliders(World.userFactionOrThrow())
-            resetInterval()
+            GameLoop.start { tick() }
             World.isReady = true
             document.getElementById("top-controls")?.removeClass("invisible") // reveal the toolbar now
             document.getElementById(LOCATION_LABEL_ID)?.removeClass("invisible") // …and the location name (in #hudTop, not the toolbar)
