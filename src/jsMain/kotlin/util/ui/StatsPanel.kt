@@ -135,10 +135,4 @@ object StatsPanel {
         )
         return row
     }
-
-    private fun el(cls: String): HTMLElement {
-        val e = document.createElement("div") as HTMLElement
-        e.className = cls
-        return e
-    }
 }

@@ -170,10 +170,4 @@ object SliderHistoryPanel {
     }
 
     private fun pct(value: Double): String = "${(value * 100.0).toInt()}%"
-
-    private fun el(cls: String): HTMLElement {
-        val e = document.createElement("div") as HTMLElement
-        e.className = cls
-        return e
-    }
 }

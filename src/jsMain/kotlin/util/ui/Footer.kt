@@ -148,12 +148,6 @@ object Footer {
         maximize?.innerHTML = if (expanded && !collapsed) ICON_RESTORE else ICON_MAXIMIZE
     }
 
-    private fun el(tag: String, cls: String): HTMLElement {
-        val e = document.createElement(tag) as HTMLElement
-        if (cls.isNotEmpty()) e.className = cls
-        return e
-    }
-
     // Simple monochrome maximize/restore icons (feather-style, currentColor) — not OS emoji.
     private fun svgIcon(inner: String): String = "<svg viewBox='0 0 24 24' width='13' height='13' fill='none' stroke='currentColor' " +
         "stroke-width='2' stroke-linecap='round' stroke-linejoin='round'>$inner</svg>"

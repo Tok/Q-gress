@@ -101,10 +101,4 @@ object LlmReasoningPanel {
     private fun setVisible(e: HTMLElement, visible: Boolean) {
         e.asDynamic().style.display = if (visible) "" else "none"
     }
-
-    private fun el(tag: String, cls: String): HTMLElement {
-        val e = document.createElement(tag) as HTMLElement
-        e.className = cls
-        return e
-    }
 }

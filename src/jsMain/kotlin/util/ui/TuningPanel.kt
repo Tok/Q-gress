@@ -252,10 +252,4 @@ object TuningPanel {
             else -> fixed
         }
     }
-
-    private fun el(tag: String, cls: String): HTMLElement {
-        val e = document.createElement(tag) as HTMLElement
-        if (cls.isNotEmpty()) e.className = cls
-        return e
-    }
 }

@@ -480,10 +480,4 @@ object TrainerPanel {
         (canvas.getContext("2d") as? CanvasRenderingContext2D)?.scale(dpr, dpr)
         return canvas
     }
-
-    private fun el(tag: String, cls: String): HTMLElement {
-        val e = document.createElement(tag) as HTMLElement
-        e.className = cls
-        return e
-    }
 }

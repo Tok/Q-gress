@@ -83,10 +83,4 @@ object AiPanel {
         values[faction] = valArr
         return col
     }
-
-    private fun el(tag: String, cls: String): HTMLElement {
-        val e = document.createElement(tag) as HTMLElement
-        e.className = cls
-        return e
-    }
 }

@@ -110,10 +110,4 @@ object TuningLab {
     private fun syncMenuSlider(id: String, value: Double) {
         (document.getElementById(id) as? HTMLInputElement)?.value = value.toString()
     }
-
-    private fun el(tag: String, cls: String): HTMLElement {
-        val e = document.createElement(tag) as HTMLElement
-        if (cls.isNotEmpty()) e.className = cls
-        return e
-    }
 }
