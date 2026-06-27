@@ -1010,6 +1010,48 @@ html, body {
     max-width: 100%;
 }
 
+/* TUNING LAB tab (TuningLab) — all tunables as one copy-paste JSON block + reset. */
+.tuningLab {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-width: 560px;
+}
+.tuningLabText {
+    width: 100%;
+    min-height: 200px;
+    box-sizing: border-box;
+    background: rgba(0, 0, 0, 0.5);
+    color: #e8e8e8;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 4px;
+    font-family: "Coda", monospace;
+    font-size: 11px;
+    line-height: 1.45;
+    padding: 6px 8px;
+    resize: vertical;
+}
+.tuningLabBtns {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.tuningLabStatus {
+    color: #a0a0a0;
+    font-size: 11px;
+}
+/* Game-menu section divider (gameplay vs visual settings). */
+.menuSectionHead {
+    color: #a0a0a0;
+    font-family: "Chakra Petch", sans-serif;
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin: 6px 0 2px;
+    padding-top: 5px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
 /* Leaderboard (LeaderboardPanel) — driver entrant toggles + a round-robin standings table. */
 .ladderEntrant {
     display: inline-flex;

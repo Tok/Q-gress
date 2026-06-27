@@ -32,21 +32,24 @@ object AudioPrefs {
 
     fun save() {
         if (HtmlUtil.isNotRunningInBrowser()) return
-        runCatching {
-            val o: dynamic = js("({})")
-            o.lowpassHz = AudioFx.lowpassHz
-            o.lowpassQ = AudioFx.lowpassQ
-            o.reverbMix = AudioFx.reverbMix
-            o.delayTimeS = AudioFx.delayTimeS
-            o.delayFeedback = AudioFx.delayFeedback01
-            o.delayMix = AudioFx.delayMix
-            o.compressAmount = AudioFx.compressAmount
-            o.envAttackS = AudioFx.envAttackS
-            o.envDecayS = AudioFx.envDecayS
-            o.envSustain = AudioFx.envSustain
-            o.envReleaseMult = AudioFx.envReleaseMult
-            localStorage.setItem(KEY, JSON.stringify(o))
-        }
+        runCatching { localStorage.setItem(KEY, JSON.stringify(json())) }
+    }
+
+    /** The current FX/envelope state as a plain object — persisted by [save] and shown by the TUNING LAB. */
+    fun json(): dynamic {
+        val o: dynamic = js("({})")
+        o.lowpassHz = AudioFx.lowpassHz
+        o.lowpassQ = AudioFx.lowpassQ
+        o.reverbMix = AudioFx.reverbMix
+        o.delayTimeS = AudioFx.delayTimeS
+        o.delayFeedback = AudioFx.delayFeedback01
+        o.delayMix = AudioFx.delayMix
+        o.compressAmount = AudioFx.compressAmount
+        o.envAttackS = AudioFx.envAttackS
+        o.envDecayS = AudioFx.envDecayS
+        o.envSustain = AudioFx.envSustain
+        o.envReleaseMult = AudioFx.envReleaseMult
+        return o
     }
 
     private fun apply(v: dynamic, set: (Double) -> Unit) {

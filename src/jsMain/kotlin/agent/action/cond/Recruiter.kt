@@ -27,12 +27,12 @@ object Recruiter : ConditionalAction {
     override fun isActionPossible(agent: Agent) = World.canRecruitMore(agent.faction)
 
     /**
-     * How strongly an agent weighs recruiting this tick — NO LONGER a tuning slider (it was too snowbally to
-     * hand anyone a crank). A fixed base ([Config.recruitWeight]) × [Balance.recruitFactor]: the SMALLER team
-     * recruits more often, the LARGER less, so team sizes self-balance. (Future: an agent skill + items — e.g.
-     * "beer" — could scale this; see PLAN.)
+     * How strongly an agent weighs recruiting this tick. A fixed base ([Config.recruitWeight]) ×
+     * [Balance.recruitFactor] (the SMALLER team recruits more, so team sizes self-balance) × the global
+     * [Config.progressSpeed] knob (how fast the game ramps — also drives AP gain). (Future: an agent skill +
+     * items — e.g. "beer" — could scale this; see PLAN.)
      */
-    fun selectionWeight(faction: Faction): Double = Config.recruitWeight * Balance.recruitFactor(faction)
+    fun selectionWeight(faction: Faction): Double = Config.recruitWeight * Balance.recruitFactor(faction) * Config.progressSpeed
 
     // Success chance just diminishes as the faction fills toward its cap (rushing the cap yields ever-smaller
     // returns); the anti-snowball balancing now lives in [selectionWeight], not here, to avoid double-counting.

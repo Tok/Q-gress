@@ -58,10 +58,10 @@ class RecruiterTest {
         addAgents(Faction.RES, 1)
         Faction.values().forEach { faction ->
             assertEquals(
-                Config.recruitWeight * agent.Balance.recruitFactor(faction),
+                Config.recruitWeight * agent.Balance.recruitFactor(faction) * Config.progressSpeed,
                 Recruiter.selectionWeight(faction),
                 1e-12,
-                "weight is exactly base × recruitFactor for $faction",
+                "weight is exactly base × recruitFactor × progressSpeed for $faction",
             )
         }
     }

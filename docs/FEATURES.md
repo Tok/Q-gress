@@ -249,6 +249,16 @@ Commit hashes are illustrative pointers, not exhaustive.
   **and the per-building colliders** are lifted to the terrain elevation too (`setGroundZ` +
   `groundZAtLngLat`), so falling pieces land on the ground and on **building roofs**, not hundreds of
   metres below at sea level.
+- **Settings — gameplay vs visual, persisted + resettable.** The game Menu splits its controls into a
+  **Gameplay** group (Drop rates, **Combat dynamics**, **Progress speed**) and a **Visual** group
+  (Passability, Damage numbers, Portal names, Buildings transparency/shake), each slider carrying a hover
+  tooltip of what it affects. **Progress speed** (`Config.progressSpeed`) is one composite knob — like combat
+  dynamics — that scales **both** the recruiting rate (`Recruiter.selectionWeight`) **and** AP gain
+  (`Agent.addAp` → agents level faster), so the game ramps early→endgame quicker. Gameplay knobs persist
+  (`util/GameplayPrefs`), audio FX persist (`util/AudioPrefs`); both load at startup. The new **TUNING LAB**
+  footer tab (`util/ui/TuningLab`) shows every tunable (audio + gameplay + drop rates) as one **copy-paste
+  JSON** block with **Copy** and **Reset to defaults** (restoring audio + gameplay and re-syncing the AUDIO
+  knobs + Menu sliders).
 - **Top toolbar** reorganized: Menu far-left (with overlay toggles + Lock-tuning inside it), Home, and a
   seamless **sim-speed segmented control** — Pause / ×1 / ×3 / Max butted together (active speed
   highlighted; Pause is Space-bound; `-`/`+` still nudge) replacing the old pause button + slider. Far

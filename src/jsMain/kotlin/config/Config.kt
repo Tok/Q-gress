@@ -125,6 +125,11 @@ object Config {
 
     const val apMultiplier = 10
 
+    // One "Progress speed" knob (like combatDynamism) for how fast the game ramps early→endgame: it scales
+    // BOTH the recruiting rate (Recruiter.selectionWeight) AND AP gain (Agent.addAp → agents level faster).
+    // 1.0 = baseline; <1 slower, >1 faster. Live-tunable + persisted (GameplayPrefs).
+    var progressSpeed = 1.0
+
     const val isNpcSwarming = true
     const val npcXmSpawnRatio = 0.2
 

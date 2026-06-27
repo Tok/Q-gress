@@ -21,6 +21,7 @@ import util.ui.SliderHistoryPanel
 import util.ui.StatsPanel
 import util.ui.TopAgentsPanel
 import util.ui.TrainerPanel
+import util.ui.TuningLab
 import util.ui.TuningPanel
 import kotlin.math.PI
 
@@ -47,7 +48,8 @@ object DrawUtil {
         LeaderboardPanel.update() // TRAIN footer tab: the driver leaderboard (round-robin ranking)
         SliderHistoryPanel.update() // AI tab: each slider's value over the checkpoint window
         LlmReasoningPanel.update() // AI tab: the LLM driver's prompt/reply/parsed reasoning
-        AudioPanel.update() // AUDIO footer tab: lazy-build the live sound toy (master FX + SFX triggers)
+        AudioPanel.update() // AUDIO footer tab: master-FX control surface + live scope/spectrum
+        TuningLab.update() // TUNING LAB footer tab: copy-paste JSON of all tunables + reset
         if (Styles.isDrawTopAgents) {
             TopAgentsPanel.update()
             PortalsPanel.update() // PORTALS footer tab: every portal as a sortable table (like AGENTS)

@@ -18,9 +18,6 @@ import portal.Portal
 import system.Cycle
 import system.HeadlessRun
 import system.Simulation
-import system.display.DamageNumberFx
-import system.display.PassabilityOverlay
-import system.display.PortalNameTicker
 import system.display.Scene3D
 import system.display.SunController
 import util.data.*
@@ -99,6 +96,7 @@ object HtmlUtil {
         // (title, onboarding, world-gen, gameplay) — not bound to a screen/toolbar that comes and goes.
         SoundUtil.restoreVolume() // re-read the saved volume/mute BEFORE the widget builds (survives reloads)
         AudioPrefs.load() // re-apply the saved master-FX tuning (AudioFx.build later picks it up via applyAll)
+        GameplayPrefs.load() // re-apply saved gameplay knobs BEFORE the menu sliders read Config to seed themselves
         document.body?.appendChild(createPersistentVolume())
 
         // Offscreen ImageData factory for the passability-grid readback (never displayed). No
@@ -235,25 +233,6 @@ object HtmlUtil {
     }
 
     private fun centerOrDefault(): Json = GameUrl.lngLat()?.toJson() ?: Locations.DEFAULT.toJSON()
-
-    private fun createCheckbox(id: String, labelText: String, onChange: (Boolean) -> Unit): HTMLSpanElement {
-        val span = document.createElement("span") as HTMLSpanElement
-        val check = document.createElement("input") as HTMLInputElement
-        check.id = id
-        check.type = "checkbox"
-        check.addClass("checkbox")
-        check.onchange = {
-            onChange(check.checked)
-            null
-        }
-        val label = document.createElement("span") as HTMLSpanElement
-        label.addClass("label", "topLabel")
-        label.innerHTML = labelText
-        label.onclick = { check.click() }
-        span.append(check)
-        span.append(label)
-        return span
-    }
 
     // Always-visible master-volume widget (fixed top-right), created once and parented to <body> so it
     // persists across the title, onboarding, world-gen and gameplay. Keeps the "soundLabel"/"volumeSlider"
@@ -712,33 +691,8 @@ object HtmlUtil {
         menu.append(createButton("menuReset", "menuItem displayFont", "Reset") { doReset() })
         menu.append(createButton("menuShare", "menuItem displayFont", "Copy link") { copyShareLink() })
         menu.append(createButton("menuSave", "menuItem displayFont", "Save") { saveGame() })
-        menu.append(createButton("menuDropRates", "menuItem displayFont", "Drop rates") { DropRatesPanel.toggle() })
-        // Overlay toggle lives in the menu now (no longer always-visible in the top bar). Vectors are
-        // no longer toggled — they flash automatically for ~a second when a portal is created.
-        // The "passability" map (greyscale walkability the grid is read from) — this is NOT the terrain.
-        menu.append(createMenuCheckbox("passabilityToggle", "Passability") { PassabilityOverlay.setVisible(it) })
-        // Damage-number animations on/off (on by default).
-        val dmgNums = createMenuCheckbox("damageNumbersToggle", "Damage numbers") { DamageNumberFx.enabled = it }
-        (dmgNums.firstChild as? HTMLInputElement)?.checked = DamageNumberFx.enabled
-        menu.append(dmgNums)
-        // 3D portal-name rings on/off (off by default; opt-in here).
-        val portalNames = createMenuCheckbox("portalNamesToggle", "Portal names") { PortalNameTicker.setEnabled(it) }
-        (portalNames.firstChild as? HTMLInputElement)?.checked = PortalNameTicker.enabled
-        menu.append(portalNames)
-        // The single combat-dynamics knob (0 = realistic/tanky, slow board … 1 = portals flip very easily).
-        // Drives shield mitigation + weapon drops + attack eagerness + the underdog comeback. Live-tunable.
-        menu.append(MenuControls.slider("Combat dynamics", Config.combatDynamism) { Config.combatDynamism = it })
-        // Fade BOTH building sets (our own meshes + MapLibre's, which fill the gaps) when they hide the action.
-        // 0 = solid, 1 = fully see-through; our own meshes are a touch more transparent than MapLibre's.
-        menu.append(
-            MenuControls.slider("Buildings transparency", BuildingTransparency.default()) { BuildingTransparency.set(it) },
-        )
-        // Building-shake intensity (0 = off … 2 = 200%).
-        menu.append(
-            MenuControls.slider("Building shake", Config.buildingShakeMultiplier, 0.0, 2.0, 0.1) {
-                Config.buildingShakeMultiplier = it
-            },
-        )
+        // Gameplay + visual settings (sectioned; gameplay knobs persist to GameplayPrefs + show in TUNING LAB).
+        MenuControls.settings(menu)
         // Build version footer (timestamp + git-sha), so any deployed build is identifiable.
         val version = document.createElement("div") as HTMLDivElement
         version.addClass("menuVersion")
@@ -749,14 +703,6 @@ object HtmlUtil {
         }
         span.append(button)
         span.append(menu)
-        return span
-    }
-
-    /** Toggle a small panel listing the live (tunable) drop rates — transparency for the player. */
-    /** A [createCheckbox] styled as a row inside the game menu dropdown. */
-    private fun createMenuCheckbox(id: String, labelText: String, onChange: (Boolean) -> Unit): HTMLSpanElement {
-        val span = createCheckbox(id, labelText, onChange)
-        span.addClass("menuCheck")
         return span
     }
 

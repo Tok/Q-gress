@@ -23,6 +23,7 @@ import util.Util
 import util.data.*
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.roundToInt
 
 data class Agent(
     val faction: Faction,
@@ -68,7 +69,7 @@ data class Agent(
 
     fun addAp(v: Int) {
         val before = getLevel()
-        this.ap += v * Config.apMultiplier
+        this.ap += (v * Config.apMultiplier * Config.progressSpeed).roundToInt() // progressSpeed → faster levelling
         if (faction == World.userFaction && getLevel() > before) SoundUtil.playLevelUp(pos) // player agent dinged up
     }
 
