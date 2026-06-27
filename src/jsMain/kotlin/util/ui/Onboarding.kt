@@ -223,7 +223,7 @@ object Onboarding {
      */
     fun showDrivers(userFaction: Faction, onBack: () -> Unit, onNext: () -> Unit) {
         currentBack = onBack // Esc → back to faction pick
-        val screen = screen("TEAM SETUP")
+        val screen = screen("TEAMS SETUP")
         val intro = div("onboardWarn")
         intro.textContent = "Pick a brain for each side — the default is neural net vs neural net (AI vs AI). " +
             "Set your side to Human to drive it yourself with the tuning sliders."
