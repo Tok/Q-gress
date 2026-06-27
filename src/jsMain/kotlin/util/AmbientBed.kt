@@ -22,6 +22,8 @@ object AmbientBed {
     private const val LFO_HZ = 0.08 // very slow cutoff drift
     private const val LFO_DEPTH_HZ = 180.0
     private const val RAMP_S = 0.6 // gain glide so coverage changes aren't clicky
+    private const val FULL_AT = 0.5 // field coverage at which the hum reaches full volume (clamps above)
+    private const val BOOST = 5.0 // the hum is a prominent layer — lift it well above the raw coverage gain
 
     var enabled = true
         private set
@@ -78,9 +80,12 @@ object AmbientBed {
             return
         }
         if (!built) build()
-        val coverage = (totalArea / playAreaMu()).coerceIn(0.0, 1.0) // layered fields can exceed → cap at 100%
-        ramp(level * coverage)
-        SoundUtil.movePanner(panner, Pos((cx / totalArea).toInt(), (cy / totalArea).toInt()))
+        val coverage = totalArea / playAreaMu() // layered fields can push this past 1 — that's fine, vol clamps
+        val vol = (coverage / FULL_AT).coerceIn(0.0, 1.0) // 50% coverage → full volume
+        ramp(level * vol * BOOST)
+        // Stereo-pan toward the field centroid's horizontal position (no distance attenuation → loud + steady).
+        val panX = (((cx / totalArea) - Sim.width / 2.0) / (Sim.width / 2.0)).coerceIn(-1.0, 1.0)
+        panner?.pan?.asDynamic()?.setTargetAtTime(panX, SoundUtil.audioCtx.asDynamic().currentTime, 0.2)
     }
 
     private fun ramp(target: Double) {
@@ -109,10 +114,10 @@ object AmbientBed {
         lp.Q.value = 6.0
         val gain = ctx.createGain()
         gain.gain.value = 0.0
-        val pan = SoundUtil.createPanner(Pos(Sim.width / 2, Sim.height / 2)) // repositioned to the field centroid each frame
+        val pan = ctx.createStereoPanner() // L/R only (no distance attenuation) → loud + steady; aimed at the field centroid
         lp.connect(gain)
         gain.connect(pan)
-        pan.asDynamic().connect(Mixer.bus(Mixer.Group.AMBIENT))
+        pan.connect(Mixer.bus(Mixer.Group.AMBIENT))
         tone(ctx, "sine", SUB_HZ, 0.34, lp)
         tone(ctx, "triangle", RUMBLE_HZ, 0.22, lp)
         tone(ctx, "sawtooth", DRONE_HZ, 0.10, lp, bandpass = 200.0)

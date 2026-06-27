@@ -735,12 +735,6 @@ object SoundUtil {
 
     internal fun now() = audioCtx.currentTime.toDouble()
 
-    /** Glide a (3D) panner to [pos] — for a continuous source that follows a moving point (the field-hum centroid). */
-    internal fun movePanner(panner: dynamic, pos: Pos) {
-        panner.positionX.setTargetAtTime(Scene3D.sceneX(pos), now(), 0.15)
-        panner.positionY.setTargetAtTime(Scene3D.sceneY(pos), now(), 0.15)
-    }
-
     internal fun createStaticOscillator(type: String, freq: Double): OscillatorNode {
         val node = audioCtx.createOscillator()
         node.type = type
