@@ -22,7 +22,7 @@ jobs:
           java-version: "21"
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v5
 
       # The Kotlin/JS plugin downloads its own Node for the Mocha runner — no browser needed.
       # koverXmlReport runs the jvm() test target (the shared functional core) and writes
@@ -54,7 +54,7 @@ jobs:
           java-version: "21"
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v5
 
       - name: Build production bundle
         run: ./gradlew --no-configuration-cache --console=plain jsBrowserDistribution
