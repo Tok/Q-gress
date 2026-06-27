@@ -22,7 +22,7 @@ object AudioViz {
         an.getByteTimeDomainData(data)
         ctx.beginPath()
         ctx.lineWidth = 1.5
-        ctx.strokeStyle = "#6cf0c2"
+        ctx.strokeStyle = "#d2d2d2" // neutral light gray (faction-agnostic viz)
         for (i in 0 until n) {
             val x = i.toDouble() / n * w
             val y = (data[i].toInt() and 0xff) / 255.0 * h
@@ -41,7 +41,7 @@ object AudioViz {
         an.getByteFrequencyData(data)
         val bars = 48
         val step = n / bars
-        ctx.fillStyle = "#6c9cf0"
+        ctx.fillStyle = "#d2d2d2" // neutral light gray (faction-agnostic viz)
         for (b in 0 until bars) {
             val v = (data[b * step].toInt() and 0xff) / 255.0
             val bw = w / bars
