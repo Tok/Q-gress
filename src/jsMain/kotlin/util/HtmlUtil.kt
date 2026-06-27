@@ -580,7 +580,7 @@ object HtmlUtil {
     }
 
     private fun createPortals(callback: () -> Unit) {
-        val total = Config.startPortals
+        val total = Config.startPortals.coerceAtLeast(Config.minPortals) // never gen below the floor (always ≥5)
         fun createPortal(callback: () -> Unit, count: Int) {
             document.defaultView?.setTimeout(fun() {
                 if (count > 0) {

@@ -4,7 +4,7 @@ import agent.Faction
 import util.HtmlUtil
 
 object Config {
-    const val minPortals = 3
+    const val minPortals = 5 // the board never churns/gens below this (always ≥5 portals on a map)
     const val maxPortals = 89
     const val minFrogs = 2
     const val maxFrogs = 21
@@ -18,7 +18,7 @@ object Config {
     // DISCOVERED and REMOVED as a neutral process that converges the count toward [targetPortals]: well below
     // target, discovery ≫ removal (~4:1) so the board fills; at target, ~1:1; above, removal wins. Replaces
     // the old agent EXPLORE action + cycle-end removePortals.
-    var portalChurnRate = 0.5 // per-checkpoint activity (chance scale for a create/remove)
+    var portalChurnRate = 0.17 // per-checkpoint activity (chance scale for a create/remove); ~⅓ the old 0.5 (churn was too fast)
 
     /** Equilibrium portal count the churn converges toward — grows from [startPortals], capped at [maxPortals]. */
     fun targetPortals(): Int = ConfigMath.targetPortals(startPortals, maxPortals)
@@ -27,12 +27,12 @@ object Config {
     // Recruiting is FREE (it's persuading a bystander, not an energy field action). The anti-snowball
     // balancing is the per-faction selection weight (smaller team recruits more, Balance.recruitFactor)
     // plus diminishing returns as the faction fills toward its cap — not an XM cost.
-    const val recruitmentBaseChance = 0.05 // success chance at an empty roster; scales →0 at the cap
+    const val recruitmentBaseChance = 0.10 // success chance at an empty roster; scales →0 at the cap (2× — faster ramp-up)
 
     // Base recruit selection weight (Recruiter.selectionWeight × Balance.recruitFactor) — recruiting is no
-    // longer a tuning slider. Matches the old default (0.1 slider × 0.0005 weight) so the even-team rate is
-    // unchanged; the anti-snowball recruitFactor modulates it per faction.
-    var recruitWeight = 0.00005
+    // longer a tuning slider. 3× the original 0.00005 so rosters grow faster (the game ramps early→endgame
+    // quicker); the anti-snowball recruitFactor still modulates it per faction so the leader can't run away.
+    var recruitWeight = 0.00015
 
     // Anti-snowball recruiting (Balance.recruitFactor): the LARGER faction recruits less, the SMALLER more,
     // so team sizes self-correct instead of the leader running away (recruiting was the dominant snowball).
