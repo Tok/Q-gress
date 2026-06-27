@@ -20,6 +20,7 @@ import system.display.OwnBuildings
 import system.display.Scene3D
 import system.ui.LoadingOverlay
 import util.PortalNames
+import util.Profiler
 import util.Rng
 import util.data.Pos
 import kotlin.js.Json
@@ -611,7 +612,7 @@ object MapController {
         gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, rawBuf)
         val imageData: ImageData = World.createStreetImage(rawBuf, width, height)
         if (!demoMode) LoadingOverlay.detail("Tracing roads, water & terrain…")
-        val grid = ShadowGridBuilder.build(imageData, width, height)
+        val grid = Profiler.time("grid-build") { ShadowGridBuilder.build(imageData, width, height) }
         if (!demoMode) LoadingOverlay.detail("Walkable ground: ${(World.walkability * 100).toInt()}% · reading place names…")
         shadowMap?.let { PortalNames.build(it) } // query POI/street names while the tiles are loaded
         teardownShadowMap() // grid + names are read — destroy the shadow map to free its WebGL context

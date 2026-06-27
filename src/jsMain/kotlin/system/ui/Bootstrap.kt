@@ -49,6 +49,7 @@ import util.Debug
 import util.GameUrl
 import util.GameplayPrefs
 import util.NameGen
+import util.Profiler
 import util.Rng
 import util.data.*
 import util.data.toJson
@@ -352,6 +353,7 @@ object Bootstrap {
         GameUrl.startStage()?.let { Config.startStage = it }
         GameUrl.round()?.let { Sim.roundField = it }
         Rng.seed(GameUrl.seed() ?: freshSeed())
+        Profiler.beginWorldGen()
         Onboarding.close() // dismiss the onboarding screen (it loads without a reload)
         // Staged loading overlay, up before the first tile request (the world build runs ~2 min on Big).
         LoadingOverlay.show()
@@ -510,11 +512,14 @@ object Bootstrap {
     }
 
     private fun createAgentsAndPortals(callback: () -> Unit) = createPortals(fun() {
+        Profiler.mark("portals (${World.allPortals.size})")
+        Profiler.flushFields() // most per-portal flow fields are queued by now
         createAgents(callback)
     })
 
     private fun onMapload() = fun(grid: Grid) {
         World.grid = grid
+        Profiler.mark("maps + grid (${grid.size} cells)")
         if (World.grid.isEmpty()) {
             console.error("Grid is empty!")
         }
@@ -544,8 +549,11 @@ object Bootstrap {
                 chooseUserFaction(Faction.random())
             }
             createQSliders(World.userFactionOrThrow())
+            Profiler.mark("agents+NPCs (${World.allAgents.size}+${World.allNonFaction.size})")
             GameLoop.start { tick() }
             World.isReady = true
+            console.log("[perf] WORLD READY") // headless profiler waits on this before the runtime window
+            FpsMeter.start() // ?debug only: per-frame FPS/frame-time readout
             document.getElementById("top-controls")?.removeClass("invisible") // reveal the toolbar now
             document.getElementById(LOCATION_LABEL_ID)?.removeClass("invisible") // …and the location name (in #hudTop, not the toolbar)
             Attribution.collapse() // we've left the title → tuck the map credit into its (i)

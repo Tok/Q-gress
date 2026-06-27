@@ -8,6 +8,7 @@ import extension.VectorField
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import util.Profiler
 import util.data.*
 
 object Pathfinding {
@@ -61,8 +62,11 @@ object Pathfinding {
     // JS event loop yielding between chunks, then hands the finished field back via [onReady].
     fun computeFieldAsync(destination: Pos, onReady: (VectorField) -> Unit) {
         MainScope().launch {
+            val start = Profiler.nowMs()
             val heatMap = generateHeatMap(destination)
-            onReady(calculateVectorField(heatMap, destination))
+            val field = calculateVectorField(heatMap, destination)
+            Profiler.addFieldMs(Profiler.nowMs() - start)
+            onReady(field)
         }
     }
 
