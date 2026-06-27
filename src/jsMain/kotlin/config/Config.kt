@@ -56,8 +56,8 @@ object Config {
     var maxInventory = 2000
 
     // NPC population is NOT a player setting — it's auto-derived from map area + location (see
-    // [npcPopulation]) at world-gen, and held constant by 1-for-1 replacement on recruit (Recruiter),
-    // so a game never runs out of people to recruit.
+    // [npcPopulation]) at world-gen. Recruiting draws it down over time; it's only refilled once it
+    // reaches [MIN_NONFACTION] (Recruiter), so a game never runs out of people to recruit.
     var maxNonFaction = 500 // current target population (set by npcPopulation at world-gen)
     fun maxFor(faction: Faction? = null) = when (faction) {
         Faction.ENL -> maxFrogs

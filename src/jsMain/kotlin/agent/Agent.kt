@@ -367,12 +367,14 @@ data class Agent(
         // agent/recruit. Only the degenerate "no portals yet" case falls back to creating one.
         private fun initialActionPortal(pos: Pos) = Util.findNearestPortal(pos) ?: Portal.create(pos)
 
-        fun createFrog(grid: Grid) = create(grid, Faction.ENL)
-        fun createSmurf(grid: Grid) = create(grid, Faction.RES)
-        private fun create(grid: Grid, faction: Faction): Agent {
+        fun createFrog(grid: Grid, at: Pos? = null) = create(grid, Faction.ENL, at)
+        fun createSmurf(grid: Grid, at: Pos? = null) = create(grid, Faction.RES, at)
+
+        // [at] places the agent at a specific spot (a recruited NPC turning faction in place); null → random.
+        private fun create(grid: Grid, faction: Faction, at: Pos? = null): Agent {
             val ap = Config.initialAp()
             val initialXm = xmCapacity(getLevel(ap))
-            val coords = Positions.createRandomPassable(grid)
+            val coords = at ?: Positions.createRandomPassable(grid)
             val actionPortal = initialActionPortal(coords)
             val agent = Agent(
                 faction, NameGen.handle(faction, HtmlUtil.locationName()), coords, Skills.createRandom(),

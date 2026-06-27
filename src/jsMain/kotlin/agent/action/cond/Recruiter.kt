@@ -60,11 +60,14 @@ object Recruiter : ConditionalAction {
      */
     fun resolve(agent: Agent, npc: NonFaction): Agent {
         if (Util.random() < recruitmentChance(agent.faction)) {
+            // The NPC turns faction: it becomes the new agent in place (not deleted + spawned elsewhere).
             World.allNonFaction.remove(npc)
-            World.allNonFaction.add(NonFaction.create(World.grid)) // 1-for-1 replacement → population never depletes
+            // Don't top the crowd back up on every recruit — let the NPC population shrink as agents recruit,
+            // only refilling once it has been drawn down to its floor (so we never run out of recruits).
+            if (World.countNonFaction() < Config.MIN_NONFACTION) World.allNonFaction.add(NonFaction.create(World.grid))
             val newAgent = when (agent.faction) {
-                Faction.ENL -> Agent.createFrog(World.grid)
-                Faction.RES -> Agent.createSmurf(World.grid)
+                Faction.ENL -> Agent.createFrog(World.grid, npc.pos)
+                Faction.RES -> Agent.createSmurf(World.grid, npc.pos)
             }
             Com.addMessage("$newAgent has completed the training.", Com.Importance.MAJOR, newAgent.faction.color)
             World.pendingAgents.add(newAgent) // flushed after the agent loop (avoids CME)
