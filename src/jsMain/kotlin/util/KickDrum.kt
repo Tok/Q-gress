@@ -1,8 +1,12 @@
 package util
 
 import config.OscillatorType
+import config.Sim
+import org.khronos.webgl.Float32Array
 import org.khronos.webgl.set
 import util.data.Pos
+import kotlin.math.PI
+import kotlin.math.abs
 import kotlin.math.exp
 
 /**
@@ -24,29 +28,89 @@ object KickDrum {
     private const val CLICK_HP_HZ = 1400.0 // click high-pass (keeps just the beater snap)
     private const val REVERB_SEND = 0.3 // how much of the kick body feeds the reverb (a bit of space)
 
+    // --- Live tuning (AUDIO tab → Instruments → Explosion kick) ----------------------------------------
+    // Multipliers on the per-blast base values (so XMP stays deeper than US, but both scale together) + a
+    // waveshaper drive. All default-neutral so the kick is unchanged until dialled. Persisted via [InstrumentPrefs].
+    var pitchMult = 1.0
+        private set
+    var decayMult = 1.0
+        private set
+    var clickMult = 1.0
+        private set
+    var drive = 0.0
+        private set
+
+    fun setPitchMult(v: Double) {
+        pitchMult = v.coerceIn(0.4, 2.5)
+    }
+    fun setDecayMult(v: Double) {
+        decayMult = v.coerceIn(0.3, 3.0)
+    }
+    fun setClickMult(v: Double) {
+        clickMult = v.coerceIn(0.0, 3.0)
+    }
+    fun setDrive(v: Double) {
+        drive = v.coerceIn(0.0, 1.0)
+    }
+
+    fun resetTuning() {
+        pitchMult = 1.0
+        decayMult = 1.0
+        clickMult = 1.0
+        drive = 0.0
+    }
+
+    /** Audition the explosion kick (AUDIO tab "Test" button): an XMP-style deep kick at the play-area centre. */
+    fun test() {
+        Mixer.current = Mixer.Group.WEAPONS
+        play(Pos(Sim.width / 2, Sim.height / 2), 48.0, 1.0, 1.0, 0.05)
+    }
+
     /**
      * Deep hard kick at sim [pos]: pitch drops fast from [startHz], peak [amp], body length [decay] s.
      * [clickFrac] sizes the beater click (the sharp transient) — small/0 for a deep boom (XMP), bigger
-     * for a tight punch (Ultra-Strike).
+     * for a tight punch (Ultra-Strike). The live tuning ([pitchMult]/[decayMult]/[clickMult]/[drive]) scales these.
      */
     fun play(pos: Pos, startHz: Double, amp: Double, decay: Double, clickFrac: Double = CLICK_AMP_FRAC) {
         val ctx = SoundUtil.audioCtx
         val n = SoundUtil.now()
-        val osc = SoundUtil.createStaticOscillator(OscillatorType.SINE, startHz)
-        osc.frequency.setValueAtTime(startHz, n)
-        osc.frequency.exponentialRampToValueAtTime(maxOf(startHz * PITCH_DROP, MIN_HZ), n + PITCH_S)
+        val sHz = startHz * pitchMult
+        val dec = decay * decayMult
+        val osc = SoundUtil.createStaticOscillator(OscillatorType.SINE, sHz)
+        osc.frequency.setValueAtTime(sHz, n)
+        osc.frequency.exponentialRampToValueAtTime(maxOf(sHz * PITCH_DROP, MIN_HZ), n + PITCH_S)
         val g = ctx.createGain()
         g.gain.setValueAtTime(SoundUtil.EPS, n)
         g.gain.linearRampToValueAtTime(amp, n + ATTACK_S)
-        g.gain.exponentialRampToValueAtTime(SoundUtil.EPS, n + decay)
+        g.gain.exponentialRampToValueAtTime(SoundUtil.EPS, n + dec)
         val pan = SoundUtil.createPanner(pos)
-        osc.connect(pan)
+        // Optional drive: osc → waveshaper → pan (harder, dirtier kick); bypassed at drive 0.
+        if (drive > 0.0) {
+            val ws = ctx.asDynamic().createWaveShaper()
+            ws.curve = driveCurve(drive)
+            osc.connect(ws)
+            ws.connect(pan)
+        } else {
+            osc.connect(pan)
+        }
         pan.connect(g)
         g.connect(Mixer.currentBus())
         sendToReverb(g, amp * REVERB_SEND)
         osc.start()
-        osc.stop(n + decay)
-        if (clickFrac > 0.0) playClick(pos, amp * clickFrac) // the hard transient on top of the body
+        osc.stop(n + dec)
+        if (clickFrac * clickMult > 0.0) playClick(pos, amp * clickFrac * clickMult) // the hard transient on top
+    }
+
+    private fun driveCurve(amount: Double): Float32Array {
+        val k = amount * 60.0
+        val n = 256
+        val curve = Float32Array(n)
+        val deg = PI / 180.0
+        for (i in 0 until n) {
+            val x = i.toDouble() * 2.0 / n - 1.0
+            curve[i] = ((3.0 + k) * x * 20.0 * deg / (PI + k * abs(x))).toFloat()
+        }
+        return curve
     }
 
     /** Tap [node]'s output into the master reverb send bus at [amount] (explosion-only space; see [AudioFx]). */

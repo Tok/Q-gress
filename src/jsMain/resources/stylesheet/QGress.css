@@ -1054,6 +1054,7 @@ html, body {
     flex-direction: column;
     align-items: center;
     width: 58px;
+    position: relative; /* anchors the per-knob reset "o" to the dial's corner */
 }
 .audioKnobDial {
     cursor: ns-resize;
@@ -1071,15 +1072,17 @@ html, body {
     font-size: 10px;
     font-variant-numeric: tabular-nums;
 }
-/* Tiny unlabelled reset dot under each knob — click to snap it back to its default. */
+/* Tiny unlabelled reset "o" at the dial's bottom-right corner — click to snap the knob back to its default. */
 .audioKnobReset {
-    width: 7px;
-    height: 7px;
-    margin-top: 3px;
+    position: absolute;
+    top: 40px;
+    right: 3px;
+    width: 9px;
+    height: 9px;
     padding: 0;
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.45);
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.12);
+    background: transparent; /* hollow → reads like an "o" */
     cursor: pointer;
 }
 .audioKnobReset:hover {

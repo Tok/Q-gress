@@ -97,6 +97,7 @@ object HtmlUtil {
         SoundUtil.restoreVolume() // re-read the saved volume/mute BEFORE the widget builds (survives reloads)
         AudioPrefs.load() // re-apply the saved master-FX tuning (AudioFx.build later picks it up via applyAll)
         MixerPrefs.load() // re-apply saved per-role mixer levels/mutes (the lazy gain buses pick them up)
+        InstrumentPrefs.load() // re-apply saved per-instrument tuning (explosion kick)
         GameplayPrefs.load() // re-apply saved gameplay knobs BEFORE the menu sliders read Config to seed themselves
         document.body?.appendChild(createPersistentVolume())
 

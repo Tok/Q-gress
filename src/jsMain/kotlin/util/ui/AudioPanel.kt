@@ -13,6 +13,8 @@ import org.w3c.dom.events.Event
 import org.w3c.dom.events.MouseEvent
 import util.AudioFx
 import util.AudioPrefs
+import util.InstrumentPrefs
+import util.KickDrum
 import util.Mixer
 import util.MixerPrefs
 import util.Scale
@@ -43,7 +45,7 @@ object AudioPanel {
     private var freqData: Uint8Array? = null
     private var glassEl: HTMLElement? = null
     private var fxPane: HTMLElement? = null
-    private var mixerPane: HTMLElement? = null
+    private val panes = mutableMapOf<String, HTMLElement>()
     private val subButtons = mutableMapOf<String, HTMLElement>()
 
     fun update() {
@@ -69,20 +71,22 @@ object AudioPanel {
             it.appendChild(controlsRow())
             it.appendChild(vizRow())
         }
-        mixerPane = mixerSubtab()
-        glass.appendChild(fxPane as HTMLElement)
-        glass.appendChild(mixerPane as HTMLElement)
+        panes["fx"] = fxPane as HTMLElement
+        panes["mixer"] = mixerSubtab()
+        panes["instruments"] = instrumentsSubtab()
+        panes.values.forEach { glass.appendChild(it) }
         glass.appendChild(TuningLab.section()) // collapsed copy-paste JSON export (audio + gameplay) at the bottom
         Footer.tab("audio").appendChild(glass)
         switchSub("fx")
         return true
     }
 
-    // --- Sub-tabs (Master FX | Mixer) + the Reset button -------------------------------------------
+    // --- Sub-tabs (Master FX | Mixer | Instruments) + the Reset button ----------------------------
     private fun subtabStrip(): HTMLElement {
         val strip = el("div", "audioSubtabs")
         strip.appendChild(subTabButton("Master FX", "fx"))
         strip.appendChild(subTabButton("Mixer", "mixer"))
+        strip.appendChild(subTabButton("Instruments", "instruments"))
         val reset = document.createElement("button") as HTMLButtonElement
         reset.className = "audioReset" // far right: restore audio + gameplay defaults
         reset.textContent = "Reset to defaults"
@@ -107,8 +111,7 @@ object AudioPanel {
     }
 
     private fun switchSub(name: String) {
-        fxPane?.style?.display = if (name == "fx") "block" else "none"
-        mixerPane?.style?.display = if (name == "mixer") "block" else "none"
+        panes.forEach { (n, p) -> p.style.display = if (n == name) "block" else "none" }
         subButtons.forEach { (n, b) -> if (n == name) b.classList.add("active") else b.classList.remove("active") }
     }
 
@@ -162,6 +165,31 @@ object AudioPanel {
         return row
     }
 
+    // --- Instruments sub-tab: per-instrument synth tuning (the explosion basskick) ----------------
+    private fun instrumentsSubtab(): HTMLElement {
+        val pane = el("div", "audioPane")
+        val box = el("div", "audioSection")
+        val head = el("div", "audioLeadRow")
+        head.appendChild(el("div", "audioHead").also { it.textContent = "Explosion kick (XMP / Ultra-Strike)" })
+        val test = document.createElement("button") as HTMLButtonElement
+        test.className = "audioReset"
+        test.textContent = "▶ Test"
+        test.onclick = {
+            KickDrum.test()
+            null
+        }
+        head.appendChild(test)
+        box.appendChild(head)
+        val grid = el("div", "audioKnobs")
+        grid.appendChild(knob("Pitch", 0.4..2.5, 1.0, { KickDrum.pitchMult }, { KickDrum.setPitchMult(it) }, ::mult))
+        grid.appendChild(knob("Decay", 0.3..3.0, 1.0, { KickDrum.decayMult }, { KickDrum.setDecayMult(it) }, ::mult))
+        grid.appendChild(knob("Click", 0.0..3.0, 1.0, { KickDrum.clickMult }, { KickDrum.setClickMult(it) }, ::mult))
+        grid.appendChild(knob("Drive", 0.0..1.0, 0.0, { KickDrum.drive }, { KickDrum.setDrive(it) }, ::pct))
+        box.appendChild(grid)
+        pane.appendChild(box)
+        return pane
+    }
+
     private fun refreshLead() {
         val major = Scale.isLeading()
         lead?.textContent = if (major) "major — your faction leads" else "minor — your faction trails"
@@ -200,7 +228,7 @@ object AudioPanel {
             val ny = (1.0 - (e.clientY - r.top) / r.height).coerceIn(0.0, 1.0)
             AudioFx.setLowpass(cutoffHz(nx))
             AudioFx.setLowpassQ(AudioFx.MIN_Q + ny * (AudioFx.MAX_Q - AudioFx.MIN_Q))
-            AudioPrefs.save()
+            persist()
             syncFromState() // drag the pad → the Cutoff/Reso knobs (and the rest) follow
         }
         drag(canvas, onMove)
@@ -313,7 +341,7 @@ object AudioPanel {
             write(v)
             value.textContent = fmt(read())
             drawKnob(k)
-            AudioPrefs.save()
+            persist()
         }
         drag(canvas) { e ->
             val r = canvas.getBoundingClientRect()
@@ -495,7 +523,7 @@ object AudioPanel {
         }
         drawAdsr()
         syncFromState() // refresh the 4 ADSR knobs to match the dragged shape
-        AudioPrefs.save()
+        persist()
     }
 
     private fun drawScope() {
@@ -594,6 +622,12 @@ object AudioPanel {
         c.width = w
         c.height = h
         return c
+    }
+
+    // Persist whatever a knob/pad/ADSR change touched — master FX + instrument tuning (both cheap localStorage writes).
+    private fun persist() {
+        AudioPrefs.save()
+        InstrumentPrefs.save()
     }
 
     private fun pct(v: Double): String = "${(v * 100).toInt()}%"

@@ -9,6 +9,8 @@ import org.w3c.dom.HTMLTextAreaElement
 import util.AudioFx
 import util.AudioPrefs
 import util.GameplayPrefs
+import util.InstrumentPrefs
+import util.KickDrum
 import util.MixerPrefs
 
 /**
@@ -55,7 +57,9 @@ object TuningLab {
     /** Restore audio + gameplay settings to their shipped defaults, re-syncing the AUDIO knobs + Menu sliders. */
     fun resetToDefaults() {
         AudioFx.resetToDefaults()
+        KickDrum.resetTuning()
         AudioPrefs.save()
+        InstrumentPrefs.save()
         AudioPanel.syncFromState() // refresh the AUDIO tab's knobs/pad/adsr
         GameplayPrefs.resetToDefaults()
         syncMenuSlider("combatDynSlider", config.Config.combatDynamism)
@@ -68,6 +72,7 @@ object TuningLab {
         val o: dynamic = js("({})")
         o.audio = AudioPrefs.json()
         o.mixer = MixerPrefs.json()
+        o.instruments = InstrumentPrefs.json()
         o.gameplay = GameplayPrefs.json()
         o.dropRates = dropRatesJson()
         return JSON.stringify(o, null, 2)
