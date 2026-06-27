@@ -440,6 +440,7 @@ html, body {
     display: flex;
     align-items: center;
     gap: 10px;
+    margin-left: auto; /* pin the expand/collapse icons hard to the right edge of the header */
 }
 .footerChevron {
     background: none;
