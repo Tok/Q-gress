@@ -11,6 +11,7 @@ import kotlin.math.exp
  */
 object SteamSound {
     fun play(pos: Pos) {
+        Mixer.current = Mixer.Group.PORTAL // burnout steam → the Portal mixer channel
         if (SoundUtil.isMuted()) return
         val ctx = SoundUtil.audioCtx
         val sr = ctx.sampleRate
@@ -38,7 +39,7 @@ object SteamSound {
         source.connect(bandpass)
         bandpass.connect(gainNode)
         gainNode.connect(panNode)
-        panNode.connect(SoundUtil.masterGain)
+        panNode.connect(Mixer.currentBus())
         source.start()
         source.stop(n + dur)
     }

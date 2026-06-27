@@ -9,6 +9,7 @@ import org.w3c.dom.HTMLTextAreaElement
 import util.AudioFx
 import util.AudioPrefs
 import util.GameplayPrefs
+import util.MixerPrefs
 
 /**
  * The **tuning export** — a small, slim collapsible section at the bottom of the AUDIO tab ([AudioPanel]):
@@ -66,6 +67,7 @@ object TuningLab {
     private fun snapshot(): String {
         val o: dynamic = js("({})")
         o.audio = AudioPrefs.json()
+        o.mixer = MixerPrefs.json()
         o.gameplay = GameplayPrefs.json()
         o.dropRates = dropRatesJson()
         return JSON.stringify(o, null, 2)

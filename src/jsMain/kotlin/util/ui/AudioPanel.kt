@@ -8,10 +8,13 @@ import org.w3c.dom.HTMLButtonElement
 import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HTMLElement
+import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.events.Event
 import org.w3c.dom.events.MouseEvent
 import util.AudioFx
 import util.AudioPrefs
+import util.Mixer
+import util.MixerPrefs
 import util.Scale
 import kotlin.math.PI
 import kotlin.math.abs
@@ -38,14 +41,19 @@ object AudioPanel {
     private var adsr: HTMLCanvasElement? = null
     private var timeData: Uint8Array? = null
     private var freqData: Uint8Array? = null
+    private var glassEl: HTMLElement? = null
+    private var fxPane: HTMLElement? = null
+    private var mixerPane: HTMLElement? = null
+    private val subButtons = mutableMapOf<String, HTMLElement>()
 
     fun update() {
         if (!ensure()) return
-        val glass = lead?.parentElement?.parentElement as? HTMLElement
-        if (glass?.offsetParent == null) return // tab hidden — skip the per-frame redraws
-        refreshLead()
-        drawScope()
-        drawSpectrum()
+        if (glassEl?.offsetParent == null) return // tab hidden — skip the per-frame redraws
+        if (fxPane?.offsetParent != null) { // only the Master FX sub-tab has the live viz/lead
+            refreshLead()
+            drawScope()
+            drawSpectrum()
+        }
         TuningLab.refresh() // live-update the collapsed JSON export (no-op while collapsed/focused)
     }
 
@@ -54,12 +62,54 @@ object AudioPanel {
         if (document.body == null) return false
         built = true
         val glass = el("div", "footerGlass audioPanel")
-        glass.appendChild(leadRow())
-        glass.appendChild(controlsRow())
-        glass.appendChild(vizRow())
+        glassEl = glass
+        glass.appendChild(subtabStrip())
+        fxPane = el("div", "audioPane").also {
+            it.appendChild(leadRow())
+            it.appendChild(controlsRow())
+            it.appendChild(vizRow())
+        }
+        mixerPane = mixerSubtab()
+        glass.appendChild(fxPane as HTMLElement)
+        glass.appendChild(mixerPane as HTMLElement)
         glass.appendChild(TuningLab.section()) // collapsed copy-paste JSON export (audio + gameplay) at the bottom
         Footer.tab("audio").appendChild(glass)
+        switchSub("fx")
         return true
+    }
+
+    // --- Sub-tabs (Master FX | Mixer) + the Reset button -------------------------------------------
+    private fun subtabStrip(): HTMLElement {
+        val strip = el("div", "audioSubtabs")
+        strip.appendChild(subTabButton("Master FX", "fx"))
+        strip.appendChild(subTabButton("Mixer", "mixer"))
+        val reset = document.createElement("button") as HTMLButtonElement
+        reset.className = "audioReset" // far right: restore audio + gameplay defaults
+        reset.textContent = "Reset to defaults"
+        reset.onclick = {
+            TuningLab.resetToDefaults()
+            null
+        }
+        strip.appendChild(reset)
+        return strip
+    }
+
+    private fun subTabButton(label: String, name: String): HTMLElement {
+        val b = document.createElement("button") as HTMLButtonElement
+        b.className = "audioSubtab"
+        b.textContent = label
+        b.onclick = {
+            switchSub(name)
+            null
+        }
+        subButtons[name] = b
+        return b
+    }
+
+    private fun switchSub(name: String) {
+        fxPane?.style?.display = if (name == "fx") "block" else "none"
+        mixerPane?.style?.display = if (name == "mixer") "block" else "none"
+        subButtons.forEach { (n, b) -> if (n == name) b.classList.add("active") else b.classList.remove("active") }
     }
 
     // --- Key (major/minor) read-only display: follows the live MU lead (Scale), not player-set ---------
@@ -68,14 +118,47 @@ object AudioPanel {
         row.appendChild(el("div", "audioHead").also { it.textContent = "Key" })
         lead = el("div", "audioLead").also { it.textContent = "—" }
         row.appendChild(lead as HTMLElement)
-        val reset = document.createElement("button") as HTMLButtonElement
-        reset.className = "audioReset" // top-right: restore audio + gameplay defaults
-        reset.textContent = "Reset to defaults"
-        reset.onclick = {
-            TuningLab.resetToDefaults()
+        return row
+    }
+
+    // --- Mixer sub-tab: a per-role channel (volume + mute) ----------------------------------------
+    private fun mixerSubtab(): HTMLElement {
+        val pane = el("div", "audioPane")
+        pane.appendChild(el("div", "audioHead").also { it.textContent = "Mixer · per-role levels" })
+        Mixer.Group.values().forEach { pane.appendChild(channelStrip(it)) }
+        return pane
+    }
+
+    private fun channelStrip(g: Mixer.Group): HTMLElement {
+        val row = el("div", "audioChannel")
+        row.appendChild(el("div", "audioChannelLabel").also { it.textContent = g.label })
+        val slider = document.createElement("input") as HTMLInputElement
+        slider.type = "range"
+        slider.className = "slider"
+        slider.min = "0"
+        slider.max = "1"
+        slider.step = "0.01"
+        slider.value = Mixer.volume(g).toString()
+        slider.oninput = {
+            Mixer.setVolume(g, slider.valueAsNumber)
+            MixerPrefs.save()
             null
         }
-        row.appendChild(reset)
+        row.appendChild(slider)
+        val mute = document.createElement("button") as HTMLButtonElement
+        mute.className = "audioMute"
+        fun paint() {
+            mute.textContent = if (Mixer.isMuted(g)) "muted" else "mute"
+            mute.classList.toggle("on", Mixer.isMuted(g))
+        }
+        paint()
+        mute.onclick = {
+            Mixer.setMuted(g, !Mixer.isMuted(g))
+            paint()
+            MixerPrefs.save()
+            null
+        }
+        row.appendChild(mute)
         return row
     }
 

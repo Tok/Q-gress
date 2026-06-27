@@ -27,6 +27,10 @@ import kotlin.math.sin
 import kotlin.math.sqrt
 import kotlin.math.tanh
 
+// LargeClass suppressed: SoundUtil is the audio hub. Voices already split out (KickDrum, HackSound, SteamSound,
+// AudioFx, Mixer); the remaining per-event play* methods are the tracked SoundUtil split (PLAN → "cut along
+// seams in SoundUtil"). The per-role Mixer annotations nudged it just over the line.
+@Suppress("LargeClass")
 object SoundUtil {
     const val DEFAULT_VOLUME = 0.3 // start quiet (30%) — less startling on first interaction
     internal const val EPS = 0.0001 // exponentialRamp can't target 0
@@ -193,6 +197,7 @@ object SoundUtil {
     }
 
     fun playPortalCreationSound(pos: Pos, gain: Double = 1.0) {
+        Mixer.current = Mixer.Group.PORTAL
         if (isMuted()) return
         val duration = 0.5
         val oscNode = createLinearRampOscillator(OscillatorType.SINE, 120.0, 0.0, duration)
@@ -200,6 +205,7 @@ object SoundUtil {
     }
 
     fun playPortalRemovalSound(pos: Pos) {
+        Mixer.current = Mixer.Group.PORTAL
         if (isMuted()) return
         val duration = 0.5
         val oscNode = createLinearRampOscillator(OscillatorType.SINE, 60.0, 120.0, duration)
@@ -212,6 +218,7 @@ object SoundUtil {
      * 0≈one small object, 1≈big; randomised so no two shatters sound the same.
      */
     fun playGlassShatterSound(pos: Pos, heaviness: Double = 0.3, amplitude: Double = 0.7) {
+        Mixer.current = Mixer.Group.PORTAL
         if (isMuted()) return
         val amp = amplitude * SHATTER_MIX // dialed back to sit under the XMP explosion in the mix
         playNoiseCrack(pos, amp, heaviness)
@@ -257,7 +264,7 @@ object SoundUtil {
         val panNode = createStaticPan(pan.coerceIn(-1.0, 1.0))
         source.connect(gainNode)
         gainNode.connect(panNode)
-        panNode.connect(masterGain)
+        panNode.connect(Mixer.currentBus())
         source.start()
         source.stop(now() + duration)
     }
@@ -268,6 +275,7 @@ object SoundUtil {
      * [playXmpExplosion]). Used by the demo + title; the in-game volley uses the lighter overload below.
      */
     fun playXmpSound(pos: Pos, level: Int) {
+        Mixer.current = Mixer.Group.WEAPONS
         if (isMuted()) return
         val amp = 0.6 + level * 0.06
         val note = noteFor(level) // 65–131 Hz; level 8 is the lowest
@@ -305,6 +313,7 @@ object SoundUtil {
      * now a far bigger, deeper, more distant blast). A deep 909 kick + sub + a tighter, brighter rumble.
      */
     fun playUltraStrike(pos: Pos) {
+        Mixer.current = Mixer.Group.WEAPONS
         if (isMuted()) return
         playXmpExplosion(pos, 0.95, noteFor(8), 0.95, deep = false) // deepest scale note; short tight tail
     }
@@ -361,7 +370,7 @@ object SoundUtil {
         source.connect(lowpass)
         lowpass.connect(rumbleGain)
         rumbleGain.connect(panNode)
-        panNode.connect(masterGain)
+        panNode.connect(Mixer.currentBus())
         KickDrum.sendToReverb(rumbleGain, amplitude * (if (deep) 0.45 else BLAST_REVERB_SEND)) // more space on the huge blast
         source.start()
         source.stop(n + life)
@@ -390,7 +399,7 @@ object SoundUtil {
         source.connect(lowpass)
         lowpass.connect(gainNode)
         gainNode.connect(panNode)
-        panNode.connect(masterGain)
+        panNode.connect(Mixer.currentBus())
         source.start()
         source.stop(n + dur)
     }
@@ -417,7 +426,7 @@ object SoundUtil {
         source.connect(highpass)
         highpass.connect(gainNode)
         gainNode.connect(panNode)
-        panNode.connect(masterGain)
+        panNode.connect(Mixer.currentBus())
         source.start()
         source.stop(now() + dur)
     }
@@ -446,7 +455,7 @@ object SoundUtil {
     private fun connectVoice(osc: OscillatorNode, panNode: AudioNode, gainNode: GainNode, stopTime: Double) {
         osc.connect(panNode)
         panNode.connect(gainNode)
-        gainNode.connect(masterGain)
+        gainNode.connect(Mixer.currentBus())
         osc.start()
         osc.stop(stopTime)
     }
@@ -461,6 +470,7 @@ object SoundUtil {
     }
 
     fun playCheckpointSound(@Suppress("UNUSED_PARAMETER") checkpoint: Checkpoint) {
+        Mixer.current = Mixer.Group.FIELD
         if (isMuted()) return
         val duration = 0.05
         val pan = 0.0 // centre
@@ -512,6 +522,7 @@ object SoundUtil {
 
     /** Portal gained a level: a quick note rising up to the NEW [level]'s note on the shared scale. */
     fun playUpgradeSound(pos: Pos, level: Int) {
+        Mixer.current = Mixer.Group.PORTAL
         if (isMuted()) return
         val dur = 0.18
         val target = noteFor(level, octaveUp = 3)
@@ -521,6 +532,7 @@ object SoundUtil {
 
     /** Portal lost a level: a quick note falling down to the NEW [level]'s note on the shared scale. */
     fun playDowngradeSound(pos: Pos, level: Int) {
+        Mixer.current = Mixer.Group.PORTAL
         if (isMuted()) return
         val dur = 0.2
         val target = noteFor(level, octaveUp = 3)
@@ -530,6 +542,7 @@ object SoundUtil {
 
     /** Portal neutralized (lost its owner): a short descending "power-down" sweep. */
     fun playNeutralizeSound(pos: Pos) {
+        Mixer.current = Mixer.Group.PORTAL
         if (isMuted()) return
         val dur = 0.5
         val osc = createExponentialRampOscillator(OscillatorType.SAW, 440.0, 90.0, dur)
@@ -541,6 +554,7 @@ object SoundUtil {
     }
 
     fun playXmpSound(level: XmpLevel, pos: Pos) {
+        Mixer.current = Mixer.Group.WEAPONS
         if (isMuted()) return
         val freq = noteFor(level.level, octaveUp = 3) // on-scale volley blip (level 8 lowest)
         val osc = createStaticOscillator(OscillatorType.SQUARE, freq)
@@ -551,6 +565,7 @@ object SoundUtil {
 
     /** A short bell-like "ding" as a single resonator drops into its slot (on the shared scale). */
     fun playResoDeploySound(pos: Pos, level: Int) {
+        Mixer.current = Mixer.Group.PORTAL
         if (isMuted()) return
         val freq = noteFor(level, octaveUp = 3) // bright + on-key (level 8 = lowest)
         val osc = createStaticOscillator(OscillatorType.SINE, freq)
@@ -565,6 +580,7 @@ object SoundUtil {
 
     /** A metallic "clunk" when a mod (shield / heat sink) is slotted into a portal. */
     fun playModDeploySound(pos: Pos, level: Int) {
+        Mixer.current = Mixer.Group.PORTAL
         if (isMuted()) return
         val osc = createStaticOscillator(OscillatorType.SQUARE, noteFor(level, octaveUp = 2))
         val gainNode = audioCtx.createGain()
@@ -577,6 +593,7 @@ object SoundUtil {
 
     /** A bright shimmering "shing" as a shield powers up on the portal. */
     fun playShieldDeploySound(pos: Pos, level: Int) {
+        Mixer.current = Mixer.Group.PORTAL
         if (isMuted()) return
         val base = noteFor(level, octaveUp = 3)
         val osc = createLinearRampOscillator(OscillatorType.TRIANGLE, base, base * 1.5, 0.35) // rises into place
@@ -590,6 +607,7 @@ object SoundUtil {
 
     /** A descending "power-down" as a shield collapses / is stripped off. */
     fun playShieldRemoveSound(pos: Pos, level: Int) {
+        Mixer.current = Mixer.Group.PORTAL
         if (isMuted()) return
         val base = noteFor(level, octaveUp = 3)
         val osc = createLinearRampOscillator(OscillatorType.TRIANGLE, base * 1.5, base * 0.5, 0.35) // falls away
@@ -602,6 +620,7 @@ object SoundUtil {
 
     /** Subtle "plop" when an XMP/Ultra-Strike knocks a mod/shield out of a slot (portal survives). */
     fun playKnockOutSound(pos: Pos) {
+        Mixer.current = Mixer.Group.PORTAL
         if (isMuted()) return
         val n = now()
         val osc = createExponentialRampOscillator(OscillatorType.SINE, 430.0, 130.0, 0.11) // quick downward bloop
@@ -614,6 +633,7 @@ object SoundUtil {
 
     /** A glitchy faction-pitched sweep when a virus (ADA / JARVIS) flips a portal. */
     fun playVirusSound(pos: Pos, faction: Faction) {
+        Mixer.current = Mixer.Group.PORTAL
         if (isMuted()) return
         val base = if (faction == Faction.ENL) 180.0 else 140.0
         val osc = createLinearRampOscillator(OscillatorType.SQUARE, base, base * 4.0, VIRUS_DUR)
@@ -627,6 +647,7 @@ object SoundUtil {
     private const val VIRUS_DUR = 0.5
 
     fun playDeploySound(pos: Pos, distanceToPortal: Int) {
+        Mixer.current = Mixer.Group.PORTAL
         if (isMuted()) return
         val ratio = distanceToPortal / Dim.maxDeploymentRange
         val gain = 0.10
@@ -643,6 +664,7 @@ object SoundUtil {
      *  link — so the sound expresses *what* is being joined. Longer links sweep longer + a register
      *  deeper (a long span reads heavier). */
     fun playLinkingSound(link: Link) {
+        Mixer.current = Mixer.Group.FIELD
         if (isMuted()) return
         val ratio = (link.getLine().length() / World.diagonalLength()).coerceIn(0.0, 1.0)
         val dur = 0.1 + 0.3 * ratio
@@ -656,6 +678,7 @@ object SoundUtil {
 
     /** Field collapse (teardown): a short downward sweep that decays away. */
     fun playFieldDownSound() {
+        Mixer.current = Mixer.Group.FIELD
         if (isMuted()) return
         val dur = 0.5
         val osc = createExponentialRampOscillator(OscillatorType.TRIANGLE, 110.0, 28.0, dur)
@@ -670,6 +693,7 @@ object SoundUtil {
      *  → lower note → the triangle's SHAPE as a chord), in a register set by the field's AREA (bigger =
      *  deeper, longer, fuller) — a control field powering up. */
     fun playFieldingSound(field: Field) {
+        Mixer.current = Mixer.Group.FIELD
         if (isMuted()) return
         val areaRatio = (field.calculateArea().toDouble() / World.totalArea()).coerceIn(0.0, 1.0)
         val dur = 0.7 + 1.0 * areaRatio // bigger field rings longer
@@ -704,7 +728,7 @@ object SoundUtil {
         val gainNode = createStaticGain(gain)
         oscNode.connect(panNode)
         panNode.connect(gainNode)
-        gainNode.connect(masterGain)
+        gainNode.connect(Mixer.currentBus())
         oscNode.start()
         oscNode.stop(now() + duration)
     }

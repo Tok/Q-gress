@@ -936,6 +936,62 @@ html, body {
     text-transform: uppercase;
     margin-bottom: 3px;
 }
+/* Sub-tab strip inside the AUDIO pane (Master FX | Mixer) + the Reset button at the far right. */
+.audioSubtabs {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+.audioSubtab {
+    font-family: "Chakra Petch", sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    padding: 3px 10px;
+    background: rgba(255, 255, 255, 0.06);
+    color: #a0a0a0;
+    border: 1px solid transparent;
+    border-radius: 3px;
+    cursor: pointer;
+}
+.audioSubtab:hover {
+    color: #ffffff;
+}
+.audioSubtab.active {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.16);
+    border-color: rgba(255, 255, 255, 0.25);
+}
+/* Mixer channel strips: label · volume slider · mute. */
+.audioChannel {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 4px 0;
+}
+.audioChannelLabel {
+    width: 64px;
+    color: #e8e8e8;
+    font-size: 11px;
+}
+.audioChannel .slider {
+    width: 160px;
+}
+.audioMute {
+    font-family: "Coda", monospace;
+    font-size: 10px;
+    width: 48px;
+    background: rgba(0, 0, 0, 0.5);
+    color: #a0a0a0;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 4px;
+    padding: 2px 0;
+    cursor: pointer;
+}
+.audioMute.on {
+    color: #f0a06c; /* muted reads warm/amber */
+    border-color: rgba(240, 160, 108, 0.5);
+}
 .audioLeadRow {
     display: flex;
     align-items: baseline;

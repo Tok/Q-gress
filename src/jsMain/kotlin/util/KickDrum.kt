@@ -42,7 +42,7 @@ object KickDrum {
         val pan = SoundUtil.createPanner(pos)
         osc.connect(pan)
         pan.connect(g)
-        g.connect(SoundUtil.masterGain)
+        g.connect(Mixer.currentBus())
         sendToReverb(g, amp * REVERB_SEND)
         osc.start()
         osc.stop(n + decay)
@@ -80,7 +80,7 @@ object KickDrum {
         source.connect(highpass)
         highpass.connect(gainNode)
         gainNode.connect(panNode)
-        panNode.connect(SoundUtil.masterGain)
+        panNode.connect(Mixer.currentBus())
         source.start()
         source.stop(SoundUtil.now() + CLICK_S)
     }

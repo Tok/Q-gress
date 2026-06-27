@@ -51,6 +51,7 @@ object HackSound {
 
     @Suppress("LongParameterList") // the full hack/glyph sound parameters
     private fun play(id: String, pos: Pos, dur: Double, faction: Faction, slots: IntArray, glyph: Boolean, level: Int) {
+        Mixer.current = Mixer.Group.PORTAL // hack/glyph → the Portal mixer channel
         stop(id)
         val ctx = SoundUtil.audioCtx
         val n = SoundUtil.now()
@@ -87,7 +88,7 @@ object HackSound {
         src.connect(lowpass)
         lowpass.connect(gainNode)
         gainNode.connect(panner)
-        panner.connect(SoundUtil.masterGain)
+        panner.connect(Mixer.currentBus())
         src.start()
         src.stop(n + dur + 0.05)
 
@@ -134,7 +135,7 @@ object HackSound {
         g.gain.exponentialRampToValueAtTime(SoundUtil.EPS, t + 0.06)
         osc.connect(g)
         g.connect(panner)
-        panner.connect(SoundUtil.masterGain)
+        panner.connect(Mixer.currentBus())
         osc.asDynamic().start(t) // typed start() takes no arg; schedule at t
         osc.stop(t + 0.08)
         return osc
@@ -170,7 +171,7 @@ object HackSound {
         ringGain.gain.exponentialRampToValueAtTime(SoundUtil.EPS, n + dur + 0.3)
         ring.connect(ringGain)
         ringGain.connect(panner)
-        panner.connect(SoundUtil.masterGain)
+        panner.connect(Mixer.currentBus())
         ring.start()
         ring.stop(n + dur + 0.3)
         return ring

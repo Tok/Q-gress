@@ -422,8 +422,10 @@ Commit hashes are illustrative pointers, not exhaustive.
   "muffle"), a high-pass, and a **reverb** send (convolver fed a generated decaying-noise impulse). The
   **`#audio` demo** auditions every standalone SFX (incl. the ultra-strike) and exposes live sliders for
   the low/high-pass + reverb mix + a major/minor toggle, to dial the audio in.
-- **AUDIO footer tab — live master-FX control surface** (`util/ui/AudioPanel`): reshape the audio **while the
-  sim runs** (the sound *triggers* stay in the `#audio` demo, palette shared via `util/ui/AudioSounds`). A
+- **AUDIO footer tab — live master-FX control surface + mixer** (`util/ui/AudioPanel`): sub-tabs **Master FX**
+  and **Mixer** (a per-role channel — Weapons / Portal / Field / World / Ambient — each with volume + mute,
+  routed through per-role gain buses in `util/Mixer`, persisted via `util/MixerPrefs`). Reshape the audio
+  **while the sim runs** (the sound *triggers* stay in the `#audio` demo, palette shared via `util/ui/AudioSounds`). A
   read-only **key** display (major/minor follows whoever leads on MU — `Scale.isLeading`, not player-set), a
   **filter pad** (canvas XY: low-pass cutoff × resonance), big **knobs** for reverb / echo (delay time +
   feedback + mix) / compression, a master **ADSR** (envelope display + A/D/S/R knobs; attack + release wired
