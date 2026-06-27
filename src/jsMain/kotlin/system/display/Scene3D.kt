@@ -1309,6 +1309,11 @@ object Scene3D {
         activeShowcase()?.let { playXmpBurst(it.pos, level) }
     }
 
+    /** Demo (Burnout button): vent the white steam puff + hiss from the active portal's flask top. */
+    fun burnoutActiveShowcase() {
+        activeShowcase()?.let { steamPuff(it.pos, it.level) }
+    }
+
     /** Demo (Upgrade/Downgrade): re-place the active portal at level±[delta] (grows in at the new size). */
     fun stepLastShowcaseLevel(delta: Int) {
         val target = activeShowcase() ?: return

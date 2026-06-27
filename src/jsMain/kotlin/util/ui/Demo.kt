@@ -118,6 +118,7 @@ object Demo {
                     button("Link", "demoButton") { Scene3D.linkLastShowcases() },
                     button("Hack", "demoButton") { Scene3D.hackActiveShowcase(false) },
                     button("Glyph", "demoButton") { Scene3D.hackActiveShowcase(true) },
+                    button("Burnout", "demoButton") { Scene3D.burnoutActiveShowcase() },
                 ),
             ),
         )

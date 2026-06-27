@@ -14,6 +14,7 @@ import util.AudioFx
 import util.HackSound
 import util.Scale
 import util.SoundUtil
+import util.SteamSound
 import util.data.Pos
 
 /**
@@ -91,6 +92,7 @@ object AudioDemo {
         "Neutralize" to { SoundUtil.playNeutralizeSound(center) },
         "XMP" to { SoundUtil.playXmpSound(center, level) },
         "Ultra-strike" to { SoundUtil.playUltraStrike(center) },
+        "Burnout (steam)" to { SteamSound.play(center) },
         "Hack" to { HackSound.hack("demo", center, HackFx.HACK_S, Faction.ENL, IntArray(8) { level }) },
         "Glyph" to { HackSound.glyph("demo", center, level, HackFx.glyphDuration(level), Faction.RES, IntArray(8) { level }) },
         "Reso deploy" to { SoundUtil.playResoDeploySound(center, level) },
