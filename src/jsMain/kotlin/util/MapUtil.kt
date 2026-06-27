@@ -11,6 +11,7 @@ import kotlinx.browser.window
 import kotlinx.dom.addClass
 import kotlinx.dom.removeClass
 import org.khronos.webgl.Uint8Array
+import org.khronos.webgl.Uint8ClampedArray
 import org.khronos.webgl.get
 import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.ImageData
@@ -660,7 +661,10 @@ object MapUtil {
         val w = Sim.width / Pos.res
         val h = Sim.height / Pos.res
         fun isOffScreen(pos: Pos) = pos.x < 0 || pos.y < 0 || pos.x >= w || pos.y >= h
-        fun nextRow(passCtx: Ctx, costCtx: Ctx, h: Int, x: Int): List<Pair<Pos, Cell>> =
+
+        // Read each downsampled canvas back ONCE (full RGBA buffer) and index per cell — a single-pixel
+        // getImageData per cell would be w×h readbacks (slow, and trips the willReadFrequently warning).
+        fun nextRow(passData: Uint8ClampedArray, costData: Uint8ClampedArray, h: Int, x: Int): List<Pair<Pos, Cell>> =
             (-OFFSCREEN_CELL_ROWS until (h + OFFSCREEN_CELL_ROWS)).map { y ->
                 val pos = Pos(x, y)
                 if (isOffScreen(pos)) {
@@ -669,8 +673,9 @@ object MapUtil {
                     // Crisp pixel → the hard passable test (a blur must NOT bleed walls/water open);
                     // blurred pixel → the movement COST, so flow fields read smooth (not jagged grid routes).
                     val passabilityOffset = 32
-                    val passPixel = passCtx.getImageData(x, y, 1, 1).data[0]
-                    val costPixel = costCtx.getImageData(x, y, 1, 1).data[0]
+                    val idx = (y * w + x) * 4 // red channel of cell (x, y) in the RGBA buffer
+                    val passPixel = passData[idx]
+                    val costPixel = costData[idx]
                     val isPassable = passPixel > passabilityOffset
                     val penalty =
                         PathUtil.MIN_HEAT + ((255 - costPixel) * (PathUtil.MAX_HEAT - PathUtil.MIN_HEAT) / 255)
@@ -686,7 +691,7 @@ object MapUtil {
 
         // Crisp downsample → the hard passable/impassable test (walls + water stay sharp).
         val passCan = document.createElement("canvas") as Canvas
-        val passCtx = passCan.getContext("2d") as Ctx
+        val passCtx = HtmlUtil.readbackCtx(passCan)
         passCan.width = w
         passCan.height = h
         passCtx.drawImage(unscaledCan, 0, 0, w, h)
@@ -695,15 +700,17 @@ object MapUtil {
         // zig-zagging around blocky building edges. (The old `tempCan.blur()` was the DOM focus method —
         // a no-op; this uses a real canvas blur filter.)
         val costCan = document.createElement("canvas") as Canvas
-        val costCtx = costCan.getContext("2d") as Ctx
+        val costCtx = HtmlUtil.readbackCtx(costCan)
         costCan.width = w
         costCan.height = h
         costCtx.asDynamic().filter = "blur(${Config.shadowBlurCount}px)"
         costCtx.drawImage(unscaledCan, 0, 0, w, h)
         costCtx.asDynamic().filter = "none"
 
+        val passData = passCtx.getImageData(0, 0, w, h).data
+        val costData = costCtx.getImageData(0, 0, w, h).data
         val rawGrid: Grid = (-OFFSCREEN_CELL_ROWS until (w + OFFSCREEN_CELL_ROWS)).flatMap { x ->
-            nextRow(passCtx, costCtx, h, x)
+            nextRow(passData, costData, h, x)
         }.toMap()
         // No closed-off areas + on-screen routes: seal pockets to the outside AND join on-screen
         // regions directly (else agents detour around the map edge between them and look stuck).

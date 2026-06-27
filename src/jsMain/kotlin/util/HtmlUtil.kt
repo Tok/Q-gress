@@ -572,6 +572,13 @@ object HtmlUtil {
 
     fun getContext2D(canvas: Canvas): Ctx = canvas.getContext("2d") as Ctx
 
+    // A 2D context flagged for frequent readback (getImageData) — tells the browser to keep the buffer
+    // CPU-side, avoiding the GPU→CPU round-trip and the "willReadFrequently" performance warning.
+    fun readbackCtx(canvas: Canvas): Ctx {
+        val opts: dynamic = js("({ willReadFrequently: true })")
+        return canvas.asDynamic().getContext("2d", opts) as Ctx
+    }
+
     private fun createPortals(callback: () -> Unit) {
         val total = Config.startPortals
         fun createPortal(callback: () -> Unit, count: Int) {
