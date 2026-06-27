@@ -473,6 +473,28 @@ html, body {
     max-height: calc(100vh - 140px);
 }
 
+/* Glass panes INSIDE the (now unblurred) footer — only the content that needs to read clearly over the map
+   gets the blur. AGENTS/PORTALS: the whole table (.topAgents). STATS: each individual stat group
+   (#footerAi > *). TRAIN: the whole tab (#footerTrain). EVENT LOG: just the text column (.statsComLines).
+   BRAINS opts out (fine flat). */
+.footerGlass,
+.topAgents,
+#footerAi > *,
+#footerTrain,
+.statsComLines {
+    backdrop-filter: blur(7px);
+    -webkit-backdrop-filter: blur(7px);
+    background: rgba(0, 0, 0, 0.45);
+    border: 1px solid var(--ui-glass-border);
+    border-radius: 6px;
+    box-sizing: border-box;
+    padding: 8px 10px;
+}
+/* TRAIN is one pane around everything; give its inner sections room to breathe. */
+#footerTrain {
+    padding: 10px 12px;
+}
+
 /* AI footer tab: the observation readout + the slider-history sparklines, side by side (wrap when narrow). */
 #footerAi {
     display: flex;
@@ -936,9 +958,11 @@ html, body {
     margin-top: 1px;
 }
 
-/* Action log lines — live in the footer's EVENT LOG tab (the footer owns the label + collapse). */
+/* Action log lines — live in the footer's EVENT LOG tab (the footer owns the label + collapse). The glass
+   pane (above) hugs the text (fit-content) rather than the whole footer width, so only the text is blurred. */
 .statsComLines {
-    width: 100%;
+    width: fit-content;
+    max-width: 100%;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -949,6 +973,14 @@ html, body {
     font-size: 11px;
     line-height: 1.5;
     white-space: nowrap;
+    align-self: flex-start; /* faction/world lines read left-justified */
+    text-align: left;
+}
+/* Faction-agnostic (neutral) world events may stay centered — they read as system announcements, not a side's
+   play-by-play. (Set in StatsPanel when no segment carries a faction colour.) */
+.statsComNeutral {
+    align-self: center;
+    text-align: center;
 }
 /* Key (MAJOR) events stand out from the routine ones. */
 .statsComMajor {
@@ -1808,9 +1840,15 @@ html, body {
 /* Glass + black-rubber panels with a faint faction-laser edge — the always-on dark surfaces. (The right
    intel column / history pane is intentionally NOT here: it uses the same flat neutral-border, no-blur style
    as the left slider pane — see .historyPanel / .tuneList.) */
-.gameMenu, .footer, .loadingPanel, .factionCta, .popup {
+.gameMenu, .loadingPanel, .factionCta, .popup {
     backdrop-filter: blur(7px);
     -webkit-backdrop-filter: blur(7px);
+    border: 1px solid var(--ui-faction-edge);
+}
+/* The footer itself is NOT blurred (like the side score panel) — blurring the whole bar over the moving map
+   was too much. Instead, content that needs to stay readable is wrapped in a .footerGlass pane (below); the
+   footer keeps its flat faction edge + its own dark tint (set on .footer). */
+.footer {
     border: 1px solid var(--ui-faction-edge);
 }
 .gameMenu, .loadingPanel {
