@@ -75,6 +75,10 @@ A **hack** is the supply action: an agent in range of a portal pulls items + XM 
 - **Burnout (`PortalMath.isBurnedOut`):** an agent may hack a portal **`Portal.maxHacks()`** times within
   the burnout window before it locks them out with `BURNOUT` (a long cooldown) — a base **6** (above the
   authentic 4 so agents restock fast enough to assault) plus any deployed **multi-hacks** (see Mod slots).
+  On the hack that tips a portal into burnout it vents a one-shot **white-steam puff + hiss** from the flask
+  top (`SmokeFx`/`SteamSound`) — a visual cue, since burnout itself is tracked per agent.
+- **Inventory cap (`Config.maxInventory`, 2000):** a **full** inventory **can't hack/glyph** for more items
+  (`Hacker.isActionPossible`) — the agent must spend (deploy/attack/link) or **recycle** to free space first.
 - **Glyphing (`Portal.tryGlyph`, `Glypher`):** a glyph hack yields **2×** a normal hack always, and **3×**
   when the agent's `glyphSkill` (default **0.8**) passes — pure item-volume bonus (no extra AP/XM). It's how
   agents refuel quickly; the heuristic/AI drivers "hack/glyph to refuel when XM runs low".
@@ -84,7 +88,9 @@ Power cubes are XM batteries that **drop from hacks** (`PowerCubeLevel` L1–L8 
 in Ingress). An agent low on XM (< 10% of capacity) **recycles** one (`Recycler`, the `RECYCLE` action),
 consuming it to restore its level × 1000 XM — the agent's main self-refill alongside picking up stray XM.
 This is distinct from **recharge** (`Recharger`, the `RECHARGE` action), which spends the agent's XM to refill
-a *portal's* resonators via a held key.
+a *portal's* resonators via a held key. Recycle is also **inventory management**: when ~full it dumps junk to
+free space (`Inventory.recycleForSpace`) — surplus **duplicate keys** first (keeping a few per portal), then
+the lowest resonators / surplus weapons / power cubes.
 
 ## Recruiting — `agent/action/cond/Recruiter.kt`, `agent/Balance.kt`
 Growing a faction's roster by persuading a bystander **NPC** to join. It is the *team-size* lever, kept
