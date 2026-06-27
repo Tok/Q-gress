@@ -112,7 +112,9 @@ object Evolution {
         /** Run one full generation and return its champion fitness. */
         fun step(): Double {
             check(!done) { "training already complete ($generation/${config.generations} generations)" }
-            while (!stepGenome()) Unit
+            while (!stepGenome()) {
+                // drive one genome evaluation per call until the whole generation is scored
+            }
             return history.last()
         }
 

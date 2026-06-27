@@ -292,11 +292,11 @@ object MapUtil {
         val turn = (50.0 + Util.random() * 130.0) * (if (Util.randomBool()) 1.0 else -1.0)
         val opts: dynamic = js("({})")
         opts.center = anchorCenter // hold the centre on the action area → portals stay framed
-        opts.bearing = (m.getBearing() as Double) + turn
+        opts.bearing = m.getBearing() + turn
         opts.pitch = TITLE_PITCH - 8.0 + Util.random() * 16.0 // gentle tilt variation around TITLE_PITCH
         // Drift gently around the CURRENT zoom (clamped) so a player can scroll out without the orbit
         // snapping back — i.e. the auto-cam keeps running through a manual zoom.
-        opts.zoom = ((m.getZoom() as Double) + (Util.random() * 0.5 - 0.25)).coerceIn(titleZoom() - 4.0, titleZoom() + 1.5)
+        opts.zoom = (m.getZoom() + (Util.random() * 0.5 - 0.25)).coerceIn(titleZoom() - 4.0, titleZoom() + 1.5)
         opts.duration = TITLE_LEG_MS
         m.asDynamic().easeTo(opts)
         window.setTimeout({ titleOrbitLeg(gen) }, TITLE_LEG_MS.toInt())
@@ -345,7 +345,7 @@ object MapUtil {
         val turn = (50.0 + Util.random() * 130.0) * (if (Util.randomBool()) 1.0 else -1.0)
         val opts: dynamic = js("({})")
         opts.center = center // keep the action framed (no fly-in to detail like the title does)
-        opts.bearing = (ref.getBearing() as Double) + turn
+        opts.bearing = ref.getBearing() + turn
         opts.pitch = AUTOCAM_PITCH - 6.0 + Util.random() * 12.0 // gentle tilt variation
         // a bit wider … to a little closer than the framed zoom
         opts.zoom = displayZoom() - AUTOCAM_ZOOM_LO + Util.random() * (AUTOCAM_ZOOM_LO + AUTOCAM_ZOOM_HI)

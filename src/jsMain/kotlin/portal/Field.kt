@@ -4,7 +4,9 @@ import World
 import agent.Agent
 import util.data.Line
 
-data class Field private constructor(val origin: Portal, val primaryAnchor: Portal, val secondaryAnchor: Portal, val owner: Agent) {
+// Not a `data class`: the auto-generated copy() would expose the private constructor (a hard error in
+// Kotlin 2.5+), and copy()/componentN go unused anyway — equals/hashCode/toString are hand-rolled below.
+class Field private constructor(val origin: Portal, val primaryAnchor: Portal, val secondaryAnchor: Portal, val owner: Agent) {
     private val idSet: LinkedHashSet<Portal> = linkedSetOf(origin, primaryAnchor, secondaryAnchor)
     fun weakestPortal() = idSet.toList().sortedBy { it.calcHealth() }.last()
     fun strongestAnchors() = idSet.toList().sortedBy { it.calcHealth() }.take(2)
