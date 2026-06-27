@@ -97,12 +97,19 @@ object SoundUtil {
     // Master volume in 0..1. Starts muted; enabled on the first user gesture
     // (browser autoplay policy needs one). The volume slider drives it too.
     private var masterVolume = 0.0
+    private var audioEnabled = false // the first gesture has raised the volume to default once
 
     /** Resume the audio context and turn sound on. Idempotent; call on a user gesture. */
     fun enableAudio() {
         if (HtmlUtil.isNotRunningInBrowser()) return
         if (audioCtx.state != "running") audioCtx.resume()
-        if (masterVolume <= 0.0) setMasterVolume(DEFAULT_VOLUME)
+        // ONLY the first gesture brings the volume up to default. Afterwards leave the level alone — otherwise a
+        // user who muted (volume 0) on the title gets silently un-muted by the next gesture / world-gen, since
+        // muted and "not enabled yet" are both volume 0. (Bug: mute on title didn't survive into the game.)
+        if (!audioEnabled) {
+            audioEnabled = true
+            if (masterVolume <= 0.0) setMasterVolume(DEFAULT_VOLUME)
+        }
     }
 
     fun setMasterVolume(volume: Double) {
