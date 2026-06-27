@@ -431,6 +431,8 @@ html, body {
     letter-spacing: 1px;
     padding: 5px 12px;
     background: rgba(255, 255, 255, 0.06);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
     color: #a0a0a0;
     border: 1px solid transparent;
     border-radius: 3px;
@@ -497,7 +499,7 @@ html, body {
     background: none;
     border: none;
     color: #d2d2d2;
-    font-size: 14px;
+    font-size: 21px; /* ~1.5× — easier to hit / read in the taller footer header */
     line-height: 1;
     cursor: pointer;
 }
@@ -514,6 +516,8 @@ html, body {
 }
 .footerMaximize svg {
     display: block;
+    width: 20px; /* ~1.5× the 13px the icon is authored at (CSS overrides the width/height attrs) */
+    height: 20px;
 }
 .footerBody {
     max-height: 320px; /* a touch taller so the STATS slider-history shows a row or two without maximizing */
@@ -1603,17 +1607,15 @@ html, body {
     border-radius: 3px;
 }
 .onboardActive {
-    background: rgba(255, 255, 255, 0.85);
-    color: #000000;
-    text-shadow: none; /* selected = white fill + dark text; drop the shared light-on-dark outline */
+    background: rgba(255, 255, 255, 0.16);
+    color: #ffffff;
 }
-/* The selected option: a clearly-filled, glowing button. Higher specificity than the later .onboardPreset
-   chrome rule, so the highlight actually shows (the plain .onboardActive lost to it). */
+/* The selected option: the same brighter-fill + white-border highlight the footer tabs use (it inherits the
+   shared button face + blur). Higher specificity than the later shared rule so the highlight actually shows. */
 .onboardPreset.onboardActive {
-    background: #ffffff;
-    color: #151515;
-    border-color: #ffffff;
-    box-shadow: 0 0 16px rgba(255, 255, 255, 0.7);
+    background: rgba(255, 255, 255, 0.18);
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.4);
     font-weight: 700;
 }
 /* Driver-selection grid: a faction label per row, then one column per option (aligned). */
@@ -2035,12 +2037,13 @@ html, body {
 }
 /* Required tile attribution: collapsed to a small ⓘ (compact) + dimmed so it's unobtrusive;
    full opacity on hover/expand. (MapLibre 5 uses the maplibregl- prefix.) */
-/* Keep the bottom-right ⓘ above the footer (z 60) and clickable. The map (.initialMap) sets z-index:8 +
-   position:relative, forming a stacking context that traps this control BELOW the body-level footer no matter
-   how high its own z-index is. position:fixed lifts it out to the viewport so its z-index actually beats the
-   footer's; it stays pinned to the same bottom-right corner (the map fills the viewport). Everything is
-   !important because MapLibre's own stylesheet (position:absolute on this control) loads AFTER ours and would
-   otherwise win the same-specificity tie, dropping it back into the trapped stacking context. */
+/* Keep the bottom-right control cluster (zoom / compass + ⓘ attribution) above the footer (z 60) and
+   clickable. .initialMap sets z-index:8 + position:relative → a stacking context that traps this control
+   BELOW the body-level footer no matter how high its own z-index (position:fixed changes geometry, not
+   stacking-context membership, so CSS alone can't escape it). MapUtil.liftMapControls() reparents this element
+   to <body> at map setup so the rules below finally compete at root level: fixed + z-index:999 floats it over
+   the footer, pinned to the bottom-right corner. Everything is !important because MapLibre's own stylesheet
+   (position:absolute on this control) loads AFTER ours and would otherwise win the same-specificity tie. */
 .maplibregl-ctrl-bottom-right, .mapboxgl-ctrl-bottom-right {
     position: fixed !important;
     right: 0 !important;
@@ -2124,9 +2127,9 @@ html, body {
     width: 80px; /* wider than the ×N buttons so "Resume" fits */
 }
 .speedBtn.active {
-    background: rgba(74, 84, 100, 0.72);
+    background: rgba(255, 255, 255, 0.18);
+    border-color: rgba(255, 255, 255, 0.32);
     color: #ffffff;
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.4);
 }
 
 /* Auto cam toggle (icon-only, rightmost in the toolbar); .active when the drift is running. */
@@ -2136,9 +2139,9 @@ html, body {
     line-height: 0;
 }
 .autoCamBtn.active {
-    background: rgba(74, 84, 100, 0.72);
+    background: rgba(255, 255, 255, 0.18);
+    border-color: rgba(255, 255, 255, 0.32);
     color: #ffffff;
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.4);
 }
 
 /* A toolbar label that holds an icon instead of text (e.g. the Volume speaker). vertical-align middle
@@ -2158,19 +2161,18 @@ html, body {
     cursor: pointer;
 }
 
-/* One shared button face — a blurred, translucent "glass" look used everywhere (top bar, footer header,
-   onboarding/init screens) so every button matches (the faction-choice .enl/.res buttons keep their colour).
-   The tint is a DELIBERATE cool off-tint slate (not a neutral gray) — chosen with the user for a glassy face
-   that reads over the bright map; the neutral-gray house rule is intentionally relaxed here. The thin black
-   text outline keeps the light label legible over any terrain/buildings. Pairs with the glow/lift below. */
+/* One shared button face — the footer-tab look (neutral translucent fill, white border, no text outline)
+   plus a touch of blur so labels read over the map. Used everywhere (top bar, footer header, onboarding/init)
+   so every button matches; the faction-choice .enl/.res buttons keep their colour. Selection brightens the
+   fill + border (see the per-state rules). */
 .topButton, .topDrop, .menuItem, .onboardPreset, .speedBtn, .autoCamBtn,
 .gateNewGame, .onboardStart, .popupButton:not(.enl):not(.res) {
-    background: rgba(26, 30, 38, 0.55);
+    background: rgba(255, 255, 255, 0.06);
     -webkit-backdrop-filter: blur(6px);
     backdrop-filter: blur(6px);
-    color: #e8e8e8;
+    color: #cccccc;
     border: 1px solid rgba(255, 255, 255, 0.18);
-    text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+    text-shadow: none;
 }
 
 /* Game-y interactive controls: a subtle lift + faction "laser" glow on hover, a press-in on click.
@@ -2188,9 +2190,9 @@ html, body {
 .topButton:hover, .topDrop:hover, .menuItem:hover, .onboardPreset:hover,
 .speedBtn:hover, .autoCamBtn:hover, .gateNewGame:hover, .onboardStart:hover,
 .popupButton:not(.enl):not(.res):hover {
-    background: rgba(44, 50, 62, 0.62);
+    background: rgba(255, 255, 255, 0.12);
     color: #ffffff;
-    border-color: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.28);
 }
 .topButton:active, .topDrop:active, .menuItem:active, .popupButton:active,
 .onboardPreset:active, .speedBtn:active, .autoCamBtn:active {
@@ -2319,12 +2321,18 @@ html, body {
 }
 
 /* Collapse toggles for the two side HUD columns (left tuning sliders / right stats). The "–" button sits at
-   the top of its column; when collapsed a round restore bubble appears where the column sat. */
+   the top of its column — left-aligned on the left, right-aligned on the right. Collapsing hides everything
+   in the column except this button (which flips to "+"); it is the whole control (no separate bubble). */
 .panelBar {
     pointer-events: auto;
     display: flex;
-    justify-content: flex-end;
     margin-bottom: 4px;
+}
+.panelBar-left {
+    justify-content: flex-start;
+}
+.panelBar-right {
+    justify-content: flex-end;
 }
 .panelCollapse {
     width: 20px;
@@ -2333,37 +2341,19 @@ html, body {
     text-align: center;
     border-radius: 4px;
     background: rgba(255, 255, 255, 0.06);
-    color: #a0a0a0;
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #cccccc;
+    border: 1px solid rgba(255, 255, 255, 0.18);
     cursor: pointer;
 }
 .panelCollapse:hover {
     color: #ffffff;
-    background: rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.12);
     border-color: rgba(255, 255, 255, 0.28);
 }
-/* The restore bubble — same idiom as the "?" controls legend, pinned where its column lives. */
-.panelBubble {
-    position: fixed;
-    top: 108px;
-    width: 24px;
-    height: 24px;
-    line-height: 24px;
-    text-align: center;
-    border-radius: 50%;
-    background: #000000aa;
-    color: #ffffff;
-    border: 1px solid #888888;
-    font-size: 13px;
-    cursor: pointer;
-    z-index: 151;
-    pointer-events: auto;
-}
-.panelBubble-left {
-    left: 14px;
-}
-.panelBubble-right {
-    right: 14px;
+/* Collapsed: hide the column's content, keep only the "–"/"+" toggle bar. */
+#hudLeft.collapsed > *:not(.panelBar),
+#hudRight.collapsed > *:not(.panelBar) {
+    display: none;
 }
 
 /* On-screen controls legend (bottom-left). */

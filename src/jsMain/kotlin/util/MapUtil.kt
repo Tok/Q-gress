@@ -412,6 +412,7 @@ object MapUtil {
         Scene3D.register(targetMap, center.lng as Double, center.lat as Double, anchorZoom)
         BuildingShake.attach(targetMap.asDynamic()) // buildings bob when XMPs detonate nearby
         setupNavigation(targetMap)
+        MapControls.lift(INITIAL_MAP) // float the zoom/compass + ⓘ above the footer (escape #initialMap's stacking context)
     }
 
     /**
@@ -750,11 +751,13 @@ object MapUtil {
     fun showSatellite() {
         document.getElementById(INITIAL_MAP)?.removeClass(INVISIBLE)
         document.getElementById(MAP)?.addClass(INVISIBLE)
+        MapControls.setVisible(true) // the lifted controls drive #initialMap — show them with it
     }
 
     fun showStreet() {
         document.getElementById(INITIAL_MAP)?.addClass(INVISIBLE)
         document.getElementById(MAP)?.removeClass(INVISIBLE)
+        MapControls.setVisible(false)
     }
 
     /**
