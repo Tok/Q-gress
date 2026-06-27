@@ -33,20 +33,20 @@ import system.grid.GridConnectivity
 import system.map.Attribution
 import system.map.MapUtil
 import system.map.Navigation
+import system.ui.AudioDemo
+import system.ui.Controls
+import system.ui.Demo
+import system.ui.DropRatesPanel
+import system.ui.Footer
+import system.ui.Hud
+import system.ui.Icons
+import system.ui.Inspector
+import system.ui.LoadingOverlay
+import system.ui.MenuControls
+import system.ui.Onboarding
+import system.ui.TuningPanel
+import system.ui.VolumeControl
 import util.data.*
-import util.ui.AudioDemo
-import util.ui.Controls
-import util.ui.Demo
-import util.ui.DropRatesPanel
-import util.ui.Footer
-import util.ui.Hud
-import util.ui.Icons
-import util.ui.Inspector
-import util.ui.LoadingOverlay
-import util.ui.MenuControls
-import util.ui.Onboarding
-import util.ui.TuningPanel
-import util.ui.VolumeControl
 import kotlin.js.Json
 
 @Suppress("UnusedParameter") // external JS global; param describes the contract
@@ -160,7 +160,7 @@ object HtmlUtil {
         MapUtil.onAutoCamChanged = { on -> syncAutoCamToggle(on) }
         MapUtil.setAutoCam(true)
         // Install the chosen AI drivers up front (the visible "AI vs AI" pickers now live in the BRAINS tab).
-        util.ui.DriverControls.installDefaults()
+        system.ui.DriverControls.installDefaults()
 
         // Header centre: the live ENL-vs-RES scoreboard (StatsPanel fills #toolbarCentre). The loaded-location
         // name moves to the slim strip just below the header (Hud.top(), centred) — see createLocationLabel().

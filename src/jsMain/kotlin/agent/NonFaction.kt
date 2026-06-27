@@ -10,9 +10,9 @@ import portal.Portal
 import system.audio.SoundUtil
 import system.grid.PathUtil
 import system.map.MapUtil
+import system.ui.LoadingOverlay
 import util.*
 import util.data.*
-import util.ui.LoadingOverlay
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin

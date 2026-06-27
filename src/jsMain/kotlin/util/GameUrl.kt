@@ -6,9 +6,9 @@ import config.Config
 import config.Sim
 import kotlinx.browser.document
 import org.w3c.dom.url.URL
+import system.ui.DriverControls
+import system.ui.TuningPanel
 import util.data.GeoCoords
-import util.ui.DriverControls
-import util.ui.TuningPanel
 
 /**
  * Read/write of the game's start state in the page URL — the shareable link. Split out of [HtmlUtil]

@@ -14,10 +14,10 @@ import org.khronos.webgl.get
 import org.w3c.dom.ImageData
 import portal.Portal
 import system.display.Scene3D
+import system.ui.LoadingOverlay
 import util.HtmlUtil
 import util.Util
 import util.data.*
-import util.ui.LoadingOverlay
 import kotlin.math.sqrt
 
 object World {

@@ -9,7 +9,7 @@ import org.w3c.dom.url.URL
 import org.w3c.files.Blob
 import org.w3c.files.BlobPropertyBag
 import system.map.MapUtil
-import util.ui.LoadingOverlay
+import system.ui.LoadingOverlay
 
 /**
  * `?debug=capture` one-time tool: sweep every [Location] preset, build each grid, and download a
