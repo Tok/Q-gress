@@ -143,8 +143,13 @@ be matched. **Desktop-only**; mobile is blocked.
   the player can play with the sound *while the sim runs* — Q-Gress is as much a toy as a game. Reuse
   `AudioFx`/`SoundUtil`/`AudioDemo` (already the dial-in surface); the sim's live events drive the audio and
   the sliders reshape it in real time. Pairs with the sound-design pass (icebox).
+- [ ] **Vector-field viz toggle** — a Menu **checkbox to turn the flow-field arrow visualization off**
+  in-game. Right now the arrows auto-flash on new portals with no off switch; some players will want them gone.
+- [ ] **Portal-discovery-rate slider** — discovery (`Cycle.managePortalDensity` / `Config.portalChurnRate`)
+  feels too fast now; expose it as a tuning **slider next to the combat-dynamics slider** so the neutral
+  portal churn pace is adjustable (it's a system process, not an agent action — see MECHANICS).
 - [ ] **Schematic base view** (reuse `SHADOW_STYLE`) + more toggleable info overlays (e.g. a
-  movement-penalty heatmap) alongside the existing Terrain/Vectors toggles.
+  movement-penalty heatmap) alongside the existing Terrain toggle.
 - [ ] **Per-faction tuning presets** — save/recall named slider sets (the slider↔AI auto-move link is done).
 - [ ] **Stage 5 — the polished end-state UI.** A cohesive visual-theme + layout pass over the whole
   HUD/onboarding/menus building on the dock: consistent typography, spacing, panels and states; responsive to
@@ -314,10 +319,11 @@ the board; fair shuffled agent order). Deeper "no single strategy dominates" val
   inventory/capacity limit; an FPS/perf readout (pairs with `?debug`); unit tests for fielding + deploying.
 
 ## Known glitches (low priority)
-- ~~**Loading-count fraction glyph.**~~ ✅ fixed globally: `font-feature-settings: "frac" 0, "afrc" 0` +
-  **`font-variant-ligatures: none`** on `html, body` (the scoped `.loadingDetail` `frac 0` hadn't worked
-  because the font also substitutes via ligatures). Keeps `1/2`, `1/4`, `n/8` literal everywhere. *Verify on
-  screen.*
+- **Passability overlay not visible on terrain.** The Menu → **Passability** overlay
+  (`PassabilityOverlay`, a textured ground quad at a fixed low z `OVERLAY_Z`) doesn't follow the DEM, so on
+  elevated terrain it sits *below* the raised ground and is hidden. Fix: drape it on the sampled terrain
+  heights (`Scene3D.groundZ`) like the objects do, or lift/conform the quad to the DEM. Same root cause as the
+  *Terrain-aware shatter ground* item (3D / rendering).
 
 ## Constraints / agreements
 - Commit to `develop`; **no pushing** until something works end-to-end.

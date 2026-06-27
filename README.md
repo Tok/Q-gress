@@ -36,7 +36,9 @@ instead. Use **Chrome / Brave / Edge** on a desktop with a mouse.
   are glass pipes, control fields are plasma sheets — grayscale vessels, faction colour as the only
   tint. Physics **shatter**, volumetric **XMP** fireballs, **hack** centrifuge animations.
 - Real **portal names** from map POI/street data; per-terrain movement; **3D positional audio**.
-- A DOM HUD: a live MU "covered area" scoreboard, a per-metric **history dashboard**, an action log.
+- A DOM HUD: a live MU "covered area" scoreboard, a per-metric **history dashboard**, and a collapsible
+  tabbed footer — sortable **AGENTS** + **PORTALS** tables, the **EVENT LOG**, and the AI tabs below.
+  A bottom-left **"?"** opens the one controls + keyboard-shortcuts reference.
 - **AI vs AI — pick each side's brain.** Every faction's 17 behaviour sliders can be driven by:
   - a **custom neural net** — a configurable MLP (two hidden layers, each **4 / 8 / 16 / 24 / 32**
     wide) trained **headless by neuroevolution**, with a baked champion bundled. Train your own live in
