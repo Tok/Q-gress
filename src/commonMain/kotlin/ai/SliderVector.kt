@@ -8,7 +8,7 @@ import agent.qvalue.QValue
  * The behaviour sliders as one flat, ordered, faction-agnostic vector — the substrate an AI driver writes
  * (PLAN Phase 6.0). One slot per [QValue] in a STABLE order ([ORDER] = every [QActions] then every
  * [QDestinations]), so a net genome / LLM JSON encode/decode round-trips with a fixed layout. Pure +
- * immutable; each slot is a 0..1 weighting (pre-[QValue.weight]). Wrap one in a [SliderVectorPolicy] to
+ * immutable; each slot is a 0..1 weighting (pre-[QValue.weight]). Wrap one in a `SliderVectorPolicy` to
  * drive a faction with it.
  */
 class SliderVector private constructor(private val slots: DoubleArray) {
@@ -27,6 +27,9 @@ class SliderVector private constructor(private val slots: DoubleArray) {
     }
 
     companion object {
+        /** The neutral, uniform slider weighting — the tuning UI's default and the headless-match fallback. */
+        const val DEFAULT_WEIGHT = 0.1
+
         /** The stable slot order: every action slider, then every destination slider. */
         val ORDER: List<QValue> = QActions.values() + QDestinations.values()
 
@@ -38,8 +41,7 @@ class SliderVector private constructor(private val slots: DoubleArray) {
         fun indexOf(value: QValue): Int = indexById[value.id] ?: error("QValue '${value.id}' is not a known slider slot")
 
         /** Every slot set to [weight] (default = the tuning-slider default, so it mirrors a fresh UI). */
-        fun uniform(weight: Double = DomSliderPolicy.DEFAULT_WEIGHT): SliderVector =
-            SliderVector(DoubleArray(SIZE) { weight.coerceIn(0.0, 1.0) })
+        fun uniform(weight: Double = DEFAULT_WEIGHT): SliderVector = SliderVector(DoubleArray(SIZE) { weight.coerceIn(0.0, 1.0) })
 
         /** Build from a raw array in [ORDER] (length must equal [SIZE]); each value clamped to 0..1. */
         fun decode(array: DoubleArray): SliderVector {
@@ -47,13 +49,4 @@ class SliderVector private constructor(private val slots: DoubleArray) {
             return SliderVector(DoubleArray(SIZE) { array[it].coerceIn(0.0, 1.0) })
         }
     }
-}
-
-/**
- * A [FactionPolicy] backed by a [SliderVector] — what an AI driver installs via [FactionPolicies.set]. The
- * [vector] is swappable, so the driver re-tunes at checkpoint cadence without rebinding anything.
- */
-class SliderVectorPolicy(var vector: SliderVector) : FactionPolicy {
-    override fun weight(value: QValue): Double = vector[value]
-    override fun currentVector(): SliderVector = vector
 }

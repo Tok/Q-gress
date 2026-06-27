@@ -14,7 +14,8 @@ import system.ui.Bootstrap
  *
  * Today the only live policy is [DomSliderPolicy] (reads the tuning sliders — the pre-6.0 behaviour); a
  * future net/LLM driver installs a [SliderVectorPolicy] via [FactionPolicies.set] and rewrites it at
- * checkpoint cadence, with no change to how agents pick actions.
+ * checkpoint cadence, with no change to how agents pick actions. (The pure [SliderVector] model lives in
+ * commonMain; the policy plumbing here — DOM slider reads, overrides, the registry — is the jsMain shell.)
  */
 interface FactionPolicy {
     /** The raw slider weighting (0..1) for [value], before [QValue.weight] is applied. */
@@ -30,20 +31,16 @@ interface FactionPolicy {
 
 /**
  * The default policy: read the live tuning slider for [faction] (id `"<qvalue>Slider<nickName>"`), or
- * [DEFAULT_WEIGHT] when there's no tuning UI (the title sim / headless matches). Byte-for-byte the pre-6.0
- * `ActionSelector.q` read, so installing it changes nothing.
+ * [SliderVector.DEFAULT_WEIGHT] when there's no tuning UI (the title sim / headless matches). Byte-for-byte
+ * the pre-6.0 `ActionSelector.q` read, so installing it changes nothing.
  */
 class DomSliderPolicy(private val faction: Faction) : FactionPolicy {
     override fun weight(value: QValue): Double {
         // Headless (Node tests / future SimRunner) there's no `window` at all — skip the DOM read entirely.
-        if (Bootstrap.isNotRunningInBrowser()) return DEFAULT_WEIGHT
+        if (Bootstrap.isNotRunningInBrowser()) return SliderVector.DEFAULT_WEIGHT
         val id = value.id + "Slider" + faction.nickName
         val slider = window.document.getElementById(id) as? HTMLInputElement
-        return slider?.valueAsNumber ?: DEFAULT_WEIGHT
-    }
-
-    companion object {
-        const val DEFAULT_WEIGHT = 0.1 // the tuning sliders' default value
+        return slider?.valueAsNumber ?: SliderVector.DEFAULT_WEIGHT
     }
 }
 
@@ -108,4 +105,13 @@ object FactionPolicies {
     fun lockedValue(faction: Faction, value: QValue): Double? = (policies[faction] as? OverridePolicy)?.lockedValue(value)
 
     fun reset() = policies.clear()
+}
+
+/**
+ * A [FactionPolicy] backed by a [SliderVector] — what an AI driver installs via [FactionPolicies.set]. The
+ * [vector] is swappable, so the driver re-tunes at checkpoint cadence without rebinding anything.
+ */
+class SliderVectorPolicy(var vector: SliderVector) : FactionPolicy {
+    override fun weight(value: QValue): Double = vector[value]
+    override fun currentVector(): SliderVector = vector
 }

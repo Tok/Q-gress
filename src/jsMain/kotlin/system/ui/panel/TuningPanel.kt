@@ -3,6 +3,7 @@ package system.ui.panel
 import agent.Faction
 import agent.qvalue.QActions
 import agent.qvalue.QDestinations
+import agent.qvalue.QIcons
 import agent.qvalue.QValue
 import ai.FactionPolicies
 import kotlinx.browser.document
@@ -197,7 +198,7 @@ object TuningPanel {
     // The action icon in its own fixed 16px column → icons line up in a column across all rows.
     private fun iconCell(qValue: QValue): HTMLElement {
         val cell = el("span", "qSliderIcon")
-        qValue.icon?.let {
+        QIcons.iconFor(qValue)?.let {
             val img = document.createElement("img") as HTMLImageElement
             img.src = it.toDataURL()
             cell.appendChild(img)
