@@ -30,9 +30,18 @@ over `commonMain`, uploaded to Codecov) are **done**; **phase B** (refactor unde
 
 ### Phase B — Refactor under the net — 🔄 in progress
 Functional core / imperative shell, properly. Module-by-module, behind the phase-A tests.
-- [ ] **SoC / split god-objects** — `Scene3D` (1579 → extract the demo/showcase code to `Showcases`, drop the
-  `LargeClass` suppress), and cut along seams in `MapUtil` (835) / `HtmlUtil` (788) / `SoundUtil` (768) /
-  `Portal` (685) as they're touched. *(The big one — not started.)*
+- [~] **Package reorg — domain vs engine.** `agent`/`portal`/`items`/`ai`/`config` are the **Ingress domain**
+  (abstract core objects); everything that *runs and presents* the sim is **engine**, grouped under `system/`,
+  kept away from the domain. `util/` slims back to its original intent (near-pure cross-cutting helpers). Moves
+  (all via `git mv`, compiler-driven import fixes, one package per commit, gate green each):
+  `util` audio→`system/audio` · map→`system/map` · buildings→`system/building` · grid/path→`system/grid`;
+  `system/display` → add `display/shader/` + `display/fx/`; `util/ui` (the DOM HUD) → `system/ui/` (+ `ui/panel/`).
+  Edge cases settled while moving: `display/PortalChangeSound`→`system/audio`; presentation bootstrap
+  (`HtmlUtil`/`DrawUtil`/`Shortcuts`)→`system/ui`. *(Do this BEFORE resuming the Scene3D split below — Scene3D
+  lives in `system/display`.)*
+- [~] **SoC / split god-objects** — `Scene3D` (1681→1499): demo/showcase **extracted to `Showcases` ✅** (1/n);
+  more cuts needed to clear the 600-line `LargeClass` cap (`PortalBuilder`, effects dispatch, entity sync). Then
+  cut along seams in `MapUtil` (835) / `HtmlUtil` (788) / `SoundUtil` (768) / `Portal` (685) as they're touched.
 - [ ] **Reduce magic numbers** — name them / fold into `Config` where it aids clarity (detekt `MagicNumber` is
   off, so this is a by-hand judgement pass, not a gate-chase). *(Started opportunistically — e.g. named the
   `LINK_MITIGATION_SCALE`.)*
