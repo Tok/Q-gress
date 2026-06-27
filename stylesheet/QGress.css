@@ -41,6 +41,13 @@
     --ui-chrome-hi: linear-gradient(180deg, #ffffff 0%, #e4e4e4 52%, #cdcdcd 100%);
     --ui-rubber: rgba(11, 11, 11, 0.82);
     --ui-glass-border: rgba(255, 255, 255, 0.16);
+    --ui-glass-bg: rgba(0, 0, 0, 0.45); /* standard glass-pane background */
+    --ui-glass-blur: blur(7px); /* standard glass-pane backdrop blur */
+    --ui-btn-blur: blur(6px); /* button backdrop blur (footer tabs / top bar) */
+    /* Translucent-white surface tints — subtle fills AND hairline borders alike. */
+    --ui-tint-1: rgba(255, 255, 255, 0.06);
+    --ui-tint-2: rgba(255, 255, 255, 0.12);
+    --ui-tint-3: rgba(255, 255, 255, 0.18);
     --ui-faction-edge: color-mix(in srgb, var(--faction) 55%, transparent);
     --ui-faction-glow: 0 0 14px color-mix(in srgb, var(--faction) 50%, transparent);
 }
@@ -144,7 +151,7 @@ html, body {
 .aiDriverSelect {
     background: rgba(0, 0, 0, 0.5);
     color: #e8e8e8;
-    border: 1px solid rgba(255, 255, 255, 0.18);
+    border: 1px solid var(--ui-tint-3);
     border-radius: 4px;
     font-family: "Coda", monospace;
     font-size: 11px;
@@ -170,7 +177,7 @@ html, body {
 .aiObsTrack {
     height: 7px;
     border-radius: 4px;
-    background: rgba(255, 255, 255, 0.12);
+    background: var(--ui-tint-2);
     overflow: hidden;
 }
 .aiObsBar {
@@ -294,7 +301,7 @@ html, body {
 .tuneList {
     pointer-events: auto;
     background: rgba(0, 0, 0, 0.5);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid var(--ui-tint-2);
     border-radius: 5px;
     padding: 8px 10px;
 }
@@ -312,7 +319,7 @@ html, body {
     gap: 16px;
     padding: 5px 14px;
     background: rgba(0, 0, 0, 0.5);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid var(--ui-tint-2);
     border-radius: 5px;
     font-family: "Coda", monospace;
     font-variant-numeric: tabular-nums; /* equal-width digits — no jitter as values change */
@@ -401,9 +408,9 @@ html, body {
     gap: 16px;
     padding: 4px 12px;
     border-radius: 6px;
-    background: rgba(0, 0, 0, 0.45);
-    -webkit-backdrop-filter: blur(7px);
-    backdrop-filter: blur(7px);
+    background: var(--ui-glass-bg);
+    -webkit-backdrop-filter: var(--ui-glass-blur);
+    backdrop-filter: var(--ui-glass-blur);
     border: 1px solid var(--ui-glass-border);
     box-sizing: border-box;
 }
@@ -412,9 +419,9 @@ html, body {
     border-left: none;
     padding: 4px 12px;
     border-radius: 6px;
-    background: rgba(0, 0, 0, 0.45);
-    -webkit-backdrop-filter: blur(7px);
-    backdrop-filter: blur(7px);
+    background: var(--ui-glass-bg);
+    -webkit-backdrop-filter: var(--ui-glass-blur);
+    backdrop-filter: var(--ui-glass-blur);
     border: 1px solid var(--ui-glass-border);
 }
 /* Full-width tabbed + collapsible footer (EVENT LOG / AGENTS). */
@@ -426,7 +433,7 @@ html, body {
     z-index: 60;
     pointer-events: auto;
     background: rgba(0, 0, 0, 0.55);
-    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    border-top: 1px solid var(--ui-tint-2);
     font-family: "Coda", monospace;
     color: #ffffff;
 }
@@ -449,9 +456,9 @@ html, body {
     font-weight: 600;
     letter-spacing: 1px;
     padding: 5px 12px;
-    background: rgba(255, 255, 255, 0.06);
-    -webkit-backdrop-filter: blur(6px);
-    backdrop-filter: blur(6px);
+    background: var(--ui-tint-1);
+    -webkit-backdrop-filter: var(--ui-btn-blur);
+    backdrop-filter: var(--ui-btn-blur);
     color: #a0a0a0;
     border: 1px solid transparent;
     border-radius: 3px;
@@ -486,7 +493,7 @@ html, body {
 .driverControls {
     gap: 8px;
     background: rgba(0, 0, 0, 0.5);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid var(--ui-tint-2);
     border-radius: 5px;
     padding: 6px 10px;
 }
@@ -564,9 +571,9 @@ html, body {
 .sliderHistoryGrid .historyRow,
 #footerTrain,
 .statsComLines {
-    backdrop-filter: blur(7px);
-    -webkit-backdrop-filter: blur(7px);
-    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: var(--ui-glass-blur);
+    -webkit-backdrop-filter: var(--ui-glass-blur);
+    background: var(--ui-glass-bg);
     border: 1px solid var(--ui-glass-border);
     border-radius: 6px;
     box-sizing: border-box;
@@ -620,7 +627,7 @@ html, body {
 }
 .brainsCard {
     background: rgba(0, 0, 0, 0.35);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid var(--ui-tint-2);
     border-radius: 6px;
     padding: 10px 12px;
 }
@@ -822,8 +829,8 @@ html, body {
     width: fit-content;
     margin: 4px auto; /* centre the activation diagram in the card */
     line-height: 0;
-    backdrop-filter: blur(7px);
-    -webkit-backdrop-filter: blur(7px);
+    backdrop-filter: var(--ui-glass-blur);
+    -webkit-backdrop-filter: var(--ui-glass-blur);
     background: rgba(0, 0, 0, 0.6);
     border: 1px solid var(--ui-glass-border);
     border-radius: 6px;
@@ -869,7 +876,7 @@ html, body {
 .trainSelect {
     background: rgba(0, 0, 0, 0.5);
     color: #e8e8e8;
-    border: 1px solid rgba(255, 255, 255, 0.18);
+    border: 1px solid var(--ui-tint-3);
     border-radius: 4px;
     font-family: "Coda", monospace;
     font-size: 12px;
@@ -916,8 +923,8 @@ html, body {
 .trainProgress {
     width: 100%;
     height: 8px;
-    background: rgba(0, 0, 0, 0.45);
-    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: var(--ui-glass-bg);
+    border: 1px solid var(--ui-tint-3);
     border-radius: 4px;
     overflow: hidden;
 }
@@ -946,7 +953,7 @@ html, body {
 }
 .trainChart {
     background: rgba(0, 0, 0, 0.4);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid var(--ui-tint-2);
     border-radius: 5px;
     padding: 4px;
 }
@@ -967,7 +974,7 @@ html, body {
     letter-spacing: 0.5px;
     background: rgba(0, 0, 0, 0.5);
     color: #e8e8e8;
-    border: 1px solid rgba(255, 255, 255, 0.18);
+    border: 1px solid var(--ui-tint-3);
     border-radius: 4px;
     padding: 4px 12px;
     cursor: pointer;
@@ -1009,7 +1016,7 @@ html, body {
     font-size: 11px;
     letter-spacing: 0.5px;
     padding: 3px 10px;
-    background: rgba(255, 255, 255, 0.06);
+    background: var(--ui-tint-1);
     color: #a0a0a0;
     border: 1px solid transparent;
     border-radius: 3px;
@@ -1044,7 +1051,7 @@ html, body {
     width: 48px;
     background: rgba(0, 0, 0, 0.5);
     color: #a0a0a0;
-    border: 1px solid rgba(255, 255, 255, 0.18);
+    border: 1px solid var(--ui-tint-3);
     border-radius: 4px;
     padding: 2px 0;
     cursor: pointer;
@@ -1065,7 +1072,7 @@ html, body {
     font-size: 11px;
     background: rgba(0, 0, 0, 0.5);
     color: #e8e8e8;
-    border: 1px solid rgba(255, 255, 255, 0.18);
+    border: 1px solid var(--ui-tint-3);
     border-radius: 4px;
     padding: 3px 11px;
     cursor: pointer;
@@ -1210,7 +1217,7 @@ html, body {
     /* Slim: a faint tint (the audioPanel glass already darkens behind it), thin border, small mono text. */
     background: rgba(0, 0, 0, 0.25);
     color: #d2d2d2;
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid var(--ui-tint-2);
     border-radius: 4px;
     font-family: "Coda", monospace;
     font-size: 10px;
@@ -1282,7 +1289,7 @@ html, body {
     pointer-events: auto;
     box-sizing: border-box;
     background: rgba(0, 0, 0, 0.5);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid var(--ui-tint-2);
     border-radius: 5px;
     padding: 6px 8px 4px;
 }
@@ -1405,8 +1412,8 @@ html, body {
     background: var(--ui-rubber);
     border: 1px solid var(--ui-faction-edge);
     border-radius: 10px;
-    backdrop-filter: blur(7px);
-    -webkit-backdrop-filter: blur(7px);
+    backdrop-filter: var(--ui-glass-blur);
+    -webkit-backdrop-filter: var(--ui-glass-blur);
     box-shadow: var(--ui-faction-glow), 0 10px 30px rgba(0, 0, 0, 0.6);
 }
 /* Thin "source on GitHub" link pinned to the bottom of the title screen. */
@@ -1534,9 +1541,9 @@ html, body {
     gap: 8px;
     padding: 4px 12px;
     border-radius: 6px;
-    background: rgba(0, 0, 0, 0.45);
-    -webkit-backdrop-filter: blur(7px);
-    backdrop-filter: blur(7px);
+    background: var(--ui-glass-bg);
+    -webkit-backdrop-filter: var(--ui-glass-blur);
+    backdrop-filter: var(--ui-glass-blur);
     border: 1px solid var(--ui-glass-border);
     font-family: "Coda", monospace;
     font-size: 13px;
@@ -1638,7 +1645,7 @@ html, body {
 /* The selected option: the same brighter-fill + white-border highlight the footer tabs use (it inherits the
    shared button face + blur). Higher specificity than the later shared rule so the highlight actually shows. */
 .onboardPreset.onboardActive {
-    background: rgba(255, 255, 255, 0.18);
+    background: var(--ui-tint-3);
     color: #ffffff;
     border-color: rgba(255, 255, 255, 0.4);
     font-weight: 700;
@@ -1781,7 +1788,7 @@ html, body {
     width: 340px;
     height: 8px;
     border-radius: 4px;
-    background: rgba(255, 255, 255, 0.12);
+    background: var(--ui-tint-2);
     overflow: hidden;
 }
 .loadingFill {
@@ -2152,7 +2159,7 @@ html, body {
     width: 80px; /* wider than the ×N buttons so "Resume" fits */
 }
 .speedBtn.active {
-    background: rgba(255, 255, 255, 0.18);
+    background: var(--ui-tint-3);
     border-color: rgba(255, 255, 255, 0.32);
     color: #ffffff;
 }
@@ -2164,7 +2171,7 @@ html, body {
     line-height: 0;
 }
 .autoCamBtn.active {
-    background: rgba(255, 255, 255, 0.18);
+    background: var(--ui-tint-3);
     border-color: rgba(255, 255, 255, 0.32);
     color: #ffffff;
 }
@@ -2192,11 +2199,11 @@ html, body {
    fill + border (see the per-state rules). */
 .topButton, .topDrop, .menuItem, .onboardPreset, .speedBtn, .autoCamBtn,
 .gateNewGame, .onboardStart, .popupButton:not(.enl):not(.res) {
-    background: rgba(255, 255, 255, 0.06);
-    -webkit-backdrop-filter: blur(6px);
-    backdrop-filter: blur(6px);
+    background: var(--ui-tint-1);
+    -webkit-backdrop-filter: var(--ui-btn-blur);
+    backdrop-filter: var(--ui-btn-blur);
     color: #cccccc;
-    border: 1px solid rgba(255, 255, 255, 0.18);
+    border: 1px solid var(--ui-tint-3);
     text-shadow: none;
 }
 
@@ -2215,7 +2222,7 @@ html, body {
 .topButton:hover, .topDrop:hover, .menuItem:hover, .onboardPreset:hover,
 .speedBtn:hover, .autoCamBtn:hover, .gateNewGame:hover, .onboardStart:hover,
 .popupButton:not(.enl):not(.res):hover {
-    background: rgba(255, 255, 255, 0.12);
+    background: var(--ui-tint-2);
     color: #ffffff;
     border-color: rgba(255, 255, 255, 0.28);
 }
@@ -2229,8 +2236,8 @@ html, body {
    intel column / history pane is intentionally NOT here: it uses the same flat neutral-border, no-blur style
    as the left slider pane — see .historyPanel / .tuneList.) */
 .gameMenu, .loadingPanel, .factionCta, .popup {
-    backdrop-filter: blur(7px);
-    -webkit-backdrop-filter: blur(7px);
+    backdrop-filter: var(--ui-glass-blur);
+    -webkit-backdrop-filter: var(--ui-glass-blur);
     border: 1px solid var(--ui-faction-edge);
 }
 /* The footer itself is NOT blurred (like the side score panel) — blurring the whole bar over the moving map
@@ -2331,7 +2338,7 @@ html, body {
     padding: 5px;
     border: 1px solid black;
     border-radius: 3px;
-    background: rgba(255, 255, 255, 0.06);
+    background: var(--ui-tint-1);
     cursor: pointer;
 }
 .gameMenu .menuCheck .label {
@@ -2383,10 +2390,10 @@ html, body {
     /* A proper little button — darker than the toolbar glass + a touch of blur so the lone toggle reads
        clearly when the column is collapsed. */
     background: rgba(0, 0, 0, 0.5);
-    -webkit-backdrop-filter: blur(6px);
-    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: var(--ui-btn-blur);
+    backdrop-filter: var(--ui-btn-blur);
     color: #cccccc;
-    border: 1px solid rgba(255, 255, 255, 0.18);
+    border: 1px solid var(--ui-tint-3);
     cursor: pointer;
 }
 .panelCollapse-left {
@@ -2470,7 +2477,7 @@ html, body {
     width: 210px;
     background: rgba(0, 0, 0, 0.5);
     color: #ffffff;
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid var(--ui-tint-2);
     border-radius: 5px;
     padding: 8px 10px;
     font-family: "Coda", "Lucida Console";
@@ -2673,7 +2680,7 @@ html, body {
     overflow: auto;
     padding: 10px 14px;
     background: rgba(0, 0, 0, 0.85);
-    border: 1px solid rgba(255, 255, 255, 0.18);
+    border: 1px solid var(--ui-tint-3);
     border-radius: 6px;
     color: #ffffff;
     font-family: "Coda", monospace;
@@ -2706,14 +2713,14 @@ html, body {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(0, 0, 0, 0.45);
+    background: var(--ui-glass-bg);
     cursor: pointer;
 }
 .shortcutsPanel {
     min-width: 300px;
     padding: 14px 18px;
     background: rgba(0, 0, 0, 0.9);
-    border: 1px solid rgba(255, 255, 255, 0.18);
+    border: 1px solid var(--ui-tint-3);
     border-radius: 8px;
     color: #ffffff;
     font-family: "Coda", monospace;
