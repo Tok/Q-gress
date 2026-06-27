@@ -61,6 +61,12 @@ Requires **JDK 21** on `JAVA_HOME`. The app is desktop-only and needs WebGL.
 - Randomness goes through `Rng` (the seedable mulberry32 PRNG in `commonMain`, not `kotlin.random`);
   seed it for deterministic tests/worlds. The old `Util.random` facade is gone — call `Rng` directly.
 - No `!!`; prefer `?:` / `requireNotNull` / `getValue` / early return.
+- **Prefer `val` + transforms over reassignment** for *new* code (`val x = if/when/…`, `map`/`fold`/`sumOf`).
+  But don't churn existing `var`s into functional form to chase a count: detekt's `VarCouldBeVal` already
+  keeps gratuitous `var`s out (the gate is green → every `var` is genuinely reassigned), and the rest are
+  legitimate — state-machine flags (`private set`), single-pass min/max accumulators (the functional `minOf`×N
+  is *N passes* — slower), and flags riding side-effecting loops. `obj.prop = …` on dynamic/DOM/three.js is the
+  platform boundary, not a reassignment.
 - **No off-tint grayscales.** UI grays must be neutral (`R == G == B`, e.g. `#a0a0a0`, `rgba(0,0,0,…)`),
   never a greenish/bluish cast (`#9aa6a0`, `rgba(24,28,34,…)`) — unless there's a deliberate reason
   (faction colours, 3D **material** tints where chrome reads cooler on purpose, data-viz encodings, the sky).
