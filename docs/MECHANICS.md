@@ -16,7 +16,9 @@ fields' areas), and fields can be **layered** (nested/overlapping triangles) to 
 ground. So the optimal play is to **field aggressively and maximise MU each turn**: capture → fully deploy →
 link → field, then layer more fields on top. The AI drivers are scored on exactly this — the summed
 per-checkpoint MU margin over the opponent (see `docs/NN.md`, `ai/Evolution`) — so an agent "consolidates
-into links/fields when ahead and presses the attack to tear down the leader's fields when behind".
+into links/fields when ahead and presses the attack to tear down the leader's fields when behind". A field's
+plasma also **fades toward a low-health portal corner** (per-vertex alpha from each anchor's health), so a
+field hanging off a weak/dying portal reads as near-transparent (`PlasmaShader`).
 
 ## Mod slots
 Each portal has **4 mod slots** (`portal/ModSlot.kt`), holding any mix of **shields**, **heat sinks**,
@@ -46,11 +48,12 @@ Boost link range / outbound-link count. **Inactive in Q-Gress** (linking range i
 yet): defined + drawable (**diagonal cube**) but **never dropped** and with no gameplay effect. ~2018:
 standard Rare + Very Rare (VR never drops — passcode only), plus the SoftBank Ultra Link (SBUL).
 
-### Multihacks — `items/types/MultihackType.kt`  *(inactive)*
-Would raise the **hacks-before-burnout** limit (Common **+4**, Rare **+8**, Very Rare **+12**).
-**Inactive in Q-Gress**: defined (with values) but **never dropped or deployed**, and they don't modify the
-limit — `Portal.MAX_HACKS` is a flat **6** for everyone (see *Hacking, cooldown & glyphing* below). Wiring
-the mod in is future work; for now the raised flat limit + glyphing cover the "hack more" need.
+### Multihacks — `items/types/MultihackType.kt`
+Raise a portal's **hacks-before-burnout** limit for everyone: Common **+4**, Rare **+8**, Very Rare **+12**
+(authentic Ingress). With several deployed the **rarest counts full, each other at half**
+(`Multihack.additionalHacks`), so `Portal.maxHacks()` = base **6** + that bonus. They **drop** from hacks
+(`DropRates.multihackChance`, heat-sink-scaled) and **deploy** like any mod (after shields + heat sinks).
+Colour from [rarity]; rendered as a **hollow square ring** in the orb.
 
 ## Viruses — `items/types/VirusType.kt`
 **ADA Refactor** (→ ENL) and **JARVIS Virus** (→ RES) flip an **enemy** portal to the user's faction
@@ -69,12 +72,19 @@ A **hack** is the supply action: an agent in range of a portal pulls items + XM 
 - **Cooldown (`portal/Cooldown.kt`, `portal/PortalMath.cooldownAfter`):** after a hack the same portal is on
   cooldown for that agent, bucketed `FIVE` (5 min, the base) → … → `NONE`, shortened by deployed **heat
   sinks** (`Portal.cooldownFactor`).
-- **Burnout (`PortalMath.isBurnedOut`):** an agent may hack a portal **`MAX_HACKS = 6`** times within the
-  burnout window before it locks them out with `BURNOUT` (a long cooldown). 6 is above the authentic 4 so
-  agents can restock fast enough to mount an assault.
+- **Burnout (`PortalMath.isBurnedOut`):** an agent may hack a portal **`Portal.maxHacks()`** times within
+  the burnout window before it locks them out with `BURNOUT` (a long cooldown) — a base **6** (above the
+  authentic 4 so agents restock fast enough to assault) plus any deployed **multi-hacks** (see Mod slots).
 - **Glyphing (`Portal.tryGlyph`, `Glypher`):** a glyph hack yields **2×** a normal hack always, and **3×**
   when the agent's `glyphSkill` (default **0.8**) passes — pure item-volume bonus (no extra AP/XM). It's how
   agents refuel quickly; the heuristic/AI drivers "hack/glyph to refuel when XM runs low".
+
+## Power cubes & recycling — `items/PowerCube.kt`, `agent/action/cond/Recycler.kt`
+Power cubes are XM batteries that **drop from hacks** (`PowerCubeLevel` L1–L8 = **1000–8000 XM**, linear, as
+in Ingress). An agent low on XM (< 10% of capacity) **recycles** one (`Recycler`, the `RECYCLE` action),
+consuming it to restore its level × 1000 XM — the agent's main self-refill alongside picking up stray XM.
+This is distinct from **recharge** (`Recharger`, the `RECHARGE` action), which spends the agent's XM to refill
+a *portal's* resonators via a held key.
 
 ## Recruiting — `agent/action/cond/Recruiter.kt`, `agent/Balance.kt`
 Growing a faction's roster by persuading a bystander **NPC** to join. It is the *team-size* lever, kept
