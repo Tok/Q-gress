@@ -224,21 +224,22 @@ html, body {
    and Portal cells (the last two) inherit the `.taRow td` ellipsis, so changing actions and long portal
    names never resize the table — overlong portal names just truncate.
    Columns: 1 XM, 2 AP, 3 Agent, 4 XMPs, 5 US, 6 Resos, 7 Cubes, 8 Shields, 9 Heat, 10 MHack,
-   11 Keys, 12 Uniq, 13 Action, 14 Portal. */
+   11 Virus, 12 Keys, 13 Uniq, 14 Action, 15 Portal. */
 .taTable th:nth-child(1), .taTable td:nth-child(1) { width: 52px; }
-.taTable th:nth-child(2), .taTable td:nth-child(2) { width: 44px; }
+.taTable th:nth-child(2), .taTable td:nth-child(2) { width: 52px; }
 .taTable th:nth-child(3), .taTable td:nth-child(3) { width: 112px; }
 .taTable th:nth-child(4), .taTable td:nth-child(4),
 .taTable th:nth-child(5), .taTable td:nth-child(5),
-.taTable th:nth-child(6), .taTable td:nth-child(6) { width: 58px; }
-.taTable th:nth-child(7), .taTable td:nth-child(7) { width: 42px; }
-.taTable th:nth-child(8), .taTable td:nth-child(8) { width: 30px; }
-.taTable th:nth-child(9), .taTable td:nth-child(9) { width: 84px; }
-.taTable th:nth-child(10), .taTable td:nth-child(10) { width: 132px; }
-.taTable th:nth-child(11), .taTable td:nth-child(11),
-.taTable th:nth-child(12), .taTable td:nth-child(12) { width: 42px; }
-.taTable th:nth-child(13), .taTable td:nth-child(13) { width: 88px; }
-.taTable th:nth-child(14), .taTable td:nth-child(14) { width: 150px; }
+.taTable th:nth-child(6), .taTable td:nth-child(6),
+.taTable th:nth-child(7), .taTable td:nth-child(7) { width: 58px; }
+.taTable th:nth-child(8), .taTable td:nth-child(8) { width: 46px; }
+.taTable th:nth-child(9), .taTable td:nth-child(9),
+.taTable th:nth-child(10), .taTable td:nth-child(10),
+.taTable th:nth-child(11), .taTable td:nth-child(11) { width: 44px; }
+.taTable th:nth-child(12), .taTable td:nth-child(12),
+.taTable th:nth-child(13), .taTable td:nth-child(13) { width: 40px; }
+.taTable th:nth-child(14), .taTable td:nth-child(14) { width: 88px; }
+.taTable th:nth-child(15), .taTable td:nth-child(15) { width: 150px; }
 .taInvBars {
     display: inline-flex;
     align-items: flex-end;
@@ -916,6 +917,183 @@ html, body {
 .trainAction:disabled {
     opacity: 0.4;
     cursor: default;
+}
+
+/* AUDIO tab (AudioPanel) — a compact master-FX control surface (the sound triggers live in the #audio demo).
+   Section heads match the TRAIN tab; the pad/knobs/viz are canvases. width:fit-content so the glass pane hugs
+   its content (like the other tabs) instead of stretching to the full footer width. */
+.audioPanel {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: fit-content;
+    max-width: 100%;
+}
+.audioHead {
+    color: #a0a0a0;
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-bottom: 3px;
+}
+.audioLeadRow {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+}
+.audioReset {
+    margin-left: auto; /* push to the top-right of the tab */
+    font-family: "Chakra Petch", sans-serif;
+    letter-spacing: 0.5px;
+    font-size: 11px;
+    background: rgba(0, 0, 0, 0.5);
+    color: #e8e8e8;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 4px;
+    padding: 3px 11px;
+    cursor: pointer;
+}
+.audioReset:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+.audioLead {
+    font-family: "Chakra Petch", sans-serif;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    color: #e8e8e8;
+}
+.audioLead.major {
+    color: #6cf0a0; /* data-viz: leading reads bright/green */
+}
+.audioLead.minor {
+    color: #f0a06c; /* data-viz: trailing reads warm/amber */
+}
+.audioControls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 22px;
+    align-items: flex-start;
+}
+.audioSection {
+    display: flex;
+    flex-direction: column;
+}
+.audioPad, .audioAdsr {
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 5px;
+    cursor: crosshair;
+}
+.audioAdsr {
+    cursor: default;
+}
+.audioKnobs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 6px;
+}
+.audioKnob {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 58px;
+}
+.audioKnobDial {
+    cursor: ns-resize;
+}
+.audioKnobLabel {
+    color: #a0a0a0;
+    font-size: 9px;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    margin-top: 2px;
+}
+.audioKnobVal {
+    color: #e8e8e8;
+    font-family: "Coda", monospace;
+    font-size: 10px;
+    font-variant-numeric: tabular-nums;
+}
+/* Tiny unlabelled reset dot under each knob — click to snap it back to its default. */
+.audioKnobReset {
+    width: 7px;
+    height: 7px;
+    margin-top: 3px;
+    padding: 0;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.12);
+    cursor: pointer;
+}
+.audioKnobReset:hover {
+    background: #cfd6e6;
+    border-color: #cfd6e6;
+}
+.audioViz {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.audioScope, .audioSpectrum {
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 5px;
+    flex: 1 1 240px;
+    max-width: 100%;
+}
+
+/* Tuning export (TuningLab) — a small collapsible section at the bottom of the AUDIO tab: all tunables as one
+   copy-paste JSON block + reset. Collapsed by default (a <details>); the marker sits in the section head. */
+.audioTuning {
+    max-width: 560px;
+    margin-top: 2px;
+}
+.audioTuning > summary {
+    color: #a0a0a0;
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    user-select: none;
+    padding: 2px 0;
+}
+.audioTuning > summary:hover {
+    color: #ffffff;
+}
+.audioTuning[open] > summary {
+    margin-bottom: 5px;
+}
+.tuningLabText {
+    width: 100%;
+    min-height: 92px;
+    box-sizing: border-box;
+    /* Slim: a faint tint (the audioPanel glass already darkens behind it), thin border, small mono text. */
+    background: rgba(0, 0, 0, 0.25);
+    color: #d2d2d2;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 4px;
+    font-family: "Coda", monospace;
+    font-size: 10px;
+    line-height: 1.4;
+    padding: 5px 7px;
+    resize: vertical;
+    cursor: pointer; /* click anywhere to copy */
+}
+.tuningLabStatus {
+    color: #a0a0a0;
+    font-size: 10px;
+}
+/* Game-menu section divider (gameplay vs visual settings). */
+.menuSectionHead {
+    color: #a0a0a0;
+    font-family: "Chakra Petch", sans-serif;
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin: 6px 0 2px;
+    padding-top: 5px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 /* Leaderboard (LeaderboardPanel) — driver entrant toggles + a round-robin standings table. */
@@ -1740,10 +1918,20 @@ html, body {
 }
 /* Required tile attribution: collapsed to a small ⓘ (compact) + dimmed so it's unobtrusive;
    full opacity on hover/expand. (MapLibre 5 uses the maplibregl- prefix.) */
-/* Keep the bottom-right ⓘ above the footer (z 60) and clickable, so it can still be expanded. */
+/* Keep the bottom-right ⓘ above the footer (z 60) and clickable. The map (.initialMap) sets z-index:8 +
+   position:relative, forming a stacking context that traps this control BELOW the body-level footer no matter
+   how high its own z-index is. position:fixed lifts it out to the viewport so its z-index actually beats the
+   footer's; it stays pinned to the same bottom-right corner (the map fills the viewport). Everything is
+   !important because MapLibre's own stylesheet (position:absolute on this control) loads AFTER ours and would
+   otherwise win the same-specificity tie, dropping it back into the trapped stacking context. */
 .maplibregl-ctrl-bottom-right, .mapboxgl-ctrl-bottom-right {
-    z-index: 70;
-    pointer-events: auto;
+    position: fixed !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    top: auto !important;
+    left: auto !important;
+    z-index: 999 !important;
+    pointer-events: auto !important;
 }
 .maplibregl-ctrl-attrib, .mapboxgl-ctrl-attrib {
     font-size: 10px;
