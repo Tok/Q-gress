@@ -8,7 +8,7 @@ import kotlin.math.min
 /**
  * Pure, platform-independent numeric helpers — clamping, angle conversion, time formatting. Part of the
  * shared functional core (`commonMain`): no `World`, DOM, WebGL or `js()`, so it is unit-tested + line-covered
- * on the JVM. [util.Util] (the JS-facing facade) delegates here, so existing `Util.clip(...)` call sites are
+ * on the JVM. [util.Util] (the JS-facing facade) delegates here, so existing `MathUtil.clip(...)` call sites are
  * unchanged.
  */
 object MathUtil {

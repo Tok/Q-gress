@@ -4,7 +4,7 @@ import World
 import config.Constants
 import config.Dim
 import config.Sim
-import util.Util
+import util.Rng
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -21,8 +21,8 @@ fun Pos.toShadow() = Pos((x / Pos.res).toInt(), (y / Pos.res).toInt())
 fun Pos.fromShadow() = Pos((x * Pos.res).toInt(), (y * Pos.res).toInt())
 
 fun Pos.randomNearPoint(radius: Int): Pos {
-    val r = radius * Util.random()
-    val t = Constants.tau * Util.random()
+    val r = radius * Rng.random()
+    val t = Constants.tau * Rng.random()
     return Pos(x + (r * cos(t)).toInt(), y + (r * sin(t)).toInt())
 }
 

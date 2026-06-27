@@ -33,6 +33,7 @@ import system.effect.Fx
 import system.grid.Pathfinding
 import system.ui.Bootstrap
 import util.*
+import util.Rng
 import util.data.*
 import kotlin.math.*
 
@@ -190,7 +191,7 @@ data class Portal(
     fun calcHealth(): Int {
         if (getAllResos().isEmpty()) return 0 // neutral portal — no resonators
         val health = getAllResos().sumOf { it.calcHealthPercent() } / Octant.values().size
-        return Util.clip(health, 0, 100)
+        return MathUtil.clip(health, 0, 100)
     }
 
     private fun calcTotalXm(): Int = getAllResos().map { it.energy }.sum()
@@ -207,7 +208,7 @@ data class Portal(
         // in by impassable cells (or off the grid, as in a headless match) would otherwise recurse forever
         // → stack overflow. Falling back to the portal centre is always safe.
         repeat(NEARBY_POINT_TRIES) {
-            val angle = Util.random() * PI
+            val angle = Rng.random() * PI
             val point = location.copy(x = location.x + (distance * cos(angle)).toInt(), y = location.y + (distance * sin(angle)).toInt())
             if (World.grid[point.toShadow()]?.isPassable ?: false) return point
         }
@@ -273,7 +274,7 @@ data class Portal(
             val glyphItems = mutableListOf<QgressItem>()
             glyphItems.addAll(normal.items ?: emptyList())
             glyphItems.addAll(hack(glypher))
-            if (Util.random() < glypher.skills.glyphSkill) {
+            if (Rng.random() < glypher.skills.glyphSkill) {
                 glyphItems.addAll(hack(glypher))
             }
             return HackResult(glyphItems.toList(), null)
@@ -310,7 +311,7 @@ data class Portal(
         val stuff = mutableListOf<QgressItem>()
         Quality.values().map { quality ->
             val selectedLevel = ResonatorLevel.find(level, quality).level
-            while (Util.random() < quality.chance) {
+            while (Rng.random() < quality.chance) {
                 stuff.add(Resonator.create(hacker, selectedLevel) as QgressItem)
             }
         }
@@ -323,7 +324,7 @@ data class Portal(
             // sim-tuning: more XMPs/hack so agents can sustain assaults
             Quality.values().map { quality ->
                 val selectedLevel = XmpLevel.find(level, quality).level
-                while (Util.random() < quality.chance) {
+                while (Rng.random() < quality.chance) {
                     stuff.add(XmpBurster.create(hacker, selectedLevel) as QgressItem)
                 }
             }
@@ -335,7 +336,7 @@ data class Portal(
         val stuff = mutableListOf<QgressItem>()
         repeat(weaponDraws()) {
             // US drops are rarer than XMP: one Bernoulli per draw, not a full quality cascade (as in Ingress).
-            if (Util.random() < DropRates.usDropChance) {
+            if (Rng.random() < DropRates.usDropChance) {
                 stuff.add(UltraStrike(UltraStrikeLevel.find(level, Quality.GOOD), hacker))
             }
         }
@@ -349,7 +350,7 @@ data class Portal(
     private fun obtainShields(hacker: Agent): List<QgressItem> {
         val stuff = mutableListOf<QgressItem>()
         ShieldType.values().forEach {
-            if (Util.random() < DropRates.shieldChance.getValue(it)) {
+            if (Rng.random() < DropRates.shieldChance.getValue(it)) {
                 stuff.add(Shield(it, hacker))
             }
         }
@@ -359,7 +360,7 @@ data class Portal(
     private fun obtainHeatSinks(hacker: Agent): List<QgressItem> {
         val stuff = mutableListOf<QgressItem>()
         HeatSinkType.values().forEach {
-            if (Util.random() < DropRates.heatSinkChance.getValue(it)) {
+            if (Rng.random() < DropRates.heatSinkChance.getValue(it)) {
                 stuff.add(HeatSink(it, hacker))
             }
         }
@@ -369,7 +370,7 @@ data class Portal(
     private fun obtainMultihacks(hacker: Agent): List<QgressItem> {
         val stuff = mutableListOf<QgressItem>()
         MultihackType.values().forEach {
-            if (Util.random() < DropRates.multihackChance.getValue(it)) {
+            if (Rng.random() < DropRates.multihackChance.getValue(it)) {
                 stuff.add(Multihack(it, hacker))
             }
         }
@@ -380,7 +381,7 @@ data class Portal(
         val stuff = mutableListOf<QgressItem>()
         Quality.values().map { quality ->
             val selectedLevel = PowerCubeLevel.find(level, quality).level
-            while (Util.random() < quality.chance * 0.3) {
+            while (Rng.random() < quality.chance * 0.3) {
                 stuff.add(PowerCube.create(hacker, selectedLevel) as QgressItem)
             }
         }
@@ -390,7 +391,7 @@ data class Portal(
     private fun obtainVirus(hacker: Agent): List<QgressItem> {
         val stuff = mutableListOf<QgressItem>()
         VirusType.values().forEach {
-            if (Util.random() < DropRates.virusChance.getValue(it)) {
+            if (Rng.random() < DropRates.virusChance.getValue(it)) {
                 stuff.add(Virus(it, hacker))
             }
         }
@@ -572,8 +573,8 @@ data class Portal(
     }
 
     fun leakXm(): Pair<Pos, Int> {
-        val fluct = Util.randomInt(300)
-        val offset = if (Util.randomBool()) fluct else -fluct
+        val fluct = Rng.randomInt(300)
+        val offset = if (Rng.randomBool()) fluct else -fluct
         return location to if (getLevel().toInt() <= 4.5) {
             (calculateLevel() * 1000) + offset
         } else {
@@ -606,6 +607,12 @@ data class Portal(
     override fun hashCode() = id.hashCode() * 31
 
     companion object {
+        /** The portal nearest to [pos] (null if none exist). Was Portal.nearestTo. */
+        fun nearestTo(pos: Pos): Portal? {
+            val nearest = World.allPortals.map { it.location.distanceTo(pos) to it }.sortedBy { it.first }.toSet()
+            return if (nearest.isNotEmpty()) nearest.first().second else null
+        }
+
         fun findChargeableForKeys(agent: Agent, keys: List<PortalKey>): List<Portal>? {
             val chargeable = World.factionPortals(agent.faction).filter { it.calcHealth() <= 90 }.toSet()
             return chargeable.filter { keys.map { a -> a.portal }.contains(it) }
@@ -630,7 +637,7 @@ data class Portal(
             val taken = World.allPortals.mapTo(HashSet()) { it.name }
             if (candidate !in taken) return candidate
             repeat(UNIQUE_NAME_TRIES) {
-                val fresh = Util.generatePortalName()
+                val fresh = PortalNames.generate()
                 if (fresh !in taken) return fresh
             }
             var n = 2
@@ -647,7 +654,7 @@ data class Portal(
         fun create(location: Pos): Portal {
             val slots: Slots = Octant.values().map { it to ResonatorSlot.create() }.toMap().toMutableMap()
             val portal = Portal(
-                uniqueName(PortalNames.nameFor(location) ?: Util.generatePortalName()),
+                uniqueName(PortalNames.nameFor(location) ?: PortalNames.generate()),
                 location,
                 emptyMap(),
                 emptyMap(),
@@ -678,7 +685,7 @@ data class Portal(
             if (!Bootstrap.isRunningInBrowser()) return create(Positions.createRandomForPortal())
             val candidates = Positions.portalCandidates() // ONE grid scan; sample from it (cheap)
             if (candidates.isEmpty()) return create(Positions.createRandomForPortal())
-            fun pick() = candidates[(Util.random() * candidates.size).toInt()]
+            fun pick() = candidates[(Rng.random() * candidates.size).toInt()]
             val existing = World.allPortals.map { it.location }
             if (existing.isEmpty()) return create(pick())
             var best = pick()

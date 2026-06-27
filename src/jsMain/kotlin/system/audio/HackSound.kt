@@ -4,7 +4,7 @@ import agent.Faction
 import config.OscillatorType
 import org.khronos.webgl.set
 import system.display.fx.HackFx
-import util.Util
+import util.Rng
 import util.data.Pos
 import kotlin.math.PI
 import kotlin.math.min
@@ -67,7 +67,7 @@ object HackSound {
         val data = buffer.getChannelData(0)
         var i = 0
         while (i < len) {
-            data[i] = (Util.random() * 2.0 - 1.0).toFloat()
+            data[i] = (Rng.random() * 2.0 - 1.0).toFloat()
             i++
         }
         val src = ctx.createBufferSource()

@@ -3,7 +3,7 @@ package system.display
 import external.FontLoader
 import external.TextGeometry
 import external.Three
-import util.Util
+import util.Rng
 import kotlin.math.sqrt
 
 /**
@@ -191,8 +191,8 @@ object TitleWordmark {
             val plen = sqrt(px * px + py * py)
             val ux = if (plen > 1e-6) px / plen else 0.0
             val uy = if (plen > 1e-6) py / plen else 1.0
-            ud.vx = (ud.vx as Double) + ux * strength + (Util.random() - 0.5) * JITTER
-            ud.vy = (ud.vy as Double) + uy * strength + (Util.random() - 0.5) * JITTER
+            ud.vx = (ud.vx as Double) + ux * strength + (Rng.random() - 0.5) * JITTER
+            ud.vy = (ud.vy as Double) + uy * strength + (Rng.random() - 0.5) * JITTER
         }
     }
 }

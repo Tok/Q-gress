@@ -47,7 +47,7 @@ object GameUrl {
     fun lngLat(): GeoCoords? = GeoCoords.fromStrings(param("lng"), param("lat"))
 
     /** Shareable link reproducing the exact current world (location + size + counts + seed + tuning). */
-    fun forShare(lng: Double, lat: Double, name: String): String = build(lng.toString(), lat.toString(), name, Util.currentSeed())
+    fun forShare(lng: Double, lat: Double, name: String): String = build(lng.toString(), lat.toString(), name, Rng.currentSeed())
 
     /** Navigation link (reset / preset): same location + size, but a FRESH world (no seed). */
     fun forNavigation(lng: Double, lat: Double, name: String): String = build(lng.toString(), lat.toString(), name, null)

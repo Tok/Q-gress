@@ -1,4 +1,4 @@
-import util.Util
+import util.Rng
 import kotlin.math.floor
 
 // Partially transpiled from Ken Perlins 'ImprovedNoise' JAVA reference implementation, see: http://mrl.nyu.edu/~perlin/noise/
@@ -92,10 +92,10 @@ object ImprovedNoise {
             ),
         )
     }
-    fun generateRawMap(width: Int, height: Int, wavelength: Double = 5 + (Util.random() * 5)): Array<DoubleArray> {
+    fun generateRawMap(width: Int, height: Int, wavelength: Double = 5 + (Rng.random() * 5)): Array<DoubleArray> {
         val frequency = wavelength / width
         val noise: Array<DoubleArray> = Array(width) { DoubleArray(height) }
-        val z = Util.random() * 1000
+        val z = Rng.random() * 1000
         for (x in 0 until width) {
             for (y in 0 until height) {
                 noise[x][y] = ImprovedNoise.noise(x * frequency, y * frequency, z * frequency)
@@ -106,7 +106,7 @@ object ImprovedNoise {
     fun generateEdgeMap(width: Int, height: Int, wavelength: Double = 10.0): Array<DoubleArray> {
         val frequency = wavelength / width
         val noise: Array<DoubleArray> = Array(width) { DoubleArray(height) }
-        val z = Util.random() * 1000
+        val z = Rng.random() * 1000
         val steps = 5.0
         for (x in 0 until width) {
             for (y in 0 until height) {

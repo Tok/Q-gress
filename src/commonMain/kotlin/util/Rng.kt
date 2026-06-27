@@ -5,7 +5,7 @@ package util
  * drives every AI choice. Lives in the shared functional core (`commonMain`) so a seeded world/match is
  * reproducible on every platform and the picker is JVM-unit-tested + Kover-covered. The one platform bit — a
  * fresh 32-bit seed when none is set — is [freshSeed] (expect/actual). [Util] delegates here, so the ~150
- * `Util.random()` / `Util.select()` call sites are unchanged. (Kotlin Int arithmetic wraps mod 2^32.)
+ * `Rng.random()` / `Rng.select()` call sites are unchanged. (Kotlin Int arithmetic wraps mod 2^32.)
  */
 object Rng {
     private const val MULBERRY_INC = 0x6D2B79F5

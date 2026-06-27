@@ -5,7 +5,7 @@ import config.Dim
 import config.Sim
 import extension.Grid
 import system.ui.Bootstrap
-import util.Util
+import util.Rng
 
 /**
  * Spawn / candidate-position factories — the World/grid-coupled half of the old `Pos` companion, relocated to
@@ -13,7 +13,7 @@ import util.Util
  * etc. (was `Pos.createRandomForPortal()`).
  */
 object Positions {
-    private fun createRandomNoOffset() = Pos(Util.randomInt(Sim.width), Util.randomInt(Sim.height))
+    private fun createRandomNoOffset() = Pos(Rng.randomInt(Sim.width), Rng.randomInt(Sim.height))
 
     /**
      * Valid portal-spawn cells (passable, inside the deploy margin, not too close to an existing portal) as
@@ -40,11 +40,11 @@ object Positions {
 
     fun createRandomForPortal(): Pos {
         if (Bootstrap.isNotRunningInBrowser()) {
-            return Pos(Util.randomInt(Sim.width), Util.randomInt(Sim.height))
+            return Pos(Rng.randomInt(Sim.width), Rng.randomInt(Sim.height))
         }
         val candidates = portalCandidates()
         check(candidates.isNotEmpty()) // map is blocked or there is no more space left.
-        return candidates[(Util.random() * candidates.size).toInt()]
+        return candidates[(Rng.random() * candidates.size).toInt()]
     }
 
     // Cache the passable-cell key list per grid (rebuilt only when the grid reference changes — once per
@@ -70,7 +70,7 @@ object Positions {
             // Grid keys are SHADOW cells; agents/portals live in SIM space. Return the cell centre in sim
             // coords (× res), else headless spawns cluster in a shadow-sized corner of the map and never reach
             // the (sim-space) portals — no gameplay, no MU (broke AI training).
-            val cell = keys[(Util.random() * keys.size).toInt()]
+            val cell = keys[(Rng.random() * keys.size).toInt()]
             return Pos(cell.x * Pos.res + Pos.res / 2, cell.y * Pos.res + Pos.res / 2)
         }
         check(grid.isNotEmpty())

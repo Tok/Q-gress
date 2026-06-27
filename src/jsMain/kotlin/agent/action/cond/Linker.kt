@@ -5,7 +5,7 @@ import agent.Agent
 import agent.action.ActionItem
 import portal.Link
 import portal.Portal
-import util.Util
+import util.Rng
 import util.data.Line
 
 object Linker : ConditionalAction {
@@ -24,7 +24,7 @@ object Linker : ConditionalAction {
         // Prefer a target that closes a TRIANGLE (= a field, the only source of MU): one sharing a connected
         // portal with our portal, so createLink's anchor check fires. Else link randomly (builds toward future
         // triangles). This is what turns "lots of links" into actual fields instead of a sprawl of lines.
-        val linkTarget = fieldClosingTarget(agent, linkOptions) ?: Util.shuffle(linkOptions).first()
+        val linkTarget = fieldClosingTarget(agent, linkOptions) ?: Rng.shuffle(linkOptions).first()
         agent.actionPortal.createLink(agent, linkTarget)
         return agent
     }

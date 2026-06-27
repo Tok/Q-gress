@@ -5,7 +5,7 @@ import config.Dim
 import config.Sim
 import items.level.PortalLevel
 import portal.Portal
-import util.Util
+import util.Rng
 import util.data.*
 import kotlin.math.PI
 import kotlin.math.cos
@@ -35,7 +35,7 @@ object Movement {
         check(hasUncapturedPortals())
         val uncaptured = World.allPortals.filter { it.isUncaptured() }.sortedBy { agent.distanceToPortal(it) }
         uncaptured.forEach { portal ->
-            if (Util.random() < agent.skills.reliability) {
+            if (Rng.random() < agent.skills.reliability) {
                 return goToDestinationPortal(agent, portal)
             }
         }
@@ -49,7 +49,7 @@ object Movement {
         val friendlyPortals = World.allPortals.filter { it.isFriendlyTo(agent) }
         val maxLevel = friendlyPortals.maxByOrNull { it.getLevel() }?.getLevel() ?: PortalLevel.ZERO
         val selection = friendlyPortals.filter { it.getLevel() == maxLevel }
-        val target = selection[(Util.random() * (selection.size - 1)).toInt()]
+        val target = selection[(Rng.random() * (selection.size - 1)).toInt()]
         return goToDestinationPortal(agent, target)
     }
     /* End Friendly Portals */
@@ -92,8 +92,8 @@ object Movement {
     // can). Samples the ring around [from]; falls back to anywhere wanderable, then to staying put (re-evaluate).
     private fun openGroundNear(from: Pos): Pos {
         repeat(WANDER_TRIES) {
-            val angle = Util.random() * 2.0 * PI
-            val dist = Dim.maxDeploymentRange + Util.random() * WANDER_RADIUS
+            val angle = Rng.random() * 2.0 * PI
+            val dist = Dim.maxDeploymentRange + Rng.random() * WANDER_RADIUS
             val point = Pos((from.x + dist * cos(angle)).toInt(), (from.y + dist * sin(angle)).toInt())
             if (isWanderable(point)) return point
         }
@@ -114,7 +114,7 @@ object Movement {
     }
 
     fun move(velocity: Complex, force: Complex, limit: Double): Complex {
-        // if (isDrunk && Util.randomBool()) { return Complex.random() } //TODO
+        // if (isDrunk && Rng.randomBool()) { return Complex.random() } //TODO
         val actualForce = if (force != Complex.ZERO) force else Complex.random()
         val newVelo = velocity + actualForce
         return if (newVelo.mag <= limit) {

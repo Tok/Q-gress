@@ -14,7 +14,7 @@ import system.display.rotate
 import system.display.scale
 import system.display.shader.GlassShader
 import system.display.sub
-import util.Util
+import util.Rng
 
 /**
  * Tesla-coil **bolt** VFX: a fractal lightning ribbon (camera-facing, additive) + a flash point light
@@ -106,8 +106,8 @@ object BoltFx {
         }
         appendRibbon(verts, pts, wStart, wEnd)
         if (depth <= 0) return
-        repeat(1 + (Util.random() * 3).toInt()) {
-            val idx = 1 + (Util.random() * (n - 1)).toInt()
+        repeat(1 + (Rng.random() * 3).toInt()) {
+            val idx = 1 + (Rng.random() * (n - 1)).toInt()
             val from = pts[idx]
             val dir = norm(sub(pts[idx + 1], pts[idx - 1]))
             val axis = norm(doubleArrayOf(rand(-1.0, 1.0), rand(-1.0, 1.0), rand(-1.0, 1.0)))
@@ -148,5 +148,5 @@ object BoltFx {
         }
     }
 
-    private fun rand(lo: Double, hi: Double) = lo + Util.random() * (hi - lo)
+    private fun rand(lo: Double, hi: Double) = lo + Rng.random() * (hi - lo)
 }

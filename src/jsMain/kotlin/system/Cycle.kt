@@ -9,7 +9,7 @@ import portal.Portal
 import portal.XmHeap
 import portal.XmMap
 import system.audio.Sound
-import util.Util
+import util.Rng
 import util.data.*
 
 enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>) {
@@ -85,12 +85,12 @@ enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>) {
             val hasSpace = count < Config.maxPortals && Positions.hasPortalSpace()
             val (createChance, removeChance) =
                 ChurnMath.churnChances(count, Config.targetPortals(), Config.portalChurnRate, hasSpace)
-            if (hasSpace && Util.random() < createChance) {
+            if (hasSpace && Rng.random() < createChance) {
                 val discovered = Portal.createRandom()
                 World.allPortals.add(discovered)
                 Com.addMessage("A new portal $discovered was discovered.", Com.Importance.MAJOR, Com.NEUTRAL)
             }
-            if (count > Config.minPortals && Util.random() < removeChance) {
+            if (count > Config.minPortals && Rng.random() < removeChance) {
                 val gone = World.randomPortal()
                 gone.remove()
                 Com.addMessage("Portal $gone no longer exists.", Com.Importance.MAJOR, Com.NEUTRAL)
@@ -101,9 +101,9 @@ enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>) {
             val count = agents.count()
             if (count < minCount) {
                 val ratio = count / maxCount
-                if (Util.random() <= ratio) {
+                if (Rng.random() <= ratio) {
                     val selection = agents.sortedBy { it.getLevel() }.takeLast(count - maxCount)
-                    val removed = Util.shuffle(selection).first() // seeded — NOT stdlib shuffled() (unseeded → nondeterministic)
+                    val removed = Rng.shuffle(selection).first() // seeded — NOT stdlib shuffled() (unseeded → nondeterministic)
                     if (fc) {
                         Com.addMessage("Portal $removed quit the game.", Com.Importance.MINOR, Com.NEUTRAL)
                     } else {
@@ -114,20 +114,20 @@ enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>) {
         }
 
         private fun removeFrogs() {
-            if (Util.random() <= Config.frogQuitRate) {
+            if (Rng.random() <= Config.frogQuitRate) {
                 removeAgents(World.frogs, Config.minFrogs, Config.maxFrogs)
             }
         }
 
         private fun removeSmurfs() {
-            if (Util.random() <= Config.smurfQuitRate) {
+            if (Rng.random() <= Config.smurfQuitRate) {
                 removeAgents(World.smurfs, Config.minFrogs, Config.maxFrogs)
             }
         }
 
         private fun factionChange() {
-            if (Util.random() <= Config.factionChangeRate) {
-                val xfAgent = if (Util.randomBool()) {
+            if (Rng.random() <= Config.factionChangeRate) {
+                val xfAgent = if (Rng.randomBool()) {
                     removeAgents(World.frogs, Config.minFrogs, Config.maxFrogs, true)
                     Agent.createSmurf(World.grid)
                 } else {
@@ -149,7 +149,7 @@ enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>) {
                     }
                 }.forEach { XmMap.createStrayXm(it, true) }
 
-            Util.shuffle(World.allNonFaction.filterNot { it.pos.isOffScreen() }) // seeded; stdlib shuffled() is unseeded
+            Rng.shuffle(World.allNonFaction.filterNot { it.pos.isOffScreen() }) // seeded; stdlib shuffled() is unseeded
                 .take((World.allNonFaction.size * Config.npcXmSpawnRatio * mult).toInt())
                 .map { XmMap.createStrayXm(it.pos.randomNearPoint(Dim.npcXmSpawnRadius), false) }
         }

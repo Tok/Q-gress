@@ -8,7 +8,7 @@ import items.level.XmpLevel
 import portal.ModSlot
 import portal.Portal
 import system.effect.Fx
-import util.Util
+import util.Rng
 import util.data.Pos
 
 data class XmpBurster(val owner: Agent, val level: XmpLevel) : DeployableItem {
@@ -21,7 +21,7 @@ data class XmpBurster(val owner: Agent, val level: XmpLevel) : DeployableItem {
         agent.findResosInAttackRange(level).forEach { reso ->
             val position = requireNotNull(reso.position) { "resonator in attack range without a position" }
             val distFrac = Combat.distanceFraction(position.distanceTo(agent.pos), level.rangeM, ultra = false)
-            val crit = distFrac < 0.2 && Util.random() < Combat.CRIT_RATE
+            val crit = distFrac < 0.2 && Rng.random() < Combat.CRIT_RATE
             val mitigation = reso.portal?.totalMitigation() ?: 0 // shields + links reduce incoming damage
             val dmg = (Combat.resoDamage(level.damage, distFrac, mitigation, ultra = false, crit = crit) * boost).toInt()
             reso.takeDamage(agent, dmg)
@@ -47,7 +47,7 @@ data class XmpBurster(val owner: Agent, val level: XmpLevel) : DeployableItem {
             level: XmpLevel,
             ultra: Boolean,
             agent: Agent?,
-            rng: () -> Double = Util::random,
+            rng: () -> Double = Rng::random,
         ): Int {
             val distFrac = Combat.distanceFraction(portal.location.distanceTo(blastPos), level.rangeM, ultra)
             if (distFrac >= 1.0) return 0
@@ -74,7 +74,7 @@ data class XmpBurster(val owner: Agent, val level: XmpLevel) : DeployableItem {
                     val rp = reso.position ?: return@forEach
                     val distFrac = Combat.distanceFraction(rp.distanceTo(pos), level.rangeM, ultra)
                     if (distFrac >= 1.0) return@forEach
-                    val crit = distFrac < 0.2 && Util.random() < Combat.CRIT_RATE
+                    val crit = distFrac < 0.2 && Rng.random() < Combat.CRIT_RATE
                     val dmg = Combat.resoDamage(level.damage, distFrac, portal.totalMitigation(), ultra, crit)
                     reso.takeDamage(attacker, dmg)
                     portalDamage += dmg

@@ -16,7 +16,7 @@ import portal.Portal
 import system.display.Scene3D
 import system.ui.Bootstrap
 import system.ui.LoadingOverlay
-import util.Util
+import util.Rng
 import util.data.*
 import kotlin.math.sqrt
 
@@ -82,7 +82,7 @@ object World {
     fun countNonFaction() = allNonFaction.count()
 
     val allPortals: MutableList<Portal> = mutableListOf()
-    fun randomPortal() = allPortals[(Util.random() * (World.allPortals.size - 1)).toInt()]
+    fun randomPortal() = allPortals[(Rng.random() * (World.allPortals.size - 1)).toInt()]
     fun enlPortals() = allPortals.filter { it.owner?.faction == Faction.ENL }
     fun resPortals() = allPortals.filter { it.owner?.faction == Faction.RES }
     fun unclaimedPortals() = allPortals.filter { it.owner == null }

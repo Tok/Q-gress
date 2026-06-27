@@ -5,7 +5,7 @@ import config.Sim
 import org.khronos.webgl.set
 import portal.Field
 import system.ui.Bootstrap
-import util.Util
+import util.Rng
 import util.data.Pos
 import kotlin.math.PI
 import kotlin.math.sqrt
@@ -191,7 +191,7 @@ object AmbientBed {
         val data = buf.getChannelData(0)
         var i = 0
         while (i < len) {
-            data[i] = ((Util.random() * 2.0 - 1.0) * 0.4).toFloat()
+            data[i] = ((Rng.random() * 2.0 - 1.0) * 0.4).toFloat()
             i++
         }
         val src = ctx.createBufferSource()

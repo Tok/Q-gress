@@ -18,8 +18,9 @@ import portal.XmMap
 import system.audio.Sound
 import system.effect.Fx
 import system.ui.Bootstrap
+import util.MathUtil
 import util.NameGen
-import util.Util
+import util.Rng
 import util.data.*
 import kotlin.math.max
 import kotlin.math.min
@@ -60,11 +61,11 @@ data class Agent(
     fun keySet() = inventory.findUniqueKeys().orEmpty()
 
     fun removeXm(v: Int) {
-        this.xm = Util.clip(xm - v, 0, xmCapacity())
+        this.xm = MathUtil.clip(xm - v, 0, xmCapacity())
     }
 
     fun addXm(v: Int) {
-        this.xm = Util.clip(xm + v, 0, xmCapacity())
+        this.xm = MathUtil.clip(xm + v, 0, xmCapacity())
     }
 
     fun addAp(v: Int) {
@@ -89,7 +90,7 @@ data class Agent(
 
     fun moveElsewhere(): Agent {
         // Last-resort default is a non-portal wander (roam open ground); everything else seeks a portal.
-        val newAgent = Util.select(moveOptions(), { Movement.wander(this) }).invoke()
+        val newAgent = Rng.select(moveOptions(), { Movement.wander(this) }).invoke()
         // Force MOVE for the portal-seeking picks (incl. their no-op paths), but leave a wander fallback on its
         // own EXPLORE action so it actually roams open ground instead of heading to a portal.
         if (newAgent.action.item != ActionItem.EXPLORE) newAgent.action.start(ActionItem.MOVE)
@@ -260,7 +261,7 @@ data class Agent(
         if (isFirst) {
             action.start(ActionItem.DEPLOY)
             val distance =
-                max(Dim.minDeploymentRange, Dim.maxDeploymentRange * Util.random() * skills.deployPrecision).toInt()
+                max(Dim.minDeploymentRange, Dim.maxDeploymentRange * Rng.random() * skills.deployPrecision).toInt()
             val dest = actionPortal.findRandomPointNearPortal(distance)
             this.destination = dest
         }
@@ -366,7 +367,7 @@ data class Agent(
         // Prefer an existing world portal (browser + headless): a fresh agent shouldn't mint a throwaway
         // portal — that also means a headless match (ai.SimRunner) doesn't pay a flow-field compute per
         // agent/recruit. Only the degenerate "no portals yet" case falls back to creating one.
-        private fun initialActionPortal(pos: Pos) = Util.findNearestPortal(pos) ?: Portal.create(pos)
+        private fun initialActionPortal(pos: Pos) = Portal.nearestTo(pos) ?: Portal.create(pos)
 
         fun createFrog(grid: Grid, at: Pos? = null) = create(grid, Faction.ENL, at)
         fun createSmurf(grid: Grid, at: Pos? = null) = create(grid, Faction.RES, at)

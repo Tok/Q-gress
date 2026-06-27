@@ -3,7 +3,7 @@ package portal
 import agent.Agent
 import config.Probabilities
 import items.deployable.DeployableItem
-import util.Util
+import util.Rng
 
 class PortalKey(val portal: Portal, val owner: Agent) : DeployableItem {
     override fun toString() = "Key-$portal"
@@ -13,7 +13,7 @@ class PortalKey(val portal: Portal, val owner: Agent) : DeployableItem {
 
     companion object {
         // TODO Probabilities
-        fun tryHack(portal: Portal, agent: Agent): PortalKey? = if (Util.random() < Probabilities.keyChance) {
+        fun tryHack(portal: Portal, agent: Agent): PortalKey? = if (Rng.random() < Probabilities.keyChance) {
             PortalKey(portal, agent)
         } else {
             null

@@ -50,8 +50,9 @@ import util.Debug
 import util.GameUrl
 import util.GameplayPrefs
 import util.NameGen
-import util.Util
+import util.Rng
 import util.data.*
+import util.freshSeed
 import kotlin.js.Json
 
 @Suppress("UnusedParameter") // external JS global; param describes the contract
@@ -368,14 +369,14 @@ object Bootstrap {
 
     private fun initWorld(center: Json) {
         // Size + seed from a shared link (if present) → reproduce the exact world; else a fresh seed
-        // (captured for sharing). Set before generation, since Util.random is the sole RNG source.
+        // (captured for sharing). Set before generation, since Rng.random is the sole RNG source.
         GameUrl.size()?.let { Sim.setSize(it.first, it.second) }
         // Apply the rest of the onboarding settings if present in the URL (deep link / reload handoff).
         GameUrl.portals()?.let { Config.startPortals = it }
         GameUrl.npcMultiplier()?.let { Config.npcMultiplier = it }
         GameUrl.startStage()?.let { Config.startStage = it }
         GameUrl.round()?.let { Sim.roundField = it }
-        Util.seed(GameUrl.seed() ?: Util.freshSeed())
+        Rng.seed(GameUrl.seed() ?: freshSeed())
         Onboarding.close() // dismiss the onboarding screen (it loads without a reload)
         // Staged loading overlay, up before the first tile request (the world build runs ~2 min on Big).
         LoadingOverlay.show()

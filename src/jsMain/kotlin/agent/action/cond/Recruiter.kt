@@ -9,7 +9,7 @@ import agent.action.ActionItem
 import config.Config
 import system.Com
 import system.audio.Sound
-import util.Util
+import util.Rng
 
 /**
  * Recruiting — a portal-INDEPENDENT action: the agent walks up to a *random* NPC, the two stand together for a
@@ -59,7 +59,7 @@ object Recruiter : ConditionalAction {
      * the agent's recruit state and ends the action either way.
      */
     fun resolve(agent: Agent, npc: NonFaction): Agent {
-        if (Util.random() < recruitmentChance(agent.faction)) {
+        if (Rng.random() < recruitmentChance(agent.faction)) {
             // The NPC turns faction: it becomes the new agent in place (not deleted + spawned elsewhere).
             World.allNonFaction.remove(npc)
             // Don't top the crowd back up on every recruit — let the NPC population shrink as agents recruit,

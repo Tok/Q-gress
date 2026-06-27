@@ -16,7 +16,7 @@ import system.Cycle
 import system.Simulation
 import system.effect.Fx
 import util.NameGen
-import util.Util
+import util.Rng
 
 /**
  * The outcome of a headless match — the per-checkpoint MU history is the **fitness signal** (PLAN
@@ -108,7 +108,7 @@ object SimRunner {
         onTick: ((Int) -> Unit)? = null, // called after each tick's scoring (for determinism/debug inspection)
     ): MatchResult {
         reset()
-        Util.seed(seed)
+        Rng.seed(seed)
         Config.headlessFieldCompute = setup.flowFields // off by default → cheap abstract (straight-line) movement
         // END = full L8 gear + AP (what "quick start" meant); the roster COUNT is setup.frogs/smurfs, not the
         // stage, so this only sets each seeded agent's level + loadout.

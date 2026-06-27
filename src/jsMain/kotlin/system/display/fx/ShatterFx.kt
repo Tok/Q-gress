@@ -6,7 +6,7 @@ import system.display.BlastModel
 import system.display.Materials
 import system.display.Scene3D
 import system.display.shader.GlassShader
-import util.Util
+import util.Rng
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
@@ -173,9 +173,9 @@ object ShatterFx {
         gasketGeo: dynamic,
     ) {
         val w = world ?: return
-        shatterRot = doubleArrayOf(Util.random() * 2.0 * PI, Util.random() * 2.0 * PI, Util.random() * 2.0 * PI)
+        shatterRot = doubleArrayOf(Rng.random() * 2.0 * PI, Rng.random() * 2.0 * PI, Rng.random() * 2.0 * PI)
         if (variants.isNotEmpty()) {
-            val variant = variants[(Util.random() * variants.size).toInt()]
+            val variant = variants[(Rng.random() * variants.size).toInt()]
             variant.forEach { holder -> spawnShard(w, holder, doubleArrayOf(x, y, orbZ), flaskScale * orbScale, color) }
         }
         spawnSinkingPole(poleGeo, x, y, poleH, poleScaleVal)
@@ -190,8 +190,8 @@ object ShatterFx {
     fun shatterOrb(x: Double, y: Double, orbZ: Double, orbScale: Double, color: String, variants: List<List<dynamic>>, flaskScale: Double) {
         val w = world ?: return
         if (variants.isEmpty()) return
-        shatterRot = doubleArrayOf(Util.random() * 2.0 * PI, Util.random() * 2.0 * PI, Util.random() * 2.0 * PI)
-        val variant = variants[(Util.random() * variants.size).toInt()]
+        shatterRot = doubleArrayOf(Rng.random() * 2.0 * PI, Rng.random() * 2.0 * PI, Rng.random() * 2.0 * PI)
+        val variant = variants[(Rng.random() * variants.size).toInt()]
         variant.forEach { holder -> spawnShard(w, holder, doubleArrayOf(x, y, orbZ), flaskScale * orbScale, color) }
     }
 
@@ -235,12 +235,12 @@ object ShatterFx {
         opts.angularDamping = 0.3
         val body = Cannon.Body(opts)
         val push = blastPush(x, y, poleH)
-        body.asDynamic().velocity.set((Util.random() - 0.5) * 3.0 + push[0], (Util.random() - 0.5) * 3.0 + push[1], -1.0 + push[2])
+        body.asDynamic().velocity.set((Rng.random() - 0.5) * 3.0 + push[0], (Rng.random() - 0.5) * 3.0 + push[1], -1.0 + push[2])
         body.asDynamic().angularVelocity.set(randSpin() * 0.4, randSpin() * 0.4, randSpin() * 0.4)
         world.addBody(body)
         group.add(mesh)
         activeShards.add(
-            Shard(mesh, mat, body, 0.0, SHARD_LIFE_MIN + Util.random() * (SHARD_LIFE_MAX - SHARD_LIFE_MIN)),
+            Shard(mesh, mat, body, 0.0, SHARD_LIFE_MIN + Rng.random() * (SHARD_LIFE_MAX - SHARD_LIFE_MIN)),
         )
     }
 
@@ -268,15 +268,15 @@ object ShatterFx {
         body.asDynamic().quaternion.setFromEuler(PI / 2, 0.0, 0.0) // upright like in the slot
         val push = blastPush(x, y, z)
         body.asDynamic().velocity.set(
-            (Util.random() - 0.5) * 4.0 + push[0],
-            (Util.random() - 0.5) * 4.0 + push[1],
-            Util.random() * 2.0 + push[2],
+            (Rng.random() - 0.5) * 4.0 + push[0],
+            (Rng.random() - 0.5) * 4.0 + push[1],
+            Rng.random() * 2.0 + push[2],
         )
         body.asDynamic().angularVelocity.set(randSpin(), randSpin(), randSpin())
         w.addBody(body)
         group.add(mesh)
         activeShards.add(
-            Shard(mesh, mat, body, 0.0, SHARD_LIFE_MIN + Util.random() * (SHARD_LIFE_MAX - SHARD_LIFE_MIN)),
+            Shard(mesh, mat, body, 0.0, SHARD_LIFE_MIN + Rng.random() * (SHARD_LIFE_MAX - SHARD_LIFE_MIN)),
         )
     }
 
@@ -310,15 +310,15 @@ object ShatterFx {
         val body = Cannon.Body(opts)
         val push = blastPush(x, y, z)
         body.asDynamic().velocity.set(
-            (Util.random() - 0.5) * 4.0 + push[0],
-            (Util.random() - 0.5) * 4.0 + push[1],
-            Util.random() * 2.0 + push[2],
+            (Rng.random() - 0.5) * 4.0 + push[0],
+            (Rng.random() - 0.5) * 4.0 + push[1],
+            Rng.random() * 2.0 + push[2],
         )
         body.asDynamic().angularVelocity.set(randSpin(), randSpin(), randSpin())
         w.addBody(body)
         group.add(mesh)
         activeShards.add(
-            Shard(mesh, mat, body, 0.0, SHARD_LIFE_MIN + Util.random() * (SHARD_LIFE_MAX - SHARD_LIFE_MIN)),
+            Shard(mesh, mat, body, 0.0, SHARD_LIFE_MIN + Rng.random() * (SHARD_LIFE_MAX - SHARD_LIFE_MIN)),
         )
     }
 
@@ -344,16 +344,16 @@ object ShatterFx {
         opts.collisionFilterMask = SHARD_MASK
         val body = Cannon.Body(opts)
         body.asDynamic().quaternion.setFromEuler(shatterRot[0], shatterRot[1], shatterRot[2])
-        val a = Util.random() * 2.0 * PI
-        val r = 0.02 + Util.random() * 0.06 // almost no outward push of their own
-        val up = Util.random() * 0.08 // the faintest self-pop; the blast + gravity take over
+        val a = Rng.random() * 2.0 * PI
+        val r = 0.02 + Rng.random() * 0.06 // almost no outward push of their own
+        val up = Rng.random() * 0.08 // the faintest self-pop; the blast + gravity take over
         val push = blastPush(pos[0], pos[1], pos[2])
         body.asDynamic().velocity.set(cos(a) * r + push[0], sin(a) * r + push[1], up + push[2])
         body.asDynamic().angularVelocity.set(randSpin(), randSpin(), randSpin())
         world.addBody(body)
         group.add(mesh)
         activeShards.add(
-            Shard(mesh, mat, body, 0.0, SHARD_LIFE_MIN + Util.random() * (SHARD_LIFE_MAX - SHARD_LIFE_MIN)),
+            Shard(mesh, mat, body, 0.0, SHARD_LIFE_MIN + Rng.random() * (SHARD_LIFE_MAX - SHARD_LIFE_MIN)),
         )
     }
 
@@ -383,7 +383,7 @@ object ShatterFx {
         }
     }
 
-    private fun randSpin() = (Util.random() - 0.5) * 2.0 * SHARD_SPIN
+    private fun randSpin() = (Rng.random() - 0.5) * 2.0 * SHARD_SPIN
 
     private fun createWorld(): Cannon.World {
         val w = Cannon.World()

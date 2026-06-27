@@ -7,7 +7,7 @@ import external.Three
 import system.audio.Sound
 import system.display.BlastModel
 import system.display.shader.GlassShader
-import util.Util
+import util.Rng
 import util.data.Pos
 import kotlin.math.abs
 import kotlin.math.atan2
@@ -323,8 +323,8 @@ object DamageNumberFx {
         opts.angularDamping = 0.15 // low → the digit tumbles freely as it falls
         val body = Cannon.Body(opts)
         body.asDynamic().quaternion.setFromEuler(0.0, 0.0, yaw) // detach at the connected orientation (no pop)
-        body.asDynamic().velocity.set((Util.random() - 0.5) * 1.5, (Util.random() - 0.5) * 1.5, Util.random() * 1.5)
-        body.asDynamic().angularVelocity.set((Util.random() - 0.5) * 3.0, (Util.random() - 0.5) * 3.0, (Util.random() - 0.5) * 3.0)
+        body.asDynamic().velocity.set((Rng.random() - 0.5) * 1.5, (Rng.random() - 0.5) * 1.5, Rng.random() * 1.5)
+        body.asDynamic().angularVelocity.set((Rng.random() - 0.5) * 3.0, (Rng.random() - 0.5) * 3.0, (Rng.random() - 0.5) * 3.0)
         return body
     }
 

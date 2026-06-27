@@ -13,6 +13,7 @@ import system.map.MapController
 import system.ui.Bootstrap
 import system.ui.LoadingOverlay
 import util.*
+import util.Rng
 import util.data.*
 import kotlin.math.PI
 import kotlin.math.cos
@@ -37,7 +38,7 @@ data class NonFaction(
     private val swarmChance = swarmTendency - (swarmTendency * 0.5 * size.offset)
 
     fun isOnScreen() = pos.isOffGrid()
-    private val isDrunk = Util.random() <= 0.02 // TODO
+    private val isDrunk = Rng.random() <= 0.02 // TODO
 
     private var velocity = Complex.ZERO
     private var beelineTicks = 0 // >0 = un-stick override: head straight to the destination, ignoring the looping field
@@ -72,7 +73,7 @@ data class NonFaction(
         val force: Complex = if (beelineTicks > 0) {
             beelineTicks--
             Movement.headingTo(pos, destination) // un-stick override: straight line through the spiral
-        } else if (Config.isNpcSwarming && Util.random() < swarmChance) {
+        } else if (Config.isNpcSwarming && Rng.random() < swarmChance) {
             val nearPos = findNearest().pos
             if (nearPos.distanceTo(pos) < Dim.agentRadius) {
                 val re = -(this.pos.x - nearPos.x)
@@ -121,11 +122,11 @@ data class NonFaction(
         this.triedBeeline = false
     }
 
-    private fun moveElsewhere() = if (Util.random() < OFFSCREEN_DEST_CHANCE) {
+    private fun moveElsewhere() = if (Rng.random() < OFFSCREEN_DEST_CHANCE) {
         // Mostly head for the FAR side of the map (even when already off-screen) so NPCs walk clear across
         // it, edge to edge, instead of clumping around the central portals.
         moveToOpposingOffscreenDestination()
-    } else if (Util.random() < 0.7) {
+    } else if (Rng.random() < 0.7) {
         moveToFarPortal() // ...but still send some to portals so there's life around them too
     } else {
         moveToRandomPortal()
@@ -144,7 +145,7 @@ data class NonFaction(
     }
 
     private fun moveToRandomPortal() {
-        val randomTarget: Portal = World.allPortals[(Util.random() * (World.allPortals.size - 1)).toInt()]
+        val randomTarget: Portal = World.allPortals[(Rng.random() * (World.allPortals.size - 1)).toInt()]
         this.vectors = randomTarget.vectors
         this.destination = randomTarget.location
     }
@@ -215,7 +216,7 @@ data class NonFaction(
             val cx = World.simW() / 2.0
             val cy = World.simH() / 2.0
             val nearCentre = minOf(World.simW(), World.simH()) * NEAR_CENTRE_FRAC
-            return Util.shuffle(NonFactionMath.opposingHalf(offscreenDestinations(), from, cx, cy, nearCentre)).first()
+            return Rng.shuffle(NonFactionMath.opposingHalf(offscreenDestinations(), from, cx, cy, nearCentre)).first()
         }
 
         private const val NEAR_CENTRE_FRAC = 0.15 // within this fraction of the field, "opposite" is meaningless
@@ -251,7 +252,7 @@ data class NonFaction(
 
         private val MIN_WAIT = Time.secondsToTicks(5)
         private val MAX_WAIT = Time.secondsToTicks(45)
-        private fun createWaitTime() = Util.randomInt(MIN_WAIT, MAX_WAIT)
+        private fun createWaitTime() = Rng.randomInt(MIN_WAIT, MAX_WAIT)
 
         private var seq = 0
         private fun nextId() = seq++
@@ -272,19 +273,19 @@ data class NonFaction(
         fun findRandom(): NonFaction? {
             val all = World.allNonFaction
             if (all.isEmpty()) return null
-            return all.elementAt((Util.random() * all.size).toInt().coerceIn(0, all.size - 1))
+            return all.elementAt((Rng.random() * all.size).toInt().coerceIn(0, all.size - 1))
         }
 
         fun create(grid: Grid): NonFaction {
             val position = Positions.createRandomPassable(grid)
             val size = AgentSize.createRandom()
             val speed = Skills.randomNpcSpeed()
-            val newNonFaction = if (Util.random() < OFFSCREEN_DEST_CHANCE) { // mostly cross the map edge-to-edge
+            val newNonFaction = if (Rng.random() < OFFSCREEN_DEST_CHANCE) { // mostly cross the map edge-to-edge
                 val destination = opposingOffscreenDestination(position)
                 val vectorField = getOrCreateVectorField(destination)
                 NonFaction(position, speed, size, destination, vectorField, World.tick)
             } else { // some still head to a portal so there's life around them
-                val portal = World.allPortals[(Util.random() * (World.allPortals.size - 1)).toInt()]
+                val portal = World.allPortals[(Rng.random() * (World.allPortals.size - 1)).toInt()]
                 NonFaction(position, speed, size, portal.location, portal.vectors, World.tick)
             }
             Sound.playNpcCreationSound(newNonFaction)

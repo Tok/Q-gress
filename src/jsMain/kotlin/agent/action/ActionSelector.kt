@@ -9,14 +9,14 @@ import agent.qvalue.QActions
 import agent.qvalue.QValue
 import ai.FactionPolicies
 import config.Config
-import util.Util
+import util.Rng
 
 object ActionSelector {
     fun doSomethingElse(agent: Agent): Agent {
         // Leader tempo handicap: an agent of the LEADING faction wanders (a neutral, non-contributing move)
         // instead of acting, with probability leadShare × Config.leaderDistraction — so being ahead costs
         // tempo and the trailing side keeps its focus. Off (0) by default; an anti-runaway balance lever.
-        if (Util.random() < Balance.leadShare(agent.faction) * Config.leaderDistraction) return agent.moveElsewhere()
+        if (Rng.random() < Balance.leadShare(agent.faction) * Config.leaderDistraction) return agent.moveElsewhere()
         val portalFaction = agent.actionPortal.owner?.faction
         return when {
             !agent.isAtActionPortal() -> doAnywhereAction(agent)
@@ -35,12 +35,12 @@ object ActionSelector {
     // roster), the agent ROAMS open ground — a portal-independent stroll that sweeps up stray XM faster than
     // standing still, so it can act again sooner. Recruiting stays a weighted option in the lists above.
     private fun fallback(agent: Agent) = { Movement.wander(agent) }
-    private fun doAnywhereAction(agent: Agent): Agent = Util.select(actionsForAnywhere(agent), fallback(agent)).invoke()
-    private fun doNeutralPortalAction(agent: Agent): Agent = Util.select(actionsForNeutralPortals(agent), fallback(agent)).invoke()
+    private fun doAnywhereAction(agent: Agent): Agent = Rng.select(actionsForAnywhere(agent), fallback(agent)).invoke()
+    private fun doNeutralPortalAction(agent: Agent): Agent = Rng.select(actionsForNeutralPortals(agent), fallback(agent)).invoke()
 
-    private fun doFriendlyPortalAction(agent: Agent): Agent = Util.select(actionsForFriendlyPortals(agent), fallback(agent)).invoke()
+    private fun doFriendlyPortalAction(agent: Agent): Agent = Rng.select(actionsForFriendlyPortals(agent), fallback(agent)).invoke()
 
-    private fun doEnemyPortalAction(agent: Agent): Agent = Util.select(actionsForEnemyPortals(agent), fallback(agent)).invoke()
+    private fun doEnemyPortalAction(agent: Agent): Agent = Rng.select(actionsForEnemyPortals(agent), fallback(agent)).invoke()
 
     private fun actionsForAnywhere(agent: Agent): List<Pair<Double, () -> Agent>> {
         val moveElsewhereQ = q(agent.faction, QActions.MOVE_ELSEWHERE)

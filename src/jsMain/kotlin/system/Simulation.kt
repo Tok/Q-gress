@@ -4,7 +4,7 @@ import World
 import agent.StuckTracker
 import agent.action.ActionItem
 import portal.XmMap
-import util.Util
+import util.Rng
 
 /**
  * The functional-core tick step, shared by the live game (`Bootstrap.tick`, which wraps this in a
@@ -20,7 +20,7 @@ object Simulation {
         // buffered in World.pendingAgents, flushed below). SHUFFLE the order (seeded → deterministic) so
         // neither faction is consistently processed first: in insertion order the ENL roster always acted
         // first and grabbed every neutral portal each tick, shutting RES out — a turn-order bias, not balance.
-        val nextAgents = Util.shuffle(World.allAgents.toList()).map { it.act() }.toSet()
+        val nextAgents = Rng.shuffle(World.allAgents.toList()).map { it.act() }.toSet()
         XmMap.updateStrayXm()
 
         World.allAgents.clear()

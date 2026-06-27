@@ -3,7 +3,7 @@ package system.display.fx
 import external.Three
 import items.level.XmpLevel
 import system.display.shader.XmpShaders
-import util.Util
+import util.Rng
 
 /**
  * The XMP detonation effect: a **volumetric raymarched** fireball — emissive fire in the hot core
@@ -76,7 +76,7 @@ object XmpBurst {
             "({ uTime: { value: 0.0 }, uProgress: { value: 0.0 }, uSeed: { value: 0.0 }," +
                 " uRadius: { value: 0.0 }, uBright: { value: 1.0 }, uCenter: { value: { x: 0.0, y: 0.0, z: 0.0 } } })",
         )
-        uni.uSeed.value = Util.random() * 10.0
+        uni.uSeed.value = Rng.random() * 10.0
         uni.uBright.value = bright
         uni.uCenter.value.x = cx
         uni.uCenter.value.y = cy

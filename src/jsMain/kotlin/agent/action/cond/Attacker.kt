@@ -9,7 +9,7 @@ import items.UltraStrike
 import items.XmpBurster
 import items.level.XmpLevel
 import system.effect.Fx
-import util.Util
+import util.Rng
 
 object Attacker : ConditionalAction {
     override val actionItem = ActionItem.ATTACK
@@ -86,6 +86,6 @@ object Attacker : ConditionalAction {
     private const val minAttackXmps = 10
     private const val maxAttackXmps = (minAttackXmps * Constants.phi).toInt()
     private const val maxVolleys = 12 // safety cap on one assault (XMPs run out well before this anyway)
-    private fun attackXmpCount() = minAttackXmps + Util.randomInt(maxAttackXmps - minAttackXmps)
+    private fun attackXmpCount() = minAttackXmps + Rng.randomInt(maxAttackXmps - minAttackXmps)
     private fun xmpsForAttack(inv: Inventory) = inv.findXmps().sortedByDescending { it.level }.take(attackXmpCount())
 }

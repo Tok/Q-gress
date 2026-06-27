@@ -174,7 +174,7 @@ object Evolution {
 
 /**
  * A small independent mulberry32 PRNG. The trainer's randomness must NOT use [util.Util], which `SimRunner`
- * reseeds on every match — same algorithm as `Util.random` so it's known-good, but with its own state.
+ * reseeds on every match — same algorithm as `Rng.random` so it's known-good, but with its own state.
  */
 private class Rng(seed: Int) {
     private var state = seed

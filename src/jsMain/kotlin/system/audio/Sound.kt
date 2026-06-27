@@ -21,7 +21,7 @@ import system.Checkpoint
 import system.HeadlessRun
 import system.display.Scene3D
 import system.ui.Bootstrap
-import util.Util
+import util.Rng
 import util.data.Pos
 import kotlin.math.PI
 import kotlin.math.exp
@@ -241,21 +241,21 @@ object Sound {
         val len = (duration * sr).toInt().coerceAtLeast(1)
         val buffer = audioCtx.createBuffer(1, len, sr)
         val data = buffer.getChannelData(0)
-        val freqMult = 0.8 + Util.random() * 0.6
+        val freqMult = 0.8 + Rng.random() * 0.6
         var blp1 = 0.0
         var blp2 = 0.0
         var i = 0
         while (i < len) {
             val t = i.toDouble() / sr
             val env = if (t < 0.001) t / 0.001 else exp(-t * 18.0 / decayMult)
-            val noise = Util.random() * 2.0 - 1.0
+            val noise = Rng.random() * 2.0 - 1.0
             val sweep = (t / (0.05 * decayMult)).coerceIn(0.0, 1.0)
             val cutoff = 8000.0 * freqMult + (400.0 - 8000.0 * freqMult) * sweep // bright crack → low rumble
             val g = sin(PI * (cutoff / sr).coerceIn(0.001, 0.499))
             blp1 += g * (noise - blp1)
             blp2 += g * (blp1 - blp2)
             var filtered = blp2
-            if (t > 0.01 && Util.random() < 0.04) filtered += Util.random() * 1.2 - 0.6 // occasional crackle
+            if (t > 0.01 && Rng.random() < 0.04) filtered += Rng.random() * 1.2 - 0.6 // occasional crackle
             val shaped = tanh(filtered * env * 0.8 * 5.0)
             data[i] = (shaped * 0.92).coerceIn(-1.0, 1.0).toFloat()
             i++
@@ -354,7 +354,7 @@ object Sound {
         val data = buffer.getChannelData(0)
         var i = 0
         while (i < len) {
-            data[i] = (Util.random() * 2.0 - 1.0).toFloat()
+            data[i] = (Rng.random() * 2.0 - 1.0).toFloat()
             i++
         }
         val source = audioCtx.createBufferSource()
@@ -386,7 +386,7 @@ object Sound {
         val data = buffer.getChannelData(0)
         var i = 0
         while (i < len) {
-            data[i] = ((Util.random() * 2.0 - 1.0) * exp(-(i.toDouble() / sr) / tau)).toFloat()
+            data[i] = ((Rng.random() * 2.0 - 1.0) * exp(-(i.toDouble() / sr) / tau)).toFloat()
             i++
         }
         val source = audioCtx.createBufferSource()
@@ -408,14 +408,14 @@ object Sound {
 
     private fun playNoiseCrack(pos: Pos, amplitude: Double, heaviness: Double) {
         val sr = audioCtx.sampleRate
-        val tau = 0.06 + Util.random() * 0.06 + heaviness * 0.06
+        val tau = 0.06 + Rng.random() * 0.06 + heaviness * 0.06
         val dur = tau * 5.0
         val len = (dur * sr).toInt().coerceAtLeast(1)
         val buffer = audioCtx.createBuffer(1, len, sr)
         val data = buffer.getChannelData(0)
         var i = 0
         while (i < len) {
-            data[i] = ((Util.random() * 2.0 - 1.0) * exp(-(i.toDouble() / sr) / tau)).toFloat()
+            data[i] = ((Rng.random() * 2.0 - 1.0) * exp(-(i.toDouble() / sr) / tau)).toFloat()
             i++
         }
         val source = audioCtx.createBufferSource()
@@ -434,8 +434,8 @@ object Sound {
     }
 
     private fun playThud(pos: Pos, amplitude: Double, heaviness: Double) {
-        val tau = 0.07 + Util.random() * 0.07 + heaviness * 0.06
-        val osc = createStaticOscillator(OscillatorType.SINE, 85.0 + Util.random() * 80.0)
+        val tau = 0.07 + Rng.random() * 0.07 + heaviness * 0.06
+        val osc = createStaticOscillator(OscillatorType.SINE, 85.0 + Rng.random() * 80.0)
         val gainNode = audioCtx.createGain()
         val n = now()
         gainNode.gain.setValueAtTime((0.6 + heaviness * 0.9) * amplitude, n)
@@ -444,12 +444,12 @@ object Sound {
     }
 
     private fun playTinkle(pos: Pos, amplitude: Double) {
-        val tau = 0.02 + Util.random() * 0.1
-        val osc = createStaticOscillator(OscillatorType.SINE, 2200.0 + Util.random() * 6800.0)
+        val tau = 0.02 + Rng.random() * 0.1
+        val osc = createStaticOscillator(OscillatorType.SINE, 2200.0 + Rng.random() * 6800.0)
         val gainNode = audioCtx.createGain()
-        val n = now() + Util.random() * 0.5
+        val n = now() + Rng.random() * 0.5
         gainNode.gain.setValueAtTime(EPS, now())
-        gainNode.gain.setValueAtTime((0.12 + Util.random() * 0.33) * amplitude, n)
+        gainNode.gain.setValueAtTime((0.12 + Rng.random() * 0.33) * amplitude, n)
         gainNode.gain.exponentialRampToValueAtTime(EPS, n + tau * 5.0)
         connectVoice(osc, createPanner(pos), gainNode, n + tau * 5.0)
     }
@@ -751,7 +751,7 @@ object Sound {
         val timeConstant = 0.01
         val max = 1000
         for (i in 0..max) {
-            val freq = Util.random() * (maxFreq - (maxFreq * i / max))
+            val freq = Rng.random() * (maxFreq - (maxFreq * i / max))
             val tc = timeConstant * i
             node.frequency.setTargetAtTime(freq, n + tc, timeConstant)
         }
@@ -782,7 +782,7 @@ object Sound {
         val max = 1000
         val n = now()
         for (i in 0..max) {
-            val pan = Util.random() * 2.0 - 1.0 // full −1…+1 stereo field
+            val pan = Rng.random() * 2.0 - 1.0 // full −1…+1 stereo field
             val tc = timeConstant * i
             node.pan.setTargetAtTime(pan, n + tc, timeConstant)
         }

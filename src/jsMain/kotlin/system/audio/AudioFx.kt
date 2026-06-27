@@ -2,7 +2,7 @@ package system.audio
 
 import org.khronos.webgl.Float32Array
 import org.khronos.webgl.set
-import util.Util
+import util.Rng
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.pow
@@ -318,7 +318,7 @@ object AudioFx {
             val data = buf.getChannelData(ch)
             var i = 0
             while (i < len) {
-                data[i] = ((Util.random() * 2.0 - 1.0) * (1.0 - i.toDouble() / len).pow(REVERB_DECAY)).toFloat()
+                data[i] = ((Rng.random() * 2.0 - 1.0) * (1.0 - i.toDouble() / len).pow(REVERB_DECAY)).toFloat()
                 i++
             }
         }

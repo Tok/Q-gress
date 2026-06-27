@@ -8,7 +8,7 @@ import kotlin.test.assertTrue
 class NameGenTest {
     @Test
     fun handlesAreUniqueWithinARoster() {
-        Util.seed(12345)
+        Rng.seed(12345)
         NameGen.reset()
         val names = (1..400).map { NameGen.handle(Faction.ENL, "Berlin") }
         assertEquals(400, names.toSet().size, "handles must be unique (they double as lookup keys)")
@@ -16,7 +16,7 @@ class NameGenTest {
 
     @Test
     fun handlesArePlausiblyShaped() {
-        Util.seed(999)
+        Rng.seed(999)
         NameGen.reset()
         val names = (1..200).map { NameGen.handle(Faction.RES, "Paris") }
         assertTrue(names.all { it.isNotBlank() }, "no blank handles")
@@ -26,7 +26,7 @@ class NameGenTest {
 
     @Test
     fun locationFlavourCanAppear() {
-        Util.seed(7)
+        Rng.seed(7)
         NameGen.reset()
         val names = (1..200).map { NameGen.handle(Faction.ENL, "Berlin") }
         assertTrue(names.any { it.contains("Berlin", ignoreCase = true) }, "location should flavour some handles")

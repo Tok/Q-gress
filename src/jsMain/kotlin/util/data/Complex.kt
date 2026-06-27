@@ -1,7 +1,7 @@
 package util.data
 
 import config.Constants
-import util.Util
+import util.Rng
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.sin
@@ -63,8 +63,8 @@ data class Complex(val re: Double, val im: Double = 0.0) {
         fun fromMagnitudeAndPhase(magnitude: Double, phase: Double) = Complex(magnitude * cos(phase), magnitude * sin(phase))
 
         fun random(): Complex {
-            val mag = Util.random()
-            val phase = Constants.tau * Util.random()
+            val mag = Rng.random()
+            val phase = Constants.tau * Rng.random()
             return Complex.fromMagnitudeAndPhase(mag, phase)
         }
     }

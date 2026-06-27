@@ -33,8 +33,8 @@ object NameGen {
     private fun build(faction: Faction?, loc: String?): String {
         val core = pickCore(faction, loc)
         val styled = style(core)
-        val numbered = if (core.size == 1 || Util.random() < NUMBER_CHANCE) styled + number() else styled
-        return if (Util.random() < WRAP_CHANCE) "xX_${numbered}_Xx" else numbered
+        val numbered = if (core.size == 1 || Rng.random() < NUMBER_CHANCE) styled + number() else styled
+        return if (Rng.random() < WRAP_CHANCE) "xX_${numbered}_Xx" else numbered
     }
 
     // --- core word selection ---------------------------------------------------------------------
@@ -51,17 +51,17 @@ object NameGen {
             { listOf(noun()) }, // a lone noun — build() always numbers it
         )
         if (loc != null) {
-            patterns.add { if (Util.randomBool()) listOf(loc, noun()) else listOf(adj(), loc) }
+            patterns.add { if (Rng.randomBool()) listOf(loc, noun()) else listOf(adj(), loc) }
         }
         if (faction != null) {
             val fw = pick(factionWords(faction))
             patterns.add { listOf(fw, noun()) }
             patterns.add { listOf(adj(), fw) }
         }
-        return patterns[Util.randomInt(0, patterns.size - 1)]()
+        return patterns[Rng.randomInt(0, patterns.size - 1)]()
     }
 
-    private fun pick(list: List<String>) = Util.shuffle(list).first()
+    private fun pick(list: List<String>) = Rng.shuffle(list).first()
     private fun adj() = pick(ADJECTIVES)
     private fun noun() = pick(NOUNS)
     private fun prefix() = pick(PREFIXES)
@@ -69,15 +69,15 @@ object NameGen {
     // --- styling ---------------------------------------------------------------------------------
 
     private fun style(tokens: List<String>): String {
-        val sep = Util.select(SEPARATORS, "")
+        val sep = Rng.select(SEPARATORS, "")
         val joined = tokens.joinToString(sep)
-        val cased = when (Util.select(CASE_STYLES, CaseStyle.CAMEL)) {
+        val cased = when (Rng.select(CASE_STYLES, CaseStyle.CAMEL)) {
             CaseStyle.LOWER -> joined.lowercase()
             CaseStyle.UPPER -> joined.uppercase()
             CaseStyle.CAMEL -> joined
         }
         // Leet only short handles — long compounds leet into unreadable gibberish.
-        return if (cased.length <= LEET_MAX_LEN && Util.random() < LEET_CHANCE) leet(cased) else cased
+        return if (cased.length <= LEET_MAX_LEN && Rng.random() < LEET_CHANCE) leet(cased) else cased
     }
 
     private val LEET = mapOf('a' to '4', 'e' to '3', 'i' to '1', 'o' to '0', 's' to '5', 't' to '7')
@@ -85,10 +85,10 @@ object NameGen {
     private fun leet(s: String): String = s.map { LEET[it.lowercaseChar()] ?: it }.joinToString("")
 
     private fun number(): String {
-        val sep = if (Util.random() < NUMBER_SEP_CHANCE) Util.select(SEPARATORS, "") else ""
-        val n = when (Util.select(NUMBER_KINDS, 0)) {
-            0 -> "${Util.randomInt(2, 99)}" // two digits
-            1 -> "${Util.randomInt(100, 999)}" // three digits
+        val sep = if (Rng.random() < NUMBER_SEP_CHANCE) Rng.select(SEPARATORS, "") else ""
+        val n = when (Rng.select(NUMBER_KINDS, 0)) {
+            0 -> "${Rng.randomInt(2, 99)}" // two digits
+            1 -> "${Rng.randomInt(100, 999)}" // three digits
             else -> pick(ICONIC_NUMBERS) // "1337", "42", "007", …
         }
         return sep + n

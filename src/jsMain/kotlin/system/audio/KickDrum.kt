@@ -4,7 +4,7 @@ import config.OscillatorType
 import config.Sim
 import org.khronos.webgl.Float32Array
 import org.khronos.webgl.set
-import util.Util
+import util.Rng
 import util.data.Pos
 import kotlin.math.PI
 import kotlin.math.abs
@@ -132,7 +132,7 @@ object KickDrum {
         val data = buffer.getChannelData(0)
         var i = 0
         while (i < len) {
-            data[i] = ((Util.random() * 2.0 - 1.0) * exp(-(i.toDouble() / sr) / CLICK_TAU)).toFloat()
+            data[i] = ((Rng.random() * 2.0 - 1.0) * exp(-(i.toDouble() / sr) / CLICK_TAU)).toFloat()
             i++
         }
         val source = ctx.createBufferSource()

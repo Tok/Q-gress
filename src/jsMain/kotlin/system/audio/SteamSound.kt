@@ -1,7 +1,7 @@
 package system.audio
 
 import org.khronos.webgl.set
-import util.Util
+import util.Rng
 import util.data.Pos
 import kotlin.math.exp
 
@@ -24,7 +24,7 @@ object SteamSound {
         while (i < len) {
             val t = i.toDouble() / sr
             val env = (1.0 - exp(-t / 0.08)) * exp(-t / 0.35) // ~80 ms swell, then a soft trail
-            data[i] = ((Util.random() * 2.0 - 1.0) * env).toFloat()
+            data[i] = ((Rng.random() * 2.0 - 1.0) * env).toFloat()
             i++
         }
         val source = ctx.createBufferSource()

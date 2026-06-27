@@ -1,6 +1,6 @@
 package config
 
-import util.Util
+import util.Rng
 import kotlin.js.Json
 
 /**
@@ -22,7 +22,7 @@ object Locations {
     private var all: List<Location> = listOf(DEFAULT)
 
     fun all(): List<Location> = all
-    fun random(): Location = Util.shuffle(all)[0]
+    fun random(): Location = Rng.shuffle(all)[0]
     fun byName(name: String): Location? = all.firstOrNull { it.name == name }
 
     /** The catalogue location at ([lng], [lat]) within ~50 m, or null (a custom/unlisted spot). */
@@ -34,7 +34,7 @@ object Locations {
     /** A random title-eligible location (the curated showpiece set); [DEFAULT] if none are flagged. */
     fun randomTitle(): Location {
         val eligible = all.filter { it.title }.ifEmpty { listOf(DEFAULT) }
-        return Util.shuffle(eligible)[0]
+        return Rng.shuffle(eligible)[0]
     }
 
     /** Parse a `locations.json` array into [Location]s (pure — unit-tested; skips malformed entries). */

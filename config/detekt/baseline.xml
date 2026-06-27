@@ -93,7 +93,7 @@
     <ID>UnusedPrivateMember:Portal.kt$Portal$private fun calcTotalXm(): Int</ID>
     <ID>UnusedPrivateMember:Portal.kt$Portal$private fun calculateLinkMitigation(): Int</ID>
     <ID>UnusedPrivateMember:Pos.kt$Pos.Companion$private fun createRandom(): Pos</ID>
-    <ID>UnusedPrivateProperty:NonFaction.kt$NonFaction$private val isDrunk = Util.random() &lt;= 0.02 // TODO</ID>
+    <ID>UnusedPrivateProperty:NonFaction.kt$NonFaction$private val isDrunk = Rng.random() &lt;= 0.02 // TODO</ID>
     <ID>UnusedPrivateProperty:Pos.kt$Pos.Companion$private val xMax = Dim.maxDeploymentRange.toInt() * 2</ID>
     <ID>UnusedPrivateProperty:StereoPannerNode.kt$StereoPannerNode$context: AudioContext</ID>
     <ID>UnusedPrivateProperty:StereoPannerNode.kt$StereoPannerNode$options: AudioNodeOptions</ID>
