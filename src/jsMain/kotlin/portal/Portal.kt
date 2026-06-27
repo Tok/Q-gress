@@ -574,7 +574,10 @@ data class Portal(
         // centre clusters). Each candidate already respects the min-distance gate (createRandomForPortal).
         // Used for the initial spawns AND the Explore action.
         fun createRandom(): Portal {
-            if (!Bootstrap.isRunningInBrowser()) return create(Positions.createRandomForPortal())
+            // Grid-driven for both browser and headless: sample passable cells (the real passability map) and
+            // spread off the existing portals' positions — no rectangular Rng(Sim.width) box, no trial-and-error.
+            // (Bare unit tests with no World.grid fall back to a simple position via createRandomForPortal.)
+            if (!World.hasGrid()) return create(Positions.createRandomForPortal())
             val candidates = Positions.portalCandidates() // ONE grid scan; sample from it (cheap)
             if (candidates.isEmpty()) return create(Positions.createRandomForPortal())
             fun pick() = candidates[(Rng.random() * candidates.size).toInt()]

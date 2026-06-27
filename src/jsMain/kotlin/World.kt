@@ -52,6 +52,9 @@ object World {
     lateinit var grid: Grid
     var walkability = 0.0 // fraction of on-screen cells that are passable (set at grid build)
 
+    /** Whether the passability grid is set yet — false in bare unit tests that build an entity without a world. */
+    fun hasGrid() = ::grid.isInitialized
+
     fun passableCells(): Grid = grid.filter { it.value.isPassable }
     private fun wellPassableCells(): Grid = grid.filter { it.value.isPassableInAllDirections() }
     private fun passableOnScreen(): Grid = wellPassableCells().filterNot { it.key.isOffGrid() }

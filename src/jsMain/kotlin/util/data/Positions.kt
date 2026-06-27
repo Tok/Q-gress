@@ -22,6 +22,12 @@ object Positions {
      */
     fun portalCandidates(): List<Pos> {
         val offset = Pos.res / 2
+        // The grid IS the play area: passable cells already exclude everything outside the (circular) field —
+        // ShadowGridBuilder.maskToCircle forces out-of-circle cells impassable at build, so sampling passable
+        // cells already stays inside it. The old separate Sim.isInsideField pass was therefore redundant on a
+        // real (masked) grid, and it broke headless matches whose Sim default didn't match their grid. Driving
+        // placement off the live grid also future-proofs a play area that grows/moves at runtime: it's
+        // re-queried each call, so candidates always track the current field.
         return World.passableInActionArea()
             .filterNot { it.key.fromShadow().x < Dim.maxDeploymentRange }
             .filterNot { it.key.fromShadow().x > World.simW() - Dim.maxDeploymentRange }
@@ -30,7 +36,6 @@ object Positions {
                 val p = it.key.fromShadow()
                 Pos(p.x + offset, p.y + offset)
             }
-            .filter { Sim.isInsideField(it.x, it.y) } // round field → only spawn within the inscribed ellipse
     }
 
     /** Whether a new portal can still be placed without clipping an existing one (a free, well-spaced
@@ -39,12 +44,13 @@ object Positions {
     fun hasPortalSpace(): Boolean = Bootstrap.isNotRunningInBrowser() || portalCandidates().isNotEmpty()
 
     fun createRandomForPortal(): Pos {
-        if (Bootstrap.isNotRunningInBrowser()) {
-            return Pos(Rng.randomInt(Sim.width), Rng.randomInt(Sim.height))
-        }
+        if (!World.hasGrid()) return createRandomNoOffset() // bare unit test, no grid → any position will do
         val candidates = portalCandidates()
-        check(candidates.isNotEmpty()) // map is blocked or there is no more space left.
-        return candidates[(Rng.random() * candidates.size).toInt()]
+        if (candidates.isNotEmpty()) return candidates[(Rng.random() * candidates.size).toInt()]
+        // No well-spaced candidate (a tiny or packed grid): fall back to any passable cell — grid-driven and in
+        // sim coords, NEVER the old rectangular Rng(Sim.width) box, which ignored passability and the field shape
+        // (and, headless, scattered portals off the match grid → coupled matches to the live Sim default size).
+        return createRandomPassable(World.grid)
     }
 
     // Cache the passable-cell key list per grid (rebuilt only when the grid reference changes — once per
