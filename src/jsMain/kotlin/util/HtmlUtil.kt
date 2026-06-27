@@ -98,6 +98,7 @@ object HtmlUtil {
         // Master volume + mute live in their own fixed widget so they stay visible across every phase
         // (title, onboarding, world-gen, gameplay) — not bound to a screen/toolbar that comes and goes.
         SoundUtil.restoreVolume() // re-read the saved volume/mute BEFORE the widget builds (survives reloads)
+        AudioPrefs.load() // re-apply the saved master-FX tuning (AudioFx.build later picks it up via applyAll)
         document.body?.appendChild(createPersistentVolume())
 
         // Offscreen ImageData factory for the passability-grid readback (never displayed). No

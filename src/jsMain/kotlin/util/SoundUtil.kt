@@ -91,7 +91,9 @@ object SoundUtil {
     /** Muffle (lowpass) the whole mix, or open it back up — used to push the title audio behind onboarding. */
     fun setMuffled(on: Boolean) {
         if (HtmlUtil.isNotRunningInBrowser()) return
-        AudioFx.setLowpass(if (on) MUFFLE_CLOSED_HZ else AudioFx.LOWPASS_OPEN_HZ)
+        // Opening back up restores the player's own AUDIO-tab cutoff, not a hardcoded "open" (else the muffle
+        // would stomp a low-pass they'd dialled in).
+        AudioFx.setLowpass(if (on) MUFFLE_CLOSED_HZ else AudioFx.lowpassHz)
     }
 
     // Master volume in 0..1. Starts silent; the first user gesture brings it to default (browser autoplay
@@ -449,13 +451,13 @@ object SoundUtil {
         osc.stop(stopTime)
     }
 
-    /** Play [osc] at [pos] with a peak→silence exponential decay over [dur] (the common one-shot voice). */
+    /** Play [osc] at [pos] as the common one-shot voice. The master ADSR ([AudioFx.shapeDecay]) shapes the
+     *  gain (attack ramp + release-stretched decay); default state reproduces the old peak→silence one-shot. */
     private fun decayVoice(osc: OscillatorNode, pos: Pos, peak: Double, dur: Double) {
         val n = now()
         val g = audioCtx.createGain()
-        g.gain.setValueAtTime(peak, n)
-        g.gain.exponentialRampToValueAtTime(EPS, n + dur)
-        connectVoice(osc, createPanner(pos), g, n + dur)
+        val total = AudioFx.shapeDecay(g.gain, n, peak, dur)
+        connectVoice(osc, createPanner(pos), g, n + total)
     }
 
     fun playCheckpointSound(@Suppress("UNUSED_PARAMETER") checkpoint: Checkpoint) {

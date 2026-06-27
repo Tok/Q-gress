@@ -19,6 +19,9 @@ object Scale {
         leading = ahead
     }
 
+    /** Whether the scale is currently major (the player's faction leads) — for the AUDIO tab's read-only key display. */
+    fun isLeading() = leading
+
     /** Frequency (Hz) of [level]'s note (level 8 = root); [octaveUp] transposes it up by octaves. */
     fun noteFor(level: Int, octaveUp: Int = 0): Double {
         val scale = if (leading) MAJOR else MINOR

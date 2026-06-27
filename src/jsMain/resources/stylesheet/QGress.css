@@ -919,8 +919,8 @@ html, body {
     cursor: default;
 }
 
-/* AUDIO tab (AudioPanel) — the in-game sound toy. Mirrors the TRAIN tab's look (section heads + dark
-   Chakra-Petch action buttons) so it reads native to the footer, not like the full-screen #audio demo. */
+/* AUDIO tab (AudioPanel) — a compact master-FX control surface (the sound triggers live in the #audio demo).
+   Section heads match the TRAIN tab; the pad/knobs/viz are canvases. */
 .audioPanel {
     display: flex;
     flex-direction: column;
@@ -931,55 +931,83 @@ html, body {
     font-size: 10px;
     letter-spacing: 0.5px;
     text-transform: uppercase;
+    margin-bottom: 3px;
 }
-.audioFx {
+.audioLeadRow {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+}
+.audioLead {
+    font-family: "Chakra Petch", sans-serif;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    color: #e8e8e8;
+}
+.audioLead.major {
+    color: #6cf0a0; /* data-viz: leading reads bright/green */
+}
+.audioLead.minor {
+    color: #f0a06c; /* data-viz: trailing reads warm/amber */
+}
+.audioControls {
     display: flex;
     flex-wrap: wrap;
-    align-items: flex-end;
-    gap: 14px;
+    gap: 22px;
+    align-items: flex-start;
 }
-.audioField {
+.audioSection {
     display: flex;
     flex-direction: column;
-    gap: 3px;
 }
-.audioFieldLabel {
-    color: #a0a0a0;
-    font-size: 10px;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
+.audioPad, .audioAdsr {
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 5px;
+    cursor: crosshair;
 }
-.audioLevels {
+.audioAdsr {
+    cursor: default;
+}
+.audioKnobs {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
+    gap: 12px;
+    margin-top: 6px;
 }
-.audioGrid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
-    gap: 6px;
+.audioKnob {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 58px;
 }
-.audioBtn {
-    font-family: "Chakra Petch", sans-serif;
-    letter-spacing: 0.5px;
-    background: rgba(0, 0, 0, 0.5);
+.audioKnobDial {
+    cursor: ns-resize;
+}
+.audioKnobLabel {
+    color: #a0a0a0;
+    font-size: 9px;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    margin-top: 2px;
+}
+.audioKnobVal {
     color: #e8e8e8;
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    border-radius: 4px;
-    padding: 4px 12px;
-    font-size: 11px;
-    cursor: pointer;
+    font-family: "Coda", monospace;
+    font-size: 10px;
+    font-variant-numeric: tabular-nums;
 }
-.audioBtn:hover {
-    background: rgba(255, 255, 255, 0.1);
+.audioViz {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
 }
-.audioMini {
-    padding: 4px 9px;
-}
-.audioBtn.sel {
-    background: rgba(255, 255, 255, 0.16);
-    border-color: rgba(255, 255, 255, 0.4);
-    color: #ffffff;
+.audioScope, .audioSpectrum {
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 5px;
+    flex: 1 1 240px;
+    max-width: 100%;
 }
 
 /* Leaderboard (LeaderboardPanel) — driver entrant toggles + a round-robin standings table. */
@@ -1804,9 +1832,15 @@ html, body {
 }
 /* Required tile attribution: collapsed to a small ⓘ (compact) + dimmed so it's unobtrusive;
    full opacity on hover/expand. (MapLibre 5 uses the maplibregl- prefix.) */
-/* Keep the bottom-right ⓘ above the footer (z 60) and clickable, so it can still be expanded. */
+/* Keep the bottom-right ⓘ above the footer (z 60) and clickable. The map (.initialMap) sets z-index:8 +
+   position:relative, forming a stacking context that traps this control BELOW the body-level footer no matter
+   how high its own z-index is. position:fixed lifts it out to the viewport so its z-index actually beats the
+   footer's; it stays pinned to the same bottom-right corner (the map fills the viewport). */
 .maplibregl-ctrl-bottom-right, .mapboxgl-ctrl-bottom-right {
-    z-index: 70;
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    z-index: 80;
     pointer-events: auto;
 }
 .maplibregl-ctrl-attrib, .mapboxgl-ctrl-attrib {

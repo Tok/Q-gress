@@ -412,12 +412,15 @@ Commit hashes are illustrative pointers, not exhaustive.
   "muffle"), a high-pass, and a **reverb** send (convolver fed a generated decaying-noise impulse). The
   **`#audio` demo** auditions every standalone SFX (incl. the ultra-strike) and exposes live sliders for
   the low/high-pass + reverb mix + a major/minor toggle, to dial the audio in.
-- **AUDIO footer tab — the live sound toy** (`util/ui/AudioPanel`): the same SFX palette + master-FX
-  controls as the `#audio` demo, but docked **in-game** so the player can reshape the audio **while the sim
-  runs** (Q-Gress is as much a toy as a game). Master-FX row (key major/minor, low-pass, high-pass, reverb
-  → live on the running mix) + an L1–L8 selector + a grid that triggers every standalone sound. The palette
-  is shared with the demo via `util/ui/AudioSounds`; the tab is styled to match the other footer tabs
-  (section heads + dark Chakra-Petch buttons), not the full-screen demo.
+- **AUDIO footer tab — live master-FX control surface** (`util/ui/AudioPanel`): reshape the audio **while the
+  sim runs** (the sound *triggers* stay in the `#audio` demo, palette shared via `util/ui/AudioSounds`). A
+  read-only **key** display (major/minor follows whoever leads on MU — `Scale.isLeading`, not player-set), a
+  **filter pad** (canvas XY: low-pass cutoff × resonance), big **knobs** for reverb / echo (delay time +
+  feedback + mix) / compression, a master **ADSR** (envelope display + A/D/S/R knobs; attack + release wired
+  into the shared one-shot voice via `AudioFx.shapeDecay`, default-neutral so SFX are unchanged until dialled),
+  and a live **scope + spectrum** off an `AudioFx` analyser tap. The `AudioFx` bus now also carries a
+  resonant low-pass, a delay/echo send, and a master compressor. Every change **persists** (`util/AudioPrefs`,
+  restored at startup before the graph builds); the TUNING LAB exports + resets the values.
 - **Layered detonation** (`SoundUtil.playXmpExplosion`, `deep` flag): a detonation snap + chest-punch sub
   at the note + a deep, hard **909-style kick** (`KickDrum`: fast pitch-drop sine + a high-passed beater
   click) + a long lowpassed rumble tail whose brightness/amplitude decay over the fireball's life, all
