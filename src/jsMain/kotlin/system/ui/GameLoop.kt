@@ -9,6 +9,7 @@ import org.w3c.dom.HTMLElement
 import system.audio.Sound
 import system.display.Scene3D
 import system.map.MapController
+import kotlin.math.roundToInt
 
 /**
  * The sim playback controller — the game clock split out of [Bootstrap] (the SoC / god-object split, PLAN
@@ -37,7 +38,7 @@ object GameLoop {
     /** (Re)start the loop, running [tick] each speed-scaled interval — the live game's `tick` or the demo's. */
     fun start(tick: () -> Unit) {
         tickFn = tick
-        intervalID = document.defaultView?.setInterval({ tickFn() }, currentTickMs()) ?: 0
+        intervalID = schedule()
     }
 
     fun isPaused() = intervalID == -1
@@ -65,16 +66,23 @@ object GameLoop {
         }
     }
 
-    private fun currentTickMs() = (Time.minTickInterval / speedMult).toInt().coerceAtLeast(1)
+    // Schedule the loop. Above 1× the timer stays at minTickInterval and we run [stepsPerFire] sim steps per
+    // fire; below 1× we slow the timer instead (one step per fire). Dividing the period for fast speeds didn't
+    // work: the browser/CPU floors setInterval at ~5 ms, so ×3 (20/3≈6 ms) and Max (20/4=5 ms) collapsed to the
+    // same real rate. Stepping N times decouples sim speed from that floor, so ×3 and Max are genuinely 3× / 4×.
+    private fun schedule(): Int = document.defaultView?.setInterval({ repeat(stepsPerFire()) { tickFn() } }, currentTickMs()) ?: 0
+
+    private fun currentTickMs() = (Time.minTickInterval / minOf(speedMult, 1.0)).toInt().coerceAtLeast(1)
+    private fun stepsPerFire() = maxOf(1, speedMult.roundToInt())
 
     /** Set the sim speed multiplier; restarts the tick interval (paused stays paused) and scales animations.
-     *  Walking/actions follow automatically — they run per tick, which now ticks faster. */
+     *  Walking/actions follow automatically — they run more sim steps per fire (or a slower timer below 1×). */
     private fun setSpeed(mult: Double) {
         speedMult = mult.coerceIn(MIN_SPEED, MAX_SPEED)
         applyAnimationSpeed() // visual FX (hack spin, deploy, shatter, build-in, sun) track the speed
         if (!isPaused()) {
             document.defaultView?.clearInterval(intervalID)
-            intervalID = document.defaultView?.setInterval({ tickFn() }, currentTickMs()) ?: 0
+            intervalID = schedule()
         }
         refreshSpeedButtons()
     }
@@ -107,7 +115,7 @@ object GameLoop {
             -1
         } else {
             pauseButton.innerText = "Pause"
-            document.defaultView?.setInterval({ tickFn() }, currentTickMs()) ?: 0
+            schedule()
         }
     }
 }
