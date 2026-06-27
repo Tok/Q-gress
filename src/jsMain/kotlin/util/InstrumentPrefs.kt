@@ -1,7 +1,5 @@
 package util
 
-import kotlinx.browser.localStorage
-
 /**
  * Persists the per-instrument tuning (currently the explosion [KickDrum]) across reloads, mirroring
  * [VolumePrefs] / [AudioPrefs]. [load] runs at startup; [save] is called when an Instruments knob changes; the
@@ -11,20 +9,14 @@ object InstrumentPrefs {
     private const val KEY = "qgress.instruments"
 
     fun load() {
-        if (HtmlUtil.isNotRunningInBrowser()) return
-        runCatching {
-            val o = JSON.parse<dynamic>(localStorage.getItem(KEY) ?: return).kick ?: return
-            apply(o.pitch) { KickDrum.setPitchMult(it) }
-            apply(o.decay) { KickDrum.setDecayMult(it) }
-            apply(o.click) { KickDrum.setClickMult(it) }
-            apply(o.drive) { KickDrum.setDrive(it) }
-        }
+        val o = (Prefs.read(KEY) ?: return).kick ?: return
+        Prefs.apply(o.pitch) { KickDrum.setPitchMult(it) }
+        Prefs.apply(o.decay) { KickDrum.setDecayMult(it) }
+        Prefs.apply(o.click) { KickDrum.setClickMult(it) }
+        Prefs.apply(o.drive) { KickDrum.setDrive(it) }
     }
 
-    fun save() {
-        if (HtmlUtil.isNotRunningInBrowser()) return
-        runCatching { localStorage.setItem(KEY, JSON.stringify(json())) }
-    }
+    fun save() = Prefs.save(KEY, ::json)
 
     /** The instrument tuning as a plain object — persisted by [save] and shown by the TUNING LAB. */
     fun json(): dynamic {
@@ -36,9 +28,5 @@ object InstrumentPrefs {
         val o: dynamic = js("({})")
         o.kick = kick
         return o
-    }
-
-    private fun apply(v: dynamic, set: (Double) -> Unit) {
-        if (v != null) set(v.unsafeCast<Double>())
     }
 }

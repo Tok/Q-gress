@@ -1,7 +1,5 @@
 package util
 
-import kotlinx.browser.localStorage
-
 /**
  * Persists the [AmbientBed] state (on / level / cutoff) across reloads, mirroring [VolumePrefs] / [AudioPrefs].
  * [load] runs at startup (restores the bed, incl. re-starting it if it was on); [save] on any Ambient change;
@@ -11,23 +9,14 @@ object AmbientPrefs {
     private const val KEY = "qgress.ambient"
 
     fun load() {
-        if (HtmlUtil.isNotRunningInBrowser()) return
-        runCatching {
-            val o = JSON.parse<dynamic>(localStorage.getItem(KEY) ?: return)
-            val level = o.level
-            val cutoff = o.cutoff
-            val distance = o.distance
-            if (level != null) AmbientBed.setLevel(level.unsafeCast<Double>())
-            if (cutoff != null) AmbientBed.setCutoff(cutoff.unsafeCast<Double>())
-            if (distance != null) AmbientBed.setDistance(distance.unsafeCast<Double>())
-            if (o.enabled == false) AmbientBed.setEnabled(false) // default on (the field hum is automatic)
-        }
+        val o = Prefs.read(KEY) ?: return
+        Prefs.apply(o.level) { AmbientBed.setLevel(it) }
+        Prefs.apply(o.cutoff) { AmbientBed.setCutoff(it) }
+        Prefs.apply(o.distance) { AmbientBed.setDistance(it) }
+        if (o.enabled == false) AmbientBed.setEnabled(false) // default on (the field hum is automatic)
     }
 
-    fun save() {
-        if (HtmlUtil.isNotRunningInBrowser()) return
-        runCatching { localStorage.setItem(KEY, JSON.stringify(json())) }
-    }
+    fun save() = Prefs.save(KEY, ::json)
 
     /** The ambient-bed state as a plain object — persisted by [save] and shown by the TUNING LAB. */
     fun json(): dynamic {

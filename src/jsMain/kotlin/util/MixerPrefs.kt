@@ -1,6 +1,5 @@
 package util
 
-import kotlinx.browser.localStorage
 import util.Mixer.Group
 
 /**
@@ -12,24 +11,17 @@ object MixerPrefs {
     private const val KEY = "qgress.mixer"
 
     fun load() {
-        if (HtmlUtil.isNotRunningInBrowser()) return
-        runCatching {
-            val raw = localStorage.getItem(KEY) ?: return
-            val o = JSON.parse<dynamic>(raw)
-            Group.values().forEach { g ->
-                val entry = o[g.name] ?: return@forEach
-                val v = entry.v
-                val m = entry.m
-                if (v != null) Mixer.setVolume(g, v.unsafeCast<Double>())
-                if (m != null) Mixer.setMuted(g, m.unsafeCast<Boolean>())
-            }
+        val o = Prefs.read(KEY) ?: return
+        Group.values().forEach { g ->
+            val entry = o[g.name] ?: return@forEach
+            val v = entry.v
+            val m = entry.m
+            if (v != null) Mixer.setVolume(g, v.unsafeCast<Double>())
+            if (m != null) Mixer.setMuted(g, m.unsafeCast<Boolean>())
         }
     }
 
-    fun save() {
-        if (HtmlUtil.isNotRunningInBrowser()) return
-        runCatching { localStorage.setItem(KEY, JSON.stringify(json())) }
-    }
+    fun save() = Prefs.save(KEY, ::json)
 
     /** The mixer state as a plain object — persisted by [save] and shown by the TUNING LAB. */
     fun json(): dynamic {

@@ -1,7 +1,6 @@
 package util
 
 import config.Config
-import kotlinx.browser.localStorage
 
 /**
  * Persists the gameplay-affecting tunables ([Config.combatDynamism], [Config.progressSpeed],
@@ -17,20 +16,13 @@ object GameplayPrefs {
     const val DEFAULT_CHURN = 0.17
 
     fun load() {
-        if (HtmlUtil.isNotRunningInBrowser()) return
-        runCatching {
-            val raw = localStorage.getItem(KEY) ?: return
-            val o = JSON.parse<dynamic>(raw)
-            apply(o.combatDynamism) { Config.combatDynamism = it }
-            apply(o.progressSpeed) { Config.progressSpeed = it }
-            apply(o.portalChurnRate) { Config.portalChurnRate = it }
-        }
+        val o = Prefs.read(KEY) ?: return
+        Prefs.apply(o.combatDynamism) { Config.combatDynamism = it }
+        Prefs.apply(o.progressSpeed) { Config.progressSpeed = it }
+        Prefs.apply(o.portalChurnRate) { Config.portalChurnRate = it }
     }
 
-    fun save() {
-        if (HtmlUtil.isNotRunningInBrowser()) return
-        runCatching { localStorage.setItem(KEY, JSON.stringify(json())) }
-    }
+    fun save() = Prefs.save(KEY, ::json)
 
     /** The current gameplay tunables as a plain object — persisted by [save] and shown by the TUNING LAB. */
     fun json(): dynamic {
@@ -47,9 +39,5 @@ object GameplayPrefs {
         Config.progressSpeed = DEFAULT_PROGRESS
         Config.portalChurnRate = DEFAULT_CHURN
         save()
-    }
-
-    private fun apply(v: dynamic, set: (Double) -> Unit) {
-        if (v != null) set(v.unsafeCast<Double>())
     }
 }
