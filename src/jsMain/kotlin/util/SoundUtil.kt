@@ -94,21 +94,23 @@ object SoundUtil {
         AudioFx.setLowpass(if (on) MUFFLE_CLOSED_HZ else AudioFx.LOWPASS_OPEN_HZ)
     }
 
-    // Master volume in 0..1. Starts muted; enabled on the first user gesture
-    // (browser autoplay policy needs one). The volume slider drives it too.
+    // Master volume in 0..1. Starts silent; the first user gesture brings it to default (browser autoplay
+    // policy needs one). The volume slider drives it too. [userMuted] is the EXPLICIT mute intent, tracked
+    // separately from the level so "muted (0)" and "not enabled yet (0)" don't get conflated — without it, any
+    // later gesture / world-gen would un-mute a user who muted before audio was first enabled.
     private var masterVolume = 0.0
     private var audioEnabled = false // the first gesture has raised the volume to default once
+    private var userMuted = false // the user explicitly chose mute (vs just not-enabled-yet)
 
     /** Resume the audio context and turn sound on. Idempotent; call on a user gesture. */
     fun enableAudio() {
         if (HtmlUtil.isNotRunningInBrowser()) return
         if (audioCtx.state != "running") audioCtx.resume()
-        // ONLY the first gesture brings the volume up to default. Afterwards leave the level alone — otherwise a
-        // user who muted (volume 0) on the title gets silently un-muted by the next gesture / world-gen, since
-        // muted and "not enabled yet" are both volume 0. (Bug: mute on title didn't survive into the game.)
+        // The first gesture brings the volume up to default — UNLESS the user has already muted. Afterwards the
+        // level is left alone, so a gesture / world-gen never un-mutes them.
         if (!audioEnabled) {
             audioEnabled = true
-            if (masterVolume <= 0.0) setMasterVolume(DEFAULT_VOLUME)
+            if (!userMuted) setMasterVolume(DEFAULT_VOLUME)
         }
     }
 
@@ -116,6 +118,7 @@ object SoundUtil {
         if (HtmlUtil.isNotRunningInBrowser()) return
         if (audioCtx.state != "running") audioCtx.resume()
         masterVolume = volume
+        userMuted = volume <= 0.0 // dragging the slider to 0 IS a mute; any positive level un-mutes
         masterGain.gain.setTargetAtTime(volume * MASTER_BOOST, now(), 0.01)
     }
 
@@ -132,12 +135,14 @@ object SoundUtil {
     }
     private var preMuteVolume = 0.0
 
-    /** Toggle mute, remembering the prior level. Returns the new volume (0 when muted). */
+    /** Toggle mute, remembering the prior level. Returns the new volume (0 when muted). Keys off the explicit
+     *  [userMuted] intent (NOT the live volume), so it works the same before and after audio is first enabled —
+     *  clicking the speaker on the title/onboarding mutes for real and stays muted into the game. */
     fun toggleMute(): Double {
-        if (isMuted()) {
+        if (userMuted) {
             setMasterVolume(if (preMuteVolume > 0.0) preMuteVolume else DEFAULT_VOLUME)
         } else {
-            preMuteVolume = masterVolume
+            preMuteVolume = if (masterVolume > 0.0) masterVolume else DEFAULT_VOLUME
             setMasterVolume(0.0)
         }
         return masterVolume

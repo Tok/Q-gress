@@ -1013,6 +1013,13 @@ html, body {
 #footerLog {
     text-align: left;
 }
+/* Pin the log pane to the LEFT no matter what: margin-right:auto keeps it left in normal flow AND pushes it to
+   the start if an ancestor turns out to be a flex row; align-self covers a flex cross-axis. */
+#footerLog .statsComLines {
+    margin-left: 0;
+    margin-right: auto;
+    align-self: flex-start;
+}
 .logFilter {
     display: flex;
     flex-wrap: nowrap;
@@ -1267,7 +1274,10 @@ html, body {
 }
 .onboardBack {
     font-size: 22px;
-    padding: 14px 52px; /* wider than the forward button */
+    padding: 14px 28px;
+    /* min-width (not width/padding) is what actually widens it — .topButton pins width:89px and, with
+       border-box, padding stays inside that. onboardStart escapes the same way. A touch wider than Next. */
+    min-width: 260px;
     cursor: pointer;
     opacity: 0.8; /* a touch quieter than the forward button */
 }
