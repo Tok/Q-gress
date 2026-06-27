@@ -31,21 +31,58 @@ object Controls {
         document.body?.append(div)
     }
 
-    /** A small "?" button toggles a controls legend popup (hidden by default so it can't cover the HUD). */
+    private const val LEGEND_ID = "controlsLegend"
+
+    // The single controls+shortcuts reference (mouse interactions + keyboard shortcuts). Shown bottom-left via
+    // the "?" button AND from Menu → Shortcuts — one source of truth (the old separate menu popup is retired).
+    private val MOUSE = listOf(
+        "Left-drag" to "Pan",
+        "Right-drag" to "Rotate + tilt",
+        "Wheel" to "Zoom",
+        "Click portal" to "Select",
+        "Click ground" to "Build",
+    )
+    private val KEYS = listOf(
+        "Space" to "Pause / resume",
+        "Home" to "Recenter on the play area",
+        "PageUp / PageDn" to "Zoom in / out",
+        "Arrows / WASD" to "Pan",
+        "Q-E / R-F" to "Rotate / pitch",
+        "− / +" to "Slower / faster",
+        ", / ." to "Building transparency",
+        "Tab" to "Switch footer tab",
+        "M" to "Mute / unmute",
+        "C" to "Auto-camera",
+        "Esc" to "Close panels",
+    )
+
+    /** A small "?" button toggles a controls+shortcuts legend (hidden by default so it can't cover the HUD). */
     fun addLegend() {
         val legend = document.createElement("div") as HTMLDivElement
-        legend.id = "controlsLegend"
+        legend.id = LEGEND_ID
         legend.addClass("controlsLegend", "coda", "invisible")
-        legend.innerHTML =
-            "<b>Controls</b><br>" +
-            "Left-drag: pan &middot; Right-drag: rotate + tilt<br>" +
-            "Wheel: zoom &middot; WASD/Q-E/R-F: move/rotate/pitch<br>" +
-            "Click portal: select &middot; Click ground: build"
+        legend.innerHTML = legendHtml()
         val info = document.createElement("div") as HTMLDivElement
         info.addClass("controlsInfo", "coda")
         info.innerHTML = "?"
-        info.onclick = { legend.classList.toggle("invisible") }
+        info.onclick = { toggleLegend() }
         document.body?.append(legend)
         document.body?.append(info)
     }
+
+    /** Reveal / hide / toggle the bottom-left legend (Menu → Shortcuts reveals it; Esc hides it; "?" toggles). */
+    fun showLegend() = document.getElementById(LEGEND_ID)?.classList?.remove("invisible")
+    fun hideLegend() = document.getElementById(LEGEND_ID)?.classList?.add("invisible")
+    fun toggleLegend() = document.getElementById(LEGEND_ID)?.classList?.toggle("invisible")
+
+    private fun legendHtml(): String {
+        val sb = StringBuilder("<div class=\"shortcutsTitle\">Controls</div>")
+        MOUSE.forEach { (key, desc) -> sb.append(row(key, desc)) }
+        sb.append("<div class=\"shortcutsTitle\">Keyboard</div>")
+        KEYS.forEach { (key, desc) -> sb.append(row(key, desc)) }
+        return sb.toString()
+    }
+
+    private fun row(key: String, desc: String) =
+        "<div class=\"shortcutsRow\"><span class=\"shortcutsKey\">$key</span><span>$desc</span></div>"
 }

@@ -34,7 +34,6 @@ import util.ui.Inspector
 import util.ui.LoadingOverlay
 import util.ui.MenuControls
 import util.ui.Onboarding
-import util.ui.ShortcutsHelp
 import util.ui.TuningPanel
 import util.ui.VolumeControl
 import kotlin.js.Json
@@ -459,7 +458,7 @@ object HtmlUtil {
             Onboarding.back()
             return
         }
-        ShortcutsHelp.close()
+        Controls.hideLegend()
         DropRatesPanel.close()
         closePopup()
     }
@@ -712,7 +711,7 @@ object HtmlUtil {
         menu.append(createButton("menuShare", "menuItem displayFont", "Copy link") { copyShareLink() })
         menu.append(createButton("menuSave", "menuItem displayFont", "Save") { saveGame() })
         menu.append(createButton("menuDropRates", "menuItem displayFont", "Drop rates") { DropRatesPanel.toggle() })
-        menu.append(createButton("menuShortcuts", "menuItem displayFont", "Shortcuts") { ShortcutsHelp.show() })
+        menu.append(createButton("menuShortcuts", "menuItem displayFont", "Shortcuts") { Controls.showLegend() })
         // Overlay toggle lives in the menu now (no longer always-visible in the top bar). Vectors are
         // no longer toggled — they flash automatically for ~a second when a portal is created.
         // The "passability" map (greyscale walkability the grid is read from) — this is NOT the terrain.
