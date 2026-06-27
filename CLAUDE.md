@@ -34,7 +34,7 @@ ARCHITECTURE, shipped → FEATURES, future → PLAN, how-to-work → here).
   build JVM is a pure tooling detail).
 - **Maps:** MapLibre GL JS (keyless, OpenFreeMap + Esri tiles). **3D:** three.js custom layer +
   cannon-es physics. **Charts:** uPlot. All via npm or CDN `external` declarations.
-- JS deps locked in `kotlin-js-store/yarn.lock` (committed). Mapbox token: none (MapLibre).
+- JS deps locked in `kotlin-js-store/yarn.lock` (committed). No map token needed (MapLibre, keyless).
 
 ## Build, test & dev workflow
 

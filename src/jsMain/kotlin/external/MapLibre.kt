@@ -7,7 +7,7 @@ package external
 /**
  * Minimal external bindings for the global `maplibregl` namespace provided by
  * the MapLibre GL JS script loaded in index.html. MapLibre is API-compatible
- * with the (v1-era) Mapbox GL JS this project originally used, so only the
+ * with the (v1-era) GL JS API this project originally used, so only the
  * handful of members the app actually calls are declared here.
  *
  * Options are passed as `dynamic` JS objects so styles/centers can be built at

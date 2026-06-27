@@ -38,12 +38,12 @@ object MapController {
         return opts
     }
 
-    private fun initInitialMapbox(): MapLibre.Map {
+    private fun initInitialMap(): MapLibre.Map {
         val style = if (demoMode) MapStyles.DEMO_STYLE else MapStyles.SATELLITE_STYLE
         return MapLibre.Map(mapOptions(INITIAL_MAP, JSON.parse<Json>(style), false))
     }
 
-    private fun initMapbox(): MapLibre.Map = MapLibre.Map(mapOptions(MAP, MapStyles.STREET_STYLE_URL, false))
+    private fun initMainMap(): MapLibre.Map = MapLibre.Map(mapOptions(MAP, MapStyles.STREET_STYLE_URL, false))
 
     // preserveDrawingBuffer is required so the rendered street mask can be read
     // back with gl.readPixels (otherwise the buffer is cleared after compositing).
@@ -510,7 +510,7 @@ object MapController {
         }
         val existing = initMap
         if (existing == null) {
-            val newMap = initInitialMapbox()
+            val newMap = initInitialMap()
             initMap = newMap
             newMap.on("load") {
                 addLayers(newMap)
@@ -538,7 +538,7 @@ object MapController {
         document.getElementById(MAP)?.removeClass(INVISIBLE)
         val existing = map
         if (existing == null) {
-            val newMap = initMapbox()
+            val newMap = initMainMap()
             map = newMap
             newMap.on("load", fun() {
                 loadShadowMap(center, callback)
