@@ -14,6 +14,7 @@ import util.AudioFx
 import util.AudioPrefs
 import util.Scale
 import kotlin.math.PI
+import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.ln
 import kotlin.math.pow
@@ -114,16 +115,39 @@ object AudioPanel {
             val r = canvas.getBoundingClientRect()
             val nx = ((e.clientX - r.left) / r.width).coerceIn(0.0, 1.0)
             val ny = (1.0 - (e.clientY - r.top) / r.height).coerceIn(0.0, 1.0)
-            AudioFx.setLowpass(CUTOFF_MIN * (AudioFx.LOWPASS_OPEN_HZ / CUTOFF_MIN).pow(nx))
+            AudioFx.setLowpass(cutoffHz(nx))
             AudioFx.setLowpassQ(AudioFx.MIN_Q + ny * (AudioFx.MAX_Q - AudioFx.MIN_Q))
-            drawPad()
             AudioPrefs.save()
+            syncFromState() // drag the pad → the Cutoff/Reso knobs (and the rest) follow
         }
         drag(canvas, onMove)
         box.appendChild(canvas)
+        // Cutoff + resonance knobs under the pad, two-way synced with it (moving one drags the other).
+        val grid = el("div", "audioKnobs")
+        grid.appendChild(
+            knob("Cutoff", 0.0..1.0, 1.0, { cutoffNorm() }, {
+                AudioFx.setLowpass(cutoffHz(it))
+                drawPad()
+            }, { khz(cutoffHz(it)) }),
+        )
+        grid.appendChild(
+            knob("Reso", AudioFx.MIN_Q..AudioFx.MAX_Q, AudioFx.MIN_Q, { AudioFx.lowpassQ }, {
+                AudioFx.setLowpassQ(it)
+                drawPad()
+            }, ::qfmt),
+        )
+        box.appendChild(grid)
         drawPad()
         return box
     }
+
+    // The pad/Cutoff-knob share a log cutoff scale (200 Hz → open); norm is the 0..1 position on it.
+    private fun cutoffNorm(): Double = (ln(AudioFx.lowpassHz / CUTOFF_MIN) / ln(AudioFx.LOWPASS_OPEN_HZ / CUTOFF_MIN)).coerceIn(0.0, 1.0)
+
+    private fun cutoffHz(norm: Double): Double = CUTOFF_MIN * (AudioFx.LOWPASS_OPEN_HZ / CUTOFF_MIN).pow(norm.coerceIn(0.0, 1.0))
+
+    private fun khz(hz: Double): String = if (hz >= 1000.0) "${(hz / 100).toInt() / 10.0}k" else "${hz.toInt()}"
+    private fun qfmt(q: Double): String = "Q${(q * 10).toInt() / 10.0}"
 
     private fun fxKnobs(): HTMLElement {
         val box = el("div", "audioSection")
@@ -144,6 +168,7 @@ object AudioPanel {
         box.appendChild(el("div", "audioHead").also { it.textContent = "Envelope (ADSR)" })
         val canvas = makeCanvas("audioAdsr", ADSR_W, ADSR_H)
         adsr = canvas
+        dragAdsr(canvas) // drag the curve's handles directly; the 4 knobs below stay in sync
         box.appendChild(canvas)
         val grid = el("div", "audioKnobs")
         grid.appendChild(envKnob("Attack", 0.0..0.5, 0.0, { AudioFx.envAttackS }, { AudioFx.setEnvAttack(it) }, ::ms))
@@ -284,38 +309,110 @@ object AudioPanel {
         ctx.fill()
     }
 
+    // Fixed envelope layout so the draggable handles map predictably (X = time on a fixed scale).
+    private class AdsrLayout(val pad: Double, val top: Double, val bot: Double, val sx: Double) {
+        val peakX get() = pad + AudioFx.envAttackS * sx
+        val kneeX get() = peakX + AudioFx.envDecayS * sx
+        val kneeY get() = bot - (bot - top) * AudioFx.envSustain
+        val relStartX get() = kneeX + ADSR_HOLD * sx
+        val relEndX get() = relStartX + AudioFx.envReleaseMult * ADSR_REL_VIS * sx
+    }
+
+    private fun adsrLayout(canvas: HTMLCanvasElement): AdsrLayout {
+        val pad = 4.0
+        val span = ADSR_A_MAX + ADSR_D_MAX + ADSR_HOLD + 3.0 * ADSR_REL_VIS // fixed → stable handle positions
+        return AdsrLayout(pad, pad, canvas.height - pad, (canvas.width - 2 * pad) / span)
+    }
+
     private fun drawAdsr() {
         val canvas = adsr ?: return
         val ctx = ctx(canvas) ?: return
         val w = canvas.width.toDouble()
         val h = canvas.height.toDouble()
-        val pad = 4.0
+        val l = adsrLayout(canvas)
         ctx.clearRect(0.0, 0.0, w, h)
         ctx.fillStyle = "rgba(0,0,0,0.35)"
         ctx.fillRect(0.0, 0.0, w, h)
-        // A=attack, D=decay-to-sustain, S=sustain hold, R=release tail. Scaled to fill the box for legibility.
-        val a = AudioFx.envAttackS
-        val d = AudioFx.envDecayS
-        val rel = AudioFx.envReleaseMult * 0.4
-        val span = (a + d + 0.3 + rel).coerceAtLeast(0.001)
-        val sx = (w - 2 * pad) / span
-        val top = pad
-        val bot = h - pad
-        val sustainY = bot - (bot - top) * AudioFx.envSustain
         ctx.beginPath()
         ctx.lineWidth = 2.0
         ctx.strokeStyle = "#cfd6e6"
-        ctx.moveTo(pad, bot)
-        var x = pad
-        x += a * sx
-        ctx.lineTo(x, top) // attack → peak
-        x += d * sx
-        ctx.lineTo(x, sustainY) // decay → sustain
-        x += 0.3 * sx
-        ctx.lineTo(x, sustainY) // sustain hold
-        x += rel * sx
-        ctx.lineTo(x, bot) // release → silence
+        ctx.moveTo(l.pad, l.bot)
+        ctx.lineTo(l.peakX, l.top) // attack → peak
+        ctx.lineTo(l.kneeX, l.kneeY) // decay → sustain
+        ctx.lineTo(l.relStartX, l.kneeY) // sustain hold
+        ctx.lineTo(l.relEndX, l.bot) // release → silence
         ctx.stroke()
+        // Draggable handles: peak (attack), knee (decay + sustain), release-end.
+        dot(ctx, l.peakX, l.top)
+        dot(ctx, l.kneeX, l.kneeY)
+        dot(ctx, l.relEndX, l.bot)
+    }
+
+    private fun dot(ctx: CanvasRenderingContext2D, x: Double, y: Double) {
+        ctx.beginPath()
+        ctx.fillStyle = "#cfe0ff"
+        ctx.arc(x, y, 3.5, 0.0, PI * 2)
+        ctx.fill()
+    }
+
+    // Drag the envelope's handles directly: peak=attack, knee=decay+sustain, end=release. Locks the nearest
+    // handle at mousedown for the whole gesture and keeps the 4 ADSR knobs in sync (via [syncFromState]).
+    private fun dragAdsr(canvas: HTMLCanvasElement) {
+        canvas.onmousedown = { down ->
+            val handle = pickAdsrHandle(canvas, canvasX(canvas, down))
+            val apply = { e: MouseEvent -> applyAdsrHandle(handle, canvas, canvasX(canvas, e), canvasY(canvas, e)) }
+            apply(down)
+            val move: (Event) -> Unit = { e -> apply(e.unsafeCast<MouseEvent>()) }
+            var up: ((Event) -> Unit)? = null
+            up = {
+                document.removeEventListener("mousemove", move)
+                up?.let { document.removeEventListener("mouseup", it) }
+            }
+            document.addEventListener("mousemove", move)
+            document.addEventListener("mouseup", up)
+            down.preventDefault()
+            null
+        }
+    }
+
+    private fun canvasX(canvas: HTMLCanvasElement, e: MouseEvent): Double {
+        val r = canvas.getBoundingClientRect()
+        return (e.clientX - r.left) / r.width * canvas.width
+    }
+
+    private fun canvasY(canvas: HTMLCanvasElement, e: MouseEvent): Double {
+        val r = canvas.getBoundingClientRect()
+        return (e.clientY - r.top) / r.height * canvas.height
+    }
+
+    // Which handle is nearest the pointer X: 0=peak (attack), 1=knee (decay/sustain), 2=release end.
+    private fun pickAdsrHandle(canvas: HTMLCanvasElement, px: Double): Int {
+        val l = adsrLayout(canvas)
+        val d0 = abs(px - l.peakX)
+        val d1 = abs(px - l.kneeX)
+        val d2 = abs(px - l.relEndX)
+        return if (d0 <= d1 && d0 <= d2) {
+            0
+        } else if (d1 <= d2) {
+            1
+        } else {
+            2
+        }
+    }
+
+    private fun applyAdsrHandle(handle: Int, canvas: HTMLCanvasElement, px: Double, py: Double) {
+        val l = adsrLayout(canvas)
+        when (handle) {
+            0 -> AudioFx.setEnvAttack(((px - l.pad) / l.sx).coerceIn(0.0, ADSR_A_MAX))
+            1 -> {
+                AudioFx.setEnvDecay(((px - l.peakX) / l.sx).coerceIn(0.0, ADSR_D_MAX))
+                AudioFx.setEnvSustain(((l.bot - py) / (l.bot - l.top)).coerceIn(0.0, 1.0))
+            }
+            else -> AudioFx.setEnvRelease((((px - l.relStartX) / l.sx) / ADSR_REL_VIS).coerceIn(0.2, 3.0))
+        }
+        drawAdsr()
+        syncFromState() // refresh the 4 ADSR knobs to match the dragged shape
+        AudioPrefs.save()
     }
 
     private fun drawScope() {
@@ -431,6 +528,10 @@ object AudioPanel {
     private const val PAD_H = 110
     private const val ADSR_W = 150
     private const val ADSR_H = 70
+    private const val ADSR_A_MAX = 0.5 // attack knob max (s) — also the envelope display's attack span
+    private const val ADSR_D_MAX = 0.5 // decay knob max (s)
+    private const val ADSR_HOLD = 0.3 // fixed sustain-hold width on the display (s)
+    private const val ADSR_REL_VIS = 0.4 // display seconds per release-multiplier unit
     private const val VIZ_W = 280
     private const val VIZ_H = 70
     private const val KNOB_PX = 54

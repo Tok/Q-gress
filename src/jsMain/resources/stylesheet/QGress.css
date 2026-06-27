@@ -985,7 +985,7 @@ html, body {
     cursor: crosshair;
 }
 .audioAdsr {
-    cursor: default;
+    cursor: crosshair; /* drag the envelope handles directly */
 }
 .audioKnobs {
     display: flex;
