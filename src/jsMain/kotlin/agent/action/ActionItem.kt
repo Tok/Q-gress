@@ -5,8 +5,8 @@ import config.Colors
 import config.Dim
 import extension.Canvas
 import extension.Ctx
-import util.DrawUtil
-import util.HtmlUtil
+import system.ui.Bootstrap
+import system.ui.HudRenderer
 import util.data.Circle
 import util.data.Line
 import util.data.Pos
@@ -28,17 +28,17 @@ data class ActionItem(val text: String, val durationSeconds: Int, val qName: Str
         val VIRUS = ActionItem("refactoring", 15, "Virus")
         fun values() = listOf(MOVE, WAIT, RECHARGE, RECRUIT, EXPLORE, RECYCLE, HACK, GLYPH, ATTACK, DEPLOY, CAPTURE, LINK, VIRUS)
 
-        private val enlImages = if (HtmlUtil.isRunningInBrowser()) {
+        private val enlImages = if (Bootstrap.isRunningInBrowser()) {
             values().map { it to drawTemplate(it, Faction.ENL) }.toMap()
         } else {
             emptyMap()
         }
-        private val resImages = if (HtmlUtil.isRunningInBrowser()) {
+        private val resImages = if (Bootstrap.isRunningInBrowser()) {
             values().map { it to drawTemplate(it, Faction.RES) }.toMap()
         } else {
             emptyMap()
         }
-        private val nonImages = if (HtmlUtil.isRunningInBrowser()) {
+        private val nonImages = if (Bootstrap.isRunningInBrowser()) {
             values().map { it to drawTemplate(it) }.toMap()
         } else {
             emptyMap()
@@ -51,7 +51,7 @@ data class ActionItem(val text: String, val durationSeconds: Int, val qName: Str
         private val resHiRes = hiResSet(Faction.RES)
         private val nonHiRes = hiResSet(null)
 
-        private fun hiResSet(faction: Faction?): Map<ActionItem, Canvas> = if (HtmlUtil.isRunningInBrowser()) {
+        private fun hiResSet(faction: Faction?): Map<ActionItem, Canvas> = if (Bootstrap.isRunningInBrowser()) {
             values().mapNotNull { i ->
                 drawTemplate(i, faction, ICON_HIRES_SCALE)?.let {
                     i to
@@ -76,20 +76,20 @@ data class ActionItem(val text: String, val durationSeconds: Int, val qName: Str
         }
 
         private fun drawTemplate(item: ActionItem, faction: Faction? = null, scale: Int = 1): Canvas? {
-            if (HtmlUtil.isNotRunningInBrowser()) return null
+            if (Bootstrap.isNotRunningInBrowser()) return null
             val rr = Dim.agentRadius + Dim.agentLineWidth
             val w = rr * 2
-            return HtmlUtil.preRender(w * scale, w * scale, fun(ctx: Ctx) {
+            return Bootstrap.preRender(w * scale, w * scale, fun(ctx: Ctx) {
                 ctx.scale(scale.toDouble(), scale.toDouble()) // vector redraw at higher res (1 = no-op)
                 val circle = Circle(Pos(rr, rr), Dim.agentRadius.toDouble() + 1)
-                DrawUtil.drawCircle(ctx, circle, Colors.black, Dim.agentLineWidth.toDouble(), faction?.color ?: Colors.white)
+                HudRenderer.drawCircle(ctx, circle, Colors.black, Dim.agentLineWidth.toDouble(), faction?.color ?: Colors.white)
                 drawGlyph(ctx, item, w, rr)
             })
         }
 
-        private fun line(ctx: Ctx, a: Line) = DrawUtil.drawLine(ctx, a, Colors.black, 0.7)
-        private fun circ(ctx: Ctx, c: Circle) = DrawUtil.drawCircle(ctx, c, Colors.black, 1.0)
-        private fun dot(ctx: Ctx, c: Pos, r: Double) = DrawUtil.drawCircle(ctx, Circle(c, r), Colors.black, 1.0, Colors.black)
+        private fun line(ctx: Ctx, a: Line) = HudRenderer.drawLine(ctx, a, Colors.black, 0.7)
+        private fun circ(ctx: Ctx, c: Circle) = HudRenderer.drawCircle(ctx, c, Colors.black, 1.0)
+        private fun dot(ctx: Ctx, c: Pos, r: Double) = HudRenderer.drawCircle(ctx, Circle(c, r), Colors.black, 1.0, Colors.black)
 
         // The per-action glyph drawn over the agent disc (split out of drawTemplate for complexity).
         private fun drawGlyph(ctx: Ctx, item: ActionItem, w: Int, rr: Int) {

@@ -14,8 +14,8 @@ import org.khronos.webgl.get
 import org.w3c.dom.ImageData
 import portal.Portal
 import system.display.Scene3D
+import system.ui.Bootstrap
 import system.ui.LoadingOverlay
-import util.HtmlUtil
 import util.Util
 import util.data.*
 import kotlin.math.sqrt
@@ -31,7 +31,7 @@ object World {
     // grid readback (see createStreetImage). Never displayed — the world renders in the three.js
     // custom layer and the HUD is DOM, so the old on-screen main/UI canvases are gone.
     lateinit var bgCan: Canvas
-    fun bgCtx() = HtmlUtil.getContext2D(bgCan)
+    fun bgCtx() = Bootstrap.getContext2D(bgCan)
 
     // var center: JSON = MapController.INITIAL_MAP_CENTER
     var mousePos: Pos? = null
@@ -148,7 +148,7 @@ object World {
                 LoadingOverlay.building(LoadingOverlay.PCT_PEOPLE, 100, total - count + 1, total, "Creating people")
                 val newNonFaction = NonFaction.create(World.grid)
                 World.allNonFaction.add(newNonFaction)
-                if (HtmlUtil.isRunningInBrowser()) {
+                if (Bootstrap.isRunningInBrowser()) {
                     Scene3D.sync() // render each NPC as created → serial drop-in
                     // (Flow fields flash once per portal when each portal's field is ready — not per NPC.)
                 }

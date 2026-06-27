@@ -6,7 +6,7 @@ import system.audio.Sound
 
 /**
  * Wires a speaker [icon] + volume [slider] to behave identically on the title screen ([Onboarding]) and
- * the in-game toolbar ([util.HtmlUtil]): dragging the slider sets the master volume, clicking the icon
+ * the in-game toolbar ([util.Bootstrap]): dragging the slider sets the master volume, clicking the icon
  * mutes/unmutes (zeroing or restoring the slider), and the icon glyph swaps to a muted speaker whenever
  * the slider sits at 0. The glyph tracks the *slider* (not [Sound.isMuted]) so it reads correctly
  * before the first user gesture, when the master volume is still 0 pending audio-enable.

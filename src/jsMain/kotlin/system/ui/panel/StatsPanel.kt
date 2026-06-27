@@ -18,7 +18,7 @@ import system.ui.el
  * reflow; a footer row shows time / tick / stray-XM. The **action log** is a collapsible section in
  * the right "intel" column. Per-faction entity counts + the MU time-series live in [HistoryPanel].
  *
- * [update] is called once per frame from [util.DrawUtil.redrawUserInterface]; it builds the DOM lazily
+ * [update] is called once per frame from [util.HudRenderer.redrawUserInterface]; it builds the DOM lazily
  * on first call and then just writes text/width. The Com list is only rebuilt when its contents change.
  */
 object StatsPanel {

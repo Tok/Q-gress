@@ -16,7 +16,7 @@ import system.display.fx.DamageNumberFx
 import system.ui.panel.DropRatesPanel
 import util.GameplayPrefs
 
-/** Builders for the game-menu dropdown controls — split out of HtmlUtil (size). */
+/** Builders for the game-menu dropdown controls — split out of Bootstrap (size). */
 object MenuControls {
 
     private const val COMBAT_TIP =

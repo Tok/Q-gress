@@ -4,7 +4,7 @@ import agent.Faction
 import agent.qvalue.QValue
 import kotlinx.browser.window
 import org.w3c.dom.HTMLInputElement
-import util.HtmlUtil
+import system.ui.Bootstrap
 
 /**
  * A per-faction source of behaviour-slider weightings — the **action substrate** (PLAN Phase 6.0). For
@@ -36,7 +36,7 @@ interface FactionPolicy {
 class DomSliderPolicy(private val faction: Faction) : FactionPolicy {
     override fun weight(value: QValue): Double {
         // Headless (Node tests / future SimRunner) there's no `window` at all — skip the DOM read entirely.
-        if (HtmlUtil.isNotRunningInBrowser()) return DEFAULT_WEIGHT
+        if (Bootstrap.isNotRunningInBrowser()) return DEFAULT_WEIGHT
         val id = value.id + "Slider" + faction.nickName
         val slider = window.document.getElementById(id) as? HTMLInputElement
         return slider?.valueAsNumber ?: DEFAULT_WEIGHT

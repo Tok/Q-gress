@@ -7,11 +7,12 @@ import config.Sim
 import kotlinx.browser.document
 import org.w3c.dom.url.URL
 import system.ui.DriverControls
+import system.ui.encodeURIComponent
 import system.ui.panel.TuningPanel
 import util.data.GeoCoords
 
 /**
- * Read/write of the game's start state in the page URL — the shareable link. Split out of [HtmlUtil]
+ * Read/write of the game's start state in the page URL — the shareable link. Split out of [Bootstrap]
  * (which only keeps the DOM-y navigation/clipboard bits). One link round-trips faction, location,
  * play size, portal/NPC counts, round field, quickstart, the RNG **seed** (so the world replays
  * deterministically), and the per-faction **tuning** sliders.

@@ -36,7 +36,7 @@ import kotlin.js.Json
  * roster, and a few dozen NPCs, all driven by the actual tick loop / AI on a real grid. So the title
  * is literally the game running behind the menu (same rendering, pathing, captures, links, fields,
  * XMPs — no parallel code). Built small + at a fixed location so it spins up fast; wiped by the reload
- * when a faction is picked (the game has no in-place teardown; see HtmlUtil's reload handoff).
+ * when a faction is picked (the game has no in-place teardown; see Bootstrap's reload handoff).
  */
 object TitleSim {
     private const val TITLE_PORTALS = 8

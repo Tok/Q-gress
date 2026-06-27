@@ -65,7 +65,7 @@ object TuningPanel {
     }
 
     /**
-     * Per-frame sync (called from [util.DrawUtil.redrawUserInterface]). If an **AI policy** drives the
+     * Per-frame sync (called from [util.HudRenderer.redrawUserInterface]). If an **AI policy** drives the
      * displayed faction, mirror its current vector onto the inputs and auto-move the read-only bars — the
      * player watches the sliders move under AI control. A **locked** slider (the padlock toggle, AI-driven
      * only) stays interactive and the AI doesn't overwrite it. Under manual control this is just the read-only-bar

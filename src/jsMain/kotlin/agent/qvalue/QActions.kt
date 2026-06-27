@@ -1,14 +1,14 @@
 package agent.qvalue
 
 import agent.action.ActionItem
-import util.HtmlUtil
+import system.ui.Bootstrap
 
 object QActions {
     // Icons use the high-res (supersampled) render so they stay crisp in the tuning list — the 1× icon
     // is ~12px and blurs when the browser scales it for HiDPI; we display it small via CSS. The icon is
     // UI-only, so headless (Node tests / future headless matches) we pass null — the hi-res icon maps are
     // empty without a browser and resolving one would throw.
-    private fun icon(item: ActionItem) = if (HtmlUtil.isRunningInBrowser()) ActionItem.getHiResIcon(item) else null
+    private fun icon(item: ActionItem) = if (Bootstrap.isRunningInBrowser()) ActionItem.getHiResIcon(item) else null
 
     // anywhere
     val MOVE_ELSEWHERE = QValue("move", 0.01, "move elsewhere", icon(ActionItem.MOVE))

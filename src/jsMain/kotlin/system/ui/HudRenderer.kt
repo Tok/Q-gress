@@ -1,4 +1,4 @@
-package util
+package system.ui
 
 import agent.Faction
 import config.*
@@ -26,7 +26,7 @@ import util.data.Line
 import util.data.Pos
 import kotlin.math.PI
 
-object DrawUtil {
+object HudRenderer {
     const val CODA = "Coda"
 
     fun redraw() {

@@ -7,9 +7,9 @@
     <ID>CyclomaticComplexMethod:Agent.kt$Agent.Companion$private fun xmCapacity(level: Int): Int</ID>
     <ID>CyclomaticComplexMethod:Cell.kt$Cell$fun isPassableInAllDirections(): Boolean</ID>
     <ID>ExplicitItLambdaParameter:Portal.kt$Portal${ it -&gt; destroyer?.addAp(Field.destroyAp) it.origin.fields.remove(it) }</ID>
-    <ID>ForEachOnRange:HtmlUtil.kt$HtmlUtil$0 until dropdown.options.length</ID>
-    <ID>ForEachOnRange:HtmlUtil.kt$HtmlUtil$1..Config.startFrogs()</ID>
-    <ID>ForEachOnRange:HtmlUtil.kt$HtmlUtil$1..Config.startSmurfs()</ID>
+    <ID>ForEachOnRange:Bootstrap.kt$Bootstrap$0 until dropdown.options.length</ID>
+    <ID>ForEachOnRange:Bootstrap.kt$Bootstrap$1..Config.startFrogs()</ID>
+    <ID>ForEachOnRange:Bootstrap.kt$Bootstrap$1..Config.startSmurfs()</ID>
     <ID>ForEachOnRange:StatsDisplay.kt$StatsDisplay$1..4</ID>
     <ID>ForEachOnRange:TopAgentsDisplay.kt$TopAgentsDisplay$1..4</ID>
     <ID>ForEachOnRange:TopAgentsDisplay.kt$TopAgentsDisplay$1..8</ID>
@@ -17,7 +17,7 @@
     <ID>ForEachOnRange:XmHeap.kt$XmHeap.Companion$1..coreCount</ID>
     <ID>FunctionOnlyReturningConstant:UltraStrikeLevel.kt$UltraStrikeLevel$fun critRate(): Double</ID>
     <ID>InvalidPackageDeclaration:TickDisplay.kt$package system.display</ID>
-    <ID>LongParameterList:DrawUtil.kt$DrawUtil$( ctx: Ctx, pos: Pos, text: String, fill: String, fontSize: Int, fontName: String = CODA, lineWidth: Double = 0.0, stroke: String = Colors.black, textAlign: CanvasTextAlign = CanvasTextAlign.START, )</ID>
+    <ID>LongParameterList:HudRenderer.kt$HudRenderer$( ctx: Ctx, pos: Pos, text: String, fill: String, fontSize: Int, fontName: String = CODA, lineWidth: Double = 0.0, stroke: String = Colors.black, textAlign: CanvasTextAlign = CanvasTextAlign.START, )</ID>
     <ID>MayBeConst:Checkpoint.kt$Checkpoint.Companion$val durationH = 5</ID>
     <ID>MayBeConst:Cycle.kt$Cycle.Companion$val ww = 8</ID>
     <ID>MayBeConst:Dim.kt$Dim$val agentDeployCircleLineWidth = 1.0</ID>

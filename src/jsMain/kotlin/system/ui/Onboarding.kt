@@ -21,7 +21,7 @@ import kotlin.math.abs
 
 /**
  * Pre-load onboarding screens, shown in order before any map loads: **faction → map-size →
- * location**, chained in-memory (no reloads) by `HtmlUtil.runOnboarding`. The location step is last
+ * location**, chained in-memory (no reloads) by `Bootstrap.runOnboarding`. The location step is last
  * so its play-area box reflects the already-chosen map size; it previews on the globe ([MiniMap]).
  */
 object Onboarding {

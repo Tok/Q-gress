@@ -1,6 +1,6 @@
 package system.effect
 
-import util.HtmlUtil
+import system.ui.Bootstrap
 
 /**
  * The live [Effects] sink — the install point for the imperative-shell boundary. Self-selects
@@ -18,7 +18,7 @@ object Fx {
      */
     var headless: Boolean = false
 
-    private fun default(): Effects = if (headless || HtmlUtil.isNotRunningInBrowser()) NoOpEffects else BrowserEffects
+    private fun default(): Effects = if (headless || Bootstrap.isNotRunningInBrowser()) NoOpEffects else BrowserEffects
 
     var sink: Effects = default()
         private set

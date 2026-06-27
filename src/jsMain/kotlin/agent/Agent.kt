@@ -17,7 +17,7 @@ import portal.Portal
 import portal.XmMap
 import system.audio.Sound
 import system.effect.Fx
-import util.HtmlUtil
+import system.ui.Bootstrap
 import util.NameGen
 import util.Util
 import util.data.*
@@ -378,7 +378,7 @@ data class Agent(
             val coords = at ?: Positions.createRandomPassable(grid)
             val actionPortal = initialActionPortal(coords)
             val agent = Agent(
-                faction, NameGen.handle(faction, HtmlUtil.locationName()), coords, Skills.createRandom(),
+                faction, NameGen.handle(faction, Bootstrap.locationName()), coords, Skills.createRandom(),
                 Inventory.empty(), Action.create(), actionPortal, actionPortal.location,
                 ap, initialXm,
             )

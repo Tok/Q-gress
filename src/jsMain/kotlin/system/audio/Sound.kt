@@ -20,7 +20,7 @@ import portal.Link
 import system.Checkpoint
 import system.HeadlessRun
 import system.display.Scene3D
-import util.HtmlUtil
+import system.ui.Bootstrap
 import util.Util
 import util.data.Pos
 import kotlin.math.PI
@@ -96,7 +96,7 @@ object Sound {
 
     /** Muffle (lowpass) the whole mix, or open it back up — used to push the title audio behind onboarding. */
     fun setMuffled(on: Boolean) {
-        if (HtmlUtil.isNotRunningInBrowser()) return
+        if (Bootstrap.isNotRunningInBrowser()) return
         // Opening back up restores the player's own AUDIO-tab cutoff, not a hardcoded "open" (else the muffle
         // would stomp a low-pass they'd dialled in).
         AudioFx.setLowpass(if (on) MUFFLE_CLOSED_HZ else AudioFx.lowpassHz)
@@ -125,7 +125,7 @@ object Sound {
 
     /** Resume the audio context and turn sound on. Idempotent; call on a user gesture. */
     fun enableAudio() {
-        if (HtmlUtil.isNotRunningInBrowser()) return
+        if (Bootstrap.isNotRunningInBrowser()) return
         if (audioCtx.state != "running") audioCtx.resume()
         // The first gesture brings the volume up — to the SAVED level — UNLESS the user has muted. Afterwards the
         // level is left alone, so a gesture / world-gen never un-mutes them.
@@ -136,7 +136,7 @@ object Sound {
     }
 
     fun setMasterVolume(volume: Double) {
-        if (HtmlUtil.isNotRunningInBrowser()) return
+        if (Bootstrap.isNotRunningInBrowser()) return
         if (audioCtx.state != "running") audioCtx.resume()
         masterVolume = volume
         userMuted = volume <= 0.0 // dragging the slider to 0 IS a mute; any positive level un-mutes
@@ -149,7 +149,7 @@ object Sound {
     // flight (in-browser training/leaderboard — the parked matches must be silent). Every play* method checks
     // this first, so it's the single gate that keeps ALL sound — and the lazy audio graph — off; no per-call
     // guards needed.
-    internal fun isMuted() = masterVolume <= 0.0 || HtmlUtil.isNotRunningInBrowser() || HeadlessRun.active || pausedMute
+    internal fun isMuted() = masterVolume <= 0.0 || Bootstrap.isNotRunningInBrowser() || HeadlessRun.active || pausedMute
 
     // Implicit mute while the sim is paused — silences sound without touching the user's volume/mute setting.
     private var pausedMute = false
@@ -171,7 +171,7 @@ object Sound {
      * frame keeps the last orientation.
      */
     fun updateListener(eye: DoubleArray, forward: DoubleArray, up: DoubleArray) {
-        if (HtmlUtil.isNotRunningInBrowser()) return
+        if (Bootstrap.isNotRunningInBrowser()) return
         val fl = sqrt(forward[0] * forward[0] + forward[1] * forward[1] + forward[2] * forward[2])
         val ul = sqrt(up[0] * up[0] + up[1] * up[1] + up[2] * up[2])
         if (fl < EPS || ul < EPS) return

@@ -1,6 +1,6 @@
 package config
 
-import util.HtmlUtil
+import system.ui.Bootstrap
 
 object Constants {
     const val phi = 1.61803398874989484820
@@ -12,6 +12,6 @@ object Constants {
     private const val location = "https://tok.github.io/"
     private const val token = "Q-gress/"
 
-    fun token() = if (HtmlUtil.isLocal()) localToken else token
-    fun targetUrl() = if (HtmlUtil.isLocal()) localLocation else location
+    fun token() = if (Bootstrap.isLocal()) localToken else token
+    fun targetUrl() = if (Bootstrap.isLocal()) localLocation else location
 }

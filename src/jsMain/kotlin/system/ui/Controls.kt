@@ -7,7 +7,7 @@ import org.w3c.dom.HTMLDivElement
 
 /**
  * Onboarding/help UI: an on-screen controls legend and a desktop-only gate
- * (the game needs WebGL + a mouse). Kept out of HtmlUtil to avoid bloating it.
+ * (the game needs WebGL + a mouse). Kept out of Bootstrap to avoid bloating it.
  */
 object Controls {
     /** True if the device can't reasonably run the game (no WebGL, or pure-touch / no mouse). */

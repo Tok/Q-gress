@@ -1,6 +1,7 @@
 package util
 
 import kotlinx.browser.localStorage
+import system.ui.Bootstrap
 
 /**
  * Shared `localStorage` plumbing for the settings stores ([AudioPrefs], [AmbientPrefs], [GameplayPrefs],
@@ -11,7 +12,7 @@ import kotlinx.browser.localStorage
 object Prefs {
     /** Read + parse the JSON blob at [key], or null when headless / absent / unparseable. */
     fun read(key: String): dynamic? {
-        if (HtmlUtil.isNotRunningInBrowser()) return null
+        if (Bootstrap.isNotRunningInBrowser()) return null
         return runCatching {
             val raw = localStorage.getItem(key) ?: return null
             JSON.parse<dynamic>(raw)
@@ -20,7 +21,7 @@ object Prefs {
 
     /** Serialize [json] and store it under [key] (no-op headless / on failure). */
     fun save(key: String, json: () -> dynamic) {
-        if (HtmlUtil.isNotRunningInBrowser()) return
+        if (Bootstrap.isNotRunningInBrowser()) return
         runCatching { localStorage.setItem(key, JSON.stringify(json())) }
     }
 

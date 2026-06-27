@@ -1,7 +1,7 @@
 package system.audio
 
 import kotlinx.browser.localStorage
-import util.HtmlUtil
+import system.ui.Bootstrap
 
 /**
  * Persists the master-volume level + mute intent to `localStorage`, so they survive the page reloads on the
@@ -14,14 +14,14 @@ object VolumePrefs {
 
     /** (saved non-mute level or null, muted intent). */
     fun load(): Pair<Double?, Boolean> {
-        if (HtmlUtil.isNotRunningInBrowser()) return null to false
+        if (Bootstrap.isNotRunningInBrowser()) return null to false
         return runCatching {
             localStorage.getItem(VOL_KEY)?.toDoubleOrNull()?.takeIf { it > 0.0 } to (localStorage.getItem(MUTE_KEY) == "true")
         }.getOrDefault(null to false)
     }
 
     fun save(volume: Double, muted: Boolean) {
-        if (HtmlUtil.isNotRunningInBrowser()) return
+        if (Bootstrap.isNotRunningInBrowser()) return
         runCatching {
             localStorage.setItem(VOL_KEY, volume.toString())
             localStorage.setItem(MUTE_KEY, muted.toString())

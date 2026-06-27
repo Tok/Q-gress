@@ -4,7 +4,7 @@ import World
 import config.Dim
 import config.Sim
 import extension.Grid
-import util.HtmlUtil
+import system.ui.Bootstrap
 import util.Util
 
 /**
@@ -36,10 +36,10 @@ object Positions {
     /** Whether a new portal can still be placed without clipping an existing one (a free, well-spaced
      *  candidate exists). Always true headless (no rendering → spacing irrelevant). Lets the density
      *  system skip discovery when the map is packed instead of failing to place. */
-    fun hasPortalSpace(): Boolean = HtmlUtil.isNotRunningInBrowser() || portalCandidates().isNotEmpty()
+    fun hasPortalSpace(): Boolean = Bootstrap.isNotRunningInBrowser() || portalCandidates().isNotEmpty()
 
     fun createRandomForPortal(): Pos {
-        if (HtmlUtil.isNotRunningInBrowser()) {
+        if (Bootstrap.isNotRunningInBrowser()) {
             return Pos(Util.randomInt(Sim.width), Util.randomInt(Sim.height))
         }
         val candidates = portalCandidates()
@@ -64,7 +64,7 @@ object Positions {
 
     fun createRandomPassable(grid: Grid) = createRandomPassable(grid, retries = 10)
     private fun createRandomPassable(grid: Grid, retries: Int): Pos {
-        if (HtmlUtil.isNotRunningInBrowser()) {
+        if (Bootstrap.isNotRunningInBrowser()) {
             val keys = passableKeys(grid)
             if (keys.isEmpty()) return Pos(0, 0)
             // Grid keys are SHADOW cells; agents/portals live in SIM space. Return the cell centre in sim

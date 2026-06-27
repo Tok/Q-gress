@@ -4,7 +4,7 @@ import World
 import config.Sim
 import org.khronos.webgl.set
 import portal.Field
-import util.HtmlUtil
+import system.ui.Bootstrap
 import util.Util
 import util.data.Pos
 import kotlin.math.PI
@@ -134,7 +134,7 @@ object AmbientBed {
     }
 
     private fun build() {
-        if (built || HtmlUtil.isNotRunningInBrowser()) return
+        if (built || Bootstrap.isNotRunningInBrowser()) return
         built = true
         val ctx = Sound.audioCtx.asDynamic()
         val lp = ctx.createBiquadFilter()

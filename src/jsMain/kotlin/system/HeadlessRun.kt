@@ -7,7 +7,7 @@ import system.effect.Fx
  * Brackets an in-browser **headless evaluation** (the TRAIN-tab trainer, the leaderboard) so it never disturbs
  * the live game: [begin] parks the live world via [WorldSnapshot] and forces the no-op effect sink ([Fx.headless]);
  * [end] clears the throwaway match state and restores the world + renderer exactly as they were. The tick loop
- * pauses while [active] (see `HtmlUtil.tick`), and the eval drives its own matches chunked over `setTimeout`.
+ * pauses while [active] (see `Bootstrap.tick`), and the eval drives its own matches chunked over `setTimeout`.
  * Re-entrant-safe via a simple depth count, but evals are expected to be one-at-a-time.
  */
 object HeadlessRun {

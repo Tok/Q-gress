@@ -1,4 +1,4 @@
-package util
+package system.ui
 
 import kotlinx.browser.document
 import org.w3c.dom.HTMLInputElement
@@ -7,7 +7,7 @@ import org.w3c.dom.HTMLTextAreaElement
 import org.w3c.dom.events.KeyboardEvent
 
 /**
- * Global keyboard shortcuts for the running game. The actual effects live in [HtmlUtil] (map, sim,
+ * Global keyboard shortcuts for the running game. The actual effects live in [Bootstrap] (map, sim,
  * audio); this just maps keys → [Handlers] callbacks. Keys are ignored while typing in a form field,
  * and a handled key calls `preventDefault` (so Space/arrows don't scroll, +/- don't browser-zoom).
  *

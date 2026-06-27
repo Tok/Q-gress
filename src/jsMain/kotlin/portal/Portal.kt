@@ -31,6 +31,7 @@ import system.Com
 import system.audio.Sound
 import system.effect.Fx
 import system.grid.Pathfinding
+import system.ui.Bootstrap
 import util.*
 import util.data.*
 import kotlin.math.*
@@ -132,7 +133,7 @@ data class Portal(
         val mod = mods.remove(slot) ?: return null
         destroyer?.addAp(MOD_DESTROY_AP)
         // Subtle "plop" as the item pops out of its slot (any mod — shield, heat sink, …).
-        if (HtmlUtil.isRunningInBrowser()) Sound.playKnockOutSound(location)
+        if (Bootstrap.isRunningInBrowser()) Sound.playKnockOutSound(location)
         Com.addMessage("$destroyer knocked a ${mod.abbr} off $this.", Com.Importance.MINOR, destroyer?.faction?.color)
         return mod
     }
@@ -655,7 +656,7 @@ data class Portal(
                 mutableSetOf(),
                 null,
             )
-            if (HtmlUtil.isRunningInBrowser()) {
+            if (Bootstrap.isRunningInBrowser()) {
                 Sound.playPortalCreationSound(location)
                 Pathfinding.computeFieldAsync(location) { field ->
                     portal.vectors = field
@@ -674,7 +675,7 @@ data class Portal(
         // centre clusters). Each candidate already respects the min-distance gate (createRandomForPortal).
         // Used for the initial spawns AND the Explore action.
         fun createRandom(): Portal {
-            if (!HtmlUtil.isRunningInBrowser()) return create(Positions.createRandomForPortal())
+            if (!Bootstrap.isRunningInBrowser()) return create(Positions.createRandomForPortal())
             val candidates = Positions.portalCandidates() // ONE grid scan; sample from it (cheap)
             if (candidates.isEmpty()) return create(Positions.createRandomForPortal())
             fun pick() = candidates[(Util.random() * candidates.size).toInt()]

@@ -78,7 +78,7 @@ object TrainerPanel {
     /** True while a training run is in flight — the tick loop pauses on this so matches don't fight the game. */
     fun isTraining(): Boolean = running
 
-    /** Lazy-build the panel; called each frame from [util.DrawUtil] (paused during a run, which drives its own UI). */
+    /** Lazy-build the panel; called each frame from [util.HudRenderer] (paused during a run, which drives its own UI). */
     fun update() {
         ensure()
     }

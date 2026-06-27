@@ -15,7 +15,7 @@ import system.map.MapController
  * spawning world (portals + their colour-coded flow vectors) shows through behind the progress.
  */
 object LoadingOverlay {
-    // Stage fill targets (%), in load order — kept here so HtmlUtil + MapController share one scale.
+    // Stage fill targets (%), in load order — kept here so Bootstrap + MapController share one scale.
     const val PCT_MAP = 12
     const val PCT_STREET = 22
     const val PCT_SHADOW = 38

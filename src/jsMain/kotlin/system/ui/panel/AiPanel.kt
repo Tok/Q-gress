@@ -11,7 +11,7 @@ import system.ui.el
  * The **AI** footer tab (PLAN Phase 6): per faction, a live readout of its **observation** — the normalized
  * world feature vector ([Observation]) a net/LLM receives, as labelled 0–1 bars. The driver picker moved to
  * the footer header ([DriverControls], reachable from any tab); this stays the transparency surface. Rebuilt
- * lazily; the bars refresh each frame from [DrawUtil.redrawUserInterface].
+ * lazily; the bars refresh each frame from [HudRenderer.redrawUserInterface].
  */
 object AiPanel {
     // One label per Observation slot — keep in order/length sync with Observation.observe().

@@ -1,4 +1,4 @@
-package util
+package system.ui
 import World
 import agent.Agent
 import agent.Faction
@@ -46,13 +46,18 @@ import system.ui.Onboarding
 import system.ui.VolumeControl
 import system.ui.panel.DropRatesPanel
 import system.ui.panel.TuningPanel
+import util.Debug
+import util.GameUrl
+import util.GameplayPrefs
+import util.NameGen
+import util.Util
 import util.data.*
 import kotlin.js.Json
 
 @Suppress("UnusedParameter") // external JS global; param describes the contract
 external fun encodeURIComponent(uri: String): String
 
-object HtmlUtil {
+object Bootstrap {
     private var intervalID = 0
     private var coloredMap = true // terrain colour on (eases in after world-gen); Menu toggle flips it
     private const val PAUSE_BUTTON_ID = "pauseButton"
@@ -84,7 +89,7 @@ object HtmlUtil {
         if (!World.isReady || HeadlessRun.active) return // paused during an in-browser headless eval (trainer / leaderboard)
         Simulation.stepEntities() // shared functional-core step (agents + NPCs + stuck tracker)
         window.requestAnimationFrame {
-            DrawUtil.redraw()
+            HudRenderer.redraw()
             val userFaction = World.userFactionOrThrow()
             val factions = userFaction to userFaction.enemy()
             val enlMu = World.calcTotalMu(Faction.ENL)
@@ -93,7 +98,7 @@ object HtmlUtil {
             val firstMu = if (factions.first == Faction.ENL) enlMu else resMu
             val secondMu = if (factions.first == Faction.RES) enlMu else resMu
             Scale.setLeading(firstMu >= secondMu) // major key while the player's faction leads, else minor
-            DrawUtil.redrawUserInterface(firstMu, secondMu, factions)
+            HudRenderer.redrawUserInterface(firstMu, secondMu, factions)
             World.tick++
         }
     }
@@ -358,7 +363,7 @@ object HtmlUtil {
     }
 
     private fun demoTick() {
-        if (World.isReady) window.requestAnimationFrame { DrawUtil.redraw() }
+        if (World.isReady) window.requestAnimationFrame { HudRenderer.redraw() }
     }
 
     private fun initWorld(center: Json) {

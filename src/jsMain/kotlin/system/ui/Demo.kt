@@ -15,7 +15,7 @@ import util.data.Pos
 /**
  * Demo harness (hash-routed, separate from the game): a menu of demo scenes for triggering and
  * tuning effects. `#demo` shows the menu; `#demo/<scene>` runs a scene (the 3D bootstrap is in
- * HtmlUtil.loadDemoScene). Add a scene by listing it in [SCENES] + handling it in [showControls].
+ * Bootstrap.loadDemoScene). Add a scene by listing it in [SCENES] + handling it in [showControls].
  */
 object Demo {
     enum class Scene { MENU, SANDBOX, AUDIO }
@@ -49,7 +49,7 @@ object Demo {
         else -> null
     }
 
-    /** The demo menu (`#demo`): links to each demo scene. Hash links reload-route (see HtmlUtil.load). */
+    /** The demo menu (`#demo`): links to each demo scene. Hash links reload-route (see Bootstrap.load). */
     fun showMenu() {
         val panel = document.createElement("div") as HTMLDivElement
         panel.id = PANEL_ID

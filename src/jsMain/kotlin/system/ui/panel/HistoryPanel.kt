@@ -17,7 +17,7 @@ import util.ColorUtil
  * the rolling checkpoint window. Unifies the old single MU chart ([CycleChart], retired) and the
  * separate counts table into one panel, and tracks every metric over time (not just MU).
  *
- * [update] runs once per frame from [util.DrawUtil.redrawUserInterface]: the header numbers refresh
+ * [update] runs once per frame from [util.HudRenderer.redrawUserInterface]: the header numbers refresh
  * every frame (cheap text sets), but the sparklines only re-feed uPlot when a checkpoint changed.
  */
 object HistoryPanel {

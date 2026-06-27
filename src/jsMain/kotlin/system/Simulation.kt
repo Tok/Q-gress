@@ -7,7 +7,7 @@ import portal.XmMap
 import util.Util
 
 /**
- * The functional-core tick step, shared by the live game (`HtmlUtil.tick`, which wraps this in a
+ * The functional-core tick step, shared by the live game (`Bootstrap.tick`, which wraps this in a
  * `requestAnimationFrame` render + HUD scoring) and the headless match harness (`ai.SimRunner`, which
  * adds synchronous `Cycle` scoring). Advances every agent + NPC one tick and feeds the stuck tracker —
  * no rendering / DOM / audio scheduling. Mutates `World` in place (the imperative shell calls it).

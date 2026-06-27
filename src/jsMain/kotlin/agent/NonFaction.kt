@@ -10,6 +10,7 @@ import portal.Portal
 import system.audio.Sound
 import system.grid.Pathfinding
 import system.map.MapController
+import system.ui.Bootstrap
 import system.ui.LoadingOverlay
 import util.*
 import util.data.*
@@ -232,7 +233,7 @@ data class NonFaction(
             if (maybeField != null && maybeField.isNotEmpty()) {
                 return maybeField
             }
-            if (Config.headlessFieldCompute && HtmlUtil.isNotRunningInBrowser()) {
+            if (Config.headlessFieldCompute && Bootstrap.isNotRunningInBrowser()) {
                 return Pathfinding.computeFieldSync(destination).also { fields[destination] = it } // headless match
             }
             if (pending.add(destination)) {

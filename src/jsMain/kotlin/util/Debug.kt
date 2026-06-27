@@ -2,6 +2,7 @@ package util
 
 import kotlinx.browser.document
 import org.w3c.dom.url.URL
+import system.ui.Bootstrap
 
 /**
  * Dev-tooling gate (PLAN: `?debug` tooling). Enabled by the `?debug` URL param — runtime diagnostics
@@ -13,7 +14,7 @@ import org.w3c.dom.url.URL
  */
 object Debug {
     private val raw: String? by lazy {
-        if (!HtmlUtil.isRunningInBrowser()) null else URL(document.location?.href ?: "").searchParams.get("debug")
+        if (!Bootstrap.isRunningInBrowser()) null else URL(document.location?.href ?: "").searchParams.get("debug")
     }
 
     val enabled: Boolean get() = raw != null
