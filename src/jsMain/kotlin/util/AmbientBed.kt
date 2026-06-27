@@ -51,7 +51,9 @@ object AmbientBed {
 
     fun setCutoff(hz: Double) {
         cutoffHz = hz.coerceIn(80.0, 2000.0)
-        filter?.frequency?.asDynamic()?.setTargetAtTime(cutoffHz, SoundUtil.audioCtx.asDynamic().currentTime, 0.2)
+        // `filter` is already `dynamic`, so calling `.asDynamic()` here would resolve as a real JS
+        // member call (no such method) rather than the Kotlin intrinsic — call the param directly.
+        filter?.frequency?.setTargetAtTime(cutoffHz, SoundUtil.audioCtx.asDynamic().currentTime, 0.2)
     }
 
     fun setDistance(v: Double) {
@@ -102,11 +104,11 @@ object AmbientBed {
         ramp(level * vol * distGain * BOOST)
         // Stereo-pan toward the field centroid's horizontal position.
         val panX = ((ccx - Sim.width / 2.0) / (Sim.width / 2.0)).coerceIn(-1.0, 1.0)
-        panner?.pan?.asDynamic()?.setTargetAtTime(panX, SoundUtil.audioCtx.asDynamic().currentTime, 0.2)
+        panner?.pan?.setTargetAtTime(panX, SoundUtil.audioCtx.asDynamic().currentTime, 0.2)
         // Field health (mean of each field's 3 portals, area-weighted) shifts the timbre: healthy fields hum
         // brighter/fuller (the base cutoff opens up); weak/decaying fields read duller.
         val health = (healthSum / totalArea).coerceIn(0.0, 1.0)
-        filter?.frequency?.asDynamic()?.setTargetAtTime(cutoffHz * (0.55 + 0.9 * health), SoundUtil.audioCtx.asDynamic().currentTime, 0.25)
+        filter?.frequency?.setTargetAtTime(cutoffHz * (0.55 + 0.9 * health), SoundUtil.audioCtx.asDynamic().currentTime, 0.25)
     }
 
     // A field's health = the mean resonator health of its three portals (0..1).
@@ -114,7 +116,7 @@ object AmbientBed {
         (f.origin.calcHealth() + f.primaryAnchor.calcHealth() + f.secondaryAnchor.calcHealth()) / 300.0
 
     private fun ramp(target: Double) {
-        master?.gain?.asDynamic()?.setTargetAtTime(target, SoundUtil.audioCtx.asDynamic().currentTime, RAMP_S)
+        master?.gain?.setTargetAtTime(target, SoundUtil.audioCtx.asDynamic().currentTime, RAMP_S)
     }
 
     private fun centroid(f: Field): Pos = Pos(
