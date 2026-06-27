@@ -503,25 +503,6 @@ object Bootstrap {
         }
     }
 
-    fun isBlockedByMapbox(pos: Pos) = isInMapboxArea(pos) || isInOsmArea(pos)
-
-    private fun isInMapboxArea(pos: Pos): Boolean {
-        val area = Line(Pos(-20, Dim.height - 40), Pos(90, Dim.height))
-        return pos.x > area.from.x &&
-            pos.x <= area.to.x &&
-            pos.y > area.from.y &&
-            pos.y <= area.to.y
-    }
-
-    private fun isInOsmArea(pos: Pos): Boolean {
-        val w = Dim.width
-        val area = Line(Pos(w - 280, Dim.height - 30), Pos(w, Dim.height))
-        return pos.x > area.from.x &&
-            pos.x <= area.to.x &&
-            pos.y > area.from.y &&
-            pos.y <= area.to.y
-    }
-
     private fun onMapClick(event: dynamic) {
         Sound.enableAudio() // first user gesture → resume audio (autoplay policy)
         // Ground point under the cursor; MapLibre fires "click" only for a click, not after a drag.
