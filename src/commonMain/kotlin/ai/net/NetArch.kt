@@ -1,21 +1,18 @@
 package ai.net
 
-import ai.Observation
-import ai.SliderVector
-
 /**
  * A net **architecture** (PLAN Phase 6.2) — the experimentation substrate. Defines the hidden layers (any
  * number, any width — default **two layers of 16**), whether neurons carry a [bias], and the hidden
- * [activation]. The input/output sizes are fixed by [Observation]/[SliderVector]. Pure + comparable, so two
- * archs can be pitted against each other in a [ai.Tournament] and a genome's shape round-trips via [GenomeIO].
+ * [activation]. The input/output sizes are the fixed net I/O contract ([INPUTS]/[OUTPUTS]). Pure + comparable,
+ * so two archs can be pitted against each other and a genome's shape round-trips through serialization.
  */
 data class NetArch(val hiddens: List<Int> = DEFAULT_HIDDENS, val bias: Boolean = true, val activation: Activation = Activation.TANH) {
     init {
         require(hiddens.isNotEmpty() && hiddens.all { it > 0 }) { "need at least one hidden layer, all widths > 0" }
     }
 
-    val inputs: Int get() = Observation.SIZE
-    val outputs: Int get() = SliderVector.SIZE
+    val inputs: Int get() = INPUTS
+    val outputs: Int get() = OUTPUTS
     private fun biasCount(): Int = if (bias) 1 else 0
 
     /** Every layer width in order: input, hidden…, output. */
@@ -45,6 +42,12 @@ data class NetArch(val hiddens: List<Int> = DEFAULT_HIDDENS, val bias: Boolean =
     fun label(): String = layerSizes().joinToString(" → ")
 
     companion object {
+        // The fixed net I/O contract. INPUTS mirrors ai.Observation.SIZE (the feature-vector length) and
+        // OUTPUTS mirrors ai.SliderVector.SIZE (QActions + QDestinations = 10 + 7). Pinned here so the net
+        // core stays platform-agnostic (those classes are World/DOM-coupled); NetContractTest guards drift.
+        const val INPUTS = 13
+        const val OUTPUTS = 17
+
         val DEFAULT_HIDDENS = listOf(16, 16) // two hidden layers of 16 — the default architecture
         val DEFAULT = NetArch()
     }

@@ -1,13 +1,11 @@
 package ai.net
 
-import ai.Observation
-import ai.SliderVector
 import kotlin.math.exp
 
 /**
  * A feed-forward MLP of arbitrary depth/width — the custom faction driver (PLAN Phase 6.2 / docs/NN.md). Its
- * shape is a [NetArch] (hidden layers, bias, activation); the input is an [Observation] and the output is the
- * [SliderVector.SIZE] behaviour sliders (always sigmoid → 0..1). All weights live in one flat genome (layout:
+ * shape is a [NetArch] (hidden layers, bias, activation); the input is an observation vector ([INPUTS]
+ * features) and the output is the [OUTPUTS] behaviour sliders (always sigmoid → 0..1). All weights live in one flat genome (layout:
  * per layer transition, per output neuron, an optional bias then one weight per input), so neuroevolution can
  * mutate + serialize it. Pure, deterministic forward pass.
  */
@@ -57,8 +55,8 @@ class Net(val arch: NetArch, private val weights: DoubleArray) {
     }
 
     companion object {
-        val INPUTS = Observation.SIZE
-        val OUTPUTS = SliderVector.SIZE
+        val INPUTS = NetArch.INPUTS
+        val OUTPUTS = NetArch.OUTPUTS
 
         /** Genome length for [arch]. */
         fun genomeSize(arch: NetArch = NetArch.DEFAULT): Int = arch.genomeSize()
