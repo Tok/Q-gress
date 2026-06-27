@@ -1,4 +1,4 @@
-package system.display
+package util.data
 
 import kotlin.math.cos
 import kotlin.math.sin

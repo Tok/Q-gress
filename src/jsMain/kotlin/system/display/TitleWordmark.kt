@@ -4,6 +4,11 @@ import external.FontLoader
 import external.TextGeometry
 import external.Three
 import util.Rng
+import util.data.add
+import util.data.cross
+import util.data.dot
+import util.data.norm
+import util.data.scale
 import kotlin.math.sqrt
 
 /**
