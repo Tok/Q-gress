@@ -9,6 +9,7 @@ import org.w3c.dom.url.URL
 import org.w3c.files.Blob
 import org.w3c.files.BlobPropertyBag
 import system.map.MapController
+import system.map.ShadowGridBuilder
 import system.ui.LoadingOverlay
 
 /**
@@ -24,10 +25,10 @@ object GridCapture {
     private val fixtures = mutableListOf<GridFixture>()
     private var currentPreset: Location? = null
 
-    /** Called from MapController.createGrid (capture mode) with the raw, pre-connectIslands grid. */
+    /** Called from ShadowGridBuilder.build (capture mode) with the raw, pre-connectIslands grid. */
     fun onGridBuilt(rawGrid: Grid, w: Int, h: Int) {
         val preset = currentPreset ?: return
-        fixtures.add(GridFixture.fromGrid(preset.name, rawGrid, w, h, MapController.OFFSCREEN_CELL_ROWS))
+        fixtures.add(GridFixture.fromGrid(preset.name, rawGrid, w, h, ShadowGridBuilder.OFFSCREEN_CELL_ROWS))
     }
 
     fun sweep() {
