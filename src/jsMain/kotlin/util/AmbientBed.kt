@@ -6,6 +6,7 @@ import org.khronos.webgl.set
 import portal.Field
 import util.data.Pos
 import kotlin.math.PI
+import kotlin.math.sqrt
 
 /**
  * The **field hum** — a generative atmospheric drone (sub-bass / rumble / noise / band-passed drone through a
@@ -31,6 +32,8 @@ object AmbientBed {
         private set // master scale on the coverage-driven volume
     var cutoffHz = 320.0
         private set
+    var distance = 0.4
+        private set // distance falloff amount: 0 = flat (no falloff), 1 = silent when the fields sit at the edge
 
     private var built = false
     private var master: dynamic = null
@@ -51,10 +54,15 @@ object AmbientBed {
         filter?.frequency?.asDynamic()?.setTargetAtTime(cutoffHz, SoundUtil.audioCtx.asDynamic().currentTime, 0.2)
     }
 
+    fun setDistance(v: Double) {
+        distance = v.coerceIn(0.0, 1.0)
+    }
+
     fun resetTuning() {
         enabled = true
         level = 0.6
         cutoffHz = 320.0
+        distance = 0.4
         if (built) setCutoff(cutoffHz)
     }
 
@@ -82,9 +90,16 @@ object AmbientBed {
         if (!built) build()
         val coverage = totalArea / playAreaMu() // layered fields can push this past 1 — that's fine, vol clamps
         val vol = (coverage / FULL_AT).coerceIn(0.0, 1.0) // 50% coverage → full volume
-        ramp(level * vol * BOOST)
-        // Stereo-pan toward the field centroid's horizontal position (no distance attenuation → loud + steady).
-        val panX = (((cx / totalArea) - Sim.width / 2.0) / (Sim.width / 2.0)).coerceIn(-1.0, 1.0)
+        val ccx = cx / totalArea
+        val ccy = cy / totalArea
+        // Distance falloff: quieter as the field centroid sits further from the play-area centre (tunable amount).
+        val dx = ccx - Sim.width / 2.0
+        val dy = ccy - Sim.height / 2.0
+        val normDist = (sqrt(dx * dx + dy * dy) / Sim.fieldRadius()).coerceIn(0.0, 1.0)
+        val distGain = (1.0 - distance * normDist).coerceIn(0.0, 1.0)
+        ramp(level * vol * distGain * BOOST)
+        // Stereo-pan toward the field centroid's horizontal position.
+        val panX = ((ccx - Sim.width / 2.0) / (Sim.width / 2.0)).coerceIn(-1.0, 1.0)
         panner?.pan?.asDynamic()?.setTargetAtTime(panX, SoundUtil.audioCtx.asDynamic().currentTime, 0.2)
     }
 

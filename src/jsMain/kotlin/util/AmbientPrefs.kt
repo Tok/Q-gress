@@ -16,8 +16,10 @@ object AmbientPrefs {
             val o = JSON.parse<dynamic>(localStorage.getItem(KEY) ?: return)
             val level = o.level
             val cutoff = o.cutoff
+            val distance = o.distance
             if (level != null) AmbientBed.setLevel(level.unsafeCast<Double>())
             if (cutoff != null) AmbientBed.setCutoff(cutoff.unsafeCast<Double>())
+            if (distance != null) AmbientBed.setDistance(distance.unsafeCast<Double>())
             if (o.enabled == false) AmbientBed.setEnabled(false) // default on (the field hum is automatic)
         }
     }
@@ -33,6 +35,7 @@ object AmbientPrefs {
         o.enabled = AmbientBed.enabled
         o.level = AmbientBed.level
         o.cutoff = AmbientBed.cutoffHz
+        o.distance = AmbientBed.distance
         return o
     }
 }

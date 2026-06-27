@@ -218,6 +218,7 @@ object AudioPanel {
         val grid = el("div", "audioKnobs")
         grid.appendChild(knob("Level", 0.0..1.0, 0.6, { AmbientBed.level }, { AmbientBed.setLevel(it) }, ::pct))
         grid.appendChild(knob("Cutoff", 80.0..2000.0, 320.0, { AmbientBed.cutoffHz }, { AmbientBed.setCutoff(it) }, ::khz))
+        grid.appendChild(knob("Distance", 0.0..1.0, 0.4, { AmbientBed.distance }, { AmbientBed.setDistance(it) }, ::pct))
         box.appendChild(grid)
         pane.appendChild(box)
         return pane
