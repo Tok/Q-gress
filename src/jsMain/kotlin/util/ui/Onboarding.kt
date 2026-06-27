@@ -100,10 +100,13 @@ object Onboarding {
         return a
     }
 
-    /** Thin "© Zirteq 2026" credit in the title footer, beside the GitHub link. */
+    private const val CREDIT_START_YEAR = 2018 // first commit; end year is the live current year (see below)
+
+    /** Thin "© Zirteq 2018–<current year>" credit in the title footer, beside the GitHub link. */
     private fun createTitleCredit(): HTMLElement {
         val credit = div("titleCredit")
-        credit.textContent = "© Zirteq 2026"
+        val now = kotlin.js.Date().getFullYear()
+        credit.textContent = "© Zirteq $CREDIT_START_YEAR–$now"
         return credit
     }
 
