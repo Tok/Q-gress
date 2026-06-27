@@ -1526,13 +1526,18 @@ html, body {
    gameplay. z above the onboarding (9998) + loading (9999) overlays so it's always clickable. */
 .persistentVolume {
     position: fixed;
-    top: 0;
-    height: 52px; /* match the toolbar row so align-items centres it level with the rest of the header */
+    top: 11px; /* a snug pill centred in the 52px header band (top:0..52) */
     right: 22px;
     z-index: 10001;
     display: flex;
     align-items: center;
     gap: 8px;
+    padding: 4px 12px;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.45);
+    -webkit-backdrop-filter: blur(7px);
+    backdrop-filter: blur(7px);
+    border: 1px solid var(--ui-glass-border);
     font-family: "Coda", monospace;
     font-size: 13px;
     color: #cccccc;
