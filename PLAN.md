@@ -289,6 +289,12 @@ the board; fair shuffled agent order). Deeper "no single strategy dominates" val
 (playtest + the headless harness); **self-play fitness shaping** is the AI-era lever.
 
 ## Under consideration (icebox)
+- **Mini-map (top-down, north-up, fields always visible).** A small fixed overlay that renders the play area
+  from an **exact top-down** view that's **always facing north** — independent of the main 3D camera's pan/
+  tilt/rotation — so the **control fields** (and portals/links) stay legible at a glance even while the main
+  view is pitched and turned. A constant strategic read of who owns what, where the fields are layered, and
+  where the action is. (Could reuse the field/link geometry against a simple north-up projection of
+  `Sim.fieldRadius()` / the grid; pairs with the movable/expandable play field.)
 - **Weather (gameplay + atmosphere).** Rain/fog/snow/day-night as a visual layer **and** a modifier (rain
   drains agent battery faster, fog cuts hack/attack range, snow slows movement) — random/seasonal or from a
   real weather API for the location. Pairs with the colony-management battery idea.

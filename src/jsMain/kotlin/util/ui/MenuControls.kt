@@ -8,6 +8,7 @@ import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLSpanElement
+import org.w3c.dom.events.Event
 import system.display.DamageNumberFx
 import system.display.PassabilityOverlay
 import system.display.PortalNameTicker
@@ -43,6 +44,7 @@ object MenuControls {
                 GameplayPrefs.save()
             },
         )
+        menu.append(gameplayResetButton())
         menu.append(sectionHead("Visual"))
         menu.append(checkbox("passabilityToggle", "Passability", false) { PassabilityOverlay.setVisible(it) })
         menu.append(checkbox("damageNumbersToggle", "Damage numbers", DamageNumberFx.enabled) { DamageNumberFx.enabled = it })
@@ -75,13 +77,20 @@ object MenuControls {
         slider.step = spec.step.toString()
         slider.value = initial.toString()
         slider.addClass("slider", "menuSlider")
+        val valueEl = document.createElement("span") as HTMLSpanElement
+        valueEl.addClass("menuSliderVal")
+        valueEl.textContent = fmt(initial)
         slider.oninput = {
             onInput(slider.valueAsNumber)
+            valueEl.textContent = fmt(slider.valueAsNumber) // live numeric readout beside the slider
             null
         }
-        span.append(label, slider)
+        span.append(label, slider, valueEl)
         return span
     }
+
+    /** Two-decimal readout for a slider value (e.g. 0.60 / 1.00) shown beside the menu sliders. */
+    private fun fmt(v: Double): String = v.asDynamic().toFixed(2) as String
 
     private fun checkbox(id: String, labelText: String, checked: Boolean, onChange: (Boolean) -> Unit): HTMLSpanElement {
         val span = document.createElement("span") as HTMLSpanElement
@@ -101,6 +110,29 @@ object MenuControls {
         label.onclick = { check.click() }
         span.append(check, label)
         return span
+    }
+
+    // Reset the gameplay knobs (combat dynamics / progress speed / portal churn) to their shipped defaults and
+    // reflect the new values back onto the menu's sliders so the UI doesn't read stale.
+    private fun gameplayResetButton(): HTMLButtonElement {
+        val b = document.createElement("button") as HTMLButtonElement
+        b.id = "menuGameplayReset"
+        b.className = "menuItem displayFont"
+        b.textContent = "Reset gameplay"
+        b.onclick = {
+            GameplayPrefs.resetToDefaults()
+            syncSlider("combatDynSlider", GameplayPrefs.DEFAULT_COMBAT)
+            syncSlider("progressSlider", GameplayPrefs.DEFAULT_PROGRESS)
+            null
+        }
+        return b
+    }
+
+    // Push a value onto a built menu slider and fire its input handler so the numeric readout + apply re-run.
+    private fun syncSlider(id: String, value: Double) {
+        val el = document.getElementById(id) as? HTMLInputElement ?: return
+        el.value = value.toString()
+        el.dispatchEvent(Event("input"))
     }
 
     private fun dropRatesButton(): HTMLButtonElement {
