@@ -188,6 +188,16 @@ team effort to layer fields across the cycle. The net/LLM only re-tunes the 17 s
 it does **not** replace per-agent `ActionSelector`.
 
 Remaining:
+- [ ] **Lock training to the standard gameplay balance.** Pin the training/eval harness (`MatchSetup` /
+  `SimRunner`) to the **shipped default** balance — drop rates, combat dynamics, progress speed — rather than
+  the live `GameplayPrefs`/`Config` tunables a player may have moved. One canonical training target → champions
+  are **"one fits all"** instead of a champion-per-balance matrix to train, version and pick between. The menu
+  sliders stay a *play-time* knob only, never a training input.
+- [ ] **Rebake the champions (release prep).** Gameplay/balance has shifted a fair bit since the baked
+  **16×16** champion was trained, so a champion trained on the old rules is stale. Retrain against the
+  now-locked standard balance and re-commit the genome (`GenomeIO`/`NetStore`). Do this **after** the balance
+  lock above (so the bake targets the canonical config) and once gameplay tuning has settled — a champion is
+  only as good as the balance it learned.
 - [ ] **Grid fixtures** — infra is built (`GridFixture` RLE + `GridCapture` ?debug=capture + the
   `PresetConnectivityTest` audit). Only the committed `PresetFixtures.kt` is missing: run `?debug=capture` once
   in-browser, drop the download into `src/jsTest/kotlin/util/`, commit. (The trainer/leaderboard already run on
