@@ -138,11 +138,6 @@ be matched. **Desktop-only**; mobile is blocked.
   (pairs with the colony-management attributes, icebox).
 
 ## UI
-- [ ] **In-game Audio tab — a live sound toy.** Fold the `#audio` demo's controls (master FX filters
-  low/high-pass + reverb, envelopes, the key/scale toggle, per-sound triggers) into a footer **AUDIO** tab so
-  the player can play with the sound *while the sim runs* — Q-Gress is as much a toy as a game. Reuse
-  `AudioFx`/`SoundUtil`/`AudioDemo` (already the dial-in surface); the sim's live events drive the audio and
-  the sliders reshape it in real time. Pairs with the sound-design pass (icebox).
 - [ ] **Vector-field viz toggle** — a Menu **checkbox to turn the flow-field arrow visualization off**
   in-game. Right now the arrows auto-flash on new portals with no off switch; some players will want them gone.
 - [ ] **Portal-discovery-rate slider** — discovery (`Cycle.managePortalDensity` / `Config.portalChurnRate`)

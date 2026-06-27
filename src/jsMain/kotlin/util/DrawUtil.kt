@@ -9,6 +9,7 @@ import util.data.Circle
 import util.data.Line
 import util.data.Pos
 import util.ui.AiPanel
+import util.ui.AudioPanel
 import util.ui.BrainsPanel
 import util.ui.DebugHud
 import util.ui.HistoryPanel
@@ -46,6 +47,7 @@ object DrawUtil {
         LeaderboardPanel.update() // TRAIN footer tab: the driver leaderboard (round-robin ranking)
         SliderHistoryPanel.update() // AI tab: each slider's value over the checkpoint window
         LlmReasoningPanel.update() // AI tab: the LLM driver's prompt/reply/parsed reasoning
+        AudioPanel.update() // AUDIO footer tab: lazy-build the live sound toy (master FX + SFX triggers)
         if (Styles.isDrawTopAgents) {
             TopAgentsPanel.update()
             PortalsPanel.update() // PORTALS footer tab: every portal as a sortable table (like AGENTS)

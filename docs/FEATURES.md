@@ -412,6 +412,12 @@ Commit hashes are illustrative pointers, not exhaustive.
   "muffle"), a high-pass, and a **reverb** send (convolver fed a generated decaying-noise impulse). The
   **`#audio` demo** auditions every standalone SFX (incl. the ultra-strike) and exposes live sliders for
   the low/high-pass + reverb mix + a major/minor toggle, to dial the audio in.
+- **AUDIO footer tab — the live sound toy** (`util/ui/AudioPanel`): the same SFX palette + master-FX
+  controls as the `#audio` demo, but docked **in-game** so the player can reshape the audio **while the sim
+  runs** (Q-Gress is as much a toy as a game). Master-FX row (key major/minor, low-pass, high-pass, reverb
+  → live on the running mix) + an L1–L8 selector + a grid that triggers every standalone sound. The palette
+  is shared with the demo via `util/ui/AudioSounds`; the tab is styled to match the other footer tabs
+  (section heads + dark Chakra-Petch buttons), not the full-screen demo.
 - **Layered detonation** (`SoundUtil.playXmpExplosion`, `deep` flag): a detonation snap + chest-punch sub
   at the note + a deep, hard **909-style kick** (`KickDrum`: fast pitch-drop sine + a high-passed beater
   click) + a long lowpassed rumble tail whose brightness/amplitude decay over the fireball's life, all

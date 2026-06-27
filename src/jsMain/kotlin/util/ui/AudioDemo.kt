@@ -1,30 +1,23 @@
 package util.ui
 
-import agent.Faction
-import config.Sim
 import kotlinx.browser.document
 import kotlinx.dom.addClass
 import org.w3c.dom.HTMLAnchorElement
 import org.w3c.dom.HTMLButtonElement
 import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HTMLInputElement
-import system.Checkpoint
-import system.display.HackFx
 import util.AudioFx
-import util.HackSound
 import util.Scale
 import util.SoundUtil
-import util.SteamSound
-import util.data.Pos
 
 /**
  * Audio demo (`#audio`): a panel of buttons that trigger every (standalone) game sound, so the SFX
  * palette can be auditioned without playing. Level-keyed sounds use the selected L1–L8. (Link/field/
- * NPC sounds need live world objects, so they're not included here.)
+ * NPC sounds need live world objects, so they're not included here.) The same palette + master-FX
+ * controls also live in-game on the **AUDIO** footer tab ([AudioPanel]); both share [AudioSounds].
  */
 object AudioDemo {
     private var level = 8
-    private val center get() = Pos(Sim.width / 2, Sim.height / 2)
 
     fun show() {
         SoundUtil.enableAudio() // first gesture (the page load into the demo) resumes the audio context
@@ -37,7 +30,7 @@ object AudioDemo {
         panel.append(fxRow())
         val grid = document.createElement("div") as HTMLDivElement
         grid.addClass("demoGrid") // the sound buttons fill the screen in a responsive grid
-        sounds().forEach { (label, action) -> grid.append(button(label, "demoButton", action)) }
+        AudioSounds.list { level }.forEach { (label, action) -> grid.append(button(label, "demoButton", action)) }
         panel.append(grid)
         document.body?.append(panel)
     }
@@ -84,36 +77,6 @@ object AudioDemo {
         wrap.append(s)
         return wrap
     }
-
-    private fun sounds(): List<Pair<String, () -> Unit>> = listOf(
-        "Portal create" to { SoundUtil.playPortalCreationSound(center) },
-        "Portal remove" to { SoundUtil.playPortalRemovalSound(center) },
-        "Glass shatter" to { SoundUtil.playGlassShatterSound(center) },
-        "Neutralize" to { SoundUtil.playNeutralizeSound(center) },
-        "XMP" to { SoundUtil.playXmpSound(center, level) },
-        "Ultra-strike" to { SoundUtil.playUltraStrike(center) },
-        "Burnout (steam)" to { SteamSound.play(center) },
-        "Hack" to { HackSound.hack("demo", center, HackFx.HACK_S, Faction.ENL, IntArray(8) { level }) },
-        "Glyph" to { HackSound.glyph("demo", center, level, HackFx.glyphDuration(level), Faction.RES, IntArray(8) { level }) },
-        "Reso deploy" to { SoundUtil.playResoDeploySound(center, level) },
-        "Mod deploy" to { SoundUtil.playModDeploySound(center, level) },
-        "Shield deploy" to { SoundUtil.playShieldDeploySound(center, level) },
-        "Shield remove" to { SoundUtil.playShieldRemoveSound(center, level) },
-        "Knock-out (plop)" to { SoundUtil.playKnockOutSound(center) },
-        "Virus ADA (ENL)" to { SoundUtil.playVirusSound(center, Faction.ENL) },
-        "Virus JARVIS (RES)" to { SoundUtil.playVirusSound(center, Faction.RES) },
-        "Upgrade" to { SoundUtil.playUpgradeSound(center, level) },
-        "Downgrade" to { SoundUtil.playDowngradeSound(center, level) },
-        "Agent level-up" to { SoundUtil.playLevelUp(center) },
-        "Deploy (legacy)" to { SoundUtil.playDeploySound(center, 50) },
-        "Field down" to { SoundUtil.playFieldDownSound() },
-        "Cycle" to { SoundUtil.playCycleSound() },
-        "Fail" to { SoundUtil.playFailSound() },
-        "Checkpoint" to { SoundUtil.playCheckpointSound(js("({})").unsafeCast<Checkpoint>()) },
-        "Noise gen" to { SoundUtil.playNoiseGenSound() },
-        "Offscreen portal" to { SoundUtil.playOffScreenLocationCreationSound() },
-        "Thunder" to { SoundUtil.playThunderSound(0.0) },
-    )
 
     private fun levelRow(): HTMLDivElement {
         val row = document.createElement("div") as HTMLDivElement

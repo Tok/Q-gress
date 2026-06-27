@@ -17,6 +17,7 @@ object Footer {
         "BRAINS" to BRAINS_ID,
         "STATS" to AI_ID,
         "TRAIN" to TRAIN_ID,
+        "AUDIO" to AUDIO_ID,
         "EVENT LOG" to LOG_ID,
     )
     private var built = false
@@ -42,6 +43,7 @@ object Footer {
             "brains" -> BRAINS_ID
             "ai" -> AI_ID
             "train" -> TRAIN_ID
+            "audio" -> AUDIO_ID
             else -> LOG_ID
         }
         return document.getElementById(bodyId) as HTMLElement
@@ -170,4 +172,5 @@ object Footer {
     private const val BRAINS_ID = "footerBrains"
     private const val AI_ID = "footerAi"
     private const val TRAIN_ID = "footerTrain"
+    private const val AUDIO_ID = "footerAudio"
 }

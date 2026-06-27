@@ -919,6 +919,69 @@ html, body {
     cursor: default;
 }
 
+/* AUDIO tab (AudioPanel) — the in-game sound toy. Mirrors the TRAIN tab's look (section heads + dark
+   Chakra-Petch action buttons) so it reads native to the footer, not like the full-screen #audio demo. */
+.audioPanel {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.audioHead {
+    color: #a0a0a0;
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+.audioFx {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 14px;
+}
+.audioField {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+.audioFieldLabel {
+    color: #a0a0a0;
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+.audioLevels {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+.audioGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+    gap: 6px;
+}
+.audioBtn {
+    font-family: "Chakra Petch", sans-serif;
+    letter-spacing: 0.5px;
+    background: rgba(0, 0, 0, 0.5);
+    color: #e8e8e8;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 4px;
+    padding: 4px 12px;
+    font-size: 11px;
+    cursor: pointer;
+}
+.audioBtn:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+.audioMini {
+    padding: 4px 9px;
+}
+.audioBtn.sel {
+    background: rgba(255, 255, 255, 0.16);
+    border-color: rgba(255, 255, 255, 0.4);
+    color: #ffffff;
+}
+
 /* Leaderboard (LeaderboardPanel) — driver entrant toggles + a round-robin standings table. */
 .ladderEntrant {
     display: inline-flex;
