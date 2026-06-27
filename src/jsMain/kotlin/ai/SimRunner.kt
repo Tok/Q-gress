@@ -6,6 +6,7 @@ import agent.Faction
 import agent.NonFaction
 import agent.StuckTracker
 import config.Config
+import config.Sim
 import config.StartStage
 import extension.Grid
 import portal.Portal
@@ -17,6 +18,7 @@ import system.Simulation
 import system.effect.Fx
 import util.NameGen
 import util.Rng
+import util.data.Pos
 
 /**
  * The outcome of a headless match — the per-checkpoint MU history is the **fitness signal** (PLAN
@@ -114,6 +116,11 @@ object SimRunner {
         // stage, so this only sets each seeded agent's level + loadout.
         Config.startStage = if (setup.quickStart) StartStage.END else StartStage.START
         World.grid = grid
+        // Size the arena to THIS grid (not the live onboarding default) and make it circular, so a match is a
+        // self-contained round play field — deterministic regardless of NORMAL_SCALE, with the field/play-area
+        // circle inscribed in the match grid. A mid-game eval restores the player's real size via WorldSnapshot.
+        Sim.setExactSize((grid.keys.maxOf { it.x } + 1).toInt() * Pos.res, (grid.keys.maxOf { it.y } + 1).toInt() * Pos.res)
+        Sim.roundField = true
         policyEnl?.let { FactionPolicies.set(Faction.ENL, it) }
         policyRes?.let { FactionPolicies.set(Faction.RES, it) }
 

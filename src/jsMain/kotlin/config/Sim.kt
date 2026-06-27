@@ -1,5 +1,7 @@
 package config
 
+import kotlin.math.sqrt
+
 /**
  * Simulation/grid extent — independent of the screen ([Dim], which drives the HUD). The world
  * covers some multiple of the screen ([scale]) so the playable area spans the pitched view, not
@@ -11,8 +13,16 @@ package config
  */
 object Sim {
     const val SMALL_SCALE = 1.0
-    const val NORMAL_SCALE = 1.5
     const val LARGE_SCALE = 2.0
+
+    /**
+     * Normal sits at the **area midpoint** of Small and Large. Play area grows with the square of the scale, so
+     * we average the squares and take the root (√((1²+2²)/2) ≈ 1.58, vs the old flat 1.5 which sat below the
+     * true midpoint). We can't weight the presets by walkability — unknown until the grid is built — so we
+     * balance the raw play-area instead: Normal's area is exactly halfway between Small's and Large's.
+     */
+    val NORMAL_SCALE = sqrt((SMALL_SCALE * SMALL_SCALE + LARGE_SCALE * LARGE_SCALE) / 2.0)
+
     private const val MAX_SCALE = 3.0
 
     var width = (Dim.width * NORMAL_SCALE).toInt()
@@ -39,6 +49,17 @@ object Sim {
     fun setSize(w: Int, h: Int) {
         width = w.coerceIn(Dim.width, (Dim.width * MAX_SCALE).toInt())
         height = h.coerceIn(Dim.height, (Dim.height * MAX_SCALE).toInt())
+    }
+
+    /**
+     * Force an exact play-area extent, bypassing the screen-size clamp. For **headless matches**, which size
+     * their arena to their own (small) grid so a match is self-contained and deterministic — independent of the
+     * live onboarding preset. The live game always goes through [setSize]; a mid-game eval restores the real
+     * size afterwards via [system.WorldSnapshot].
+     */
+    fun setExactSize(w: Int, h: Int) {
+        width = w
+        height = h
     }
 
     fun presetWidth(scaleOf: Double) = (Dim.width * scaleOf).toInt()

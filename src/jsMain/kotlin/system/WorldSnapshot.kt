@@ -7,6 +7,7 @@ import agent.NonFaction
 import ai.FactionPolicies
 import ai.FactionPolicy
 import config.Config
+import config.Sim
 import extension.Grid
 import portal.Portal
 
@@ -38,6 +39,9 @@ object WorldSnapshot {
         val policies: Map<Faction, FactionPolicy>,
         val headlessFieldCompute: Boolean,
         val startStage: config.StartStage,
+        val simWidth: Int,
+        val simHeight: Int,
+        val roundField: Boolean,
     )
 
     /** Snapshot the live world. Requires [World.grid] to be initialised (a running game always has it). */
@@ -54,6 +58,9 @@ object WorldSnapshot {
         policies = Faction.all().associateWith { FactionPolicies.of(it) },
         headlessFieldCompute = Config.headlessFieldCompute,
         startStage = Config.startStage,
+        simWidth = Sim.width,
+        simHeight = Sim.height,
+        roundField = Sim.roundField,
     )
 
     /** Restore a [capture]d world (after an eval reset/ran on the shared singletons). */
@@ -72,6 +79,8 @@ object WorldSnapshot {
         snapshot.policies.forEach { (faction, policy) -> FactionPolicies.set(faction, policy) }
         Config.headlessFieldCompute = snapshot.headlessFieldCompute
         Config.startStage = snapshot.startStage
+        Sim.setExactSize(snapshot.simWidth, snapshot.simHeight) // a match resized the arena to its grid → restore
+        Sim.roundField = snapshot.roundField
     }
 
     private fun <T> replace(target: MutableCollection<T>, source: List<T>) {
