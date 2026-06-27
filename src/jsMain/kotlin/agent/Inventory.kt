@@ -1,5 +1,6 @@
 package agent
 
+import config.Config
 import items.PowerCube
 import items.QgressItem
 import items.UltraStrike
@@ -10,6 +11,26 @@ import portal.Portal
 import portal.PortalKey
 
 data class Inventory(val items: MutableList<QgressItem> = mutableListOf()) {
+    fun size(): Int = items.size
+    fun isFull(): Boolean = items.size >= Config.maxInventory
+    fun freeSpace(): Int = (Config.maxInventory - items.size).coerceAtLeast(0)
+
+    /** Recycle up to [maxToRemove] of the least-useful items to free space — surplus weapons, the lowest
+     *  resonators and power cubes first; keys + shields/heat-sinks/multi-hacks are kept. Returns XM recovered. */
+    fun recycleForSpace(maxToRemove: Int): Int {
+        if (maxToRemove <= 0) return 0
+        val candidates = findResonators().sortedBy { it.level.level } + findXmps() + findUltraStrikes() + findPowerCubes()
+        var xm = 0
+        candidates.take(maxToRemove).forEach { item ->
+            items.remove(item)
+            xm += when (item) {
+                is Resonator -> item.level.calculateRecycleXm()
+                is PowerCube -> item.level.calculateRecycleXm()
+                else -> 0
+            }
+        }
+        return xm
+    }
     fun findKeys(): List<PortalKey> = items.filter { it is PortalKey }.map { it as PortalKey }
     fun findXmps(): List<XmpBurster> = items.filter { it is XmpBurster }.map { it as XmpBurster }
     fun findUltraStrikes(): List<UltraStrike> = items.filter { it is UltraStrike }.map { it as UltraStrike }

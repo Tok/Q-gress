@@ -51,6 +51,10 @@ object Config {
     fun startSmurfs() = startStage.agentsPerFaction
     fun initialAp() = startStage.initialAp
 
+    // Per-agent inventory cap (authentic Ingress = 2000). When full, an agent can't hack/glyph for more items
+    // (Hacker.isActionPossible) — it must spend (deploy/attack/link) or recycle to free space (Recycler).
+    var maxInventory = 2000
+
     // NPC population is NOT a player setting — it's auto-derived from map area + location (see
     // [npcPopulation]) at world-gen, and held constant by 1-for-1 replacement on recruit (Recruiter),
     // so a game never runs out of people to recruit.

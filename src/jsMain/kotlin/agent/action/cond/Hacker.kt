@@ -12,7 +12,8 @@ import util.HackSound
 object Hacker : ConditionalAction {
     override val actionItem = ActionItem.HACK
 
-    override fun isActionPossible(agent: Agent) = agent.actionPortal.canHack(agent)
+    // Can't hack for more items when the inventory is full (Ingress rule) — the agent must spend or recycle first.
+    override fun isActionPossible(agent: Agent) = !agent.inventory.isFull() && agent.actionPortal.canHack(agent)
 
     override fun performAction(agent: Agent): Agent {
         agent.action.start(actionItem)
