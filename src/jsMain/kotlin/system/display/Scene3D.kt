@@ -10,6 +10,7 @@ import config.Sim
 import external.GLTFLoader
 import external.MapLibre
 import external.Three
+import items.RewardMote
 import items.deployable.Mod
 import items.deployable.ModType
 import items.deployable.Shield
@@ -34,6 +35,7 @@ import kotlin.math.abs
 import kotlin.math.atan
 import kotlin.math.cos
 import kotlin.math.pow
+import kotlin.math.roundToInt
 import kotlin.math.sin
 import kotlin.math.sinh
 import kotlin.math.sqrt
@@ -132,6 +134,7 @@ object Scene3D {
     private const val OVERLAY_Z = 0.2 // passability quad just above ground
     private const val MARKER_R = 10.0 // build-preview marker radius (metres)
     private const val SHOWCASE_SELECT_R = 55.0 // demo: click within this (sim px) selects a portal / min place gap
+    private const val SHOWCASE_FLIP_S = 1.0 // demo: seconds for a virus-flip orb colour morph
     private const val BORDER_COLOR = "#ffffff" // playable-area boundary (white — no non-faction hues)
     private const val BORDER_Z = 0.3
     private const val OUTSIDE_DIM = 0.4 // opacity of the dark mask greying out everything beyond the border
@@ -187,11 +190,13 @@ object Scene3D {
         val parts: Array<dynamic>,
         val pos: Pos,
         var level: Int,
-        val color: String,
+        var color: String, // mutable: a virus flip morphs it to the new faction colour
         var hackAge: Double,
         var growAge: Double,
     ) {
         var hackGlyph: Boolean = false // the active hack is a (stronger) glyph hack
+        var flipAge: Double = 0.0 // seconds left in a virus-flip colour morph (counts down)
+        var flipFrom: String? = null // the colour the orb is morphing FROM during a flip
     }
     private val showcases = mutableListOf<Showcase>()
     private class DemoLink(val a: Showcase, val b: Showcase, val pipe: dynamic)
@@ -568,8 +573,8 @@ object Scene3D {
         )
     }
 
-    /** Hack/glyph loot: one item-coloured cube per [colors] entry arcs from the portal's orb to the agent. */
-    fun rewardFx(portalLocation: Pos, level: Int, to: Pos, colors: List<String>) {
+    /** Hack/glyph loot: one mote per [motes] entry (a cube, or a faction sphere for viruses) arcs from the orb to the agent. */
+    fun rewardFx(portalLocation: Pos, level: Int, to: Pos, motes: List<RewardMote>) {
         scene ?: return
         val top = doubleArrayOf(
             sceneX(portalLocation),
@@ -577,7 +582,7 @@ object Scene3D {
             groundZ(portalLocation) + orbCenterZ(level.coerceAtLeast(1).toDouble()),
         )
         val dst = doubleArrayOf(sceneX(to), sceneY(to), groundZ(to) + HEAD_Z)
-        colors.take(MAX_REWARD_CUBES).forEachIndexed { i, c -> RewardFx.spawn(top, dst, c, i * REWARD_STAGGER_S) }
+        motes.take(MAX_REWARD_CUBES).forEachIndexed { i, m -> RewardFx.spawn(top, dst, m, i * REWARD_STAGGER_S) }
     }
 
     /** A burned-out portal vents a one-shot white-steam puff from its flask top (+ a subtle hiss). */
@@ -780,6 +785,19 @@ object Scene3D {
         p.side = 2 // DoubleSide
         p.depthWrite = false
         Three.MeshBasicMaterial(p)
+    }
+
+    /** Lerp [from]→[to] (both "#rrggbb") component-wise in RGB at [t] (0..1), returning a "#rrggbb" string. */
+    private fun blendColor(from: String, to: String, t: Double): String {
+        val a = from.removePrefix("#")
+        val b = to.removePrefix("#")
+        fun chan(i: Int): String {
+            val av = a.substring(i, i + 2).toInt(16)
+            val bv = b.substring(i, i + 2).toInt(16)
+            val v = (av + (bv - av) * t).roundToInt().coerceIn(0, 255)
+            return v.toString(16).padStart(2, '0')
+        }
+        return "#" + chan(0) + chan(2) + chan(4)
     }
 
     /** Toggle the passability overlay (a textured ground quad built from the movement grid). */
@@ -987,11 +1005,14 @@ object Scene3D {
             SoundUtil.playGlassShatterSound(portal.location, CAPTURE_SHATTER_WEIGHT)
         }
         val reform = CaptureFx.reformFactor(id)
+        // A virus flip morphs the orb from the old faction colour to the new one (no shatter); everywhere
+        // else this is just baseColor. Lerp in RGB so green↔blue passes through a believable midpoint.
+        val orbColor = CaptureFx.recolorFrom(id)?.let { blendColor(it, baseColor, CaptureFx.recolorT(id)) } ?: baseColor
         // octant → (reso level, health 0..1) — both real-time, so the rod's energy bar tracks its charge.
         val resos = portal.resoMap().mapValues { Pair(it.value.getLevel(), it.value.calcHealthPercent() / 100.0) }
         // Selection keeps the faction hue but lights the orb brighter (no neutral-looking white tint);
         // buildPortal derives that from id == selected.
-        val parts = buildPortal(portalsGroup, portal.location, level, baseColor, id, resos)
+        val parts = buildPortal(portalsGroup, portal.location, level, orbColor, id, resos)
         buildMods(parts[0], portal) // chrome mods + shield bubble inside/around the orb (if shielded)
         HackFx.bind(id, parts[3]) // spin the collar if this portal is being hacked
         // Build-in: the pole rises and the orb grows from the ground; [reform] re-pops the orb only.
@@ -1369,6 +1390,18 @@ object Scene3D {
         demoLinks.removeAll { it.a === sc || it.b === sc }
     }
 
+    /** Demo (ADA / JARVIS): flip the active showcase portal to [targetColor], morphing the orb (no shatter)
+     *  the same way a live virus flip does, and play [faction]'s virus sound once. */
+    fun refactorActiveShowcase(targetColor: String, faction: Faction) {
+        val sc = activeShowcase() ?: return
+        if (sc.color != targetColor) {
+            sc.flipFrom = sc.color
+            sc.flipAge = SHOWCASE_FLIP_S
+            sc.color = targetColor
+        }
+        SoundUtil.playVirusSound(sc.pos, faction)
+    }
+
     private fun updateShowcases(dt: Double) {
         showcases.forEach { sc ->
             if (sc.growAge < PORTAL_GROW_S) { // build-in: pole rises + orb grows from the ground
@@ -1381,10 +1414,25 @@ object Scene3D {
                 val dur = if (sc.hackGlyph) HackFx.GLYPH_SPIN_S else HackFx.HACK_S
                 HackFx.spinShowcase(sc.parts[3], dur - sc.hackAge, dir, sc.hackGlyph)
             }
+            sc.flipFrom?.let { from ->
+                // virus flip: morph the orb glass from old→new faction colour
+                sc.flipAge = (sc.flipAge - dt).coerceAtLeast(0.0)
+                val p = ((SHOWCASE_FLIP_S - sc.flipAge) / SHOWCASE_FLIP_S).coerceIn(0.0, 1.0)
+                val mat = Materials.glass(blendColor(from, sc.color, p * p * (3.0 - 2.0 * p))) // smoothstep
+                setOrbMaterial(sc.parts[0], mat)
+                if (sc.flipAge <= 0.0) sc.flipFrom = null
+            }
         }
     }
 
-    private fun showcasesAnimating() = showcases.any { it.growAge < PORTAL_GROW_S || it.hackAge > 0.0 }
+    /** Re-skin a showcase orb (outer shell + the concentric inner shell child) to [mat]. */
+    private fun setOrbMaterial(orb: dynamic, mat: dynamic) {
+        orb.material = mat
+        val inner = orb.children[0] // the inner double-shell, added as the orb's child
+        if (inner != null) inner.material = mat
+    }
+
+    private fun showcasesAnimating() = showcases.any { it.growAge < PORTAL_GROW_S || it.hackAge > 0.0 || it.flipFrom != null }
 
     private fun addAgent(agent: Agent) {
         val x = sceneX(agent.pos)

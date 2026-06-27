@@ -1,22 +1,27 @@
 package system.display
 
 import external.Three
+import items.RewardMote
+import items.RewardShape
 import kotlin.math.PI
 import kotlin.math.sin
 
 /**
  * Hack/glyph loot: each dropped item flies from the portal orb to the hacking agent as a small **item-coloured
- * cube** (gold = portal key, level-colour = power cube / resonator, rarity = mod, faction colour otherwise),
- * arcing up and spinning before it's absorbed. Kinematic (no physics), absolute-time driven like [XmFx];
+ * cube** (gold = portal key, level-colour = power cube / resonator, rarity = mod, faction colour otherwise) —
+ * **except viruses**, which fly as a bigger **faction-coloured sphere** ([SPHERE_R], φ× an agent head). Each
+ * arcs up and spins before it's absorbed. Kinematic (no physics), absolute-time driven like [XmFx];
  * [register] once, [spawn] per item (staggered), [update] each frame while [hasActive].
  */
 object RewardFx {
-    private const val DUR = 0.6 // seconds for a cube to reach the agent
+    private const val DUR = 0.6 // seconds for a mote to reach the agent
     private const val CUBE_R = 0.9
-    private const val ARC_H = 4.0 // how high the cube humps on its way over
+    private const val SPHERE_R = 0.45 * 1.618 // virus sphere: 1.618× (φ) an agent head (Scene3D.HEAD_R = 0.45)
+    private const val ARC_H = 4.0 // how high the mote humps on its way over
 
     private var group: dynamic = null
-    private val geo: dynamic by lazy { Three.BoxGeometry(CUBE_R, CUBE_R, CUBE_R) }
+    private val cubeGeo: dynamic by lazy { Three.BoxGeometry(CUBE_R, CUBE_R, CUBE_R) }
+    private val sphereGeo: dynamic by lazy { Three.SphereGeometry(SPHERE_R, 16, 12) }
 
     private class Cube(val mesh: dynamic, val from: DoubleArray, val to: DoubleArray, val start: Double, val spin: Double)
 
@@ -28,10 +33,11 @@ object RewardFx {
 
     fun hasActive() = cubes.isNotEmpty()
 
-    /** Fly a [colorHex] cube from [from] (the orb, scene metres) to [to] (the agent), beginning [delayS] later. */
-    fun spawn(from: DoubleArray, to: DoubleArray, colorHex: String, delayS: Double) {
+    /** Fly a [mote] (cube, or a sphere for viruses) from [from] (the orb, scene metres) to [to] (the agent), beginning [delayS] later. */
+    fun spawn(from: DoubleArray, to: DoubleArray, mote: RewardMote, delayS: Double) {
         val g = group ?: return
-        val mesh = Three.Mesh(geo, Materials.modSolid(colorHex))
+        val geo = if (mote.shape == RewardShape.SPHERE) sphereGeo else cubeGeo
+        val mesh = Three.Mesh(geo, Materials.modSolid(mote.color))
         mesh.asDynamic().position.set(from[0], from[1], from[2])
         g.add(mesh)
         cubes.add(Cube(mesh, from, to, now() + delayS * 1000.0, 4.0 + delayS * 6.0))

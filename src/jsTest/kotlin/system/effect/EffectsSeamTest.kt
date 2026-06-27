@@ -3,6 +3,7 @@ package system.effect
 import Factory
 import World
 import agent.Faction
+import items.RewardMote
 import items.deployable.Mod
 import portal.Octant
 import portal.Portal
@@ -84,6 +85,7 @@ private class CountingEffects : Effects {
     var shatterPortal = 0
     var dropResonator = 0
     var flashVectorField = 0
+    var refactorPortal = 0
 
     override fun playXmpBurst(location: Pos, level: Int, sound: Boolean) {
         playXmpBurst++
@@ -97,7 +99,7 @@ private class CountingEffects : Effects {
         recordHack++
     }
 
-    override fun rewardFx(portalLocation: Pos, level: Int, to: Pos, colors: List<String>) {
+    override fun rewardFx(portalLocation: Pos, level: Int, to: Pos, motes: List<RewardMote>) {
         rewardFx++
     }
 
@@ -131,5 +133,9 @@ private class CountingEffects : Effects {
 
     override fun flashVectorField(portalId: String) {
         flashVectorField++
+    }
+
+    override fun refactorPortal(portalId: String) {
+        refactorPortal++
     }
 }

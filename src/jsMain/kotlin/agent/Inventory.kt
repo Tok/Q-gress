@@ -9,6 +9,7 @@ import items.deployable.HeatSink
 import items.deployable.Multihack
 import items.deployable.Resonator
 import items.deployable.Shield
+import items.deployable.Virus
 import portal.Portal
 import portal.PortalKey
 
@@ -48,6 +49,7 @@ data class Inventory(val items: MutableList<QgressItem> = mutableListOf()) {
     fun findShields(): List<Shield> = items.filterIsInstance<Shield>()
     fun findHeatSinks(): List<HeatSink> = items.filterIsInstance<HeatSink>()
     fun findMultihacks(): List<Multihack> = items.filterIsInstance<Multihack>()
+    fun findViruses(): List<Virus> = items.filterIsInstance<Virus>()
 
     fun findUniqueKeys(): List<PortalKey>? = findKeys().distinct()
 

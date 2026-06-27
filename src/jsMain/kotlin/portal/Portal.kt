@@ -152,18 +152,21 @@ data class Portal(
         else -> 0
     }
 
-    /** Virus flip (ADA / JARVIS): take the portal for [agent]'s faction — reassign resonators, drop mods. */
+    /**
+     * Virus flip (ADA / JARVIS): the portal changes hands — it is **not** destroyed. [agent]'s faction
+     * takes ownership of the portal and **all of its slot content** (every resonator + mod stays in place,
+     * just re-owned). Only the links/fields are torn down (they'd be cross-faction now), and the orb
+     * re-skins to the new colour **without** the capture shatter (see [system.display.CaptureFx]).
+     */
     fun refactor(agent: Agent) {
-        val strippedShield = mods.values.filterIsInstance<Shield>().firstOrNull()
         owner = agent
         slots.values.filter { it.resonator != null }.forEach { it.owner = agent }
-        mods.clear()
         // The portal changed faction, so every link/field it touches is now cross-faction → destroy them all
         // (incoming + outgoing + anchored fields). Without this the old faction's links survive on the flipped
         // portal — e.g. a green portal virus-flipped to blue would still show its incoming GREEN links.
         destroyAllLinksAndFields()
+        Fx.sink.refactorPortal("portal:$id") // re-skin the orb to the new faction, no shatter
         agent.addAp(VIRUS_AP)
-        if (strippedShield != null && HtmlUtil.isRunningInBrowser()) SoundUtil.playShieldRemoveSound(location, strippedShield.getLevel())
         Com.addMessage("$agent refactored $this to ${agent.faction}.", Com.Importance.MAJOR, agent.faction.color)
     }
 

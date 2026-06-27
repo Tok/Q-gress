@@ -1,6 +1,7 @@
 package system.effect
 
 import agent.Faction
+import items.RewardMote
 import items.deployable.Mod
 import portal.Octant
 import portal.Portal
@@ -26,8 +27,8 @@ interface Effects {
     /** The portal collar hack/glyph spin animation (ENL cw / RES ccw; [glyph] = the stronger glyph spin). */
     fun recordHack(id: String, faction: Faction, glyph: Boolean, durationS: Double)
 
-    /** Reward drops flying from a hacked portal to the agent — one item-coloured cube per [colors] entry. */
-    fun rewardFx(portalLocation: Pos, level: Int, to: Pos, colors: List<String>)
+    /** Reward drops flying from a hacked portal to the agent — one mote per [motes] entry (cube, or sphere for viruses). */
+    fun rewardFx(portalLocation: Pos, level: Int, to: Pos, motes: List<RewardMote>)
 
     /** A one-shot white-steam puff vented from a portal's flask top when an agent burns it out (over-hacks it). */
     fun steamPuff(portalLocation: Pos, level: Int)
@@ -52,4 +53,11 @@ interface Effects {
 
     /** The one-shot flow-field flash for a portal once its vector field finishes computing. */
     fun flashVectorField(portalId: String)
+
+    /**
+     * A virus flip (ADA / JARVIS): the orb re-skins to the new faction colour WITHOUT the capture
+     * shatter — the portal changes hands, it isn't destroyed and rebuilt. Suppresses the next colour-
+     * change shatter for [portalId] (see [system.display.CaptureFx]).
+     */
+    fun refactorPortal(portalId: String)
 }

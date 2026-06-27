@@ -431,9 +431,14 @@ Commit hashes are illustrative pointers, not exhaustive.
   - Rarity colours are shared (`items/types/Rarity`: mint / purple / pink).
 - **Deploy** is one item per action (`Deployer`): a resonator if one fits, else a mod into a free slot
   — each with a sound (resonator **ding** / mod **clunk**) + animation.
-- **Viruses** (`VirusType` ADA / JARVIS): the `Refactorer` action (new `ActionItem.VIRUS` + tuning
-  slider) flips an **enemy** portal to the agent's faction (`Portal.refactor` reassigns resonators,
-  drops mods) — colour change animates via `CaptureFx`, with a glitchy `playVirusSound`.
+- **Viruses** (`VirusType` ADA = RES-blue / JARVIS = ENL-green; **either faction carries + uses either
+  one**): the `Refactorer` action (`ActionItem.VIRUS` + tuning slider) flips an **enemy** portal to the
+  agent's faction. The portal **changes hands, it is not destroyed** — `Portal.refactor` re-owns the
+  portal and **all its slot content** (every resonator + mod stays in place) and tears down only its
+  links/fields; the orb **morphs** to the new faction colour over ~1 s **without** the capture shatter
+  (`CaptureFx.recolorWithoutShatter`), with a glitchy `playVirusSound`. Carried viruses show in the
+  **AGENTS** panel's Virus column; loot flies in as a φ-sized faction sphere (vs the usual cube). The
+  flip animation + sounds are triggerable in the `#demo` sandbox (ADA / JARVIS buttons).
 - **Items fall on loss**: resonators tumble out as each is destroyed (`removeReso` → `dropResonator`);
   mods tumble out when the portal is neutralized (`destroy` → `dropMods`) or fully shattered
   (`shatterPortal`) — cannon-es physics in `ShatterFx`.

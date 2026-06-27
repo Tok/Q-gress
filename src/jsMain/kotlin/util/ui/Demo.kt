@@ -119,6 +119,9 @@ object Demo {
                     button("Hack", "demoButton") { Scene3D.hackActiveShowcase(false) },
                     button("Glyph", "demoButton") { Scene3D.hackActiveShowcase(true) },
                     button("Burnout", "demoButton") { Scene3D.burnoutActiveShowcase() },
+                    // Virus flips: ADA → RES (blue), JARVIS → ENL (green) — the orb morphs colour, no shatter.
+                    button("ADA", "demoButton") { Scene3D.refactorActiveShowcase(Faction.RES.color, Faction.RES) },
+                    button("JARVIS", "demoButton") { Scene3D.refactorActiveShowcase(Faction.ENL.color, Faction.ENL) },
                 ),
             ),
         )

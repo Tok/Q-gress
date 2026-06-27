@@ -3,7 +3,7 @@ package agent.action.cond
 import agent.Agent
 import agent.action.ActionItem
 import items.QgressItem
-import items.rewardColor
+import items.rewardMote
 import system.display.HackFx
 import system.display.Scene3D
 import system.effect.Fx
@@ -36,7 +36,7 @@ object Glypher : ConditionalAction {
                     agent.actionPortal.location,
                     agent.actionPortal.getLevel().toInt(),
                     agent.pos,
-                    newStuff.map { it.rewardColor(agent.faction) },
+                    newStuff.map { it.rewardMote(agent.faction) },
                 )
             }
         }

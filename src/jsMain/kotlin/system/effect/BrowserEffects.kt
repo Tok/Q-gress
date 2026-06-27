@@ -1,9 +1,11 @@
 package system.effect
 
 import agent.Faction
+import items.RewardMote
 import items.deployable.Mod
 import portal.Octant
 import portal.Portal
+import system.display.CaptureFx
 import system.display.DeployFx
 import system.display.HackFx
 import system.display.Scene3D
@@ -18,8 +20,8 @@ object BrowserEffects : Effects {
     override fun playXmpBurst(location: Pos, level: Int, sound: Boolean) = Scene3D.playXmpBurst(location, level, sound)
     override fun showDamageNumber(portal: Portal, amount: Int) = Scene3D.showDamageNumber(portal, amount)
     override fun recordHack(id: String, faction: Faction, glyph: Boolean, durationS: Double) = HackFx.record(id, faction, glyph, durationS)
-    override fun rewardFx(portalLocation: Pos, level: Int, to: Pos, colors: List<String>) =
-        Scene3D.rewardFx(portalLocation, level, to, colors)
+    override fun rewardFx(portalLocation: Pos, level: Int, to: Pos, motes: List<RewardMote>) =
+        Scene3D.rewardFx(portalLocation, level, to, motes)
 
     override fun steamPuff(portalLocation: Pos, level: Int) = Scene3D.steamPuff(portalLocation, level)
     override fun recordDeploy(id: String, octant: Octant, from: Pos) = DeployFx.record(id, octant, from)
@@ -33,4 +35,5 @@ object BrowserEffects : Effects {
         Scene3D.dropResonator(location, level, octantIndex, resoLevel)
 
     override fun flashVectorField(portalId: String) = VectorFieldOverlay.flash(portalId)
+    override fun refactorPortal(portalId: String) = CaptureFx.recolorWithoutShatter(portalId)
 }

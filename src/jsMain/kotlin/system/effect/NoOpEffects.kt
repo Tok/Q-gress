@@ -1,6 +1,7 @@
 package system.effect
 
 import agent.Faction
+import items.RewardMote
 import items.deployable.Mod
 import portal.Octant
 import portal.Portal
@@ -15,7 +16,7 @@ object NoOpEffects : Effects {
     override fun playXmpBurst(location: Pos, level: Int, sound: Boolean) = Unit
     override fun showDamageNumber(portal: Portal, amount: Int) = Unit
     override fun recordHack(id: String, faction: Faction, glyph: Boolean, durationS: Double) = Unit
-    override fun rewardFx(portalLocation: Pos, level: Int, to: Pos, colors: List<String>) = Unit
+    override fun rewardFx(portalLocation: Pos, level: Int, to: Pos, motes: List<RewardMote>) = Unit
     override fun steamPuff(portalLocation: Pos, level: Int) = Unit
     override fun recordDeploy(id: String, octant: Octant, from: Pos) = Unit
     override fun collectXmFx(from: Pos, to: Pos) = Unit
@@ -24,4 +25,5 @@ object NoOpEffects : Effects {
     override fun shatterPortal(location: Pos, color: String, level: Int, resos: Map<Octant, Int>) = Unit
     override fun dropResonator(location: Pos, level: Int, octantIndex: Int, resoLevel: Int) = Unit
     override fun flashVectorField(portalId: String) = Unit
+    override fun refactorPortal(portalId: String) = Unit
 }

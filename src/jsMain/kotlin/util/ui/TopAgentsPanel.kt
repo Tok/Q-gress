@@ -8,6 +8,7 @@ import items.level.LevelColor
 import items.types.HeatSinkType
 import items.types.MultihackType
 import items.types.ShieldType
+import items.types.VirusType
 import kotlinx.browser.document
 import org.w3c.dom.HTMLElement
 
@@ -61,6 +62,7 @@ object TopAgentsPanel {
         Col("MHack", num = {
             it.inventory.findMultihacks().size.toDouble()
         }, render = { a -> invCell(a.inventory.findMultihacks(), MAX_MOD_LEVEL, MultihackType::getColorForLevel) }),
+        Col("Virus", num = { it.inventory.findViruses().size.toDouble() }, render = { a -> virusCell(a) }),
         Col("Keys", num = { it.inventory.keyCount().toDouble() }, render = { a -> cell(a.inventory.keyCount().toString(), "taNum") }),
         Col("Uniq", num = { uniqueKeys(it).toDouble() }, render = { a -> cell(uniqueKeys(a).toString(), "taNum") }),
         Col("Action", str = { it.action.item.text }, render = { a -> cell(a.action.item.text, "taCell") }),
@@ -146,6 +148,29 @@ object TopAgentsPanel {
                 val bar = el("span", "taInvBar")
                 bar.style.height = "${(c.toDouble() / maxCount * BAR_MAX_PX).toInt()}px"
                 if (c > 0) bar.style.background = colorFor(lvl)
+                bars.appendChild(bar)
+            }
+            td.appendChild(bars)
+        }
+        return td
+    }
+
+    /** Viruses an agent carries: a count + a two-bar strip (JARVIS green, ADA blue) in each type's colour. */
+    private fun virusCell(agent: Agent): HTMLElement {
+        val viruses = agent.inventory.findViruses()
+        val td = el("td", "taInv")
+        val count = el("span", "taInvCount")
+        count.textContent = viruses.size.toString()
+        td.appendChild(count)
+        if (viruses.isNotEmpty()) {
+            val byType = viruses.groupBy { it.type }.mapValues { it.value.size }
+            val maxCount = byType.values.maxOrNull() ?: 1
+            val bars = el("span", "taInvBars")
+            VirusType.values().forEach { type ->
+                val c = byType[type] ?: 0
+                val bar = el("span", "taInvBar")
+                bar.style.height = "${(c.toDouble() / maxCount * BAR_MAX_PX).toInt()}px"
+                if (c > 0) bar.style.background = type.color
                 bars.appendChild(bar)
             }
             td.appendChild(bars)
