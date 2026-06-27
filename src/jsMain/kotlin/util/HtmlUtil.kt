@@ -652,6 +652,7 @@ object HtmlUtil {
             resetInterval()
             World.isReady = true
             document.getElementById("top-controls")?.removeClass("invisible") // reveal the toolbar now
+            document.getElementById(LOCATION_LABEL_ID)?.removeClass("invisible") // …and the location name (in #hudTop, not the toolbar)
             Attribution.collapse() // we've left the title → tuck the map credit into its (i)
             MapUtil.showSatellite() // terrain stays grayscale (set at map-load) until the fade below
             Navigation.setup()
@@ -682,7 +683,7 @@ object HtmlUtil {
     private fun createLocationLabel(): HTMLSpanElement {
         val span = document.createElement("span") as HTMLSpanElement
         span.id = LOCATION_LABEL_ID
-        span.addClass("topLocation", "displayFont")
+        span.addClass("topLocation", "displayFont", "invisible") // hidden through title/onboarding; shown when the world is ready
         span.textContent = currentLocationName
         return span
     }

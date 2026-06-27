@@ -2321,21 +2321,13 @@ html, body {
     text-align: center;
 }
 
-/* Collapse toggles for the two side HUD columns (left tuning sliders / right stats). The "–" button sits at
-   the top of its column — left-aligned on the left, right-aligned on the right. Collapsing hides everything
-   in the column except this button (which flips to "+"); it is the whole control (no separate bubble). */
-.panelBar {
-    pointer-events: auto;
-    display: flex;
-    margin-bottom: 4px;
-}
-.panelBar-left {
-    justify-content: flex-start;
-}
-.panelBar-right {
-    justify-content: flex-end;
-}
+/* Collapse toggles for the two side HUD columns (left tuning sliders / right stats). The "–" button is a
+   direct flex child of its column, pinned by align-self to the column's outer edge (left column → left, right
+   column → right) so it sits in the SAME spot whether the column is open or collapsed — no centre drift.
+   Collapsing hides everything in the column except this button (which flips to "+"); it is the whole control. */
 .panelCollapse {
+    pointer-events: auto; /* the column is pointer-events:none; the toggle opts back in */
+    flex: none; /* never grow/shrink — keep its fixed 22px box */
     width: 22px;
     height: 22px;
     line-height: 20px;
@@ -2350,14 +2342,20 @@ html, body {
     border: 1px solid rgba(255, 255, 255, 0.18);
     cursor: pointer;
 }
+.panelCollapse-left {
+    align-self: flex-start;
+}
+.panelCollapse-right {
+    align-self: flex-end;
+}
 .panelCollapse:hover {
     color: #ffffff;
     background: rgba(0, 0, 0, 0.65);
     border-color: rgba(255, 255, 255, 0.28);
 }
-/* Collapsed: hide the column's content, keep only the "–"/"+" toggle bar. */
-#hudLeft.collapsed > *:not(.panelBar),
-#hudRight.collapsed > *:not(.panelBar) {
+/* Collapsed: hide the column's content, keep only the "–"/"+" toggle. */
+#hudLeft.collapsed > *:not(.panelCollapse),
+#hudRight.collapsed > *:not(.panelCollapse) {
     display: none;
 }
 

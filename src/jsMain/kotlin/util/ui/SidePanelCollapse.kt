@@ -25,8 +25,10 @@ object SidePanelCollapse {
         val container = document.getElementById(containerId) as? HTMLElement ?: return
         attached += side
 
-        val bar = el("div", "panelBar panelBar-$side")
-        val collapse = el("div", "panelCollapse displayFont")
+        // The toggle is a direct flex child of the column (no wrapper) so the column's align-items + the
+        // button's own align-self pin it to the column's outer edge — identical in the expanded and collapsed
+        // states, so it never drifts toward the centre.
+        val collapse = el("div", "panelCollapse panelCollapse-$side displayFont")
         collapse.textContent = "–"
         collapse.title = "Collapse / expand"
         collapse.onclick = {
@@ -34,7 +36,6 @@ object SidePanelCollapse {
             collapse.textContent = if (collapsed) "+" else "–"
             null
         }
-        bar.appendChild(collapse)
-        container.insertBefore(bar, container.firstChild)
+        container.insertBefore(collapse, container.firstChild)
     }
 }
