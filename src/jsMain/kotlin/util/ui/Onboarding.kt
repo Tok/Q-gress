@@ -114,7 +114,7 @@ object Onboarding {
      */
     fun showLocation(onBack: () -> Unit, onStart: (Double, Double, String) -> Unit) {
         currentBack = onBack // Esc → back to map size
-        val screen = screen("CHOOSE A LOCATION")
+        val screen = screen("LOCATION SETUP")
         var currentName = ""
         // The coords of the currently-named selection. The user pans/zooms to fine-tune the play-area box
         // AFTER picking a place, so the confirmed centre can drift from it — if it drifts far, the name no
@@ -223,7 +223,7 @@ object Onboarding {
      */
     fun showDrivers(userFaction: Faction, onBack: () -> Unit, onNext: () -> Unit) {
         currentBack = onBack // Esc → back to faction pick
-        val screen = screen("WHO'S DRIVING?")
+        val screen = screen("TEAM SETUP")
         val intro = div("onboardWarn")
         intro.textContent = "Pick a brain for each side — the default is neural net vs neural net (AI vs AI). " +
             "Set your side to Human to drive it yourself with the tuning sliders."
@@ -316,7 +316,7 @@ object Onboarding {
      *  (NPC population isn't a player choice — it's auto-derived from map size + location; see Config.) */
     fun showMapSize(defaultPortals: Int, onBack: () -> Unit, onStart: (Int, Int, Int, StartStage) -> Unit) {
         currentBack = onBack // Esc → back to faction pick
-        val screen = screen("MAP SIZE & PORTALS")
+        val screen = screen("MAP SETUP")
         val widthInput = numberInput(Sim.width)
         val heightInput = numberInput(Sim.height)
         val portalsInput = numberInput(defaultPortals)
