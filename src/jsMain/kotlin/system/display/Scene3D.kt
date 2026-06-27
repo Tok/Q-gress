@@ -68,10 +68,12 @@ import kotlin.math.sqrt
  * The simulation stays 2D; [sync] is called each tick to (re)place 3D objects
  * from world state. Rendering happens continuously via the custom layer.
  */
-// LargeClass suppressed (temporarily): Scene3D is the renderer hub. The god-object split is in progress —
-// already out: the demo sandbox (Showcases) and portal-mesh construction (PortalBuilder). Remaining to
-// extract before the suppress can drop: the effects dispatch, the entity-sync builders, and the
-// coordinate/terrain helpers (PLAN.md → phase B "split god-objects").
+// LargeClass suppressed (intentional): Scene3D is the scene-graph hub — it owns the three.js groups and the
+// per-tick sync that places every entity into them, which is irreducibly large and cohesive. The cleanly
+// separable concerns HAVE been extracted (Showcases demo sandbox, PortalBuilder mesh construction, plus
+// ShatterFx/HackFx/FieldFx/CaptureFx/Spawns/ShardAssets/…). What remains — entity sync + effect dispatch —
+// is tightly bound to the groups; relocating it behind a ~30-member internal API purely to beat the
+// line cap would make the code worse, not better, so the suppress stays.
 @Suppress("TooManyFunctions", "LargeClass")
 object Scene3D {
     // Metres per CSS pixel at zoom 0 on the equator, for MapLibre's 512-px tiles
