@@ -18,10 +18,7 @@ object Movement {
     // Flow-field cells read empty while the field computes async (see Pathfinding.computeFieldAsync).
     // Until it lands, head straight for the destination at unit magnitude so the agent keeps moving
     // (never stalls on Complex.ZERO → stuck → never re-targets) and re-samples the real field later.
-    fun headingTo(from: Pos, to: Pos): Complex {
-        val raw = Complex(to.x - from.x, to.y - from.y)
-        return if (raw == Complex.ZERO) Complex.ZERO else raw.copyWithNewMagnitude(1.0)
-    }
+    fun headingTo(from: Pos, to: Pos): Complex = MovementMath.headingTo(from, to)
 
     fun findUncapturedPortals() = World.allPortals.filter { it.isUncaptured() }
     fun hasUncapturedPortals() = findUncapturedPortals().isNotEmpty()
@@ -113,14 +110,5 @@ object Movement {
         return agent.copy(actionPortal = destination, destination = nextDest)
     }
 
-    fun move(velocity: Complex, force: Complex, limit: Double): Complex {
-        // if (isDrunk && Rng.randomBool()) { return Complex.random() } //TODO
-        val actualForce = if (force != Complex.ZERO) force else Complex.random()
-        val newVelo = velocity + actualForce
-        return if (newVelo.mag <= limit) {
-            newVelo
-        } else {
-            newVelo.copyWithNewMagnitude(limit)
-        }
-    }
+    fun move(velocity: Complex, force: Complex, limit: Double): Complex = MovementMath.move(velocity, force, limit)
 }
