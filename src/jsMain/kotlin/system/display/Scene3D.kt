@@ -29,6 +29,9 @@ import system.audio.PortalChangeSound
 import system.audio.SoundUtil
 import system.audio.SteamSound
 import system.building.BuildingShake
+import system.display.shader.GlassShader
+import system.display.shader.PlasmaShader
+import system.display.shader.ShieldShader
 import util.Debug
 import util.data.Pos
 import kotlin.math.PI

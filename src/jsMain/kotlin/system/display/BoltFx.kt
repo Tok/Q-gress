@@ -3,6 +3,7 @@ package system.display
 import external.Three
 import org.khronos.webgl.Float32Array
 import org.khronos.webgl.set
+import system.display.shader.GlassShader
 import util.Util
 
 /**

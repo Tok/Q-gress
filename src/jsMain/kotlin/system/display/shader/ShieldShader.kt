@@ -1,4 +1,4 @@
-package system.display
+package system.display.shader
 
 import external.Three
 import util.ColorUtil

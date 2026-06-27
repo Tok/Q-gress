@@ -1,6 +1,7 @@
 package system.display
 
 import external.Three
+import system.display.shader.PlasmaShader
 
 /**
  * Transient "dissolve" effect for control fields that have just been destroyed. [Scene3D] detects a

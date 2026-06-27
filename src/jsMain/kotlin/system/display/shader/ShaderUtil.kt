@@ -1,4 +1,4 @@
-package system.display
+package system.display.shader
 
 /** Render a Double as a GLSL float literal (always with a decimal point, so `2` becomes `2.0`). */
 internal fun Double.glsl(): String {

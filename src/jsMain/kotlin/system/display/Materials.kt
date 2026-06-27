@@ -3,6 +3,7 @@ package system.display
 import external.Three
 import kotlinx.browser.document
 import org.w3c.dom.HTMLCanvasElement
+import system.display.shader.GlassShader
 import kotlin.math.roundToInt
 
 /**
