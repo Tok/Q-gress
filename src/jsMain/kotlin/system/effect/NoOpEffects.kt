@@ -16,6 +16,7 @@ object NoOpEffects : Effects {
     override fun showDamageNumber(portal: Portal, amount: Int) = Unit
     override fun recordHack(id: String, faction: Faction, glyph: Boolean, durationS: Double) = Unit
     override fun rewardFx(portalLocation: Pos, level: Int, to: Pos, colors: List<String>) = Unit
+    override fun steamPuff(portalLocation: Pos, level: Int) = Unit
     override fun recordDeploy(id: String, octant: Octant, from: Pos) = Unit
     override fun collectXmFx(from: Pos, to: Pos) = Unit
     override fun fireBolt(from: Pos, fromLevel: Int, to: Pos, color: String) = Unit

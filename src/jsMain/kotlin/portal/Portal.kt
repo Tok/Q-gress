@@ -395,42 +395,22 @@ data class Portal(
     private fun maxHacks(): Int = MAX_HACKS + Multihack.additionalHacks(mods.values)
 
     private fun handleCooldown(hacker: Agent, readOnly: Boolean): Cooldown {
-        // a result of NONE should add a the ticknumber to the list of the last hacks
-        val key = hacker.key()
-        fun cool(agentsLastHacks: MutableList<Int>, tickNr: Int): Cooldown {
-            agentsLastHacks.sort()
-            val baseCooldownS = (Cooldown.FIVE.seconds * cooldownFactor()).toInt() // heat sinks shorten it
-            val cooldown = PortalMath.cooldownAfter(tickNr - agentsLastHacks.last(), baseCooldownS)
-            if (cooldown == Cooldown.NONE && !readOnly) {
-                agentsLastHacks.add(tickNr)
-                lastHacks[key] = mutableListOf(tickNr)
-            }
-            return cooldown
-        }
-
-        fun burn(agentsLastHacks: MutableList<Int>, tickNr: Int): Cooldown {
-            if (PortalMath.isBurnedOut(agentsLastHacks, tickNr)) return Cooldown.BURNOUT
-            if (!readOnly) {
-                agentsLastHacks.add(tickNr)
-                lastHacks[key] = mutableListOf(tickNr)
-            }
-            return Cooldown.NONE // reset
-        }
-
-        val isFirstHack = !lastHacks.containsKey(key)
-        return if (isFirstHack) {
-            if (!readOnly) {
-                lastHacks[key] = mutableListOf(World.tick)
-            }
-            Cooldown.NONE
-        } else {
-            val agentsLastHacks: MutableList<Int> = lastHacks.getValue(key)
-            if (agentsLastHacks.count() < maxHacks()) {
-                cool(agentsLastHacks, World.tick)
-            } else {
-                burn(agentsLastHacks, World.tick)
+        // Per-agent hack history (tick numbers). Burnout = maxHacks() hacks all still within the burnout window
+        // (PortalMath.isBurnedOut); the time-cooldown between hacks is keyed off the most recent. The list is
+        // kept to the last maxHacks() entries so it's bounded and burnout can recur once old hacks age out.
+        val hacks = lastHacks.getOrPut(hacker.key()) { mutableListOf() }
+        if (hacks.size >= maxHacks() && PortalMath.isBurnedOut(hacks, World.tick)) return Cooldown.BURNOUT
+        val baseCooldownS = (Cooldown.FIVE.seconds * cooldownFactor()).toInt() // heat sinks shorten it
+        val cooldown = if (hacks.isEmpty()) Cooldown.NONE else PortalMath.cooldownAfter(World.tick - hacks.max(), baseCooldownS)
+        if (cooldown == Cooldown.NONE && !readOnly) {
+            hacks.add(World.tick)
+            while (hacks.size > maxHacks()) hacks.removeAt(0)
+            // This hack just tipped the portal into burnout for this agent → vent a one-shot steam puff.
+            if (hacks.size >= maxHacks() && PortalMath.isBurnedOut(hacks, World.tick)) {
+                Fx.sink.steamPuff(location, getLevel().toInt())
             }
         }
+        return cooldown
     }
 
     fun isOwnedByEnemy(agent: Agent) = owner?.faction != null && owner?.faction != agent.faction

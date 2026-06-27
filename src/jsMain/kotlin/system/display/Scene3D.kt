@@ -27,6 +27,7 @@ import portal.XmMap
 import util.BuildingShake
 import util.Debug
 import util.SoundUtil
+import util.SteamSound
 import util.data.Pos
 import kotlin.math.PI
 import kotlin.math.abs
@@ -290,6 +291,7 @@ object Scene3D {
         BoltFx.register(newScene)
         XmFx.register(newScene)
         RewardFx.register(newScene)
+        SmokeFx.register(newScene)
         showcaseGroup = Three.Group()
         newScene.add(showcaseGroup)
         scene = newScene
@@ -359,6 +361,7 @@ object Scene3D {
         DeployFx.hasActive() ||
         XmFx.hasActive() ||
         RewardFx.hasActive() ||
+        SmokeFx.hasActive() ||
         XmpBurst.hasActive() ||
         FieldFx.hasActive() ||
         BoltFx.hasActive()
@@ -374,6 +377,7 @@ object Scene3D {
         if (DeployFx.hasActive()) DeployFx.update()
         if (XmFx.hasActive()) XmFx.update()
         if (RewardFx.hasActive()) RewardFx.update()
+        if (SmokeFx.hasActive()) SmokeFx.update()
         if (FieldFx.hasActive()) FieldFx.update(dt)
         if (XmpBurst.hasActive()) {
             val canvas = map.getCanvas()
@@ -574,6 +578,19 @@ object Scene3D {
         )
         val dst = doubleArrayOf(sceneX(to), sceneY(to), groundZ(to) + HEAD_Z)
         colors.take(MAX_REWARD_CUBES).forEachIndexed { i, c -> RewardFx.spawn(top, dst, c, i * REWARD_STAGGER_S) }
+    }
+
+    /** A burned-out portal vents a one-shot white-steam puff from its flask top (+ a subtle hiss). */
+    fun steamPuff(portalLocation: Pos, level: Int) {
+        scene ?: return
+        val lvl = level.coerceAtLeast(1).toDouble()
+        val flaskTop = doubleArrayOf(
+            sceneX(portalLocation),
+            sceneY(portalLocation),
+            groundZ(portalLocation) + orbCenterZ(lvl) + TOP_R * orbScale(lvl),
+        )
+        SmokeFx.puff(flaskTop)
+        SteamSound.play(portalLocation)
     }
 
     /** Drop the deployed mods out of the orb when a portal is neutralized / removed. */

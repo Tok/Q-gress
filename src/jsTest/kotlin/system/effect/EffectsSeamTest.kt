@@ -76,6 +76,7 @@ private class CountingEffects : Effects {
     var showDamageNumber = 0
     var recordHack = 0
     var rewardFx = 0
+    var steamPuff = 0
     var recordDeploy = 0
     var collectXmFx = 0
     var fireBolt = 0
@@ -98,6 +99,10 @@ private class CountingEffects : Effects {
 
     override fun rewardFx(portalLocation: Pos, level: Int, to: Pos, colors: List<String>) {
         rewardFx++
+    }
+
+    override fun steamPuff(portalLocation: Pos, level: Int) {
+        steamPuff++
     }
 
     override fun recordDeploy(id: String, octant: Octant, from: Pos) {

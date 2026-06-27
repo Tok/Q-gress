@@ -29,6 +29,9 @@ interface Effects {
     /** Reward drops flying from a hacked portal to the agent — one item-coloured cube per [colors] entry. */
     fun rewardFx(portalLocation: Pos, level: Int, to: Pos, colors: List<String>)
 
+    /** A one-shot white-steam puff vented from a portal's flask top when an agent burns it out (over-hacks it). */
+    fun steamPuff(portalLocation: Pos, level: Int)
+
     /** A deployed resonator rod flying into [octant] from the agent at [from]. */
     fun recordDeploy(id: String, octant: Octant, from: Pos)
 
