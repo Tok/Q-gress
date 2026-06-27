@@ -1,6 +1,7 @@
 package system.display
 
 import external.Three
+import util.ColorUtil
 
 /**
  * A classic sci-fi **shield bubble** for a shielded portal: a translucent sphere shell (rendered at
@@ -79,7 +80,7 @@ object ShieldShader {
 
     /** A shield-bubble material tinted by [hexColor]; [intensity] (0..1) scales density/brightness. */
     fun material(hexColor: String, intensity: Double): dynamic {
-        val rgb = hexToRgb(hexColor)
+        val rgb = ColorUtil.hexToRgb(hexColor)
         val uni: dynamic = js("({ uTint: { value: null }, uIntensity: { value: 1.0 } })")
         uni.uTint.value = js("({ x: 0.0, y: 0.0, z: 0.0 })")
         uni.uTint.value.x = rgb[0]
@@ -99,19 +100,4 @@ object ShieldShader {
         p.side = 2 // DoubleSide — see both faces of the bubble
         return Three.ShaderMaterial(p)
     }
-
-    private fun hexToRgb(hex: String): DoubleArray {
-        val h = hex.removePrefix("#")
-        return doubleArrayOf(
-            h.substring(0, 2).toInt(16) / 255.0,
-            h.substring(2, 4).toInt(16) / 255.0,
-            h.substring(4, 6).toInt(16) / 255.0,
-        )
-    }
-}
-
-/** Render a Double as a GLSL float literal (always with a decimal point). */
-private fun Double.glsl(): String {
-    val s = this.toString()
-    return if (s.contains('.') || s.contains('e') || s.contains('E')) s else "$s.0"
 }

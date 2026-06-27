@@ -1,6 +1,7 @@
 package system.display
 
 import external.Three
+import util.ColorUtil
 
 /**
  * Abstract "lab-glass" material, ported from qlippostasis's `glass.gdshader` and adapted for our
@@ -121,7 +122,7 @@ object GlassShader {
      * fading out at end of life.
      */
     fun material(hexColor: String, bright: Double = 1.0, fill: Double = 2.0): dynamic {
-        val rgb = hexToRgb(hexColor)
+        val rgb = ColorUtil.hexToRgb(hexColor)
         val uni: dynamic = js("({ uTint: { value: null }, uBright: { value: 1.0 }, uFade: { value: 1.0 }, uFill: { value: 2.0 } })")
         uni.uTint.value = js("({ x: 0.0, y: 0.0, z: 0.0 })")
         uni.uTint.value.x = rgb[0]
@@ -140,18 +141,4 @@ object GlassShader {
         p.side = 2 // DoubleSide — the far wall shows through, the "thick glass" cue
         return Three.ShaderMaterial(p)
     }
-
-    private fun hexToRgb(hex: String): DoubleArray {
-        val h = hex.removePrefix("#")
-        val r = h.substring(0, 2).toInt(16) / 255.0
-        val g = h.substring(2, 4).toInt(16) / 255.0
-        val b = h.substring(4, 6).toInt(16) / 255.0
-        return doubleArrayOf(r, g, b)
-    }
-}
-
-/** Render a Double as a GLSL float literal (always with a decimal point). */
-private fun Double.glsl(): String {
-    val s = this.toString()
-    return if (s.contains('.') || s.contains('e') || s.contains('E')) s else "$s.0"
 }

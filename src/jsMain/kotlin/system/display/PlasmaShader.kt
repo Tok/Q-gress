@@ -1,6 +1,7 @@
 package system.display
 
 import external.Three
+import util.ColorUtil
 
 /**
  * Animated plasma material for control fields — a faction-tinted energy sheet whose brightness
@@ -21,7 +22,7 @@ object PlasmaShader {
 
     /** A plasma [Three.ShaderMaterial] tinted with [hexColor] (faction colour). Cached per colour. */
     fun material(hexColor: String): dynamic = cache.getOrPut(hexColor) {
-        val rgb = hexToRgb(hexColor)
+        val rgb = ColorUtil.hexToRgb(hexColor)
         val uni: dynamic = js("({ uTint: { value: { x: 0.0, y: 0.0, z: 0.0 } } })")
         uni.uTint.value.x = rgb[0]
         uni.uTint.value.y = rgb[1]
@@ -57,13 +58,4 @@ object PlasmaShader {
             " vec3 col = uTint * (0.45 + v * 0.85);\n" +
             " float a = (0.16 + v * 0.2) * mix(MIN_HEALTH_ALPHA, 1.0, clamp(vHealth, 0.0, 1.0));\n" +
             " gl_FragColor = vec4(col, a); }"
-
-    private fun hexToRgb(hex: String): DoubleArray {
-        val h = hex.removePrefix("#")
-        return doubleArrayOf(
-            h.substring(0, 2).toInt(16) / 255.0,
-            h.substring(2, 4).toInt(16) / 255.0,
-            h.substring(4, 6).toInt(16) / 255.0,
-        )
-    }
 }

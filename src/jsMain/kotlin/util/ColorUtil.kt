@@ -30,6 +30,25 @@ object ColorUtil {
         return "#" + red.toHexString() + green.toHexString() + blue.toHexString()
     }
 
+    /** Parse a "#rrggbb" (or "rrggbb") hex colour into an [r, g, b] array in 0..1 — e.g. for GLSL uniforms. */
+    fun hexToRgb(hex: String): DoubleArray {
+        val h = hex.removePrefix("#")
+        return doubleArrayOf(
+            h.substring(0, 2).toInt(16) / 255.0,
+            h.substring(2, 4).toInt(16) / 255.0,
+            h.substring(4, 6).toInt(16) / 255.0,
+        )
+    }
+
+    /** The channel-wise midpoint of two "#rrggbb" colours, as an "rgb(r, g, b)" string. */
+    fun blendHex(a: String, b: String): String {
+        fun channel(hex: String, i: Int) = hex.substring(1 + i * 2, 3 + i * 2).toInt(16)
+        val r = (channel(a, 0) + channel(b, 0)) / 2
+        val g = (channel(a, 1) + channel(b, 1)) / 2
+        val bl = (channel(a, 2) + channel(b, 2)) / 2
+        return "rgb($r, $g, $bl)"
+    }
+
     fun spectrum(range: Int, fraction: Double) = when (range) {
         0 -> Triple(1.0, fraction, 0.0) // Red -> Yellow
         1 -> Triple(1.0 - fraction, 1.0, 0.0) // Yellow -> Green

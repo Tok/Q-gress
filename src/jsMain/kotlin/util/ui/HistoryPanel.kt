@@ -7,6 +7,7 @@ import kotlinx.browser.document
 import org.w3c.dom.HTMLElement
 import system.Checkpoint
 import system.Cycle
+import util.ColorUtil
 
 /**
  * Right-side **history dashboard** (DOM + uPlot): one row per metric — Covered area (MU), Portals,
@@ -26,7 +27,7 @@ object HistoryPanel {
     // The exact midpoint between the two faction colours, used for the OVERLAP line (drawn on top where the
     // two series coincide) so the chart is faction-agnostic — without it, whichever faction is drawn last
     // (RES) always wins the colour where the lines sit on top of each other, even though the values are equal.
-    private val OVERLAP_COLOR = blendHex(Faction.ENL.color, Faction.RES.color)
+    private val OVERLAP_COLOR = ColorUtil.blendHex(Faction.ENL.color, Faction.RES.color)
 
     /** A dashboard row: a title, the live per-faction value, and the per-checkpoint history value. */
     private class Metric(
@@ -134,15 +135,6 @@ object HistoryPanel {
         s.width = 1.5
         s.points = js("({ show: false })")
         return s
-    }
-
-    // Midpoint of two "#rrggbb" colours as an "rgb(r, g, b)" string.
-    private fun blendHex(a: String, b: String): String {
-        fun channel(hex: String, i: Int) = hex.substring(1 + i * 2, 3 + i * 2).toInt(16)
-        val r = (channel(a, 0) + channel(b, 0)) / 2
-        val g = (channel(a, 1) + channel(b, 1)) / 2
-        val bl = (channel(a, 2) + channel(b, 2)) / 2
-        return "rgb($r, $g, $bl)"
     }
 
     private fun el(cls: String): HTMLElement {

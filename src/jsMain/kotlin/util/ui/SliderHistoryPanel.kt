@@ -9,6 +9,7 @@ import external.UPlot
 import kotlinx.browser.document
 import org.w3c.dom.HTMLElement
 import system.Cycle
+import util.ColorUtil
 
 /**
  * The slider-history section of the **AI** footer tab (merged with [AiPanel]'s observation readout): one
@@ -26,7 +27,7 @@ object SliderHistoryPanel {
     private const val CHART_H = 40
     private const val FILL_ALPHA = "0.16)" // appended to a faction's "rgba(r, g, b, " prefix
 
-    private val OVERLAP_COLOR = blendHex(Faction.ENL.color, Faction.RES.color)
+    private val OVERLAP_COLOR = ColorUtil.blendHex(Faction.ENL.color, Faction.RES.color)
     private val SLOTS: List<QValue> = SliderVector.ORDER
 
     private var built = false
@@ -166,15 +167,6 @@ object SliderHistoryPanel {
         s.width = 1.5
         s.points = js("({ show: false })")
         return s
-    }
-
-    // Midpoint of two "#rrggbb" colours as an "rgb(r, g, b)" string (the faction-agnostic overlap colour).
-    private fun blendHex(a: String, b: String): String {
-        fun channel(hex: String, i: Int) = hex.substring(1 + i * 2, 3 + i * 2).toInt(16)
-        val r = (channel(a, 0) + channel(b, 0)) / 2
-        val g = (channel(a, 1) + channel(b, 1)) / 2
-        val bl = (channel(a, 2) + channel(b, 2)) / 2
-        return "rgb($r, $g, $bl)"
     }
 
     private fun pct(value: Double): String = "${(value * 100.0).toInt()}%"
