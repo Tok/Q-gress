@@ -52,6 +52,7 @@ import util.GameplayPrefs
 import util.NameGen
 import util.Rng
 import util.data.*
+import util.data.toJson
 import util.freshSeed
 import kotlin.js.Json
 
