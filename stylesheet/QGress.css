@@ -33,13 +33,13 @@
     /* The player's faction accent — the ONLY chrome colour ("lasers"). Set to the chosen faction's
        colour at startup (HtmlUtil.chooseUserFaction / LoadingOverlay.setAccent); neutral chrome until then.
        Everything faction-branded in the UI reads this, so a RES player never sees ENL green and vice versa. */
-    --faction: #cfd3d8;
+    --faction: #d3d3d3;
 
     /* UI theme: glass, chrome and lasers (the laser = --faction). Chrome = light metal buttons;
        rubber = the near-black translucent panel like the 3D gasket; the faction edge/glow is the accent. */
-    --ui-chrome: linear-gradient(180deg, #eef1f5 0%, #cfd4db 52%, #b4bac3 100%);
-    --ui-chrome-hi: linear-gradient(180deg, #ffffff 0%, #dfe3e9 52%, #c6ccd4 100%);
-    --ui-rubber: rgba(10, 11, 13, 0.82);
+    --ui-chrome: linear-gradient(180deg, #f1f1f1 0%, #d5d5d5 52%, #bbbbbb 100%);
+    --ui-chrome-hi: linear-gradient(180deg, #ffffff 0%, #e4e4e4 52%, #cdcdcd 100%);
+    --ui-rubber: rgba(11, 11, 11, 0.82);
     --ui-glass-border: rgba(255, 255, 255, 0.16);
     --ui-faction-edge: color-mix(in srgb, var(--faction) 55%, transparent);
     --ui-faction-glow: 0 0 14px color-mix(in srgb, var(--faction) 50%, transparent);
@@ -62,6 +62,11 @@ html, body {
     /* Global default font = Coda (the data/body face); display elements opt into Chakra Petch via
        .displayFont. Always end stacks in a generic so we never fall back to an arbitrary system font. */
     font-family: "Coda", monospace;
+    /* Never auto-ligature "1/2"/"1/4" into ½/¼ glyphs (the font substitutes them via frac AND ligatures) —
+       keep literal fractions like the "n/8" resonator counts. Disable both, globally; inherited and it
+       leaves tabular-nums (a font-variant-numeric setting) untouched. */
+    font-feature-settings: "frac" 0, "afrc" 0;
+    font-variant-ligatures: none;
 }
 .container {
     position: relative;
@@ -97,7 +102,10 @@ html, body {
 }
 /* Top-agents leaderboard table (UI Stage 3: canvas→DOM). */
 .topAgents {
-    width: 100%;
+    /* Hug the table + sit centered, so the glass pane (below) blurs only the centre, not the whole bar. */
+    width: fit-content;
+    max-width: 100%;
+    margin-inline: auto;
     box-sizing: border-box;
     color: #ffffff;
 }
@@ -105,11 +113,12 @@ html, body {
 .aiPanel {
     display: flex;
     gap: 28px;
-    width: 100%;
+    width: fit-content; /* hug the two faction columns so the scene shows through beside it */
+    max-width: 100%;
     box-sizing: border-box;
     font-family: "Coda", monospace;
     font-size: 11px;
-    color: #b8c4bc;
+    color: #bdbdbd;
 }
 .aiCol {
     flex: 1;
@@ -134,7 +143,7 @@ html, body {
 }
 .aiDriverSelect {
     background: rgba(0, 0, 0, 0.5);
-    color: #e6ebe8;
+    color: #e8e8e8;
     border: 1px solid rgba(255, 255, 255, 0.18);
     border-radius: 4px;
     font-family: "Coda", monospace;
@@ -153,7 +162,7 @@ html, body {
     line-height: 1.45;
 }
 .aiObsLabel {
-    color: #9aa6a0;
+    color: #a0a0a0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -182,14 +191,14 @@ html, body {
     font-size: 11px;
 }
 .taHeadCell {
-    color: #cfd6d2;
+    color: #d2d2d2;
     font-weight: bold;
     padding: 2px 6px 3px;
     text-align: right;
     /* Stay visible while the (expanded) body scrolls through every agent. */
     position: sticky;
     top: 0;
-    background: var(--ui-rubber, rgba(10, 11, 13, 0.92));
+    background: var(--ui-rubber, rgba(11, 11, 11, 0.92));
 }
 .taSortable {
     cursor: pointer;
@@ -329,7 +338,7 @@ html, body {
     padding-left: 14px;
     border-left: 1px solid rgba(255, 255, 255, 0.16);
     font-size: 13px;
-    color: #cdd5d0;
+    color: #d1d1d1;
     white-space: nowrap;
 }
 /* Fixed-width fields so the centered strip's overall width never changes as the values tick. */
@@ -376,7 +385,7 @@ html, body {
     letter-spacing: 1px;
     padding: 3px 10px;
     background: rgba(255, 255, 255, 0.06);
-    color: #9aa6a0;
+    color: #a0a0a0;
     border: 1px solid transparent;
     border-radius: 3px;
     cursor: pointer;
@@ -418,7 +427,7 @@ html, body {
     font-family: "Chakra Petch", sans-serif;
     letter-spacing: 1px;
     font-size: 11px;
-    color: #9aa6a0;
+    color: #a0a0a0;
 }
 /* The per-slider lock toggle (AI-driven only): white icon, pushed to the right edge of its row. */
 .qLockToggle {
@@ -429,6 +438,11 @@ html, body {
     cursor: pointer;
 }
 .footerControls {
+    /* Pin to the footer's top-right corner (the footer is position:fixed = the containing block), so the
+       expand/collapse icons sit at the far right regardless of the header's flex flow / content width. */
+    position: absolute;
+    top: 4px;
+    right: 14px;
     display: flex;
     align-items: center;
     gap: 10px;
@@ -436,7 +450,7 @@ html, body {
 .footerChevron {
     background: none;
     border: none;
-    color: #cfd6d2;
+    color: #d2d2d2;
     font-size: 14px;
     line-height: 1;
     cursor: pointer;
@@ -444,7 +458,7 @@ html, body {
 .footerMaximize {
     background: none;
     border: none;
-    color: #cfd6d2;
+    color: #d2d2d2;
     line-height: 0;
     padding: 0;
     cursor: pointer;
@@ -468,6 +482,42 @@ html, body {
     max-height: calc(100vh - 140px);
 }
 
+/* Glass panes INSIDE the (now unblurred) footer — only the CONTENT that needs to read over the map gets the
+   blur, never the section titles (consistent across tabs; TRAIN is the exception — it panes everything). Panes
+   hug their content (contract) so as much of the scene shows through as possible. AGENTS/PORTALS: the table
+   (.topAgents, centered). STATS: the observation bars (.aiPanel) and EACH behaviour-slider graph on its own
+   (.sliderHistoryGrid .historyRow — scoped so the right-dock HistoryPanel rows are untouched). BRAINS: the NN
+   summary + genome (.footerGlass, set in BrainsPanel). TRAIN: the whole tab (#footerTrain). EVENT LOG: just
+   the text column (.statsComLines). */
+.footerGlass,
+.topAgents,
+.aiPanel,
+.sliderHistoryGrid .historyRow,
+#footerTrain,
+.statsComLines {
+    backdrop-filter: blur(7px);
+    -webkit-backdrop-filter: blur(7px);
+    background: rgba(0, 0, 0, 0.45);
+    border: 1px solid var(--ui-glass-border);
+    border-radius: 6px;
+    box-sizing: border-box;
+    padding: 8px 10px;
+}
+/* TRAIN is one pane around everything; give its inner sections room to breathe. */
+#footerTrain {
+    padding: 10px 12px;
+}
+/* The genome pane hugs its canvas (a small pane behind the heatmap, not the whole card). */
+.brainsGenomePane {
+    width: fit-content;
+}
+/* The slider-history grid itself isn't a pane — each graph (.historyRow) is its own. Hug the fixed-width
+   columns and add a row gap so the scene shows between the individual graph panes. */
+.sliderHistoryGrid {
+    width: fit-content;
+    row-gap: 8px;
+}
+
 /* AI footer tab: the observation readout + the slider-history sparklines, side by side (wrap when narrow). */
 #footerAi {
     display: flex;
@@ -480,7 +530,7 @@ html, body {
     letter-spacing: 1px;
     font-size: 12px;
     text-transform: uppercase;
-    color: #9aa6a0;
+    color: #a0a0a0;
     margin-bottom: 8px;
 }
 .brainsSplit {
@@ -510,12 +560,12 @@ html, body {
     text-transform: uppercase;
     letter-spacing: 1px;
     font-size: 13px;
-    color: #cfe3ff;
+    color: #e8e8e8;
     margin-bottom: 6px;
 }
 .brainsText {
     font-size: 12px;
-    color: #b9c2bd;
+    color: #bdbdbd;
     line-height: 1.4;
     margin-bottom: 8px;
 }
@@ -527,12 +577,12 @@ html, body {
     margin-bottom: 4px;
 }
 .brainsKvKey {
-    color: #7f8a84;
+    color: #848484;
     flex: 0 0 128px; /* wide enough that "Driving input" / "Peak hidden" don't wrap */
     text-align: left;
 }
 .brainsKvVal {
-    color: #e7edea;
+    color: #eaeaea;
     flex: 1 1 auto;
     min-width: 0; /* allow the value to wrap inside the flex row instead of being clipped */
     word-break: break-word;
@@ -541,13 +591,13 @@ html, body {
     font-size: 10px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    color: #7f8a84;
+    color: #848484;
     margin: 8px 0 2px;
 }
 .brainsPre {
     font-size: 10px;
     line-height: 1.3;
-    color: #cfd6d2;
+    color: #d2d2d2;
     background: rgba(0, 0, 0, 0.35);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 4px;
@@ -561,7 +611,7 @@ html, body {
 .brainsChose {
     font-size: 15px;
     font-weight: bold;
-    color: #cfe3ff;
+    color: #e8e8e8;
     line-height: 1.3;
     margin: 2px 0 8px;
 }
@@ -571,14 +621,14 @@ html, body {
 }
 .brainsHelpSummary {
     cursor: pointer;
-    color: #7f8a84;
+    color: #848484;
     font-size: 11px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     user-select: none;
 }
 .brainsHelpSummary:hover {
-    color: #cfe3ff;
+    color: #e8e8e8;
 }
 .brainsLinks {
     display: flex;
@@ -614,7 +664,7 @@ html, body {
     letter-spacing: 1px;
     font-size: 10px;
     text-transform: uppercase;
-    color: #7f8a84;
+    color: #848484;
     margin: 4px 0 6px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     padding-bottom: 3px;
@@ -632,7 +682,7 @@ html, body {
     margin-bottom: 4px;
 }
 .llmKey {
-    color: #9aa6a0;
+    color: #a0a0a0;
     font-size: 10px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -651,7 +701,7 @@ html, body {
     padding: 4px 6px;
     margin: 2px 0;
     font-size: 11px;
-    color: #cdd6d0;
+    color: #d1d1d1;
 }
 
 /* NET footer tab: the neural-net activation diagram + a stats sidebar (best viewed footer-maximized). */
@@ -683,7 +733,7 @@ html, body {
     min-width: 0;
 }
 .netVizStatKey {
-    color: #9aa6a0;
+    color: #a0a0a0;
     font-size: 10px;
     letter-spacing: 0.5px;
     text-transform: uppercase;
@@ -695,21 +745,24 @@ html, body {
     overflow: hidden;
     text-overflow: ellipsis;
 }
-/* A darker, less-transparent off-tint gray pane behind ONLY the activation diagram, so the connection lines
-   stand out instead of fighting the blurred map showing through the footer glass. */
+/* The single glass pane behind each faction's activation diagram, so the connection lines read clearly.
+   Neutral grayscale (no blue tint) and a touch DARKER than the .footerGlass summary pane above it, to set the
+   diagram apart while staying in the same family. */
 .netVizDiagram {
     display: block;
     width: fit-content;
     margin: 4px auto; /* centre the activation diagram in the card */
     line-height: 0;
-    background: rgba(24, 28, 34, 0.66);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(7px);
+    -webkit-backdrop-filter: blur(7px);
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid var(--ui-glass-border);
     border-radius: 6px;
     padding: 4px;
 }
 .netVizSub {
     margin: 10px 0 3px;
-    color: #9aa6a0;
+    color: #a0a0a0;
     font-size: 10px;
     letter-spacing: 0.5px;
     text-transform: uppercase;
@@ -738,7 +791,7 @@ html, body {
     gap: 3px;
 }
 .trainFieldLabel {
-    color: #9aa6a0;
+    color: #a0a0a0;
     font-size: 10px;
     letter-spacing: 0.5px;
     text-transform: uppercase;
@@ -746,7 +799,7 @@ html, body {
 .trainInput,
 .trainSelect {
     background: rgba(0, 0, 0, 0.5);
-    color: #e6ebe8;
+    color: #e8e8e8;
     border: 1px solid rgba(255, 255, 255, 0.18);
     border-radius: 4px;
     font-family: "Coda", monospace;
@@ -760,7 +813,7 @@ html, body {
     font-family: "Chakra Petch", sans-serif;
     letter-spacing: 1px;
     background: rgba(120, 170, 255, 0.16);
-    color: #cfe3ff;
+    color: #e8e8e8;
     border: 1px solid rgba(120, 170, 255, 0.5);
     border-radius: 4px;
     padding: 5px 16px;
@@ -771,7 +824,7 @@ html, body {
 }
 .trainStatus {
     flex-basis: 100%;
-    color: #9aa6a0;
+    color: #a0a0a0;
     font-size: 12px;
     min-height: 16px;
 }
@@ -787,7 +840,7 @@ html, body {
     gap: 3px;
 }
 .trainProgressLabel {
-    color: #cfe3ff;
+    color: #e8e8e8;
     font-size: 11px;
     min-height: 13px;
 }
@@ -802,7 +855,7 @@ html, body {
 .trainProgressFill {
     height: 100%;
     width: 0;
-    background: linear-gradient(90deg, #4a8cff, #cfe3ff);
+    background: linear-gradient(90deg, #4a8cff, #e8e8e8);
     transition: width 0.08s linear;
 }
 .trainMain {
@@ -817,7 +870,7 @@ html, body {
     gap: 8px;
 }
 .trainColHead {
-    color: #9aa6a0;
+    color: #a0a0a0;
     font-size: 10px;
     letter-spacing: 0.5px;
     text-transform: uppercase;
@@ -831,7 +884,7 @@ html, body {
 .trainCaption {
     font-family: "Coda", monospace;
     font-size: 12px;
-    color: #cfe3ff;
+    color: #e8e8e8;
     font-variant-numeric: tabular-nums;
 }
 .trainActions {
@@ -844,7 +897,7 @@ html, body {
     font-family: "Chakra Petch", sans-serif;
     letter-spacing: 0.5px;
     background: rgba(0, 0, 0, 0.5);
-    color: #e6ebe8;
+    color: #e8e8e8;
     border: 1px solid rgba(255, 255, 255, 0.18);
     border-radius: 4px;
     padding: 4px 12px;
@@ -865,7 +918,7 @@ html, body {
     gap: 5px;
     font-family: "Coda", monospace;
     font-size: 12px;
-    color: #e6ebe8;
+    color: #e8e8e8;
     cursor: pointer;
 }
 .ladderTable {
@@ -876,7 +929,7 @@ html, body {
     min-width: 360px;
 }
 .ladderHeadCell {
-    color: #9aa6a0;
+    color: #a0a0a0;
     font-size: 10px;
     letter-spacing: 0.5px;
     text-transform: uppercase;
@@ -893,7 +946,7 @@ html, body {
 }
 .ladderName {
     text-align: left;
-    color: #cfe3ff;
+    color: #e8e8e8;
 }
 .ladderRow:first-child .ladderName {
     font-weight: bold; /* the leader (table is pre-sorted by avg MU margin) */
@@ -919,7 +972,7 @@ html, body {
 }
 .historyTitle {
     flex: 1;
-    color: #cfd6d2;
+    color: #d2d2d2;
 }
 .historyVal {
     width: 40px;
@@ -931,9 +984,12 @@ html, body {
     margin-top: 1px;
 }
 
-/* Action log lines — live in the footer's EVENT LOG tab (the footer owns the label + collapse). */
+/* Action log lines — live in the footer's EVENT LOG tab (the footer owns the label + collapse). The glass
+   pane (above) hugs the text (fit-content) rather than the whole footer width, so only the text is blurred. */
 .statsComLines {
-    width: 100%;
+    /* A STABLE width (viewport-relative, not content-relative) so the pane doesn't jitter as messages scroll;
+       left-anchored so the play-by-play reads left-justified. */
+    width: min(720px, 100%);
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -944,19 +1000,35 @@ html, body {
     font-size: 11px;
     line-height: 1.5;
     white-space: nowrap;
+    align-self: stretch; /* each line spans the pane… */
+    width: 100%;
+    text-align: left; /* …with its text hard-left */
 }
 /* Key (MAJOR) events stand out from the routine ones. */
 .statsComMajor {
     font-weight: bold;
 }
 /* EVENT LOG "only key events" filter row, above the log lines. */
+/* The EVENT LOG tab: force its whole content left-justified (the log reads as a left-aligned feed; centered
+   was strange) — overrides any inherited alignment. */
+#footerLog {
+    text-align: left;
+}
+/* Center the log PANE horizontally (both margins auto / align-self center), while the lines inside stay
+   hard-left (see .statsComLine) — so it's a centered pane of left-justified text. */
+#footerLog .statsComLines {
+    margin-inline: auto;
+    align-self: center;
+}
 .logFilter {
     display: flex;
+    flex-wrap: nowrap;
+    width: fit-content; /* hug the box + label so they stay together at the left (never spread / wrap apart) */
     justify-content: flex-start;
     align-items: center;
     gap: 4px;
     font-size: 11px;
-    color: #9aa6a0;
+    color: #a0a0a0;
     margin-bottom: 4px;
     cursor: pointer;
     user-select: none;
@@ -967,6 +1039,7 @@ html, body {
 }
 .logFilterLabel {
     cursor: pointer;
+    white-space: nowrap; /* keep the label on the checkbox's line, not wrapped below it */
 }
 /* Pre-load onboarding screens (faction → location); see util/ui/Onboarding. */
 .onboardScreen {
@@ -1026,7 +1099,7 @@ html, body {
     font-size: 12px;
     letter-spacing: 1px;
     text-decoration: none;
-    color: rgba(230, 235, 232, 0.6);
+    color: rgba(232, 232, 232, 0.6);
     pointer-events: auto;
     transition: color 0.15s;
 }
@@ -1043,7 +1116,7 @@ html, body {
     font-family: "Coda", monospace;
     font-size: 10px;
     letter-spacing: 1px;
-    color: rgba(230, 235, 232, 0.55);
+    color: rgba(232, 232, 232, 0.55);
     pointer-events: none;
 }
 .titleGithub svg {
@@ -1084,6 +1157,11 @@ html, body {
     display: flex;
     gap: 28px;
 }
+/* "Start at" label sitting before the [Start|Mid|End] stage buttons; vertically centred with them. */
+.onboardStageLabel {
+    align-self: center;
+    opacity: 0.85;
+}
 .onboardRow .popupButton {
     width: 88px;
     height: 42px;
@@ -1108,7 +1186,7 @@ html, body {
     align-items: center;
     gap: 10px;
     padding: 12px 18px 14px;
-    background: rgba(8, 12, 10, 0.55);
+    background: rgba(10, 10, 10, 0.55);
     border: 1px solid rgba(255, 255, 255, 0.16);
     border-radius: 6px;
     backdrop-filter: blur(3px);
@@ -1117,7 +1195,7 @@ html, body {
     font-family: "Coda", monospace; /* not the brand font, not all-caps — a calm prompt */
     font-size: 14px;
     letter-spacing: 2px;
-    color: #e6ebe8;
+    color: #e8e8e8;
 }
 /* Master volume — a fixed widget (top-right) that stays put through title, onboarding, world-gen and
    gameplay. z above the onboarding (9998) + loading (9999) overlays so it's always clickable. */
@@ -1132,7 +1210,7 @@ html, body {
     gap: 8px;
     font-family: "Coda", monospace;
     font-size: 13px;
-    color: #c8d0cc;
+    color: #cccccc;
 }
 /* "New version deployed" reload prompt (VersionCheck). */
 .updateBanner {
@@ -1142,7 +1220,7 @@ html, body {
     transform: translateX(-50%);
     z-index: 10000;
     padding: 8px 16px;
-    background: rgba(8, 12, 10, 0.92);
+    background: rgba(10, 10, 10, 0.92);
     border: 1px solid rgba(255, 255, 255, 0.5);
     border-radius: 4px;
     color: #ffffff;
@@ -1168,7 +1246,7 @@ html, body {
 .onboardHint {
     font-family: "Coda", monospace;
     font-size: 12px;
-    color: #9aa6a0;
+    color: #a0a0a0;
     max-width: 380px;
     text-align: center;
 }
@@ -1197,6 +1275,9 @@ html, body {
 .onboardBack {
     font-size: 22px;
     padding: 14px 28px;
+    /* min-width (not width/padding) is what actually widens it — .topButton pins width:89px and, with
+       border-box, padding stays inside that. onboardStart escapes the same way. A touch wider than Next. */
+    min-width: 260px;
     cursor: pointer;
     opacity: 0.8; /* a touch quieter than the forward button */
 }
@@ -1206,7 +1287,7 @@ html, body {
 .onboardSliderLabel {
     font-family: "Coda", monospace;
     font-size: 13px;
-    color: rgba(230, 235, 232, 0.85);
+    color: rgba(232, 232, 232, 0.85);
     align-self: center;
     min-width: 96px;
 }
@@ -1228,7 +1309,7 @@ html, body {
    chrome rule, so the highlight actually shows (the plain .onboardActive lost to it). */
 .onboardPreset.onboardActive {
     background: #ffffff;
-    color: #11151a;
+    color: #151515;
     border-color: #ffffff;
     box-shadow: 0 0 16px rgba(255, 255, 255, 0.7);
     font-weight: 700;
@@ -1252,7 +1333,7 @@ html, body {
     justify-content: flex-start;
     gap: 4px;
     cursor: pointer;
-    color: #e6ebe8;
+    color: #e8e8e8;
     font-size: 13px;
 }
 .driverExperimentalLabel input[type="checkbox"] {
@@ -1263,7 +1344,7 @@ html, body {
     display: inline;
 }
 .driverExperimentalNote {
-    color: #9aa6a0;
+    color: #a0a0a0;
     font-size: 11px;
     margin-top: 2px;
     line-height: 1.35;
@@ -1289,7 +1370,7 @@ html, body {
 .onboardFieldLabel {
     font-family: "Coda", monospace;
     font-size: 12px;
-    color: #9aa6a0;
+    color: #a0a0a0;
 }
 .onboardInput {
     width: 90px;
@@ -1332,7 +1413,7 @@ html, body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    background: radial-gradient(ellipse at center, #0c1410 0%, #000000 100%);
+    background: radial-gradient(ellipse at center, #101010 0%, #000000 100%);
     color: #ffffff;
     font-family: "Chakra Petch", sans-serif;
     transition: opacity 0.6s ease;
@@ -1362,7 +1443,7 @@ html, body {
 .loadingStatus {
     font-family: "Coda", monospace;
     font-size: 15px;
-    color: #b8c4bc;
+    color: #bdbdbd;
     margin-bottom: 14px;
     min-height: 18px;
     font-feature-settings: "frac" 0; /* don't turn counts like "111/200" into a ½ fraction glyph */
@@ -1396,7 +1477,7 @@ html, body {
 .loadingDetail {
     font-family: "Coda", monospace;
     font-size: 12px;
-    color: #9aa6a0;
+    color: #a0a0a0;
     margin-top: 10px;
     min-height: 16px;
     font-feature-settings: "frac" 0; /* don't turn counts like "111/200" into a ½ fraction glyph */
@@ -1641,7 +1722,7 @@ html, body {
 .qBarFill {
     height: 100%;
     width: 0;
-    background: #9aa6a0;
+    background: #a0a0a0;
 }
 #locationSelect {
     width: 233px;
@@ -1767,7 +1848,7 @@ html, body {
 .topButton, .topDrop, .menuItem, .onboardPreset, .speedBtn, .autoCamBtn,
 .gateNewGame, .onboardStart, .popupButton:not(.enl):not(.res) {
     background: var(--ui-chrome);
-    color: #14171c;
+    color: #181818;
     border: 1px solid rgba(0, 0, 0, 0.45);
     text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
 }
@@ -1798,9 +1879,15 @@ html, body {
 /* Glass + black-rubber panels with a faint faction-laser edge — the always-on dark surfaces. (The right
    intel column / history pane is intentionally NOT here: it uses the same flat neutral-border, no-blur style
    as the left slider pane — see .historyPanel / .tuneList.) */
-.gameMenu, .footer, .loadingPanel, .factionCta, .popup {
+.gameMenu, .loadingPanel, .factionCta, .popup {
     backdrop-filter: blur(7px);
     -webkit-backdrop-filter: blur(7px);
+    border: 1px solid var(--ui-faction-edge);
+}
+/* The footer itself is NOT blurred (like the side score panel) — blurring the whole bar over the moving map
+   was too much. Instead, content that needs to stay readable is wrapped in a .footerGlass pane (below); the
+   footer keeps its flat faction edge + its own dark tint (set on .footer). */
+.footer {
     border: 1px solid var(--ui-faction-edge);
 }
 .gameMenu, .loadingPanel {
@@ -1862,7 +1949,7 @@ html, body {
     z-index: 50;
     display: flex;
     flex-direction: column;
-    background: rgba(18, 18, 22, 0.96);
+    background: rgba(18, 18, 18, 0.96);
     border: 1px solid black;
     border-radius: 3px;
 }
@@ -2082,13 +2169,13 @@ html, body {
     font-size: 11px;
     letter-spacing: 1px;
     text-transform: uppercase;
-    color: #9aa6a0;
+    color: #a0a0a0;
     margin: 8px 0 2px;
 }
 .demoHint {
     font-size: 11px;
     line-height: 1.35;
-    color: #b8c4bc;
+    color: #bdbdbd;
     margin-bottom: 4px;
 }
 /* Horizontal wrapping group (the L1-8 / X1-8 selectors + faction/action rows). */
@@ -2186,7 +2273,7 @@ html, body {
     font-family: "Chakra Petch", sans-serif;
     letter-spacing: 2px;
     margin-bottom: 8px;
-    color: #cfd6d2;
+    color: #d2d2d2;
 }
 .dropRatesRow {
     display: flex;
@@ -2196,7 +2283,7 @@ html, body {
 }
 .dropRatesNote {
     margin-top: 8px;
-    color: #9aa6a0;
+    color: #a0a0a0;
     font-size: 11px;
     max-width: 280px;
 }
@@ -2226,7 +2313,7 @@ html, body {
     font-family: "Chakra Petch", sans-serif;
     letter-spacing: 2px;
     margin-bottom: 10px;
-    color: #cfd6d2;
+    color: #d2d2d2;
 }
 .shortcutsRow {
     display: flex;
@@ -2240,6 +2327,6 @@ html, body {
 }
 .shortcutsNote {
     margin-top: 10px;
-    color: #9aa6a0;
+    color: #a0a0a0;
     font-size: 11px;
 }
