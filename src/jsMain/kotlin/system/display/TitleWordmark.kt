@@ -28,6 +28,7 @@ object TitleWordmark {
     private const val LEVEL_FLOOR = 0.3 // L1 still nudges the letters, L8 = full shove (BlastModel.levelGain)
     private const val JITTER = 16.0 // per-letter random velocity so they don't all move identically
     private const val TILT = 0.1 // letters tilt with their horizontal displacement (liveliness)
+    private val FALLBACK_Z = doubleArrayOf(0.0, 0.0, 1.0) // norm() fallback for a degenerate basis vector
 
     private var group: dynamic = null
     private var wordScene: dynamic = null // the wordmark renders in its OWN scene + pass (see renderOverlay)
@@ -137,10 +138,10 @@ object TitleWordmark {
     fun update(eye: DoubleArray, forward: DoubleArray, up: DoubleArray, dt: Double) {
         val g = group ?: return
         if (!loaded) return
-        val f = norm(forward)
-        val u = norm(up)
+        val f = norm(forward, FALLBACK_Z)
+        val u = norm(up, FALLBACK_Z)
         val z = scale(f, -1.0) // text front (+Z) faces back toward the eye
-        val x = norm(cross(u, z))
+        val x = norm(cross(u, z), FALLBACK_Z)
         val y = cross(z, x)
         val pos = add(add(eye, scale(f, DIST)), scale(u, Y_OFFSET))
         val m = Three.Matrix4()
@@ -193,20 +194,5 @@ object TitleWordmark {
             ud.vx = (ud.vx as Double) + ux * strength + (Util.random() - 0.5) * JITTER
             ud.vy = (ud.vy as Double) + uy * strength + (Util.random() - 0.5) * JITTER
         }
-    }
-
-    // --- vec3 helpers ---
-    private fun cross(a: DoubleArray, b: DoubleArray) = doubleArrayOf(
-        a[1] * b[2] - a[2] * b[1],
-        a[2] * b[0] - a[0] * b[2],
-        a[0] * b[1] - a[1] * b[0],
-    )
-
-    private fun dot(a: DoubleArray, b: DoubleArray) = a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
-    private fun add(a: DoubleArray, b: DoubleArray) = doubleArrayOf(a[0] + b[0], a[1] + b[1], a[2] + b[2])
-    private fun scale(a: DoubleArray, s: Double) = doubleArrayOf(a[0] * s, a[1] * s, a[2] * s)
-    private fun norm(a: DoubleArray): DoubleArray {
-        val l = sqrt(a[0] * a[0] + a[1] * a[1] + a[2] * a[2])
-        return if (l < 1e-9) doubleArrayOf(0.0, 0.0, 1.0) else scale(a, 1.0 / l)
     }
 }
