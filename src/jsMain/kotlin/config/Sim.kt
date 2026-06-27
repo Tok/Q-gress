@@ -24,19 +24,13 @@ object Sim {
     var roundField = true
 
     /** Field radius in sim units (the inscribed circle = the smaller half-extent). */
-    fun fieldRadius(): Double = minOf(width, height) / 2.0
+    fun fieldRadius(): Double = SimMath.fieldRadius(width, height)
 
     /** Whether a point is inside the play field — always true for a rectangle; the inscribed circle when round. */
-    fun isInsideField(x: Double, y: Double): Boolean {
-        if (!roundField) return true
-        val dx = x - width / 2.0
-        val dy = y - height / 2.0
-        val r = fieldRadius()
-        return dx * dx + dy * dy <= r * r
-    }
+    fun isInsideField(x: Double, y: Double): Boolean = SimMath.isInsideField(roundField, width, height, x, y)
 
     /** Inside the *displayable* play area: on-screen bounds AND inside the field (circle when round). */
-    fun isInPlayArea(x: Double, y: Double) = x >= 0 && y >= 0 && x < width && y < height && isInsideField(x, y)
+    fun isInPlayArea(x: Double, y: Double) = SimMath.isInPlayArea(roundField, width, height, x, y)
 
     /** Effective scale vs the screen — drives the framed display zoom (MapController). */
     val scale: Double get() = maxOf(width.toDouble() / Dim.width, height.toDouble() / Dim.height)
