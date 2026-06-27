@@ -11,43 +11,55 @@ import util.AudioPrefs
 import util.GameplayPrefs
 
 /**
- * The **TUNING LAB** footer tab: every live-tunable setting (audio FX + gameplay) as one **copy-paste JSON**
- * block, so values dialled in the AUDIO tab / Menu can be pasted back for baking new defaults. A **Copy**
- * button and a **Reset to defaults** button (restores audio + gameplay, re-syncs the AUDIO knobs + Menu
- * sliders). The text refreshes live (except while it's focused, so a selection survives).
+ * The **tuning export** — a small, slim collapsible section at the bottom of the AUDIO tab ([AudioPanel]):
+ * every live-tunable setting (audio FX + gameplay) as one **copy-paste JSON** block, so values dialled in the
+ * AUDIO tab / Menu can be pasted back for baking new defaults. **Click the JSON to copy it.** ([resetToDefaults]
+ * lives at the top of the AUDIO tab.) The text refreshes live via [refresh] (except while focused, so a
+ * selection survives), but only while the section is expanded.
  */
 object TuningLab {
-    private var built = false
     private var text: HTMLTextAreaElement? = null
     private var status: HTMLElement? = null
 
-    fun update() {
-        if (!ensure()) return
+    /** Refresh the JSON in place — called each frame by [AudioPanel.update]; no-op while collapsed/hidden/focused. */
+    fun refresh() {
         val box = text ?: return
-        if (box.offsetParent == null) return // tab hidden — skip
+        if (box.offsetParent == null) return // section collapsed or tab hidden — skip
         if (document.activeElement != box) box.value = snapshot() // don't stomp an active selection
     }
 
-    private fun ensure(): Boolean {
-        if (built) return true
-        if (document.body == null) return false
-        built = true
-        val glass = el("div", "footerGlass tuningLab")
-        glass.appendChild(el("div", "audioHead").also { it.textContent = "Tunable settings (copy-paste JSON)" })
+    /** A slim `<details>` (collapsed by default) holding the copy-paste JSON — embedded at the AUDIO tab bottom. */
+    fun section(): HTMLElement {
+        val details = document.createElement("details") as HTMLElement
+        details.className = "audioTuning"
+        val summary = document.createElement("summary") as HTMLElement
+        summary.textContent = "Tuning · copy-paste JSON (click to copy)"
+        details.appendChild(summary)
         val area = document.createElement("textarea") as HTMLTextAreaElement
         area.className = "tuningLabText"
         area.readOnly = true
         area.value = snapshot()
+        area.asDynamic().onclick = {
+            area.select() // click anywhere on the JSON → select all + copy
+            copy()
+            null
+        }
         text = area
-        glass.appendChild(area)
-        val btns = el("div", "tuningLabBtns")
-        btns.appendChild(button("Copy") { copy() })
-        btns.appendChild(button("Reset to defaults") { reset() })
-        status = el("span", "tuningLabStatus")
-        btns.appendChild(status as HTMLElement)
-        glass.appendChild(btns)
-        Footer.tab("tuning").appendChild(glass)
-        return true
+        details.appendChild(area)
+        status = el("div", "tuningLabStatus")
+        details.appendChild(status as HTMLElement)
+        return details
+    }
+
+    /** Restore audio + gameplay settings to their shipped defaults, re-syncing the AUDIO knobs + Menu sliders. */
+    fun resetToDefaults() {
+        AudioFx.resetToDefaults()
+        AudioPrefs.save()
+        AudioPanel.syncFromState() // refresh the AUDIO tab's knobs/pad/adsr
+        GameplayPrefs.resetToDefaults()
+        syncMenuSlider("combatDynSlider", config.Config.combatDynamism)
+        syncMenuSlider("progressSlider", config.Config.progressSpeed)
+        text?.value = snapshot()
     }
 
     /** The full settings snapshot as pretty JSON: { audio, gameplay, dropRates }. */
@@ -80,37 +92,11 @@ object TuningLab {
     private fun copy() {
         val box = text ?: return
         window.navigator.asDynamic().clipboard?.writeText(box.value)
-        flash("Copied")
-    }
-
-    private fun reset() {
-        AudioFx.resetToDefaults()
-        AudioPrefs.save()
-        AudioPanel.syncFromState() // refresh the AUDIO tab's knobs/pad/adsr
-        GameplayPrefs.resetToDefaults()
-        syncMenuSlider("combatDynSlider", config.Config.combatDynamism)
-        syncMenuSlider("progressSlider", config.Config.progressSpeed)
-        text?.value = snapshot()
-        flash("Reset to defaults")
+        status?.textContent = "Copied ✓"
     }
 
     private fun syncMenuSlider(id: String, value: Double) {
         (document.getElementById(id) as? HTMLInputElement)?.value = value.toString()
-    }
-
-    private fun flash(msg: String) {
-        status?.textContent = msg
-    }
-
-    private fun button(label: String, onClick: () -> Unit): HTMLElement {
-        val b = document.createElement("button") as HTMLElement
-        b.className = "trainAction" // reuse the TRAIN tab's button look
-        b.textContent = label
-        b.asDynamic().onclick = {
-            onClick()
-            null
-        }
-        return b
     }
 
     private fun el(tag: String, cls: String): HTMLElement {

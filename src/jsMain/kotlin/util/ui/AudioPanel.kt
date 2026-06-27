@@ -4,6 +4,7 @@ import kotlinx.browser.document
 import org.khronos.webgl.Uint8Array
 import org.khronos.webgl.get
 import org.w3c.dom.CanvasRenderingContext2D
+import org.w3c.dom.HTMLButtonElement
 import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HTMLElement
@@ -44,6 +45,7 @@ object AudioPanel {
         refreshLead()
         drawScope()
         drawSpectrum()
+        TuningLab.refresh() // live-update the collapsed JSON export (no-op while collapsed/focused)
     }
 
     private fun ensure(): Boolean {
@@ -54,6 +56,7 @@ object AudioPanel {
         glass.appendChild(leadRow())
         glass.appendChild(controlsRow())
         glass.appendChild(vizRow())
+        glass.appendChild(TuningLab.section()) // collapsed copy-paste JSON export (audio + gameplay) at the bottom
         Footer.tab("audio").appendChild(glass)
         return true
     }
@@ -64,6 +67,14 @@ object AudioPanel {
         row.appendChild(el("div", "audioHead").also { it.textContent = "Key" })
         lead = el("div", "audioLead").also { it.textContent = "—" }
         row.appendChild(lead as HTMLElement)
+        val reset = document.createElement("button") as HTMLButtonElement
+        reset.className = "audioReset" // top-right: restore audio + gameplay defaults
+        reset.textContent = "Reset to defaults"
+        reset.onclick = {
+            TuningLab.resetToDefaults()
+            null
+        }
+        row.appendChild(reset)
         return row
     }
 
