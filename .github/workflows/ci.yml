@@ -25,12 +25,19 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       # The Kotlin/JS plugin downloads its own Node for the Mocha runner — no browser needed.
-      - name: Quality gate (ktlint + detekt + jsNodeTest)
-        run: ./gradlew --no-configuration-cache --console=plain ktlintCheck detekt jsNodeTest
+      # koverXmlReport runs the jvm() test target (the shared functional core) and writes
+      # build/reports/kover/report.xml for the Codecov upload below.
+      - name: Quality gate (ktlint + detekt + jsNodeTest + coverage)
+        run: ./gradlew --no-configuration-cache --console=plain ktlintCheck detekt jsNodeTest koverXmlReport
 
-      # Codecov upload is parked until real Kotlin/JS line-coverage exists (Kover is JVM-only — needs
-      # the functional-core split; see PLAN.md). Re-add codecov/codecov-action here once a coverage
-      # report is produced; the CODECOV_TOKEN secret is already set.
+      # Line-coverage of the pure functional core (commonMain, measured via the jvm() target — Kover
+      # can't read Kotlin/JS). The CODECOV_TOKEN secret is already set on the repo.
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./build/reports/kover/report.xml
+          fail_ci_if_error: false
 
   deploy:
     name: Deploy 3D to GitHub Pages (root)

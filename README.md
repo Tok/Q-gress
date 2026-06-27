@@ -5,6 +5,7 @@
 # Q-Gress
 
 [![CI](https://github.com/Tok/Q-gress/actions/workflows/ci.yml/badge.svg)](https://github.com/Tok/Q-gress/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/Tok/Q-gress/branch/main/graph/badge.svg)](https://codecov.io/gh/Tok/Q-gress)
 [![desktop only](https://img.shields.io/badge/platform-desktop%20only-informational)](#desktop-only)
 [![Kotlin/JS](https://img.shields.io/badge/Kotlin%2FJS-2.4-7F52FF)](https://kotlinlang.org/docs/js-overview.html)
 
@@ -84,9 +85,10 @@ Every push and PR runs a GitHub Actions pipeline ([`.github/workflows/ci.yml`](.
 the production bundle and **deploys it to GitHub Pages**. A local **pre-commit hook** (`.githooks/`,
 installed via `installGitHooks`) runs the same gate so commits land green.
 
-Coverage uploads to **Codecov**. Caveat: Kover has no Kotlin/JS support yet, so real line-coverage
-arrives with the functional-core split (a `commonMain` + `jvm()` test target) — see `PLAN.md`. Until
-then the badge just reflects the test job.
+**Line-coverage uploads to [Codecov](https://codecov.io/gh/Tok/Q-gress)** (`koverXmlReport`). It
+measures the **pure functional core** (`commonMain`) via the `jvm()` test target — Kover can't
+instrument Kotlin/JS, so the browser/WebGL/three.js shell in `jsMain` isn't counted. As more game
+logic moves into the testable core (see `PLAN.md`), the covered surface grows.
 
 ## Project docs
 

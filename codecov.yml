@@ -1,0 +1,16 @@
+# Codecov config. Coverage here measures only the pure functional core (commonMain), run on the
+# jvm() test target — Kover can't instrument Kotlin/JS, so the browser/WebGL/three.js shell in
+# jsMain is not (and can't yet be) covered. See README "CI / quality" and PLAN.md.
+coverage:
+  status:
+    project:
+      default:
+        # Informational: report the number, don't block PRs on coverage deltas.
+        informational: true
+    patch:
+      default:
+        informational: true
+
+comment:
+  layout: "reach, diff, flags, files"
+  require_changes: true
