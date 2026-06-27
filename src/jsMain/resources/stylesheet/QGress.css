@@ -1015,6 +1015,21 @@ html, body {
     font-size: 10px;
     font-variant-numeric: tabular-nums;
 }
+/* Tiny unlabelled reset dot under each knob — click to snap it back to its default. */
+.audioKnobReset {
+    width: 7px;
+    height: 7px;
+    margin-top: 3px;
+    padding: 0;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.12);
+    cursor: pointer;
+}
+.audioKnobReset:hover {
+    background: #cfd6e6;
+    border-color: #cfd6e6;
+}
 .audioViz {
     display: flex;
     flex-wrap: wrap;
@@ -1906,13 +1921,17 @@ html, body {
 /* Keep the bottom-right ⓘ above the footer (z 60) and clickable. The map (.initialMap) sets z-index:8 +
    position:relative, forming a stacking context that traps this control BELOW the body-level footer no matter
    how high its own z-index is. position:fixed lifts it out to the viewport so its z-index actually beats the
-   footer's; it stays pinned to the same bottom-right corner (the map fills the viewport). */
+   footer's; it stays pinned to the same bottom-right corner (the map fills the viewport). Everything is
+   !important because MapLibre's own stylesheet (position:absolute on this control) loads AFTER ours and would
+   otherwise win the same-specificity tie, dropping it back into the trapped stacking context. */
 .maplibregl-ctrl-bottom-right, .mapboxgl-ctrl-bottom-right {
-    position: fixed;
-    right: 0;
-    bottom: 0;
-    z-index: 80;
-    pointer-events: auto;
+    position: fixed !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    top: auto !important;
+    left: auto !important;
+    z-index: 999 !important;
+    pointer-events: auto !important;
 }
 .maplibregl-ctrl-attrib, .mapboxgl-ctrl-attrib {
     font-size: 10px;

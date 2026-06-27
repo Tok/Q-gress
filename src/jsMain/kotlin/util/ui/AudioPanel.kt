@@ -118,11 +118,11 @@ object AudioPanel {
         val box = el("div", "audioSection")
         box.appendChild(el("div", "audioHead").also { it.textContent = "FX" })
         val grid = el("div", "audioKnobs")
-        grid.appendChild(knob("Reverb", 0.0, 1.0, { AudioFx.reverbMix }, { AudioFx.setReverbMix(it) }, ::pct))
-        grid.appendChild(knob("Echo", 0.0, 1.0, { AudioFx.delayMix }, { AudioFx.setDelayMix(it) }, ::pct))
-        grid.appendChild(knob("Echo time", 0.0, AudioFx.MAX_DELAY_S, { AudioFx.delayTimeS }, { AudioFx.setDelayTime(it) }, ::ms))
-        grid.appendChild(knob("Feedback", 0.0, 0.95, { AudioFx.delayFeedback01 }, { AudioFx.setDelayFeedback(it) }, ::pct))
-        grid.appendChild(knob("Compress", 0.0, 1.0, { AudioFx.compressAmount }, { AudioFx.setCompress(it) }, ::pct))
+        grid.appendChild(knob("Reverb", 0.0..1.0, 0.0, { AudioFx.reverbMix }, { AudioFx.setReverbMix(it) }, ::pct))
+        grid.appendChild(knob("Echo", 0.0..1.0, 0.0, { AudioFx.delayMix }, { AudioFx.setDelayMix(it) }, ::pct))
+        grid.appendChild(knob("Echo time", 0.0..AudioFx.MAX_DELAY_S, 0.25, { AudioFx.delayTimeS }, { AudioFx.setDelayTime(it) }, ::ms))
+        grid.appendChild(knob("Feedback", 0.0..0.95, 0.3, { AudioFx.delayFeedback01 }, { AudioFx.setDelayFeedback(it) }, ::pct))
+        grid.appendChild(knob("Compress", 0.0..1.0, 0.0, { AudioFx.compressAmount }, { AudioFx.setCompress(it) }, ::pct))
         box.appendChild(grid)
         return box
     }
@@ -134,34 +134,27 @@ object AudioPanel {
         adsr = canvas
         box.appendChild(canvas)
         val grid = el("div", "audioKnobs")
-        grid.appendChild(
-            knob("Attack", 0.0, 0.5, { AudioFx.envAttackS }, {
-                AudioFx.setEnvAttack(it)
-                drawAdsr()
-            }, ::ms),
-        )
-        grid.appendChild(
-            knob("Decay", 0.0, 0.5, { AudioFx.envDecayS }, {
-                AudioFx.setEnvDecay(it)
-                drawAdsr()
-            }, ::ms),
-        )
-        grid.appendChild(
-            knob("Sustain", 0.0, 1.0, { AudioFx.envSustain }, {
-                AudioFx.setEnvSustain(it)
-                drawAdsr()
-            }, ::pct),
-        )
-        grid.appendChild(
-            knob("Release", 0.2, 3.0, { AudioFx.envReleaseMult }, {
-                AudioFx.setEnvRelease(it)
-                drawAdsr()
-            }, ::mult),
-        )
+        grid.appendChild(envKnob("Attack", 0.0..0.5, 0.0, { AudioFx.envAttackS }, { AudioFx.setEnvAttack(it) }, ::ms))
+        grid.appendChild(envKnob("Decay", 0.0..0.5, 0.0, { AudioFx.envDecayS }, { AudioFx.setEnvDecay(it) }, ::ms))
+        grid.appendChild(envKnob("Sustain", 0.0..1.0, 1.0, { AudioFx.envSustain }, { AudioFx.setEnvSustain(it) }, ::pct))
+        grid.appendChild(envKnob("Release", 0.2..3.0, 1.0, { AudioFx.envReleaseMult }, { AudioFx.setEnvRelease(it) }, ::mult))
         box.appendChild(grid)
         drawAdsr()
         return box
     }
+
+    // An ADSR knob — like [knob] but its writes also redraw the envelope curve.
+    private fun envKnob(
+        label: String,
+        range: ClosedFloatingPointRange<Double>,
+        default: Double,
+        read: () -> Double,
+        write: (Double) -> Unit,
+        fmt: (Double) -> String,
+    ): HTMLElement = knob(label, range, default, read, {
+        write(it)
+        drawAdsr()
+    }, fmt)
 
     private fun vizRow(): HTMLElement {
         val row = el("div", "audioViz")
@@ -170,12 +163,12 @@ object AudioPanel {
         return row
     }
 
-    // --- A draggable knob (vertical drag), drawn on a canvas -----------------------------------------
+    // --- A draggable knob (vertical drag), drawn on a canvas, with a tiny reset-to-default dot -------
     private class Knob(
         val canvas: HTMLCanvasElement,
         val valueLabel: HTMLElement,
-        val min: Double,
-        val max: Double,
+        val range: ClosedFloatingPointRange<Double>,
+        val default: Double,
         val read: () -> Double,
         val write: (Double) -> Unit,
         val fmt: (Double) -> String,
@@ -183,8 +176,8 @@ object AudioPanel {
 
     private fun knob(
         label: String,
-        min: Double,
-        max: Double,
+        range: ClosedFloatingPointRange<Double>,
+        default: Double,
         read: () -> Double,
         write: (Double) -> Unit,
         fmt: (Double) -> String,
@@ -192,22 +185,35 @@ object AudioPanel {
         val cell = el("div", "audioKnob")
         val canvas = makeCanvas("audioKnobDial", KNOB_PX, KNOB_PX)
         val value = el("div", "audioKnobVal").also { it.textContent = fmt(read()) }
-        val k = Knob(canvas, value, min, max, read, write, fmt)
+        val k = Knob(canvas, value, range, default, read, write, fmt)
         knobs.add(k)
-        drag(canvas) { e ->
-            val r = canvas.getBoundingClientRect()
-            val cur = ((read() - min) / (max - min)).coerceIn(0.0, 1.0)
-            val ny = (1.0 - (e.clientY - r.top) / r.height).coerceIn(0.0, 1.0)
-            // Blend toward the pointer's vertical position so a click-drag anywhere on the dial tracks smoothly.
-            val next = (cur * 0.5 + ny * 0.5)
-            write(min + next.coerceIn(0.0, 1.0) * (max - min))
+        val lo = range.start
+        val hi = range.endInclusive
+        fun commit(v: Double) {
+            write(v)
             value.textContent = fmt(read())
             drawKnob(k)
             AudioPrefs.save()
         }
+        drag(canvas) { e ->
+            val r = canvas.getBoundingClientRect()
+            val cur = ((read() - lo) / (hi - lo)).coerceIn(0.0, 1.0)
+            val ny = (1.0 - (e.clientY - r.top) / r.height).coerceIn(0.0, 1.0)
+            // Blend toward the pointer's vertical position so a click-drag anywhere on the dial tracks smoothly.
+            val next = (cur * 0.5 + ny * 0.5)
+            commit(lo + next.coerceIn(0.0, 1.0) * (hi - lo))
+        }
         cell.appendChild(canvas)
         cell.appendChild(el("div", "audioKnobLabel").also { it.textContent = label })
         cell.appendChild(value)
+        val reset = document.createElement("button") as HTMLButtonElement
+        reset.className = "audioKnobReset" // tiny unlabelled dot: snap the knob back to its default
+        reset.title = "Reset to default"
+        reset.onclick = {
+            commit(default)
+            null
+        }
+        cell.appendChild(reset)
         drawKnob(k)
         return cell
     }
@@ -229,7 +235,7 @@ object AudioPanel {
         val w = k.canvas.width.toDouble()
         val cx = w / 2
         val r = w / 2 - 5.0
-        val v = ((k.read() - k.min) / (k.max - k.min)).coerceIn(0.0, 1.0)
+        val v = ((k.read() - k.range.start) / (k.range.endInclusive - k.range.start)).coerceIn(0.0, 1.0)
         val a0 = PI * 0.75
         val a1 = PI * 2.25
         val a = a0 + (a1 - a0) * v
