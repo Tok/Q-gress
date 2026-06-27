@@ -7,98 +7,44 @@ Branch: `develop` · Owner: @zirteq
 [docs/LLM.md](docs/LLM.md). Completed work lives in the **git log**, not here — keep this file to the point.
 
 ## ★ Next session — start here
-**Line-coverage target met (phase C) — backfill the rest of `commonMain`, then resume phase B.** The Kover
-report over the shared core now reads **~99% line coverage** (was ~78%): a `commonTest` backfill pinned the
-previously-uncovered pure data/enums — `config.IngressFacts` (0→100%, a "DO-NOT-EDIT reference table" pin),
-`agent.Faction` (3→100%, migrated `FactionTest` jsTest→commonTest so Kover counts it), `config.Time` (54→100%),
-plus the last `Rng` overloads. A follow-up **branch-gap pass** (Codecov counts partial branches as misses, so
-the live number had read ~91%) closed the flagged branches in `Pos`/`Line` (→100%), `FieldMath`, `Cooldown` and
-`MathUtil.formatSeconds`. The residual ~5 lines are the platform `freshSeed` actual + two `Rng` defensive
-`check`/`throw` guards + two dense barycentric/`findLast` expressions already at majority branch coverage —
-low value, leave them. (CI compiler warnings — no-cast / unused-expr / `data`-class `copy()` exposing a private
-ctor — are also cleared.) **From here:** the lever for *more* coverage is **migrating more pure logic into `commonMain`**
-(phase B's functional-core split), which then gets `commonTest` + Kover for free. The **`Scene3D` → `Showcases`
-split** (phase B) is the next big structural piece, then the 140 → 120 line-length pass. Work in phase order:
-**A** safety-net tests (done) → **B** refactor (+ functional-core split, ← resume here) → **C** coverage to
-target (met) → **D** profiling & optimization. The perf items elsewhere (Pathfinding scalability, Building perf,
-Map-size profiling) are **phase D** inputs — don't pull them forward. One gameplay item also queued:
-**field-layering tests + tuning investigation** (under *Gameplay mechanics* — the rules are sound, but agents
-layer too rarely).
+**Resume phase B — the `Scene3D` → `Showcases` split.** `Scene3D` (~1579 lines) carries a `LargeClass`
+suppress; most of its bulk is the self-contained demo/showcase sandbox. Extract that to a `Showcases` object
+(build helpers go `internal`), then drop the suppress. After it: the **140 → 120 line-length** pass (lands
+*with* the class extractions — auto-wrapping inflates `LargeClass` otherwise), and cut along seams in
+`MapUtil` (835) / `HtmlUtil` (788) / `SoundUtil` (768) / `Portal` (685) as they're touched. Migrating more pure
+logic into `commonMain` is the lever for higher coverage (it gets `commonTest` + Kover for free). Don't pull
+the **phase D** perf items (Pathfinding scalability, Building perf, Map-size profiling) forward. One gameplay
+item is queued: **field-layering tests + tuning investigation** (under *Gameplay mechanics* — the rules are
+sound, but agents layer too rarely).
 
-A **code-duplication pass** just landed (shared `util.ColorUtil` hex helpers, `system.display.Vec3` +
-`ShaderUtil`, `util.ui.Dom` `el()` factory, `util.Prefs` localStorage plumbing). Minor dupes still open if
-wanted: the 3 mod-type `getColorForLevel()` companions and the two history panels' uPlot series config.
+Optional small wins: a **CSS design-token dedup** (hoist the repeated glass/button magic values — `blur(7px)`,
+the `rgba(255,255,255,.06/.12/.18)` button fills, `rgba(0,0,0,.45)`, `border-radius:6px` — into `:root` custom
+properties; zero-toolchain, a visual no-op), plus the leftover code dupes (the 3 mod-type `getColorForLevel()`
+companions; the two history panels' uPlot series config).
 
 ## Non-functional track — quality → coverage → perf (CURRENT FOCUS)
-The push to get the code to a state we're comfortable with, *then* make it fast. Strictly phased: each phase
-de-risks the next. "Coverage" means two things and they split across phases — a behavioural **safety net** comes
-first (phase A, in the existing Node harness); real **line-coverage measurement** (Kover) needs the
-functional-core split, so it rides along with phase B — the `commonMain` + `jvm()` + Kover scaffolding is now
-up (phase C) and grows as each pure module migrates.
-
-### Phase A — Safety net (behavioural tests on today's behaviour) — ✅ done
-Lock current behaviour before moving any code, so the refactor can't silently change it. Pure Node/Mocha tests
-(no tooling change). Characterization tests over the functional core as-it-is:
-- [x] `Balance` — `recruitFactor` / `attackBoost` (deficit² steepness) / `leadShare` zero-guard.
-- [x] `Config` formulas — `npcPopulation`, `targetPortals`, `maxMitigation`, `weaponDropMultiplier`,
-  `attackXmpThreshold`, `comebackAttackBonus` (`ConfigTest` pins the input→output table at the current consts).
-- [x] `ActionSelector.q` weighting (composition + field-maker ordering); `StuckTracker` already covered.
-- [x] `Util` — the seeded mulberry32 RNG + the weighted `select` contract (`UtilTest`).
-- [x] `Field` MU/area (Heron ÷100 floored) + `isCoveringPortal` (the fitness-objective math).
-- [x] `Recruiter` self-balancing `selectionWeight` + diminishing `recruitSuccessProbability`.
-- [x] `SimRunner` determinism — already covered (`sameSeedIsDeterministic`, `reproducibleAfterAnotherMatch`).
-- [x] `MovementUtil` — `headingTo` (pure) + the **wander never leaves the map** invariant (passable + in-play-area
-  destination, from centre and edge), via a rectangle field + a passable `GridFixture` (restored per test).
-- **Exit criterion (met):** a green net that fails if behaviour changes. (Suite now **260** tests, all green.)
+Get the code to a state we're comfortable with, *then* make it fast. Strictly phased; each phase de-risks the
+next. **Phase A** (behavioural safety net) and **phase C** (Kover line-coverage on a test-only `jvm()` target
+over `commonMain`, uploaded to Codecov) are **done**; **phase B** (refactor under the net) is the current focus;
+**phase D** (profiling) is last.
 
 ### Phase B — Refactor under the net — 🔄 in progress
-Functional core / imperative shell, properly. Do it module-by-module behind phase-A tests:
-- [~] **Isolate pure logic** — extract decision functions (state in → value/decision out) and push effects to the
-  edges. Done so far (each guarded by a new unit test): `Cycle.churnChances`, `Portal.linkMitigationFor`,
-  `Portal.retaliationDamage`, `Recruiter.recruitSuccessProbability`, `NonFaction.opposingHalf` (off-map bearing),
-  `Portal.cooldownAfter` + `Portal.isBurnedOut` (hack cooldown/burnout), `Agent.enemyPortalsInRange` (attack
-  targeting, `World` read inverted to a param). **Remaining candidates:** `Linker.fieldClosingTarget` (a trivial
-  set-intersection pick — low value); `Deployer.deployTargetFor` was assessed and **skipped** (it mixes agent-level
-  + portal reads — not cleanly pure, and `DeployerTest` already covers it). The cheap, high-signal extractions are
-  largely done; the **`commonMain` move** is complete (below) and the **Scene3D split** remains.
-- [x] **Incremental functional-core split** — the pure logic now lives in `commonMain` (compiled for both JS
-  and the test-only `jvm()` target, Kover-covered ~78%; the World/`Config`/`Portal`-coupled holders delegate).
-  **Migrated:** `util.MathUtil`, `util.Rng` (seedable PRNG + `select`, `freshSeed` via expect/actual),
-  `config.Time`, `config.IngressFacts`, `config.ConfigMath`, `portal.Cooldown`, `portal.PortalMath`,
-  `portal.FieldMath`, `system.ChurnMath`, `agent.BalanceMath`, `agent.Faction`, `agent.NonFactionMath`
-  (`opposingHalf`), and the geometry core (`util.data.Pos` + `util.data.Line`, with grid/geo/RNG members
-  split to `PosExt`/`Positions` in the shell). **Intentionally left in `jsMain`:** `Agent.enemyPortalsInRange`
-  (references `Portal`, a JS-shell type — already a tested pure function there).
-- [ ] **Reduce magic numbers** — name them / fold into `Config` where it aids clarity (detekt `MagicNumber` is
-  off, so this is a by-hand judgement pass, not a gate-chase). *(Started opportunistically — e.g. named the
-  `LINK_MITIGATION_SCALE`.)*
+Functional core / imperative shell, properly. Module-by-module, behind the phase-A tests.
 - [ ] **SoC / split god-objects** — `Scene3D` (1579 → extract the demo/showcase code to `Showcases`, drop the
   `LargeClass` suppress), and cut along seams in `MapUtil` (835) / `HtmlUtil` (788) / `SoundUtil` (768) /
   `Portal` (685) as they're touched. *(The big one — not started.)*
-- [x] **Null-safety hardening** — `!!` audit complete: **zero** `!!` in `src/jsMain` (the convention has held).
-- [x] **De-duplication pass** — hoisted copy-pasted helpers into shared homes: `util.ColorUtil.hexToRgb` /
-  `blendHex` (3 shaders + 2 panels), `system.display.Vec3` + `ShaderUtil.glsl` (BoltFx/TitleWordmark + shaders),
-  `util.ui.Dom.el()` (14 footer panels), `util.Prefs` localStorage plumbing (5 prefs stores). *Minor leftovers:*
-  the 3 mod-type `getColorForLevel()` companions; the two history panels' uPlot series config.
+- [ ] **Reduce magic numbers** — name them / fold into `Config` where it aids clarity (detekt `MagicNumber` is
+  off, so this is a by-hand judgement pass, not a gate-chase). *(Started opportunistically — e.g. named the
+  `LINK_MITIGATION_SCALE`.)*
 - [ ] **Functional patterns** where they fit; **tighten line length 140 → 120** *alongside* the class
   extractions (it inflates `LargeClass` otherwise).
+- **Done:** the high-signal pure-logic extractions; the **`commonMain` move** (the pure core — math/RNG/time/
+  geometry/portal/field/balance/faction — now compiles for both JS and the test-only `jvm()` target, with the
+  World/`Config`/`Portal`-coupled holders delegating); the **`!!` audit** (zero in `src/jsMain`); the
+  **de-duplication pass** (shared `ColorUtil`/`Vec3`/`ShaderUtil`/`Dom.el()`/`Prefs`). Remaining extraction
+  candidates are low-value (`Linker.fieldClosingTarget`, a trivial set-intersection; `Deployer.deployTargetFor`
+  deliberately skipped — mixes agent + portal reads, already covered by `DeployerTest`).
 - **Exit criterion:** pure logic is testable in isolation; gate (ktlint/detekt/tests) stays green throughout.
-
-### Phase C — Real coverage measurement (enabled by B)
-- [x] Stand up **Kover on a `jvm()` test target** over the `commonMain` functional core (`build.gradle.kts`:
-  `jvm()` + `kotlinx-kover` 0.9.8 + JUnit5; `koverHtmlReport` / `koverLog`). The shared-core tests run on
-  **both** jsNodeTest and jvmTest.
-- [x] **Hook up Codecov via the GitHub pipeline** — CI emits `koverXmlReport` and uploads via
-  `codecov/codecov-action@v5` (`CODECOV_TOKEN` set; `codecov.yml` keeps status informational); README carries
-  the badge. **Live and reporting ~71%.**
-- [x] **Drive coverage past 90%** — Kover over `commonMain` now reads **~99% line** (was ~78%). `commonTest`
-  backfill pinned the last uncovered pure data: `IngressFacts` (0→100%), `Faction` (3→100%, `FactionTest` moved
-  jsTest→commonTest so Kover counts it), `Time` (54→100%), + the remaining `Rng` overloads; a **branch-gap pass**
-  then closed the partial branches Codecov was scoring as misses (`Pos`/`Line`→100%, `FieldMath`, `Cooldown`,
-  `MathUtil.formatSeconds`), taking the live Codecov number from ~91% up with it. The leftover ~5 lines are the
-  `freshSeed` actual + `Rng` defensive guards + two dense expressions at majority branch coverage (left
-  intentionally). Pushing *higher* now means migrating more pure logic into `commonMain` (phase B) — it then gets
-  `commonTest` + Kover for free. Effects/shell stay Node-side and aren't counted.
 
 ### Phase D — Profiling & optimization (last)
 Only once we're comfortable with structure + coverage. **Baseline first, then optimize, guarded by the net:**
@@ -257,7 +203,6 @@ Remaining:
   `PresetConnectivityTest` audit). Only the committed `PresetFixtures.kt` is missing: run `?debug=capture` once
   in-browser, drop the download into `src/jsTest/kotlin/util/`, commit. (The trainer/leaderboard already run on
   the live `World.grid`, so this only feeds the offline connectivity audit.)
-- [x] ~~Clean-eval flag~~ — shipped (`MatchSetup.cleanEval`, restored via try/finally; "Clean eval" toggle in TRAIN).
 - [ ] **Per-side net-architecture / variant pick in onboarding** — *blocked*: only meaningful once there's a
   library of trained nets per `NetArch` (a net driver of an untrained arch just plays randomly). Fold into the
   icebox "download/upload + saved-net library" item below.
@@ -272,19 +217,13 @@ Remaining:
 keep tuning `Config` and consider shaping fitness for *interesting* play (a follow-up lever, not v1).
 
 ## Open engineering decisions
-*These are the concrete items the **Non-functional track** (above) executes — phase B for the refactors, phase C
-for coverage tooling. Kept here for the rationale; the track sequences them.*
-- **Coverage tooling.** ✅ resolved: Kover has no Kotlin/JS support, so the pure core moves to `commonMain` and
-  is line-covered via a test-only `jvm()` target (`kotlinx-kover` 0.9.8). **Codecov is now wired into CI and
-  reporting (~71%)**; coverage grows as the split proceeds. → *phase C (Codecov live); push to >90% ongoing with
-  phase B.*
+*Rationale for the pending **Non-functional track** items (above); the track sequences them.*
 - **Tighten max line length 140 → 120.** Deferred: ktlint auto-wrapping inflates detekt's `LargeClass` count,
   so it must land alongside the class extractions (`Scene3D`, and any near the 600-line cap like
   `HtmlUtil`/`MapUtil`). A dedicated refactor pass. → *phase B.*
 - **Extract the demo/showcase subsystem from `Scene3D`** — most of Scene3D's `LargeClass` bulk is the
   self-contained sandbox code; move it to a `Showcases` object (build helpers go `internal`), then drop the
   `LargeClass` suppress. → *phase B.*
-- ~~**Null-safety hardening**~~ — ✅ done (phase B): **zero** `!!` in `src/jsMain`; the convention has held.
 
 ## Balance risk (recruit-rush)
 `ActionSelector` picks by weighted-random over `slider × weight`; recruiting adds agents (→ more actions/tick →
