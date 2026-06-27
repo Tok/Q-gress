@@ -4,29 +4,17 @@ import agent.Agent
 import agent.Balance
 import agent.action.ActionItem
 import config.Config
-import config.DropRates
 import config.IngressFacts
 import config.Sim
 import extension.*
-import items.PowerCube
 import items.QgressItem
-import items.UltraStrike
-import items.XmpBurster
 import items.deployable.HeatSink
 import items.deployable.Mod
 import items.deployable.Multihack
 import items.deployable.Resonator
 import items.deployable.Shield
-import items.deployable.Virus
 import items.level.PortalLevel
-import items.level.PowerCubeLevel
 import items.level.ResonatorLevel
-import items.level.UltraStrikeLevel
-import items.level.XmpLevel
-import items.types.HeatSinkType
-import items.types.MultihackType
-import items.types.ShieldType
-import items.types.VirusType
 import system.Com
 import system.audio.Sound
 import system.effect.Fx
@@ -284,18 +272,15 @@ data class Portal(
 
     private fun hack(hacker: Agent): MutableList<QgressItem> {
         val level = min(calculateLevel(), hacker.getLevel())
+        val newStuff = HackLoot.rollDrops(hacker, level).toMutableList()
+        PortalKey.tryHack(this, hacker)?.let { newStuff.add(it) }
+        chargeHackCost(hacker)
+        return newStuff
+    }
 
-        val newStuff = mutableListOf<QgressItem?>()
-        newStuff.addAll(obtainResos(hacker, level))
-        newStuff.addAll(obtainXmps(hacker, level))
-        newStuff.addAll(obtainUltraStrikes(hacker, level))
-        newStuff.addAll(obtainShields(hacker))
-        newStuff.addAll(obtainHeatSinks(hacker))
-        newStuff.addAll(obtainMultihacks(hacker))
-        newStuff.addAll(obtainVirus(hacker))
-        newStuff.addAll(obtainPowerCubes(level, hacker))
-        newStuff.add(PortalKey.tryHack(this, hacker))
-
+    // The XM cost of a hack (and the AP for hacking an enemy's), scaled by portal level — the portal-specific
+    // half of a hack the drop table ([HackLoot]) can't own.
+    private fun chargeHackCost(hacker: Agent) {
         val isEnemyPortal = owner != null && hacker.faction != owner?.faction
         if (isEnemyPortal) {
             hacker.addAp(100)
@@ -303,99 +288,6 @@ data class Portal(
         } else {
             hacker.removeXm(50 * this.calculateLevel())
         }
-
-        return newStuff.filterNotNull().toMutableList()
-    }
-
-    private fun obtainResos(hacker: Agent, level: Int): List<QgressItem> {
-        val stuff = mutableListOf<QgressItem>()
-        Quality.values().map { quality ->
-            val selectedLevel = ResonatorLevel.find(level, quality).level
-            while (Rng.random() < quality.chance) {
-                stuff.add(Resonator.create(hacker, selectedLevel) as QgressItem)
-            }
-        }
-        return stuff
-    }
-
-    private fun obtainXmps(hacker: Agent, level: Int): List<QgressItem> {
-        val stuff = mutableListOf<QgressItem>()
-        repeat(weaponDraws()) {
-            // sim-tuning: more XMPs/hack so agents can sustain assaults
-            Quality.values().map { quality ->
-                val selectedLevel = XmpLevel.find(level, quality).level
-                while (Rng.random() < quality.chance) {
-                    stuff.add(XmpBurster.create(hacker, selectedLevel) as QgressItem)
-                }
-            }
-        }
-        return stuff
-    }
-
-    private fun obtainUltraStrikes(hacker: Agent, level: Int): List<QgressItem> {
-        val stuff = mutableListOf<QgressItem>()
-        repeat(weaponDraws()) {
-            // US drops are rarer than XMP: one Bernoulli per draw, not a full quality cascade (as in Ingress).
-            if (Rng.random() < DropRates.usDropChance) {
-                stuff.add(UltraStrike(UltraStrikeLevel.find(level, Quality.GOOD), hacker))
-            }
-        }
-        return stuff
-    }
-
-    // Live weapon-draw count per hack: the base XMP multiplier scaled by the menu "Weapon drops" slider
-    // ([Config.weaponDropMultiplier], default 3× = tripled). Drives both XMP and Ultra-Strike yields.
-    private fun weaponDraws(): Int = (DropRates.xmpDropMultiplier * Config.weaponDropMultiplier()).toInt().coerceAtLeast(1)
-
-    private fun obtainShields(hacker: Agent): List<QgressItem> {
-        val stuff = mutableListOf<QgressItem>()
-        ShieldType.values().forEach {
-            if (Rng.random() < DropRates.shieldChance.getValue(it)) {
-                stuff.add(Shield(it, hacker))
-            }
-        }
-        return stuff
-    }
-
-    private fun obtainHeatSinks(hacker: Agent): List<QgressItem> {
-        val stuff = mutableListOf<QgressItem>()
-        HeatSinkType.values().forEach {
-            if (Rng.random() < DropRates.heatSinkChance.getValue(it)) {
-                stuff.add(HeatSink(it, hacker))
-            }
-        }
-        return stuff
-    }
-
-    private fun obtainMultihacks(hacker: Agent): List<QgressItem> {
-        val stuff = mutableListOf<QgressItem>()
-        MultihackType.values().forEach {
-            if (Rng.random() < DropRates.multihackChance.getValue(it)) {
-                stuff.add(Multihack(it, hacker))
-            }
-        }
-        return stuff
-    }
-
-    private fun obtainPowerCubes(level: Int, hacker: Agent): List<QgressItem> {
-        val stuff = mutableListOf<QgressItem>()
-        Quality.values().map { quality ->
-            val selectedLevel = PowerCubeLevel.find(level, quality).level
-            while (Rng.random() < quality.chance * 0.3) {
-                stuff.add(PowerCube.create(hacker, selectedLevel) as QgressItem)
-            }
-        }
-        return stuff
-    }
-
-    private fun obtainVirus(hacker: Agent): List<QgressItem> {
-        val stuff = mutableListOf<QgressItem>()
-        VirusType.values().forEach {
-            if (Rng.random() < DropRates.virusChance.getValue(it)) {
-                stuff.add(Virus(it, hacker))
-            }
-        }
-        return stuff
     }
 
     /** Hacks allowed before burnout: the base [MAX_HACKS] plus any deployed multi-hacks' bonus. */
