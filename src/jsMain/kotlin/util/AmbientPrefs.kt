@@ -18,7 +18,7 @@ object AmbientPrefs {
             val cutoff = o.cutoff
             if (level != null) AmbientBed.setLevel(level.unsafeCast<Double>())
             if (cutoff != null) AmbientBed.setCutoff(cutoff.unsafeCast<Double>())
-            if (o.on == true) AmbientBed.setOn(true)
+            if (o.enabled == false) AmbientBed.setEnabled(false) // default on (the field hum is automatic)
         }
     }
 
@@ -30,7 +30,7 @@ object AmbientPrefs {
     /** The ambient-bed state as a plain object — persisted by [save] and shown by the TUNING LAB. */
     fun json(): dynamic {
         val o: dynamic = js("({})")
-        o.on = AmbientBed.on
+        o.enabled = AmbientBed.enabled
         o.level = AmbientBed.level
         o.cutoff = AmbientBed.cutoffHz
         return o

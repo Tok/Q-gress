@@ -426,9 +426,12 @@ Commit hashes are illustrative pointers, not exhaustive.
   sub-tabs **Master FX**, **Mixer** (a per-role channel — Weapons / Portal / Field / World / Ambient — each
   with volume + mute, routed through per-role gain buses in `util/Mixer`, persisted via `util/MixerPrefs`),
   **Instruments** (a synth tuner per sound — the **explosion basskick** so far: pitch / decay / click / drive
-  on `util/KickDrum`, with a **▶ Test** trigger, persisted via `util/InstrumentPrefs`), and **Ambient** (a
-  generative atmospheric bed — sub-bass / rumble / noise / drone through a slow LFO-swept resonant low-pass into
-  the Ambient mixer channel, `util/AmbientBed` + `util/AmbientPrefs`; on/off + level + cutoff). Every knob has a
+  on `util/KickDrum`, with a **▶ Test** trigger, persisted via `util/InstrumentPrefs`), and **Ambient** — the
+  **field hum** (`util/AmbientBed`): a generative drone (sub-bass / rumble / noise / band-passed drone through a
+  slow LFO-swept resonant low-pass) the **control fields emit**, its **volume ∝ the % of the play area covered
+  by fields** (capped at 100% — layered fields can exceed it; **no fields → silent**) and **3D-panned** to the
+  area-weighted field centroid, into the Ambient mixer channel. Enable / level / cutoff persist via
+  `util/AmbientPrefs`. Every knob has a
   small bottom-right reset "o"; all of it feeds the global **Reset to defaults** + the TUNING LAB JSON export.
   Reshape the audio
   **while the sim runs** (the sound *triggers* stay in the `#audio` demo, palette shared via `util/ui/AudioSounds`). A

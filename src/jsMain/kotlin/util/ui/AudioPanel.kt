@@ -201,17 +201,17 @@ object AudioPanel {
         val pane = el("div", "audioPane")
         val box = el("div", "audioSection")
         val head = el("div", "audioLeadRow")
-        head.appendChild(el("div", "audioHead").also { it.textContent = "Ambient bed" })
+        head.appendChild(el("div", "audioHead").also { it.textContent = "Field hum (volume ∝ field coverage)" })
         val toggle = document.createElement("button") as HTMLButtonElement
         toggle.className = "audioMute"
         fun paint() {
-            toggle.textContent = if (AmbientBed.on) "on" else "off"
-            toggle.classList.toggle("on", AmbientBed.on)
+            toggle.textContent = if (AmbientBed.enabled) "on" else "off"
+            toggle.classList.toggle("on", AmbientBed.enabled)
         }
         ambientRepaint = ::paint
         paint()
         toggle.onclick = {
-            AmbientBed.setOn(!AmbientBed.on)
+            AmbientBed.setEnabled(!AmbientBed.enabled)
             paint()
             AmbientPrefs.save()
             null
@@ -219,7 +219,7 @@ object AudioPanel {
         head.appendChild(toggle)
         box.appendChild(head)
         val grid = el("div", "audioKnobs")
-        grid.appendChild(knob("Level", 0.0..1.0, 0.5, { AmbientBed.level }, { AmbientBed.setLevel(it) }, ::pct))
+        grid.appendChild(knob("Level", 0.0..1.0, 0.6, { AmbientBed.level }, { AmbientBed.setLevel(it) }, ::pct))
         grid.appendChild(knob("Cutoff", 80.0..2000.0, 320.0, { AmbientBed.cutoffHz }, { AmbientBed.setCutoff(it) }, ::khz))
         box.appendChild(grid)
         pane.appendChild(box)

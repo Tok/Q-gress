@@ -47,6 +47,7 @@ object DrawUtil {
         LeaderboardPanel.update() // TRAIN footer tab: the driver leaderboard (round-robin ranking)
         SliderHistoryPanel.update() // AI tab: each slider's value over the checkpoint window
         LlmReasoningPanel.update() // AI tab: the LLM driver's prompt/reply/parsed reasoning
+        AmbientBed.updateFromFields() // field hum: volume ∝ % field coverage, panned to the field centroid
         AudioPanel.update() // AUDIO footer tab: master-FX control surface, live scope/spectrum + tuning export
         if (Styles.isDrawTopAgents) {
             TopAgentsPanel.update()
