@@ -7,16 +7,22 @@ Branch: `develop` · Owner: @zirteq
 [docs/LLM.md](docs/LLM.md). Completed work lives in the **git log**, not here — keep this file to the point.
 
 ## ★ Next session — start here
-**Resume the _non-functional track_ (refactoring).** Feature set is at a good resting point; the focus is the
-non-functional track below (quality → coverage → perf), not new features — pick up **phase B**, with the
-**`Scene3D` → `Showcases` split** as the headline item (then the 140 → 120 line-length pass). Work in phase
-order: **A** safety-net tests (done) → **B** refactor (+ incremental functional-core split) → **C** real
-coverage measurement → **D** profiling & optimization. The perf items elsewhere (Pathfinding scalability,
-Building perf, Map-size profiling) are **phase D** inputs — don't pull them forward. One gameplay item also
-queued: **field-layering tests + tuning investigation** (under *Gameplay mechanics* — the rules are sound, but
-agents layer too rarely). Two cheap loose ends to clear opportunistically (not blockers): the grid-fixtures
-`?debug=capture` pass (manual, user-only) and eyeballing the *Verify in-browser* list to confirm a clean baseline
-before refactoring.
+**Push line-coverage toward >90% (phase C).** Codecov is now **wired into CI and live** (`koverXmlReport` →
+`codecov/codecov-action`, badge in the README) but reads **~71% — a red badge**, because it only covers the
+pure core in `commonMain`. The next focus is driving that **up past 90%**: migrate more pure logic into
+`commonMain` (phase B's functional-core split is the enabler) and **backfill `commonTest` tests** for whatever
+the Kover report shows uncovered (run `./gradlew koverHtmlReport` and read `build/reports/kover/html/index.html`).
+The selection/balance logic should land near 100% (CLAUDE.md target); effects/shell stay Node-side and aren't
+counted. The **`Scene3D` → `Showcases` split** (phase B) stays queued behind/alongside this, then the 140 → 120
+line-length pass. Work in phase order: **A** safety-net tests (done) → **B** refactor (+ functional-core split)
+→ **C** coverage to target (← here) → **D** profiling & optimization. The perf items elsewhere (Pathfinding
+scalability, Building perf, Map-size profiling) are **phase D** inputs — don't pull them forward. One gameplay
+item also queued: **field-layering tests + tuning investigation** (under *Gameplay mechanics* — the rules are
+sound, but agents layer too rarely).
+
+A **code-duplication pass** just landed (shared `util.ColorUtil` hex helpers, `system.display.Vec3` +
+`ShaderUtil`, `util.ui.Dom` `el()` factory, `util.Prefs` localStorage plumbing). Minor dupes still open if
+wanted: the 3 mod-type `getColorForLevel()` companions and the two history panels' uPlot series config.
 
 ## Non-functional track — quality → coverage → perf (CURRENT FOCUS)
 The push to get the code to a state we're comfortable with, *then* make it fast. Strictly phased: each phase
@@ -65,6 +71,10 @@ Functional core / imperative shell, properly. Do it module-by-module behind phas
   `LargeClass` suppress), and cut along seams in `MapUtil` (835) / `HtmlUtil` (788) / `SoundUtil` (768) /
   `Portal` (685) as they're touched. *(The big one — not started.)*
 - [x] **Null-safety hardening** — `!!` audit complete: **zero** `!!` in `src/jsMain` (the convention has held).
+- [x] **De-duplication pass** — hoisted copy-pasted helpers into shared homes: `util.ColorUtil.hexToRgb` /
+  `blendHex` (3 shaders + 2 panels), `system.display.Vec3` + `ShaderUtil.glsl` (BoltFx/TitleWordmark + shaders),
+  `util.ui.Dom.el()` (14 footer panels), `util.Prefs` localStorage plumbing (5 prefs stores). *Minor leftovers:*
+  the 3 mod-type `getColorForLevel()` companions; the two history panels' uPlot series config.
 - [ ] **Functional patterns** where they fit; **tighten line length 140 → 120** *alongside* the class
   extractions (it inflates `LargeClass` otherwise).
 - **Exit criterion:** pure logic is testable in isolation; gate (ktlint/detekt/tests) stays green throughout.
@@ -73,12 +83,13 @@ Functional core / imperative shell, properly. Do it module-by-module behind phas
 - [x] Stand up **Kover on a `jvm()` test target** over the `commonMain` functional core (`build.gradle.kts`:
   `jvm()` + `kotlinx-kover` 0.9.8 + JUnit5; `koverHtmlReport` / `koverLog`). The shared-core tests run on
   **both** jsNodeTest and jvmTest.
-- [ ] As more of the core lands in `commonMain` (phase B), drive coverage toward the CLAUDE.md target
-  (selection/balance logic near 100%) and backfill whatever the report shows uncovered (effects/shell stay
-  Node-side).
-- [ ] **Hook up Codecov via the GitHub pipeline** (at the *end* of the refactor) — emit `koverXmlReport` in a
-  CI workflow and upload to Codecov for a coverage badge + PR coverage diffs. Keeps the `jvm()`/Kover work
-  visible and guards against coverage regressions on the shared core.
+- [x] **Hook up Codecov via the GitHub pipeline** — CI emits `koverXmlReport` and uploads via
+  `codecov/codecov-action@v5` (`CODECOV_TOKEN` set; `codecov.yml` keeps status informational); README carries
+  the badge. **Live and reporting ~71%.**
+- [ ] **Drive coverage past 90%** (← current focus) — the badge is **red at ~71%** because only `commonMain` is
+  measured. As more of the core lands in `commonMain` (phase B), backfill `commonTest` for whatever
+  `koverHtmlReport` shows uncovered and push toward the CLAUDE.md target (selection/balance logic near 100%).
+  Effects/shell stay Node-side and aren't counted, so the realistic ceiling is "the pure core, ~fully covered."
 
 ### Phase D — Profiling & optimization (last)
 Only once we're comfortable with structure + coverage. **Baseline first, then optimize, guarded by the net:**
@@ -255,8 +266,9 @@ keep tuning `Config` and consider shaping fitness for *interesting* play (a foll
 *These are the concrete items the **Non-functional track** (above) executes — phase B for the refactors, phase C
 for coverage tooling. Kept here for the rationale; the track sequences them.*
 - **Coverage tooling.** ✅ resolved: Kover has no Kotlin/JS support, so the pure core moves to `commonMain` and
-  is line-covered via a test-only `jvm()` target (`kotlinx-kover` 0.9.8). Scaffolding is up; coverage grows as
-  the split proceeds. → *phase C (stood up); ongoing with phase B.*
+  is line-covered via a test-only `jvm()` target (`kotlinx-kover` 0.9.8). **Codecov is now wired into CI and
+  reporting (~71%)**; coverage grows as the split proceeds. → *phase C (Codecov live); push to >90% ongoing with
+  phase B.*
 - **Tighten max line length 140 → 120.** Deferred: ktlint auto-wrapping inflates detekt's `LargeClass` count,
   so it must land alongside the class extractions (`Scene3D`, and any near the 600-line cap like
   `HtmlUtil`/`MapUtil`). A dedicated refactor pass. → *phase B.*

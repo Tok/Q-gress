@@ -172,3 +172,13 @@ bundle via the Kotlin/JS webpack; **unit tests run in Node** (Mocha). Quality ga
 + **detekt** (complexity limits) + tests, enforced by an in-repo **pre-commit hook**
 (`.githooks/`, `core.hooksPath`). three.js / cannon-es / MapLibre / uPlot come via npm or CDN
 `external` declarations. See [../CLAUDE.md](../CLAUDE.md) for commands.
+
+**Line-coverage:** the pure core in `commonMain` also compiles to a test-only `jvm()` target so
+**Kover** can instrument it (it can't read Kotlin/JS); the same `commonTest` suite runs on both Node
+and the JVM. CI emits `koverXmlReport` and uploads it to **Codecov** (badge in the README). The
+browser/WebGL/three.js shell in `jsMain` isn't counted — coverage tracks the functional core, and
+grows as more logic migrates into `commonMain` (see PLAN phase B/C).
+
+Small **shared helpers** keep the shell DRY: `util.ColorUtil` (hex↔rgb / blend), `util.Prefs`
+(localStorage load/save), `util.ui.Dom.el()` (DOM-div factory for the footer panels), and in
+`system.display` the `Vec3` vector kit + `ShaderUtil.glsl()` float-literal helper.
