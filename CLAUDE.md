@@ -61,6 +61,10 @@ Requires **JDK 21** on `JAVA_HOME`. The app is desktop-only and needs WebGL.
 - Randomness goes through `Util.random()` (not `kotlin.random`) — being migrated to an
   injectable/seedable RNG for deterministic tests (PLAN Phase 6.0).
 - No `!!`; prefer `?:` / `requireNotNull` / `getValue` / early return.
+- **No off-tint grayscales.** UI grays must be neutral (`R == G == B`, e.g. `#a0a0a0`, `rgba(0,0,0,…)`),
+  never a greenish/bluish cast (`#9aa6a0`, `rgba(24,28,34,…)`) — unless there's a deliberate reason
+  (faction colours, 3D **material** tints where chrome reads cooler on purpose, data-viz encodings, the sky).
+  When a tint is intentional, note why in a comment so it isn't "corrected" later.
 - Tests mirror the main package layout under `src/jsTest/kotlin/` and must compile to JS.
 - Commit raw Blender sources under `assets/blender/` (not just the exported `.glb` in `models/`).
 

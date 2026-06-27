@@ -115,6 +115,11 @@ Q-Gress becomes an **AI-vs-AI sandbox**: each faction (ENL/RES) is driven by an 
 be matched. **Desktop-only**; mobile is blocked.
 
 ## 3D / rendering
+- [ ] **Graphics-settings menu + anti-aliased links.** Add a **Graphics** options group (Menu or onboarding)
+  for quality toggles, and use it to **anti-alias the link tubes** — they read jaggy now. Options: bump the
+  renderer's `antialias`/`samples` (MSAA) or add a post-process (FXAA/SMAA pass); for the links specifically,
+  fatten + feather the tube edges or draw them as anti-aliased lines. Make AA / shadow quality / building cap
+  / DEM exaggeration live toggles so low-end machines can dial down and high-end can crank it.
 - [ ] **Buildings — per-building replacement** *(the parallel-mode follow-up).* Today both sets render (ours
   on top, MapLibre filling gaps). Cleaner end-state: hide **only** the MapLibre footprints we have our own
   mesh for, so the gap-fillers and our look match and there's no overlap/z-fight. Needs matching our synthetic
@@ -133,6 +138,11 @@ be matched. **Desktop-only**; mobile is blocked.
   (pairs with the colony-management attributes, icebox).
 
 ## UI
+- [ ] **In-game Audio tab — a live sound toy.** Fold the `#audio` demo's controls (master FX filters
+  low/high-pass + reverb, envelopes, the key/scale toggle, per-sound triggers) into a footer **AUDIO** tab so
+  the player can play with the sound *while the sim runs* — Q-Gress is as much a toy as a game. Reuse
+  `AudioFx`/`SoundUtil`/`AudioDemo` (already the dial-in surface); the sim's live events drive the audio and
+  the sliders reshape it in real time. Pairs with the sound-design pass (icebox).
 - [ ] **Schematic base view** (reuse `SHADOW_STYLE`) + more toggleable info overlays (e.g. a
   movement-penalty heatmap) alongside the existing Terrain/Vectors toggles.
 - [ ] **Per-faction tuning presets** — save/recall named slider sets (the slider↔AI auto-move link is done).
