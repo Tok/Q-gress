@@ -8,7 +8,7 @@ import agent.NonFaction
 import agent.action.ActionItem
 import config.Config
 import system.Com
-import system.audio.SoundUtil
+import system.audio.Sound
 import util.Util
 
 /**
@@ -71,10 +71,10 @@ object Recruiter : ConditionalAction {
             }
             Com.addMessage("$newAgent has completed the training.", Com.Importance.MAJOR, newAgent.faction.color)
             World.pendingAgents.add(newAgent) // flushed after the agent loop (avoids CME)
-            SoundUtil.playRecruitSuccess(agent.pos)
+            Sound.playRecruitSuccess(agent.pos)
         } else {
             Com.addMessage("A recruit turned down the ${agent.faction.nickName}s.", Com.Importance.MINOR, agent.faction.color)
-            SoundUtil.playRecruitFail(agent.pos)
+            Sound.playRecruitFail(agent.pos)
         }
         agent.recruitTargetId = null
         agent.action.end()

@@ -3,7 +3,7 @@ package system.display
 import agent.Faction
 import external.Three
 import portal.Octant
-import system.audio.SoundUtil
+import system.audio.Sound
 import system.display.fx.HackFx
 import util.data.Pos
 
@@ -123,7 +123,7 @@ object Showcases {
         placed.remove(target)
         dropLinksFor(target) // the old showcase object is gone — drop its link pipes
         place(pos, newLevel, target.color) // re-places + re-selects
-        if (up) SoundUtil.playUpgradeSound(pos, newLevel) else SoundUtil.playDowngradeSound(pos, newLevel)
+        if (up) Sound.playUpgradeSound(pos, newLevel) else Sound.playDowngradeSound(pos, newLevel)
     }
 
     /** Demo: move the ground cursor ring to [location] (null hides it); colour shows select vs place. */
@@ -176,7 +176,7 @@ object Showcases {
             sc.flipAge = FLIP_S
             sc.color = targetColor
         }
-        SoundUtil.playVirusSound(sc.pos, faction)
+        Sound.playVirusSound(sc.pos, faction)
     }
 
     fun update(dt: Double) {

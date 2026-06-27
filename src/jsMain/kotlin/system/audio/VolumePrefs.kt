@@ -5,8 +5,8 @@ import util.HtmlUtil
 
 /**
  * Persists the master-volume level + mute intent to `localStorage`, so they survive the page reloads on the
- * title→onboarding→world-gen path (each re-inits [SoundUtil], losing in-memory state). Split out to keep
- * SoundUtil under the size limit. No-ops / safe defaults headless or when storage is unavailable.
+ * title→onboarding→world-gen path (each re-inits [Sound], losing in-memory state). Split out to keep
+ * Sound under the size limit. No-ops / safe defaults headless or when storage is unavailable.
  */
 object VolumePrefs {
     private const val VOL_KEY = "qgress.volume"

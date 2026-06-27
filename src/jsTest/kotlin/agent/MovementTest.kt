@@ -12,24 +12,24 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 /**
- * Tests for [MovementUtil] (PLAN non-functional track — the last phase-A gap). [headingTo] is the pure
- * unit-vector heading; [MovementUtil.wander] must only ever pick a destination that is passable AND inside the
+ * Tests for [Movement] (PLAN non-functional track — the last phase-A gap). [headingTo] is the pure
+ * unit-vector heading; [Movement.wander] must only ever pick a destination that is passable AND inside the
  * play area, so a wandering agent can never stray off-map / off-field the way loose NPCs can.
  */
-class MovementUtilTest {
+class MovementTest {
 
     // --- headingTo (pure) ----------------------------------------------------
 
     @Test
     fun headingToPointsAtTheTargetWithUnitMagnitude() {
-        val east = MovementUtil.headingTo(Pos(0, 0), Pos(10, 0))
+        val east = Movement.headingTo(Pos(0, 0), Pos(10, 0))
         assertEquals(1.0, sqrt(east.re * east.re + east.im * east.im), 1e-9, "always a unit vector")
         assertTrue(east.re > 0.99 && kotlin.math.abs(east.im) < 1e-9, "due east")
     }
 
     @Test
     fun headingToIsZeroWhenAlreadyThere() {
-        val still = MovementUtil.headingTo(Pos(5, 5), Pos(5, 5))
+        val still = Movement.headingTo(Pos(5, 5), Pos(5, 5))
         assertEquals(0.0, still.re, 1e-12)
         assertEquals(0.0, still.im, 1e-12)
     }
@@ -55,7 +55,7 @@ class MovementUtilTest {
     @Test
     fun wanderPicksAPassableInPlayAreaDestination() {
         val agent = Factory.agent().copy(pos = Pos(600, 400))
-        val dest = MovementUtil.wander(agent).destination
+        val dest = Movement.wander(agent).destination
         assertTrue(dest.isPassable(), "wander destinations are always on passable ground")
         assertTrue(Sim.isInPlayArea(dest.x, dest.y), "wander destinations are always inside the play area")
     }
@@ -64,7 +64,7 @@ class MovementUtilTest {
     fun wanderNeverLeavesTheMapEvenFromTheEdge() {
         // Near the corner, many ring samples fall off-map; the isWanderable gate must reject them all.
         val agent = Factory.agent().copy(pos = Pos(20, 20))
-        val dest = MovementUtil.wander(agent).destination
+        val dest = Movement.wander(agent).destination
         assertTrue(dest.isPassable() && Sim.isInPlayArea(dest.x, dest.y), "an edge agent still stays on-map")
     }
 }

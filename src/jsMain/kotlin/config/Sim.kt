@@ -38,7 +38,7 @@ object Sim {
     /** Inside the *displayable* play area: on-screen bounds AND inside the field (circle when round). */
     fun isInPlayArea(x: Double, y: Double) = x >= 0 && y >= 0 && x < width && y < height && isInsideField(x, y)
 
-    /** Effective scale vs the screen — drives the framed display zoom (MapUtil). */
+    /** Effective scale vs the screen — drives the framed display zoom (MapController). */
     val scale: Double get() = maxOf(width.toDouble() / Dim.width, height.toDouble() / Dim.height)
 
     /** Set the play-area size (clamped to a sane range around the screen size). */

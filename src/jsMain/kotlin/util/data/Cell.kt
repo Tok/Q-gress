@@ -1,6 +1,6 @@
 package util.data
 
-import system.grid.PathUtil
+import system.grid.Pathfinding
 
 data class Cell(val position: Pos, val isPassable: Boolean, val movementPenalty: Int) {
     /**
@@ -10,8 +10,8 @@ data class Cell(val position: Pos, val isPassable: Boolean, val movementPenalty:
      */
     fun overlayColor(): String {
         if (!isPassable) return "rgba(0, 0, 0, 0.75)"
-        val span = (PathUtil.MAX_HEAT - PathUtil.MIN_HEAT).toDouble()
-        val t = ((movementPenalty - PathUtil.MIN_HEAT) / span).coerceIn(0.0, 1.0)
+        val span = (Pathfinding.MAX_HEAT - Pathfinding.MIN_HEAT).toDouble()
+        val t = ((movementPenalty - Pathfinding.MIN_HEAT) / span).coerceIn(0.0, 1.0)
         val v = (255 - t * 175).toInt() // 255 = road, ~80 = high-penalty ground
         return "rgba($v, $v, $v, 0.45)"
     }

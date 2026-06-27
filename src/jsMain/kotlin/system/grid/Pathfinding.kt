@@ -10,7 +10,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import util.data.*
 
-object PathUtil {
+object Pathfinding {
     const val MIN_HEAT = 35
     const val MAX_HEAT = 100
     private const val MIN_SPEED_FACTOR = 0.45 // slowest terrain still moves at 45% (so agents never stall)

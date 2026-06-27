@@ -15,7 +15,7 @@ import items.deployable.Resonator
 import items.level.XmpLevel
 import portal.Portal
 import portal.XmMap
-import system.audio.SoundUtil
+import system.audio.Sound
 import system.effect.Fx
 import util.HtmlUtil
 import util.NameGen
@@ -70,7 +70,7 @@ data class Agent(
     fun addAp(v: Int) {
         val before = getLevel()
         this.ap += (v * Config.apMultiplier * Config.progressSpeed).roundToInt() // progressSpeed → faster levelling
-        if (faction == World.userFaction && getLevel() > before) SoundUtil.playLevelUp(pos) // player agent dinged up
+        if (faction == World.userFaction && getLevel() > before) Sound.playLevelUp(pos) // player agent dinged up
     }
 
     fun act(): Agent {
@@ -89,7 +89,7 @@ data class Agent(
 
     fun moveElsewhere(): Agent {
         // Last-resort default is a non-portal wander (roam open ground); everything else seeks a portal.
-        val newAgent = Util.select(moveOptions(), { MovementUtil.wander(this) }).invoke()
+        val newAgent = Util.select(moveOptions(), { Movement.wander(this) }).invoke()
         // Force MOVE for the portal-seeking picks (incl. their no-op paths), but leave a wander fallback on its
         // own EXPLORE action so it actually roams open ground instead of heading to a portal.
         if (newAgent.action.item != ActionItem.EXPLORE) newAgent.action.start(ActionItem.MOVE)
@@ -99,26 +99,26 @@ data class Agent(
     // The weighted destination options for [moveElsewhere] — each gated by what's reachable/possible.
     private fun moveOptions(): List<Pair<Double, () -> Agent>> {
         val agent = this
-        val hasEnemyPortals = MovementUtil.hasEnemyPortals(agent)
+        val hasEnemyPortals = Movement.hasEnemyPortals(agent)
         with(QDestinations) {
             val randomQ = ActionSelector.q(faction, MOVE_TO_RANDOM)
             val nearQ = ActionSelector.q(faction, MOVE_TO_NEAR)
             val uncapturedQ =
-                if (MovementUtil.hasUncapturedPortals()) ActionSelector.q(faction, MOVE_TO_UNCAPTURED) else -1.0
+                if (Movement.hasUncapturedPortals()) ActionSelector.q(faction, MOVE_TO_UNCAPTURED) else -1.0
             val friendlyQ =
-                if (MovementUtil.hasFriendlyPortals(agent)) ActionSelector.q(faction, MOVE_TO_MOST_FRIENDLY) else -1.0
+                if (Movement.hasFriendlyPortals(agent)) ActionSelector.q(faction, MOVE_TO_MOST_FRIENDLY) else -1.0
             val nearEnemyQ = if (hasXmps() && hasEnemyPortals) ActionSelector.q(faction, MOVE_TO_NEAR_ENEMY) else -1.0
             val weakEnemyQ = if (hasXmps() && hasEnemyPortals) ActionSelector.q(faction, MOVE_TO_WEAK_ENEMY) else -1.0
             val strongEnemyQ =
                 if (hasXmps() && hasEnemyPortals) ActionSelector.q(faction, MOVE_TO_STRONG_ENEMY) else -1.0
             return listOf(
-                randomQ to { MovementUtil.moveToRandomPortal(agent) },
-                nearQ to { MovementUtil.moveToNearestPortal(agent) },
-                uncapturedQ to { MovementUtil.moveToUncapturedPortal(agent) },
-                friendlyQ to { MovementUtil.moveToFriendlyHighLevelPortal(agent) },
-                nearEnemyQ to { MovementUtil.attackClosePortal(agent) },
-                weakEnemyQ to { MovementUtil.attackMostVulnerablePortal(agent) },
-                strongEnemyQ to { MovementUtil.attackMostLinkedPortal(agent) },
+                randomQ to { Movement.moveToRandomPortal(agent) },
+                nearQ to { Movement.moveToNearestPortal(agent) },
+                uncapturedQ to { Movement.moveToUncapturedPortal(agent) },
+                friendlyQ to { Movement.moveToFriendlyHighLevelPortal(agent) },
+                nearEnemyQ to { Movement.attackClosePortal(agent) },
+                weakEnemyQ to { Movement.attackMostVulnerablePortal(agent) },
+                strongEnemyQ to { Movement.attackMostLinkedPortal(agent) },
             )
         }
     }
@@ -161,11 +161,11 @@ data class Agent(
         val beelining = beelineTicks > 0
         if (beelining) beelineTicks--
         val force = if (beelining) {
-            MovementUtil.headingTo(pos, actionPortal.location) // un-stick override: straight line through the spiral
+            Movement.headingTo(pos, actionPortal.location) // un-stick override: straight line through the spiral
         } else {
-            actionPortal.vectors[pos.toShadow()] ?: MovementUtil.headingTo(pos, actionPortal.location)
+            actionPortal.vectors[pos.toShadow()] ?: Movement.headingTo(pos, actionPortal.location)
         }
-        velocity = MovementUtil.move(velocity, force, skills.speed)
+        velocity = Movement.move(velocity, force, skills.speed)
         return this.copy(pos = Pos((pos.x + velocity.re).toInt(), (pos.y + velocity.im).toInt()))
     }
 
@@ -176,7 +176,7 @@ data class Agent(
             action.end()
             return this
         }
-        velocity = MovementUtil.move(velocity, MovementUtil.headingTo(pos, destination), skills.speed)
+        velocity = Movement.move(velocity, Movement.headingTo(pos, destination), skills.speed)
         return this.copy(pos = Pos((pos.x + velocity.re).toInt(), (pos.y + velocity.im).toInt()))
     }
 
@@ -193,7 +193,7 @@ data class Agent(
         npc.holdInPlace(World.tick + RECRUIT_HOLD_TICKS) // keep them waiting while we approach + meet
         if (distanceToDestination() > Dim.maxDeploymentRange) {
             action.start(ActionItem.RECRUIT) // keep the meeting timer fresh until we actually arrive
-            velocity = MovementUtil.move(velocity, MovementUtil.headingTo(pos, destination), skills.speed)
+            velocity = Movement.move(velocity, Movement.headingTo(pos, destination), skills.speed)
             return this.copy(pos = Pos((pos.x + velocity.re).toInt(), (pos.y + velocity.im).toInt()))
         }
         if (action.isBusy()) return this // standing together — the meeting (the head bobs in the render)

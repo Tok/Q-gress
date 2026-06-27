@@ -3,7 +3,7 @@ package agent.action.cond
 import agent.Agent
 import agent.action.ActionItem
 import items.deployable.Virus
-import system.audio.SoundUtil
+import system.audio.Sound
 
 /**
  * Using a virus (ADA Refactor or JARVIS Virus — **either faction may carry and use either one**) on an
@@ -21,7 +21,7 @@ object Refactorer : ConditionalAction {
         val portal = agent.actionPortal
         portal.refactor(agent)
         agent.inventory.items.remove(virus)
-        SoundUtil.playVirusSound(portal.location, agent.faction)
+        Sound.playVirusSound(portal.location, agent.faction)
         agent.action.start(ActionItem.VIRUS)
         return agent
     }

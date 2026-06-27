@@ -29,11 +29,11 @@ import kotlin.math.sin
 import kotlin.math.sqrt
 import kotlin.math.tanh
 
-// LargeClass suppressed: SoundUtil is the audio hub. Voices already split out (KickDrum, HackSound, SteamSound,
-// AudioFx, Mixer); the remaining per-event play* methods are the tracked SoundUtil split (PLAN → "cut along
-// seams in SoundUtil"). The per-role Mixer annotations nudged it just over the line.
+// LargeClass suppressed: Sound is the audio hub. Voices already split out (KickDrum, HackSound, SteamSound,
+// AudioFx, Mixer); the remaining per-event play* methods are the tracked Sound split (PLAN → "cut along
+// seams in Sound"). The per-role Mixer annotations nudged it just over the line.
 @Suppress("LargeClass")
-object SoundUtil {
+object Sound {
     const val DEFAULT_VOLUME = 0.3 // start quiet (30%) — less startling on first interaction
     internal const val EPS = 0.0001 // exponentialRamp can't target 0
     private const val SHATTER_MIX = 0.8 // glass-shatter loudness vs the rest of the mix
@@ -66,7 +66,7 @@ object SoundUtil {
     private const val BLAST_REVERB_SEND = 0.22 // reverb send for the explosion rumble tail
     private const val MUFFLE_CLOSED_HZ = 600.0 // muffled: distant/underwater (title behind onboarding)
 
-    // The whole audio graph is LAZY so merely referencing SoundUtil headless (Node tests / SimRunner)
+    // The whole audio graph is LAZY so merely referencing Sound headless (Node tests / SimRunner)
     // doesn't construct an AudioContext (which doesn't exist outside a browser → would crash). Every play*
     // method gates on isMuted() (true headless), so these are only ever touched in a browser.
     internal val audioCtx: AudioContext by lazy { AudioContext() }
@@ -750,9 +750,9 @@ object SoundUtil {
         val n = now()
         val timeConstant = 0.01
         val max = 1000
-        (0..max).forEach {
-            val freq = Util.random() * (maxFreq - (maxFreq * it / max))
-            val tc = timeConstant * it
+        for (i in 0..max) {
+            val freq = Util.random() * (maxFreq - (maxFreq * i / max))
+            val tc = timeConstant * i
             node.frequency.setTargetAtTime(freq, n + tc, timeConstant)
         }
         return node
@@ -781,9 +781,9 @@ object SoundUtil {
         val timeConstant = 0.01
         val max = 1000
         val n = now()
-        (0..max).forEach {
+        for (i in 0..max) {
             val pan = Util.random() * 2.0 - 1.0 // full −1…+1 stereo field
-            val tc = timeConstant * it
+            val tc = timeConstant * i
             node.pan.setTargetAtTime(pan, n + tc, timeConstant)
         }
 

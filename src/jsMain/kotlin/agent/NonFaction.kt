@@ -7,9 +7,9 @@ import config.Time
 import extension.Grid
 import extension.VectorField
 import portal.Portal
-import system.audio.SoundUtil
-import system.grid.PathUtil
-import system.map.MapUtil
+import system.audio.Sound
+import system.grid.Pathfinding
+import system.map.MapController
 import system.ui.LoadingOverlay
 import util.*
 import util.data.*
@@ -70,7 +70,7 @@ data class NonFaction(
         maybeRecoverFromStuck()
         val force: Complex = if (beelineTicks > 0) {
             beelineTicks--
-            MovementUtil.headingTo(pos, destination) // un-stick override: straight line through the spiral
+            Movement.headingTo(pos, destination) // un-stick override: straight line through the spiral
         } else if (Config.isNpcSwarming && Util.random() < swarmChance) {
             val nearPos = findNearest().pos
             if (nearPos.distanceTo(pos) < Dim.agentRadius) {
@@ -82,9 +82,9 @@ data class NonFaction(
                 Complex(pos.x, pos.y)
             }
         } else {
-            vectors[pos.toShadow()] ?: MovementUtil.headingTo(pos, destination)
+            vectors[pos.toShadow()] ?: Movement.headingTo(pos, destination)
         }
-        velocity = MovementUtil.move(velocity, force, speed)
+        velocity = Movement.move(velocity, force, speed)
         this.pos = Pos(pos.x + velocity.re, pos.y + velocity.im)
     }
 
@@ -149,7 +149,7 @@ data class NonFaction(
     }
 
     companion object {
-        private val OFFSCREEN_DISTANCE = Pos.res * (MapUtil.OFFSCREEN_CELL_ROWS / 2)
+        private val OFFSCREEN_DISTANCE = Pos.res * (MapController.OFFSCREEN_CELL_ROWS / 2)
 
         // Roughly the gap between adjacent off-map destinations along the border (sim units ≈ half a screen).
         // The count then scales with the field perimeter, bounded so we don't compute too many full-map flow
@@ -233,14 +233,14 @@ data class NonFaction(
                 return maybeField
             }
             if (Config.headlessFieldCompute && HtmlUtil.isNotRunningInBrowser()) {
-                return PathUtil.computeFieldSync(destination).also { fields[destination] = it } // headless match
+                return Pathfinding.computeFieldSync(destination).also { fields[destination] = it } // headless match
             }
             if (pending.add(destination)) {
-                PathUtil.computeFieldAsync(destination) { field ->
+                Pathfinding.computeFieldAsync(destination) { field ->
                     fields[destination] = field
                     pending.remove(destination)
                     LoadingOverlay.detail("Preparing routes…")
-                    SoundUtil.playOffScreenLocationCreationSound()
+                    Sound.playOffScreenLocationCreationSound()
                 }
             }
             return emptyMap()
@@ -286,7 +286,7 @@ data class NonFaction(
                 val portal = World.allPortals[(Util.random() * (World.allPortals.size - 1)).toInt()]
                 NonFaction(position, speed, size, portal.location, portal.vectors, World.tick)
             }
-            SoundUtil.playNpcCreationSound(newNonFaction)
+            Sound.playNpcCreationSound(newNonFaction)
             return newNonFaction // rendered in 3D by Scene3D.sync(); no 2D draw (it'd just flash then clear)
         }
     }

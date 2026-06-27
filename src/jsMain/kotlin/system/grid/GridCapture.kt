@@ -8,7 +8,7 @@ import org.w3c.dom.HTMLAnchorElement
 import org.w3c.dom.url.URL
 import org.w3c.files.Blob
 import org.w3c.files.BlobPropertyBag
-import system.map.MapUtil
+import system.map.MapController
 import system.ui.LoadingOverlay
 
 /**
@@ -17,17 +17,17 @@ import system.ui.LoadingOverlay
  * `src/jsTest/kotlin/util/` and commit it; [util.PresetConnectivityTest] then asserts connectivity
  * offline. Re-run when presets or the tile source change materially.
  *
- * No agents/portals/3D are created — only [MapUtil.loadMaps], which builds the grid and (under
+ * No agents/portals/3D are created — only [MapController.loadMaps], which builds the grid and (under
  * capture mode) hands the raw grid to [onGridBuilt] before carving.
  */
 object GridCapture {
     private val fixtures = mutableListOf<GridFixture>()
     private var currentPreset: Location? = null
 
-    /** Called from MapUtil.createGrid (capture mode) with the raw, pre-connectIslands grid. */
+    /** Called from MapController.createGrid (capture mode) with the raw, pre-connectIslands grid. */
     fun onGridBuilt(rawGrid: Grid, w: Int, h: Int) {
         val preset = currentPreset ?: return
-        fixtures.add(GridFixture.fromGrid(preset.name, rawGrid, w, h, MapUtil.OFFSCREEN_CELL_ROWS))
+        fixtures.add(GridFixture.fromGrid(preset.name, rawGrid, w, h, MapController.OFFSCREEN_CELL_ROWS))
     }
 
     fun sweep() {
@@ -40,7 +40,7 @@ object GridCapture {
             }
             currentPreset = presets[i]
             LoadingOverlay.detail("Capturing ${presets[i].displayName} (${i + 1}/${presets.size})…")
-            MapUtil.loadMaps(presets[i].toJSON()) { next(i + 1) }
+            MapController.loadMaps(presets[i].toJSON()) { next(i + 1) }
         }
         next(0)
     }

@@ -154,9 +154,9 @@ object Config {
     val ticksPerCycle = Time.secondsToTicks(1800)
 
     // Headless flow-field compute (PLAN Phase 6.1 / the SimRunner). Off by default: in the browser fields
-    // are computed async (PathUtil.computeFieldAsync) and in plain Node unit tests we skip them entirely
+    // are computed async (Pathfinding.computeFieldAsync) and in plain Node unit tests we skip them entirely
     // (agents bee-line). A headless match flips this on so Portal/NonFaction compute fields synchronously
-    // (PathUtil.computeFieldSync) — deterministic pathfinding without the coroutine event loop. Requires
+    // (Pathfinding.computeFieldSync) — deterministic pathfinding without the coroutine event loop. Requires
     // World.grid to be initialised (the match harness sets it up first).
     var headlessFieldCompute = false
 }

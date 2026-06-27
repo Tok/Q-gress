@@ -1,7 +1,7 @@
 package system.building
 
 import system.display.OwnBuildings
-import system.map.MapUtil
+import system.map.MapController
 
 /**
  * The "Buildings transparency" control (menu slider + keyboard nudge): one knob over BOTH building sets, since
@@ -20,12 +20,12 @@ object BuildingTransparency {
 
     /** Keyboard nudge: shift MapLibre's opacity by [deltaOpacity], then mirror onto our meshes. */
     fun nudge(deltaOpacity: Double) {
-        MapUtil.nudgeBuildingOpacity(deltaOpacity)
-        applyOpacity(MapUtil.currentBuildingOpacity())
+        MapController.nudgeBuildingOpacity(deltaOpacity)
+        applyOpacity(MapController.currentBuildingOpacity())
     }
 
     private fun applyOpacity(mapOpacity: Double) {
-        MapUtil.setBuildingOpacity(mapOpacity) // MapLibre's gap-fillers
+        MapController.setBuildingOpacity(mapOpacity) // MapLibre's gap-fillers
         OwnBuildings.setOpacity((mapOpacity - OWN_EXTRA).coerceIn(0.0, 1.0)) // our meshes
     }
 }

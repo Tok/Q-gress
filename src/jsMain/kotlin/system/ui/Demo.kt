@@ -9,7 +9,7 @@ import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLLabelElement
 import system.display.Showcases
-import system.map.MapUtil
+import system.map.MapController
 import util.data.Pos
 
 /**
@@ -81,9 +81,9 @@ object Demo {
         val check = document.createElement("input") as HTMLInputElement
         check.type = "checkbox"
         check.checked = true
-        MapUtil.setDemoSatellite(true) // satellite on by default
+        MapController.setDemoSatellite(true) // satellite on by default
         check.onchange = {
-            MapUtil.setDemoSatellite(check.checked)
+            MapController.setDemoSatellite(check.checked)
             null
         }
         label.append(check)

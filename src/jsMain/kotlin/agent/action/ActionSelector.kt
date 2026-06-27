@@ -3,7 +3,7 @@ package agent.action
 import agent.Agent
 import agent.Balance
 import agent.Faction
-import agent.MovementUtil
+import agent.Movement
 import agent.action.cond.*
 import agent.qvalue.QActions
 import agent.qvalue.QValue
@@ -34,7 +34,7 @@ object ActionSelector {
     // No-idle fallback: when nothing productive is eligible (portal on cooldown, empty inventory, capped
     // roster), the agent ROAMS open ground — a portal-independent stroll that sweeps up stray XM faster than
     // standing still, so it can act again sooner. Recruiting stays a weighted option in the lists above.
-    private fun fallback(agent: Agent) = { MovementUtil.wander(agent) }
+    private fun fallback(agent: Agent) = { Movement.wander(agent) }
     private fun doAnywhereAction(agent: Agent): Agent = Util.select(actionsForAnywhere(agent), fallback(agent)).invoke()
     private fun doNeutralPortalAction(agent: Agent): Agent = Util.select(actionsForNeutralPortals(agent), fallback(agent)).invoke()
 

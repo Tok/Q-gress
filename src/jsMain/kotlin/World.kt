@@ -33,7 +33,7 @@ object World {
     lateinit var bgCan: Canvas
     fun bgCtx() = HtmlUtil.getContext2D(bgCan)
 
-    // var center: JSON = MapUtil.INITIAL_MAP_CENTER
+    // var center: JSON = MapController.INITIAL_MAP_CENTER
     var mousePos: Pos? = null
 
     // Screen extent — the fixed play area (Dim); used for on/off-screen tests and sound ratios.

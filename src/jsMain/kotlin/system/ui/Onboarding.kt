@@ -15,7 +15,7 @@ import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLOptionElement
 import org.w3c.dom.HTMLSelectElement
-import system.audio.SoundUtil
+import system.audio.Sound
 import system.display.TitleWordmark
 import kotlin.math.abs
 
@@ -52,7 +52,7 @@ object Onboarding {
                 // Keep the title sim running behind the rest of onboarding (shaded), but pop the 3D
                 // wordmark out (it'd sit under the selection pane) and muffle the audio.
                 TitleWordmark.setVisible(false)
-                SoundUtil.setMuffled(true)
+                Sound.setMuffled(true)
                 onPick(f)
             }
             row.appendChild(btn)

@@ -22,7 +22,7 @@ import system.display.OwnBuildings
 import system.display.Scene3D
 import system.grid.GridCapture
 import system.grid.GridConnectivity
-import system.grid.PathUtil
+import system.grid.Pathfinding
 import system.ui.LoadingOverlay
 import util.Debug
 import util.HtmlUtil
@@ -34,7 +34,7 @@ import kotlin.js.Json
 import kotlin.math.log2
 import kotlin.math.roundToInt
 
-object MapUtil {
+object MapController {
     private fun mapOptions(container: String, style: dynamic, preserveBuffer: Boolean): dynamic {
         val opts: dynamic = js("({})")
         opts.container = container
@@ -689,7 +689,7 @@ object MapUtil {
                     val costPixel = costData[idx]
                     val isPassable = passPixel > passabilityOffset
                     val penalty =
-                        PathUtil.MIN_HEAT + ((255 - costPixel) * (PathUtil.MAX_HEAT - PathUtil.MIN_HEAT) / 255)
+                        Pathfinding.MIN_HEAT + ((255 - costPixel) * (Pathfinding.MAX_HEAT - Pathfinding.MIN_HEAT) / 255)
                     pos to Cell(pos, isPassable, penalty)
                 }
             }

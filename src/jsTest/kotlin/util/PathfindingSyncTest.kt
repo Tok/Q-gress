@@ -4,7 +4,7 @@ import World
 import config.Config
 import portal.Portal
 import system.grid.GridFixture
-import system.grid.PathUtil
+import system.grid.Pathfinding
 import util.data.Pos
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -13,12 +13,12 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 /**
- * The synchronous flow-field path (PLAN Phase 6.1 / Stage 2 of the functional-core split): [PathUtil.
+ * The synchronous flow-field path (PLAN Phase 6.1 / Stage 2 of the functional-core split): [Pathfinding.
  * computeFieldSync] computes a flow field inline (no coroutine), so a headless match has deterministic
  * pathfinding without the `MainScope` event loop. Also covers the [Config.headlessFieldCompute] opt-in
  * that routes `Portal.create` through the sync path headless.
  */
-class PathUtilSyncTest {
+class PathfindingSyncTest {
 
     // A small all-passable arena (12×12 on-screen + a 2-cell ring), keyed by shadow-space Pos.
     private val goal = Pos(60, 60) // sim coords → shadow (6, 6), interior of the arena
@@ -36,18 +36,18 @@ class PathUtilSyncTest {
 
     @Test
     fun computeFieldSyncProducesANonEmptyField() {
-        assertTrue(PathUtil.computeFieldSync(goal).isNotEmpty(), "a flow field is produced over the grid")
+        assertTrue(Pathfinding.computeFieldSync(goal).isNotEmpty(), "a flow field is produced over the grid")
     }
 
     @Test
     fun computeFieldSyncIsDeterministic() {
         // Same grid + goal → byte-for-byte the same field (no coroutine scheduling, no RNG).
-        assertEquals(PathUtil.computeFieldSync(goal), PathUtil.computeFieldSync(goal))
+        assertEquals(Pathfinding.computeFieldSync(goal), Pathfinding.computeFieldSync(goal))
     }
 
     @Test
     fun fieldVectorsHaveSaneBoundedMagnitudes() {
-        val field = PathUtil.computeFieldSync(goal)
+        val field = Pathfinding.computeFieldSync(goal)
         assertTrue(
             field.values.all { it.re.isFinite() && it.im.isFinite() && it.magnitude in 0.0..1.0001 },
             "every flow vector is finite with a speed-scaled magnitude in [0, 1]",

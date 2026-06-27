@@ -1,7 +1,7 @@
 package system.map
 
 /**
- * MapLibre style JSON + the keyless tile sources behind them — split out of [MapUtil] (size). Street
+ * MapLibre style JSON + the keyless tile sources behind them — split out of [MapController] (size). Street
  * backdrop: hosted OpenFreeMap style. Satellite: Esri World Imagery raster. Passability "shadow":
  * OpenFreeMap vector tiles rendered as a white-roads-on-black mask that we read back via WebGL.
  */

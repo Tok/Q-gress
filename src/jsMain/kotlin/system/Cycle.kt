@@ -8,7 +8,7 @@ import config.Dim
 import portal.Portal
 import portal.XmHeap
 import portal.XmMap
-import system.audio.SoundUtil
+import system.audio.Sound
 import util.Util
 import util.data.*
 
@@ -47,10 +47,10 @@ enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>) {
                     removeFrogs()
                     removeSmurfs()
                     factionChange()
-                    SoundUtil.playCycleSound() // SoundUtil self-guards headless (isMuted())
+                    Sound.playCycleSound() // Sound self-guards headless (isMuted())
                     World.allPortals.forEach { it.decay() }
                 } else {
-                    SoundUtil.playCheckpointSound(cp)
+                    Sound.playCheckpointSound(cp)
                 }
             }
         }

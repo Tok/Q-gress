@@ -2,7 +2,7 @@ package system.display
 import World
 import config.Sim
 import external.Three
-import system.audio.SoundUtil
+import system.audio.Sound
 import util.data.*
 import kotlin.math.PI
 import kotlin.math.atan2
@@ -11,7 +11,7 @@ import kotlin.math.atan2
  * The flow-field arrows for a freshly-created portal — cones coloured by flow direction (hue),
  * subsampled. No toggle: a portal calls [flash] when its field is ready and the field shows briefly.
  *
- * Fields are now computed asynchronously (PathUtil.computeFieldAsync), so during world generation
+ * Fields are now computed asynchronously (Pathfinding.computeFieldAsync), so during world generation
  * many land in a rapid burst. A FIFO [queue] replays them as a paced sweep (each shown for at least
  * [MIN_SHOW_MS] before the next), and the last one lingers + fades out. Driven every frame by
  * [Scene3D.render] (a continuous loop), not the per-tick sync, so the sweep keeps animating through
@@ -72,7 +72,7 @@ object VectorFieldOverlay {
             builtKey = currentId
             // Paced audio through world-gen: a soft route-ready ping as each flow field lands (the long
             // field-prep tail was silent — portal-creation sounds only cover the spawn burst).
-            if (!World.isReady) SoundUtil.playOffScreenLocationCreationSound()
+            if (!World.isReady) Sound.playOffScreenLocationCreationSound()
         }
         if (currentId == null) return
         val shownFor = now() - shownAt

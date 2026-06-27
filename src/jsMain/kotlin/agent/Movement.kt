@@ -11,11 +11,11 @@ import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
 
-object MovementUtil {
+object Movement {
     private const val WANDER_RADIUS = 220.0 // px — a regional stroll to collect stray XM, not a map-wide teleport
     private const val WANDER_TRIES = 12 // samples to find a wanderable point before falling back
 
-    // Flow-field cells read empty while the field computes async (see PathUtil.computeFieldAsync).
+    // Flow-field cells read empty while the field computes async (see Pathfinding.computeFieldAsync).
     // Until it lands, head straight for the destination at unit magnitude so the agent keeps moving
     // (never stalls on Complex.ZERO → stuck → never re-targets) and re-samples the real field later.
     fun headingTo(from: Pos, to: Pos): Complex {

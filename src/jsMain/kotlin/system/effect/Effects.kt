@@ -14,7 +14,7 @@ import util.data.Pos
  * (headless: Node tests / the future `SimRunner`). No three.js / DOM types cross this seam, so the whole
  * tick loop runs headless without touching the renderer.
  *
- * Audio is **not** here — [util.SoundUtil] already self-guards headless; the message log [system.Com] is
+ * Audio is **not** here — [util.Sound] already self-guards headless; the message log [system.Com] is
  * pure. This seam covers only the renderer (`system/display/`) calls. Mirrors [ai.FactionPolicies].
  */
 interface Effects {

@@ -18,7 +18,7 @@ import kotlin.math.min
  *    and spin SPEED sets the tempo → a little melody that differs per faction + portal.
  *
  * Keyed by **portal id**: re-hacking before the spin finishes (e.g. RES interrupts ENL, flipping the
- * spin) stops the old voice and starts a fresh one. Lives outside [SoundUtil] (at its size limit).
+ * spin) stops the old voice and starts a fresh one. Lives outside [Sound] (at its size limit).
  */
 object HackSound {
     private const val MAX_CLICKS = 64 // safety cap (long high-level glyphs turn many times)
@@ -31,22 +31,22 @@ object HackSound {
     /** Normal hack for [id] (portal); [dur] s = the spin's wall-clock length. [slots] = octant→reso level
      *  (0 = empty), [faction] sets the click order/direction. */
     fun hack(id: String, pos: Pos, dur: Double, faction: Faction, slots: IntArray) {
-        if (SoundUtil.isMuted()) return
+        if (Sound.isMuted()) return
         play(id, pos, dur, faction, slots, glyph = false, level = 0)
     }
 
     /** Glyph hack: a sharper whoosh (it spins faster) + a glassy completion chime, plus the clicks. */
     fun glyph(id: String, pos: Pos, level: Int, dur: Double, faction: Faction, slots: IntArray) {
-        if (SoundUtil.isMuted()) return
+        if (Sound.isMuted()) return
         play(id, pos, dur, faction, slots, glyph = true, level = level)
     }
 
     /** Stop [id]'s current voice with a quick fade (a re-hack interrupted it before it played out). */
     fun stop(id: String) {
         val v = active.remove(id) ?: return
-        val n = SoundUtil.now()
+        val n = Sound.now()
         v.gain.gain.cancelScheduledValues(n)
-        v.gain.gain.setTargetAtTime(SoundUtil.EPS, n, 0.02) // ~60 ms fade, no click
+        v.gain.gain.setTargetAtTime(Sound.EPS, n, 0.02) // ~60 ms fade, no click
         v.oscs.forEach { runCatching { it.stop(n + 0.12) } }
     }
 
@@ -54,10 +54,10 @@ object HackSound {
     private fun play(id: String, pos: Pos, dur: Double, faction: Faction, slots: IntArray, glyph: Boolean, level: Int) {
         Mixer.current = Mixer.Group.PORTAL // hack/glyph → the Portal mixer channel
         stop(id)
-        val ctx = SoundUtil.audioCtx
-        val n = SoundUtil.now()
+        val ctx = Sound.audioCtx
+        val n = Sound.now()
         val mid = n + dur * 0.5
-        val panner = SoundUtil.createPanner(pos)
+        val panner = Sound.createPanner(pos)
         val peak = if (glyph) 0.08 else 0.06 // white noise is perceptually loud — keep it well down
         val highCut = if (glyph) 4800.0 else 3200.0
 
@@ -81,11 +81,11 @@ object HackSound {
         lowpass.asDynamic().Q.value = 1.2
         // Bell envelope: quiet at the ends, loud in the middle (the "sss → SSS → sss"), silent at start/end.
         val gainNode = ctx.createGain()
-        gainNode.gain.setValueAtTime(SoundUtil.EPS, n)
+        gainNode.gain.setValueAtTime(Sound.EPS, n)
         gainNode.gain.linearRampToValueAtTime(peak * 0.12, n + dur * 0.25) // ease in from silence (soft sss)
         gainNode.gain.linearRampToValueAtTime(peak, mid) // swell to the peak (SSS)
         gainNode.gain.linearRampToValueAtTime(peak * 0.12, n + dur * 0.75) // back down (soft sss)
-        gainNode.gain.exponentialRampToValueAtTime(SoundUtil.EPS, n + dur) // fade fully out
+        gainNode.gain.exponentialRampToValueAtTime(Sound.EPS, n + dur) // fade fully out
         src.connect(lowpass)
         lowpass.connect(gainNode)
         gainNode.connect(panner)
@@ -119,21 +119,21 @@ object HackSound {
             val lvl = slots.getOrElse(slotIdx) { 0 }
             if (lvl > 0) {
                 val u = invSmoother((j * EIGHTH) / total) // when the spin reaches j·45° (eased, so tempo tracks speed)
-                oscs.add(click(panner, SoundUtil.noteFor(lvl, 3), n + u * dur))
+                oscs.add(click(panner, Sound.noteFor(lvl, 3), n + u * dur))
             }
             j++
         }
     }
 
     private fun click(panner: dynamic, freq: Double, t: Double): dynamic {
-        val ctx = SoundUtil.audioCtx
+        val ctx = Sound.audioCtx
         val osc = ctx.createOscillator()
         osc.type = OscillatorType.TRIANGLE
         osc.frequency.setValueAtTime(freq, t)
         val g = ctx.createGain()
-        g.gain.setValueAtTime(SoundUtil.EPS, t)
+        g.gain.setValueAtTime(Sound.EPS, t)
         g.gain.linearRampToValueAtTime(0.07, t + 0.004) // sharp transient
-        g.gain.exponentialRampToValueAtTime(SoundUtil.EPS, t + 0.06)
+        g.gain.exponentialRampToValueAtTime(Sound.EPS, t + 0.06)
         osc.connect(g)
         g.connect(panner)
         panner.connect(Mixer.currentBus())
@@ -158,18 +158,18 @@ object HackSound {
 
     /** A glassy chime ringing up as a glyph completes (the "stronger / skill" flourish). */
     private fun chime(panner: dynamic, level: Int, n: Double, dur: Double): dynamic {
-        val ctx = SoundUtil.audioCtx
+        val ctx = Sound.audioCtx
         val ring = ctx.createOscillator()
         ring.type = OscillatorType.SINE
         val rt = n + dur * 0.7
-        val note = SoundUtil.noteFor(level, 4)
+        val note = Sound.noteFor(level, 4)
         ring.frequency.setValueAtTime(note, rt)
         ring.frequency.exponentialRampToValueAtTime(note * 1.5, n + dur)
         val ringGain = ctx.createGain()
-        ringGain.gain.setValueAtTime(SoundUtil.EPS, n)
-        ringGain.gain.setValueAtTime(SoundUtil.EPS, rt)
+        ringGain.gain.setValueAtTime(Sound.EPS, n)
+        ringGain.gain.setValueAtTime(Sound.EPS, rt)
         ringGain.gain.linearRampToValueAtTime(0.13, rt + 0.05)
-        ringGain.gain.exponentialRampToValueAtTime(SoundUtil.EPS, n + dur + 0.3)
+        ringGain.gain.exponentialRampToValueAtTime(Sound.EPS, n + dur + 0.3)
         ring.connect(ringGain)
         ringGain.connect(panner)
         panner.connect(Mixer.currentBus())

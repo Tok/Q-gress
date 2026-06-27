@@ -8,7 +8,7 @@ import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HTMLInputElement
 import system.audio.AudioFx
 import system.audio.Scale
-import system.audio.SoundUtil
+import system.audio.Sound
 
 /**
  * Audio demo (`#audio`): a panel of buttons that trigger every (standalone) game sound, so the SFX
@@ -20,7 +20,7 @@ object AudioDemo {
     private var level = 8
 
     fun show() {
-        SoundUtil.enableAudio() // first gesture (the page load into the demo) resumes the audio context
+        Sound.enableAudio() // first gesture (the page load into the demo) resumes the audio context
         val panel = document.createElement("div") as HTMLDivElement
         panel.id = "demoPanel"
         panel.addClass("demoPanel", "coda", "audioDemo") // audioDemo → wide layout + button grid (see CSS)

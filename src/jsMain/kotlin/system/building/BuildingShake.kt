@@ -8,7 +8,7 @@ import kotlin.math.sin
 /**
  * Per-building bob when an XMP/US goes off nearby: only buildings **within the XMP's blast range** of
  * the detonation shake (so a blast doesn't shudder the whole plane), each via MapLibre `feature-state`
- * added to the extrusion height/base (see MapUtil's building layer + inflate). Amplitude uses the same
+ * added to the extrusion height/base (see MapController's building layer + inflate). Amplitude uses the same
  * stepped-quintile range falloff as the weapon, is damped for **taller** buildings, clamped to a
  * fraction of each building's height (so a short one isn't bobbed into the ground), and scaled by the
  * menu's [Config.buildingShakeMultiplier]; [update] decays it back to rest.
@@ -41,7 +41,7 @@ object BuildingShake {
 
     private class Shake(val rawId: dynamic, val end: Double, val amp: Double, val phase: Double)
 
-    /** Bind to the base map that carries the building layer (from MapUtil.enable3D). */
+    /** Bind to the base map that carries the building layer (from MapController.enable3D). */
     fun attach(baseMap: dynamic) {
         map = baseMap
     }

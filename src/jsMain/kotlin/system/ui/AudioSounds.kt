@@ -4,7 +4,7 @@ import agent.Faction
 import config.Sim
 import system.Checkpoint
 import system.audio.HackSound
-import system.audio.SoundUtil
+import system.audio.Sound
 import system.audio.SteamSound
 import system.display.fx.HackFx
 import util.data.Pos
@@ -19,32 +19,32 @@ object AudioSounds {
     private val center get() = Pos(Sim.width / 2, Sim.height / 2)
 
     fun list(level: () -> Int): List<Pair<String, () -> Unit>> = listOf(
-        "Portal create" to { SoundUtil.playPortalCreationSound(center) },
-        "Portal remove" to { SoundUtil.playPortalRemovalSound(center) },
-        "Glass shatter" to { SoundUtil.playGlassShatterSound(center) },
-        "Neutralize" to { SoundUtil.playNeutralizeSound(center) },
-        "XMP" to { SoundUtil.playXmpSound(center, level()) },
-        "Ultra-strike" to { SoundUtil.playUltraStrike(center) },
+        "Portal create" to { Sound.playPortalCreationSound(center) },
+        "Portal remove" to { Sound.playPortalRemovalSound(center) },
+        "Glass shatter" to { Sound.playGlassShatterSound(center) },
+        "Neutralize" to { Sound.playNeutralizeSound(center) },
+        "XMP" to { Sound.playXmpSound(center, level()) },
+        "Ultra-strike" to { Sound.playUltraStrike(center) },
         "Burnout (steam)" to { SteamSound.play(center) },
         "Hack" to { HackSound.hack("demo", center, HackFx.HACK_S, Faction.ENL, IntArray(8) { level() }) },
         "Glyph" to { HackSound.glyph("demo", center, level(), HackFx.glyphDuration(level()), Faction.RES, IntArray(8) { level() }) },
-        "Reso deploy" to { SoundUtil.playResoDeploySound(center, level()) },
-        "Mod deploy" to { SoundUtil.playModDeploySound(center, level()) },
-        "Shield deploy" to { SoundUtil.playShieldDeploySound(center, level()) },
-        "Shield remove" to { SoundUtil.playShieldRemoveSound(center, level()) },
-        "Knock-out (plop)" to { SoundUtil.playKnockOutSound(center) },
-        "Virus ADA (ENL)" to { SoundUtil.playVirusSound(center, Faction.ENL) },
-        "Virus JARVIS (RES)" to { SoundUtil.playVirusSound(center, Faction.RES) },
-        "Upgrade" to { SoundUtil.playUpgradeSound(center, level()) },
-        "Downgrade" to { SoundUtil.playDowngradeSound(center, level()) },
-        "Agent level-up" to { SoundUtil.playLevelUp(center) },
-        "Deploy (legacy)" to { SoundUtil.playDeploySound(center, 50) },
-        "Field down" to { SoundUtil.playFieldDownSound() },
-        "Cycle" to { SoundUtil.playCycleSound() },
-        "Fail" to { SoundUtil.playFailSound() },
-        "Checkpoint" to { SoundUtil.playCheckpointSound(js("({})").unsafeCast<Checkpoint>()) },
-        "Noise gen" to { SoundUtil.playNoiseGenSound() },
-        "Offscreen portal" to { SoundUtil.playOffScreenLocationCreationSound() },
-        "Thunder" to { SoundUtil.playThunderSound(0.0) },
+        "Reso deploy" to { Sound.playResoDeploySound(center, level()) },
+        "Mod deploy" to { Sound.playModDeploySound(center, level()) },
+        "Shield deploy" to { Sound.playShieldDeploySound(center, level()) },
+        "Shield remove" to { Sound.playShieldRemoveSound(center, level()) },
+        "Knock-out (plop)" to { Sound.playKnockOutSound(center) },
+        "Virus ADA (ENL)" to { Sound.playVirusSound(center, Faction.ENL) },
+        "Virus JARVIS (RES)" to { Sound.playVirusSound(center, Faction.RES) },
+        "Upgrade" to { Sound.playUpgradeSound(center, level()) },
+        "Downgrade" to { Sound.playDowngradeSound(center, level()) },
+        "Agent level-up" to { Sound.playLevelUp(center) },
+        "Deploy (legacy)" to { Sound.playDeploySound(center, 50) },
+        "Field down" to { Sound.playFieldDownSound() },
+        "Cycle" to { Sound.playCycleSound() },
+        "Fail" to { Sound.playFailSound() },
+        "Checkpoint" to { Sound.playCheckpointSound(js("({})").unsafeCast<Checkpoint>()) },
+        "Noise gen" to { Sound.playNoiseGenSound() },
+        "Offscreen portal" to { Sound.playOffScreenLocationCreationSound() },
+        "Thunder" to { Sound.playThunderSound(0.0) },
     )
 }

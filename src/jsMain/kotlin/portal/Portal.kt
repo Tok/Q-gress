@@ -28,9 +28,9 @@ import items.types.MultihackType
 import items.types.ShieldType
 import items.types.VirusType
 import system.Com
-import system.audio.SoundUtil
+import system.audio.Sound
 import system.effect.Fx
-import system.grid.PathUtil
+import system.grid.Pathfinding
 import util.*
 import util.data.*
 import kotlin.math.*
@@ -39,7 +39,7 @@ data class Portal(
     val name: String,
     val location: Pos,
     val heatMap: GridMap,
-    var vectors: VectorField, // filled asynchronously after creation (PathUtil.computeFieldAsync)
+    var vectors: VectorField, // filled asynchronously after creation (Pathfinding.computeFieldAsync)
     val slots: Slots,
     val links: MutableSet<Link>,
     val fields: MutableSet<Field>,
@@ -132,7 +132,7 @@ data class Portal(
         val mod = mods.remove(slot) ?: return null
         destroyer?.addAp(MOD_DESTROY_AP)
         // Subtle "plop" as the item pops out of its slot (any mod — shield, heat sink, …).
-        if (HtmlUtil.isRunningInBrowser()) SoundUtil.playKnockOutSound(location)
+        if (HtmlUtil.isRunningInBrowser()) Sound.playKnockOutSound(location)
         Com.addMessage("$destroyer knocked a ${mod.abbr} off $this.", Com.Importance.MINOR, destroyer?.faction?.color)
         return mod
     }
@@ -235,7 +235,7 @@ data class Portal(
             links.add(newLink)
             linker.inventory.consumeKeyToPortal(target)
             Com.addMessage("$linker created a link from $this to $target", Com.Importance.MINOR, linker.faction.color)
-            SoundUtil.playLinkingSound(newLink)
+            Sound.playLinkingSound(newLink)
             linker.addAp(IngressFacts.AP_CREATE_LINK) // 313 (was 187 — that's the DESTROY-link value)
             linker.removeXm(250)
 
@@ -248,7 +248,7 @@ data class Portal(
                     val newField = Field.create(this, target, anchor, linker)
                     if (newField != null) {
                         Com.addMessage("$linker created a field at $this. +$newField", Com.Importance.MAJOR, linker.faction.color)
-                        SoundUtil.playFieldingSound(newField)
+                        Sound.playFieldingSound(newField)
                         fields.add(newField)
                         linker.addAp(IngressFacts.AP_CREATE_FIELD) // 1250, flat (size drives MU, not AP)
                     }
@@ -497,7 +497,7 @@ data class Portal(
         val level = getLevel().value
         agent.removeXm(PortalMath.retaliationDamage(level, totalMitigation()))
         Fx.sink.fireBolt(location, level, agent.pos, defender.faction.color)
-        SoundUtil.playThunderSound((agent.pos.x / Sim.width * 2.0 - 1.0).coerceIn(-1.0, 1.0))
+        Sound.playThunderSound((agent.pos.x / Sim.width * 2.0 - 1.0).coerceIn(-1.0, 1.0))
     }
 
     fun destroy(destroyer: Agent? = null) {
@@ -510,7 +510,7 @@ data class Portal(
         mods.clear()
         if (droppedMods.isNotEmpty()) {
             Fx.sink.dropMods(location, lvl, droppedMods) // mods tumble out when the portal goes down
-            droppedMods.filterIsInstance<Shield>().firstOrNull()?.let { SoundUtil.playShieldRemoveSound(location, it.getLevel()) }
+            droppedMods.filterIsInstance<Shield>().firstOrNull()?.let { Sound.playShieldRemoveSound(location, it.getLevel()) }
         }
         destroyAllLinksAndFields(destroyer)
         World.allAgents.forEach { agent ->
@@ -529,7 +529,7 @@ data class Portal(
         val heaviness = (0.1 + level * 0.06).coerceAtMost(0.7)
         destroy()
         Fx.sink.shatterPortal(location, shardColor, level, resoLevels) // glass shards + resonators fall
-        SoundUtil.playGlassShatterSound(location, heaviness, 0.8)
+        Sound.playGlassShatterSound(location, heaviness, 0.8)
         World.allAgents.forEach { agent ->
             val portalKeys: List<PortalKey>? = agent.inventory.findKeys().filter { key -> key.portal == this }.toList()
             if (portalKeys != null) {
@@ -640,7 +640,7 @@ data class Portal(
         // The pure link-defense curve, retaliation damage, hack cooldown + burnout math now live in the shared
         // core ([PortalMath]); callers below use it directly.
 
-        // Non-blocking: the portal is built with an empty flow field, then PathUtil.computeFieldAsync
+        // Non-blocking: the portal is built with an empty flow field, then Pathfinding.computeFieldAsync
         // fills portal.vectors off-thread (heatMap stays empty — it's never read externally). Agents
         // fall back to a straight-line heading while vectors is empty (Agent.moveCloserToDestinationPortal).
         fun create(location: Pos): Portal {
@@ -656,13 +656,13 @@ data class Portal(
                 null,
             )
             if (HtmlUtil.isRunningInBrowser()) {
-                SoundUtil.playPortalCreationSound(location)
-                PathUtil.computeFieldAsync(location) { field ->
+                Sound.playPortalCreationSound(location)
+                Pathfinding.computeFieldAsync(location) { field ->
                     portal.vectors = field
                     Fx.sink.flashVectorField("portal:${portal.id}")
                 }
             } else if (Config.headlessFieldCompute) {
-                portal.vectors = PathUtil.computeFieldSync(location) // headless match: deterministic, inline
+                portal.vectors = Pathfinding.computeFieldSync(location) // headless match: deterministic, inline
             }
             return portal
         }

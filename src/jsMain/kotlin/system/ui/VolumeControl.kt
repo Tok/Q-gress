@@ -2,13 +2,13 @@ package system.ui
 
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLInputElement
-import system.audio.SoundUtil
+import system.audio.Sound
 
 /**
  * Wires a speaker [icon] + volume [slider] to behave identically on the title screen ([Onboarding]) and
  * the in-game toolbar ([util.HtmlUtil]): dragging the slider sets the master volume, clicking the icon
  * mutes/unmutes (zeroing or restoring the slider), and the icon glyph swaps to a muted speaker whenever
- * the slider sits at 0. The glyph tracks the *slider* (not [SoundUtil.isMuted]) so it reads correctly
+ * the slider sits at 0. The glyph tracks the *slider* (not [Sound.isMuted]) so it reads correctly
  * before the first user gesture, when the master volume is still 0 pending audio-enable.
  */
 object VolumeControl {
@@ -17,12 +17,12 @@ object VolumeControl {
         icon.title = "Mute / unmute"
         refreshIcon(icon, slider)
         icon.onclick = {
-            slider.value = SoundUtil.toggleMute().toString()
+            slider.value = Sound.toggleMute().toString()
             refreshIcon(icon, slider)
             null
         }
         slider.oninput = {
-            SoundUtil.setMasterVolume(slider.valueAsNumber)
+            Sound.setMasterVolume(slider.valueAsNumber)
             refreshIcon(icon, slider)
             null
         }

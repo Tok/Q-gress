@@ -1,7 +1,7 @@
 package system.audio
 
 import portal.Portal
-import system.audio.SoundUtil
+import system.audio.Sound
 
 /**
  * Plays the portal upgrade / downgrade / neutralize sounds by diffing each portal against the
@@ -16,13 +16,13 @@ object PortalChangeSound {
         val lvl = portal.getLevel().toInt()
         prevLevel[id]?.let { prev ->
             when {
-                lvl > prev -> SoundUtil.playUpgradeSound(portal.location, lvl)
-                lvl < prev && portal.owner != null -> SoundUtil.playDowngradeSound(portal.location, lvl)
+                lvl > prev -> Sound.playUpgradeSound(portal.location, lvl)
+                lvl < prev && portal.owner != null -> Sound.playDowngradeSound(portal.location, lvl)
             }
         }
         prevLevel[id] = lvl
         val owned = portal.owner != null
-        if (prevOwned[id] == true && !owned) SoundUtil.playNeutralizeSound(portal.location)
+        if (prevOwned[id] == true && !owned) Sound.playNeutralizeSound(portal.location)
         prevOwned[id] = owned
     }
 }

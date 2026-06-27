@@ -7,7 +7,7 @@ import util.data.Pos
 /**
  * A compact, committed snapshot of one preset's passability, for offline (Node) connectivity tests
  * that can't reach live map tiles. Only `isPassable` is stored (all the connectivity helpers need);
- * the off-screen ring is reconstructed as passable, matching MapUtil's grid builder.
+ * the off-screen ring is reconstructed as passable, matching MapController's grid builder.
  *
  * Captured **pre-[GridConnectivity.connectIslands]** (the raw screen-derived passability) so tests
  * run the real carve themselves and stay valid if the carve logic changes. Storage is run-length

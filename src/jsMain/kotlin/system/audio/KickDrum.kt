@@ -13,7 +13,7 @@ import kotlin.math.exp
 /**
  * A deep, hard **TR-909-style kick** for the detonations — the punch under the XMP / Ultra-Strike blasts.
  * A sine whose pitch drops fast from the start freq (the "thwack" body) plus a tight high-passed click
- * (the hard beater attack), with a bit of [reverb send][sendToReverb] for space. Split out of [SoundUtil]
+ * (the hard beater attack), with a bit of [reverb send][sendToReverb] for space. Split out of [Sound]
  * (size); reuses its lazy audio graph (context, master gain, panner, oscillator/gain helpers).
  *
  * Part of the wider move toward a **303 / 808 / 909** sound-design palette (see PLAN).
@@ -73,18 +73,18 @@ object KickDrum {
      * for a tight punch (Ultra-Strike). The live tuning ([pitchMult]/[decayMult]/[clickMult]/[drive]) scales these.
      */
     fun play(pos: Pos, startHz: Double, amp: Double, decay: Double, clickFrac: Double = CLICK_AMP_FRAC) {
-        val ctx = SoundUtil.audioCtx
-        val n = SoundUtil.now()
+        val ctx = Sound.audioCtx
+        val n = Sound.now()
         val sHz = startHz * pitchMult
         val dec = decay * decayMult
-        val osc = SoundUtil.createStaticOscillator(OscillatorType.SINE, sHz)
+        val osc = Sound.createStaticOscillator(OscillatorType.SINE, sHz)
         osc.frequency.setValueAtTime(sHz, n)
         osc.frequency.exponentialRampToValueAtTime(maxOf(sHz * PITCH_DROP, MIN_HZ), n + PITCH_S)
         val g = ctx.createGain()
-        g.gain.setValueAtTime(SoundUtil.EPS, n)
+        g.gain.setValueAtTime(Sound.EPS, n)
         g.gain.linearRampToValueAtTime(amp, n + ATTACK_S)
-        g.gain.exponentialRampToValueAtTime(SoundUtil.EPS, n + dec)
-        val pan = SoundUtil.createPanner(pos)
+        g.gain.exponentialRampToValueAtTime(Sound.EPS, n + dec)
+        val pan = Sound.createPanner(pos)
         // Optional drive: osc → waveshaper → pan (harder, dirtier kick); bypassed at drive 0.
         if (drive > 0.0) {
             val ws = ctx.asDynamic().createWaveShaper()
@@ -117,7 +117,7 @@ object KickDrum {
     /** Tap [node]'s output into the master reverb send bus at [amount] (explosion-only space; see [AudioFx]). */
     fun sendToReverb(node: dynamic, amount: Double) {
         val bus = AudioFx.reverbSend() ?: return
-        val g = SoundUtil.audioCtx.createGain()
+        val g = Sound.audioCtx.createGain()
         g.gain.value = amount
         node.connect(g)
         g.connect(bus)
@@ -125,7 +125,7 @@ object KickDrum {
 
     // A short high-passed noise tick — the beater "click" that makes the kick read hard/punchy.
     private fun playClick(pos: Pos, amplitude: Double) {
-        val ctx = SoundUtil.audioCtx
+        val ctx = Sound.audioCtx
         val sr = ctx.sampleRate
         val len = (CLICK_S * sr).toInt().coerceAtLeast(1)
         val buffer = ctx.createBuffer(1, len, sr)
@@ -139,14 +139,14 @@ object KickDrum {
         source.buffer = buffer
         val highpass = ctx.createBiquadFilter()
         highpass.type = "highpass"
-        highpass.frequency.setValueAtTime(CLICK_HP_HZ, SoundUtil.now())
-        val gainNode = SoundUtil.createStaticGain(amplitude)
-        val panNode = SoundUtil.createPanner(pos)
+        highpass.frequency.setValueAtTime(CLICK_HP_HZ, Sound.now())
+        val gainNode = Sound.createStaticGain(amplitude)
+        val panNode = Sound.createPanner(pos)
         source.connect(highpass)
         highpass.connect(gainNode)
         gainNode.connect(panNode)
         panNode.connect(Mixer.currentBus())
         source.start()
-        source.stop(SoundUtil.now() + CLICK_S)
+        source.stop(Sound.now() + CLICK_S)
     }
 }

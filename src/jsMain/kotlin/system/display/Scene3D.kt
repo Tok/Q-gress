@@ -26,7 +26,7 @@ import portal.Portal
 import portal.XmHeap
 import portal.XmMap
 import system.audio.PortalChangeSound
-import system.audio.SoundUtil
+import system.audio.Sound
 import system.audio.SteamSound
 import system.building.BuildingShake
 import system.display.fx.BoltFx
@@ -652,7 +652,7 @@ object Scene3D {
             BuildingShake.blast(ll[0], ll[1], XmpLevel.valueOf(level).rangeM, level, ultra, animClockMs / 1000.0)
         }
         if (sound) {
-            if (ultra) SoundUtil.playUltraStrike(location) else SoundUtil.playXmpSound(location, level)
+            if (ultra) Sound.playUltraStrike(location) else Sound.playXmpSound(location, level)
         }
     }
 
@@ -660,7 +660,7 @@ object Scene3D {
      * Build static box colliders from the rendered building footprints (lng/lat polygons + render_height)
      * so falling debris/digits land on roofs instead of dropping through buildings. One axis-aligned box
      * per building (cheap); base at z=0 (the FX ground plane). Call once after world-gen ([feats] from
-     * MapUtil's queryRenderedFeatures on the building layer).
+     * MapController's queryRenderedFeatures on the building layer).
      */
     fun buildBuildingColliders(feats: dynamic) {
         scene ?: return
@@ -920,9 +920,9 @@ object Scene3D {
         val mid = unproject(invProj, 0.0, 0.0, 0.0)
         val far = unproject(invProj, 0.0, 0.0, 1.0)
         val top = unproject(invProj, 0.0, 1.0, 0.0)
-        SoundUtil.updateListener(
+        Sound.updateListener(
             eye,
-            doubleArrayOf(far[0] - eye[0], far[1] - eye[1], far[2] - eye[2]), // forward (normalised in SoundUtil)
+            doubleArrayOf(far[0] - eye[0], far[1] - eye[1], far[2] - eye[2]), // forward (normalised in Sound)
             doubleArrayOf(top[0] - mid[0], top[1] - mid[1], top[2] - mid[2]), // up
         )
     }
@@ -996,7 +996,7 @@ object Scene3D {
                 flaskVariants,
                 flaskScale,
             )
-            SoundUtil.playGlassShatterSound(portal.location, CAPTURE_SHATTER_WEIGHT)
+            Sound.playGlassShatterSound(portal.location, CAPTURE_SHATTER_WEIGHT)
         }
         val reform = CaptureFx.reformFactor(id)
         // A virus flip morphs the orb from the old faction colour to the new one (no shatter); everywhere
@@ -1394,7 +1394,7 @@ object Scene3D {
             val rec = if (id.startsWith("field:")) fieldRecords.remove(id) else null
             if (rec != null) {
                 FieldFx.dissolve(rec.cx, rec.cy, rec.cz, rec.rel, rec.color)
-                SoundUtil.playFieldDownSound()
+                Sound.playFieldDownSound()
             }
             displayedLevel.remove(id) // forget removed portals' level tween
             CaptureFx.forget(id) // forget removed portals' capture/colour state

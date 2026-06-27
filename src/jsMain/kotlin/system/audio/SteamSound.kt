@@ -8,13 +8,13 @@ import kotlin.math.exp
 /**
  * The steam-release hiss for a burned-out portal — a subtle airy "ffffff…": band-passed white noise with a
  * soft attack and a long trail, settling slightly in pitch (distinct from the fiery XMP blasts). Split out of
- * [SoundUtil] (a known oversized class) but reuses its audio graph internals (same module/package).
+ * [Sound] (a known oversized class) but reuses its audio graph internals (same module/package).
  */
 object SteamSound {
     fun play(pos: Pos) {
         Mixer.current = Mixer.Group.PORTAL // burnout steam → the Portal mixer channel
-        if (SoundUtil.isMuted()) return
-        val ctx = SoundUtil.audioCtx
+        if (Sound.isMuted()) return
+        val ctx = Sound.audioCtx
         val sr = ctx.sampleRate
         val dur = 0.9
         val len = (dur * sr).toInt().coerceAtLeast(1)
@@ -31,12 +31,12 @@ object SteamSound {
         source.buffer = buffer
         val bandpass = ctx.createBiquadFilter()
         bandpass.type = "bandpass"
-        val n = SoundUtil.now()
+        val n = Sound.now()
         bandpass.frequency.setValueAtTime(2600.0, n)
         bandpass.frequency.exponentialRampToValueAtTime(1400.0, n + dur) // hiss settles a touch
         bandpass.asDynamic().Q.setValueAtTime(0.7, n) // wide → airy, not whistly
-        val gainNode = SoundUtil.createStaticGain(0.3)
-        val panNode = SoundUtil.createPanner(pos)
+        val gainNode = Sound.createStaticGain(0.3)
+        val panNode = Sound.createPanner(pos)
         source.connect(bandpass)
         bandpass.connect(gainNode)
         gainNode.connect(panNode)

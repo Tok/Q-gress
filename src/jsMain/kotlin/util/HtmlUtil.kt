@@ -23,7 +23,7 @@ import system.audio.AudioPrefs
 import system.audio.InstrumentPrefs
 import system.audio.MixerPrefs
 import system.audio.Scale
-import system.audio.SoundUtil
+import system.audio.Sound
 import system.building.BuildingTransparency
 import system.display.Scene3D
 import system.display.Showcases
@@ -31,7 +31,7 @@ import system.display.SunController
 import system.grid.GridCapture
 import system.grid.GridConnectivity
 import system.map.Attribution
-import system.map.MapUtil
+import system.map.MapController
 import system.map.Navigation
 import system.ui.AudioDemo
 import system.ui.Controls
@@ -108,7 +108,7 @@ object HtmlUtil {
         rootDiv.addClass("container")
         // Master volume + mute live in their own fixed widget so they stay visible across every phase
         // (title, onboarding, world-gen, gameplay) — not bound to a screen/toolbar that comes and goes.
-        SoundUtil.restoreVolume() // re-read the saved volume/mute BEFORE the widget builds (survives reloads)
+        Sound.restoreVolume() // re-read the saved volume/mute BEFORE the widget builds (survives reloads)
         AudioPrefs.load() // re-apply the saved master-FX tuning (AudioFx.build later picks it up via applyAll)
         MixerPrefs.load() // re-apply saved per-role mixer levels/mutes (the lazy gain buses pick them up)
         InstrumentPrefs.load() // re-apply saved per-instrument tuning (explosion kick)
@@ -151,14 +151,14 @@ object HtmlUtil {
         leftGroup.addClass("toolbarGroup")
         leftGroup.append(createMenuSpan()) // New Game / Reset + overlay toggles
         // Recenter top-down over the play area (find your way back after panning/rotating away).
-        leftGroup.append(createButton("homeButton", "topButton displayFont", "HOME") { MapUtil.goHome() })
+        leftGroup.append(createButton("homeButton", "topButton displayFont", "HOME") { MapController.goHome() })
         leftGroup.append(createSpeedControls()) // Pause + ×1/×3/Max (Space toggles pause; -/+ keys nudge speed)
         leftGroup.append(createAutoCamToggle()) // Auto cam sits right after the speed controls (camera ≈ playback)
         bindKeyboardShortcuts() // Space=pause · Home=recenter · zoom/pan/speed/mute/Esc
 
         // Keep the toggle's highlight in sync — incl. when a manual move snaps the drift (and toggle) out.
-        MapUtil.onAutoCamChanged = { on -> syncAutoCamToggle(on) }
-        MapUtil.setAutoCam(true)
+        MapController.onAutoCamChanged = { on -> syncAutoCamToggle(on) }
+        MapController.setAutoCam(true)
         // Install the chosen AI drivers up front (the visible "AI vs AI" pickers now live in the BRAINS tab).
         system.ui.DriverControls.installDefaults()
 
@@ -267,7 +267,7 @@ object HtmlUtil {
         slider.min = "0.0"
         slider.max = "1.0"
         slider.step = "0.05"
-        slider.value = SoundUtil.displayVolume().toString() // reflect the restored/saved level (+ mute glyph)
+        slider.value = Sound.displayVolume().toString() // reflect the restored/saved level (+ mute glyph)
         slider.addClass("slider", "volumeSlider")
         VolumeControl.build(label, slider) // speaker icon (click = mute) + slider
         wrap.append(label)
@@ -290,7 +290,8 @@ object HtmlUtil {
 
     /** The Auto cam toggle button (icon-only, rightmost). Snaps out when a manual move cancels the drift. */
     private fun createAutoCamToggle(): HTMLButtonElement {
-        val btn = createButton("autoCamToggle", "topButton displayFont autoCamBtn", "") { MapUtil.setAutoCam(!MapUtil.isAutoCamOn()) }
+        val btn =
+            createButton("autoCamToggle", "topButton displayFont autoCamBtn", "") { MapController.setAutoCam(!MapController.isAutoCamOn()) }
         btn.innerHTML = Icons.CAM
         btn.title = "Auto cam"
         return btn
@@ -321,34 +322,34 @@ object HtmlUtil {
     private fun loadDemoScene() {
         World.userFaction = Faction.ENL
         val center = Pos(Sim.width / 2, Sim.height / 2)
-        MapUtil.loadMaps(Locations.DEFAULT.toJSON(), demo = true, callback = fun(grid: Grid) {
+        MapController.loadMaps(Locations.DEFAULT.toJSON(), demo = true, callback = fun(grid: Grid) {
             World.grid = grid
             World.isReady = true
             Navigation.setup()
-            MapUtil.enable3D()
+            MapController.enable3D()
             // Sandbox map interaction: LMB places a portal on empty ground (a ground ring previews
             // place vs select) or selects the one under the cursor; RMB shatters the nearest. The
             // effects (Hack / Fire XMP) are panel buttons that act on the selected portal.
-            MapUtil.bindPortalDemo(
+            MapController.bindPortalDemo(
                 fun(event: dynamic) {
-                    val pos = MapUtil.eventToSimPos(event) ?: return
-                    SoundUtil.enableAudio()
+                    val pos = MapController.eventToSimPos(event) ?: return
+                    Sound.enableAudio()
                     if (Demo.xmpOnClick()) {
                         Scene3D.playXmpBurst(pos, Demo.xmpLevel()) // detonate at the click point (plays the XMP sound)
                         return
                     }
                     if (Showcases.click(pos, Demo.portalLevel(), Demo.portalColorValue())) {
-                        SoundUtil.playPortalCreationSound(pos)
+                        Sound.playPortalCreationSound(pos)
                     }
                 },
                 fun(event: dynamic) {
-                    val pos = MapUtil.eventToSimPos(event) ?: return
-                    SoundUtil.enableAudio()
+                    val pos = MapController.eventToSimPos(event) ?: return
+                    Sound.enableAudio()
                     Showcases.removeNear(pos)
-                    SoundUtil.playGlassShatterSound(pos, 0.4, 0.9)
+                    Sound.playGlassShatterSound(pos, 0.4, 0.9)
                 },
                 fun(event: dynamic) {
-                    Showcases.moveCursor(MapUtil.eventToSimPos(event))
+                    Showcases.moveCursor(MapController.eventToSimPos(event))
                 },
             )
             intervalID = document.defaultView?.setInterval({ demoTick() }, Time.minTickInterval) ?: 0
@@ -373,7 +374,7 @@ object HtmlUtil {
         Onboarding.close() // dismiss the onboarding screen (it loads without a reload)
         // Staged loading overlay, up before the first tile request (the world build runs ~2 min on Big).
         LoadingOverlay.show()
-        MapUtil.loadMaps(center, callback = onMapload())
+        MapController.loadMaps(center, callback = onMapload())
     }
 
     private fun closePopup() {
@@ -388,7 +389,7 @@ object HtmlUtil {
     }
 
     private fun chooseUserFaction(fact: Faction) {
-        SoundUtil.enableAudio() // first user gesture → resume audio (autoplay policy)
+        Sound.enableAudio() // first user gesture → resume audio (autoplay policy)
         closePopup()
         if (World.userFaction != null) {
             console.warn("Faction ${World.userFaction} was already chosen.")
@@ -413,21 +414,21 @@ object HtmlUtil {
     // Pausing the tick interval freezes the sim logic, but the 3D render + auto-cam run on their own loop —
     // so also park the auto-cam (restoring it on resume) and implicitly mute, so a paused game is truly still.
     private fun applyPauseSideEffects(paused: Boolean) {
-        SoundUtil.setPausedMute(paused)
+        Sound.setPausedMute(paused)
         applyAnimationSpeed() // freeze (or restore) the 3D animation clock — sun arc, hack spins, etc.
         if (paused) {
-            autoCamBeforePause = MapUtil.isAutoCamOn()
-            if (autoCamBeforePause) MapUtil.setAutoCam(false)
+            autoCamBeforePause = MapController.isAutoCamOn()
+            if (autoCamBeforePause) MapController.setAutoCam(false)
         } else if (autoCamBeforePause) {
-            MapUtil.setAutoCam(true)
+            MapController.setAutoCam(true)
         }
     }
 
     private fun bindKeyboardShortcuts() = Shortcuts.bind(
         Shortcuts.Handlers(
             command = { onShortcutCommand(it) },
-            zoom = { MapUtil.zoomBy(it) },
-            pan = { dx, dy -> MapUtil.panBy(dx, dy) },
+            zoom = { MapController.zoomBy(it) },
+            pan = { dx, dy -> MapController.panBy(dx, dy) },
             buildingOpacity = { BuildingTransparency.nudge(it) },
             speedDelta = { setSpeed(speedMult + it) },
         ),
@@ -438,10 +439,10 @@ object HtmlUtil {
 
     private fun onShortcutCommand(c: Shortcuts.Command) = when (c) {
         Shortcuts.Command.PAUSE -> togglePause()
-        Shortcuts.Command.HOME -> MapUtil.goHome()
+        Shortcuts.Command.HOME -> MapController.goHome()
         Shortcuts.Command.CYCLE_TAB -> Footer.cycleTab()
         Shortcuts.Command.MUTE -> toggleMuteUi()
-        Shortcuts.Command.AUTO_CAM -> MapUtil.setAutoCam(!MapUtil.isAutoCamOn()) // C — highlight syncs via onAutoCamChanged
+        Shortcuts.Command.AUTO_CAM -> MapController.setAutoCam(!MapController.isAutoCamOn()) // C — highlight syncs via onAutoCamChanged
         Shortcuts.Command.CLOSE -> escClose()
     }
 
@@ -449,7 +450,7 @@ object HtmlUtil {
         // Reuse the speaker icon's own click handler (toggles mute + syncs slider + swaps the glyph) so the
         // M-key and the icon stay in lock-step; fall back to a bare toggle if the toolbar isn't built yet.
         val icon = document.getElementById("soundLabel") as? HTMLElement
-        if (icon != null) icon.click() else SoundUtil.toggleMute()
+        if (icon != null) icon.click() else Sound.toggleMute()
     }
 
     private fun escClose() {
@@ -516,9 +517,9 @@ object HtmlUtil {
     }
 
     private fun onMapClick(event: dynamic) {
-        SoundUtil.enableAudio() // first user gesture → resume audio (autoplay policy)
+        Sound.enableAudio() // first user gesture → resume audio (autoplay policy)
         // Ground point under the cursor; MapLibre fires "click" only for a click, not after a drag.
-        val pos = MapUtil.eventToSimPos(event) ?: return
+        val pos = MapController.eventToSimPos(event) ?: return
         // Portals are *discovered*, not placed by the player: a click only selects the portal under
         // the cursor (or deselects). Manual placement/removal lives only in the /#demo sandbox.
         if (pos.hasClosePortalForClick()) {
@@ -530,7 +531,7 @@ object HtmlUtil {
 
     private fun onMapMove(event: dynamic) {
         // Hover affordance only — highlight the portal under the cursor (nothing is buildable now).
-        val pos = MapUtil.eventToSimPos(event)
+        val pos = MapController.eventToSimPos(event)
         if (pos != null && pos.hasClosePortalForClick()) {
             Scene3D.setBuildMarker(pos, "portal")
         } else {
@@ -646,13 +647,13 @@ object HtmlUtil {
         // POI/street lng/lat through Scene3D.lngLatToSimPos, which throws until Scene3D is registered.
         // Registering first means portals actually adopt their real map names (else all fall back to
         // the random generator).
-        MapUtil.enable3D()
+        MapController.enable3D()
         // Sample the DEM height grid BEFORE spawning portals (+ schedule retries as tiles stream in), so the
         // flow-field arrows that flash during world-gen sit on the terrain instead of at sea level. Without
         // this the first build often shows the vectors too low (heights weren't ready); a re-sample after the
         // Home view settles (below) keeps them accurate.
         Scene3D.onTerrainChanged()
-        MapUtil.startBuildCinematic() // gentle orbit while portals + people spawn
+        MapController.startBuildCinematic() // gentle orbit while portals + people spawn
         LoadingOverlay.stage(LoadingOverlay.PCT_WORLD, "Building world…")
         createAgentsAndPortals {
             LoadingOverlay.detail("Computing routes & starting simulation…")
@@ -667,16 +668,16 @@ object HtmlUtil {
             document.getElementById("top-controls")?.removeClass("invisible") // reveal the toolbar now
             document.getElementById(LOCATION_LABEL_ID)?.removeClass("invisible") // …and the location name (in #hudTop, not the toolbar)
             Attribution.collapse() // we've left the title → tuck the map credit into its (i)
-            MapUtil.showSatellite() // terrain stays grayscale (set at map-load) until the fade below
+            MapController.showSatellite() // terrain stays grayscale (set at map-load) until the fade below
             Navigation.setup()
-            MapUtil.bindInteractions(::onMapClick, ::onMapMove)
+            MapController.bindInteractions(::onMapClick, ::onMapMove)
             LoadingOverlay.done()
-            MapUtil.stopBuildCinematicAndHome() // settle to the Home view (top-down over the play area)
-            if (coloredMap) MapUtil.fadeInColor() else MapUtil.setColored(false) // colour eases in post-build
+            MapController.stopBuildCinematicAndHome() // settle to the Home view (top-down over the play area)
+            if (coloredMap) MapController.fadeInColor() else MapController.setColored(false) // colour eases in post-build
             Scene3D.onTerrainChanged() // sample the DEM height grid (objects sit on the terrain)
             // Once the Home view has settled (buildings on screen), build our own building meshes +
             // colliders (so debris lands on roofs and the sun casts real building shadows).
-            window.setTimeout({ MapUtil.buildBuildingColliders() }, 1600)
+            window.setTimeout({ MapController.buildBuildingColliders() }, 1600)
             SunController.setSpeed(false) // the intro's fast sun sweep eases to a slow drift in-game
         }
     }

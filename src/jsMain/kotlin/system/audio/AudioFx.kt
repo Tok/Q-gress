@@ -8,10 +8,10 @@ import kotlin.math.abs
 import kotlin.math.pow
 
 /**
- * The master audio FX bus, sitting between [SoundUtil]'s mix and its safety limiter. The signal runs
+ * The master audio FX bus, sitting between [Sound]'s mix and its safety limiter. The signal runs
  * `input → high-pass → low-pass (with resonance) → compressor → fxOut`, with parallel **reverb** and
  * **delay/echo** sends summed back into `fxOut`, and an [analyser] tap for the AUDIO tab's scope/spectrum.
- * A master **ADSR** ([envAttack]/[envReleaseMult], wired into [SoundUtil]'s shared one-shot voice) reshapes
+ * A master **ADSR** ([envAttack]/[envReleaseMult], wired into [Sound]'s shared one-shot voice) reshapes
  * most SFX. All node values are mirrored in plain vars so they can be read back (sliders, the TUNING LAB
  * export) and re-applied after [build] / after [util.AudioPrefs] loads.
  *
@@ -227,7 +227,7 @@ object AudioFx {
      * Apply the master ADSR to a one-shot voice's [gain] param: an optional attack ramp up to [peak], then an
      * exponential decay to silence. The release multiplier stretches the tail. Returns the total voice length
      * (so the caller can stop the oscillator). Default state (attack 0, release ×1) reproduces the old
-     * peak→silence one-shot exactly. Centralised here so [SoundUtil.decayVoice] stays tiny.
+     * peak→silence one-shot exactly. Centralised here so [Sound.decayVoice] stays tiny.
      */
     fun shapeDecay(gain: dynamic, now: Double, peak: Double, dur: Double): Double {
         val total = dur * envReleaseMult
@@ -242,7 +242,7 @@ object AudioFx {
         return total
     }
 
-    // Master ADSR (wired into SoundUtil.decayVoice via shapeDecay): attack + release shape most one-shot SFX.
+    // Master ADSR (wired into Sound.decayVoice via shapeDecay): attack + release shape most one-shot SFX.
     fun setEnvAttack(seconds: Double) {
         envAttackS = seconds.coerceIn(0.0, 0.5)
     }

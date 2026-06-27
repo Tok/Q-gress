@@ -2,7 +2,7 @@ package system.ui
 
 import kotlinx.browser.document
 import org.w3c.dom.HTMLElement
-import system.map.MapUtil
+import system.map.MapController
 
 /**
  * Full-screen DOM loading overlay shown from the very first frame, so the long world-build (map
@@ -15,7 +15,7 @@ import system.map.MapUtil
  * spawning world (portals + their colour-coded flow vectors) shows through behind the progress.
  */
 object LoadingOverlay {
-    // Stage fill targets (%), in load order — kept here so HtmlUtil + MapUtil share one scale.
+    // Stage fill targets (%), in load order — kept here so HtmlUtil + MapController share one scale.
     const val PCT_MAP = 12
     const val PCT_STREET = 22
     const val PCT_SHADOW = 38
@@ -95,7 +95,7 @@ object LoadingOverlay {
     // Grow the 3D buildings in step with world-gen progress — they only reach full height when gen is done.
     private fun driveBuildings(percent: Double) {
         val frac = ((percent - BUILD_START_PCT) / (100.0 - BUILD_START_PCT)).coerceIn(0.0, 1.0)
-        MapUtil.setBuildProgress(frac)
+        MapController.setBuildProgress(frac)
     }
 
     private fun reveal() {

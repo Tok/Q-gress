@@ -6,7 +6,7 @@ import kotlin.math.pow
  * The shared musical scale the sim plays in. The 8 portal/XMP levels map to 8 notes (C2 root;
  * **level 8 = the lowest**), so a portal's level is audible across every level-keyed sound. The key
  * flips **major when the player's faction leads, minor when behind** (`setLeading`, driven by the live
- * MU each tick) — the soundtrack brightens/darkens with the score. Split out of [SoundUtil] (size).
+ * MU each tick) — the soundtrack brightens/darkens with the score. Split out of [Sound] (size).
  */
 object Scale {
     private val MINOR = intArrayOf(0, 2, 3, 5, 7, 8, 10, 12) // C natural minor (behind)

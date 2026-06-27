@@ -86,7 +86,7 @@ data class MatchSetup(
  * fields compute synchronously ([Config.headlessFieldCompute]).
  *
  * The functional-core/imperative-shell split made this possible: Stage 1 (the effect sink) stopped the
- * renderer crashing headless, Stage 2 ([util.PathUtil.computeFieldSync]) gave deterministic inline
+ * renderer crashing headless, Stage 2 ([util.Pathfinding.computeFieldSync]) gave deterministic inline
  * pathfinding, and [Simulation.stepEntities] is the shared tick core the live game also runs.
  */
 object SimRunner {

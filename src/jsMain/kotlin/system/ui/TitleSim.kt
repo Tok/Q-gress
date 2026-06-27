@@ -20,14 +20,14 @@ import org.w3c.dom.HTMLElement
 import portal.Portal
 import portal.PortalKey
 import portal.XmMap
-import system.audio.SoundUtil
+import system.audio.Sound
 import system.display.PortalNameTicker
 import system.display.Scene3D
 import system.display.SunController
 import system.display.VectorFieldOverlay
 import system.grid.GridConnectivity
 import system.map.GeoLocator
-import system.map.MapUtil
+import system.map.MapController
 import util.data.Pos
 import kotlin.js.Json
 
@@ -74,7 +74,7 @@ object TitleSim {
             onTitleReady?.invoke()
         }
         hideDomWordmark() // the 3D letters replace it — hide the flat DOM text immediately (no flash)
-        window.addEventListener("pointerdown", { SoundUtil.enableAudio() }) // autoplay: unlock on first gesture
+        window.addEventListener("pointerdown", { Sound.enableAudio() }) // autoplay: unlock on first gesture
         Sim.setSize(Sim.presetWidth(Sim.SMALL_SCALE), Sim.presetHeight(Sim.SMALL_SCALE)) // small → fast to build
         Sim.roundField = true // a centered round arena → portals cluster around the centre (border stays hidden)
         VectorFieldOverlay.flashEnabled = false // no flow-field flashes on the title
@@ -89,7 +89,7 @@ object TitleSim {
     }
 
     private fun loadTitleWorld(center: Json, attempt: Int = 0) {
-        MapUtil.loadMaps(center, demo = false, callback = fun(grid: Grid) {
+        MapController.loadMaps(center, demo = false, callback = fun(grid: Grid) {
             // Not every location is playable at the small round title size — a home over open water (a
             // player on a ship) or an unexpectedly sparse spot has no room for paths/portals. Fall back
             // to an iconic location, forcing the known-good default on the final try. Same gate as the
@@ -104,13 +104,13 @@ object TitleSim {
             }
             World.grid = grid
             World.isReady = true
-            MapUtil.enable3D()
-            MapUtil.startTitleCinematic() // 3D terrain + zoom to frame the arena + slow orbit
+            MapController.enable3D()
+            MapController.startTitleCinematic() // 3D terrain + zoom to frame the arena + slow orbit
             buildWorld()
             bindBlasts()
             // Our own building meshes (→ real shadows) once the title city has risen; then ease the
             // intro sun from its fast sweep down to a slow drift.
-            window.setTimeout({ MapUtil.buildBuildingColliders() }, TITLE_BUILD_MESH_MS)
+            window.setTimeout({ MapController.buildBuildingColliders() }, TITLE_BUILD_MESH_MS)
             window.setTimeout({ SunController.setSpeed(false) }, TITLE_SUN_SLOW_MS)
         })
     }
@@ -118,9 +118,9 @@ object TitleSim {
     // Let the player blast the title scene: LMB = L8 XMP, RMB = a squished/brighter/higher ultra-strike.
     // Both actually damage the scene (shatter portals, drop shields) like an agent's XMP — not just FX.
     private fun bindBlasts() {
-        MapUtil.bindTitleBlasts(
-            { e -> MapUtil.eventToSimPos(e)?.let { blastAt(it, ultra = false) } },
-            { e -> MapUtil.eventToSimPos(e)?.let { blastAt(it, ultra = true) } },
+        MapController.bindTitleBlasts(
+            { e -> MapController.eventToSimPos(e)?.let { blastAt(it, ultra = false) } },
+            { e -> MapController.eventToSimPos(e)?.let { blastAt(it, ultra = true) } },
         )
     }
 
@@ -144,7 +144,7 @@ object TitleSim {
     fun stop() {
         if (interval != 0) window.clearInterval(interval)
         interval = 0
-        MapUtil.stopTitleOrbit()
+        MapController.stopTitleOrbit()
     }
 
     private fun buildWorld() {
