@@ -1425,7 +1425,9 @@ object Scene3D {
         if (Debug.enabled && StuckTracker.isStuck("npc:${npc.id}")) addStuckMarker(sceneX(npc.pos), sceneY(npc.pos), gz)
         // Marble drop-in: on first appearance the NPC falls from the sky (accelerating, 1−f²) to head
         // height. Per-NPC start height (by id) so a crowd reads as scattered marbles, not a flat sheet.
-        val f = Spawns.appearRaw("npc:${npc.id}", NPC_DROP_S)
+        // Only while the world is first populating — once the game is running, NPCs created during play
+        // (recruit replacements) or wandering back into the play area appear in place, not raining down.
+        val f = if (World.isReady) 1.0 else Spawns.appearRaw("npc:${npc.id}", NPC_DROP_S)
         val h = NPC_DROP_HEIGHT * (0.55 + 0.45 * ((npc.id * 37) % 100) / 100.0)
         val z = gz + HEAD_Z + h * (1.0 - f * f)
         place(sphere.asDynamic(), sceneX(npc.pos), sceneY(npc.pos), z)

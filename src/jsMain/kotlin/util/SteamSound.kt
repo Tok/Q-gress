@@ -33,7 +33,7 @@ object SteamSound {
         bandpass.frequency.setValueAtTime(2600.0, n)
         bandpass.frequency.exponentialRampToValueAtTime(1400.0, n + dur) // hiss settles a touch
         bandpass.asDynamic().Q.setValueAtTime(0.7, n) // wide → airy, not whistly
-        val gainNode = SoundUtil.createStaticGain(0.18)
+        val gainNode = SoundUtil.createStaticGain(0.3)
         val panNode = SoundUtil.createPanner(pos)
         source.connect(bandpass)
         bandpass.connect(gainNode)
