@@ -666,6 +666,7 @@ object HtmlUtil {
             resetInterval()
             World.isReady = true
             document.getElementById("top-controls")?.removeClass("invisible") // reveal the toolbar now
+            Attribution.collapse() // we've left the title → tuck the map credit into its (i)
             MapUtil.showSatellite() // terrain stays grayscale (set at map-load) until the fade below
             Navigation.setup()
             MapUtil.bindInteractions(::onMapClick, ::onMapMove)

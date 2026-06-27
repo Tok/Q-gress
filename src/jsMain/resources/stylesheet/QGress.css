@@ -1000,8 +1000,9 @@ html, body {
     font-size: 11px;
     line-height: 1.5;
     white-space: nowrap;
-    align-self: flex-start; /* faction/world lines read left-justified */
-    text-align: left;
+    align-self: stretch; /* each line spans the pane… */
+    width: 100%;
+    text-align: left; /* …with its text hard-left */
 }
 /* Key (MAJOR) events stand out from the routine ones. */
 .statsComMajor {
@@ -1013,11 +1014,9 @@ html, body {
 #footerLog {
     text-align: left;
 }
-/* Pin the log pane to the LEFT no matter what: margin-right:auto keeps it left in normal flow AND pushes it to
-   the start if an ancestor turns out to be a flex row; align-self covers a flex cross-axis. */
+/* Keep the log pane at the LEFT (no auto margins → never drifts right); align-self covers a flex ancestor. */
 #footerLog .statsComLines {
-    margin-left: 0;
-    margin-right: auto;
+    margin: 0;
     align-self: flex-start;
 }
 .logFilter {
