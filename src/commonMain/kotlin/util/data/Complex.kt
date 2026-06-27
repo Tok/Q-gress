@@ -14,11 +14,15 @@ import kotlin.math.sqrt
 data class Complex(val re: Double, val im: Double = 0.0) {
     constructor(real: Int, imaginary: Int = 0) : this(real.toDouble(), imaginary.toDouble())
 
-    val magnitude: Double = sqrt(addSquares(re, im))
-    val mag: Double = magnitude
-    val magnitude2: Double = addSquares(re, im)
-    val phase = atan2(im, re)
-    val modulus = magnitude
+    // Derived values are computed on access, NOT eagerly in the constructor. A flow field builds one
+    // Complex per grid cell (millions per world-gen); most are only ever read for re/im, so eagerly doing
+    // a sqrt + atan2 (and storing 5 extra fields) per construction was a large world-gen cost — see the
+    // phase-D profile, where Complex construction dominated. `get()` keeps the same values, pays only on use.
+    val magnitude2: Double get() = addSquares(re, im)
+    val magnitude: Double get() = sqrt(magnitude2)
+    val mag: Double get() = magnitude
+    val phase: Double get() = atan2(im, re)
+    val modulus: Double get() = magnitude
 
     fun copyWithNewMagnitude(mag: Double) = Complex.fromMagnitudeAndPhase(mag, this.phase)
 
