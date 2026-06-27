@@ -15,6 +15,7 @@ import util.ui.HistoryPanel
 import util.ui.Inspector
 import util.ui.LeaderboardPanel
 import util.ui.LlmReasoningPanel
+import util.ui.PortalsPanel
 import util.ui.SliderHistoryPanel
 import util.ui.StatsPanel
 import util.ui.TopAgentsPanel
@@ -47,6 +48,7 @@ object DrawUtil {
         LlmReasoningPanel.update() // AI tab: the LLM driver's prompt/reply/parsed reasoning
         if (Styles.isDrawTopAgents) {
             TopAgentsPanel.update()
+            PortalsPanel.update() // PORTALS footer tab: every portal as a sortable table (like AGENTS)
         }
         DebugHud.update() // no-op unless ?debug
     }

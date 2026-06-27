@@ -13,6 +13,7 @@ import org.w3c.dom.HTMLElement
 object Footer {
     private val tabs = listOf(
         "AGENTS" to AGENTS_ID,
+        "PORTALS" to PORTALS_ID,
         "BRAINS" to BRAINS_ID,
         "STATS" to AI_ID,
         "TRAIN" to TRAIN_ID,
@@ -37,6 +38,7 @@ object Footer {
         build()
         val bodyId = when (id) {
             "agents" -> AGENTS_ID
+            "portals" -> PORTALS_ID
             "brains" -> BRAINS_ID
             "ai" -> AI_ID
             "train" -> TRAIN_ID
@@ -164,6 +166,7 @@ object Footer {
 
     private const val LOG_ID = "footerLog"
     private const val AGENTS_ID = "footerAgents"
+    private const val PORTALS_ID = "footerPortals"
     private const val BRAINS_ID = "footerBrains"
     private const val AI_ID = "footerAi"
     private const val TRAIN_ID = "footerTrain"
