@@ -91,6 +91,8 @@ object StatsPanel {
         built = true
 
         val panel = el("scorePanel") // fixed bottom-left (see CSS)
+        // Both MU rows (ENL + RES) share one glass pane (.scoreMu) in the header — see CSS.
+        val muWrap = el("scoreMu")
         repeat(2) { row ->
             val r = el("scoreRow")
             val tag = el("scoreTag").also { muTags[row] = it }
@@ -101,8 +103,9 @@ object StatsPanel {
             r.appendChild(tag)
             r.appendChild(track)
             r.appendChild(value)
-            panel.appendChild(r)
+            muWrap.appendChild(r)
         }
+        panel.appendChild(muWrap)
         val footer = el("scoreFooter")
         timeEl = el("scoreTime").also { footer.appendChild(it) }
         tickEl = el("scoreTick").also { footer.appendChild(it) }

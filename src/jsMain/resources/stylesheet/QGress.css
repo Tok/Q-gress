@@ -319,6 +319,12 @@ html, body {
     color: #ffffff;
     text-shadow: 0 0 3px #000, 0 0 3px #000;
 }
+/* The two MU rows (ENL + RES) sit side by side; in the header they share one glass pane (see .toolbarCentre). */
+.scoreMu {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
 .scoreRow {
     display: grid;
     grid-template-columns: 34px 92px 58px; /* tag | bar | value */
@@ -380,24 +386,36 @@ html, body {
     justify-content: center;
     align-items: center;
 }
-/* In the header the scoreboard drops its standalone glass frame so it reads as part of the bar, not a
-   panel floating inside it. */
+/* In the header the scoreboard drops its outer frame; instead the two MU rows and the time/tick/XM strip each
+   sit in their own standard glass pane (matching .footerGlass) so they read over the map as deliberate panels. */
 .toolbarCentre .scorePanel {
     background: none;
     border: none;
     padding: 0;
-    gap: 14px;
+    gap: 12px;
 }
-/* …but the time / tick / stray-XM text was hard to read straight over the map, so it gets its own little
-   glass pane (matching the glass buttons) — no left divider needed once it's a standalone pill. */
+/* One glass pane behind both MU rows (ENL + RES). */
+.toolbarCentre .scoreMu {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 4px 12px;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.45);
+    -webkit-backdrop-filter: blur(7px);
+    backdrop-filter: blur(7px);
+    border: 1px solid var(--ui-glass-border);
+    box-sizing: border-box;
+}
+/* …and the time / tick / stray-XM strip gets its own matching pane (no left divider as a standalone pill). */
 .toolbarCentre .scoreFooter {
     border-left: none;
-    padding: 3px 10px;
-    border-radius: 5px;
-    background: rgba(26, 30, 38, 0.55);
-    -webkit-backdrop-filter: blur(6px);
-    backdrop-filter: blur(6px);
-    border: 1px solid rgba(255, 255, 255, 0.14);
+    padding: 4px 12px;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.45);
+    -webkit-backdrop-filter: blur(7px);
+    backdrop-filter: blur(7px);
+    border: 1px solid var(--ui-glass-border);
 }
 /* Full-width tabbed + collapsible footer (EVENT LOG / AGENTS). */
 .footer {
