@@ -1,4 +1,4 @@
-package util
+package system.building
 
 import config.Styles
 import external.MapLibre

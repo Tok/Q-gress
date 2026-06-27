@@ -15,6 +15,9 @@ import org.khronos.webgl.Uint8ClampedArray
 import org.khronos.webgl.get
 import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.ImageData
+import system.building.BuildingShake
+import system.building.BuildingStream
+import system.building.BuildingTiles
 import system.display.OwnBuildings
 import system.display.Scene3D
 import util.data.Cell

@@ -18,6 +18,7 @@ import portal.Portal
 import system.Cycle
 import system.HeadlessRun
 import system.Simulation
+import system.building.BuildingTransparency
 import system.display.Scene3D
 import system.display.Showcases
 import system.display.SunController

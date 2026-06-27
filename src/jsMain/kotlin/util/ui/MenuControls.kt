@@ -9,10 +9,10 @@ import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLSpanElement
 import org.w3c.dom.events.Event
+import system.building.BuildingTransparency
 import system.display.DamageNumberFx
 import system.display.PassabilityOverlay
 import system.display.PortalNameTicker
-import util.BuildingTransparency
 import util.GameplayPrefs
 
 /** Builders for the game-menu dropdown controls — split out of HtmlUtil (size). */

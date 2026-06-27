@@ -1,4 +1,4 @@
-package util
+package system.building
 
 import kotlinx.browser.window
 import kotlin.math.PI

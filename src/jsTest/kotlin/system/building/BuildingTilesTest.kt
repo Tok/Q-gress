@@ -1,4 +1,4 @@
-package util
+package system.building
 
 import kotlin.test.Test
 import kotlin.test.assertEquals

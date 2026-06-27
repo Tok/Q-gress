@@ -1,4 +1,4 @@
-package util
+package system.building
 
 import config.Config
 import items.Combat

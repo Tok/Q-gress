@@ -25,7 +25,7 @@ import portal.Octant
 import portal.Portal
 import portal.XmHeap
 import portal.XmMap
-import util.BuildingShake
+import system.building.BuildingShake
 import util.Debug
 import util.SoundUtil
 import util.SteamSound
