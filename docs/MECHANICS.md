@@ -20,6 +20,20 @@ into links/fields when ahead and presses the attack to tear down the leader's fi
 plasma also **fades toward a low-health portal corner** (per-vertex alpha from each anchor's health), so a
 field hanging off a weak/dying portal reads as near-transparent (`PlasmaShader`).
 
+**Linking & layering rules** (`Portal.canLinkOut`, matching Ingress). A link needs an owned source with at
+least `Config.linkMinResos` resonators, a held key to the target, ≤ 8 outgoing links, and **no crossing**
+existing link (`findLinkableForKeys`). Critically, you **cannot link out from a portal that sits under an
+existing control field** (`!isCoveredByField()`) — only from *outside* it (the field's own anchors are exempt,
+since `isCoveringPortal` ignores connected portals). This makes fielding **unidirectional** and means layered
+fields must be built **innermost-first**: you stack a new field by linking from an outside/anchor portal *over*
+existing fields, never from a portal trapped inside one. The logic is sound; agents layering *less* than they
+used to is a behaviour/tuning question (board churn may tear stable fields down before they can be layered),
+not a rule bug — see `PLAN.md`. (Modern Ingress exempts **< 500 m** links from the under-field block, but
+that looks to be a **post-2018** addition, so the classic-era sim deliberately omits it.) A per-tick
+invariant sweep (`World.pruneInvalidLinksAndFields`) guarantees a link/field can never **dangle**: any whose
+endpoints aren't all still on the board and the same faction is dropped — a safety net for a flip/removal that
+races a link being made.
+
 ## Mod slots
 Each portal has **4 mod slots** (`portal/ModSlot.kt`), holding any mix of **shields**, **heat sinks**,
 and **link amps** (`items/deployable/Mod.kt`). Mods are deployed one-per-action by agents (`Deployer`),
@@ -99,12 +113,14 @@ deliberately gentle so neither faction snowballs.
 - **How:** an agent walks to a random NPC; on meeting it rolls success
   `recruitmentBaseChance × (1 − rosterFill)` (`Config.recruitmentBaseChance = 0.05`), so an empty roster
   recruits at ~5% and a full one at ~0 (diminishing returns toward `Config.maxFor(faction)`).
+- **The NPC turns faction in place:** a successful recruit converts that NPC into the new agent **at its own
+  position** (`Agent.create(at = npc.pos)`) — it isn't deleted while a fresh agent spawns elsewhere.
 - **Anti-snowball (`Balance.recruitFactor`):** how *often* an agent even tries to recruit scales by
   `(enemyRoster + 1) / (myRoster + 1)`, clamped to `[0.3, 3.0]` — the **smaller** team recruits more, the
   **larger** less, so sizes self-correct.
-- **Population is constant:** each recruited NPC is **replaced 1-for-1** (`Recruiter` spawns a fresh NPC),
-  so the map never runs out of people to recruit. There is **no `RECRUIT` behaviour slider** (retired —
-  too snowbally to hand anyone a crank).
+- **The crowd drains toward a floor:** recruiting is **not** topped up 1-for-1. The NPC population shrinks as
+  agents recruit and is only refilled once it reaches `Config.MIN_NONFACTION` (30), so a long game thins the
+  crowd but never runs out of recruits. There is **no `RECRUIT` behaviour slider** (retired — too snowbally).
 
 ## Portal discovery & removal — `system/Cycle.managePortalDensity`
 Portals are **discovered and removed** by a neutral, density-driven *system* process (every checkpoint),

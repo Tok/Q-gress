@@ -7,11 +7,14 @@ Branch: `develop` · Owner: @zirteq
 [docs/LLM.md](docs/LLM.md). Completed work lives in the **git log**, not here — keep this file to the point.
 
 ## ★ Next session — start here
-**Feature set is at a good resting point; the current focus is the _non-functional track_ below**
-(quality → coverage → perf), not new features. Work it in phase order: **A** safety-net tests → **B** refactor
-(+ incremental functional-core split) → **C** real coverage measurement → **D** profiling & optimization.
-The perf items elsewhere in this file (Pathfinding scalability, Building perf, Map-size profiling) are **phase D**
-inputs — don't pull them forward. Two cheap loose ends to clear opportunistically (not blockers): the grid-fixtures
+**Resume the _non-functional track_ (refactoring).** Feature set is at a good resting point; the focus is the
+non-functional track below (quality → coverage → perf), not new features — pick up **phase B**, with the
+**`Scene3D` → `Showcases` split** as the headline item (then the 140 → 120 line-length pass). Work in phase
+order: **A** safety-net tests (done) → **B** refactor (+ incremental functional-core split) → **C** real
+coverage measurement → **D** profiling & optimization. The perf items elsewhere (Pathfinding scalability,
+Building perf, Map-size profiling) are **phase D** inputs — don't pull them forward. One gameplay item also
+queued: **field-layering tests + tuning investigation** (under *Gameplay mechanics* — the rules are sound, but
+agents layer too rarely). Two cheap loose ends to clear opportunistically (not blockers): the grid-fixtures
 `?debug=capture` pass (manual, user-only) and eyeballing the *Verify in-browser* list to confirm a clean baseline
 before refactoring.
 
@@ -157,6 +160,16 @@ be matched. **Desktop-only**; mobile is blocked.
   synthetic harness into a real per-preset audit gate.
 
 ## Gameplay mechanics
+- [ ] **Field layering — tests + tuning investigation.** The *rules* are sound and match Ingress
+  (`Portal.canLinkOut`: no linking out from a portal **under** a field, so fielding is unidirectional and
+  layers stack from **outside/anchor** portals, innermost-first — confirmed vs the Ingress wiki; the modern
+  `<500 m` exemption is post-2018 and intentionally omitted). But agents seem to **layer far less** than in the
+  2D era — likely a **behaviour/tuning** cause, not logic (suspects: the `Linker` greedily closes *any*
+  triangle with no preference for stacking; faster board churn / `dominanceDecay` tears stable fields down
+  before they can be layered; link Q-weights). **To do:** (a) add **field-layering tests** — assert a link
+  from an outside/anchor portal creates an overlapping field and that `calcTotalMu` sums the layers, and that a
+  link from a covered interior portal is rejected; (b) instrument a headless run for layered-field counts and
+  tune the `Linker`/weights so layering actually emerges.
 - [ ] **Glyph hacking** — a skill-based hack: **~3× rewards**, but **longer**, **needs skill**, **can fail**.
   Glyph skill (+ portal level) sets odds + duration. The collar animation + glassy sound already land
   (`HackFx`/`SoundUtil`); this is the reward/skill/timing model in `Glypher`/`Portal.tryGlyph` + a glyph skill
@@ -291,11 +304,10 @@ the board; fair shuffled agent order). Deeper "no single strategy dominates" val
   inventory/capacity limit; an FPS/perf readout (pairs with `?debug`); unit tests for fielding + deploying.
 
 ## Known glitches (low priority)
-- **Loading-count fraction glyph.** In world-creation progress, counts like `1/2` and `1/4` render as the
-  precomposed ½/¼ glyph (`LoadingOverlay.detail("… ($done/$total)")`). `font-feature-settings: "frac" 0` on
-  `.loadingDetail` is already set but **doesn't fix it** — next time try also disabling `dlig`/`clig`/`liga`
-  (or `font-variant-ligatures: none`), or break the sequence (a hair-space / ZWNJ between the digit and the
-  slash). Cosmetic, non-critical.
+- ~~**Loading-count fraction glyph.**~~ ✅ fixed globally: `font-feature-settings: "frac" 0, "afrc" 0` +
+  **`font-variant-ligatures: none`** on `html, body` (the scoped `.loadingDetail` `frac 0` hadn't worked
+  because the font also substitutes via ligatures). Keeps `1/2`, `1/4`, `n/8` literal everywhere. *Verify on
+  screen.*
 
 ## Constraints / agreements
 - Commit to `develop`; **no pushing** until something works end-to-end.

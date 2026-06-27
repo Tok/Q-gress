@@ -160,6 +160,12 @@ Commit hashes are illustrative pointers, not exhaustive.
   **checkpoint** logs both factions' MU in their own colours (a key, multi-segment line). Every event is
   `MINOR` or `MAJOR`; an **"only key events"** filter hides the routine ones. The tab shows the last few lines
   collapsed and the **whole scrolling backlog when expanded** (`Com.CAP` = 250).
+- **AGENTS & PORTALS tables** (`util/ui/TopAgentsPanel`, `util/ui/PortalsPanel`): two sortable DOM tables as
+  footer tabs. **AGENTS** lists every agent with XM/AP, faction colour, and per-item count+level-bar columns
+  (XMPs, US, Resos, Cubes, Shields, Heat sinks, Multi-hacks) plus Keys / unique Keys. **PORTALS** lists every
+  portal — owner-faction-coloured name, Faction, Level, Health, Resos (n/8), Mods (n/4), Links, Fields, Owner.
+  Click any header to sort (toggles asc/desc; stable, tie-broken on name); collapsed shows the top rows,
+  expanded scrolls the full roster.
 - **Unified tabbed dock** (`util/ui/Dock`): the scattered corner panes are consolidated into one
   right-docked panel with **NOW / HISTORY / TUNE** tabs (one view at a time) — NOW holds the
   scoreboard + leaderboard + LOG, HISTORY the sparklines, TUNE the sliders. It's the only
