@@ -93,7 +93,7 @@ html, body {
     height: 100%;
     z-index: 8;
 }
-.mapboxgl-map {
+.maplibregl-map {
     font-family: "Coda";
 }
 .shadowMap {
@@ -1870,7 +1870,7 @@ html, body {
     border: 1px solid rgba(255, 255, 255, 0.4);
     border-radius: 3px;
 }
-.mapboxgl-ctrl-top-right {
+.maplibregl-ctrl-top-right {
     visibility: hidden;
     display: none;
 }
@@ -2063,8 +2063,7 @@ html, body {
 #locationSelect {
     width: 233px;
 }
-.mapboxgl-ctrl-bottom-left,
-.mapboxgl-ctrl-bottom-right {
+.maplibregl-ctrl-bottom-left {
     z-index: 999 !important;
 }
 /* Required tile attribution: collapsed to a small ⓘ (compact) + dimmed so it's unobtrusive;
@@ -2076,7 +2075,7 @@ html, body {
    to <body> at map setup so the rules below finally compete at root level: fixed + z-index:999 floats it over
    the footer, pinned to the bottom-right corner. Everything is !important because MapLibre's own stylesheet
    (position:absolute on this control) loads AFTER ours and would otherwise win the same-specificity tie. */
-.maplibregl-ctrl-bottom-right, .mapboxgl-ctrl-bottom-right {
+.maplibregl-ctrl-bottom-right {
     position: fixed !important;
     right: 0 !important;
     bottom: 0 !important;
@@ -2085,11 +2084,11 @@ html, body {
     z-index: 999 !important;
     pointer-events: auto !important;
 }
-.maplibregl-ctrl-attrib, .mapboxgl-ctrl-attrib {
+.maplibregl-ctrl-attrib {
     font-size: 10px;
     opacity: 0.5;
 }
-.maplibregl-ctrl-attrib:hover, .mapboxgl-ctrl-attrib:hover {
+.maplibregl-ctrl-attrib:hover {
     opacity: 1;
 }
 .popup {
