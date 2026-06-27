@@ -1,4 +1,4 @@
-package system.ui
+package system.ui.panel
 
 import kotlinx.browser.document
 import org.w3c.dom.CanvasRenderingContext2D
@@ -18,6 +18,9 @@ import system.audio.KickDrum
 import system.audio.Mixer
 import system.audio.MixerPrefs
 import system.audio.Scale
+import system.ui.AudioViz
+import system.ui.Footer
+import system.ui.TuningLab
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.cos

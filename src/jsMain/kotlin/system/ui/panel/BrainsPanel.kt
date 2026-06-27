@@ -1,4 +1,4 @@
-package system.ui
+package system.ui.panel
 
 import World
 import agent.Faction
@@ -20,6 +20,9 @@ import kotlinx.browser.window
 import org.w3c.dom.CanvasRenderingContext2D
 import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.HTMLElement
+import system.ui.DriverControls
+import system.ui.Footer
+import system.ui.el
 import kotlin.math.roundToInt
 
 /**

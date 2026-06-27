@@ -1,4 +1,4 @@
-package system.ui
+package system.ui.panel
 
 import agent.Faction
 import ai.FactionPolicies
@@ -9,6 +9,8 @@ import ai.llm.LlmPolicy
 import ai.llm.WebLlmClient
 import kotlinx.browser.document
 import org.w3c.dom.HTMLElement
+import system.ui.Footer
+import system.ui.el
 
 /**
  * The **LLM reasoning** section of the AI footer tab (PLAN Phase 6.3): for each LLM-driven faction, shows the

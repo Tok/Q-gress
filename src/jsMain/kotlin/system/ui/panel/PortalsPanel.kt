@@ -1,10 +1,12 @@
-package system.ui
+package system.ui.panel
 
 import World
 import config.Config
 import kotlinx.browser.document
 import org.w3c.dom.HTMLElement
 import portal.Portal
+import system.ui.Footer
+import system.ui.el
 
 /**
  * The **PORTALS** footer tab: every portal (both factions + neutral) as a DOM table, styled like the AGENTS

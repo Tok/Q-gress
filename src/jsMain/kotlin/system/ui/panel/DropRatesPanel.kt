@@ -1,4 +1,4 @@
-package system.ui
+package system.ui.panel
 
 import config.DropRates
 import kotlinx.browser.document

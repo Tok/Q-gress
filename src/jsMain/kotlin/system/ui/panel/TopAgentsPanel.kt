@@ -1,4 +1,4 @@
-package system.ui
+package system.ui.panel
 
 import World
 import agent.Agent
@@ -11,6 +11,8 @@ import items.types.ShieldType
 import items.types.VirusType
 import kotlinx.browser.document
 import org.w3c.dom.HTMLElement
+import system.ui.Footer
+import system.ui.el
 
 /**
  * The **AGENTS** footer tab: a leaderboard of agents (both factions mixed) as a DOM table. Columns: #, XM, AP,

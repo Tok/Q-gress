@@ -36,7 +36,6 @@ import system.map.Navigation
 import system.ui.AudioDemo
 import system.ui.Controls
 import system.ui.Demo
-import system.ui.DropRatesPanel
 import system.ui.Footer
 import system.ui.Hud
 import system.ui.Icons
@@ -44,8 +43,9 @@ import system.ui.Inspector
 import system.ui.LoadingOverlay
 import system.ui.MenuControls
 import system.ui.Onboarding
-import system.ui.TuningPanel
 import system.ui.VolumeControl
+import system.ui.panel.DropRatesPanel
+import system.ui.panel.TuningPanel
 import util.data.*
 import kotlin.js.Json
 

@@ -13,6 +13,7 @@ import system.building.BuildingTransparency
 import system.display.PassabilityOverlay
 import system.display.PortalNameTicker
 import system.display.fx.DamageNumberFx
+import system.ui.panel.DropRatesPanel
 import util.GameplayPrefs
 
 /** Builders for the game-menu dropdown controls — split out of HtmlUtil (size). */

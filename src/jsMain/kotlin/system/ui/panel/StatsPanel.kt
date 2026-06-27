@@ -1,4 +1,4 @@
-package system.ui
+package system.ui.panel
 
 import World
 import agent.Faction
@@ -8,6 +8,9 @@ import kotlinx.browser.document
 import org.w3c.dom.HTMLElement
 import portal.XmMap
 import system.Com
+import system.ui.Footer
+import system.ui.Hud
+import system.ui.el
 
 /**
  * DOM HUD for the always-on stats. The **scoreboard** (bottom-left) is a fixed-width grid: per faction

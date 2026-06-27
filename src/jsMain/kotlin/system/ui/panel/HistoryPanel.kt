@@ -1,4 +1,4 @@
-package system.ui
+package system.ui.panel
 
 import World
 import agent.Faction
@@ -7,6 +7,8 @@ import kotlinx.browser.document
 import org.w3c.dom.HTMLElement
 import system.Checkpoint
 import system.Cycle
+import system.ui.Hud
+import system.ui.el
 import util.ColorUtil
 
 /**

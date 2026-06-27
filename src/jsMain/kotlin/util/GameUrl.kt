@@ -7,7 +7,7 @@ import config.Sim
 import kotlinx.browser.document
 import org.w3c.dom.url.URL
 import system.ui.DriverControls
-import system.ui.TuningPanel
+import system.ui.panel.TuningPanel
 import util.data.GeoCoords
 
 /**

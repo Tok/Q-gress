@@ -1,4 +1,4 @@
-package system.ui
+package system.ui.panel
 
 import agent.Faction
 import agent.qvalue.QActions
@@ -9,6 +9,8 @@ import external.UPlot
 import kotlinx.browser.document
 import org.w3c.dom.HTMLElement
 import system.Cycle
+import system.ui.Footer
+import system.ui.el
 import util.ColorUtil
 
 /**

@@ -1,9 +1,11 @@
-package system.ui
+package system.ui.panel
 
 import agent.Faction
 import ai.Observation
 import kotlinx.browser.document
 import org.w3c.dom.HTMLElement
+import system.ui.Footer
+import system.ui.el
 
 /**
  * The **AI** footer tab (PLAN Phase 6): per faction, a live readout of its **observation** — the normalized

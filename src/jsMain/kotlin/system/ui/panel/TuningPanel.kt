@@ -1,4 +1,4 @@
-package system.ui
+package system.ui.panel
 
 import agent.Faction
 import agent.qvalue.QActions
@@ -9,6 +9,8 @@ import kotlinx.browser.document
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLImageElement
 import org.w3c.dom.HTMLInputElement
+import system.ui.Hud
+import system.ui.el
 
 /**
  * The merged behaviour-tuning panel (TUNE tab) — one flat list of all q-value sliders: the Actions

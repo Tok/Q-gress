@@ -1,4 +1,4 @@
-package system.ui
+package system.ui.panel
 
 import World
 import agent.Faction
@@ -14,6 +14,8 @@ import org.w3c.dom.HTMLButtonElement
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLInputElement
 import system.HeadlessRun
+import system.ui.Footer
+import system.ui.el
 import kotlin.math.roundToInt
 
 /**

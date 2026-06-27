@@ -13,6 +13,7 @@ import system.audio.AudioPrefs
 import system.audio.InstrumentPrefs
 import system.audio.KickDrum
 import system.audio.MixerPrefs
+import system.ui.panel.AudioPanel
 import util.GameplayPrefs
 
 /**
