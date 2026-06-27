@@ -1,9 +1,8 @@
 package util
 
-import config.Colors
-import config.Constants
 import extension.toHexString
 import util.data.Complex
+import kotlin.math.PI
 import kotlin.math.max
 import kotlin.math.min
 
@@ -12,14 +11,16 @@ import kotlin.math.min
  */
 object ColorUtil {
     private const val MAX_RGB = 0xFF
+    private const val BLACK = "#000000" // was config.Colors.black; inlined to keep this pure (commonMain)
+    private const val TAU = 2.0 * PI // was config.Constants.tau
     fun getColor(c: Complex): String = getColorFromMagnitudeAndPhase(c.magnitude, c.phase)
     private fun getColorFromMagnitudeAndPhase(magnitude: Double, phase: Double): String {
         if (magnitude <= 1.0 / MAX_RGB) {
-            return Colors.black
+            return BLACK
         }
         val mag = min(1.0, magnitude)
-        val clippedPhase = if (phase < 0.0) phase + Constants.tau else phase
-        val p = clippedPhase * 6.0 / Constants.tau
+        val clippedPhase = if (phase < 0.0) phase + TAU else phase
+        val p = clippedPhase * 6.0 / TAU
         val range = min(5.0, max(0.0, p)).toInt()
         val fraction = p - range
         val rgbValues = spectrum(range, fraction)

@@ -1,7 +1,7 @@
 package util.data
 
-import config.Constants
 import util.Rng
+import kotlin.math.PI
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.sin
@@ -53,6 +53,7 @@ data class Complex(val re: Double, val im: Double = 0.0) {
     }
 
     companion object {
+        private const val TAU = 2.0 * PI // full turn (was config.Constants.tau; inlined to keep this pure)
         val I = Complex(0.0, 1.0)
         val ZERO = Complex(0.0, 0.0)
         val ONE = Complex(1.0, 0.0)
@@ -64,7 +65,7 @@ data class Complex(val re: Double, val im: Double = 0.0) {
 
         fun random(): Complex {
             val mag = Rng.random()
-            val phase = Constants.tau * Rng.random()
+            val phase = TAU * Rng.random()
             return Complex.fromMagnitudeAndPhase(mag, phase)
         }
     }

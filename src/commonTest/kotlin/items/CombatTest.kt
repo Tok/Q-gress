@@ -19,6 +19,14 @@ class CombatTest {
     }
 
     @Test
+    fun rangePxAndDistanceFraction() {
+        assertEquals(50.0, Combat.rangePx(100, ultra = false), 1e-9) // 100m × 0.5
+        assertEquals(20.0, Combat.rangePx(100, ultra = true), 1e-9) // …× 0.4 for an Ultra-Strike
+        assertEquals(0.5, Combat.distanceFraction(25.0, 100, ultra = false), 1e-9) // 25px / 50px range
+        assertEquals(1.0, Combat.distanceFraction(20.0, 100, ultra = true), 1e-9) // at the US range edge
+    }
+
+    @Test
     fun outOfRangeDealsNoDamage() {
         assertEquals(0, Combat.resoDamage(2700, distFrac = 1.2, mitigation = 0, ultra = false, crit = false))
     }
