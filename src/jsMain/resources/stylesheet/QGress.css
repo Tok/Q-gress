@@ -62,9 +62,11 @@ html, body {
     /* Global default font = Coda (the data/body face); display elements opt into Chakra Petch via
        .displayFont. Always end stacks in a generic so we never fall back to an arbitrary system font. */
     font-family: "Coda", monospace;
-    /* Never auto-ligature "1/2"/"1/4" into ½/¼ glyphs (Chakra Petch enables the `frac` feature) — keep
-       literal fractions like the "n/8" resonator counts. Inherited; doesn't touch tabular-nums. */
+    /* Never auto-ligature "1/2"/"1/4" into ½/¼ glyphs (the font substitutes them via frac AND ligatures) —
+       keep literal fractions like the "n/8" resonator counts. Disable both, globally; inherited and it
+       leaves tabular-nums (a font-variant-numeric setting) untouched. */
     font-feature-settings: "frac" 0, "afrc" 0;
+    font-variant-ligatures: none;
 }
 .container {
     position: relative;
