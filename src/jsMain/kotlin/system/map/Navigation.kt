@@ -1,4 +1,4 @@
-package util
+package system.map
 
 import kotlinx.browser.window
 import org.w3c.dom.events.KeyboardEvent

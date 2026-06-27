@@ -1,4 +1,4 @@
-package util
+package system.map
 
 /**
  * MapLibre style JSON + the keyless tile sources behind them — split out of [MapUtil] (size). Street

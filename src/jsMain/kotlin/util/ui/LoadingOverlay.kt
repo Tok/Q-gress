@@ -2,7 +2,7 @@ package util.ui
 
 import kotlinx.browser.document
 import org.w3c.dom.HTMLElement
-import util.MapUtil
+import system.map.MapUtil
 
 /**
  * Full-screen DOM loading overlay shown from the very first frame, so the long world-build (map

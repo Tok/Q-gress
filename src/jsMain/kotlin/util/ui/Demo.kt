@@ -9,7 +9,7 @@ import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLLabelElement
 import system.display.Showcases
-import util.MapUtil
+import system.map.MapUtil
 import util.data.Pos
 
 /**

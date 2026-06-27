@@ -1,4 +1,4 @@
-package util
+package system.map
 
 import World
 import config.Config
@@ -20,6 +20,13 @@ import system.building.BuildingStream
 import system.building.BuildingTiles
 import system.display.OwnBuildings
 import system.display.Scene3D
+import util.Debug
+import util.GridCapture
+import util.GridConnectivity
+import util.HtmlUtil
+import util.PathUtil
+import util.PortalNames
+import util.Util
 import util.data.Cell
 import util.data.Pos
 import util.ui.LoadingOverlay

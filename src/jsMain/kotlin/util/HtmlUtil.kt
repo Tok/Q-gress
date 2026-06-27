@@ -22,6 +22,9 @@ import system.building.BuildingTransparency
 import system.display.Scene3D
 import system.display.Showcases
 import system.display.SunController
+import system.map.Attribution
+import system.map.MapUtil
+import system.map.Navigation
 import util.data.*
 import util.ui.AudioDemo
 import util.ui.Controls

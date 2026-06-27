@@ -24,9 +24,9 @@ import system.display.PortalNameTicker
 import system.display.Scene3D
 import system.display.SunController
 import system.display.VectorFieldOverlay
-import util.GeoLocator
+import system.map.GeoLocator
+import system.map.MapUtil
 import util.GridConnectivity
-import util.MapUtil
 import util.SoundUtil
 import util.data.Pos
 import kotlin.js.Json

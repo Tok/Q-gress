@@ -1,7 +1,7 @@
 package system.building
 
 import system.display.OwnBuildings
-import util.MapUtil
+import system.map.MapUtil
 
 /**
  * The "Buildings transparency" control (menu slider + keyboard nudge): one knob over BOTH building sets, since
