@@ -1014,10 +1014,11 @@ html, body {
 #footerLog {
     text-align: left;
 }
-/* Keep the log pane at the LEFT (no auto margins → never drifts right); align-self covers a flex ancestor. */
+/* Center the log PANE horizontally (both margins auto / align-self center), while the lines inside stay
+   hard-left (see .statsComLine) — so it's a centered pane of left-justified text. */
 #footerLog .statsComLines {
-    margin: 0;
-    align-self: flex-start;
+    margin-inline: auto;
+    align-self: center;
 }
 .logFilter {
     display: flex;
