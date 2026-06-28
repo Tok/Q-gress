@@ -2,6 +2,7 @@ package system.ui.panel
 
 import World
 import agent.Agent
+import agent.action.ActionItem
 import config.Config
 import config.Sim
 import items.deployable.DeployableItem
@@ -12,6 +13,7 @@ import items.types.ShieldType
 import items.types.VirusType
 import kotlinx.browser.document
 import org.w3c.dom.HTMLElement
+import org.w3c.dom.HTMLImageElement
 import system.ui.Footer
 import system.ui.el
 
@@ -70,7 +72,7 @@ object TopAgentsPanel {
         Col("Keys", num = { it.inventory.keyCount().toDouble() }, render = { a -> cell(a.inventory.keyCount().toString(), "taNum") }),
         Col("Uniq", num = { uniqueKeys(it).toDouble() }, render = { a -> cell(uniqueKeys(a).toString(), "taNum") }),
         Col("m/s", num = { speedMs(it) }, render = { a -> speedCell(a) }),
-        Col("Action", str = { it.action.item.text }, render = { a -> cell(a.action.item.text, "taCell") }),
+        Col("Action", str = { it.action.item.text }, render = { a -> actionCell(a) }),
         Col("Portal", str = { it.actionPortal.name }, render = { a -> cell(a.actionPortal.name, "taCell") }),
     )
 
@@ -145,6 +147,20 @@ object TopAgentsPanel {
         return td
     }
 
+    // The Action cell (left-justified string column): the same coin glyph shown beside the tuning sliders,
+    // then ~1 char of space, then the action name. Neutral (faction-less) icon to match the slider list.
+    private fun actionCell(agent: Agent): HTMLElement {
+        val td = el("td", "taCell")
+        val img = document.createElement("img") as HTMLImageElement
+        img.src = ActionItem.getHiResIcon(agent.action.item).toDataURL()
+        img.className = "taActionIcon"
+        td.appendChild(img)
+        val label = el("span", "taActionLabel")
+        label.textContent = agent.action.item.text
+        td.appendChild(label)
+        return td
+    }
+
     private fun deployColor(level: Int): String = LevelColor.map[level] ?: "#ffffff"
 
     // Distinct portals an agent holds keys to (vs total Keys, which counts duplicates).
@@ -204,6 +220,7 @@ object TopAgentsPanel {
         COLS.forEachIndexed { idx, c ->
             val th = el("th", "taHeadCell")
             th.textContent = c.header
+            if (c.str != null) th.classList.add("taHeadLeft") // string columns left-justify (header + cells)
             if (c.sortable) {
                 th.classList.add("taSortable")
                 th.onclick = {

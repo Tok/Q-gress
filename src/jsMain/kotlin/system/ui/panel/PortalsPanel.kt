@@ -119,6 +119,7 @@ object PortalsPanel {
         COLS.forEachIndexed { idx, c ->
             val th = el("th", "taHeadCell")
             th.textContent = c.header
+            if (c.str != null) th.classList.add("taHeadLeft") // string columns left-justify (header + cells)
             if (c.sortable) {
                 th.classList.add("taSortable")
                 th.onclick = {

@@ -206,6 +206,10 @@ html, body {
     top: 0;
     background: var(--ui-rubber, rgba(11, 11, 11, 0.92));
 }
+/* String-column headers left-justify to sit over their left-aligned cells (numbers stay right). */
+.taHeadLeft {
+    text-align: left;
+}
 .taSortable {
     cursor: pointer;
     user-select: none;
@@ -220,8 +224,21 @@ html, body {
     overflow: hidden;
     text-overflow: ellipsis;
 }
-.taName, .taCell {
+/* String cells left-justify. Qualified with `.taRow td` so it outweighs the `.taRow td` right-align above
+   (a bare `.taName, .taCell` loses the specificity tie and the cells stay right-aligned). */
+.taRow td.taName, .taRow td.taCell {
     text-align: left;
+}
+/* Action cell: the slider coin glyph, then ~1 char of space, then the action name. */
+.taActionIcon {
+    width: 12px;
+    height: 12px;
+    vertical-align: middle;
+    image-rendering: -webkit-optimize-contrast;
+}
+.taActionLabel {
+    margin-left: 6px; /* ~1 monospace char before the name */
+    vertical-align: middle;
 }
 .taInv {
     text-align: right;
@@ -237,7 +254,8 @@ html, body {
    and Portal cells (the last two) inherit the `.taRow td` ellipsis, so changing actions and long portal
    names never resize the table — overlong portal names just truncate.
    Columns: 1 XM, 2 AP, 3 Agent, 4 XMPs, 5 US, 6 Resos, 7 Cubes, 8 Shields, 9 Heat, 10 MHack,
-   11 Virus, 12 Keys, 13 Uniq, 14 Action, 15 Portal. */
+   11 Virus, 12 Keys, 13 Uniq, 14 m/s, 15 Action, 16 Portal. (The PORTALS table reuses .taTable but
+   has only 9 columns, so the 10+ widths below are agents-only — they no-op there.) */
 .taTable th:nth-child(1), .taTable td:nth-child(1) { width: 52px; }
 .taTable th:nth-child(2), .taTable td:nth-child(2) { width: 52px; }
 .taTable th:nth-child(3), .taTable td:nth-child(3) { width: 112px; }
@@ -251,8 +269,9 @@ html, body {
 .taTable th:nth-child(11), .taTable td:nth-child(11) { width: 44px; }
 .taTable th:nth-child(12), .taTable td:nth-child(12),
 .taTable th:nth-child(13), .taTable td:nth-child(13) { width: 40px; }
-.taTable th:nth-child(14), .taTable td:nth-child(14) { width: 88px; }
-.taTable th:nth-child(15), .taTable td:nth-child(15) { width: 150px; }
+.taTable th:nth-child(14), .taTable td:nth-child(14) { width: 48px; }
+.taTable th:nth-child(15), .taTable td:nth-child(15) { width: 96px; }
+.taTable th:nth-child(16), .taTable td:nth-child(16) { width: 150px; }
 .taInvBars {
     display: inline-flex;
     align-items: flex-end;
