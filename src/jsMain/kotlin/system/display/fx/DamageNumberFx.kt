@@ -41,7 +41,9 @@ object DamageNumberFx {
     private const val HANG_DUR = 1.4 // seconds it hangs upright before the digits drop
     private const val STAGGER = 0.1 // delay between digit releases (right-most first)
     private const val FALL_LIFE = 6.5 // seconds a digit lives (visible) after release, before it sinks away
-    private const val SINK_DUR = 1.2 // then it no-clips down through the ground/buildings + despawns while invisible
+
+    // No-clip down + despawn window after EOL — long enough for a digit still bouncing/settling to drop out of sight first.
+    private const val SINK_DUR = 3.2
     private const val RESTITUTION = 0.45 // digit bounciness on landing (ground / roofs / poles)
     private const val LAND_CLEARANCE = 3.0 // a digit is "landed" once it drops to about this far above the floor
     private const val LAND_VOLUME = 0.25 // soft glassy clink when the digits hit the ground
@@ -207,7 +209,10 @@ object DamageNumberFx {
         num.sinking = true
         num.digits.forEach { d ->
             val b = d.body
-            if (b != null) b.asDynamic().collisionResponse = false
+            if (b != null) {
+                b.asDynamic().collisionResponse = false
+                b.asDynamic().wakeUp() // a settled (sleeping) digit won't fall on its own → it'd pop in place; wake it so it sinks
+            }
         }
     }
 

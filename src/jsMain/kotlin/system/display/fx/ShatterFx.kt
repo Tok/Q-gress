@@ -20,7 +20,10 @@ import kotlin.math.sqrt
  */
 object ShatterFx {
     private const val SHARD_BRIGHT = 1.4 // shards share the orb GlassShader, a touch brighter so the pieces read
-    private const val SINK_DUR = 1.2 // seconds to no-clip straight down + despawn after life — matches DamageNumberFx
+
+    // No-clip down + despawn window after life. Long enough that a piece still mid-bounce at EOL falls back down
+    // through the ground before removal (else a jumpy reso would vanish in mid-air). Matches DamageNumberFx.
+    private const val SINK_DUR = 3.2
 
     // Three bounce tiers (restitution against the ground). Glass shards opt out entirely (no material → ~0).
     private const val RESO_BOUNCE = 0.95 // resonators bounce the MOST — near-elastic, quite jumpy
