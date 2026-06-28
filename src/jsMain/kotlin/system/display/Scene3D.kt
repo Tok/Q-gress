@@ -1010,8 +1010,14 @@ object Scene3D {
         val id = "agent:${agent.name}"
         val color = if (selected == id) HIGHLIGHT_COLOR else agent.faction.color
         val sphere = Three.Mesh(headGeo, Materials.solid(color))
-        // While recruiting (standing with an NPC), the head bobs up/down — a little "jumping" exchange.
-        val bob = if (agent.action.item == ActionItem.RECRUIT) abs(sin(animMs() / 130.0)) * HEAD_R * 1.2 else 0.0
+        // A head-bob = a visible "I'm active" cue so a standing/roaming agent never reads as stuck: recruiting
+        // (standing with an NPC) bobs hard — a little "jumping" exchange — and exploring/discovering bobs lighter.
+        val bobAmp = when (agent.action.item) {
+            ActionItem.RECRUIT -> HEAD_R * 2.6
+            ActionItem.EXPLORE -> HEAD_R * 1.1
+            else -> 0.0
+        }
+        val bob = abs(sin(animMs() / 130.0)) * bobAmp
         place(sphere.asDynamic(), x, y, gz + HEAD_Z + bob)
         tag(sphere.asDynamic(), id)
         agentsGroup.add(sphere)

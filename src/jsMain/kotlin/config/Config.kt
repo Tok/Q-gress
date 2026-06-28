@@ -27,7 +27,10 @@ object Config {
     // Recruiting is FREE (it's persuading a bystander, not an energy field action). The anti-snowball
     // balancing is the per-faction selection weight (smaller team recruits more, Balance.recruitFactor)
     // plus diminishing returns as the faction fills toward its cap — not an XM cost.
-    const val recruitmentBaseChance = 0.10 // success chance at an empty roster; scales →0 at the cap (2× — faster ramp-up)
+    // Success chance at an empty roster; scales →0 at the cap. Cut ⅓ in step with the 3× shorter RECRUIT
+    // "meeting" (30→10 ticks): same net recruits per unit time, but agents spend less time standing in a
+    // meeting and more time visibly walking between recruits (so they don't read as stuck).
+    const val recruitmentBaseChance = 0.033
 
     // Base recruit selection weight (Recruiter.selectionWeight × Balance.recruitFactor) — recruiting is no
     // longer a tuning slider. 3× the original 0.00005 so rosters grow faster (the game ramps early→endgame
