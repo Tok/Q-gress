@@ -33,9 +33,12 @@ class BalanceMathTest {
     }
 
     @Test
-    fun recruitSuccessDiminishesAsTheRosterFills() {
-        assertEquals(0.05, BalanceMath.recruitSuccessProbability(0.0, 0.05), 1e-12, "empty → full base")
-        assertEquals(0.0, BalanceMath.recruitSuccessProbability(1.0, 0.05), 1e-12, "full → ~0")
-        assertEquals(0.025, BalanceMath.recruitSuccessProbability(0.5, 0.05), 1e-12, "half → half")
+    fun recruitsPerCheckpointScalesAndDiminishesToZeroAtTheCap() {
+        // base × progressSpeed × recruitFactor × (1 − fill)
+        assertEquals(1.0, BalanceMath.recruitsPerCheckpoint(0.0, 1.0, 1.0, 1.0), 1e-12, "empty roster, baseline → base")
+        assertEquals(0.5, BalanceMath.recruitsPerCheckpoint(0.5, 1.0, 1.0, 1.0), 1e-12, "half full → half")
+        assertEquals(0.0, BalanceMath.recruitsPerCheckpoint(1.0, 3.0, 4.0, 1.0), 1e-12, "at the cap → 0 (no matter the factors)")
+        assertEquals(0.0, BalanceMath.recruitsPerCheckpoint(1.5, 1.0, 1.0, 1.0), 1e-12, "over the cap clamps to 0, not negative")
+        assertEquals(4.0, BalanceMath.recruitsPerCheckpoint(0.0, 2.0, 2.0, 1.0), 1e-12, "× recruitFactor × progressSpeed")
     }
 }

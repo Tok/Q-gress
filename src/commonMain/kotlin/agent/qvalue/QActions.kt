@@ -4,9 +4,9 @@ object QActions {
     // anywhere
     val MOVE_ELSEWHERE = QValue("move", 0.01, "move elsewhere")
 
-    // Retired sliders: RECRUIT (too snowbally to hand anyone a crank — its rate is now self-balancing, see
-    // Recruiter.selectionWeight × Balance.recruitFactor) and EXPLORE (portal discovery is faction-neutral,
-    // now a density-driven system process in system/Cycle). Both were dull/unfair to tune.
+    // Retired sliders: RECRUIT and EXPLORE — both are now faction-neutral SYSTEM PROCESSES in system/Cycle
+    // (recruiting via Recruiter.expectedRecruits → recruitmentTick; portal discovery via managePortalDensity),
+    // not agent-tunable cranks. Both were dull/unfair to tune (recruiting especially was the dominant snowball).
     val RECYCLE = QValue("recycle", 1.0, "recycle items")
     val RECHARGE = QValue("recharge", 1.0, "recharge portals")
 

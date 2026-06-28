@@ -31,12 +31,10 @@ object ActionSelector {
     // sliders, or 0.1 headless), so this is unchanged from the old inline DOM read.
     fun q(faction: Faction, value: QValue): Double = FactionPolicies.of(faction).weight(value) * value.weight
 
-    // No-idle fallback: an agent with nothing portal-productive to do never waits — it does one of the two
-    // always-available things: recruit a nearby NPC, else EXPLORE (roam open ground = "discovering" portals).
-    // Both render coin-less (just a head-bob), so they read distinctly from a purposeful MOVE.
-    private fun fallback(agent: Agent): () -> Agent = {
-        if (Recruiter.isActionPossible(agent)) Recruiter.performAction(agent) else Movement.wander(agent)
-    }
+    // No-idle fallback: an agent with nothing portal-productive to do never waits — it roams open ground
+    // (EXPLORE, coin-less = just a head-bob, reads distinctly from a purposeful MOVE). Recruiting is NOT here:
+    // it's a neutral system process now (system/Cycle.recruitmentTick), not something an agent self-chooses.
+    private fun fallback(agent: Agent): () -> Agent = { Movement.wander(agent) }
     private fun doAnywhereAction(agent: Agent): Agent = Rng.select(actionsForAnywhere(agent), fallback(agent)).invoke()
     private fun doNeutralPortalAction(agent: Agent): Agent = Rng.select(actionsForNeutralPortals(agent), fallback(agent)).invoke()
 
@@ -48,12 +46,10 @@ object ActionSelector {
         val moveElsewhereQ = q(agent.faction, QActions.MOVE_ELSEWHERE)
         val recycleQ = if (Recycler.isActionPossible(agent)) q(agent.faction, QActions.RECYCLE) else -1.0
         val rechargeQ = if (Recharger.isActionPossible(agent)) q(agent.faction, QActions.RECHARGE) else -1.0
-        val recruitQ = if (Recruiter.isActionPossible(agent)) Recruiter.selectionWeight(agent) else -1.0
         return listOf(
             moveElsewhereQ to { agent.moveElsewhere() },
             recycleQ to { Recycler.performAction(agent) },
             rechargeQ to { Recharger.performAction(agent) },
-            recruitQ to { Recruiter.performAction(agent) },
         )
     }
 

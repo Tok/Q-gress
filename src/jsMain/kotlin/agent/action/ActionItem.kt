@@ -17,7 +17,7 @@ data class ActionItem(val text: String, val durationSeconds: Int, val qName: Str
         val MOVE = ActionItem("moving", 60, "Move")
         val WAIT = ActionItem("waiting", 10, "Wait")
         val RECHARGE = ActionItem("recharging", 30, "Recharge")
-        val RECRUIT = ActionItem("recruiting", 10, "Recruit") // short "meeting" (after walking up) — see recruitmentBaseChance
+        val RECRUIT = ActionItem("recruiting", 10, "Recruit") // short "meeting" after walking up (system-driven — see Recruiter)
         val EXPLORE = ActionItem("exploring", 300, "Explore")
         val RECYCLE = ActionItem("recycling", 30, "Recycle")
         val HACK = ActionItem("hacking", 10, "Hack")

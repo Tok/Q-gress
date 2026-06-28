@@ -3,7 +3,6 @@ package agent.action.cond
 import Factory
 import World
 import agent.Faction
-import config.Config
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -11,10 +10,10 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 /**
- * Characterization tests (PLAN non-functional track, phase A) for [Recruiter]'s pure, anti-snowball
- * selection weighting: a fixed [Config.recruitWeight] base scaled by [agent.Balance.recruitFactor], so the
- * SMALLER roster weighs recruiting more heavily. The walk-up/meeting/[Recruiter.resolve] flow has effects
- * (RNG, sound, World mutation) and is left for the integration layer.
+ * Recruiting is a faction-NEUTRAL system process now (not an agent Q-action) — [Recruiter.expectedRecruits] is the
+ * per-checkpoint rate that [system.Cycle] drives. These cover the anti-snowball shaping: the rate scales with the
+ * smaller-roster [agent.Balance.recruitFactor] and falls to 0 as the roster fills toward its (size-scaled) cap.
+ * The pure rate formula is unit-tested in [agent.BalanceMathTest].
  */
 class RecruiterTest {
 
@@ -27,55 +26,24 @@ class RecruiterTest {
     private fun addAgents(faction: Faction, n: Int) = repeat(n) { World.allAgents.add(Factory.agent(faction)) }
 
     @Test
-    fun selectionWeightIsTheBaseWhenRostersAreEven() {
-        addAgents(Faction.ENL, 3)
-        addAgents(Faction.RES, 3)
-        // recruitFactor == (theirs+1)/(mine+1) == 1.0 when even → weight == the base.
-        assertEquals(Config.recruitWeight, Recruiter.selectionWeight(Faction.ENL), 1e-12)
-        assertEquals(Config.recruitWeight, Recruiter.selectionWeight(Faction.RES), 1e-12)
-    }
-
-    @Test
-    fun theSmallerRosterWeighsRecruitingMoreThanTheLargerOne() {
+    fun theSmallerRosterRecruitsFaster() {
         addAgents(Faction.ENL, 5)
         addAgents(Faction.RES, 1)
         assertTrue(
-            Recruiter.selectionWeight(Faction.RES) > Recruiter.selectionWeight(Faction.ENL),
-            "the underdog recruits more eagerly than the leader",
+            Recruiter.expectedRecruits(Faction.RES) > Recruiter.expectedRecruits(Faction.ENL),
+            "the underdog's anti-snowball recruiting rate is higher than the leader's",
         )
     }
 
     @Test
-    fun perAgentRecruitingAptitudeScalesTheTeamWeight() {
-        addAgents(Faction.ENL, 3)
-        addAgents(Faction.RES, 3) // even rosters → the team weight is exactly the base
-        val base = Recruiter.selectionWeight(Faction.ENL)
-        val average = Factory.frog().let { it.copy(skills = it.skills.copy(recruiting = 0.5)) }
-        val keen = average.copy(skills = average.skills.copy(recruiting = 1.0))
-        val reluctant = average.copy(skills = average.skills.copy(recruiting = 0.0))
-        assertEquals(base, Recruiter.selectionWeight(average), 1e-12, "0.5 aptitude → 1.0× → the team weight")
-        assertEquals(base * 1.5, Recruiter.selectionWeight(keen), 1e-12, "max aptitude → 1.5×")
-        assertEquals(base * 0.5, Recruiter.selectionWeight(reluctant), 1e-12, "min aptitude → 0.5×")
-    }
-
-    @Test
-    fun recruitSuccessProbabilityDiminishesAsTheRosterFills() {
-        assertEquals(Config.recruitmentBaseChance, Recruiter.recruitSuccessProbability(0.0), 1e-12, "empty roster → full base")
-        assertEquals(0.0, Recruiter.recruitSuccessProbability(1.0), 1e-12, "a full roster recruits at ~0")
-        assertEquals(Config.recruitmentBaseChance / 2.0, Recruiter.recruitSuccessProbability(0.5), 1e-12, "half full → half")
-    }
-
-    @Test
-    fun selectionWeightTracksRecruitFactorExactly() {
-        addAgents(Faction.ENL, 5)
-        addAgents(Faction.RES, 1)
-        Faction.values().forEach { faction ->
-            assertEquals(
-                Config.recruitWeight * agent.Balance.recruitFactor(faction) * Config.progressSpeed,
-                Recruiter.selectionWeight(faction),
-                1e-12,
-                "weight is exactly base × recruitFactor × progressSpeed for $faction",
-            )
-        }
+    fun evenRostersRecruitAtTheSameRate() {
+        addAgents(Faction.ENL, 4)
+        addAgents(Faction.RES, 4)
+        assertEquals(
+            Recruiter.expectedRecruits(Faction.ENL),
+            Recruiter.expectedRecruits(Faction.RES),
+            1e-12,
+            "even rosters → identical rate (recruitFactor 1.0 both sides)",
+        )
     }
 }

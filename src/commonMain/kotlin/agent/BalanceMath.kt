@@ -23,7 +23,10 @@ object BalanceMath {
     fun attackBoost(deficit: Double, comebackMax: Double, comebackBonus: Double): Double =
         1.0 + comebackMax * comebackBonus * deficit * deficit
 
-    /** Diminishing-returns recruit chance: [baseChance] × the roster's remaining headroom (`1 − fillRatio`),
-     *  so a near-full roster recruits at ~0 and an empty one at the full base. */
-    fun recruitSuccessProbability(fillRatio: Double, baseChance: Double): Double = baseChance * (1.0 - fillRatio)
+    /** Expected recruits this checkpoint for a faction (the system-driven recruiting rate — recruiting is a
+     *  neutral process now, not an agent Q-action): a [baseRate] scaled by [progressSpeed] (the game-ramp knob),
+     *  the anti-snowball [recruitFactor] (smaller faction recruits more), and the roster's remaining headroom
+     *  (`1 − fillRatio`, clamped ≥ 0 → 0 at the cap). */
+    fun recruitsPerCheckpoint(fillRatio: Double, recruitFactor: Double, progressSpeed: Double, baseRate: Double): Double =
+        baseRate * progressSpeed * recruitFactor * (1.0 - fillRatio).coerceAtLeast(0.0)
 }

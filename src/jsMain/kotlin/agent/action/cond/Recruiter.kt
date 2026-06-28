@@ -3,6 +3,7 @@ package agent.action.cond
 import World
 import agent.Agent
 import agent.Balance
+import agent.BalanceMath
 import agent.Faction
 import agent.NonFaction
 import agent.action.ActionItem
@@ -13,47 +14,45 @@ import system.audio.Tts
 import util.Rng
 
 /**
- * Recruiting — a portal-INDEPENDENT action: the agent walks up to a *random* NPC, the two stand together for a
- * short "meeting" ([ActionItem.RECRUIT] duration), then it resolves. [performAction] only *starts* it (picks
- * the target, pays the XM, heads off); [Agent] drives the walk-up + meeting per tick and calls [resolve] at the
- * end. Success rolls [recruitmentChance] (diminishing as the roster fills) and, with the anti-snowball
- * [selectionWeight], helps the SMALLER team grow faster.
+ * Recruiting — a faction-NEUTRAL **system process** (like the density-driven portal churn / the retired EXPLORE),
+ * NOT an agent Q-action: agent action selection is purely the 17 sliders, never a code override. [system.Cycle]
+ * drives recruiting each checkpoint at a rate from [expectedRecruits] (a base rate × the game-ramp [Config.progressSpeed]
+ * × the anti-snowball [Balance.recruitFactor] × roster headroom). Each event [startRecruit] commandeers one agent to
+ * walk up to a random NPC ([performAction] sets its RECRUIT action); [Agent] drives the walk + "meeting", and
+ * [resolve] converts the NPC into a teammate at the end. To recruit FASTER, the lever is the rate (progress speed),
+ * not the number of agents choosing it.
  */
 object Recruiter : ConditionalAction {
     override val actionItem = ActionItem.RECRUIT
 
-    // Recruiting is free — it's persuading a bystander to join, not an energy-spending field action. The
-    // anti-snowball balancing lives in [selectionWeight] (smaller team recruits more) + the diminishing
-    // [recruitmentChance], not an XM gate. Only condition: there's still roster room.
+    /** Only condition: the faction's (size-scaled) roster isn't full yet ([World.canRecruitMore]). */
     override fun isActionPossible(agent: Agent) = World.canRecruitMore(agent.faction)
 
+    /** Expected recruits for [faction] this checkpoint — the system-driven rate ([BalanceMath.recruitsPerCheckpoint]:
+     *  base × progress speed × anti-snowball factor × roster headroom). */
+    fun expectedRecruits(faction: Faction): Double = BalanceMath.recruitsPerCheckpoint(
+        World.countAgents(faction).toDouble() / Config.maxFor(faction),
+        Balance.recruitFactor(faction),
+        Config.progressSpeed,
+        Config.recruitRate,
+    )
+
     /**
-     * How strongly an agent weighs recruiting this tick. A fixed base ([Config.recruitWeight]) ×
-     * [Balance.recruitFactor] (the SMALLER team recruits more, so team sizes self-balance) × the global
-     * [Config.progressSpeed] knob (how fast the game ramps — also drives AP gain). This is the *team*-level
-     * weight; the per-agent [selectionWeight] overload scales it by the recruiter's personal aptitude. (Future:
-     * items — e.g. "beer" — could scale it further; see PLAN.)
+     * Commandeer one available agent of [faction] — weighted by recruiting aptitude ([agent.Skills.recruitingFactor],
+     * so natural recruiters do it more) — to walk up to a random NPC. Returns false if the roster is full or no
+     * free agent exists. Called by the system process, never the agent's own action roulette.
      */
-    fun selectionWeight(faction: Faction): Double = Config.recruitWeight * Balance.recruitFactor(faction) * Config.progressSpeed
+    fun startRecruit(faction: Faction): Boolean {
+        if (!World.canRecruitMore(faction)) return false
+        val candidates = World.allAgents.filter { it.faction == faction && it.action.item != ActionItem.RECRUIT }
+        if (candidates.isEmpty()) return false
+        val agent = Rng.select(candidates.map { it.skills.recruitingFactor() to it }, candidates.first())
+        return performAction(agent).recruitTargetId != null
+    }
 
-    /** Per-agent recruiting weight: the faction's team [selectionWeight] scaled by the agent's personal
-     *  recruiting aptitude ([agent.Skills.recruitingFactor], ~1.0× on average) — some agents are natural
-     *  recruiters. Averages out to the team weight, so it changes *who* recruits, not the overall pace. */
-    fun selectionWeight(agent: Agent): Double = selectionWeight(agent.faction) * agent.skills.recruitingFactor()
-
-    // Success chance just diminishes as the faction fills toward its cap (rushing the cap yields ever-smaller
-    // returns); the anti-snowball balancing now lives in [selectionWeight], not here, to avoid double-counting.
-    private fun recruitmentChance(faction: Faction): Double =
-        recruitSuccessProbability(World.countAgents(faction).toDouble() / Config.maxFor(faction))
-
-    /** Diminishing-returns curve (pure math in [agent.BalanceMath.recruitSuccessProbability]): base chance ×
-     *  the roster's remaining headroom (`1 − fillRatio`), so a near-full roster recruits at ~0. */
-    fun recruitSuccessProbability(fillRatio: Double): Double =
-        agent.BalanceMath.recruitSuccessProbability(fillRatio, Config.recruitmentBaseChance)
-
-    /** Start a recruit: pick a random NPC and head over (Agent drives the walk + meeting). Free — no XM cost. */
+    /** Start the walk-up on [agent]: pick a random NPC and head over (Agent drives the walk + meeting). */
     override fun performAction(agent: Agent): Agent {
-        val npc = NonFaction.findRandom() ?: return agent // no NPCs (never, given MIN_NONFACTION) → caller re-selects
+        val npc = NonFaction.findRandom() ?: return agent // no NPCs (never, given MIN_NONFACTION)
         agent.recruitTargetId = npc.id
         agent.destination = npc.pos
         agent.action.start(actionItem)
@@ -61,16 +60,15 @@ object Recruiter : ConditionalAction {
     }
 
     /**
-     * Finish a recruit once the agent has stood with [npc] for the meeting: roll success (diminishing as the
-     * roster fills), spawn a teammate + replace the NPC on success, and play the success / fail sound. Clears
-     * the agent's recruit state and ends the action either way.
+     * Finish a recruit once [agent] has stood with [npc] for the meeting: convert the NPC into a teammate in place.
+     * The recruiting RATE is gated upstream by the system process, so a completed walk-up succeeds — unless the
+     * roster filled in the meantime ([World.canRecruitMore]). Clears the agent's recruit state + ends the action.
      */
     fun resolve(agent: Agent, npc: NonFaction): Agent {
-        if (Rng.random() < recruitmentChance(agent.faction)) {
+        if (World.canRecruitMore(agent.faction)) {
             // The NPC turns faction: it becomes the new agent in place (not deleted + spawned elsewhere).
             World.allNonFaction.remove(npc)
-            // Don't top the crowd back up on every recruit — let the NPC population shrink as agents recruit,
-            // only refilling once it has been drawn down to its floor (so we never run out of recruits).
+            // Let the NPC population draw down as agents recruit; only refill once it hits its floor (never run out).
             if (World.countNonFaction() < Config.MIN_NONFACTION) World.allNonFaction.add(NonFaction.create(World.grid))
             val newAgent = when (agent.faction) {
                 Faction.ENL -> Agent.createFrog(World.grid, npc.pos)
@@ -80,9 +78,6 @@ object Recruiter : ConditionalAction {
             World.pendingAgents.add(newAgent) // flushed after the agent loop (avoids CME)
             Sound.playRecruitSuccess(agent.pos)
             Tts.announceRecruitment(agent.faction) // VERBOSE TTS
-        } else {
-            Com.addMessage("A recruit turned down the ${agent.faction.nickName}s.", Com.Importance.MINOR, agent.faction.color)
-            Sound.playRecruitFail(agent.pos)
         }
         agent.recruitTargetId = null
         agent.action.end()

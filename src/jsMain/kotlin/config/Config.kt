@@ -24,25 +24,15 @@ object Config {
     fun targetPortals(): Int = ConfigMath.targetPortals(startPortals, maxPortals)
 
     // --- Recruitment balance (Phase 5) ---------------------------------------
-    // Recruiting is FREE (it's persuading a bystander, not an energy field action). The anti-snowball
-    // balancing is the per-faction selection weight (smaller team recruits more, Balance.recruitFactor)
-    // plus diminishing returns as the faction fills toward its cap — not an XM cost.
-    // Success chance per RECRUIT "meeting" at an empty roster; scales →0 as the faction fills toward its cap
-    // (BalanceMath.recruitSuccessProbability × (1 − fill)). Raised so a meeting actually lands often enough that
-    // rosters fill in a reasonable time — recruiting felt broken at the old 0.033 (×(1−fill) ≈ a few % per try).
-    const val recruitmentBaseChance = 0.20
+    // Recruiting is a faction-NEUTRAL SYSTEM PROCESS ([system.Cycle.recruitmentTick] / [agent.action.cond.Recruiter]),
+    // NOT an agent Q-action — agent action selection is purely the 17 sliders. This is the expected recruits per
+    // CHECKPOINT per faction at baseline; the live rate is this × [progressSpeed] (the "make it faster" knob) ×
+    // the anti-snowball [agent.Balance.recruitFactor] × the roster's remaining headroom (→0 at the cap). Tune by feel.
+    var recruitRate = 1.0
 
-    // Base recruit selection weight (Recruiter.selectionWeight × Balance.recruitFactor × progressSpeed). This
-    // competes (roulette, Rng.select) against the 0–1 slider Q-values (default 0.10). Calibration: 0.00015 was
-    // ~never picked (recruiting felt dead); 0.05 was far too high — in the "anywhere" context (only moveElsewhere
-    // ~0.10 competes) every agent recruited non-stop (and a recruiting agent shows no action coin, just bobs). At
-    // 0.005 recruiting is a ~5% background pick at x1 (more for the underdog / at higher Progress speed) so rosters
-    // fill over time without agents abandoning play. Tune by feel.
-    var recruitWeight = 0.005
-
-    // Anti-snowball recruiting (Balance.recruitFactor): the LARGER faction recruits less, the SMALLER more,
-    // so team sizes self-correct instead of the leader running away (recruiting was the dominant snowball).
-    // The recruit chance is multiplied by (enemyRoster+1)/(myRoster+1), clamped to this band.
+    // Anti-snowball recruiting (Balance.recruitFactor): the LARGER faction recruits less, the SMALLER more, so
+    // team sizes self-correct instead of the leader running away. Multiplies the recruit RATE (not selection — there
+    // is no selection now) by (enemyRoster+1)/(myRoster+1), clamped to this band.
     var recruitFactorMin = 0.3 // a much-larger faction recruits at ≥30% of base
     var recruitFactorMax = 3.0 // a much-smaller faction recruits at ≤300% of base
 
@@ -145,7 +135,7 @@ object Config {
     const val apMultiplier = 10
 
     // One "Progress speed" knob (like combatDynamism) for how fast the game ramps early→endgame: it scales
-    // BOTH the recruiting rate (Recruiter.selectionWeight) AND AP gain (Agent.addAp → agents level faster).
+    // BOTH the recruiting rate (Recruiter.expectedRecruits) AND AP gain (Agent.addAp → agents level faster).
     // 1.0 = baseline; <1 slower, >1 faster. Live-tunable + persisted (GameplayPrefs).
     var progressSpeed = 1.0
 
