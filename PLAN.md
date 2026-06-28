@@ -110,16 +110,19 @@ CSS design-token dedup is done too: glass/tint/blur literals route through `:roo
   on `agent/Skills`, exposed as a high-risk/high-reward QAction the AI learns to weigh. Drive the glyph count +
   hack duration off portal level (Ingress wiki: L1 = 1 glyph / 20 s … L8 = 5 glyphs / 15 s; perfect-hack +
   speed bonuses) via the `glyph/Glyph` enum; the TTS "glyph" tier already reads the sequence back.
-- [ ] **Recruiting as an agent skill + items.** Rate is self-balancing now (`Recruiter.selectionWeight` ×
-  `Balance.recruitFactor`). Next: a per-agent **skill** (`agent/Skills`) some are better at, plus **items**
-  (e.g. *beer* — a temporary recruit boost) — a characterful lever instead of a flat faction rate.
+- [ ] **Recruiting items** *(the per-agent skill shipped).* `Skills.recruiting` (0..1, `recruitingFactor()`
+  → 0.5×–1.5× weight, ~1.0× avg so it changes *who* recruits, not the pace) now scales
+  `Recruiter.selectionWeight(agent)`. Still open: **items** (e.g. *beer* — a temporary recruit boost) on top.
 - [ ] **Aim skill (XMP / Ultra-Strike accuracy)** — a per-agent skill: high-aim detonates **closer to portal
   centre** (max damage), low-aim lands **off-centre** (damage falls off with miss distance). Makes the
   small-radius Ultra-Strike reward good aim; feeds the damage calc + blast VFX origin; another AI lever.
-- [ ] **Portal-mod follow-ups** (shields/heat-sinks/viruses ship; link amps inactive): heat-sink **instant
-  cooldown reset** on attach; a **multi-hack** mod; **activate link amps** (range/outbound/SBUL); the
-  **Ultra-Strike** weapon + targeted mod-stripping honouring shield `stickiness`; a **3D key** model; a
-  per-game **drop-rate tuning UI** (`DropRates` is centralized — Menu → Drop rates; `docs/MECHANICS.md`).
+  *(Deferred for an eyes-on session: it rewrites the live combat-damage model + blast VFX origin — wants
+  visual + feel verification, not a blind change.)*
+- [ ] **Portal-mod follow-ups** (shields/heat-sinks/viruses ship; link amps inactive): ~~heat-sink instant
+  cooldown reset~~ **(done — deploying a heat sink now wipes `Portal.lastHacks`)**; a **multi-hack** mod;
+  **activate link amps** (range/outbound/SBUL); the **Ultra-Strike** weapon + targeted mod-stripping honouring
+  shield `stickiness`; a **3D key** model; a per-game **drop-rate tuning UI** (`DropRates` is centralized —
+  Menu → Drop rates; `docs/MECHANICS.md`).
 
 ## Grand game — multiple locations & a living field *(big, exploratory)*
 - [ ] **Movable / expandable play field** — the playable area can **grow** or **shift** over a game (captured
@@ -148,11 +151,11 @@ CSS design-token dedup is done too: glass/tint/blur literals route through `:roo
 team effort to layer fields across the cycle. The net/LLM re-tunes the 17 sliders at checkpoint cadence; it
 does **not** replace the per-agent `ActionSelector`.
 
-- [ ] **Lock training to the standard gameplay balance.** Pin the training/eval harness (`MatchSetup` /
-  `SimRunner`) to the **shipped default** balance — drop rates, combat dynamics, progress speed — rather than
-  the live `GameplayPrefs`/`Config` tunables a player may have moved. One canonical training target → champions
-  are **"one fits all"** instead of a champion-per-balance matrix. The menu sliders stay a *play-time* knob
-  only, never a training input.
+- [x] **Lock training to the standard gameplay balance.** *Done:* `MatchSetup.useDefaultBalance` (default ON)
+  pins combat dynamics / progress speed / portal churn to the shipped `GameplayPrefs` defaults for each headless
+  match — `SimRunner` snapshots + restores the live values around the run. One canonical training target →
+  champions are "one fits all"; the menu sliders stay a play-time-only knob. *Remaining:* fold drop rates in
+  once they become player-tunable (the drop-rate UI item); `BalanceSweep` opts out (it drives `Config` itself).
 - [ ] **Rebake the champions (release prep).** Gameplay/balance has shifted since the baked **16×16** champion
   was trained, so it's stale. Retrain against the now-locked standard balance and re-commit the genome
   (`GenomeIO`/`NetStore`). Do this **after** the balance lock above and once gameplay tuning has settled — a
