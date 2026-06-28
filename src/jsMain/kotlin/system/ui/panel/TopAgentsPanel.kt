@@ -88,9 +88,22 @@ object TopAgentsPanel {
     private var tbody: HTMLElement? = null
     private val headerCells = mutableListOf<HTMLElement>()
 
-    /** Rebuild the table body from the current roster (sorted by the chosen column). */
+    /** Rebuild the table body from the current roster (sorted by the chosen column). Skips the rebuild when the
+     *  AGENTS tab is hidden — the table is DOM-heavy and was rebuilt every frame even off-screen. */
     fun update() {
         ensure()
+        if (!Footer.isActive("agents")) return
+        rebuild()
+    }
+
+    /** Build + populate the table once regardless of tab visibility — [LoadingOverlay] measures the populated
+     *  pane to land the AGENTS morph, so it can't wait for the tab to be active. */
+    fun forceRebuild() {
+        ensure()
+        rebuild()
+    }
+
+    private fun rebuild() {
         val body = tbody ?: return
         refreshHeaders()
         body.textContent = ""
@@ -154,10 +167,15 @@ object TopAgentsPanel {
 
     // The Action cell (left-justified string column): the same coin glyph shown beside the tuning sliders,
     // then ~1 char of space, then the action name. Neutral (faction-less) icon to match the slider list.
+    // The action icon is static per ActionItem, but toDataURL (canvas → PNG base64) is expensive — and this
+    // table rebuilds every frame. Encode each item's icon ONCE and reuse the data URL (was ~80% of runtime CPU).
+    private val actionIconUrls = mutableMapOf<ActionItem, String>()
+    private fun actionIconUrl(item: ActionItem): String = actionIconUrls.getOrPut(item) { ActionItem.getHiResIcon(item).toDataURL() }
+
     private fun actionCell(agent: Agent): HTMLElement {
         val td = el("td", "taCell")
         val img = document.createElement("img") as HTMLImageElement
-        img.src = ActionItem.getHiResIcon(agent.action.item).toDataURL()
+        img.src = actionIconUrl(agent.action.item)
         img.className = "taActionIcon"
         td.appendChild(img)
         val label = el("span", "taActionLabel")

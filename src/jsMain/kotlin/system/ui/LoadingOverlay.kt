@@ -215,7 +215,7 @@ object LoadingOverlay {
     // renders (the first game tick hasn't run at done()), so render it once here (builds the footer + populates
     // the table), then measure the pane itself, not the full-width footer bar.
     private fun dockRect(): dynamic {
-        TopAgentsPanel.update()
+        TopAgentsPanel.forceRebuild() // populate once even if the AGENTS tab isn't active, so the pane has a measurable rect
         val pane = document.querySelector(".topAgents") ?: return null
         val r = pane.asDynamic().getBoundingClientRect()
         return if ((r.width as Double) > 1.0 && (r.height as Double) > 1.0) r else null

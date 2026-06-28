@@ -50,9 +50,11 @@ object PortalsPanel {
     private var tbody: HTMLElement? = null
     private val headerCells = mutableListOf<HTMLElement>()
 
-    /** Rebuild the table body from the current portals (sorted by the chosen column). */
+    /** Rebuild the table body from the current portals (sorted by the chosen column). Skips the rebuild when the
+     *  PORTALS tab is hidden — the table is DOM-heavy and was rebuilt every frame even off-screen. */
     fun update() {
         ensure()
+        if (!Footer.isActive("portals")) return
         val body = tbody ?: return
         refreshHeaders()
         body.textContent = ""
