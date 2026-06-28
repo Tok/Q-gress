@@ -269,11 +269,14 @@ data class NonFaction(
             it.pos.distanceTo2(pos) // nearest → squared distance preserves the ordering, skips the sqrt
         } ?: throw IllegalStateException("Unable to find nearest to $pos")
 
-        /** A random NPC to recruit (the recruiter walks up to whoever — recruiting isn't tied to a portal). */
+        /** A random NPC to recruit (the recruiter walks up to whoever — recruiting isn't tied to a portal).
+         *  Prefer ones INSIDE the play area: agents can't leave it, so chasing an off-screen NPC would just
+         *  stall the recruiter against the border. Fall back to any if none are currently inside. */
         fun findRandom(): NonFaction? {
             val all = World.allNonFaction
             if (all.isEmpty()) return null
-            return all.elementAt((Rng.random() * all.size).toInt().coerceIn(0, all.size - 1))
+            val pool = all.filter { Sim.isInPlayArea(it.pos.x, it.pos.y) }.ifEmpty { all.toList() }
+            return pool.elementAt((Rng.random() * pool.size).toInt().coerceIn(0, pool.size - 1))
         }
 
         fun create(grid: Grid): NonFaction {

@@ -168,7 +168,7 @@ data class Agent(
             actionPortal.vectors[pos.toShadow()] ?: Movement.headingTo(pos, actionPortal.location)
         }
         velocity = Movement.move(velocity, force, skills.speed)
-        return this.copy(pos = Pos((pos.x + velocity.re).toInt(), (pos.y + velocity.im).toInt()))
+        return this.copy(pos = Movement.clampToPlayable(pos, Pos((pos.x + velocity.re).toInt(), (pos.y + velocity.im).toInt())))
     }
 
     // The no-idle stroll (ActionItem.EXPLORE): roam straight toward a nearby open-ground [destination],
@@ -179,7 +179,7 @@ data class Agent(
             return this
         }
         velocity = Movement.move(velocity, Movement.headingTo(pos, destination), skills.speed)
-        return this.copy(pos = Pos((pos.x + velocity.re).toInt(), (pos.y + velocity.im).toInt()))
+        return this.copy(pos = Movement.clampToPlayable(pos, Pos((pos.x + velocity.re).toInt(), (pos.y + velocity.im).toInt())))
     }
 
     // Recruiting (ActionItem.RECRUIT): walk straight up to the target NPC (holding it in place), then stand
@@ -196,7 +196,7 @@ data class Agent(
         if (distanceToDestination() > Dim.maxDeploymentRange) {
             action.start(ActionItem.RECRUIT) // keep the meeting timer fresh until we actually arrive
             velocity = Movement.move(velocity, Movement.headingTo(pos, destination), skills.speed)
-            return this.copy(pos = Pos((pos.x + velocity.re).toInt(), (pos.y + velocity.im).toInt()))
+            return this.copy(pos = Movement.clampToPlayable(pos, Pos((pos.x + velocity.re).toInt(), (pos.y + velocity.im).toInt())))
         }
         if (action.isBusy()) return this // standing together — the meeting (the head bobs in the render)
         return Recruiter.resolve(this, npc) // meeting over → roll the result
@@ -212,7 +212,7 @@ data class Agent(
         val rawDiffY = (pos.yDiff(dest) * part).toInt()
         val rawNextX = pos.x - rawDiffX
         val rawNextY = pos.y - rawDiffY
-        return this.copy(pos = Pos(rawNextX, rawNextY))
+        return this.copy(pos = Movement.clampToPlayable(pos, Pos(rawNextX, rawNextY)))
     }
 
     private fun collectXm() {

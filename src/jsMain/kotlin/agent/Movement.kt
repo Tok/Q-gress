@@ -20,6 +20,23 @@ object Movement {
     // (never stalls on Complex.ZERO → stuck → never re-targets) and re-samples the real field later.
     fun headingTo(from: Pos, to: Pos): Complex = MovementMath.headingTo(from, to)
 
+    /**
+     * Keep an **agent** on walkable ground: only step into a cell that's **passable** — which also means
+     * **on the grid** ([Pos.isPassable] is false off-map and on water/buildings). So an agent never walks on
+     * water or off the playable map, even when chasing a destination outside it; it slides along one axis when
+     * the diagonal is blocked, else holds (StuckTracker re-targets if that persists). (NPCs roam off-screen by
+     * design — they don't go through this.) Clamping to passability, not the round-field circle, so the
+     * agents can still reach portals placed in the passable corners outside the inscribed circle.
+     */
+    fun clampToPlayable(from: Pos, to: Pos): Pos {
+        if (to.isPassable()) return to
+        val slideX = Pos(to.x, from.y)
+        if (slideX.isPassable()) return slideX
+        val slideY = Pos(from.x, to.y)
+        if (slideY.isPassable()) return slideY
+        return from // blocked on both axes → hold (StuckTracker will re-target if it persists)
+    }
+
     fun findUncapturedPortals() = World.allPortals.filter { it.isUncaptured() }
     fun hasUncapturedPortals() = findUncapturedPortals().isNotEmpty()
     fun findEnemyPortals(agent: Agent): List<Portal> = World.allPortals.filter { it.isEnemyOf(agent) }
