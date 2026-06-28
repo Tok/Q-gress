@@ -55,11 +55,15 @@ CSS design-token dedup is done too: glass/tint/blur literals route through `:roo
   toggle (`GraphicsPrefs`): **High-detail shadows** (2048↔1024 shadow map, live realloc). Levers to add:
   **building cap**, **DEM exaggeration**; surface the group in onboarding too. *(Anti-aliasing is iceboxed — see
   "Anti-aliasing (the terrain custom-layer problem)" below.)*
-- [ ] **Buildings — per-building replacement** *(the parallel-mode follow-up).* Today both sets render (ours
-  on top, MapLibre filling gaps). Cleaner end-state: hide **only** the MapLibre footprints we have our own
-  mesh for, so the gap-fillers and our look match and there's no overlap/z-fight. Needs matching our synthetic
-  centroid keys to MapLibre feature ids (now that the `openmaptiles` source carries `generateId`) — or a
-  custom building layer we fully own.
+- [x] **Buildings — per-building replacement.** *Done (gated `OwnBuildings.PER_BUILDING_REPLACE`):* in
+  parallel mode we now hide **only** the MapLibre footprints we've meshed, so our mesh is the sole visual there
+  (no overlap/z-fight) while MapLibre fills the gaps. `OwnBuildings.coversGeometry` matches a MapLibre feature to
+  ours by quantized **centroid cell** (±`MATCH_TOL`, reusing our `ringKey` scheme); `MapController` marks matches
+  `setFeatureState(hidden)` and draws hidden footprints as a transparent **fill-extrusion-color** (opacity rejects
+  data exprs), re-running on every map idle for streamed tiles. *Open/verify:* `MATCH_TOL` is the visual knob
+  (widen if MapLibre twins remain, tighten if wrong footprints vanish); consider bumping our mesh opacity now that
+  it's the sole visual on matched buildings; buildings straddling tile edges (clipped vector-tile geometry → drifted
+  centroid) may not match.
 - [x] **Terrain-aware shatter ground.** *Done:* each blast lifts the shared cannon-es shard/digit floor to
   `groundZ(blastLocation)` at spawn (`liftShardFloor` in shatterPortal/dropMods/dropResonator; the separate digit
   floor in showDamageNumber), so debris rests on the local terrain instead of the play-area-centre height it was
