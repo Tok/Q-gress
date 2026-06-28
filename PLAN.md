@@ -7,17 +7,19 @@ Branch: `develop` · Owner: @zirteq
 [docs/LLM.md](docs/LLM.md). Completed work lives in the **git log**, not here — keep this file to the point.
 
 ## ★ Next session — start here
-**Phase B continues — pick from the remaining refactor items:** the **140 → 120 line-length** pass, the
-**magic-numbers** naming pass, and cutting along seams in `MapController` (835) / `Bootstrap` (788) / `Sound`
-(768) / `Portal` (685) as they're touched. The **commonMain pure-logic migration** has had a deep pass and the
-cleanly-liftable core is now moved + tested (`SimMath`, the `Cell` pure/presentation split → `Grid` +
-`GridConnectivity` + `GridFixture`, `NameGen`, `Octant`, `MovementMath`, the `QValue`/`QActions`/
-`QDestinations`/`SliderVector` model behind a `QIcons` UI split, `HeuristicTune`); **what's left is blocked by
-deeper coupling** — `Config` (a big jsMain object) gates `Tournament`/`Observation`/`Cycle`, and `Portal`/
-`World`/`Agent` gate `Field`/`Inventory`/`knockMods`. Pull more pure logic over only as those god-objects are
-split (it rides the SoC work, not a separate pass). Don't pull the **phase D** perf items (Pathfinding
-scalability, Building perf, Map-size profiling) forward. One gameplay item is queued: **field-layering tests +
-tuning investigation** (under *Gameplay mechanics* — the rules are sound, but agents layer too rarely).
+**Phase D's cheap perf wins + baseline tooling are banked** (flat-array flow fields, squared-distance targeting,
+panel throttling, FX physics, `Profiler`/`FpsMeter`/`profiler.sh` — see Phase D); the Large map area was doubled
+(`Sim.LARGE_SCALE` 3.11, Normal the area-midpoint). The next big perf lever (**three.js mesh instancing**) is
+deferred — reprofile when things change, don't pre-optimize.
+
+**Phase B (refactor) is the open structural work — pick from:** more **god-object seams** (this session cut
+`Portal`→`HackLoot`, `Bootstrap`→`CanvasFactory`+`GameLoop`, `MapController`→`ShadowGridBuilder`; `Sound` (768)
+and the rest of `Bootstrap`/`MapController` remain), the **140 → 120 line-length** pass, and the **magic-numbers**
+naming pass. The **commonMain pure-logic migration** had a deep pass (cleanly-liftable core moved + tested);
+**what's left is blocked by deeper coupling** — `Config` gates `Tournament`/`Observation`/`Cycle`, `Portal`/
+`World`/`Agent` gate `Field`/`Inventory`/`knockMods` — so it rides the SoC work, not a separate pass. One
+gameplay item is queued: **field-layering tests + tuning investigation** (under *Gameplay mechanics* — the rules
+are sound, but agents layer too rarely).
 
 Optional small wins: a **CSS design-token dedup** (hoist the repeated glass/button magic values — `blur(7px)`,
 the `rgba(255,255,255,.06/.12/.18)` button fills, `rgba(0,0,0,.45)`, `border-radius:6px` — into `:root` custom
@@ -25,8 +27,9 @@ properties; zero-toolchain, a visual no-op), plus the leftover code dupes (the 3
 companions; the two history panels' uPlot series config).
 
 ## Non-functional track — quality → coverage → perf (CURRENT FOCUS)
-Get the code to a state we're comfortable with, *then* make it fast. Strictly phased; each phase de-risks the
-next. **Phase B** (refactor under the net) is the current focus; **phase D** (profiling) is last.
+Get the code to a state we're comfortable with, *then* make it fast. Mostly phased, but we took an early,
+data-driven **phase D** dip (the baseline tooling + cheap perf wins were too good to defer — see Phase D). **Phase
+B** (refactor under the net) remains the open structural focus; phase D's big lever (mesh instancing) is deferred.
 
 ### Phase B — Refactor under the net — 🔄 in progress
 Functional core / imperative shell, properly. Module-by-module, behind the phase-A safety net.
@@ -39,14 +42,23 @@ Functional core / imperative shell, properly. Module-by-module, behind the phase
   extractions (it inflates `LargeClass` otherwise).
 - **Exit criterion:** pure logic is testable in isolation; gate (ktlint/detekt/tests) stays green throughout.
 
-### Phase D — Profiling & optimization (last)
-Only once we're comfortable with structure + coverage. **Baseline first, then optimize, guarded by the net:**
-- [ ] **Establish a baseline** — an FPS / frame-time readout (ties to `?debug`, also a legacy TODO) + world-gen
-  per-stage timing logs, so regressions are visible and wins are measurable.
-- [ ] **In-game hotspots** — `Scene3D` per-frame draw, pathfinding heat maps, the NPC swarm, shadows/effects.
-- [ ] **World-creation** — grid build, shadow readback, async flow-field compute, building stream.
-- [ ] Fold in the existing perf items as data dictates: **Pathfinding scalability**, **Building perf + lifecycle**,
-  and the **Map-size preset** profiling/tuning (all listed in their sections below).
+### Phase D — Profiling & optimization — 🔄 baseline + cheap wins landed (out of strict order, data-driven)
+We dipped into phase D ahead of finishing phase B because a profiling pass was cheap and high-value. **Baseline
+tooling + the cheap, high-confidence optimizations are done; the big remaining lever is deferred.**
+- [x] **Baseline tooling** — `util/Profiler` (world-gen per-stage `[perf]` timing + the per-portal flow-field
+  aggregate), `system/ui/FpsMeter` (`?debug` FPS/frame-time overlay), and **`./profiler.sh`** (a zero-dep
+  headless-Chrome CDP CPU profiler → `build/profiles/*.cpuprofile`; `tools/profiling/`). Re-run any time.
+- [x] **Cheap wins (banked)** — lazy `Complex` (no eager `sqrt`/`atan2` per construction); **flat-array flow
+  fields** (`Pathfinding` over `IntArray`/`DoubleArray` + a flat `VectorField`, no `Pos`-keyed HashMaps of boxed
+  `Complex`: flow-field build **459 → 29 ms avg**, world-gen **33.5 → 17 s** on a Large+endgame board);
+  squared-distance targeting (`Pos.distanceTo2` in the hot per-tick loops); hidden-footer-tab panel throttle
+  (`Footer.isActive`); cannon-es FX physics (SAP broadphase + `allowSleep` + a digit collision filter).
+- [ ] **The big remaining lever — three.js mesh instancing/merging.** World-gen + steady-state are now dominated
+  by mesh construction (`setValueM4` / `Object3D` / link tubes / `generateUUID`). Cutting it is a real refactor
+  (instance/merge static meshes), worth it only to push map sizes much further. Plus a ~5% runtime `update`
+  still to identify. **Reprofile when things change** — don't pre-optimize.
+- [ ] Still open in their sections below: **Building perf + lifecycle**, the **Map-size preset** warning popup +
+  per-preset tuning. (The **Pathfinding-scalability** flow-field cost is largely handled by the flat arrays.)
 
 ## ⚑ Verify in-browser first (`./start.sh`)
 Built headless recently, not yet confirmed on screen — eyeball these, then move on:
@@ -90,9 +102,10 @@ be matched. **Desktop-only**; mobile is blocked.
 - [ ] **Explosion shader tuning (optional).** GLSL consts in `XmpShaders.VOLUME_FRAG` (`NOISE_FREQ`,
   `DISPLACE`, `DENSITY_GAIN`, `STEPS`) + the rise/grow curve in `XmpBurst.update`; promote to uniforms if the
   fireball needs frequent live tuning.
-- [ ] **Pathfinding scalability.** Heat map is a bucketed Dijkstra (O(cells), async via
-  `Pathfinding.computeFieldAsync`) but still **per-portal full-map**. Want: multi-mode nav (flow fields near,
-  cheap nav far), a coarser `pathResolution` lever, ambient NPCs, a field viz.
+- [ ] **Pathfinding scalability.** The per-cell churn is solved (phase D: the Dijkstra + vector field + flat
+  `VectorField` are now `IntArray`/`DoubleArray`, no `Pos`-keyed HashMaps — flow-field build is ~16× cheaper).
+  Still **per-portal full-map**, though: the remaining want is multi-mode nav (flow fields near, cheap nav far)
+  + a coarser `pathResolution` lever for very large maps, plus a field viz.
 - [ ] **Humanoid glTF models** — people are head-sized spheres at head height today; swap in real models
   (pairs with the colony-management attributes, icebox).
 
@@ -110,11 +123,12 @@ be matched. **Desktop-only**; mobile is blocked.
   window size. The "real UI" we want to ship behind.
 
 ## Onboarding
-- [ ] **Map-size pass.** (a) A **warning popup for large maps** — "reduced FPS to be expected" before the
-  build, so the player opts in knowingly. (b) **Optimize the three size presets** (Small / Normal / Large) —
-  profile + tune each (portal count, NPC density, build time, runtime FPS) so each hits a sane quality/perf
-  target. (c) **Drop square maps** if any remain (the round-field option already squares; rectangular presets
-  are the keepers) — confirm and remove.
+- [ ] **Map-size pass.** Presets are now spaced by **area**, not linear scale: `Sim.NORMAL_SCALE` is the
+  area-midpoint of Small (1.0) and Large, and Large was grown post-phase-D to **3.11** (≈ 9.7× the screen, double
+  the earlier area). Remaining: (a) a **warning popup for large maps** — "reduced FPS to be expected" before the
+  build, so the player opts in knowingly; (b) per-preset **runtime-FPS tuning** on a real GPU now that the build
+  cost is cheap (entity count, not build time, is the constraint — find where Large bites); (c) **drop square
+  maps** if any remain (the round field already inscribes a circle; rectangular presets are the keepers).
 - [ ] **Location selection polish** — Home / nearest city via Geolocation; a curated preset list; Random;
   surface the free-form search on the onboarding screen (it only exists in-game now).
 - [ ] **Location list import / export** — let the player export the current location catalogue (the
