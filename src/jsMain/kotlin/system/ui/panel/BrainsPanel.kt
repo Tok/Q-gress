@@ -48,6 +48,9 @@ object BrainsPanel {
 
     fun update() {
         if (!ensure()) return
+        // Pure per-frame rendering (genome cards + the live net-activation canvas) — skip it entirely while the
+        // BRAINS tab is hidden (a measured RT cost); it re-renders the current net when the player opens the tab.
+        if (!Footer.isActive("brains")) return
         sides().forEach { faction ->
             renderIfChanged(faction)
             repaintActivation(faction) // live net activation (per frame, between the per-checkpoint card rebuilds)

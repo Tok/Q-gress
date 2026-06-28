@@ -46,17 +46,23 @@ object SliderHistoryPanel {
 
     fun update() {
         if (!ensure()) return
+        // Keep the history snapshot current even while the AI tab is hidden (cheap — only on a checkpoint
+        // change, ~once a minute) so the sparklines are complete whenever the player opens the tab.
+        val cps = Cycle.INSTANCE.checkpoints.toList().sortedBy { it.first }
+        val key = "${cps.size}:${cps.lastOrNull()?.first ?: 0}"
+        if (key != lastKey) {
+            lastKey = key
+            snapshot()
+            feed()
+        }
+        // The per-frame chart resize (a layout reflow — reads clientWidth) and the live ENL/RES value text only
+        // matter when the tab is actually on screen, so skip them otherwise (a measured per-frame RT cost).
+        if (!Footer.isActive("ai")) return
         resizeCharts() // stretch each sparkline to its (4-col) cell width, tracking footer maximize / resize
         SLOTS.forEachIndexed { i, q ->
             enlVals[i]?.textContent = pct(FactionPolicies.of(Faction.ENL).weight(q))
             resVals[i]?.textContent = pct(FactionPolicies.of(Faction.RES).weight(q))
         }
-        val cps = Cycle.INSTANCE.checkpoints.toList().sortedBy { it.first }
-        val key = "${cps.size}:${cps.lastOrNull()?.first ?: 0}"
-        if (key == lastKey) return // history unchanged — skip the snapshot + sparkline re-feed
-        lastKey = key
-        snapshot()
-        feed()
     }
 
     private fun snapshot() {

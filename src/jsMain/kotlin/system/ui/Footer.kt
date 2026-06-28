@@ -37,17 +37,25 @@ object Footer {
     /** The content element for a footer tab ("log" / "agents" / "ai"); builds the footer on first call. */
     fun tab(id: String): HTMLElement {
         build()
-        val bodyId = when (id) {
-            "agents" -> AGENTS_ID
-            "portals" -> PORTALS_ID
-            "brains" -> BRAINS_ID
-            "ai" -> AI_ID
-            "train" -> TRAIN_ID
-            "audio" -> AUDIO_ID
-            else -> LOG_ID
-        }
-        return document.getElementById(bodyId) as HTMLElement
+        return document.getElementById(bodyId(id)) as HTMLElement
     }
+
+    private fun bodyId(id: String): String = when (id) {
+        "agents" -> AGENTS_ID
+        "portals" -> PORTALS_ID
+        "brains" -> BRAINS_ID
+        "ai" -> AI_ID
+        "train" -> TRAIN_ID
+        "audio" -> AUDIO_ID
+        else -> LOG_ID
+    }
+
+    /**
+     * Whether the [id] tab ("ai" / "brains" / …) is the one currently shown — i.e. the footer is open and that
+     * tab is active. Lets a footer-tab panel skip its expensive per-frame update (chart resize / canvas viz)
+     * while it's hidden behind another tab.
+     */
+    fun isActive(id: String): Boolean = built && !collapsed && active == bodyId(id)
 
     private fun build() {
         if (built) return
