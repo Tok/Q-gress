@@ -1,40 +1,52 @@
 package config
 
+import kotlin.math.PI
+import kotlin.math.pow
+import kotlin.math.roundToInt
 import kotlin.math.sqrt
 
 /**
- * Simulation/grid extent — independent of the screen ([Dim], which drives the HUD). The world
- * covers some multiple of the screen ([scale]) so the playable area spans the pitched view, not
- * just the top-down footprint. The Pos→metre bridge stays anchored at zoom 18.
+ * Simulation/grid extent — independent of the screen ([Dim], which drives the HUD). The Pos→metre bridge stays
+ * anchored at zoom 18, so a sim pixel is a fixed real-world size ([MPP_REF]).
  *
- * Size is chosen at onboarding (the map-size step): bigger = more grid cells = a slower build and
- * pricier per-portal flow fields (each portal builds a full-map field). Bumped up from the original
- * Large=2.0 now that the flat-array flow fields + targeting cut world-gen ~2×; "Small" is way smaller.
+ * **Sizes are chosen by real-world AREA (km²), not a screen multiple** — area is the meaningful measure (a "1 km²"
+ * map covers ~1 km² of ground regardless of the window). Each preset [TINY_KM2]…[GIANT_KM2] maps to a SQUARE
+ * whose inscribed circle (the round play field) covers that area; [sideForArea] does the conversion. Bigger =
+ * more grid cells = a slower build and pricier per-portal flow fields (each portal builds a full-map field), so
+ * the **per-portal pathfinding cost — not the raw area — is what bounds how big we go**: [suggestedPortals] grows
+ * the portal count only sub-linearly (∛), and [GIANT_KM2] is warned at onboarding. NPC population is area-linear
+ * but capped (see [ConfigMath.npcPopulation]), so it won't run away on the big presets.
  *
- * Tuning note: the play area grows with [scale]² so an entity count (portals/NPCs, hence per-frame
- * GPU draw + sim CPU) grows with it too — bump [LARGE_SCALE] for bigger maps, but each +X% area is
- * roughly +X% runtime cost. World-gen has headroom now; runtime FPS is the constraint.
+ * Area is NOMINAL (computed at the equator reference [MPP_REF]); the real on-map area shrinks by ~cos²(latitude),
+ * but sizing the grid nominally keeps the cell count — and therefore perf — predictable everywhere.
  */
 object Sim {
-    const val SMALL_SCALE = 1.0
+    /** Metres per sim pixel at the zoom-18 anchor, equator (512-px tiles: earthCircumference/512 ÷ 2¹⁸). The
+     *  real value is ×cos(lat); we size grids by this nominal value so perf doesn't swing with latitude. */
+    const val MPP_REF = 78271.516964 / 262144.0 // ≈ 0.2986 m/px
 
-    // Grew the largest map's PLAY AREA in steps as the perf work freed headroom (area ∝ scale²): linear scale
-    // 2.0 → 2.2 → 3.11 → 5.0. Area is now a round 25× the screen footprint (≈ 2.6× the previous 3.11²).
-    const val LARGE_SCALE = 5.0
+    // Map-size presets by play-area in km². "tiny" is the title-screen arena, "mid" the onboarding default,
+    // "giant" the warned perf-heavy ceiling. Portal count (the pathfinding driver) follows area sub-linearly.
+    const val TINY_KM2 = 0.10
+    const val SMALL_KM2 = 0.5
+    const val MID_KM2 = 1.0
+    const val LARGE_KM2 = 2.0
+    const val GIANT_KM2 = 5.0
 
-    /**
-     * Normal sits at the **area midpoint** of Small and Large. Play area grows with the square of the scale, so
-     * we average the squares and take the root (√((1²+5²)/2) = √13 ≈ 3.61). We can't weight the presets by
-     * walkability — unknown until the grid is built — so we balance the raw play-area instead: Normal's area is
-     * exactly halfway between Small's and Large's.
-     */
-    val NORMAL_SCALE = sqrt((SMALL_SCALE * SMALL_SCALE + LARGE_SCALE * LARGE_SCALE) / 2.0)
+    // Absolute sim-pixel clamp for custom (manual / URL) sizes — window-independent now that presets are absolute.
+    private const val MIN_SIDE = 600
+    private const val MAX_SIDE = 9000
 
-    private const val MAX_SCALE = 5.2 // URL w/h clamp — kept just above Large so the preset isn't clamped
+    /** Square side (sim px) whose inscribed circle covers [km2] of (nominal) ground: area = π·(side·MPP/2)². */
+    fun sideForArea(km2: Double): Int = (2.0 * sqrt(km2 * 1_000_000.0 / PI) / MPP_REF).roundToInt()
 
-    var width = (Dim.width * NORMAL_SCALE).toInt()
+    /** Suggested start-portal count for a [km2] map — sub-linear (∛) so the per-portal flow-field cost stays
+     *  bounded as the map grows (≈ 4 · 6 · 8 · 10 · 14 across tiny…giant). */
+    fun suggestedPortals(km2: Double): Int = (8.0 * km2.pow(1.0 / 3.0)).roundToInt().coerceAtLeast(3)
+
+    var width = sideForArea(MID_KM2)
         private set
-    var height = (Dim.height * NORMAL_SCALE).toInt()
+    var height = sideForArea(MID_KM2)
         private set
 
     /** Round play field (inscribed circle) instead of the rectangle — chosen at onboarding (default on). */
@@ -52,10 +64,10 @@ object Sim {
     /** Effective scale vs the screen — drives the framed display zoom (MapController). */
     val scale: Double get() = maxOf(width.toDouble() / Dim.width, height.toDouble() / Dim.height)
 
-    /** Set the play-area size (clamped to a sane range around the screen size). */
+    /** Set the play-area size (clamped to a sane absolute pixel range — see [MIN_SIDE]/[MAX_SIDE]). */
     fun setSize(w: Int, h: Int) {
-        width = w.coerceIn(Dim.width, (Dim.width * MAX_SCALE).toInt())
-        height = h.coerceIn(Dim.height, (Dim.height * MAX_SCALE).toInt())
+        width = w.coerceIn(MIN_SIDE, MAX_SIDE)
+        height = h.coerceIn(MIN_SIDE, MAX_SIDE)
     }
 
     /**
@@ -68,9 +80,6 @@ object Sim {
         width = w
         height = h
     }
-
-    fun presetWidth(scaleOf: Double) = (Dim.width * scaleOf).toInt()
-    fun presetHeight(scaleOf: Double) = (Dim.height * scaleOf).toInt()
 
     // Spawn margins where no portals are placed (absolute, same as Dim's).
     val leftOffset = Dim.leftOffset

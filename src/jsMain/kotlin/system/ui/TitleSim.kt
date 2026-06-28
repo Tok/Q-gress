@@ -75,7 +75,7 @@ object TitleSim {
         }
         hideDomWordmark() // the 3D letters replace it — hide the flat DOM text immediately (no flash)
         window.addEventListener("pointerdown", { Sound.enableAudio() }) // autoplay: unlock on first gesture
-        Sim.setSize(Sim.presetWidth(Sim.SMALL_SCALE), Sim.presetHeight(Sim.SMALL_SCALE)) // small → fast to build
+        Sim.sideForArea(Sim.TINY_KM2).let { Sim.setSize(it, it) } // tiny square arena → fast to build
         Sim.roundField = true // a centered round arena → portals cluster around the centre (border stays hidden)
         VectorFieldOverlay.flashEnabled = false // no flow-field flashes on the title
         Config.startPortals = TITLE_PORTALS

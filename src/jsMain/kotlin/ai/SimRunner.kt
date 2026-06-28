@@ -117,7 +117,7 @@ object SimRunner {
         Config.startStage = if (setup.quickStart) StartStage.END else StartStage.START
         World.grid = grid
         // Size the arena to THIS grid (not the live onboarding default) and make it circular, so a match is a
-        // self-contained round play field — deterministic regardless of NORMAL_SCALE, with the field/play-area
+        // self-contained round play field — deterministic regardless of the onboarding preset, with the play-area
         // circle inscribed in the match grid. A mid-game eval restores the player's real size via WorldSnapshot.
         Sim.setExactSize((grid.keys.maxOf { it.x } + 1).toInt() * Pos.res, (grid.keys.maxOf { it.y } + 1).toInt() * Pos.res)
         Sim.roundField = true

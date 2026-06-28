@@ -324,32 +324,41 @@ object Onboarding {
         val heightInput = numberInput(Sim.height)
         val portalsInput = numberInput(defaultPortals)
 
+        // Heavy-map confirmation — only shown for Giant (built early so the preset closures below can toggle it).
+        val warn = heavyMapWarn()
+
         val presets = div("onboardRow")
         val presetBtns = mutableListOf<HTMLButtonElement>()
         val applyPreset = mutableListOf<() -> Unit>()
-        // Portal count scales with map size (Small 5 · Normal 8 · Large 13); people scale automatically.
+        // Sizes are picked by play-AREA (km²); portal count (the pathfinding driver) follows area sub-linearly,
+        // people scale automatically. "Giant" is the warned, perf-heavy ceiling.
         listOf(
-            Triple("Small", Sim.SMALL_SCALE, 5),
-            Triple("Normal", Sim.NORMAL_SCALE, 8),
-            Triple("Large", Sim.LARGE_SCALE, 13),
-        ).forEach { (label, sc, portals) ->
+            "Tiny" to Sim.TINY_KM2,
+            "Small" to Sim.SMALL_KM2,
+            "Mid" to Sim.MID_KM2,
+            "Large" to Sim.LARGE_KM2,
+            "Giant" to Sim.GIANT_KM2,
+        ).forEach { (label, km2) ->
             lateinit var btn: HTMLButtonElement
             val apply: () -> Unit = {
-                widthInput.value = Sim.presetWidth(sc).toString()
-                heightInput.value = Sim.presetHeight(sc).toString()
-                portalsInput.value = portals.toString()
+                val side = Sim.sideForArea(km2)
+                widthInput.value = side.toString()
+                heightInput.value = side.toString()
+                portalsInput.value = Sim.suggestedPortals(km2).toString()
+                warn.style.display = if (km2 >= Sim.GIANT_KM2) "block" else "none"
                 presetBtns.forEach { it.removeClass("onboardActive") }
                 btn.addClass("onboardActive")
             }
-            btn = button(label, "onboardPreset") { apply() }
+            btn = button("$label · ${fmtKm2(km2)} km²", "onboardPreset") { apply() }
+            btn.title = "≈ ${fmtSqMi(km2)} sq mi" // hover: imperial conversion
             presetBtns.add(btn)
             applyPreset.add(apply)
             presets.appendChild(btn)
         }
         screen.appendChild(presets)
-        // Default to Small: actually APPLY its size/portals to the inputs (not just highlight it) so hitting
-        // Next without touching a preset uses Small (the lightest/fastest default).
-        applyPreset.getOrNull(0)?.invoke()
+        // Default to Mid (index 2): actually APPLY its size/portals to the inputs (not just highlight it) so
+        // hitting Next without touching a preset uses Mid.
+        applyPreset.getOrNull(2)?.invoke()
 
         val fields = div("onboardRow")
         fields.appendChild(labeledInput("Width", widthInput))
@@ -362,8 +371,6 @@ object Onboarding {
         val stagePick = stageRow(screen, Config.startStage)
         val roundCheck = checkRow(screen, "Round field (play inside an inscribed ellipse)", Sim.roundField)
 
-        val warn = div("onboardWarn")
-        warn.textContent = "Larger maps take longer to generate and use more processing whenever portals spawn."
         screen.appendChild(warn)
 
         val next = button("Next →", "topButton displayFont onboardStart") {
@@ -383,6 +390,17 @@ object Onboarding {
         }
         screen.appendChild(navRow(onBack, next))
     }
+
+    /** The heavy-map confirmation line, hidden until the Giant preset is picked. */
+    private fun heavyMapWarn(): HTMLElement = div("onboardWarn").also {
+        it.textContent = "Giant maps are heavy: much longer to generate, and the per-portal pathfinding can " +
+            "drag FPS. Pick a smaller size if it stutters."
+        it.style.display = "none"
+    }
+
+    // Map-area labels: km² on the button (trim a trailing .0), an imperial sq-mi conversion in the hover title.
+    private fun fmtKm2(km2: Double): String = km2.toInt().let { if (km2 == it.toDouble()) it.toString() else km2.toString() }
+    private fun fmtSqMi(km2: Double): String = (km2 * 0.386102).asDynamic().toFixed(2) as String
 
     // The wizard footer: a [← Back | <forward> →] row. Back invokes the screen's onBack (same as Esc).
     private fun navRow(onBack: () -> Unit, forward: HTMLButtonElement): HTMLElement {
