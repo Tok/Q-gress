@@ -1,8 +1,6 @@
 package system.ui
 import World
-import agent.Agent
 import agent.Faction
-import agent.StuckTracker
 import config.*
 import config.Sim
 import extension.CanvasFactory
@@ -13,7 +11,6 @@ import kotlinx.dom.addClass
 import kotlinx.dom.removeClass
 import org.w3c.dom.*
 import org.w3c.dom.events.Event
-import portal.Portal
 import system.Cycle
 import system.HeadlessRun
 import system.Simulation
@@ -28,10 +25,7 @@ import system.audio.Tts
 import system.building.BuildingTransparency
 import system.display.Scene3D
 import system.display.Showcases
-import system.display.SunController
 import system.grid.GridCapture
-import system.grid.GridConnectivity
-import system.map.Attribution
 import system.map.MapCamera
 import system.map.MapController
 import system.map.Navigation
@@ -47,30 +41,24 @@ import system.ui.MenuControls
 import system.ui.Onboarding
 import system.ui.VolumeControl
 import system.ui.panel.DropRatesPanel
-import system.ui.panel.TuningPanel
 import util.Debug
 import util.GameUrl
 import util.GameplayPrefs
-import util.NameGen
-import util.Profiler
-import util.Rng
 import util.data.*
 import util.data.toJson
-import util.freshSeed
 import kotlin.js.Json
 
 @Suppress("UnusedParameter") // external JS global; param describes the contract
 external fun encodeURIComponent(uri: String): String
 
 object Bootstrap {
-    private var coloredMap = true // terrain colour on (eases in after world-gen); Menu toggle flips it
-    private const val LOCATION_LABEL_ID = "locationLabel"
+    internal const val LOCATION_LABEL_ID = "locationLabel"
 
     // The actually-loaded location (set by setLoadedLocation) — named in the top bar, and the target
-    // a Reset reloads onto.
-    private var currentLng = Locations.DEFAULT.lng
-    private var currentLat = Locations.DEFAULT.lat
-    private var currentLocationName = Locations.DEFAULT.displayName
+    // a Reset reloads onto. [WorldBuilder] reads these when spawning + announcing the world.
+    internal var currentLng = Locations.DEFAULT.lng
+    internal var currentLat = Locations.DEFAULT.lat
+    internal var currentLocationName = Locations.DEFAULT.displayName
 
     /** The loaded place name (for flavouring generated content, e.g. agent handles). */
     fun locationName() = currentLocationName
@@ -79,7 +67,7 @@ object Bootstrap {
     fun isNotRunningInBrowser() = !isRunningInBrowser()
     fun isLocal() = isRunningInBrowser() && document.location?.href?.contains("localhost") ?: false
 
-    private fun tick() {
+    internal fun tick() {
         if (!World.isReady || HeadlessRun.active) return // paused during an in-browser headless eval (trainer / leaderboard)
         Simulation.stepEntities() // shared functional-core step (agents + NPCs + stuck tracker)
         window.requestAnimationFrame {
@@ -208,12 +196,12 @@ object Bootstrap {
             GameUrl.isAutoStart() -> {
                 chooseUserFaction(faction ?: Faction.random())
                 loadUrlLocation(urlCenter, Locations.DEFAULT.displayName)
-                initWorld(centerOrDefault())
+                WorldBuilder.initWorld(centerOrDefault())
             }
             faction != null && urlCenter != null -> { // deep link → straight to load
                 chooseUserFaction(faction)
                 loadUrlLocation(urlCenter, "Custom location")
-                initWorld(centerOrDefault())
+                WorldBuilder.initWorld(centerOrDefault())
             }
             else -> runOnboarding()
         }
@@ -347,35 +335,11 @@ object Bootstrap {
         if (World.isReady) window.requestAnimationFrame { HudRenderer.redraw() }
     }
 
-    private fun initWorld(center: Json) {
-        // Size + seed from a shared link (if present) → reproduce the exact world; else a fresh seed
-        // (captured for sharing). Set before generation, since Rng.random is the sole RNG source.
-        GameUrl.size()?.let { Sim.setSize(it.first, it.second) }
-        // Apply the rest of the onboarding settings if present in the URL (deep link / reload handoff).
-        GameUrl.portals()?.let { Config.startPortals = it }
-        GameUrl.npcMultiplier()?.let { Config.npcMultiplier = it }
-        GameUrl.startStage()?.let { Config.startStage = it }
-        GameUrl.round()?.let { Sim.roundField = it }
-        Rng.seed(GameUrl.seed() ?: freshSeed())
-        Profiler.beginWorldGen()
-        Onboarding.close() // dismiss the onboarding screen (it loads without a reload)
-        // Staged loading overlay, up before the first tile request (the world build runs ~2 min on Big).
-        LoadingOverlay.show()
-        MapController.loadMaps(center, callback = onMapload())
-    }
-
     private fun closePopup() {
         (document.getElementById("popup") as? HTMLDivElement)?.addClass("invisible")
     }
 
-    private fun createQSliders(fact: Faction) {
-        // One merged tuning list in the dock's TUNE tab (Actions, a divider, then Destinations),
-        // instead of the two separate floating slider panes.
-        TuningPanel.build(fact, GameUrl.isReadOnly())
-        GameUrl.tune()?.let { TuningPanel.importTuning(it) } // restore shared-link tuning
-    }
-
-    private fun chooseUserFaction(fact: Faction) {
+    internal fun chooseUserFaction(fact: Faction) {
         Sound.enableAudio() // first user gesture → resume audio (autoplay policy)
         closePopup()
         if (World.userFaction != null) {
@@ -426,7 +390,7 @@ object Bootstrap {
         closePopup()
     }
 
-    private fun onMapClick(event: dynamic) {
+    internal fun onMapClick(event: dynamic) {
         Sound.enableAudio() // first user gesture → resume audio (autoplay policy)
         // Ground point under the cursor; MapLibre fires "click" only for a click, not after a drag.
         val pos = MapController.eventToSimPos(event) ?: return
@@ -439,7 +403,7 @@ object Bootstrap {
         }
     }
 
-    private fun onMapMove(event: dynamic) {
+    internal fun onMapMove(event: dynamic) {
         // Hover affordance only — highlight the portal under the cursor (nothing is buildable now).
         val pos = MapController.eventToSimPos(event)
         if (pos != null && pos.hasClosePortalForClick()) {
@@ -457,123 +421,13 @@ object Bootstrap {
     fun rightSliderWidth() = maybeWidth("right-sliders") ?: 213
     fun rightSliderHeight() = maybeHeight("right-sliders") ?: 145
 
-    private fun createButton(id: String, className: String, text: String, callback: ((Event) -> Unit)?): HTMLButtonElement {
+    internal fun createButton(id: String, className: String, text: String, callback: ((Event) -> Unit)?): HTMLButtonElement {
         val button = document.createElement("BUTTON") as HTMLButtonElement
         button.id = id
         button.addClass(className)
         button.onclick = callback
         button.innerText = text
         return button
-    }
-
-    private fun createPortals(callback: () -> Unit) {
-        val total = Config.startPortals.coerceAtLeast(Config.minPortals) // never gen below the floor (always ≥5)
-        fun createPortal(callback: () -> Unit, count: Int) {
-            document.defaultView?.setTimeout(fun() {
-                if (count > 0) {
-                    val newPortal = Portal.createRandom()
-                    LoadingOverlay.building(
-                        LoadingOverlay.PCT_WORLD,
-                        LoadingOverlay.PCT_PEOPLE,
-                        total - count + 1,
-                        total,
-                        "Creating portal ${newPortal.name}",
-                    )
-                    World.allPortals.add(newPortal)
-                    // Render the spawning world behind the (now translucent) loading screen: the new
-                    // portal grows in. Its flow field is computed async and, once ready, joins the
-                    // paced VectorFieldOverlay sweep (driven by Scene3D.render, the continuous loop).
-                    Scene3D.sync()
-                    createPortal(callback, count - 1)
-                } else {
-                    callback()
-                }
-            }, 0)
-        }
-        LoadingOverlay.detail("Creating portals…")
-        World.allPortals.clear()
-        createPortal(callback, total)
-    }
-
-    private fun createAgents(callback: () -> Unit) {
-        World.allAgents.clear()
-        StuckTracker.reset() // fresh world → drop stale stuck-history (?debug)
-        NameGen.reset() // fresh roster → fresh handle dedupe
-        LoadingOverlay.detail("Deploying ${Config.startFrogs()} ENL + ${Config.startSmurfs()} RES agents…")
-        (1..Config.startFrogs()).forEach {
-            World.allAgents.add(Agent.createFrog(World.grid))
-        }
-        (1..Config.startSmurfs()).forEach {
-            World.allAgents.add(Agent.createSmurf(World.grid))
-        }
-        World.allNonFaction.clear()
-        // Auto-size the population for this map + location (walkability is known now the grid is built);
-        // held constant afterwards by 1-for-1 replacement on recruit, so we never run out of recruits.
-        // Curated showpiece (title-eligible) locations count as tourist hotspots → a crowd bonus.
-        val tourist = Locations.byCoords(currentLng, currentLat)?.title ?: false
-        Config.maxNonFaction = Config.npcPopulation(Sim.width, Sim.height, World.walkability, tourist)
-        World.createNonFaction(callback, Config.maxFor())
-    }
-
-    private fun createAgentsAndPortals(callback: () -> Unit) = createPortals(fun() {
-        Profiler.mark("portals (${World.allPortals.size})")
-        Profiler.flushFields() // most per-portal flow fields are queued by now
-        createAgents(callback)
-    })
-
-    private fun onMapload() = fun(grid: Grid) {
-        World.grid = grid
-        Profiler.mark("maps + grid (${grid.size} cells)")
-        if (World.grid.isEmpty()) {
-            console.error("Grid is empty!")
-        }
-        // Gate mostly-water / unplayable locations before the expensive world build. Auto-start
-        // (dev/headless) is exempt so tests never block.
-        if (World.walkability < GridConnectivity.MIN_WALKABILITY && !GameUrl.isAutoStart()) {
-            showUnplayableGate()
-            return
-        }
-        // Anchor the 3D scene BEFORE spawning portals: Portal.create → PortalNames.nameFor projects
-        // POI/street lng/lat through Scene3D.lngLatToSimPos, which throws until Scene3D is registered.
-        // Registering first means portals actually adopt their real map names (else all fall back to
-        // the random generator).
-        MapController.enable3D()
-        // Sample the DEM height grid BEFORE spawning portals (+ schedule retries as tiles stream in), so the
-        // flow-field arrows that flash during world-gen sit on the terrain instead of at sea level. Without
-        // this the first build often shows the vectors too low (heights weren't ready); a re-sample after the
-        // Home view settles (below) keeps them accurate.
-        Scene3D.onTerrainChanged()
-        MapCamera.startBuildCinematic() // gentle orbit while portals + people spawn
-        LoadingOverlay.stage(LoadingOverlay.PCT_WORLD, "Building world…")
-        createAgentsAndPortals {
-            LoadingOverlay.detail("Computing routes & starting simulation…")
-            // Start the game with nothing selected (the vector field flashes itself on new portals).
-            Scene3D.selected = null
-            if (World.userFaction == null) {
-                chooseUserFaction(Faction.random())
-            }
-            createQSliders(World.userFactionOrThrow())
-            Profiler.mark("agents+NPCs (${World.allAgents.size}+${World.allNonFaction.size})")
-            GameLoop.start { tick() }
-            World.isReady = true
-            console.log("[perf] WORLD READY") // headless profiler waits on this before the runtime window
-            FpsMeter.start() // arms the FPS readout (menu-toggled display + ?debug console capture)
-            document.getElementById("top-controls")?.removeClass("invisible") // reveal the toolbar now
-            document.getElementById(LOCATION_LABEL_ID)?.removeClass("invisible") // …and the location name (in #hudTop, not the toolbar)
-            Tts.announceLocation(currentLocationName) // scanner reads the theatre of operations as play begins
-            Attribution.collapse() // we've left the title → tuck the map credit into its (i)
-            MapController.showSatellite() // terrain stays grayscale (set at map-load) until the fade below
-            Navigation.setup()
-            MapController.bindInteractions(::onMapClick, ::onMapMove)
-            LoadingOverlay.done()
-            MapCamera.stopBuildCinematicAndHome() // settle to the Home view (top-down over the play area)
-            if (coloredMap) MapController.fadeInColor() else MapController.setColored(false) // colour eases in post-build
-            Scene3D.onTerrainChanged() // sample the DEM height grid (objects sit on the terrain)
-            // Once the Home view has settled (buildings on screen), build our own building meshes +
-            // colliders (so debris lands on roofs and the sun casts real building shadows).
-            window.setTimeout({ MapController.buildBuildingColliders() }, 1600)
-            SunController.setSpeed(false) // the intro's fast sun sweep eases to a slow drift in-game
-        }
     }
 
     /** Record (and name in the top bar) the location the world actually loaded at. */
@@ -628,27 +482,8 @@ object Bootstrap {
         return span
     }
 
-    /** Block the build when the chosen area is mostly water/blocked; offer to pick another location. */
-    private fun showUnplayableGate() {
-        LoadingOverlay.done()
-        val screen = document.createElement("div") as HTMLDivElement
-        screen.id = "unplayableGate"
-        screen.addClass("onboardScreen")
-        val title = document.createElement("div") as HTMLDivElement
-        title.addClass("onboardTitle")
-        title.textContent = "Not enough ground to play"
-        screen.append(title)
-        val hint = document.createElement("div") as HTMLDivElement
-        hint.addClass("onboardHint")
-        hint.textContent =
-            "“$currentLocationName” is only ${(World.walkability * 100).toInt()}% walkable — mostly water/blocked. Pick another."
-        screen.append(hint)
-        screen.append(createButton("gateNewGame", "topButton displayFont onboardStart", "Choose another location") { doNewGame() })
-        document.body?.append(screen)
-    }
-
     /** New Game: drop all URL params and reload → the onboarding flow runs from scratch. */
-    private fun doNewGame() {
+    internal fun doNewGame() {
         val loc = document.location
         document.location?.href = (loc?.origin ?: "") + (loc?.pathname ?: "/")
     }
