@@ -83,7 +83,9 @@ CSS design-token dedup is done too: glass/tint/blur literals route through `:roo
 
 ## Onboarding
 - [ ] **Map-size per-preset tuning + dynamic field.** Presets are km²-based (Tiny 0.1 · Small 0.2 default ·
-  Mid 0.5 · Large 1 · Giant 2; Large + Giant warned at ≥ 1 km²) with sub-linear portal counts. Remaining: (a) per-preset **runtime-FPS tuning**
+  Mid 0.5 · Large 1 · Giant 2; Large + Giant warned at ≥ 1 km²) with sub-linear portal counts **and now
+  size-scaled rosters** (`Sim.suggestedAgents` mid-game seed 3·5·8·12·16; `Sim.maxAgents` cap 8·16·24·28·32;
+  recruiting grows rosters to the cap, nothing shrinks them). Remaining: (a) per-preset **runtime-FPS tuning**
   on a real GPU (entity count, not build time, is the constraint — find where Large/Giant bite); (b) the
   **dynamic grow/move the play area mid-game** idea (kept in mind during the SimRunner area-decoupling); (c)
   the deferred **mesh instancing** is what would let the big presets run smoothly (see Perf).
