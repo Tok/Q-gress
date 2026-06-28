@@ -66,8 +66,6 @@ CSS design-token dedup is done too: glass/tint/blur literals route through `:roo
   (pairs with the colony-management attributes, icebox).
 
 ## UI
-- [ ] **Vector-field viz toggle** — a Menu **checkbox to turn the flow-field arrow visualization off**
-  in-game. Right now the arrows auto-flash on new portals with no off switch; some players will want them gone.
 - [ ] **Portal-discovery-rate slider** — discovery (`Cycle.managePortalDensity` / `Config.portalChurnRate`)
   feels too fast now; expose it as a tuning **slider next to the combat-dynamics slider** so the neutral
   portal churn pace is adjustable (it's a system process, not an agent action — see MECHANICS).
