@@ -132,6 +132,10 @@ data class Portal(
     fun deployMod(deployer: Agent, mod: Mod) {
         val free = ModSlot.values().firstOrNull { !mods.containsKey(it) } ?: return
         mods[free] = mod
+        // A heat sink instantly clears the portal-wide hack cooldown on attach (it also shortens the window
+        // going forward via [cooldownFactor]). Wiping the per-agent hack history resets everyone's timer +
+        // any burnout to zero, so the portal is hackable again immediately.
+        if (mod is HeatSink) lastHacks.clear()
         deployer.removeXm(modCost(mod))
         deployer.addAp(MOD_DEPLOY_AP)
         deployer.inventory.items.remove(mod)
