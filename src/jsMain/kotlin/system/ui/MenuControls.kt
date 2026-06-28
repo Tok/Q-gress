@@ -72,11 +72,6 @@ object MenuControls {
         menu.append(slider("Building shake", Config.buildingShakeMultiplier, Spec(0.0..2.0, 0.1)) { Config.buildingShakeMultiplier = it })
         menu.append(sectionHead("Graphics"))
         menu.append(
-            checkbox("antialiasToggle", "Anti-aliasing (MSAA)", GraphicsPrefs.antialias) {
-                GraphicsPrefs.setAntialias(it)
-            }.also { it.title = "Hardware multisampling on the map's WebGL context — applies on the next reload / new game" },
-        )
-        menu.append(
             checkbox("highShadowsToggle", "High-detail shadows", GraphicsPrefs.highShadows) {
                 GraphicsPrefs.setHighShadows(it)
                 SunController.setShadowDetail(it)
