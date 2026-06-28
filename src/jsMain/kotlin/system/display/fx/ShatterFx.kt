@@ -22,8 +22,8 @@ object ShatterFx {
     private const val SHARD_BRIGHT = 1.4 // shards share the orb GlassShader, a touch brighter so the pieces read
     private const val SHARD_SINK_MAX = 1.4 // seconds after its life to no-clip down + despawn (hard cap)
     private const val SHARD_GONE_M = 4.0 // …or drop it once it's sunk this far below the terrain floor
-    private const val SHARD_LIFE_MIN = 6.0
-    private const val SHARD_LIFE_MAX = 10.0
+    private const val SHARD_LIFE_MIN = 8.0
+    private const val SHARD_LIFE_MAX = 12.0
     private const val SHARD_SPIN = 1.8 // max tumble rad/s — a gentle turn
     private const val SHARD_GROUP = 2 // shards collide with ground/pole only…
     private const val SHARD_MASK = 1 // …not each other (their boxes all sit at the orb centre)
