@@ -3,7 +3,6 @@ import World
 import agent.Agent
 import agent.Balance
 import agent.Faction
-import agent.action.ActionItem
 import config.Config
 import config.IngressFacts
 import config.Sim
@@ -421,7 +420,7 @@ data class Portal(
         World.allAgents.forEach { agent ->
             if (agent.actionPortal == this) {
                 agent.actionPortal = World.randomPortal()
-                agent.action.start(ActionItem.WAIT)
+                agent.action.end() // its target vanished → re-select next tick (never park in WAIT)
             }
         }
     }

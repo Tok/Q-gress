@@ -82,6 +82,9 @@ data class Agent(
             action.item == ActionItem.MOVE -> moveCloserToDestinationPortal()
             action.item == ActionItem.EXPLORE -> wanderStep() // roam toward open ground (the no-idle fallback)
             action.item == ActionItem.RECRUIT -> recruitStep() // walk up to the NPC, then meet (handled even while "busy")
+            // WAIT is never a chosen behaviour — it's only the default/just-ended state. Re-select a real action
+            // immediately (recruit / seek a portal) so agents never sit idle, even on the title scenes.
+            action.item == ActionItem.WAIT -> ActionSelector.doSomethingElse(this)
             action.isBusy() -> this
             else -> ActionSelector.doSomethingElse(this)
         }
@@ -90,13 +93,19 @@ data class Agent(
     }
 
     fun moveElsewhere(): Agent {
-        // Last-resort default is a non-portal wander (roam open ground); everything else seeks a portal.
-        val newAgent = Rng.select(moveOptions(), { Movement.wander(this) }).invoke()
+        // Default is to go FIND a portal — a RANDOM one, so a blocked agent keeps getting fresh headings and
+        // frees itself — never an aimless wander / idle wait. Wander only when the board has no portals at all.
+        val newAgent = Rng.select(moveOptions(), { seekRandomPortalOrWander() }).invoke()
         // Force MOVE for the portal-seeking picks (incl. their no-op paths), but leave a wander fallback on its
         // own EXPLORE action so it actually roams open ground instead of heading to a portal.
         if (newAgent.action.item != ActionItem.EXPLORE) newAgent.action.start(ActionItem.MOVE)
         return newAgent
     }
+
+    // The no-portal-work fallback: head for a random portal (always available; a fresh heading each time, so a
+    // wedged agent slides free) — only roam open ground when the board genuinely has no portals.
+    private fun seekRandomPortalOrWander(): Agent =
+        if (World.allPortals.isNotEmpty()) Movement.moveToRandomPortal(this) else Movement.wander(this)
 
     // The weighted destination options for [moveElsewhere] — each gated by what's reachable/possible.
     private fun moveOptions(): List<Pair<Double, () -> Agent>> {
@@ -152,7 +161,7 @@ data class Agent(
     private fun moveCloserToDestinationPortal(): Agent {
         if (!World.isReady) {
             console.warn("World is not ready.")
-            return doNothing()
+            return this // init/teardown only — keep the action; re-selecting here would touch a half-built World
         }
         if (isAtActionPortal()) {
             action.end()
@@ -169,11 +178,10 @@ data class Agent(
         }
         velocity = Movement.move(velocity, force, skills.speed)
         val next = Movement.clampToPlayable(pos, Pos((pos.x + velocity.re).toInt(), (pos.y + velocity.im).toInt()))
-        if (next == pos) { // literally boxed in (not just looping) → end so act() re-targets immediately. Covers
-            action.end() // the title sim too, which runs act() but not StuckTracker/recoverIfStuck.
-            beelineTicks = 0
+        if (next == pos) { // boxed in (not just looping) → seek a fresh (random) portal so the new heading frees
+            beelineTicks = 0 // us; never park in WAIT. Works in the title sim too (no StuckTracker there).
             triedBeeline = false
-            return this
+            return moveElsewhere()
         }
         return this.copy(pos = next)
     }
@@ -187,10 +195,7 @@ data class Agent(
         }
         velocity = Movement.move(velocity, Movement.headingTo(pos, destination), skills.speed)
         val next = Movement.clampToPlayable(pos, Pos((pos.x + velocity.re).toInt(), (pos.y + velocity.im).toInt()))
-        if (next == pos) { // boxed in with nowhere to creep → drop the stroll so act() picks a fresh point/target
-            action.end()
-            return this
-        }
+        if (next == pos) return moveElsewhere() // boxed with nowhere to creep → seek a portal instead of idling
         return this.copy(pos = next)
     }
 
@@ -209,10 +214,9 @@ data class Agent(
             action.start(ActionItem.RECRUIT) // keep the meeting timer fresh until we actually arrive
             velocity = Movement.move(velocity, Movement.headingTo(pos, destination), skills.speed)
             val next = Movement.clampToPlayable(pos, Pos((pos.x + velocity.re).toInt(), (pos.y + velocity.im).toInt()))
-            if (next == pos) { // can't reach the NPC (boxed) → abort the recruit so act() re-selects next tick
+            if (next == pos) { // can't reach the NPC (boxed) → abort and seek a portal instead of idling
                 recruitTargetId = null
-                action.end()
-                return this
+                return moveElsewhere()
             }
             return this.copy(pos = next)
         }
@@ -229,9 +233,9 @@ data class Agent(
         val rawDiffX = (pos.xDiff(dest) * part).toInt()
         val rawDiffY = (pos.yDiff(dest) * part).toInt()
         val next = Movement.clampToPlayable(pos, Pos(pos.x - rawDiffX, pos.y - rawDiffY))
-        // Boxed approaching the in-range spot (attack/deploy) with no recovery of its own → end the action so
-        // act() re-rolls a fresh, likely-reachable destination point next tick instead of wedging on a dead end.
-        if (next == pos) action.end()
+        // Boxed approaching the in-range spot (attack/deploy) → seek a reachable target elsewhere instead of
+        // wedging on a dead end; never idle.
+        if (next == pos) return moveElsewhere()
         return this.copy(pos = next)
     }
 
@@ -274,9 +278,12 @@ data class Agent(
                 this
             }
             Attacker.isActionPossible(this) -> Attacker.performAction(this)
-            // Worthy target but too few XMPs right now — brief rest at the portal (roaming away abandons the
-            // assault); the WAIT lets act() re-select, and with no XMPs it won't re-pick attack.
-            else -> doNothing()
+            // Worthy target but too few XMPs right now — don't idle: end so act() re-selects (likely HACK to earn
+            // XMPs, or recruit / seek another portal). Resting wouldn't yield XMPs anyway (those come from hacking).
+            else -> {
+                action.end()
+                this
+            }
         }
     }
 
@@ -296,19 +303,11 @@ data class Agent(
                 if (Deployer.isActionPossible(this)) {
                     Deployer.performAction(this)
                 } else {
-                    doNothing() // brief rest at the portal to regain XM, then resume the build (roaming away abandons it)
+                    action.end() // can't deploy yet (low XM) → re-select (recharge / hack to earn XM) rather than idle
+                    this
                 }
             }
         }
-    }
-
-    // A brief WAIT — NOT aimless idle (an agent with nothing to do anywhere roams via the wander fallback).
-    // Two uses: the not-ready guard (init/teardown), and a short rest AT a portal to regain XM so the agent
-    // can finish its build/assault (capture→deploy→link needs the agent to stay put; roaming away abandons it
-    // and collapses field formation). A future roster game may add an explicit "recharge / stand down" instead.
-    private fun doNothing(): Agent {
-        action.start(ActionItem.WAIT)
-        return this
     }
 
     private fun findPortalsInAttackRange(level: XmpLevel): List<Portal> =
