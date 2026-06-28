@@ -168,7 +168,14 @@ data class Agent(
             actionPortal.vectors[pos.toShadow()] ?: Movement.headingTo(pos, actionPortal.location)
         }
         velocity = Movement.move(velocity, force, skills.speed)
-        return this.copy(pos = Movement.clampToPlayable(pos, Pos((pos.x + velocity.re).toInt(), (pos.y + velocity.im).toInt())))
+        val next = Movement.clampToPlayable(pos, Pos((pos.x + velocity.re).toInt(), (pos.y + velocity.im).toInt()))
+        if (next == pos) { // literally boxed in (not just looping) → end so act() re-targets immediately. Covers
+            action.end() // the title sim too, which runs act() but not StuckTracker/recoverIfStuck.
+            beelineTicks = 0
+            triedBeeline = false
+            return this
+        }
+        return this.copy(pos = next)
     }
 
     // The no-idle stroll (ActionItem.EXPLORE): roam straight toward a nearby open-ground [destination],
@@ -179,7 +186,12 @@ data class Agent(
             return this
         }
         velocity = Movement.move(velocity, Movement.headingTo(pos, destination), skills.speed)
-        return this.copy(pos = Movement.clampToPlayable(pos, Pos((pos.x + velocity.re).toInt(), (pos.y + velocity.im).toInt())))
+        val next = Movement.clampToPlayable(pos, Pos((pos.x + velocity.re).toInt(), (pos.y + velocity.im).toInt()))
+        if (next == pos) { // boxed in with nowhere to creep → drop the stroll so act() picks a fresh point/target
+            action.end()
+            return this
+        }
+        return this.copy(pos = next)
     }
 
     // Recruiting (ActionItem.RECRUIT): walk straight up to the target NPC (holding it in place), then stand
@@ -196,7 +208,13 @@ data class Agent(
         if (distanceToDestination() > Dim.maxDeploymentRange) {
             action.start(ActionItem.RECRUIT) // keep the meeting timer fresh until we actually arrive
             velocity = Movement.move(velocity, Movement.headingTo(pos, destination), skills.speed)
-            return this.copy(pos = Movement.clampToPlayable(pos, Pos((pos.x + velocity.re).toInt(), (pos.y + velocity.im).toInt())))
+            val next = Movement.clampToPlayable(pos, Pos((pos.x + velocity.re).toInt(), (pos.y + velocity.im).toInt()))
+            if (next == pos) { // can't reach the NPC (boxed) → abort the recruit so act() re-selects next tick
+                recruitTargetId = null
+                action.end()
+                return this
+            }
+            return this.copy(pos = next)
         }
         if (action.isBusy()) return this // standing together — the meeting (the head bobs in the render)
         return Recruiter.resolve(this, npc) // meeting over → roll the result
@@ -210,9 +228,11 @@ data class Agent(
         val part = skills.inRangeSpeed() / pos.distanceTo(dest)
         val rawDiffX = (pos.xDiff(dest) * part).toInt()
         val rawDiffY = (pos.yDiff(dest) * part).toInt()
-        val rawNextX = pos.x - rawDiffX
-        val rawNextY = pos.y - rawDiffY
-        return this.copy(pos = Movement.clampToPlayable(pos, Pos(rawNextX, rawNextY)))
+        val next = Movement.clampToPlayable(pos, Pos(pos.x - rawDiffX, pos.y - rawDiffY))
+        // Boxed approaching the in-range spot (attack/deploy) with no recovery of its own → end the action so
+        // act() re-rolls a fresh, likely-reachable destination point next tick instead of wedging on a dead end.
+        if (next == pos) action.end()
+        return this.copy(pos = next)
     }
 
     private fun collectXm() {

@@ -67,4 +67,42 @@ class MovementTest {
         val dest = Movement.wander(agent).destination
         assertTrue(dest.isPassable() && Sim.isInPlayArea(dest.x, dest.y), "an edge agent still stays on-map")
     }
+
+    // --- clampToPlayable (sub-stepping wall slide / creep) --------------------
+    // A 5×5-cell passable quadrant (shadow res 10 → sim 0..49 passable); everything at cell x≥5 OR y≥5 is a
+    // wall. Lets us exercise the diagonal-blocked slide + the doubled-speed overshoot creep + the dead corner.
+
+    private fun setQuadrantGrid() {
+        World.grid = GridFixture(
+            "CLAMP",
+            10,
+            10,
+            2,
+            GridFixture.rleEncode(List(10 * 10) { idx -> (idx % 10) < 5 && (idx / 10) < 5 }),
+        ).toGrid()
+    }
+
+    @Test
+    fun clampReturnsAPassableTargetUnchanged() {
+        setQuadrantGrid()
+        assertEquals(Pos(44, 44), Movement.clampToPlayable(Pos(42, 42), Pos(44, 44)), "open ground → step taken as-is")
+    }
+
+    @Test
+    fun clampCreepsTowardAWallInsteadOfFreezing() {
+        // Full step lands in the wall (cell x=5), but a shorter step stays in the passable cell — the agent
+        // creeps up to the wall rather than holding (the doubled-speed thin-passage regression).
+        setQuadrantGrid()
+        val next = Movement.clampToPlayable(Pos(42, 42), Pos(52, 42))
+        assertTrue(next.isPassable(), "creep result is on passable ground")
+        assertTrue(next.x.toInt() in 43..49 && next.y.toInt() == 42, "made forward progress toward the wall (was 42 → $next)")
+    }
+
+    @Test
+    fun clampHoldsOnlyInaTrueDeadCorner() {
+        // Wedged in the far corner of the passable quadrant: every probe (both slides + the shortened diagonal)
+        // crosses into the wall → hold at the start position (StuckTracker/the per-action bail takes over).
+        setQuadrantGrid()
+        assertEquals(Pos(49, 49), Movement.clampToPlayable(Pos(49, 49), Pos(52, 52)), "boxed-in corner → hold")
+    }
 }

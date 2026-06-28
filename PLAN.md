@@ -304,11 +304,12 @@ the board; fair shuffled agent order). Deeper "no single strategy dominates" val
   inventory/capacity limit; an FPS/perf readout (pairs with `?debug`); unit tests for fielding + deploying.
 
 ## Known glitches (low priority)
-- **Passability overlay not visible on terrain.** The Menu → **Passability** overlay
-  (`PassabilityOverlay`, a textured ground quad at a fixed low z `OVERLAY_Z`) doesn't follow the DEM, so on
-  elevated terrain it sits *below* the raised ground and is hidden. Fix: drape it on the sampled terrain
-  heights (`Scene3D.groundZ`) like the objects do, or lift/conform the quad to the DEM. Same root cause as the
-  *Terrain-aware shatter ground* item (3D / rendering).
+- **Passability overlay drape — verify in-browser.** The Menu → **Passability** overlay (`PassabilityOverlay`)
+  now drapes its mesh on the sampled DEM (`Scene3D.groundZ`, per-vertex) and **rebuilds on every terrain
+  (re)sample** (`onTerrainChanged` → `PassabilityOverlay.refresh`), so a visible overlay follows the elevation
+  instead of keeping the flat/stale snapshot it had when toggled on before tiles streamed in. Confirm on an
+  elevated location that it hugs the ground (and isn't a flat sheet floating above/below the hills). Shares the
+  DEM-draping approach with the *Terrain-aware shatter ground* item (3D / rendering).
 
 ## Constraints / agreements
 - Commit to `develop`; **no pushing** until something works end-to-end.

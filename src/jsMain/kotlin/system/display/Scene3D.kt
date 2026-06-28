@@ -821,6 +821,7 @@ object Scene3D {
     fun onTerrainChanged() {
         sampleHeights()
         rebuildBorder()
+        PassabilityOverlay.refresh() // re-drape the walkability overlay onto the freshly-sampled heights
         window.setTimeout({ resampleTerrain() }, 1500)
         window.setTimeout({ resampleTerrain() }, 4000)
     }
@@ -828,6 +829,7 @@ object Scene3D {
     private fun resampleTerrain() {
         sampleHeights()
         rebuildBorder()
+        PassabilityOverlay.refresh()
     }
 
     private fun rebuildBorder() {

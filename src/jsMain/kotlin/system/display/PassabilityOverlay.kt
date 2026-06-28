@@ -28,6 +28,13 @@ object PassabilityOverlay {
         if (show && World.isReady) g.add(buildMesh())
     }
 
+    /** Re-drape against the current DEM — call when the terrain (re)samples ([Scene3D.onTerrainChanged]). The
+     *  mesh bakes `groundZ` at build time, so without this a visible overlay keeps the flat/stale heights it
+     *  had when toggled on (before the elevation tiles streamed in) and won't follow the terrain. */
+    fun refresh() {
+        if (visible) setVisible(true)
+    }
+
     fun isVisible() = visible
 
     private fun buildMesh(): dynamic {
