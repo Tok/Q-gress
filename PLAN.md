@@ -59,9 +59,12 @@ CSS design-token dedup is done too: glass/tint/blur literals route through `:roo
   mesh for, so the gap-fillers and our look match and there's no overlap/z-fight. Needs matching our synthetic
   centroid keys to MapLibre feature ids (now that the `openmaptiles` source carries `generateId`) — or a
   custom building layer we fully own.
-- [ ] **Terrain-aware shatter ground.** The cannon-es plane is flat z=0, so shards/pole sink to sea level on
-  high ground; sample the DEM under the blast (maybe a Menu exaggeration slider); resample if the play area
-  moves (ties into the grand-game movable field).
+- [x] **Terrain-aware shatter ground.** *Done:* each blast lifts the shared cannon-es shard/digit floor to
+  `groundZ(blastLocation)` at spawn (`liftShardFloor` in shatterPortal/dropMods/dropResonator; the separate digit
+  floor in showDamageNumber), so debris rests on the local terrain instead of the play-area-centre height it was
+  pinned to. *Open:* a Menu **DEM-exaggeration** slider (pairs with the Graphics group); **per-blast separate
+  planes** only if simultaneous cross-terrain blasts ever visibly clash on the shared plane; **resample on
+  play-area move** (ties into the grand-game movable field).
 - [ ] **Explosion shader tuning (optional).** GLSL consts in `XmpShaders.VOLUME_FRAG` (`NOISE_FREQ`,
   `DISPLACE`, `DENSITY_GAIN`, `STEPS`) + the rise/grow curve in `XmpBurst.update`; promote to uniforms if the
   fireball needs frequent live tuning.
