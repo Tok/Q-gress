@@ -15,13 +15,12 @@ be matched. **Desktop-only**; mobile is blocked. (The substrate ships; what's le
 ## ★ Next up — refactor under the net (Phase B)
 The open structural focus: functional core / imperative shell, module-by-module, with the gate
 (ktlint/detekt/tests) green throughout. Exit criterion: pure logic testable in isolation. Pick from:
-- **Split god-objects** along seams as they're touched: `MapController` (835), `Bootstrap` (788),
-  `Portal` (685). Also **extract the demo/showcase subsystem from `Scene3D`** into a `Showcases` object (build
-  helpers → `internal`): most of Scene3D's `LargeClass` bulk is that self-contained sandbox, so moving it lets
-  the suppress drop. (Otherwise `Scene3D` keeps an intentional suppress — a scene-graph hub is legitimately
-  large.) This also unblocks the remaining **commonMain pure-logic lift**: the cleanly-liftable core is already
-  moved + tested; what's left is gated behind this coupling (`Config` → `Tournament`/`Observation`/`Cycle`;
-  `Portal`/`World`/`Agent` → `Field`/`Inventory`/`knockMods`), so it rides the split rather than a separate pass.
+- **Split god-objects** along seams as they're touched. Remaining: **`Portal` (685)** — the highest-value one,
+  since splitting it also unblocks the remaining **commonMain pure-logic lift** (the cleanly-liftable core is
+  already moved + tested; what's left is gated behind coupling — `Config` → `Tournament`/`Observation`/`Cycle`;
+  `Portal`/`World`/`Agent` → `Field`/`Inventory`/`knockMods`). (`Scene3D` keeps an *intentional* `LargeClass`
+  suppress: its showcase sandbox is already out in `Showcases`, and the remaining entity-sync + effect-dispatch
+  bulk is irreducibly bound to the three.js groups — relocating it behind a ~30-member API would be worse.)
 - **Reduce magic numbers** — name them / fold into `Config` where it aids clarity (detekt `MagicNumber` is
   off → a by-hand judgement pass, not a gate-chase).
 - **Tighten line length 140 → 120** — land *alongside* the class extractions (auto-wrapping inflates
@@ -87,7 +86,15 @@ series config).
   `Locations` registry / `resources/locations.json`) to a file and import a custom one, so curated place
   sets can be shared without a rebuild. Builds on the already-externalized JSON catalogue + pure parser
   (`Locations.parse`); pairs with the shareable-scenario seam.
+- [ ] **Loading / progress display rework.** The world-gen progress (`LoadingOverlay`) currently reads in a
+  **strange order** and isn't transparent enough — rework it into a clear, correctly-ordered, legible sequence
+  of stages (map → grid → portals → people → routes) with honest per-stage progress. Pairs with the real
+  per-stage load % below.
 - [ ] **Real per-stage load %** (especially flow-field computation).
+- [ ] **Building grow-in spans the whole load.** The 3D building inflate finishes well before world-gen does
+  (`MapController.setBuildProgress` / `BUILD_DELAY_FRAC` 0.15 + `BUILD_RISE_SPAN` 0.45 → full at ~60% of gen).
+  Slow it so the city rises across the **entire** loading time and reaches full height **exactly when the game
+  starts**, not way before. Tie the inflate target to true gen progress end-to-end.
 - [ ] **Initial roster "roll"** — light flavour, not a gacha loop; ties to the icebox rarity tiers.
 - [ ] **`?debug` dev tooling — remaining.** Load-timing/profiling logs; and the handoff: run `?debug=capture`
   once in-browser, drop the downloaded `PresetFixtures.kt` into `src/jsTest/kotlin/util/` and commit, flipping
