@@ -16,6 +16,7 @@ import system.Com
 import system.Cycle
 import system.Simulation
 import system.effect.Fx
+import util.GameplayPrefs
 import util.NameGen
 import util.Rng
 import util.data.Pos
@@ -73,6 +74,12 @@ data class MatchSetup(
     // They deliberately muddy a leader's advantage to keep games close — great for play, but they add noise to
     // the training/ranking signal, so an eval can ask for a cleaner gradient. SimRunner restores them after.
     val cleanEval: Boolean = false,
+    // Pin the player-tunable gameplay balance (combat dynamics / progress speed / portal churn) to the shipped
+    // DEFAULTS for the match, ignoring whatever the player has moved the live menu sliders to. ON by default so
+    // training/eval has ONE canonical target — champions are "one fits all", not a champion-per-balance matrix.
+    // SimRunner snapshots + restores the live values around the match. Opt out (false) only when the caller is
+    // itself sweeping balance (e.g. BalanceSweep). (Drop rates aren't player-tunable yet; extend when they are.)
+    val useDefaultBalance: Boolean = true,
 ) {
     companion object {
         const val DEFAULT_NPCS = 30
@@ -133,6 +140,14 @@ object SimRunner {
             Config.leaderDistraction = 0.0
         }
 
+        // Pin the player-tunable balance to the shipped defaults (canonical training target); snapshot + restore.
+        val liveBalance = Triple(Config.combatDynamism, Config.progressSpeed, Config.portalChurnRate)
+        if (setup.useDefaultBalance) {
+            Config.combatDynamism = GameplayPrefs.DEFAULT_COMBAT
+            Config.progressSpeed = GameplayPrefs.DEFAULT_PROGRESS
+            Config.portalChurnRate = GameplayPrefs.DEFAULT_CHURN
+        }
+
         try {
             seedPortals(setup.portals)
             seedAgents(setup.frogs, setup.smurfs)
@@ -154,6 +169,11 @@ object SimRunner {
             Config.comebackMax = antiRunaway.first
             Config.dominanceDecay = antiRunaway.second
             Config.leaderDistraction = antiRunaway.third
+            if (setup.useDefaultBalance) {
+                Config.combatDynamism = liveBalance.first
+                Config.progressSpeed = liveBalance.second
+                Config.portalChurnRate = liveBalance.third
+            }
         }
     }
 

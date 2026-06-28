@@ -51,6 +51,33 @@ class SimRunnerTest {
     }
 
     @Test
+    fun defaultBalanceIsForcedDuringTheMatchThenTheLiveValueIsRestored() {
+        val live = 0.123 // a value the "player" moved the combat slider to (≠ the shipped default)
+        config.Config.combatDynamism = live
+        var midMatch = -1.0
+        SimRunner.runMatch(openGrid(), seed = 5, maxTicks = 5, onTick = { midMatch = config.Config.combatDynamism })
+        assertEquals(util.GameplayPrefs.DEFAULT_COMBAT, midMatch, "the match runs on the canonical default balance")
+        assertEquals(live, config.Config.combatDynamism, "…and the player's live value is restored after the match")
+        config.Config.combatDynamism = util.GameplayPrefs.DEFAULT_COMBAT // tidy the shared singleton for later tests
+    }
+
+    @Test
+    fun optingOutOfDefaultBalanceRunsOnTheLiveValue() {
+        val live = 0.123
+        config.Config.combatDynamism = live
+        var midMatch = -1.0
+        SimRunner.runMatch(
+            openGrid(),
+            seed = 5,
+            maxTicks = 5,
+            setup = MatchSetup(useDefaultBalance = false),
+            onTick = { midMatch = config.Config.combatDynamism },
+        )
+        assertEquals(live, midMatch, "opting out runs the player's live balance, untouched")
+        config.Config.combatDynamism = util.GameplayPrefs.DEFAULT_COMBAT
+    }
+
+    @Test
     fun sameSeedIsDeterministic() {
         val a = SimRunner.runMatch(openGrid(), seed = 7, maxTicks = 150, setup = MatchSetup(npcs = 8))
         val b = SimRunner.runMatch(openGrid(), seed = 7, maxTicks = 150, setup = MatchSetup(npcs = 8))

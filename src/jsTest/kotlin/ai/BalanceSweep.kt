@@ -59,7 +59,9 @@ class BalanceSweep {
         for (ld in listOf(0.0, 0.25, 0.5, 0.75, 1.0)) {
             Config.leaderDistraction = ld
             val scores = seeds.map { seed ->
-                val r = SimRunner.runMatch(grid, seed = seed, maxTicks = 6000, setup = MatchSetup(frogs = 12, smurfs = 12, npcs = 20))
+                // This sweep IS the balance-finding tool, so it drives Config itself — opt out of the default-balance pin.
+                val setup = MatchSetup(frogs = 12, smurfs = 12, npcs = 20, useDefaultBalance = false)
+                val r = SimRunner.runMatch(grid, seed = seed, maxTicks = 6000, setup = setup)
                 SimRunner.reset()
                 scoreMatch(r)
             }
