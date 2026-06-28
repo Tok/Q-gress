@@ -3,6 +3,7 @@ package agent.action
 import agent.Agent
 import agent.Balance
 import agent.Faction
+import agent.Movement
 import agent.action.cond.*
 import agent.qvalue.QActions
 import agent.qvalue.QValue
@@ -30,11 +31,11 @@ object ActionSelector {
     // sliders, or 0.1 headless), so this is unchanged from the old inline DOM read.
     fun q(faction: Faction, value: QValue): Double = FactionPolicies.of(faction).weight(value) * value.weight
 
-    // No-idle fallback: an agent with nothing portal-productive to do never waits or aimlessly wanders — it
-    // does the two things that are ALWAYS available: recruit a nearby NPC, else head out to find a portal
-    // ("discover portals" — a random target via moveElsewhere). Keeps everyone moving and contributing.
+    // No-idle fallback: an agent with nothing portal-productive to do never waits — it does one of the two
+    // always-available things: recruit a nearby NPC, else EXPLORE (roam open ground = "discovering" portals).
+    // Both render coin-less (just a head-bob), so they read distinctly from a purposeful MOVE.
     private fun fallback(agent: Agent): () -> Agent = {
-        if (Recruiter.isActionPossible(agent)) Recruiter.performAction(agent) else agent.moveElsewhere()
+        if (Recruiter.isActionPossible(agent)) Recruiter.performAction(agent) else Movement.wander(agent)
     }
     private fun doAnywhereAction(agent: Agent): Agent = Rng.select(actionsForAnywhere(agent), fallback(agent)).invoke()
     private fun doNeutralPortalAction(agent: Agent): Agent = Rng.select(actionsForNeutralPortals(agent), fallback(agent)).invoke()

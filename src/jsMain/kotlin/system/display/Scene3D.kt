@@ -1021,11 +1021,15 @@ object Scene3D {
         place(sphere.asDynamic(), x, y, gz + HEAD_Z + bob)
         tag(sphere.asDynamic(), id)
         agentsGroup.add(sphere)
-        // Action indicator: a 3D coin/wheel (icon on the round faces) hovering above the head.
-        val coin = Three.Mesh(indicatorGeo, indicatorMaterial(agent.action.item, agent.faction))
-        coin.asDynamic().rotation.x = PI / 2 // stand the cylinder's faces up (axis → world Z)
-        place(coin.asDynamic(), x, y, gz + INDICATOR_Z)
-        indicatorsGroup.add(coin)
+        // Action indicator: a 3D coin/wheel (icon on the round faces) hovering above the head — EXCEPT for
+        // recruiting and exploring/discovering, which show NO coin (just the head-bob). So a coin-less, bobbing
+        // agent at 0 m/s reads as plainly mid-recruit / roaming, while a coin-bearing one stuck at 0 m/s is sus.
+        if (agent.action.item != ActionItem.RECRUIT && agent.action.item != ActionItem.EXPLORE) {
+            val coin = Three.Mesh(indicatorGeo, indicatorMaterial(agent.action.item, agent.faction))
+            coin.asDynamic().rotation.x = PI / 2 // stand the cylinder's faces up (axis → world Z)
+            place(coin.asDynamic(), x, y, gz + INDICATOR_Z)
+            indicatorsGroup.add(coin)
+        }
         addEnergyBar(x, y, gz, agent) // XM gauge to the side (height scales with the agent's level)
         if (Debug.enabled && StuckTracker.isStuck(agent.key())) addStuckMarker(x, y, gz)
     }
