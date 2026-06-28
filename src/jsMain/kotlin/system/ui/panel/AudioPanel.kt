@@ -458,6 +458,8 @@ object AudioPanel {
         ctx.lineWidth = 4.0
         ctx.strokeStyle = "rgba(255,255,255,0.16)"
         strokeArc(ctx, cx, r, a0, a1)
+        // Deliberate cool tint (NOT a neutral grey): the value ring + ADSR curve share the synth's blue
+        // accent family with the #cfe0ff readouts, set against the strictly-neutral chrome knob body.
         ctx.strokeStyle = "#cfd6e6"
         strokeArc(ctx, cx, r, a0, a)
         // Chrome cap: a vertical neutral-gray gradient (light top, dark bottom, bright reflection band) + rim.
@@ -528,7 +530,7 @@ object AudioPanel {
         ctx.fillRect(0.0, 0.0, w, h)
         ctx.beginPath()
         ctx.lineWidth = 2.0
-        ctx.strokeStyle = "#cfd6e6"
+        ctx.strokeStyle = "#cfd6e6" // cool accent line (matches the knob value ring + #cfe0ff readouts), not a grey
         ctx.moveTo(l.pad, l.bot)
         ctx.lineTo(l.peakX, l.top) // attack → peak
         ctx.lineTo(l.kneeX, l.kneeY) // decay → sustain
