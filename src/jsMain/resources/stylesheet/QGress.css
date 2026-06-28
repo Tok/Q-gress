@@ -1550,18 +1550,6 @@ html, body {
 .titleGithub svg {
     display: block;
 }
-/* Title intro veil: a black sheet over the very first title frames (the map renders at the framed close zoom
-   for a beat before the cinematic sets the zoom-out) — held, then faded to reveal the swooping-in view. Below
-   the onboarding overlay (9998) + persistent volume (10001), above the map + title canvas. */
-.titleBlackout {
-    position: fixed;
-    inset: 0;
-    z-index: 9990;
-    background: #000;
-    opacity: 1;
-    transition: opacity 0.6s ease;
-    pointer-events: none;
-}
 /* Standalone three.js thunderbolt scene behind the title content (above the gradient). */
 .titleCanvas {
     position: absolute;

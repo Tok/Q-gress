@@ -108,7 +108,10 @@ object MapController {
     // --- IN-GAME: buildings grow IN STEP with the overall load (LoadingOverlay drives the 0..1 fraction,
     // delayed start → full at 100%), only reaching full height as the game starts — so the city keeps rising
     // across the whole build instead of finishing early.
-    private const val BUILD_EASE = 0.12 // how fast the shown height eases toward the live gen-progress target
+    // How fast the shown height eases toward the gen-progress target. Low on purpose: it's a duration FLOOR —
+    // even if the spawn bar jumps to 100 (few portals/NPCs), the city still rises gradually (~2 s) rather than
+    // snapping up, so the growth reads as a slow build, not a pop.
+    private const val BUILD_EASE = 0.04
     private var buildTarget = 0.0
     private var buildShown = 0.0
     private var buildLoopRunning = false
