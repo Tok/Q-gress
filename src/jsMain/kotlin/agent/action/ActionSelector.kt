@@ -3,7 +3,6 @@ package agent.action
 import agent.Agent
 import agent.Balance
 import agent.Faction
-import agent.Movement
 import agent.action.cond.*
 import agent.qvalue.QActions
 import agent.qvalue.QValue
@@ -31,26 +30,37 @@ object ActionSelector {
     // sliders, or 0.1 headless), so this is unchanged from the old inline DOM read.
     fun q(faction: Faction, value: QValue): Double = FactionPolicies.of(faction).weight(value) * value.weight
 
-    // No-idle fallback: an agent with no gameplay action left (portals burnt out, nothing to hack/deploy/attack)
-    // never waits — it RECRUITS a nearby NPC, else EXPLORES (roams open ground). Both are coin-less (just a
-    // head-bob), reading distinctly from a purposeful MOVE. Recruiting is the idle thing, not a slider — and only
-    // a capped few per faction recruit ([Recruiter.canRecruit]); the rest explore, so they never ALL recruit.
-    private fun fallback(agent: Agent): () -> Agent = {
-        if (Recruiter.canRecruit(agent)) Recruiter.performAction(agent) else Movement.wander(agent)
+    // When the agent has a PRODUCTIVE action available (hack/deploy/attack/link/capture/glyph/recycle/recharge),
+    // it acts on the 17 sliders — MOVE_ELSEWHERE competes too (AI-weighted relocation). When NOTHING productive is
+    // possible (portals burnt out, nothing to do) it's IDLE: a capped few per faction RECRUIT a nearby NPC
+    // ([Recruiter.canRecruit]) — recruiting is the idle thing, not a slider — and the rest roam to find work. The
+    // [act] productive-check is what makes recruiting actually fire: MOVE_ELSEWHERE is always weakly positive, so a
+    // plain Rng.select fallback would never trigger (the agent would just keep moving instead of ever recruiting).
+    private fun act(agent: Agent, productive: List<Pair<Double, () -> Agent>>): Agent {
+        if (productive.any { it.first > 0.0 }) {
+            val withMove = productive + (q(agent.faction, QActions.MOVE_ELSEWHERE) to { agent.moveElsewhere() })
+            return Rng.select(withMove, idle(agent)).invoke()
+        }
+        return idle(agent).invoke()
     }
-    private fun doAnywhereAction(agent: Agent): Agent = Rng.select(actionsForAnywhere(agent), fallback(agent)).invoke()
-    private fun doNeutralPortalAction(agent: Agent): Agent = Rng.select(actionsForNeutralPortals(agent), fallback(agent)).invoke()
 
-    private fun doFriendlyPortalAction(agent: Agent): Agent = Rng.select(actionsForFriendlyPortals(agent), fallback(agent)).invoke()
+    // Idle behaviour (no productive action): recruit a nearby NPC if under the per-faction concurrent cap, else
+    // roam to find work. Both render coin-less (just a head-bob), distinct from a purposeful MOVE.
+    private fun idle(agent: Agent): () -> Agent = {
+        if (Recruiter.canRecruit(agent)) Recruiter.performAction(agent) else agent.moveElsewhere()
+    }
 
-    private fun doEnemyPortalAction(agent: Agent): Agent = Rng.select(actionsForEnemyPortals(agent), fallback(agent)).invoke()
+    private fun doAnywhereAction(agent: Agent): Agent = act(agent, actionsForAnywhere(agent))
+    private fun doNeutralPortalAction(agent: Agent): Agent = act(agent, actionsForNeutralPortals(agent))
+    private fun doFriendlyPortalAction(agent: Agent): Agent = act(agent, actionsForFriendlyPortals(agent))
+    private fun doEnemyPortalAction(agent: Agent): Agent = act(agent, actionsForEnemyPortals(agent))
 
+    // The PRODUCTIVE "anywhere" actions (NOT MOVE_ELSEWHERE — that's added by [act] only when productive work
+    // exists, and is the idle roam otherwise).
     private fun actionsForAnywhere(agent: Agent): List<Pair<Double, () -> Agent>> {
-        val moveElsewhereQ = q(agent.faction, QActions.MOVE_ELSEWHERE)
         val recycleQ = if (Recycler.isActionPossible(agent)) q(agent.faction, QActions.RECYCLE) else -1.0
         val rechargeQ = if (Recharger.isActionPossible(agent)) q(agent.faction, QActions.RECHARGE) else -1.0
         return listOf(
-            moveElsewhereQ to { agent.moveElsewhere() },
             recycleQ to { Recycler.performAction(agent) },
             rechargeQ to { Recharger.performAction(agent) },
         )
