@@ -73,8 +73,8 @@ object SunController {
     /** Live-resize the shadow map (the Graphics "High-detail shadows" toggle). Disposing the old render target
      *  + nulling it forces three.js to reallocate it at the new size on the next render. No-op before [register]. */
     fun setShadowDetail(high: Boolean) {
-        val light = sun ?: return
-        val shadow = light.asDynamic().shadow
+        val light = sun ?: return // already dynamic — no .asDynamic() (it would throw, as in [placeSun])
+        val shadow = light.shadow
         val mapSize = if (high) SHADOW_HIGH else SHADOW_LOW
         shadow.mapSize.width = mapSize
         shadow.mapSize.height = mapSize
