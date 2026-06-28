@@ -42,7 +42,10 @@ object XmpBurst {
         p.color = "#19bfff"
         p.transparent = true
         p.opacity = 1.0
-        p.depthTest = false // always on top: a flat near-ground ring depth-tested vs the terrain z-fights/vanishes
+        // Occlude vs the shared depth buffer so the shockwave hides behind buildings/portals and clips into
+        // rising terrain instead of always painting on top. It sits RING_Z above the ground, so it clears the
+        // flat terrain it's drawn over (no z-fight) while still reading as a ground ring.
+        p.depthTest = true
         p.depthWrite = false
         p.blending = Three.AdditiveBlending
         return Three.MeshBasicMaterial(p)

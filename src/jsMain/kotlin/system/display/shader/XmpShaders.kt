@@ -35,14 +35,16 @@ object XmpShaders {
         p.uniforms = uni
         p.transparent = true
         p.depthWrite = false
-        // Always on top. The volume is raymarched on the box's BACK faces (so it works inside or outside
-        // the box), so the fragment's geometric depth is the FAR box face — which sits below the terrain.
-        // Depth-testing that against the shared map depth buffer fails almost everywhere → the fireball
-        // vanishes behind the ground. Proper building-only occlusion needs gl_FragDepth (sphere-entry
-        // depth) + a building depth pass; deferred to the own-mesh building work.
-        p.depthTest = false
+        // Occlude against the shared map depth buffer so the fireball sits BEHIND buildings/portals/terrain in
+        // front of it (yet still draws over the ground it rises from). The raymarch reconstructs its ray from
+        // gl_FragCoord, so it renders the SAME fireball on the box's FRONT faces as on the back — but the front
+        // faces carry a usable geometric depth (the box's near side, just ahead of the fireball) to test with,
+        // whereas the back faces sit below the terrain and failed the test almost everywhere (fireball vanished).
+        // Trade-off: if the camera is literally inside the small blast box the fireball isn't drawn (front faces
+        // cull) — rare in a top-down map view, and reads as "you're inside the explosion".
+        p.depthTest = true
         p.blending = Three.NormalBlending
-        p.side = 1 // BackSide
+        p.side = 0 // FrontSide (was BackSide; see the depthTest note above)
         return Three.ShaderMaterial(p)
     }
 
