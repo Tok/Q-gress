@@ -1480,9 +1480,12 @@ html, body {
     background: transparent;
     border: 1px solid transparent; /* keep the 1px box so the panel's footprint matches the glass edge */
     border-radius: 10px;
-    /* Controls cross-fade in (opacity set inline). Held ~0.12s so the glass leads, then fading to land right
-       as the 0.45s pane morph settles — so content never fully arrives before its glass, without a real delay. */
-    transition: opacity 0.33s ease 0.12s;
+    transform-origin: center;
+    /* The controls EMERGE with the glass (opacity + scale set inline): the scale rides the pane's wobble so
+       they feel born from it, while the opacity leads off ~0.2s later so the glass clearly arrives first. */
+    transition:
+        opacity 0.3s ease 0.2s,
+        transform 0.5s cubic-bezier(0.34, 1.5, 0.64, 1);
 }
 /* The morphing glass frame: a single persistent pane that lerps its bounds between onboarding steps. Carries
    the glass look the step panels used to own; positioned (left/top/width/height) from JS per step. */
@@ -1503,6 +1506,12 @@ html, body {
         top 0.5s cubic-bezier(0.34, 1.5, 0.64, 1),
         width 0.5s cubic-bezier(0.34, 1.5, 0.64, 1),
         height 0.5s cubic-bezier(0.34, 1.5, 0.64, 1);
+}
+/* Morphing back onto the faction CTA: the CTA is always neutral white (the title showpiece never takes a
+   faction tint), so the pane drops the faction edge + glow for that one trip. */
+.morphPaneNeutral {
+    border-color: rgba(255, 255, 255, 0.16);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
 }
 /* Thin "source on GitHub" link pinned to the bottom of the title screen. */
 .titleGithub {

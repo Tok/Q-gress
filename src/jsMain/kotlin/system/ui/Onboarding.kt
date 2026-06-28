@@ -574,10 +574,14 @@ object Onboarding {
     private fun installMorph(panel: HTMLElement) {
         val overlay = document.getElementById(SCREEN_ID) as? HTMLElement ?: return
         MorphPane.morphInto(overlay, panel, pendingFrom)
-        if (pendingFrom != null) { // cross-fade the controls in as the glass morphs into place behind them
+        if (pendingFrom != null) { // the controls EMERGE from the pane (scale up + fade) rather than just appearing
             panel.style.opacity = "0"
-            panel.asDynamic().offsetWidth // commit opacity:0 before the transition to 1
-            window.requestAnimationFrame { panel.style.opacity = "1" }
+            panel.style.transform = "scale(0.95)"
+            panel.asDynamic().offsetWidth // commit the start state before transitioning
+            window.requestAnimationFrame {
+                panel.style.opacity = "1"
+                panel.style.transform = "scale(1)"
+            }
         }
     }
 

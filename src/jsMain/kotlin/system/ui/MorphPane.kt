@@ -26,6 +26,7 @@ object MorphPane {
      */
     fun morphInto(overlay: HTMLElement, target: HTMLElement, fromRect: dynamic) {
         val p = ensure()
+        p.classList.remove("morphPaneNeutral") // step panes carry the faction edge (the back-to-CTA morph re-adds it)
         overlay.insertBefore(p, overlay.firstChild) // behind the step's content (which paints above via z-index)
         if (fromRect == null) {
             applyBounds(p, target.asDynamic().getBoundingClientRect()) // first appearance — snap, no morph-from-nothing
@@ -53,6 +54,7 @@ object MorphPane {
      *  footprint and vanishes, then the CTA fades in. */
     fun morphAwayTo(overlay: HTMLElement, target: HTMLElement, fromRect: dynamic, onDone: () -> Unit) {
         morphInto(overlay, target, fromRect)
+        pane?.classList?.add("morphPaneNeutral") // the faction CTA is always neutral white — never faction-coloured
         window.setTimeout({
             reset()
             onDone()
