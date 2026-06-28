@@ -21,6 +21,12 @@ data class Pos(val x: Double, val y: Double) {
         return abs(sqrt(xPow + yPow))
     }
 
+    /**
+     * Squared distance — skips the `sqrt`. For COMPARISONS only (nearest/within-range), where it preserves
+     * ordering: `a.distanceTo2(b) < r*r` ≡ `a.distanceTo(b) < r`. The hot per-tick targeting paths use this.
+     */
+    fun distanceTo2(other: Pos): Double = xDiff(other) * xDiff(other) + yDiff(other) * yDiff(other)
+
     fun surrounding(w: Int, h: Int): List<Pos> = listOf(
         Pos(x - 1.0, y - 1.0),
         Pos(x, y - 1.0),

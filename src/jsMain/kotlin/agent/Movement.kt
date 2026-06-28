@@ -30,7 +30,7 @@ object Movement {
     /* Uncaptured Portals */
     fun moveToUncapturedPortal(agent: Agent): Agent {
         check(hasUncapturedPortals())
-        val uncaptured = World.allPortals.filter { it.isUncaptured() }.sortedBy { agent.distanceToPortal(it) }
+        val uncaptured = World.allPortals.filter { it.isUncaptured() }.sortedBy { agent.distanceToPortal2(it) }
         uncaptured.forEach { portal ->
             if (Rng.random() < agent.skills.reliability) {
                 return goToDestinationPortal(agent, portal)
@@ -52,7 +52,7 @@ object Movement {
     /* End Friendly Portals */
 
     /* Enemy Portals */
-    fun attackClosePortal(a: Agent) = goAttack(a, findEnemyPortals(a).sortedBy { a.distanceToPortal(it) }.firstOrNull())
+    fun attackClosePortal(a: Agent) = goAttack(a, findEnemyPortals(a).minByOrNull { a.distanceToPortal2(it) })
 
     fun attackMostLinkedPortal(a: Agent) = goAttack(a, findEnemyPortals(a).sortedBy { it.links.size }.firstOrNull())
     fun attackMostVulnerablePortal(a: Agent) = goAttack(a, findEnemyPortals(a).sortedBy { -it.calcHealth() }.firstOrNull())
@@ -66,7 +66,7 @@ object Movement {
 
     /* All Portals */
     fun moveToNearestPortal(agent: Agent): Agent {
-        val target = World.allPortals.sortedBy { agent.distanceToPortal(it) }.first()
+        val target = World.allPortals.minByOrNull { agent.distanceToPortal2(it) } ?: return agent
         return goToDestinationPortal(agent, target)
     }
 

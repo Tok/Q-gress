@@ -49,6 +49,7 @@ data class Agent(
     fun key() = faction.abbr + "-" + name
     private fun distanceToDestination(): Double = pos.distanceTo(destination)
     fun distanceToPortal(portal: Portal): Double = pos.distanceTo(portal.location)
+    fun distanceToPortal2(portal: Portal): Double = pos.distanceTo2(portal.location) // squared — for nearest/sort only
     fun isAtActionPortal(): Boolean = distanceToPortal(actionPortal) < Dim.maxDeploymentRange
 
     fun getLevel(): Int = getLevel(this.ap)

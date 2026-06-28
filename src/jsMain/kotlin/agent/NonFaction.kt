@@ -112,7 +112,7 @@ data class NonFaction(
     }
 
     private fun findNearest() = World.allNonFaction.filterNot { it == this }.minByOrNull {
-        it.pos.distanceTo(this.pos)
+        it.pos.distanceTo2(this.pos) // nearest → squared distance is enough (no sqrt), over the whole swarm
     } ?: throw IllegalStateException("Unable to find nearest to $pos")
 
     private fun wait() {
@@ -266,7 +266,7 @@ data class NonFaction(
         }
 
         fun findNearestTo(pos: Pos) = World.allNonFaction.minByOrNull {
-            it.pos.distanceTo(pos)
+            it.pos.distanceTo2(pos) // nearest → squared distance preserves the ordering, skips the sqrt
         } ?: throw IllegalStateException("Unable to find nearest to $pos")
 
         /** A random NPC to recruit (the recruiter walks up to whoever — recruiting isn't tied to a portal). */
