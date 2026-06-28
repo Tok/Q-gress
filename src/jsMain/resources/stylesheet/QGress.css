@@ -1584,7 +1584,7 @@ html, body {
 }
 .onboardRow {
     display: flex;
-    gap: 28px;
+    gap: 16px; /* tight + uniform across steps — the narrow preset/field buttons read too spread at the old 28px */
 }
 /* "Start at" label sitting before the [Start|Mid|End] stage buttons; vertically centred with them. */
 .onboardStageLabel {
