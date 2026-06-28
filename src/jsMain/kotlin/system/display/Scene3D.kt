@@ -169,6 +169,11 @@ object Scene3D {
     private var npcsGroup: dynamic = null
     private var xmGroup: dynamic = null // stray collectible XM motes
     private var linksGroup: dynamic = null
+
+    // Persistent link meshes keyed by the (unordered) portal pair, so [syncLinks] reuses them across ticks
+    // instead of clear+recreate every tick (the per-tick Object3D/UUID churn the PLAN flags). Cleared in onAdd
+    // when the group is rebuilt.
+    private val linkMeshes = mutableMapOf<String, LinkMeshes>()
     private var fieldsGroup: dynamic = null
     private var markerGroup: dynamic = null // build-preview marker
     private var borderGroup: dynamic = null // playable-area boundary outline
@@ -247,6 +252,7 @@ object Scene3D {
         portalsGroup = Three.Group().also { newScene.add(it) }
         fieldsGroup = Three.Group().also { newScene.add(it) }
         linksGroup = Three.Group().also { newScene.add(it) }
+        linkMeshes.clear() // the persistent link-mesh cache belongs to the OLD group — drop it with the rebuild
         npcsGroup = Three.Group().also { newScene.add(it) }
         xmGroup = Three.Group().also { newScene.add(it) }
         agentsGroup = Three.Group().also { newScene.add(it) }
@@ -368,8 +374,7 @@ object Scene3D {
         syncPoleColliders()
         clear(fieldsGroup)
         World.allFields().forEach { addField(it) }
-        clear(linksGroup)
-        World.allLinks().forEach { addLink(it) }
+        syncLinks() // persistent: reuse link meshes across ticks (no clear+recreate)
         clear(npcsGroup)
         World.allNonFaction.forEach { addNpc(it) }
         clear(xmGroup)
@@ -1093,24 +1098,68 @@ object Scene3D {
         xmGroup.add(mote)
     }
 
+    // A link's persistent meshes: the glass pipe + the two near-opaque ball-joints at each orb. [color] is the
+    // creator faction's colour, tracked so [syncLinks] can re-tint if a pair flips faction (recapture + relink).
+    private class LinkMeshes(val pipe: dynamic, val jointA: dynamic, val jointB: dynamic, var color: String)
+
+    // A stable, order-independent key for a link's portal pair (Link.equals is symmetric), so the same physical
+    // link reuses its meshes across ticks even though World rebuilds the Link objects.
+    private fun linkKey(link: Link): String {
+        val ids = listOf(link.origin.id, link.destination.id).sorted()
+        return ids[0] + " " + ids[1]
+    }
+
     /**
-     * A link is a thin glass pipe between the two portals' orbs (à la qlippostasis tubing): a
-     * brighter glass shell ([Materials.linkGlass]) around an additive **plasma core** filament, so
-     * the link still reads strongly even though the orb glass is near-transparent at pipe radius.
+     * Reconcile the link meshes with [World.allLinks] WITHOUT clearing + recreating them every tick: reuse the
+     * existing meshes (just re-orient them — both ends ride the tweened orb height), create only genuinely new
+     * links, and remove only vanished ones. A link is a thin glass pipe ([Materials.linkGlass]) between the two
+     * portals' orbs, capped by bright ball-joints that round the pipe ends + hide their cut faces.
      */
-    private fun addLink(link: Link) {
-        val color = link.creator.faction.color
-        val a = orbPos(link.origin) // both ends ride the tweened orb height
-        val b = orbPos(link.destination)
-        val pipe = Three.Mesh(linkGeo, Materials.linkGlass(color)) // one translucent glass pipe (no plasma core)
-        orientTube(pipe.asDynamic(), a, b)
-        linksGroup.add(pipe)
-        // Bright near-opaque ball-joints at each orb: round the pipe ends + hide their cut faces.
-        listOf(a, b).forEach { end ->
-            val joint = Three.Mesh(linkJointGeo, Materials.linkNode(color))
-            joint.asDynamic().position.set(end[0], end[1], end[2])
-            linksGroup.add(joint)
+    private fun syncLinks() {
+        val group = linksGroup ?: return
+        val present = mutableSetOf<String>()
+        World.allLinks().forEach { link ->
+            val key = linkKey(link)
+            present.add(key)
+            val color = link.creator.faction.color
+            val a = orbPos(link.origin)
+            val b = orbPos(link.destination)
+            val existing = linkMeshes[key]
+            if (existing == null) {
+                linkMeshes[key] = createLinkMeshes(group, a, b, color)
+            } else {
+                if (existing.color != color) recolorLink(existing, color)
+                orientTube(existing.pipe, a, b)
+                existing.jointA.position.set(a[0], a[1], a[2])
+                existing.jointB.position.set(b[0], b[1], b[2])
+            }
         }
+        (linkMeshes.keys - present).forEach { key ->
+            val lm = linkMeshes.remove(key) ?: return@forEach
+            group.remove(lm.pipe)
+            group.remove(lm.jointA)
+            group.remove(lm.jointB)
+        }
+    }
+
+    private fun createLinkMeshes(group: dynamic, a: DoubleArray, b: DoubleArray, color: String): LinkMeshes {
+        val pipe = Three.Mesh(linkGeo, Materials.linkGlass(color))
+        orientTube(pipe.asDynamic(), a, b)
+        group.add(pipe)
+        val jointA = Three.Mesh(linkJointGeo, Materials.linkNode(color)).asDynamic()
+        jointA.position.set(a[0], a[1], a[2])
+        group.add(jointA)
+        val jointB = Three.Mesh(linkJointGeo, Materials.linkNode(color)).asDynamic()
+        jointB.position.set(b[0], b[1], b[2])
+        group.add(jointB)
+        return LinkMeshes(pipe.asDynamic(), jointA, jointB, color)
+    }
+
+    private fun recolorLink(lm: LinkMeshes, color: String) {
+        lm.pipe.material = Materials.linkGlass(color)
+        lm.jointA.material = Materials.linkNode(color)
+        lm.jointB.material = Materials.linkNode(color)
+        lm.color = color
     }
 
     /** Place a unit (Y-axis) cylinder so it spans [a]→[b]: midpoint, Y-scaled to length, Y rotated to dir. */
