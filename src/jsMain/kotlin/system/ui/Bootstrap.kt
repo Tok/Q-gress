@@ -19,6 +19,7 @@ import system.HeadlessRun
 import system.Simulation
 import system.audio.AmbientPrefs
 import system.audio.AudioPrefs
+import system.audio.BlastSound
 import system.audio.InstrumentPrefs
 import system.audio.MixerPrefs
 import system.audio.Scale
@@ -330,7 +331,7 @@ object Bootstrap {
                     val pos = MapController.eventToSimPos(event) ?: return
                     Sound.enableAudio()
                     Showcases.removeNear(pos)
-                    Sound.playGlassShatterSound(pos, 0.4, 0.9)
+                    BlastSound.playGlassShatterSound(pos, 0.4, 0.9)
                 },
                 fun(event: dynamic) {
                     Showcases.moveCursor(MapController.eventToSimPos(event))

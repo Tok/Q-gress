@@ -16,6 +16,7 @@ import items.deployable.Shield
 import items.level.PortalLevel
 import items.level.ResonatorLevel
 import system.Com
+import system.audio.BlastSound
 import system.audio.Sound
 import system.audio.Tts
 import system.effect.Fx
@@ -123,7 +124,7 @@ data class Portal(
         val mod = mods.remove(slot) ?: return null
         destroyer?.addAp(MOD_DESTROY_AP)
         // Subtle "plop" as the item pops out of its slot (any mod — shield, heat sink, …).
-        if (Bootstrap.isRunningInBrowser()) Sound.playKnockOutSound(location)
+        if (Bootstrap.isRunningInBrowser()) BlastSound.playKnockOutSound(location)
         Com.addMessage("$destroyer knocked a ${mod.abbr} off $this.", Com.Importance.MINOR, destroyer?.faction?.color)
         return mod
     }
@@ -401,7 +402,7 @@ data class Portal(
         val level = getLevel().value
         agent.removeXm(PortalMath.retaliationDamage(level, totalMitigation()))
         Fx.sink.fireBolt(location, level, agent.pos, defender.faction.color)
-        Sound.playThunderSound((agent.pos.x / Sim.width * 2.0 - 1.0).coerceIn(-1.0, 1.0))
+        BlastSound.playThunderSound((agent.pos.x / Sim.width * 2.0 - 1.0).coerceIn(-1.0, 1.0))
     }
 
     fun destroy(destroyer: Agent? = null) {
@@ -433,7 +434,7 @@ data class Portal(
         val heaviness = (0.1 + level * 0.06).coerceAtMost(0.7)
         destroy()
         Fx.sink.shatterPortal(location, shardColor, level, resoLevels) // glass shards + resonators fall
-        Sound.playGlassShatterSound(location, heaviness, 0.8)
+        BlastSound.playGlassShatterSound(location, heaviness, 0.8)
         World.allAgents.forEach { agent ->
             val portalKeys: List<PortalKey>? = agent.inventory.findKeys().filter { key -> key.portal == this }.toList()
             if (portalKeys != null) {

@@ -13,9 +13,10 @@ real **km²** (`Sim.sideForArea`, Small default, Giant 3 km² warned) with sub-l
 default pace was doubled. The next big perf lever (**three.js mesh instancing**) is deferred — reprofile when
 things change, don't pre-optimize.
 
-**Phase B (refactor) is the open structural work — pick from:** more **god-object seams** (this session cut
-`Portal`→`HackLoot`, `Bootstrap`→`CanvasFactory`+`GameLoop`, `MapController`→`ShadowGridBuilder`; `Sound` (768)
-and the rest of `Bootstrap`/`MapController` remain), the **140 → 120 line-length** pass, and the **magic-numbers**
+**Phase B (refactor) is the open structural work — pick from:** more **god-object seams** (cut so far:
+`Portal`→`HackLoot`, `Bootstrap`→`CanvasFactory`+`GameLoop`, `MapController`→`ShadowGridBuilder`, `Sound`→
+`BlastSound` (the detonation/impact family — `Sound` now 548 lines, `LargeClass` suppress dropped); the rest
+of `Bootstrap`/`MapController` remain), the **140 → 120 line-length** pass, and the **magic-numbers**
 naming pass. The **commonMain pure-logic migration** had a deep pass (cleanly-liftable core moved + tested);
 **what's left is blocked by deeper coupling** — `Config` gates `Tournament`/`Observation`/`Cycle`, `Portal`/
 `World`/`Agent` gate `Field`/`Inventory`/`knockMods` — so it rides the SoC work, not a separate pass.
@@ -34,9 +35,10 @@ B** (refactor under the net) remains the open structural focus; phase D's big le
 
 ### Phase B — Refactor under the net — 🔄 in progress
 Functional core / imperative shell, properly. Module-by-module, behind the phase-A safety net.
-- [ ] **SoC / split god-objects** — cut along seams in `MapController` (835) / `Bootstrap` (788) / `Sound`
-  (768) / `Portal` (685) as they're touched. (`Scene3D` keeps an intentional `LargeClass` suppress — a
-  scene-graph hub is legitimately large; the cleanly-separable concerns are already out.)
+- [ ] **SoC / split god-objects** — cut along seams in `MapController` (835) / `Bootstrap` (788) /
+  `Portal` (685) as they're touched. (`Sound` is done — the detonation family is out in `BlastSound`, leaving
+  the hub at 548 lines, no suppress. `Scene3D` keeps an intentional `LargeClass` suppress — a scene-graph hub
+  is legitimately large; the cleanly-separable concerns are already out.)
 - [ ] **Reduce magic numbers** — name them / fold into `Config` where it aids clarity (detekt `MagicNumber` is
   off, so this is a by-hand judgement pass, not a gate-chase).
 - [ ] **Functional patterns** where they fit; **tighten line length 140 → 120** *alongside* the class

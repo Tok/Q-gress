@@ -3,6 +3,7 @@ package system.ui
 import agent.Faction
 import config.Sim
 import system.Checkpoint
+import system.audio.BlastSound
 import system.audio.HackSound
 import system.audio.Sound
 import system.audio.SteamSound
@@ -21,10 +22,10 @@ object AudioSounds {
     fun list(level: () -> Int): List<Pair<String, () -> Unit>> = listOf(
         "Portal create" to { Sound.playPortalCreationSound(center) },
         "Portal remove" to { Sound.playPortalRemovalSound(center) },
-        "Glass shatter" to { Sound.playGlassShatterSound(center) },
+        "Glass shatter" to { BlastSound.playGlassShatterSound(center) },
         "Neutralize" to { Sound.playNeutralizeSound(center) },
-        "XMP" to { Sound.playXmpSound(center, level()) },
-        "Ultra-strike" to { Sound.playUltraStrike(center) },
+        "XMP" to { BlastSound.playXmpSound(center, level()) },
+        "Ultra-strike" to { BlastSound.playUltraStrike(center) },
         "Burnout (steam)" to { SteamSound.play(center) },
         "Hack" to { HackSound.hack("demo", center, HackFx.HACK_S, Faction.ENL, IntArray(8) { level() }) },
         "Glyph" to { HackSound.glyph("demo", center, level(), HackFx.glyphDuration(level()), Faction.RES, IntArray(8) { level() }) },
@@ -32,7 +33,7 @@ object AudioSounds {
         "Mod deploy" to { Sound.playModDeploySound(center, level()) },
         "Shield deploy" to { Sound.playShieldDeploySound(center, level()) },
         "Shield remove" to { Sound.playShieldRemoveSound(center, level()) },
-        "Knock-out (plop)" to { Sound.playKnockOutSound(center) },
+        "Knock-out (plop)" to { BlastSound.playKnockOutSound(center) },
         "Virus ADA (ENL)" to { Sound.playVirusSound(center, Faction.ENL) },
         "Virus JARVIS (RES)" to { Sound.playVirusSound(center, Faction.RES) },
         "Upgrade" to { Sound.playUpgradeSound(center, level()) },
@@ -45,6 +46,6 @@ object AudioSounds {
         "Checkpoint" to { Sound.playCheckpointSound(js("({})").unsafeCast<Checkpoint>()) },
         "Noise gen" to { Sound.playNoiseGenSound() },
         "Offscreen portal" to { Sound.playOffScreenLocationCreationSound() },
-        "Thunder" to { Sound.playThunderSound(0.0) },
+        "Thunder" to { BlastSound.playThunderSound(0.0) },
     )
 }

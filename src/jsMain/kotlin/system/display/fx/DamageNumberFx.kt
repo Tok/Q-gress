@@ -4,7 +4,7 @@ import external.Cannon
 import external.FontLoader
 import external.TextGeometry
 import external.Three
-import system.audio.Sound
+import system.audio.BlastSound
 import system.display.BlastModel
 import system.display.shader.GlassShader
 import util.Rng
@@ -238,7 +238,7 @@ object DamageNumberFx {
         d.mesh.position.set(px, py, pz)
         if (body != null && pz <= groundZ + LAND_CLEARANCE && !d.landed) { // each digit clinks once as it hits the ground
             d.landed = true
-            Sound.playGlassShatterSound(num.loc, 0.0, LAND_VOLUME)
+            BlastSound.playGlassShatterSound(num.loc, 0.0, LAND_VOLUME)
         }
     }
 

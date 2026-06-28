@@ -24,6 +24,7 @@ import portal.Octant
 import portal.Portal
 import portal.XmHeap
 import portal.XmMap
+import system.audio.BlastSound
 import system.audio.PortalChangeSound
 import system.audio.Sound
 import system.audio.SteamSound
@@ -628,7 +629,7 @@ object Scene3D {
             BuildingShake.blast(ll[0], ll[1], XmpLevel.valueOf(level).rangeM, level, ultra, animClockMs / 1000.0)
         }
         if (sound) {
-            if (ultra) Sound.playUltraStrike(location) else Sound.playXmpSound(location, level)
+            if (ultra) BlastSound.playUltraStrike(location) else BlastSound.playXmpSound(location, level)
         }
     }
 
@@ -970,7 +971,7 @@ object Scene3D {
                 flaskVariants,
                 flaskScale,
             )
-            Sound.playGlassShatterSound(portal.location, CAPTURE_SHATTER_WEIGHT)
+            BlastSound.playGlassShatterSound(portal.location, CAPTURE_SHATTER_WEIGHT)
         }
         val reform = CaptureFx.reformFactor(id)
         // A virus flip morphs the orb from the old faction colour to the new one (no shatter); everywhere
