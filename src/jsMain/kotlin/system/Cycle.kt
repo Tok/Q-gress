@@ -9,6 +9,7 @@ import portal.Portal
 import portal.XmHeap
 import portal.XmMap
 import system.audio.Sound
+import system.audio.Tts
 import util.Rng
 import util.data.*
 
@@ -39,6 +40,8 @@ enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>) {
                 INSTANCE.checkpoints.clear()
                 INSTANCE.checkpoints.putAll(old)
                 INSTANCE.checkpoints[tick] = cp
+                val lead = enlMu - resMu // VERBOSE TTS: who's ahead this checkpoint, and by how much
+                if (lead != 0) Tts.announceCheckpointLead(if (lead > 0) Faction.ENL else Faction.RES, if (lead > 0) lead else -lead)
                 logCheckpoint(enlMu, resMu)
                 spawnXm() // every checkpoint (not just cycle end) so agent XM is replenished mid-cycle
                 World.allPortals.toList().forEach { it.erodeByDominance() } // the leader's empire erodes → board reopens

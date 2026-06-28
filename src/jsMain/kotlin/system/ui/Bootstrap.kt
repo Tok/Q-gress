@@ -591,6 +591,13 @@ object Bootstrap {
         span.id = LOCATION_LABEL_ID
         span.addClass("topLocation", "displayFont", "invisible") // hidden through title/onboarding; shown when the world is ready
         span.textContent = currentLocationName
+        // Click the name to hear it (unless TTS is fully muted). #hudTop is pointer-events:none, so opt this back in.
+        span.style.setProperty("pointer-events", "auto")
+        span.style.cursor = "pointer"
+        span.onclick = {
+            Tts.sayOnDemand(currentLocationName)
+            null
+        }
         return span
     }
 

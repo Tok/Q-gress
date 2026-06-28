@@ -2,6 +2,7 @@ package portal
 import World
 import agent.Agent
 import agent.Balance
+import agent.Faction
 import agent.action.ActionItem
 import config.Config
 import config.IngressFacts
@@ -219,6 +220,13 @@ data class Portal(
         return nonIntersecting.filter { it.isLinkable(linker) }
     }
 
+    // VERBOSE TTS: call out a field covering a big slice of the play box (rare → not spammy).
+    private fun announceIfHugeField(field: Field, faction: Faction) {
+        if (field.calculateMu().toLong() > Sim.width.toLong() * Sim.height / HUGE_FIELD_FRACTION) {
+            Tts.announceHugeField(faction, field.calculateMu())
+        }
+    }
+
     fun createLink(linker: Agent, target: Portal) {
         val newLink: Link? = Link.create(this, target, linker)
         if (newLink != null) {
@@ -242,6 +250,7 @@ data class Portal(
                         Sound.playFieldingSound(newField)
                         fields.add(newField)
                         linker.addAp(IngressFacts.AP_CREATE_FIELD) // 1250, flat (size drives MU, not AP)
+                        announceIfHugeField(newField, linker.faction) // VERBOSE TTS
                     }
                 }
             }
@@ -566,10 +575,12 @@ data class Portal(
             } else if (Config.headlessFieldCompute) {
                 portal.vectors = Pathfinding.computeFieldSync(location) // headless match: deterministic, inline
             }
+            if (World.isReady) Tts.announcePortalDiscovery(portal.name) // VERBOSE TTS (in-game spawns only, not world-gen)
             return portal
         }
 
         private const val SPREAD_CANDIDATES = 8
+        private const val HUGE_FIELD_FRACTION = 6 // "huge field" = MU over 1/this of the play box
 
         // Best-candidate (Mitchell's) sampling: of several valid candidates, take the one farthest from
         // existing portals, so portals spread to cover the sim space optimally (edges fill before the

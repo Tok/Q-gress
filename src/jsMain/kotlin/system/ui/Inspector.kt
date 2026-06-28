@@ -9,6 +9,7 @@ import org.w3c.dom.HTMLButtonElement
 import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HTMLElement
 import portal.Portal
+import system.audio.Tts
 import system.display.Scene3D
 
 /**
@@ -24,8 +25,13 @@ object Inspector {
     private var selectedId: String? = null
 
     fun select(id: String?) {
+        val changed = id != selectedId
         selectedId = id
         Scene3D.selected = id
+        // Read a freshly-selected portal's name aloud (unless TTS is fully muted) — a user-initiated action.
+        if (changed && id != null && id.startsWith("portal:")) {
+            findPortal(id.removePrefix("portal:"))?.let { Tts.sayOnDemand(it.name) }
+        }
         refresh()
     }
 

@@ -7,6 +7,14 @@ import system.ui.Bootstrap
 import util.Prefs
 import util.Rng
 
+/** Minimal binding for the Web Speech API utterance — constructed WITH its text, like the reference. */
+external class SpeechSynthesisUtterance(text: String) {
+    var volume: Double
+    var rate: Double
+    var pitch: Double
+    var voice: dynamic
+}
+
 /**
  * On-the-fly text-to-speech via the browser **Web Speech API** — synthesised live, no samples / assets (matches
  * the "generate everything on the fly" rule). A clinical scanner announcer for the sim. Mirrors the
@@ -37,6 +45,9 @@ object Tts {
     var voiceName: String? = null
         private set
 
+    private var current: dynamic = null // hold the live utterance so Chrome doesn't GC it mid-speech (known bug)
+    private var warnedNoVoices = false
+
     private fun available(): Boolean =
         !Bootstrap.isNotRunningInBrowser() && js("typeof window !== 'undefined' && 'speechSynthesis' in window").unsafeCast<Boolean>()
 
@@ -58,6 +69,13 @@ object Tts {
         say(TtsPhrases.glyphHack(f, names), Verbosity.GLYPH)
     }
 
+    /** A user-initiated readout (portal select, location-name click) — speaks whenever TTS isn't *fully* muted
+     *  (i.e. enabled and not OFF), independent of the verbosity tier. */
+    fun sayOnDemand(text: String) {
+        if (!enabled || verbosity == Verbosity.OFF || text.isBlank()) return
+        speak(text, rate, pitch)
+    }
+
     /** Audition the current voice/tuning from the AUDIO tab — reads a random glyph sequence, regardless of the
      *  verbosity gate. */
     fun test() {
@@ -74,15 +92,27 @@ object Tts {
     private fun speak(text: String, rate: Double, pitch: Double) {
         if (!available()) return
         val s = synth()
+        warnIfNoVoices(s)
         s.cancel() // announcements never overlap — the latest wins
-        val u = js("new SpeechSynthesisUtterance()")
-        u.text = text
+        val u = SpeechSynthesisUtterance(text)
         u.volume = volume
         u.rate = rate
         u.pitch = pitch
         val voice = voiceFor(s)
         if (voice != null) u.voice = voice
+        current = u // keep a reference alive past this call (Chrome GCs utterances mid-speech otherwise)
+        s.resume() // some browsers leave the speech queue paused — a no-op when it isn't
         s.speak(u)
+    }
+
+    // A silent TTS is almost always "no system speech engine" (notably Chrome/Firefox on Linux without
+    // speech-dispatcher + espeak/festival). Surface that once so it's diagnosable rather than mysteriously mute.
+    private fun warnIfNoVoices(s: dynamic) {
+        if (warnedNoVoices) return
+        if (((s.getVoices()?.length as? Int) ?: 0) == 0) {
+            warnedNoVoices = true
+            console.warn("[tts] no speech voices installed — TTS will be silent (Linux: install speech-dispatcher + espeak)")
+        }
     }
 
     private fun voiceFor(s: dynamic): dynamic {

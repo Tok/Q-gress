@@ -9,6 +9,7 @@ import agent.action.ActionItem
 import config.Config
 import system.Com
 import system.audio.Sound
+import system.audio.Tts
 import util.Rng
 
 /**
@@ -72,6 +73,7 @@ object Recruiter : ConditionalAction {
             Com.addMessage("$newAgent has completed the training.", Com.Importance.MAJOR, newAgent.faction.color)
             World.pendingAgents.add(newAgent) // flushed after the agent loop (avoids CME)
             Sound.playRecruitSuccess(agent.pos)
+            Tts.announceRecruitment(agent.faction) // VERBOSE TTS
         } else {
             Com.addMessage("A recruit turned down the ${agent.faction.nickName}s.", Com.Importance.MINOR, agent.faction.color)
             Sound.playRecruitFail(agent.pos)
