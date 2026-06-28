@@ -86,15 +86,11 @@ series config).
   `Locations` registry / `resources/locations.json`) to a file and import a custom one, so curated place
   sets can be shared without a rebuild. Builds on the already-externalized JSON catalogue + pure parser
   (`Locations.parse`); pairs with the shareable-scenario seam.
-- [ ] **Loading / progress display rework.** The world-gen progress (`LoadingOverlay`) currently reads in a
-  **strange order** and isn't transparent enough — rework it into a clear, correctly-ordered, legible sequence
-  of stages (map → grid → portals → people → routes) with honest per-stage progress. Pairs with the real
-  per-stage load % below.
-- [ ] **Real per-stage load %** (especially flow-field computation).
-- [ ] **Building grow-in spans the whole load.** The 3D building inflate finishes well before world-gen does
-  (`MapController.setBuildProgress` / `BUILD_DELAY_FRAC` 0.15 + `BUILD_RISE_SPAN` 0.45 → full at ~60% of gen).
-  Slow it so the city rises across the **entire** loading time and reaches full height **exactly when the game
-  starts**, not way before. Tie the inflate target to true gen progress end-to-end.
+- [ ] **Real per-stage load %.** The progress bars now move steadily (`LoadingOverlay` steady-creep + a
+  per-stage sub-bar) and the buildings rise across the whole load, but the single-async-wait stages
+  (map/street/shadow/grid) still **creep** rather than report true progress. Wire real signal where the APIs
+  allow it — esp. **flow-field computation** (per-portal field-build counts) and MapLibre tile-load events —
+  so those stages fill for real instead of estimating.
 - [ ] **Initial roster "roll"** — light flavour, not a gacha loop; ties to the icebox rarity tiers.
 - [ ] **`?debug` dev tooling — remaining.** Load-timing/profiling logs; and the handoff: run `?debug=capture`
   once in-browser, drop the downloaded `PresetFixtures.kt` into `src/jsTest/kotlin/util/` and commit, flipping
