@@ -33,10 +33,12 @@ object Config {
     const val recruitmentBaseChance = 0.20
 
     // Base recruit selection weight (Recruiter.selectionWeight × Balance.recruitFactor × progressSpeed). This
-    // competes (roulette, Rng.select) against the 0–1 slider Q-values, so at the old 0.00015 recruiting was
-    // picked ~never. Raised to actually compete; the anti-snowball recruitFactor (0.3–3.0×) still modulates it
-    // per faction (leader recruits less), and the "Progress speed" menu slider scales it further. Tune by feel.
-    var recruitWeight = 0.05
+    // competes (roulette, Rng.select) against the 0–1 slider Q-values (default 0.10). Calibration: 0.00015 was
+    // ~never picked (recruiting felt dead); 0.05 was far too high — in the "anywhere" context (only moveElsewhere
+    // ~0.10 competes) every agent recruited non-stop (and a recruiting agent shows no action coin, just bobs). At
+    // 0.005 recruiting is a ~5% background pick at x1 (more for the underdog / at higher Progress speed) so rosters
+    // fill over time without agents abandoning play. Tune by feel.
+    var recruitWeight = 0.005
 
     // Anti-snowball recruiting (Balance.recruitFactor): the LARGER faction recruits less, the SMALLER more,
     // so team sizes self-correct instead of the leader running away (recruiting was the dominant snowball).
