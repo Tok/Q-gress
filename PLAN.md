@@ -15,21 +15,25 @@ be matched. **Desktop-only**; mobile is blocked. (The substrate ships; what's le
 ## ★ Next up — refactor under the net (Phase B)
 The open structural focus: functional core / imperative shell, module-by-module, with the gate
 (ktlint/detekt/tests) green throughout. Exit criterion: pure logic testable in isolation. Pick from:
-- **Split god-objects** along seams as they're touched. Remaining: **`Portal` (685)** — the highest-value one,
-  since splitting it also unblocks the remaining **commonMain pure-logic lift** (the cleanly-liftable core is
-  already moved + tested; what's left is gated behind coupling — `Config` → `Tournament`/`Observation`/`Cycle`;
-  `Portal`/`World`/`Agent` → `Field`/`Inventory`/`knockMods`). (`Scene3D` keeps an *intentional* `LargeClass`
-  suppress: its showcase sandbox is already out in `Showcases`, and the remaining entity-sync + effect-dispatch
-  bulk is irreducibly bound to the three.js groups — relocating it behind a ~30-member API would be worse.)
+- **Split god-objects** along seams as they're touched. The named splits are done (`Sound`/`MapController`/
+  `Bootstrap`/`Portal` all under detekt's 600-line `LargeClass` threshold). What's left is the deeper
+  **commonMain pure-logic lift**: the cleanly-liftable core is already moved + tested, and the rest is gated
+  behind type coupling — to lift `Field`/`Inventory`/`knockMods` and `Config` consumers
+  (`Tournament`/`Observation`/`Cycle`), the jsMain types they bind (`Portal`/`World`/`Agent` + the `items/`
+  hierarchy) have to become `commonMain` first. That's a large, multi-step move, not a quick extraction.
+  (`Scene3D` keeps an *intentional* `LargeClass` suppress: its showcase sandbox is already out in `Showcases`,
+  and the remaining entity-sync + effect-dispatch bulk is irreducibly bound to the three.js groups — relocating
+  it behind a ~30-member API would be worse.)
 - **Reduce magic numbers** — name them / fold into `Config` where it aids clarity (detekt `MagicNumber` is
   off → a by-hand judgement pass, not a gate-chase).
 - **Tighten line length 140 → 120** — land *alongside* the class extractions (auto-wrapping inflates
   `LargeClass` otherwise).
 
-Optional small wins: **CSS design-token dedup** (hoist `blur(7px)`, the `rgba(255,255,255,.06/.12/.18)` button
-fills, `rgba(0,0,0,.45)`, `border-radius:6px` into `:root` custom properties — zero-toolchain, a visual
-no-op); the leftover code dupes (the 3 mod-type `getColorForLevel()` companions; the two history panels' uPlot
-series config).
+Optional small wins: the leftover code dupes (the two history panels' uPlot series config — the mod-type
+`getColorForLevel()` companions already share `LeveledColor.colorForLevel`). *(CSS design-token dedup is
+done: the glass/tint/blur literals route through `:root` vars, plus `--ui-active-fill` / `--ui-border-bright`.
+Deliberately left as literals: `border-radius` — the radii span 2–10px, so one token can't dedup them without
+changing values, i.e. not a no-op.)*
 
 ## Perf — the big deferred lever
 - [ ] **three.js mesh instancing / merging.** World-gen + steady-state are dominated by mesh construction

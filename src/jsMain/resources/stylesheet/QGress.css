@@ -40,7 +40,7 @@
     --ui-chrome: linear-gradient(180deg, #f1f1f1 0%, #d5d5d5 52%, #bbbbbb 100%);
     --ui-chrome-hi: linear-gradient(180deg, #ffffff 0%, #e4e4e4 52%, #cdcdcd 100%);
     --ui-rubber: rgba(11, 11, 11, 0.82);
-    --ui-glass-border: rgba(255, 255, 255, 0.16);
+    --ui-glass-border: rgba(255, 255, 255, 0.16); /* standard hairline edge / divider */
     --ui-glass-bg: rgba(0, 0, 0, 0.45); /* standard glass-pane background */
     --ui-glass-blur: blur(7px); /* standard glass-pane backdrop blur */
     --ui-btn-blur: blur(6px); /* button backdrop blur (footer tabs / top bar) */
@@ -48,6 +48,8 @@
     --ui-tint-1: rgba(255, 255, 255, 0.06);
     --ui-tint-2: rgba(255, 255, 255, 0.12);
     --ui-tint-3: rgba(255, 255, 255, 0.18);
+    --ui-active-fill: rgba(255, 255, 255, 0.16); /* selected/active chip highlight (tabs, onboarding) */
+    --ui-border-bright: rgba(255, 255, 255, 0.4); /* the strong white control edge (buttons, fields) */
     --ui-faction-edge: color-mix(in srgb, var(--faction) 55%, transparent);
     --ui-faction-glow: 0 0 14px color-mix(in srgb, var(--faction) 50%, transparent);
 }
@@ -364,7 +366,7 @@ html, body {
 }
 .scoreTrack {
     height: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.4);
+    border: 1px solid var(--ui-border-bright);
     border-radius: 2px;
     overflow: hidden;
 }
@@ -383,7 +385,7 @@ html, body {
     display: flex;
     gap: 12px;
     padding-left: 14px;
-    border-left: 1px solid rgba(255, 255, 255, 0.16);
+    border-left: 1px solid var(--ui-glass-border);
     font-size: 13px;
     color: #d1d1d1;
     white-space: nowrap;
@@ -487,7 +489,7 @@ html, body {
 }
 .footerTab.active {
     color: #ffffff;
-    background: rgba(255, 255, 255, 0.16);
+    background: var(--ui-active-fill);
     border-color: rgba(255, 255, 255, 0.25);
 }
 .footerHeaderRight {
@@ -1049,7 +1051,7 @@ html, body {
 }
 .audioSubtab.active {
     color: #ffffff;
-    background: rgba(255, 255, 255, 0.16);
+    background: var(--ui-active-fill);
     border-color: rgba(255, 255, 255, 0.25);
 }
 /* Mixer channel strips: label · volume slider · mute. */
@@ -1510,7 +1512,7 @@ html, body {
 /* Morphing back onto the faction CTA: the CTA is always neutral white (the title showpiece never takes a
    faction tint), so the pane drops the faction edge + glow for that one trip. */
 .morphPaneNeutral {
-    border-color: rgba(255, 255, 255, 0.16);
+    border-color: var(--ui-glass-border);
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
 }
 /* Thin "source on GitHub" link pinned to the bottom of the title screen. */
@@ -1616,7 +1618,7 @@ html, body {
     gap: 10px;
     padding: 12px 18px 14px;
     background: rgba(10, 10, 10, 0.55);
-    border: 1px solid rgba(255, 255, 255, 0.16);
+    border: 1px solid var(--ui-glass-border);
     border-radius: 6px;
     backdrop-filter: blur(3px);
 }
@@ -1745,11 +1747,11 @@ html, body {
     cursor: pointer;
     color: #ffffff;
     background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.4);
+    border: 1px solid var(--ui-border-bright);
     border-radius: 3px;
 }
 .onboardActive {
-    background: rgba(255, 255, 255, 0.16);
+    background: var(--ui-active-fill);
     color: #ffffff;
 }
 /* The selected option: the same brighter-fill + white-border highlight the footer tabs use (it inherits the
@@ -1757,7 +1759,7 @@ html, body {
 .onboardPreset.onboardActive {
     background: var(--ui-tint-3);
     color: #ffffff;
-    border-color: rgba(255, 255, 255, 0.4);
+    border-color: var(--ui-border-bright);
     font-weight: 700;
 }
 /* Driver-selection grid: a faction label per row, then one column per option (aligned). */
@@ -1825,7 +1827,7 @@ html, body {
     text-align: center;
     color: #ffffff;
     background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.4);
+    border: 1px solid var(--ui-border-bright);
     border-radius: 3px;
 }
 .onboardCheck {
@@ -2004,7 +2006,7 @@ html, body {
     padding: 3px 7px;
     color: #ffffff;
     background: rgba(0, 0, 0, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.4);
+    border: 1px solid var(--ui-border-bright);
     border-radius: 3px;
 }
 .maplibregl-ctrl-top-right {
@@ -2178,7 +2180,7 @@ html, body {
 }
 .tuneDivider {
     height: 1px;
-    background: rgba(255, 255, 255, 0.16);
+    background: var(--ui-glass-border);
     margin: 6px 0;
 }
 .tuneHidden {
