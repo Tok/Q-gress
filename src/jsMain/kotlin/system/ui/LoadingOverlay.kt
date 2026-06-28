@@ -110,10 +110,11 @@ object LoadingOverlay {
         bandEnd = to.toDouble()
         stageFrac = if (total <= 0) 1.0 else (done.toDouble() / total).coerceIn(0.0, 1.0)
         indeterminate = false
-        // Right-pad the count to a fixed 4-wide field so the centred line never reflows as the numbers grow
-        // (the detail line is monospace, so a normal space is exactly one cell — no figure-space fallback).
+        // Put the count on its OWN line below the label: the label varies in width (e.g. "Creating portal
+        // <name>"), so keeping the count on the same centred line made it slide left/right as the label
+        // changed. On its own line — monospace + a fixed 4-wide field — the count stays rock-steady.
         val padded = done.toString().padStart(4, ' ') // fixed 4-wide field; in monospace a normal space is one cell
-        detail("$label  ($padded/$total)")
+        detail("$label\n($padded/$total)")
         reveal()
     }
 

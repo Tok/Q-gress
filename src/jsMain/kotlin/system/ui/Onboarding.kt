@@ -347,14 +347,15 @@ object Onboarding {
         val heightInput = numberInput(Sim.height)
         val portalsInput = numberInput(defaultPortals)
 
-        // Heavy-map confirmation — only shown for Giant (built early so the preset closures below can toggle it).
+        // Heavy-map confirmation — shown for Large + Giant (≥ 1 km², already FPS-challenging); built early so
+        // the preset closures below can toggle it.
         val warn = heavyMapWarn()
 
         val presets = div("onboardRow")
         val presetBtns = mutableListOf<HTMLButtonElement>()
         val applyPreset = mutableListOf<() -> Unit>()
         // Sizes are picked by play-AREA (km²); portal count (the pathfinding driver) follows area sub-linearly,
-        // people scale automatically. "Giant" is the warned, perf-heavy ceiling.
+        // people scale automatically. "Large"/"Giant" (≥ 1 km²) are the warned, perf-heavy presets.
         listOf(
             "Tiny" to Sim.TINY_KM2,
             "Small" to Sim.SMALL_KM2,

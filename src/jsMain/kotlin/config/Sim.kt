@@ -28,11 +28,11 @@ object Sim {
     // Map-size presets by play-area in km². "tiny" is the title-screen arena, "small" the onboarding default
     // (smaller = less walking = more action), "giant" the warned heavy ceiling. Portal count (the pathfinding
     // driver) follows area sub-linearly.
-    const val TINY_KM2 = 0.20
-    const val SMALL_KM2 = 0.5
-    const val MID_KM2 = 1.0
-    const val LARGE_KM2 = 2.0
-    const val GIANT_KM2 = 3.0
+    const val TINY_KM2 = 0.10
+    const val SMALL_KM2 = 0.20
+    const val MID_KM2 = 0.50
+    const val LARGE_KM2 = 1.0
+    const val GIANT_KM2 = 2.0
 
     // Absolute sim-pixel clamp for custom (manual / URL) sizes — window-independent now that presets are absolute.
     private const val MIN_SIDE = 600
@@ -42,7 +42,7 @@ object Sim {
     fun sideForArea(km2: Double): Int = (2.0 * sqrt(km2 * 1_000_000.0 / PI) / MPP_REF).roundToInt()
 
     /** Suggested start-portal count for a [km2] map — sub-linear (∛) so the per-portal flow-field cost stays
-     *  bounded as the map grows (≈ 4 · 6 · 8 · 10 · 12 across tiny…giant). */
+     *  bounded as the map grows (≈ 4 · 5 · 6 · 8 · 10 across tiny…giant). */
     fun suggestedPortals(km2: Double): Int = (8.0 * km2.pow(1.0 / 3.0)).roundToInt().coerceAtLeast(3)
 
     var width = sideForArea(SMALL_KM2)

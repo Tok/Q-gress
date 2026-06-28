@@ -79,8 +79,8 @@ CSS design-token dedup is done too: glass/tint/blur literals route through `:roo
   window size. The "real UI" we want to ship behind.
 
 ## Onboarding
-- [ ] **Map-size per-preset tuning + dynamic field.** Presets are km²-based (Tiny 0.1 · Small 0.5 default ·
-  Mid 1 · Large 2 · Giant 3) with sub-linear portal counts. Remaining: (a) per-preset **runtime-FPS tuning**
+- [ ] **Map-size per-preset tuning + dynamic field.** Presets are km²-based (Tiny 0.1 · Small 0.2 default ·
+  Mid 0.5 · Large 1 · Giant 2; Large + Giant warned at ≥ 1 km²) with sub-linear portal counts. Remaining: (a) per-preset **runtime-FPS tuning**
   on a real GPU (entity count, not build time, is the constraint — find where Large/Giant bite); (b) the
   **dynamic grow/move the play area mid-game** idea (kept in mind during the SimRunner area-decoupling); (c)
   the deferred **mesh instancing** is what would let the big presets run smoothly (see Perf).

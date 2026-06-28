@@ -1954,7 +1954,12 @@ html, body {
     font-size: 12px;
     color: #a0a0a0;
     margin-top: 10px;
-    min-height: 16px;
+    /* Render the "\n" before the (n/n) count as a real line break (the count sits on its own line below the
+       label, so a variable-width label can't slide it around). Reserve both lines always so single-line
+       details don't shorten the panel and make it jump vertically. */
+    white-space: pre-line;
+    min-height: 32px;
+    line-height: 16px;
     font-feature-settings: "frac" 0; /* don't turn counts like "111/200" into a ½ fraction glyph */
 }
 @keyframes loadingShimmer {

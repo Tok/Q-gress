@@ -24,14 +24,16 @@ object FpsMeter {
     private var readout: HTMLElement? = null
     private var looping = false
 
-    /** Whether the on-screen readout is currently shown (menu checkbox state). */
-    var displayEnabled = false
+    /** Whether the on-screen readout is currently shown (menu checkbox state). On by default — the FPS
+     *  readout is useful at a glance and the menu checkbox can hide it. */
+    var displayEnabled = true
         private set
 
-    /** Create the (hidden) readout and start measuring if `?debug` capture is on. Call once the HUD is ready. */
+    /** Create the readout and start measuring if it's shown by default or `?debug` capture is on. Call once
+     *  the HUD is ready. */
     fun start() {
         ensureReadout()
-        if (Debug.enabled) ensureLoop()
+        if (Debug.enabled || displayEnabled) ensureLoop()
     }
 
     /** Menu toggle: show/hide the on-screen FPS readout at runtime — independent of the `?debug` console capture. */
