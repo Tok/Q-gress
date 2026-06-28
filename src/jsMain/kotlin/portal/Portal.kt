@@ -4,6 +4,7 @@ import agent.Agent
 import agent.Balance
 import agent.Faction
 import config.Config
+import config.Dim
 import config.IngressFacts
 import config.Sim
 import extension.*
@@ -299,8 +300,11 @@ data class Portal(
             )
             deployer.removeXm(level.level * 20)
             val oldDistance = oldReso?.distance
-            val newDistance = (if (oldDistance == 0) distance else oldDistance) ?: distance
-            // console.trace("$agent deploys ${resonator} to $octant at $this. $distance $oldDistance")
+            // Clamp into the legal deploy band: a stored upgrade distance — or the agent's per-tick step
+            // granularity landing it a hair outside max range — could otherwise trip ResonatorSlot.deployReso's
+            // [min, max] range checks. Clamping here keeps the slot invariant and the rod geometry consistent.
+            val newDistance = ((if (oldDistance == 0) distance else oldDistance) ?: distance)
+                .coerceIn(Dim.minDeploymentRange.toInt(), Dim.maxDeploymentRange.toInt())
             slots[octant]?.deployReso(deployer, resonator, newDistance)
             val xx = location.x + octant.calcXOffset(newDistance)
             val yy = location.y + octant.calcYOffset(newDistance)
