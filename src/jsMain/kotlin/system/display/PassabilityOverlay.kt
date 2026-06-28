@@ -74,7 +74,7 @@ object PassabilityOverlay {
     // returns 0) until the terrain heights are ready.
     private fun terrainGeometry(): dynamic {
         val mpp = Scene3D.metersPerPixel
-        val geo = Three.asDynamic().PlaneGeometry(Sim.width * mpp, Sim.height * mpp, SEG, SEG) // 4-arg ctor (segments)
+        val geo = Three.PlaneGeometry(Sim.width * mpp, Sim.height * mpp, SEG, SEG) // 4-arg ctor (subdivided to drape)
         val pos = geo.asDynamic().attributes.position
         val count = pos.count as Int
         for (i in 0 until count) {

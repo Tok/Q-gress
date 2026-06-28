@@ -75,7 +75,12 @@ external object Three {
     val EquirectangularReflectionMapping: Int
 
     class BoxGeometry(width: dynamic, height: dynamic, depth: dynamic)
-    class PlaneGeometry(width: dynamic, height: dynamic)
+    class PlaneGeometry(
+        width: dynamic,
+        height: dynamic,
+        widthSegments: dynamic = definedExternally,
+        heightSegments: dynamic = definedExternally,
+    )
     class TorusGeometry(
         radius: dynamic,
         tube: dynamic,
