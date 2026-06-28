@@ -2492,6 +2492,11 @@ html, body {
     display: flex;
     flex-direction: column;
     min-width: 210px; /* a roomy fixed-ish width so the stretched rows/buttons read as one column */
+    /* Cap to the viewport below the top bar and scroll: the settings list (Gameplay/Visual/Graphics + footer)
+       can outrun a short window, and the dropdown is absolutely positioned, so without this the lower sections
+       run off-screen unreachable. */
+    max-height: calc(100vh - 70px);
+    overflow-y: auto;
     background: rgba(18, 18, 18, 0.96);
     border: 1px solid black;
     border-radius: 3px;
