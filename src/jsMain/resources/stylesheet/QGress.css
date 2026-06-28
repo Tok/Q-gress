@@ -120,8 +120,7 @@ html, body {
 .aiPanel {
     display: flex;
     gap: 28px;
-    width: fit-content; /* hug the two faction columns so the scene shows through beside it */
-    max-width: 100%;
+    width: 100%; /* fill the STATS-tab width so each faction's obs grid spreads into columns (auto-fill below) */
     box-sizing: border-box;
     font-family: "Coda", monospace;
     font-size: 11px;
