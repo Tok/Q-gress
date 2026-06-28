@@ -21,6 +21,13 @@ import kotlin.math.sqrt
 object Pathfinding {
     const val MIN_HEAT = 35
     const val MAX_HEAT = 100
+
+    // How much worse a wall/unreached cell reads than the passable cell beside it, so the heat gradient always
+    // points AWAY from walls — at any distance from the goal. Must be RELATIVE (here + this), not a fixed
+    // ceiling: accumulated heat grows ≥ MIN_HEAT per cell, so cells far from the goal sit in the thousands and a
+    // fixed-100 wall would read as the LOWEST (most attractive) heat around → the gradient would steer agents
+    // straight INTO walls (where the passability clamp then traps them). One max-penalty-cell of repulsion.
+    private const val WALL_REPULSION = MAX_HEAT
     private const val MIN_SPEED_FACTOR = 0.45 // slowest terrain still moves at 45% (so agents never stall)
     private const val YIELD_EVERY_CELLS = 2000 // cooperative yield cadence while filling the field (async path)
     private const val UNREACHED = -1
@@ -165,8 +172,11 @@ object Pathfinding {
         for (i in 0 until n) {
             val x = cells.minX + i % cells.w
             val y = cells.minY + i / cells.w
-            val lr = heatAt(cells, heat, x - 1, y) - heatAt(cells, heat, x + 1, y)
-            val ud = heatAt(cells, heat, x, y - 1) - heatAt(cells, heat, x, y + 1)
+            // Walls/unreached neighbours read as THIS cell's heat + a repulsion margin (always "worse than
+            // here"), so the gradient points away from them whether the cell is near the goal or deep in the map.
+            val wallHeat = (if (heat[i] != UNREACHED) heat[i] else 0) + WALL_REPULSION
+            val lr = heatAt(cells, heat, x - 1, y, wallHeat) - heatAt(cells, heat, x + 1, y, wallHeat)
+            val ud = heatAt(cells, heat, x, y - 1, wallHeat) - heatAt(cells, heat, x, y + 1, wallHeat)
             val rawX: Double
             val rawY: Double
             if (lr != 0 || ud != 0) {
@@ -200,11 +210,11 @@ object Pathfinding {
         return re to im
     }
 
-    // Heat at a cell, or [MAX_HEAT] when off-grid or unreached (matches the old `heatMap[pos] ?: maxHeat`,
-    // with maxHeat ≡ MAX_HEAT — the cost ceiling unreached cells already carry).
-    private fun heatAt(cells: Cells, heat: IntArray, x: Int, y: Int): Int {
+    // Heat at a cell, or [wallHeat] (the caller's own heat + a repulsion margin) when off-grid or unreached, so
+    // a wall always reads worse than the cell beside it → the gradient steers away from it everywhere.
+    private fun heatAt(cells: Cells, heat: IntArray, x: Int, y: Int, wallHeat: Int): Int {
         val i = cells.idx(x, y)
-        return if (i >= 0 && heat[i] != UNREACHED) heat[i] else MAX_HEAT
+        return if (i >= 0 && heat[i] != UNREACHED) heat[i] else wallHeat
     }
 
     // --- smoothing (3×3 box blur — averaging the 9 neighbour vectors, missing ones count as zero) ----------
