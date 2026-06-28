@@ -12,6 +12,7 @@ import org.w3c.dom.events.Event
 import system.building.BuildingTransparency
 import system.display.PassabilityOverlay
 import system.display.PortalNameTicker
+import system.display.VectorFieldOverlay
 import system.display.fx.DamageNumberFx
 import system.ui.panel.DropRatesPanel
 import util.GameplayPrefs
@@ -50,6 +51,11 @@ object MenuControls {
         menu.append(checkbox("passabilityToggle", "Passability map", false) { PassabilityOverlay.setVisible(it) })
         menu.append(checkbox("damageNumbersToggle", "3D Damage numbers", DamageNumberFx.enabled) { DamageNumberFx.enabled = it })
         menu.append(checkbox("portalNamesToggle", "3D Portal names", PortalNameTicker.enabled) { PortalNameTicker.setEnabled(it) })
+        menu.append(
+            checkbox("vectorFieldToggle", "Flow-field arrows", VectorFieldOverlay.flashEnabled) {
+                VectorFieldOverlay.setEnabled(it)
+            },
+        )
         menu.append(checkbox("fpsToggle", "FPS", FpsMeter.displayEnabled) { FpsMeter.setDisplay(it) })
         menu.append(slider("Buildings transparency", BuildingTransparency.default()) { BuildingTransparency.set(it) })
         menu.append(slider("Building shake", Config.buildingShakeMultiplier, Spec(0.0..2.0, 0.1)) { Config.buildingShakeMultiplier = it })

@@ -3,6 +3,7 @@ import World
 import config.Sim
 import external.Three
 import system.audio.Sound
+import util.Prefs
 import util.data.*
 import kotlin.math.PI
 import kotlin.math.atan2
@@ -42,8 +43,23 @@ object VectorFieldOverlay {
         group = Three.Group().also { scene.add(it) }
     }
 
-    /** Off for the title scene — no flow-field flashes there. */
-    var flashEnabled = true
+    private const val PREF_KEY = "vectorFieldArrows" // localStorage key for the in-game on/off toggle
+
+    /** Whether new portals flash their flow field. Off for the title scene (set directly by TitleSim); in-game
+     *  it follows the player's persisted Menu choice ([setEnabled]), on by default. */
+    var flashEnabled = Prefs.read(PREF_KEY)?.unsafeCast<Boolean>() ?: true
+
+    /** Menu toggle (persisted): show/hide the flow-field arrows in-game. Off clears whatever's on screen now. */
+    fun setEnabled(on: Boolean) {
+        flashEnabled = on
+        Prefs.save(PREF_KEY) { on }
+        if (!on) { // drop the queued sweep + anything currently showing, so it disappears at once
+            queue.clear()
+            currentId = null
+            builtKey = null
+            group?.clear()
+        }
+    }
 
     private const val MAX_QUEUE = 24 // bound the FIFO (re-flashing through the long people phase can over-feed it)
 
