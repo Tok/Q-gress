@@ -553,7 +553,7 @@ object Bootstrap {
             GameLoop.start { tick() }
             World.isReady = true
             console.log("[perf] WORLD READY") // headless profiler waits on this before the runtime window
-            FpsMeter.start() // ?debug only: per-frame FPS/frame-time readout
+            FpsMeter.start() // arms the FPS readout (menu-toggled display + ?debug console capture)
             document.getElementById("top-controls")?.removeClass("invisible") // reveal the toolbar now
             document.getElementById(LOCATION_LABEL_ID)?.removeClass("invisible") // …and the location name (in #hudTop, not the toolbar)
             Attribution.collapse() // we've left the title → tuck the map credit into its (i)

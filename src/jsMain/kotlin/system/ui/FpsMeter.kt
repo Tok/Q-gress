@@ -2,37 +2,62 @@ package system.ui
 
 import kotlinx.browser.document
 import kotlinx.browser.window
+import kotlinx.dom.addClass
 import org.w3c.dom.HTMLElement
 import util.Debug
 
 /**
- * Per-frame FPS / frame-time readout (PLAN phase D — establish a baseline). Runs its own
- * `requestAnimationFrame` loop, computing a rolling FPS + average frame-time over a short window, shown in a
- * fixed corner overlay and logged to the console as `[perf] fps=… frame=…ms` (so the headless CDP profiler
- * captures it too). Gated by `?debug` — off and zero-cost in normal play. Independent of the sim tick, so it
- * measures the real display/render rate (3D scene + HUD), not the sim speed.
+ * FPS / frame-time readout (PLAN phase D — establish a baseline). Runs its own `requestAnimationFrame` loop,
+ * computing a rolling FPS once per second (independent of the sim tick, so it measures the real display/render
+ * rate, not the sim speed). Two independent consumers:
+ *  - **On-screen display** — a small Coda readout in the top-right (under the volume widget), toggled at runtime
+ *    from the menu ([setDisplay]); off by default.
+ *  - **Debug capture** — the `[perf] fps=… frame=…ms` console logs the headless CDP profiler scrapes, gated by
+ *    `?debug` (unchanged). The menu toggle controls ONLY the display, never this capture.
+ * The rAF loop runs only while at least one consumer is active, and re-baselines when it (re)starts.
  */
 object FpsMeter {
     private const val WINDOW_MS = 1000.0 // recompute the average once per second
     private var last = 0.0
     private var frames = 0
     private var accumMs = 0.0
-    private var hud: HTMLElement? = null
-    private var running = false
+    private var readout: HTMLElement? = null
+    private var looping = false
 
-    /** Start the readout if `?debug` is on (idempotent). Call once the world is ready. */
+    /** Whether the on-screen readout is currently shown (menu checkbox state). */
+    var displayEnabled = false
+        private set
+
+    /** Create the (hidden) readout and start measuring if `?debug` capture is on. Call once the HUD is ready. */
     fun start() {
-        if (running || !Debug.enabled) return
-        running = true
-        hud = (document.createElement("div") as HTMLElement).also {
-            it.id = "fpsMeter"
-            it.setAttribute(
-                "style",
-                "position:fixed;top:6px;left:50%;transform:translateX(-50%);z-index:99999;" +
-                    "font:11px monospace;color:#a0a0a0;background:rgba(0,0,0,.55);padding:2px 8px;border-radius:6px;pointer-events:none",
-            )
+        ensureReadout()
+        if (Debug.enabled) ensureLoop()
+    }
+
+    /** Menu toggle: show/hide the on-screen FPS readout at runtime — independent of the `?debug` console capture. */
+    fun setDisplay(on: Boolean) {
+        displayEnabled = on
+        ensureReadout()
+        readout?.style?.display = if (on) "block" else "none"
+        if (on) ensureLoop()
+    }
+
+    private fun ensureReadout() {
+        if (readout != null || document.body == null) return
+        readout = (document.createElement("div") as HTMLElement).also {
+            it.id = "fpsReadout"
+            it.addClass("fpsReadout") // Coda, top-right under the volume widget, no glass pane (see CSS)
+            it.style.display = if (displayEnabled) "block" else "none"
             document.body?.appendChild(it)
         }
+    }
+
+    private fun ensureLoop() {
+        if (looping) return
+        looping = true
+        last = 0.0 // re-baseline so the first interval after a (re)start isn't a huge gap
+        frames = 0
+        accumMs = 0.0
         loop()
     }
 
@@ -42,17 +67,17 @@ object FpsMeter {
                 accumMs += t - last
                 frames++
                 if (accumMs >= WINDOW_MS) {
-                    val fps = (frames * 1000.0 / accumMs)
+                    val fps = frames * 1000.0 / accumMs
                     val frameMs = accumMs / frames
-                    val text = "fps ${fps.toInt()} · frame ${frameMs.asTenths()}ms"
-                    hud?.textContent = text
-                    console.log("[perf] $text")
+                    if (displayEnabled) readout?.textContent = "${fps.toInt()} FPS"
+                    if (Debug.enabled) console.log("[perf] fps ${fps.toInt()} · frame ${frameMs.asTenths()}ms")
                     frames = 0
                     accumMs = 0.0
                 }
             }
             last = t
-            loop()
+            // Keep ticking only while something needs us; otherwise idle (re-armed by start()/setDisplay()).
+            if (displayEnabled || Debug.enabled) loop() else looping = false
         }
     }
 
