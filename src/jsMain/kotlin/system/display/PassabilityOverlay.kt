@@ -56,8 +56,12 @@ object PassabilityOverlay {
             }
         }
         val texture = Three.CanvasTexture(canvas)
-        texture.asDynamic().magFilter = Three.NearestFilter
-        texture.asDynamic().minFilter = Three.NearestFilter
+        // Bilinear (LinearFilter) instead of Nearest so the one-texel-per-cell map reads as a smooth walkability
+        // gradient rather than huge blocky pixels. ClampToEdge keeps the non-power-of-2 canvas a valid texture.
+        texture.asDynamic().magFilter = Three.LinearFilter
+        texture.asDynamic().minFilter = Three.LinearFilter
+        texture.asDynamic().wrapS = Three.ClampToEdgeWrapping
+        texture.asDynamic().wrapT = Three.ClampToEdgeWrapping
         val matParams: dynamic = js("({})")
         matParams.map = texture
         matParams.transparent = true

@@ -69,6 +69,8 @@ external object Three {
     class Float32BufferAttribute(array: dynamic, itemSize: dynamic)
 
     val NearestFilter: Int
+    val LinearFilter: Int
+    val ClampToEdgeWrapping: Int
     val AdditiveBlending: Int
     val DoubleSide: Int
     val NormalBlending: Int
