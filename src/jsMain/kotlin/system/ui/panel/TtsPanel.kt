@@ -89,7 +89,7 @@ object TtsPanel {
     private fun testButton(): HTMLElement {
         val row = el("div", "audioChannel")
         val b = document.createElement("button") as HTMLButtonElement
-        b.className = "audioMute"
+        b.className = "audioTestBtn"
         b.textContent = "Test voice"
         b.onclick = {
             Tts.test()

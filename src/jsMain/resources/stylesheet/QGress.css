@@ -1080,6 +1080,49 @@ html, body {
     padding: 3px 11px;
     cursor: pointer;
 }
+/* A proper-sized glass action button (the TTS "Test voice") — the tiny .audioMute pill was too small. */
+.audioTestBtn {
+    font-family: "Chakra Petch", sans-serif;
+    letter-spacing: 0.5px;
+    font-size: 13px;
+    background: var(--ui-glass-bg);
+    -webkit-backdrop-filter: var(--ui-btn-blur);
+    backdrop-filter: var(--ui-btn-blur);
+    color: #e8e8e8;
+    border: 1px solid var(--ui-glass-border);
+    border-radius: 5px;
+    padding: 7px 20px;
+    cursor: pointer;
+}
+.audioTestBtn:hover {
+    background: var(--ui-tint-2);
+}
+/* Glass scrollbars for the footer panels (Webkit + Firefox) — the default chunky OS bar broke the look. */
+.footerBody::-webkit-scrollbar,
+.footerBody *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+.footerBody::-webkit-scrollbar-track,
+.footerBody *::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.25);
+    border-radius: 5px;
+}
+.footerBody::-webkit-scrollbar-thumb,
+.footerBody *::-webkit-scrollbar-thumb {
+    background: var(--ui-tint-3);
+    border: 1px solid var(--ui-glass-border);
+    border-radius: 5px;
+}
+.footerBody::-webkit-scrollbar-thumb:hover,
+.footerBody *::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.28);
+}
+.footerBody,
+.footerBody * {
+    scrollbar-width: thin; /* Firefox */
+    scrollbar-color: var(--ui-tint-3) rgba(0, 0, 0, 0.25);
+}
 .audioReset:hover {
     background: rgba(255, 255, 255, 0.1);
 }
@@ -2153,9 +2196,20 @@ html, body {
     margin: 5px;
     width: 233px;
     font-size: 13px;
-    border-radius: 3px;
-    border: 1px solid black;
+    border-radius: 4px;
     padding: 5px;
+    /* Glass to match the rest of the UI — and so the closed control isn't white-on-white. */
+    background: var(--ui-glass-bg);
+    -webkit-backdrop-filter: var(--ui-btn-blur);
+    backdrop-filter: var(--ui-btn-blur);
+    color: #e8e8e8;
+    border: 1px solid var(--ui-glass-border);
+}
+/* The OPEN option list is OS-drawn (can't be glassed), so make it a readable neutral dark instead of the
+   default white-on-white. */
+.topDrop option {
+    background: #1c1c1c;
+    color: #e8e8e8;
 }
 
 /* Compact sim-speed buttons (Pause / ×1 / ×3 / Max) — narrower than .topButton, with an active state.

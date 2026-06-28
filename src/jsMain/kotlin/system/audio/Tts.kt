@@ -80,7 +80,9 @@ object Tts {
      *  verbosity gate. */
     fun test() {
         val names = Glyph.randomSequence(Rng, 1 + Rng.randomInt(2)).map { it.spokenName } // 1..3 glyphs
-        speak(names.joinToString(". ") + ".", rate, pitch)
+        val text = names.joinToString(". ") + "."
+        console.log("[tts] test → \"$text\" (available=${available()}, voices=${voices().size}, enabled=$enabled)")
+        speak(text, rate, pitch)
     }
 
     // --- core -----------------------------------------------------------------------------------------
