@@ -8,18 +8,22 @@ import kotlin.math.sqrt
  * just the top-down footprint. The Pos→metre bridge stays anchored at zoom 18.
  *
  * Size is chosen at onboarding (the map-size step): bigger = more grid cells = a slower build and
- * pricier per-portal flow fields (each portal builds a full-map field). "Large" is the original
- * SCALE=2.0; the default is "Normal" (a bit smaller); "Small" is way smaller.
+ * pricier per-portal flow fields (each portal builds a full-map field). Bumped up from the original
+ * Large=2.0 now that the flat-array flow fields + targeting cut world-gen ~2×; "Small" is way smaller.
+ *
+ * Tuning note: the play area grows with [scale]² so an entity count (portals/NPCs, hence per-frame
+ * GPU draw + sim CPU) grows with it too — bump [LARGE_SCALE] for bigger maps, but each +X% area is
+ * roughly +X% runtime cost. World-gen has headroom now; runtime FPS is the constraint.
  */
 object Sim {
     const val SMALL_SCALE = 1.0
-    const val LARGE_SCALE = 2.0
+    const val LARGE_SCALE = 2.2 // was 2.0; nudged up after the phase-D perf work (area +21%)
 
     /**
      * Normal sits at the **area midpoint** of Small and Large. Play area grows with the square of the scale, so
-     * we average the squares and take the root (√((1²+2²)/2) ≈ 1.58, vs the old flat 1.5 which sat below the
-     * true midpoint). We can't weight the presets by walkability — unknown until the grid is built — so we
-     * balance the raw play-area instead: Normal's area is exactly halfway between Small's and Large's.
+     * we average the squares and take the root (√((1²+2.2²)/2) ≈ 1.71). We can't weight the presets by
+     * walkability — unknown until the grid is built — so we balance the raw play-area instead: Normal's area is
+     * exactly halfway between Small's and Large's.
      */
     val NORMAL_SCALE = sqrt((SMALL_SCALE * SMALL_SCALE + LARGE_SCALE * LARGE_SCALE) / 2.0)
 
