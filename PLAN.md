@@ -8,7 +8,7 @@ Branch: `develop` · Owner: @zirteq
 
 ## ★ Next session — start here
 **Phase D's cheap perf wins + baseline tooling are banked** (flat-array flow fields, squared-distance targeting,
-panel throttling, FX physics, `Profiler`/`FpsMeter`/`profiler.sh` — see Phase D); map presets are now sized by
+panel throttling, FX physics, `Profiler`/`FpsMeter`/`scripts/profiler.sh` — see Phase D); map presets are now sized by
 real **km²** (`Sim.sideForArea`, Small default, Giant 3 km² warned) with sub-linear portal counts, and the
 default pace was doubled. The next big perf lever (**three.js mesh instancing**) is deferred — reprofile when
 things change, don't pre-optimize.
@@ -47,7 +47,7 @@ Functional core / imperative shell, properly. Module-by-module, behind the phase
 We dipped into phase D ahead of finishing phase B because a profiling pass was cheap and high-value. **Baseline
 tooling + the cheap, high-confidence optimizations are done; the big remaining lever is deferred.**
 - [x] **Baseline tooling** — `util/Profiler` (world-gen per-stage `[perf]` timing + the per-portal flow-field
-  aggregate), `system/ui/FpsMeter` (`?debug` FPS/frame-time overlay), and **`./profiler.sh`** (a zero-dep
+  aggregate), `system/ui/FpsMeter` (`?debug` FPS/frame-time overlay), and **`./scripts/profiler.sh`** (a zero-dep
   headless-Chrome CDP CPU profiler → `build/profiles/*.cpuprofile`; `tools/profiling/`). Re-run any time.
 - [x] **Cheap wins (banked)** — lazy `Complex` (no eager `sqrt`/`atan2` per construction); **flat-array flow
   fields** (`Pathfinding` over `IntArray`/`DoubleArray` + a flat `VectorField`, no `Pos`-keyed HashMaps of boxed

@@ -5,16 +5,16 @@
 # Chrome (software WebGL), and prints a self-time-per-function breakdown. Profiles + console
 # land in build/profiles/ (open the .cpuprofile files in Chrome DevTools → Performance).
 #
-#   ./profiler.sh                                   # default: Large map + endgame roster
-#   ./profiler.sh "local=true&start=mid&w=1600&h=1000&seed=1&debug=true"   # custom world
-#   SKIP_BUILD=1 ./profiler.sh                      # reuse the existing dev bundle
-#   GEN_TIMEOUT=400 RUNTIME_S=30 ./profiler.sh      # longer windows
+#   ./scripts/profiler.sh                                   # default: Large map + endgame roster
+#   ./scripts/profiler.sh "local=true&start=mid&w=1600&h=1000&seed=1&debug=true"   # custom world
+#   SKIP_BUILD=1 ./scripts/profiler.sh                      # reuse the existing dev bundle
+#   GEN_TIMEOUT=400 RUNTIME_S=30 ./scripts/profiler.sh      # longer windows
 #
 # NB: headless uses software WebGL, so the *frame rate* is NOT representative of a real GPU —
 # trust the world-gen breakdown + the sim-function self-times, not the headless FPS. For real
 # FPS, run ./start.sh and read the ?debug FpsMeter overlay on your own machine.
 set -euo pipefail
-cd "$(dirname "$0")"
+cd "$(dirname "$0")/.."
 
 if [ -z "${JAVA_HOME:-}" ] && [ -x /usr/lib/jvm/java-21-openjdk-amd64/bin/java ]; then
     export JAVA_HOME="/usr/lib/jvm/java-21-openjdk-amd64"

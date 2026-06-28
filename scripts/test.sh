@@ -2,8 +2,8 @@
 #
 # Run the Q-Gress unit-test suite (Node/Mocha, 62 tests).
 #
-#   ./test.sh             # run the tests
-#   ./test.sh --coverage  # also produce an experimental coverage report (see note)
+#   ./scripts/test.sh             # run the tests
+#   ./scripts/test.sh --coverage  # also produce an experimental coverage report (see note)
 #
 # Coverage note: Kover has no Kotlin/JS support, and c8-over-source-maps reports
 # inflated numbers for transpiled Kotlin (untested .kt files can't be seen).
@@ -11,7 +11,7 @@
 # PLAN.md. The --coverage report is therefore INDICATIVE ONLY.
 #
 set -euo pipefail
-cd "$(dirname "$0")"
+cd "$(dirname "$0")/.."
 
 # Pick up the project toolchain (JDK 21) if the shell doesn't already have it.
 if [ -z "${JAVA_HOME:-}" ] && [ -x /usr/lib/jvm/java-21-openjdk-amd64/bin/java ]; then
