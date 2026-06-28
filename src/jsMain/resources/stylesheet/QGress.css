@@ -1946,13 +1946,14 @@ html, body {
     margin-top: 7px;
 }
 .loadingDetail {
-    font-family: "Coda", monospace;
+    /* Monospace (Coda's digits are proportional + it has no tabular figures): equal-width glyphs so the
+       centred "(3/21)→(12/21)" count never shimmies as the numbers tick. */
+    font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
     font-size: 12px;
     color: #a0a0a0;
     margin-top: 10px;
     min-height: 16px;
     font-feature-settings: "frac" 0; /* don't turn counts like "111/200" into a ½ fraction glyph */
-    font-variant-numeric: tabular-nums; /* equal-width digits so the centred count doesn't shimmy as it changes */
 }
 @keyframes loadingShimmer {
     0% { background-position: 200% 0; }
