@@ -20,19 +20,20 @@ external class SpeechSynthesisUtterance(text: String) {
  * the "generate everything on the fly" rule). A clinical scanner announcer for the sim. Mirrors the
  * spectral-plinko WebSpeechTTS (voice / rate / pitch / volume) with a **verbosity** gate on top:
  *  - OFF — silent.
- *  - MINIMAL (default) — faction on pick, location on start, "Q-Gress" on the title.
- *  - VERBOSE — also checkpoint leads, huge fields, portal discovery, recruitment.
+ *  - MINIMAL — location on start, "Q-Gress" on the title.
+ *  - VERBOSE — also faction on pick, checkpoint leads, huge fields, portal discovery, recruitment.
  *  - GLYPH — everything, plus 1–3 random [Glyph]s read back on each successful glyph hack.
  *
- * Web Speech plays straight to the speakers and can't be routed through our Web Audio FX graph, so there are no
- * TTS FX (a browser limitation). Settings persist via [Prefs]; muted/safe headless.
+ * **Disabled by default** (voice quality is system-specific, so opt-in via the AUDIO → Voice tab). Web Speech
+ * plays straight to the speakers and can't be routed through our Web Audio FX graph, so there are no TTS FX (a
+ * browser limitation). Settings persist via [Prefs]; muted/safe headless.
  */
 object Tts {
     enum class Verbosity(val label: String) { OFF("Off"), MINIMAL("Minimal"), VERBOSE("Verbose"), GLYPH("Glyph") }
 
     private const val PREFS_KEY = "qgress.tts"
 
-    var enabled = true
+    var enabled = false // opt-in (the AUDIO → Voice "Enable" checkbox) — voice quality varies by system
         private set
     var verbosity = Verbosity.MINIMAL
         private set
