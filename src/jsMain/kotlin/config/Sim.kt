@@ -17,17 +17,20 @@ import kotlin.math.sqrt
  */
 object Sim {
     const val SMALL_SCALE = 1.0
-    const val LARGE_SCALE = 2.2 // was 2.0; nudged up after the phase-D perf work (area +21%)
+
+    // Doubled the largest map's PLAY AREA after the phase-D perf work (area ∝ scale², so ×√2 on the linear
+    // scale): 2.0 → 2.2 → 3.11 over the session. ≈ 9.7× the screen footprint.
+    const val LARGE_SCALE = 3.11
 
     /**
      * Normal sits at the **area midpoint** of Small and Large. Play area grows with the square of the scale, so
-     * we average the squares and take the root (√((1²+2.2²)/2) ≈ 1.71). We can't weight the presets by
+     * we average the squares and take the root (√((1²+3.11²)/2) ≈ 2.31). We can't weight the presets by
      * walkability — unknown until the grid is built — so we balance the raw play-area instead: Normal's area is
      * exactly halfway between Small's and Large's.
      */
     val NORMAL_SCALE = sqrt((SMALL_SCALE * SMALL_SCALE + LARGE_SCALE * LARGE_SCALE) / 2.0)
 
-    private const val MAX_SCALE = 3.0
+    private const val MAX_SCALE = 3.3 // URL w/h clamp — kept just above Large so the preset isn't clamped
 
     var width = (Dim.width * NORMAL_SCALE).toInt()
         private set
