@@ -118,8 +118,9 @@ CSS design-token dedup is done too: glass/tint/blur literals route through `:roo
   small-radius Ultra-Strike reward good aim; feeds the damage calc + blast VFX origin; another AI lever.
   *(Deferred for an eyes-on session: it rewrites the live combat-damage model + blast VFX origin — wants
   visual + feel verification, not a blind change.)*
-- [ ] **Portal-mod follow-ups** (shields/heat-sinks/viruses ship; link amps inactive): ~~heat-sink instant
-  cooldown reset~~ **(done — deploying a heat sink now wipes `Portal.lastHacks`)**; a **multi-hack** mod;
+- [ ] **Portal-mod follow-ups** (shields/heat-sinks/**multi-hacks**/viruses ship; link amps inactive):
+  ~~heat-sink instant cooldown reset~~ **(done — deploying a heat sink wipes `Portal.lastHacks`)**;
+  ~~a multi-hack mod~~ **(done — `Multihack.additionalHacks` raises `Portal.maxHacks`, now covered)**;
   **activate link amps** (range/outbound/SBUL); the **Ultra-Strike** weapon + targeted mod-stripping honouring
   shield `stickiness`; a **3D key** model; a per-game **drop-rate tuning UI** (`DropRates` is centralized —
   Menu → Drop rates; `docs/MECHANICS.md`).
