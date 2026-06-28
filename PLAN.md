@@ -158,7 +158,11 @@ be matched. **Desktop-only**; mobile is blocked.
 - [ ] **Glyph hacking** — a skill-based hack: **~3× rewards**, but **longer**, **needs skill**, **can fail**.
   Glyph skill (+ portal level) sets odds + duration. The collar animation + glassy sound already land
   (`HackFx`/`Sound`); this is the reward/skill/timing model in `Glypher`/`Portal.tryGlyph` + a glyph skill
-  on `agent/Skills`, exposed as a high-risk/high-reward QAction the AI learns to weigh.
+  on `agent/Skills`, exposed as a high-risk/high-reward QAction the AI learns to weigh. **Now have the data
+  to make timing realistic:** the [[glyph]] `Glyph` enum + the per-level glyph counts / time limits from the
+  Ingress wiki (L1 = 1 glyph / 20 s … L8 = 5 glyphs / 15 s; perfect-hack + speed bonuses) — drive the glyph
+  count + hack duration off portal level instead of a flat timing, and the TTS "glyph" tier already reads the
+  sequence back.
 - [ ] **Recruiting as an agent skill + items.** Rate is self-balancing now (`Recruiter.selectionWeight` ×
   `Balance.recruitFactor`). Next: a per-agent **skill** (`agent/Skills`) some are better at, plus **items**
   (e.g. *beer* — a temporary recruit boost) — a characterful lever instead of a flat faction rate.
