@@ -11,7 +11,6 @@ import org.w3c.dom.HTMLElement
 import system.Cycle
 import system.ui.Footer
 import system.ui.el
-import util.ColorUtil
 
 /**
  * The slider-history section of the **AI** footer tab (merged with [AiPanel]'s observation readout): one
@@ -27,9 +26,7 @@ object SliderHistoryPanel {
     private const val COLS = 4 // lay the slots out in 4 columns (was 2) to use the footer width
     private const val CHART_W = 240 // initial chart width; resizeCharts() then stretches each to its cell
     private const val CHART_H = 40
-    private const val FILL_ALPHA = "0.16)" // appended to a faction's "rgba(r, g, b, " prefix
 
-    private val OVERLAP_COLOR = ColorUtil.blendHex(Faction.ENL.color, Faction.RES.color)
     private val SLOTS: List<QValue> = SliderVector.ORDER
 
     private var built = false
@@ -77,10 +74,7 @@ object SliderHistoryPanel {
         SLOTS.indices.forEach { slot ->
             val enl = enlHist.map { it[slot] }.toTypedArray()
             val res = resHist.map { it[slot] }.toTypedArray()
-            // Overlap series: the value only where both factions coincide (else a null gap), drawn on top in
-            // the blended colour so identical weightings read as neutral, not whichever line was drawn last.
-            val overlap: Array<Double?> = Array(enl.size) { if (enl[it] == res[it]) enl[it] else null }
-            plots[slot]?.setData(arrayOf(xs, enl, res, overlap))
+            plots[slot]?.setData(arrayOf(xs, enl, res, Sparkline.overlapOf(enl, res)))
         }
     }
 
@@ -146,36 +140,9 @@ object SliderHistoryPanel {
         }
     }
 
-    private fun makePlot(target: HTMLElement): UPlot {
-        val opts: dynamic = js("({})")
-        opts.width = CHART_W
-        opts.height = CHART_H
-        opts.cursor = js("({ show: false })")
-        opts.legend = js("({ show: false })")
-        // Fix the y-axis to the slider range so slots are visually comparable (no per-chart auto-zoom).
-        opts.scales = js("({ x: { time: false }, y: { range: [0, 1] } })")
-        opts.axes = arrayOf(js("({ show: false })"), js("({ show: false })"))
-        opts.series = arrayOf(js("({})"), seriesOpts(Faction.ENL), seriesOpts(Faction.RES), overlapSeriesOpts())
-        val empty: dynamic = arrayOf(arrayOf<Double>(), arrayOf<Double>(), arrayOf<Double>(), arrayOf<Double>())
-        return UPlot(opts, empty, target)
-    }
-
-    private fun seriesOpts(faction: Faction): dynamic {
-        val s: dynamic = js("({})")
-        s.stroke = faction.color
-        s.width = 1.5
-        s.fill = faction.fieldStyle + FILL_ALPHA
-        s.points = js("({ show: false })")
-        return s
-    }
-
-    private fun overlapSeriesOpts(): dynamic {
-        val s: dynamic = js("({})")
-        s.stroke = OVERLAP_COLOR
-        s.width = 1.5
-        s.points = js("({ show: false })")
-        return s
-    }
+    // Fix the y-axis to the slider range so slots are visually comparable (no per-chart auto-zoom).
+    private fun makePlot(target: HTMLElement): UPlot =
+        Sparkline.plot(target, CHART_W, CHART_H, js("({ x: { time: false }, y: { range: [0, 1] } })"))
 
     private fun pct(value: Double): String = "${(value * 100.0).toInt()}%"
 }

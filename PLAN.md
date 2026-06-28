@@ -29,11 +29,11 @@ The open structural focus: functional core / imperative shell, module-by-module,
 - **Tighten line length 140 → 120** — land *alongside* the class extractions (auto-wrapping inflates
   `LargeClass` otherwise).
 
-Optional small wins: the leftover code dupes (the two history panels' uPlot series config — the mod-type
-`getColorForLevel()` companions already share `LeveledColor.colorForLevel`). *(CSS design-token dedup is
-done: the glass/tint/blur literals route through `:root` vars, plus `--ui-active-fill` / `--ui-border-bright`.
-Deliberately left as literals: `border-radius` — the radii span 2–10px, so one token can't dedup them without
-changing values, i.e. not a no-op.)*
+Optional small wins: *(the named code dupes are done — the two history panels' uPlot series config now
+shares `Sparkline`; the mod-type `getColorForLevel()` companions already share `LeveledColor.colorForLevel`.
+CSS design-token dedup is done too: glass/tint/blur literals route through `:root` vars, plus
+`--ui-active-fill` / `--ui-border-bright`. Deliberately left as literals: `border-radius` — the radii span
+2–10px, so one token can't dedup them without changing values, i.e. not a no-op.)*
 
 ## Perf — the big deferred lever
 - [ ] **three.js mesh instancing / merging.** World-gen + steady-state are dominated by mesh construction
