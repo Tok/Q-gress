@@ -449,18 +449,13 @@ object MapController {
             "type": "fill-extrusion",
             "minzoom": 14,
             "paint": {
-                "fill-extrusion-color": "#333333",
+                "fill-extrusion-color": ["case", ["boolean", ["feature-state", "hidden"], false], "rgba(0,0,0,0)", "#333333"],
                 "fill-extrusion-height": ["+", ["coalesce", ["get", "render_height"], 8], ${BuildingShake.SHAKE_TERM}],
                 "fill-extrusion-base": ["+", ["coalesce", ["get", "render_min_height"], 0], ${BuildingShake.SHAKE_TERM}],
-                "fill-extrusion-opacity": ["case", ["boolean", ["feature-state", "hidden"], false], 0, 0.85]
+                "fill-extrusion-opacity": 0.85
             }
         }""",
     )
-
-    // The building-layer opacity, made feature-state aware: a footprint marked {hidden:true} (by
-    // [hideMeshedMapLibreBuildings] — we've meshed it ourselves) draws at 0; everything else at [op].
-    private fun buildingOpacityExpr(op: Double): dynamic =
-        JSON.parse("""["case", ["boolean", ["feature-state", "hidden"], false], 0, $op]""")
 
     // Per-building replacement: hide ONLY the MapLibre footprints we've meshed (centroid match), so our mesh is
     // the sole visual there while MapLibre fills the gaps. Re-run on every idle so newly-streamed tiles (whose
@@ -578,8 +573,9 @@ object MapController {
     /** Fade the 3D buildings (0 = invisible … 1 = solid) so crowded areas don't hide the action. */
     fun setBuildingOpacity(opacity: Double) {
         buildingOpacity = opacity.coerceIn(0.0, 1.0)
-        // Keep the feature-state-aware form so the slider doesn't un-hide the footprints we've meshed over.
-        initMap?.setPaintProperty("3d-buildings", "fill-extrusion-opacity", buildingOpacityExpr(buildingOpacity))
+        // fill-extrusion-opacity is layer-wide (no data expressions allowed); the per-building HIDE is done via a
+        // feature-state-driven transparent fill-extrusion-COLOR instead, so the slider here stays a plain value.
+        initMap?.setPaintProperty("3d-buildings", "fill-extrusion-opacity", buildingOpacity)
     }
 
     private var buildingOpacity = 0.85
