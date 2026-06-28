@@ -20,8 +20,17 @@ import kotlin.math.sqrt
  */
 object ShatterFx {
     private const val SHARD_BRIGHT = 1.4 // shards share the orb GlassShader, a touch brighter so the pieces read
-    private const val SHARD_SINK_MAX = 1.4 // seconds after its life to no-clip down + despawn (hard cap)
-    private const val SHARD_GONE_M = 4.0 // …or drop it once it's sunk this far below the terrain floor
+    private const val SINK_DUR = 1.2 // seconds to no-clip straight down + despawn after life — matches DamageNumberFx
+
+    // Three bounce tiers (restitution against the ground). Glass shards opt out entirely (no material → ~0).
+    private const val RESO_BOUNCE = 0.95 // resonators bounce the MOST — near-elastic, quite jumpy
+    private const val RUBBER_BOUNCE = 0.8 // o-rings + the gasket are rubber → bounce like rubber
+    private const val MOD_BOUNCE = 0.4 // other slot items (shields etc.) — real bounciness unknown, so just a bit
+    private const val BOUNCE_FRICTION = 0.3 // so the bouncy pieces still settle + don't slide forever
+
+    /** Which bounce tier a falling piece uses (selects its physics [Cannon.Material]). */
+    enum class Bounce { RUBBER, LIGHT }
+
     private const val SHARD_LIFE_MIN = 8.0
     private const val SHARD_LIFE_MAX = 12.0
     private const val SHARD_SPIN = 1.8 // max tumble rad/s — a gentle turn
@@ -91,6 +100,14 @@ object ShatterFx {
     private var world: Cannon.World? = null
     private var group: dynamic = null // shards + sinking poles (not cleared by sync)
     private var groundBody: Cannon.Body? = null
+
+    // Physics materials so debris bounces by type: ground/poles/buildings carry [groundMat]; resonators carry the
+    // jumpy [resoMat]; o-rings + gasket carry the rubbery [rubberMat]; other slot mods carry the light [modMat].
+    // Each ground×piece ContactMaterial sets that contact's restitution. Glass shards carry NO material → ~0 bounce.
+    private var groundMat: Cannon.Material? = null
+    private var resoMat: Cannon.Material? = null
+    private var rubberMat: Cannon.Material? = null
+    private var modMat: Cannon.Material? = null
     private var groundZ = 0.0 // the physics floor's elevation = terrain height under the play area
 
     /** Lift the physics floor to the terrain elevation [z] so debris lands on the ground, not ~hundreds
@@ -121,6 +138,7 @@ object ShatterFx {
         val opts: dynamic = js("({ mass: 0 })")
         opts.position = Cannon.Vec3(cx, cy, cz)
         opts.shape = Cannon.Box(Cannon.Vec3(hx, hy, hz))
+        opts.material = groundMat // so bouncy debris bounces off roofs too
         w.addBody(Cannon.Body(opts))
     }
 
@@ -138,6 +156,7 @@ object ShatterFx {
                 val opts: dynamic = js("({ mass: 0 })")
                 opts.position = Cannon.Vec3(s[0], s[1], s[2] + h / 2.0)
                 opts.shape = Cannon.Box(Cannon.Vec3(s[4], s[4], h / 2.0)) // square box ≈ the round pole
+                opts.material = groundMat // bouncy debris bounces off the poles too
                 Cannon.Body(opts).also {
                     w.addBody(it)
                     poleBodies.add(it)
@@ -233,6 +252,7 @@ object ShatterFx {
         opts.shape = Cannon.Box(Cannon.Vec3(POLE_R * 1.5, POLE_R * 1.5, POLE_R * 0.5))
         opts.linearDamping = 0.05
         opts.angularDamping = 0.3
+        opts.material = rubberMat // the gasket is rubber → bounces like it
         val body = Cannon.Body(opts)
         val push = blastPush(x, y, poleH)
         body.asDynamic().velocity.set((Rng.random() - 0.5) * 3.0 + push[0], (Rng.random() - 0.5) * 3.0 + push[1], -1.0 + push[2])
@@ -264,6 +284,7 @@ object ShatterFx {
         opts.angularDamping = 0.25
         opts.collisionFilterGroup = SHARD_GROUP // rods rest on the ground, ignore each other/shards
         opts.collisionFilterMask = SHARD_MASK
+        opts.material = resoMat // resonators bounce the most (jumpy)
         val body = Cannon.Body(opts)
         body.asDynamic().quaternion.setFromEuler(PI / 2, 0.0, 0.0) // upright like in the slot
         val push = blastPush(x, y, z)
@@ -284,9 +305,10 @@ object ShatterFx {
      * A slot-mod mesh ([geo] = dodeca / pentagon / cube) tumbling out of a shattered or neutralized
      * portal: starts at the orb centre ([x], [y], [z]) at [scale], with a small box collider ([half]),
      * then tumbles + fades. Builds its own emissive material (rarity [color]) so it can fade alone.
+     * [bounce] picks the bounciness — [Bounce.RUBBER] for the rubber o-rings, [Bounce.LIGHT] for other mods.
      */
-    @Suppress("LongParameterList") // position + size + colour for one falling mod
-    fun spawnFallingChunk(geo: dynamic, x: Double, y: Double, z: Double, scale: Double, half: Double, color: String) {
+    @Suppress("LongParameterList") // position + size + colour + bounce tier for one falling mod
+    fun spawnFallingChunk(geo: dynamic, x: Double, y: Double, z: Double, scale: Double, half: Double, color: String, bounce: Bounce) {
         val w = world ?: return
         val p: dynamic = js("({})")
         p.color = color
@@ -307,6 +329,7 @@ object ShatterFx {
         opts.angularDamping = 0.25
         opts.collisionFilterGroup = SHARD_GROUP
         opts.collisionFilterMask = SHARD_MASK
+        opts.material = if (bounce == Bounce.RUBBER) rubberMat else modMat
         val body = Cannon.Body(opts)
         val push = blastPush(x, y, z)
         body.asDynamic().velocity.set(
@@ -368,13 +391,15 @@ object ShatterFx {
             s.mesh.position.set(bodyPos.x as Double, bodyPos.y as Double, pz)
             val bodyQuat = s.body.asDynamic().quaternion
             s.mesh.quaternion.set(bodyQuat.x as Double, bodyQuat.y as Double, bodyQuat.z as Double, bodyQuat.w as Double)
-            // End of life: no-clip straight down through the ground/buildings (like the damage digits) and
-            // drop once it's well below the terrain — instead of fading out the opacity.
+            // End of life: no-clip straight down through the ground/buildings exactly like the damage digits —
+            // disable collision response and WAKE the body (a settled/sleeping piece won't fall on its own, so
+            // it'd just vanish in place instead of visibly sinking). Removed [SINK_DUR] later, same as the digits.
             if (!s.sinking && s.age >= s.life) {
                 s.sinking = true
                 s.body.asDynamic().collisionResponse = false
+                s.body.asDynamic().wakeUp()
             }
-            if (s.age >= s.life + SHARD_SINK_MAX || (s.sinking && pz < groundZ - SHARD_GONE_M)) {
+            if (s.age >= s.life + SINK_DUR) {
                 world?.removeBody(s.body)
                 group.remove(s.mesh)
                 s.mat.dispose()
@@ -385,13 +410,34 @@ object ShatterFx {
 
     private fun randSpin() = (Rng.random() - 0.5) * 2.0 * SHARD_SPIN
 
+    // cannon-es ContactMaterial options: how bouncy ([restitution]) + grippy this pair of materials is.
+    private fun contactOpts(restitution: Double): dynamic {
+        val o: dynamic = js("({})")
+        o.restitution = restitution
+        o.friction = BOUNCE_FRICTION
+        return o
+    }
+
     private fun createWorld(): Cannon.World {
         val w = Cannon.World()
         w.asDynamic().broadphase = Cannon.SAPBroadphase(w) // ~O(n log n) pairs; a shatter spawns a burst of shards
         w.asDynamic().allowSleep = true // shards that settle on the ground stop being simulated
         w.asDynamic().gravity.set(0.0, 0.0, -GRAVITY)
+        // Per-tier bouncy contacts against the ground (shards opt out by carrying no material).
+        val gm = Cannon.Material("shatterGround")
+        val reso = Cannon.Material("shatterReso")
+        val rubber = Cannon.Material("shatterRubber")
+        val mod = Cannon.Material("shatterMod")
+        groundMat = gm
+        resoMat = reso
+        rubberMat = rubber
+        modMat = mod
+        w.addContactMaterial(Cannon.ContactMaterial(gm, reso, contactOpts(RESO_BOUNCE)))
+        w.addContactMaterial(Cannon.ContactMaterial(gm, rubber, contactOpts(RUBBER_BOUNCE)))
+        w.addContactMaterial(Cannon.ContactMaterial(gm, mod, contactOpts(MOD_BOUNCE)))
         val groundOpts: dynamic = js("({ mass: 0 })") // static ground plane (normal +Z); lifted to terrain via setGroundZ
         groundOpts.shape = Cannon.Plane()
+        groundOpts.material = gm
         val gb = Cannon.Body(groundOpts)
         w.addBody(gb)
         groundBody = gb

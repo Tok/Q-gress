@@ -489,8 +489,26 @@ object Scene3D {
             val rx = x + ringR * cos(ang)
             val ry = y + ringR * sin(ang)
             // Both o-rings fall for every slot (filled or empty): the lower socket and the upper ring.
-            ShatterFx.spawnFallingChunk(resoRingGeo, rx, ry, collarZ, 1.0, RESO_RING_R + RESO_RING_TUBE, GROMMET_COLOR)
-            ShatterFx.spawnFallingChunk(resoRingGeo, rx, ry, collarZ + rodLen, 1.0, RESO_RING_R + RESO_RING_TUBE, GROMMET_COLOR)
+            ShatterFx.spawnFallingChunk(
+                resoRingGeo,
+                rx,
+                ry,
+                collarZ,
+                1.0,
+                RESO_RING_R + RESO_RING_TUBE,
+                GROMMET_COLOR,
+                ShatterFx.Bounce.RUBBER,
+            )
+            ShatterFx.spawnFallingChunk(
+                resoRingGeo,
+                rx,
+                ry,
+                collarZ + rodLen,
+                1.0,
+                RESO_RING_R + RESO_RING_TUBE,
+                GROMMET_COLOR,
+                ShatterFx.Bounce.RUBBER,
+            )
             resos[octant]?.let { lvl ->
                 ShatterFx.spawnFallingRod(resoRodGeo, rx, ry, collarZ + rodLen / 2.0, RESO_ROD_R, rodLen, LevelColor.map[lvl] ?: "#ffffff")
             }
@@ -585,6 +603,7 @@ object Scene3D {
                 s,
                 half,
                 mod.rarity.color,
+                ShatterFx.Bounce.LIGHT, // shields etc. — real bounciness unknown, so just a bit
             )
         }
     }

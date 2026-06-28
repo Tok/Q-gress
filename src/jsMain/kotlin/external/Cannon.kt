@@ -18,6 +18,7 @@ external object Cannon {
     class World(options: dynamic = definedExternally) {
         fun addBody(body: Body)
         fun removeBody(body: Body)
+        fun addContactMaterial(cm: ContactMaterial)
         fun step(timeStep: Double, timeSinceLastCalled: dynamic = definedExternally, maxSubSteps: dynamic = definedExternally)
     }
 
@@ -30,4 +31,8 @@ external object Cannon {
     class Box(halfExtents: Vec3)
     class Plane
     class Material(name: dynamic = definedExternally)
+
+    // Per-pair friction/restitution (options = { friction, restitution }). Registered via World.addContactMaterial;
+    // a body carries a Material, and the pair's ContactMaterial sets how bouncy that contact is.
+    class ContactMaterial(m1: Material, m2: Material, options: dynamic = definedExternally)
 }
