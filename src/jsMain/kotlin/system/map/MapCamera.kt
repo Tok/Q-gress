@@ -1,6 +1,8 @@
 package system.map
 
+import kotlinx.browser.document
 import kotlinx.browser.window
+import org.w3c.dom.HTMLElement
 import system.display.Scene3D
 import util.Rng
 
@@ -64,8 +66,9 @@ object MapCamera {
         cinematicActive = true
         liftViewToCentre() // face the play-area centre from the start (the 3D tilt otherwise sinks it to the bottom)
         window.requestAnimationFrame { spinBuild() }
-        // No inflate reset here: the city has already been rising in step with the overall load (LoadingOverlay
-        // → setBuildProgress) since the map appeared, so it keeps growing through the orbit to full at game start.
+        // Start flat: the city rises across the VISIBLE build (LoadingOverlay → setBuildProgress, from the reveal
+        // at PCT_WORLD) so the player watches it grow to full as the game starts — the build's entertainment.
+        MapController.applyBuildInflate(0.0)
     }
 
     // The build camera keeps DEFAULT_PITCH for the 3D look, which pushes the play-area centre low on
@@ -108,6 +111,7 @@ object MapCamera {
      *  randomized camera (chained eased legs through random bearing/pitch/zoom — a spline-ish drift). */
     fun startTitleCinematic() {
         val m = MapController.initMap ?: return
+        blackoutIntro() // hide the brief wrong-zoom (close) frame + the jump-out; fade in once the swoop's underway
         // Block map input during the swoop-in: an early click/drag cancels the flyTo and leaves the map
         // stuck zoomed out. Re-enabled when the fly-in lands (startTitleLeg) — also gates early blasts.
         m.asDynamic().getCanvasContainer().style.pointerEvents = "none"
@@ -127,6 +131,20 @@ object MapCamera {
         // A user zoom cancels the running easeTo — restart the drift the moment they finish, so the
         // title auto-cam never stalls (originalEvent ⇒ user move; the orbit's own easeTo is ignored).
         m.onEvent("moveend") { e -> if (titleOrbitActive && e.originalEvent != null) startTitleLeg() }
+    }
+
+    private const val INTRO_BLACK_HOLD_MS = 450 // hold black over the initial wrong-zoom frame(s) + the jump-out…
+    private const val INTRO_BLACK_FADE_MS = 600 // …then fade in to the (already swooping-in) view
+
+    // A full-screen black veil over the title's first frames: the map renders at the framed (close) zoom for
+    // a beat before the cinematic sets the zoom-out, so cover that + the jump and fade in once the fly-in is
+    // underway — the player sees a clean fade-to-swoop instead of a close snapshot that jumps away.
+    private fun blackoutIntro() {
+        val black = document.createElement("div") as HTMLElement
+        black.className = "titleBlackout"
+        document.body?.appendChild(black)
+        window.setTimeout({ black.style.opacity = "0" }, INTRO_BLACK_HOLD_MS)
+        window.setTimeout({ black.remove() }, INTRO_BLACK_HOLD_MS + INTRO_BLACK_FADE_MS)
     }
 
     private fun startTitleLeg() {

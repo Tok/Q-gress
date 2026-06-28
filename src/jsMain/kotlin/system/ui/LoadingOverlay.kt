@@ -51,7 +51,6 @@ object LoadingOverlay {
     private const val CREEP_EASE = 0.02 // …slowly, so a long wait keeps inching rather than stalling
     private const val MAIN_EASE = 0.14 // how fast the shown overall bar chases its target (snappy = real progress shows)
     private const val SUB_EASE = 0.22
-    private const val BUILD_START_FRAC = 0.12 // the city starts rising at this overall fraction, full at 1.0 (game start)
     private const val FINISH_HOLD_MS = 380 // let the bar ease to 100 before the fade
     private const val FADE_MS = 600
 
@@ -110,7 +109,10 @@ object LoadingOverlay {
         bandEnd = to.toDouble()
         stageFrac = if (total <= 0) 1.0 else (done.toDouble() / total).coerceIn(0.0, 1.0)
         indeterminate = false
-        detail("$label  ($done/$total)")
+        // Pad the count to the total's width with a digit-wide figure space (+ tabular figures in CSS) so the
+        // centred line doesn't shimmy left/right a few px as the numbers change ("3/21" → "12/21").
+        val padded = done.toString().padStart(total.toString().length, ' ') // U+2007 figure space (digit-wide)
+        detail("$label  ($padded/$total)")
         reveal()
     }
 
@@ -147,10 +149,11 @@ object LoadingOverlay {
 
     private fun pct(v: Double): String = "${(v * 10).toInt() / 10.0}%"
 
-    // Grow the 3D buildings in step with the overall bar: rise from BUILD_START_FRAC, full at 1.0 — so the
-    // city reaches full height exactly as the game starts, not way before.
+    // Grow the 3D buildings only across the VISIBLE world-build (after the reveal at PCT_WORLD → full at 100%),
+    // so the rise is actually seen + spans the (slow, setTimeout-paced) spawn phase, and the heavy map/shadow
+    // load earlier isn't slowed by per-frame MapLibre paint updates competing with the shadow-map readback.
     private fun driveBuildings(overallPercent: Double) {
-        val frac = ((overallPercent / 100.0 - BUILD_START_FRAC) / (1.0 - BUILD_START_FRAC)).coerceIn(0.0, 1.0)
+        val frac = ((overallPercent - PCT_WORLD) / (100.0 - PCT_WORLD)).coerceIn(0.0, 1.0)
         MapController.setBuildProgress(frac)
     }
 
