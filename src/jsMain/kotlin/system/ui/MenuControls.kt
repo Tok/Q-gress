@@ -26,6 +26,9 @@ object MenuControls {
     private const val PROGRESS_TIP =
         "How fast the game ramps early→endgame. Scales the recruiting rate (rosters grow faster) AND AP gain " +
             "(agents level up faster). 1 = baseline."
+    private const val CHURN_TIP =
+        "How fast NEUTRAL portals are discovered + abandoned (a system process, not an agent action). " +
+            "0 = a fixed board; higher = portals appear/vanish faster. 0.17 = baseline."
 
     /**
      * Append the menu's settings controls, split into a **Gameplay** group (affects the run; persisted to
@@ -43,6 +46,12 @@ object MenuControls {
         menu.append(
             slider("Progress speed", Config.progressSpeed, Spec(0.25..4.0, tooltip = PROGRESS_TIP, id = "progressSlider")) {
                 Config.progressSpeed = it
+                GameplayPrefs.save()
+            },
+        )
+        menu.append(
+            slider("Portal discovery", Config.portalChurnRate, Spec(0.0..0.5, 0.01, tooltip = CHURN_TIP, id = "churnSlider")) {
+                Config.portalChurnRate = it
                 GameplayPrefs.save()
             },
         )
@@ -131,6 +140,7 @@ object MenuControls {
             GameplayPrefs.resetToDefaults()
             syncSlider("combatDynSlider", GameplayPrefs.DEFAULT_COMBAT)
             syncSlider("progressSlider", GameplayPrefs.DEFAULT_PROGRESS)
+            syncSlider("churnSlider", GameplayPrefs.DEFAULT_CHURN)
             null
         }
         return b
