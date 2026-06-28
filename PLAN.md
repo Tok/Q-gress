@@ -68,7 +68,6 @@ CSS design-token dedup is done too: glass/tint/blur literals route through `:roo
 ## UI
 - [ ] **Schematic base view** (reuse `SHADOW_STYLE`) + more toggleable info overlays (e.g. a
   movement-penalty heatmap) alongside the existing Terrain toggle.
-- [ ] **Per-faction tuning presets** — save/recall named slider sets (the slider↔AI auto-move link is done).
 - [ ] **Stage 5 — the polished end-state UI.** A cohesive visual-theme + layout pass over the whole
   HUD/onboarding/menus building on the dock: consistent typography, spacing, panels and states; responsive to
   window size. The "real UI" we want to ship behind.
