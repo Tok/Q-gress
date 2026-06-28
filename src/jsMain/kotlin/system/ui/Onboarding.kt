@@ -345,7 +345,7 @@ object Onboarding {
                 widthInput.value = side.toString()
                 heightInput.value = side.toString()
                 portalsInput.value = Sim.suggestedPortals(km2).toString()
-                warn.style.display = if (km2 >= Sim.GIANT_KM2) "block" else "none"
+                if (km2 >= Sim.GIANT_KM2) warn.addClass("show") else warn.removeClass("show") // .show = visible + pulse
                 presetBtns.forEach { it.removeClass("onboardActive") }
                 btn.addClass("onboardActive")
             }
@@ -391,11 +391,11 @@ object Onboarding {
         screen.appendChild(navRow(onBack, next))
     }
 
-    /** The heavy-map confirmation line, hidden until the Giant preset is picked. */
+    /** The heavy-map confirmation line. Hidden via CSS (`visibility`, so its v-space stays reserved and the
+     *  popup doesn't resize) until the Giant preset adds `.show`. */
     private fun heavyMapWarn(): HTMLElement = div("onboardWarn").also {
         it.textContent = "Giant maps are heavy: much longer to generate, and the per-portal pathfinding can " +
             "drag FPS. Pick a smaller size if it stutters."
-        it.style.display = "none"
     }
 
     // Map-area labels: km² on the button (trim a trailing .0), an imperial sq-mi conversion in the hover title.
