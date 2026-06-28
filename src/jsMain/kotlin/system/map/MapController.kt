@@ -19,6 +19,7 @@ import system.building.BuildingTiles
 import system.display.OwnBuildings
 import system.display.Scene3D
 import system.ui.LoadingOverlay
+import util.GraphicsPrefs
 import util.PortalNames
 import util.Profiler
 import util.data.Pos
@@ -27,11 +28,16 @@ import kotlin.math.log2
 import kotlin.math.roundToInt
 
 object MapController {
-    private fun mapOptions(container: String, style: dynamic, preserveBuffer: Boolean): dynamic {
+    private fun mapOptions(container: String, style: dynamic, preserveBuffer: Boolean, antialias: Boolean = false): dynamic {
         val opts: dynamic = js("({})")
         opts.container = container
         opts.style = style
         opts.preserveDrawingBuffer = preserveBuffer
+        // MSAA on the WebGL context (the Graphics "Anti-aliasing" toggle). The three.js custom layer shares this
+        // context, so enabling it here is what actually multisamples the 3D edges — renderer.antialias is ignored
+        // on a borrowed context. NEVER on the shadow map: it's read back pixel-exact for the passability mask, and
+        // multisampling would blur that. Context-creation option → a change lands on the next reload.
+        opts.antialias = antialias
         // Collapse the required tile attribution to a small "ⓘ" that expands on click (the compliant
         // way to make it unobtrusive — OSM/Esri terms require attribution, so we don't suppress it).
         opts.attributionControl = js("({ compact: true })")
@@ -40,10 +46,11 @@ object MapController {
 
     private fun initInitialMap(): MapLibre.Map {
         val style = if (demoMode) MapStyles.DEMO_STYLE else MapStyles.SATELLITE_STYLE
-        return MapLibre.Map(mapOptions(INITIAL_MAP, JSON.parse<Json>(style), false))
+        return MapLibre.Map(mapOptions(INITIAL_MAP, JSON.parse<Json>(style), false, antialias = GraphicsPrefs.antialias))
     }
 
-    private fun initMainMap(): MapLibre.Map = MapLibre.Map(mapOptions(MAP, MapStyles.STREET_STYLE_URL, false))
+    private fun initMainMap(): MapLibre.Map =
+        MapLibre.Map(mapOptions(MAP, MapStyles.STREET_STYLE_URL, false, antialias = GraphicsPrefs.antialias))
 
     // preserveDrawingBuffer is required so the rendered street mask can be read
     // back with gl.readPixels (otherwise the buffer is cleared after compositing).

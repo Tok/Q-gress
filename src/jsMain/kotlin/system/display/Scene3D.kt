@@ -45,7 +45,6 @@ import system.display.shader.GlassShader
 import system.display.shader.PlasmaShader
 import system.display.shader.ShieldShader
 import util.Debug
-import util.GraphicsPrefs
 import util.data.Pos
 import kotlin.math.PI
 import kotlin.math.abs
@@ -108,8 +107,6 @@ object Scene3D {
     private const val NAME_RING_GAP = 2.0 // gap above the orb top for the hovered-portal name ring (PortalNameTicker)
     internal const val POLE_R = 2.0
     private const val LINK_R = 0.7 // link pipe radius (metres)
-    private const val LINK_SEG_SMOOTH = 16 // radial segments — round silhouette (default)
-    private const val LINK_SEG_COARSE = 8 // radial segments — cheap octagon for low-end machines
     internal const val PORTAL_GROW_S = 0.7 // seconds for a new portal to inflate in (pole rises, orb pops)
     private const val CAPTURE_SHATTER_WEIGHT = 0.22 // glass-shatter heaviness on capture (light — only the orb)
     private const val FIELD_FILL_S = 0.4 // seconds for a new control field to fill in
@@ -207,16 +204,9 @@ object Scene3D {
     internal val poleGeo: dynamic by lazy { Three.CylinderGeometry(POLE_R, POLE_R, POLE_H, 12) } // metal pole
     internal val gasketGeo: dynamic by lazy { Three.TorusGeometry(POLE_R * 1.15, POLE_R * 0.4, 10, 20) } // rubber donut
 
-    // Unit pipe (scaled to length). Radial-segment count tracks the Graphics "Smooth links" toggle — the coarse
-    // 8-gon facets read jaggy under the bright fresnel rim, so default to the smoother build (see invalidateLinkGeo).
-    private var linkGeoCache: dynamic = null
-    internal val linkGeo: dynamic
-        get() = linkGeoCache ?: Three.CylinderGeometry(
-            LINK_R,
-            LINK_R,
-            1.0,
-            if (GraphicsPrefs.smoothLinks) LINK_SEG_SMOOTH else LINK_SEG_COARSE,
-        ).also { linkGeoCache = it }
+    // Unit pipe (scaled to length), 16 sides so the silhouette reads round; MSAA (the Graphics anti-aliasing
+    // toggle, set on the MapLibre context) smooths its edges.
+    internal val linkGeo: dynamic by lazy { Three.CylinderGeometry(LINK_R, LINK_R, 1.0, 16) }
     private val linkJointGeo: dynamic by lazy { Three.SphereGeometry(LINK_R * 1.5, 12, 12) } // ball-joint, a bit fatter than the pipe
     internal val resoRingGeo: dynamic by lazy { Three.TorusGeometry(RESO_RING_R, RESO_RING_TUBE, 8, 14) } // rubber slot grommet
     private val indicatorGeo: dynamic by lazy {
@@ -1121,19 +1111,6 @@ object Scene3D {
             joint.asDynamic().position.set(end[0], end[1], end[2])
             linksGroup.add(joint)
         }
-    }
-
-    /**
-     * Drop the cached link-pipe geometry and rebuild the pipes at the current quality — the Graphics "Smooth
-     * links" toggle. Rebuilds immediately (so it lands even while the sim is paused); the per-tick [sync]
-     * keeps them consistent thereafter. The previous geometry is left for GC — one shared cylinder, toggled
-     * rarely; disposing it would glitch the meshes still referencing it for the current frame.
-     */
-    internal fun invalidateLinkGeo() {
-        linkGeoCache = null
-        val group = linksGroup ?: return
-        clear(group)
-        World.allLinks().forEach { addLink(it) }
     }
 
     /** Place a unit (Y-axis) cylinder so it spans [a]→[b]: midpoint, Y-scaled to length, Y rotated to dir. */

@@ -6,25 +6,26 @@ package util
  * `*Prefs` stores: [load] runs at startup **before** the scene + menu build so both seed themselves from the
  * saved values, and each setter persists immediately.
  *
- * - [smoothLinks] — link pipes at the higher radial-segment count (no octagonal faceting) vs the coarse fallback.
- * - [highShadows] — the larger shadow map (crisper edges) vs the cheaper half-resolution one.
+ * - [antialias] — MSAA on the MapLibre WebGL context (the three.js custom layer inherits it → smooth edges on
+ *   links/poles/buildings). It's a context-creation option, so a change only takes effect on the next reload.
+ * - [highShadows] — the larger shadow map (crisper edges) vs the cheaper half-resolution one (live).
  */
 object GraphicsPrefs {
     private const val KEY = "qgress.graphics"
 
-    var smoothLinks = true
+    var antialias = true
         private set
     var highShadows = true
         private set
 
     fun load() {
         val o = Prefs.read(KEY) ?: return
-        (o.smoothLinks as? Boolean)?.let { smoothLinks = it }
+        (o.antialias as? Boolean)?.let { antialias = it }
         (o.highShadows as? Boolean)?.let { highShadows = it }
     }
 
-    fun setSmoothLinks(on: Boolean) {
-        smoothLinks = on
+    fun setAntialias(on: Boolean) {
+        antialias = on
         save()
     }
 
@@ -35,7 +36,7 @@ object GraphicsPrefs {
 
     private fun save() = Prefs.save(KEY) {
         val o: dynamic = js("({})")
-        o.smoothLinks = smoothLinks
+        o.antialias = antialias
         o.highShadows = highShadows
         o
     }

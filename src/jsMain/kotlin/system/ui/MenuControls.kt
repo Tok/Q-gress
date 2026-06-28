@@ -12,7 +12,6 @@ import org.w3c.dom.events.Event
 import system.building.BuildingTransparency
 import system.display.PassabilityOverlay
 import system.display.PortalNameTicker
-import system.display.Scene3D
 import system.display.SunController
 import system.display.VectorFieldOverlay
 import system.display.fx.DamageNumberFx
@@ -73,10 +72,9 @@ object MenuControls {
         menu.append(slider("Building shake", Config.buildingShakeMultiplier, Spec(0.0..2.0, 0.1)) { Config.buildingShakeMultiplier = it })
         menu.append(sectionHead("Graphics"))
         menu.append(
-            checkbox("smoothLinksToggle", "Smooth links", GraphicsPrefs.smoothLinks) {
-                GraphicsPrefs.setSmoothLinks(it)
-                Scene3D.invalidateLinkGeo()
-            },
+            checkbox("antialiasToggle", "Anti-aliasing (MSAA)", GraphicsPrefs.antialias) {
+                GraphicsPrefs.setAntialias(it)
+            }.also { it.title = "Hardware multisampling on the map's WebGL context — applies on the next reload / new game" },
         )
         menu.append(
             checkbox("highShadowsToggle", "High-detail shadows", GraphicsPrefs.highShadows) {
