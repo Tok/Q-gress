@@ -44,14 +44,14 @@ CSS design-token dedup is done too: glass/tint/blur literals route through `:roo
   `./scripts/profiler.sh` (headless-Chrome CDP CPU profiler → `build/profiles/*.cpuprofile`).
 
 ## 3D / rendering
-- [ ] **Graphics-settings menu + anti-aliased links** *(group shipped, more levers to add).* The **Graphics**
-  menu group exists with two live, persisted toggles (`GraphicsPrefs`): **Smooth links** (pipes default to
-  16 radial segments — the octagon faceting that read jaggy under the fresnel rim is gone; low-end drops to 8)
-  and **High-detail shadows** (2048↔1024 shadow map, live realloc). The link AA is done at the geometry level
-  on purpose: MapLibre owns the GL context, so a live MSAA/`samples` flip isn't available, and there's no
-  post-process infra (no `EffectComposer`/FXAA/SMAA declared). Remaining: more live levers — **building cap**,
-  **DEM exaggeration**, maybe a render-to-texture **FXAA/SMAA** pass if the geometry-level fix isn't enough on
-  thin bright edges; consider surfacing the group in onboarding too.
+- [ ] **Graphics-settings menu + anti-aliasing** *(group shipped, more levers to add).* The **Graphics** menu
+  group exists with persisted toggles (`GraphicsPrefs`): **Anti-aliasing (MSAA)** — enables MapLibre's own
+  `antialias` on the display maps, which the three.js custom layer inherits (genuine hardware multisampling on
+  every 3D edge; the shadow map stays non-AA for its pixel-exact readback). It's a context-creation option, so
+  it applies on the next reload. **High-detail shadows** (2048↔1024 shadow map, live realloc). *(An earlier
+  geometry-only "Smooth links" segment toggle was dropped — imperceptible at link scale and not edge AA; the
+  real cause was the context being created without `antialias` at all.)* Remaining: more levers — **building
+  cap**, **DEM exaggeration**; surface the group in onboarding too.
 - [ ] **Buildings — per-building replacement** *(the parallel-mode follow-up).* Today both sets render (ours
   on top, MapLibre filling gaps). Cleaner end-state: hide **only** the MapLibre footprints we have our own
   mesh for, so the gap-fillers and our look match and there's no overlap/z-fight. Needs matching our synthetic
