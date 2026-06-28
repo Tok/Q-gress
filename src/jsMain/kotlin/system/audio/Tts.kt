@@ -129,8 +129,6 @@ object Tts {
     fun setEnabled(on: Boolean) = mutate { enabled = on }.also { if (!on) stop() }
     fun setVerbosity(v: Verbosity) = mutate { verbosity = v }
     fun setVolume(x: Double) = mutate { volume = x.coerceIn(0.0, 1.0) }
-    fun setRate(x: Double) = mutate { rate = x.coerceIn(0.1, 2.0) }
-    fun setPitch(x: Double) = mutate { pitch = x.coerceIn(0.0, 2.0) }
     fun setVoice(name: String?) = mutate { voiceName = name }
 
     private inline fun mutate(change: () -> Unit) {

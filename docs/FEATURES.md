@@ -538,6 +538,13 @@ Commit hashes are illustrative pointers, not exhaustive.
 - **Optional on-screen FPS readout** (`system/ui/FpsMeter`): a small Coda number top-right under the volume
   widget (no glass pane), toggled by a **"FPS"** menu checkbox. Independent of the `?debug` `[perf]` console
   capture the headless profiler scrapes — the toggle controls only the on-screen display.
+- **Spoken announcer / TTS** (`system/audio/Tts` + `TtsPanel`): an **opt-in** Web Speech announcer with verbosity
+  tiers — **Off** · **Minimal** (location on start, "Q-Gress" on the title) · **Verbose** (+ faction on pick,
+  checkpoint leads, huge fields, portal discovery, recruitment) · **Glyph** (+ 1–3 Ingress glyphs read on a glyph
+  hack, from the 135-entry `glyph/Glyph` enum). **Off by default** (voice quality is system-specific); enable +
+  pick a voice in the **AUDIO → Voice** subtab. On-demand readouts (when not fully muted): selecting a portal
+  reads its name, clicking the location name reads the place. Web Speech only — no bundled engine (meSpeak/eSpeak
+  is GPL); on Linux/Chromium it needs `--enable-speech-dispatcher`. Synthesised live, no audio assets.
 
 ## Settled decisions
 - **Modernize Kotlin/JS in place** (not a TS rewrite; not KMP) — keep the ~7k lines of tested logic.

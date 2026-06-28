@@ -27,8 +27,6 @@ object TtsPanel {
         val voiceOpts = listOf("" to "Default (auto)") + Tts.voices().map { it.first to "${it.first} · ${it.second}" }
         pane.appendChild(selectRow("Voice", voiceOpts, Tts.voiceName ?: "") { name -> Tts.setVoice(name.ifBlank { null }) })
         pane.appendChild(sliderRow("Volume", Tts.volume, 0.0, 1.0) { Tts.setVolume(it) })
-        pane.appendChild(sliderRow("Rate", Tts.rate, 0.5, 2.0) { Tts.setRate(it) })
-        pane.appendChild(sliderRow("Pitch", Tts.pitch, 0.0, 2.0) { Tts.setPitch(it) })
         pane.appendChild(testButton())
         return pane
     }

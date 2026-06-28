@@ -292,8 +292,9 @@ the board; fair shuffled agent order). Deeper "no single strategy dominates" val
   claps, 909 hats) for deploys/links/checkpoints and acid-303 sweeps for viruses/power-ups, a shared reverb/
   delay bus, and maybe a subtle musical bed. Tune the kick (`XMP_KICK_HZ`/`US_KICK_HZ`, `KickDrum` consts) +
   global `AudioFx.setReverbMix` to taste; the `#audio` demo is the dial-in surface.
-- **TTS announcements (low pri)** — speak key events (captures, fields, cycle changes) via `speechSynthesis`,
-  throttled, per-faction voices, off by default behind a toggle + master volume.
+- ✅ **TTS announcements** — DONE: `system/audio/Tts` (Web Speech, off by default) with Off/Minimal/Verbose/Glyph
+  verbosity tiers, the AUDIO → Voice subtab, and the `glyph/Glyph` enum read on glyph hacks. (Web Speech only —
+  the on-the-fly *bundled* synth meSpeak/eSpeak is GPL, so left out. See docs/FEATURES.md.)
 - **Modern Ingress (post-2018), optional** — most-aligned first: **Machina** (the red AI "third faction" — the
   closest analogue to our AI-vs-AI north star: a rules-driven faction that spawns, auto-links, decays, is easy
   to clear); the **hacking-economy triad** (heat-sink / multi-hack / Fracker + ITO) shaping farm rate; **drones**
