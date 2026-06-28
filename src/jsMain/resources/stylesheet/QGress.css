@@ -548,7 +548,7 @@ html, body {
     /* FIXED height (not max-height) so the docked footer is the SAME size on every tab — switching tabs no
        longer makes it jump taller/shorter, which made navigation jarring. Sparse tabs just have spare room;
        taller ones (STATS slider-history) scroll. Maximize for the full view. */
-    height: 320px;
+    height: 210px;
     overflow: auto;
     padding: 6px 12px;
 }
