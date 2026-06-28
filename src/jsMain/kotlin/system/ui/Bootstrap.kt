@@ -44,6 +44,7 @@ import system.ui.panel.DropRatesPanel
 import util.Debug
 import util.GameUrl
 import util.GameplayPrefs
+import util.GraphicsPrefs
 import util.data.*
 import util.data.toJson
 import kotlin.js.Json
@@ -102,6 +103,7 @@ object Bootstrap {
         InstrumentPrefs.load() // re-apply saved per-instrument tuning (explosion kick)
         AmbientPrefs.load() // restore the ambient bed (incl. re-starting it if it was on)
         GameplayPrefs.load() // re-apply saved gameplay knobs BEFORE the menu sliders read Config to seed themselves
+        GraphicsPrefs.load() // re-apply saved render-quality toggles BEFORE the scene + menu build read them
         document.body?.appendChild(createPersistentVolume())
 
         // Offscreen ImageData factory for the passability-grid readback (never displayed). No

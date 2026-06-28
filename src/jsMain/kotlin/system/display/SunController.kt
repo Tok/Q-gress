@@ -1,6 +1,7 @@
 package system.display
 
 import external.Three
+import util.GraphicsPrefs
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -17,7 +18,8 @@ object SunController {
     private const val SLOW = 0.12 // settled drift speed (rad/s) — a full sweep ≈ 52s so shadows visibly move in-game
     private const val SPEED_EASE = 0.4 // per-second easing of the live speed toward its target
     private const val INTENSITY = 1.15 // directional strength (ambient is lowered so shadows read)
-    private const val SHADOW_MAP = 2048
+    private const val SHADOW_HIGH = 2048 // crisp shadow edges (the Graphics "High-detail shadows" default)
+    private const val SHADOW_LOW = 1024 // half-resolution fallback for low-end machines
 
     private var az = 0.6 // current azimuth
     private var speed = FAST
@@ -37,8 +39,9 @@ object SunController {
         val light = Three.DirectionalLight(0xffffff, INTENSITY)
         light.asDynamic().castShadow = true
         val shadow = light.asDynamic().shadow
-        shadow.mapSize.width = SHADOW_MAP
-        shadow.mapSize.height = SHADOW_MAP
+        val mapSize = if (GraphicsPrefs.highShadows) SHADOW_HIGH else SHADOW_LOW
+        shadow.mapSize.width = mapSize
+        shadow.mapSize.height = mapSize
         shadow.bias = -0.0004
         val cam = shadow.camera // an OrthographicCamera three positions at the light each frame
         cam.left = -r * 1.3
@@ -65,6 +68,21 @@ object SunController {
     /** Retarget the drift speed (FAST during the intro, SLOW once settled). */
     fun setSpeed(fast: Boolean) {
         targetSpeed = if (fast) FAST else SLOW
+    }
+
+    /** Live-resize the shadow map (the Graphics "High-detail shadows" toggle). Disposing the old render target
+     *  + nulling it forces three.js to reallocate it at the new size on the next render. No-op before [register]. */
+    fun setShadowDetail(high: Boolean) {
+        val light = sun ?: return
+        val shadow = light.asDynamic().shadow
+        val mapSize = if (high) SHADOW_HIGH else SHADOW_LOW
+        shadow.mapSize.width = mapSize
+        shadow.mapSize.height = mapSize
+        val target = shadow.map
+        if (target != null) {
+            target.dispose()
+            shadow.map = null
+        }
     }
 
     /** Advance the sun by real-time [dt] seconds (independent of sim speed). */

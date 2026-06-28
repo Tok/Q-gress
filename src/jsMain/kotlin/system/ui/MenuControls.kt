@@ -12,10 +12,13 @@ import org.w3c.dom.events.Event
 import system.building.BuildingTransparency
 import system.display.PassabilityOverlay
 import system.display.PortalNameTicker
+import system.display.Scene3D
+import system.display.SunController
 import system.display.VectorFieldOverlay
 import system.display.fx.DamageNumberFx
 import system.ui.panel.DropRatesPanel
 import util.GameplayPrefs
+import util.GraphicsPrefs
 
 /** Builders for the game-menu dropdown controls — split out of Bootstrap (size). */
 object MenuControls {
@@ -68,6 +71,19 @@ object MenuControls {
         menu.append(checkbox("fpsToggle", "FPS", FpsMeter.displayEnabled) { FpsMeter.setDisplay(it) })
         menu.append(slider("Buildings transparency", BuildingTransparency.default()) { BuildingTransparency.set(it) })
         menu.append(slider("Building shake", Config.buildingShakeMultiplier, Spec(0.0..2.0, 0.1)) { Config.buildingShakeMultiplier = it })
+        menu.append(sectionHead("Graphics"))
+        menu.append(
+            checkbox("smoothLinksToggle", "Smooth links", GraphicsPrefs.smoothLinks) {
+                GraphicsPrefs.setSmoothLinks(it)
+                Scene3D.invalidateLinkGeo()
+            },
+        )
+        menu.append(
+            checkbox("highShadowsToggle", "High-detail shadows", GraphicsPrefs.highShadows) {
+                GraphicsPrefs.setHighShadows(it)
+                SunController.setShadowDetail(it)
+            },
+        )
     }
 
     /** Optional slider settings — range / step / hover [tooltip] / input [id] — bundled to keep [slider] lean. */
