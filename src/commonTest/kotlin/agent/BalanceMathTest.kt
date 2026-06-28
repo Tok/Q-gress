@@ -33,12 +33,13 @@ class BalanceMathTest {
     }
 
     @Test
-    fun recruitsPerCheckpointScalesAndDiminishesToZeroAtTheCap() {
-        // base × progressSpeed × recruitFactor × (1 − fill)
-        assertEquals(1.0, BalanceMath.recruitsPerCheckpoint(0.0, 1.0, 1.0, 1.0), 1e-12, "empty roster, baseline → base")
-        assertEquals(0.5, BalanceMath.recruitsPerCheckpoint(0.5, 1.0, 1.0, 1.0), 1e-12, "half full → half")
-        assertEquals(0.0, BalanceMath.recruitsPerCheckpoint(1.0, 3.0, 4.0, 1.0), 1e-12, "at the cap → 0 (no matter the factors)")
-        assertEquals(0.0, BalanceMath.recruitsPerCheckpoint(1.5, 1.0, 1.0, 1.0), 1e-12, "over the cap clamps to 0, not negative")
-        assertEquals(4.0, BalanceMath.recruitsPerCheckpoint(0.0, 2.0, 2.0, 1.0), 1e-12, "× recruitFactor × progressSpeed")
+    fun recruitChanceScalesDiminishesAndClampsToAValidProbability() {
+        // baseChance × progressSpeed × recruitFactor × (1 − fill), clamped to 0..1
+        assertEquals(0.3, BalanceMath.recruitChance(0.0, 1.0, 1.0, 0.3), 1e-12, "empty roster, baseline → base")
+        assertEquals(0.15, BalanceMath.recruitChance(0.5, 1.0, 1.0, 0.3), 1e-12, "half full → half")
+        assertEquals(0.6, BalanceMath.recruitChance(0.0, 1.0, 2.0, 0.3), 1e-12, "× progressSpeed")
+        assertEquals(0.0, BalanceMath.recruitChance(1.0, 3.0, 4.0, 0.3), 1e-12, "at the cap → 0 (whatever the factors)")
+        assertEquals(0.0, BalanceMath.recruitChance(1.5, 1.0, 1.0, 0.3), 1e-12, "over the cap clamps to 0, not negative")
+        assertEquals(1.0, BalanceMath.recruitChance(0.0, 2.0, 2.0, 0.3), 1e-12, "big factors clamp to a valid 1.0 probability")
     }
 }

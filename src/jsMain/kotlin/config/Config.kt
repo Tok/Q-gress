@@ -24,11 +24,15 @@ object Config {
     fun targetPortals(): Int = ConfigMath.targetPortals(startPortals, maxPortals)
 
     // --- Recruitment balance (Phase 5) ---------------------------------------
-    // Recruiting is a faction-NEUTRAL SYSTEM PROCESS ([system.Cycle.recruitmentTick] / [agent.action.cond.Recruiter]),
-    // NOT an agent Q-action — agent action selection is purely the 17 sliders. This is the expected recruits per
-    // CHECKPOINT per faction at baseline; the live rate is this × [progressSpeed] (the "make it faster" knob) ×
-    // the anti-snowball [agent.Balance.recruitFactor] × the roster's remaining headroom (→0 at the cap). Tune by feel.
-    var recruitRate = 1.0
+    // Recruiting is the IDLE FALLBACK (like EXPLORE) — an agent recruits a nearby NPC when it has no gameplay
+    // action left ([agent.action.cond.Recruiter] via ActionSelector), NOT a Q-slider and NOT in the roulette.
+    // Per-meeting SUCCESS chance at an empty roster: scaled live by [progressSpeed] (the "make it faster" lever),
+    // the anti-snowball [agent.Balance.recruitFactor], roster headroom (→0 at the cap) + the recruiter's aptitude.
+    var recruitmentBaseChance = 0.3
+
+    // Cap on how many agents per faction recruit AT ONCE — the rest of the idle agents explore instead, so a quiet
+    // board (everything burnt out) doesn't show EVERY agent recruiting. Recruiting completes + frees a slot.
+    var maxConcurrentRecruiters = 2
 
     // Anti-snowball recruiting (Balance.recruitFactor): the LARGER faction recruits less, the SMALLER more, so
     // team sizes self-correct instead of the leader running away. Multiplies the recruit RATE (not selection — there
@@ -135,7 +139,7 @@ object Config {
     const val apMultiplier = 10
 
     // One "Progress speed" knob (like combatDynamism) for how fast the game ramps early→endgame: it scales
-    // BOTH the recruiting rate (Recruiter.expectedRecruits) AND AP gain (Agent.addAp → agents level faster).
+    // BOTH the recruiting success chance (Recruiter.recruitmentChance) AND AP gain (Agent.addAp → level faster).
     // 1.0 = baseline; <1 slower, >1 faster. Live-tunable + persisted (GameplayPrefs).
     var progressSpeed = 1.0
 

@@ -2,18 +2,18 @@ package agent.action.cond
 
 import Factory
 import World
-import agent.Faction
+import agent.action.ActionItem
+import config.Config
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
-import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 /**
- * Recruiting is a faction-NEUTRAL system process now (not an agent Q-action) — [Recruiter.expectedRecruits] is the
- * per-checkpoint rate that [system.Cycle] drives. These cover the anti-snowball shaping: the rate scales with the
- * smaller-roster [agent.Balance.recruitFactor] and falls to 0 as the roster fills toward its (size-scaled) cap.
- * The pure rate formula is unit-tested in [agent.BalanceMathTest].
+ * Recruiting is the idle fallback now (an agent recruits when it has no gameplay action, like EXPLORE) — these
+ * cover [Recruiter.canRecruit], the gate that keeps only [Config.maxConcurrentRecruiters] per faction recruiting
+ * at once (the rest explore). The per-meeting success math is unit-tested in [agent.BalanceMathTest].
  */
 class RecruiterTest {
 
@@ -23,27 +23,26 @@ class RecruiterTest {
         World.allAgents.clear()
     }
 
-    private fun addAgents(faction: Faction, n: Int) = repeat(n) { World.allAgents.add(Factory.agent(faction)) }
-
     @Test
-    fun theSmallerRosterRecruitsFaster() {
-        addAgents(Faction.ENL, 5)
-        addAgents(Faction.RES, 1)
-        assertTrue(
-            Recruiter.expectedRecruits(Faction.RES) > Recruiter.expectedRecruits(Faction.ENL),
-            "the underdog's anti-snowball recruiting rate is higher than the leader's",
-        )
+    fun anIdleAgentRecruitsWhenThereIsRoomAndAFreeSlot() {
+        val agent = Factory.frog()
+        World.allAgents.add(agent)
+        assertTrue(Recruiter.canRecruit(agent), "roster has room + nobody recruiting → this idle agent recruits")
     }
 
     @Test
-    fun evenRostersRecruitAtTheSameRate() {
-        addAgents(Faction.ENL, 4)
-        addAgents(Faction.RES, 4)
-        assertEquals(
-            Recruiter.expectedRecruits(Faction.ENL),
-            Recruiter.expectedRecruits(Faction.RES),
-            1e-12,
-            "even rosters → identical rate (recruitFactor 1.0 both sides)",
-        )
+    fun theConcurrentCapStopsEveryIdleAgentRecruiting() {
+        repeat(Config.maxConcurrentRecruiters) {
+            World.allAgents.add(Factory.frog().also { it.action.start(ActionItem.RECRUIT) })
+        }
+        val idle = Factory.frog().also { World.allAgents.add(it) }
+        assertFalse(Recruiter.canRecruit(idle), "at the per-faction concurrent cap → the next idle agent explores instead")
+    }
+
+    @Test
+    fun anAgentAlreadyRecruitingDoesNotPickItAgain() {
+        val agent = Factory.frog().also { it.action.start(ActionItem.RECRUIT) }
+        World.allAgents.add(agent)
+        assertFalse(Recruiter.canRecruit(agent))
     }
 }

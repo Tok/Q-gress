@@ -3,7 +3,6 @@ import World
 import agent.Agent
 import agent.Faction
 import agent.action.ActionItem
-import agent.action.cond.Recruiter
 import config.Config
 import config.Dim
 import portal.Portal
@@ -47,7 +46,6 @@ enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>) {
                 spawnXm() // every checkpoint (not just cycle end) so agent XM is replenished mid-cycle
                 World.allPortals.toList().forEach { it.erodeByDominance() } // the leader's empire erodes → board reopens
                 managePortalDensity() // neutral portal discovery + removal, density-driven toward the target
-                recruitmentTick() // neutral, system-driven roster growth (recruiting is not an agent Q-action)
                 if (cp.isCycleEnd) {
                     removeFrogs()
                     removeSmurfs()
@@ -98,19 +96,6 @@ enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>) {
                 val gone = World.randomPortal()
                 gone.remove()
                 Com.addMessage("Portal $gone no longer exists.", Com.Importance.MAJOR, Com.NEUTRAL)
-            }
-        }
-
-        // Faction-neutral roster growth (every checkpoint). Each faction recruits at a rate from progress speed ×
-        // the anti-snowball factor × roster headroom ([Recruiter.expectedRecruits]); each event commandeers an agent
-        // to walk up to an NPC (the visible "meeting") that then joins. Mirrors how portal discovery + the retired
-        // EXPLORE became system processes rather than agent-tunable cranks — agents' own actions stay the 17 sliders.
-        private fun recruitmentTick() {
-            Faction.values().forEach { faction ->
-                val expected = Recruiter.expectedRecruits(faction)
-                val whole = expected.toInt()
-                val events = whole + if (Rng.random() < expected - whole) 1 else 0 // fractional remainder → one more, sometimes
-                repeat(events) { Recruiter.startRecruit(faction) }
             }
         }
 

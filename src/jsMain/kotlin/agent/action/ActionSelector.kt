@@ -31,10 +31,13 @@ object ActionSelector {
     // sliders, or 0.1 headless), so this is unchanged from the old inline DOM read.
     fun q(faction: Faction, value: QValue): Double = FactionPolicies.of(faction).weight(value) * value.weight
 
-    // No-idle fallback: an agent with nothing portal-productive to do never waits — it roams open ground
-    // (EXPLORE, coin-less = just a head-bob, reads distinctly from a purposeful MOVE). Recruiting is NOT here:
-    // it's a neutral system process now (system/Cycle.recruitmentTick), not something an agent self-chooses.
-    private fun fallback(agent: Agent): () -> Agent = { Movement.wander(agent) }
+    // No-idle fallback: an agent with no gameplay action left (portals burnt out, nothing to hack/deploy/attack)
+    // never waits — it RECRUITS a nearby NPC, else EXPLORES (roams open ground). Both are coin-less (just a
+    // head-bob), reading distinctly from a purposeful MOVE. Recruiting is the idle thing, not a slider — and only
+    // a capped few per faction recruit ([Recruiter.canRecruit]); the rest explore, so they never ALL recruit.
+    private fun fallback(agent: Agent): () -> Agent = {
+        if (Recruiter.canRecruit(agent)) Recruiter.performAction(agent) else Movement.wander(agent)
+    }
     private fun doAnywhereAction(agent: Agent): Agent = Rng.select(actionsForAnywhere(agent), fallback(agent)).invoke()
     private fun doNeutralPortalAction(agent: Agent): Agent = Rng.select(actionsForNeutralPortals(agent), fallback(agent)).invoke()
 
