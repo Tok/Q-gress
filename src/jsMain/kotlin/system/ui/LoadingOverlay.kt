@@ -112,8 +112,9 @@ object LoadingOverlay {
         indeterminate = false
         // Put the count on its OWN line below the label: the label varies in width (e.g. "Creating portal
         // <name>"), so keeping the count on the same centred line made it slide left/right as the label
-        // changed. On its own line — monospace + a fixed 4-wide field — the count stays rock-steady.
-        val padded = done.toString().padStart(4, ' ') // fixed 4-wide field; in monospace a normal space is one cell
+        // changed. On its own line — monospace, padded to the DENOMINATOR's width — the count stays
+        // rock-steady (total is fixed for the stage) without a surplus leading space when it's < that width.
+        val padded = done.toString().padStart(total.toString().length, ' ')
         detail("$label\n($padded/$total)")
         reveal()
     }
