@@ -105,22 +105,19 @@ object MapController {
         if (t < 1.0) window.requestAnimationFrame { stepInflate() }
     }
 
-    // --- IN-GAME: buildings grow IN STEP with world-gen progress, only reaching full height once gen is
-    // finished (portals + agents + NPCs all created) — so the city keeps rising while people drop in.
+    // --- IN-GAME: buildings grow IN STEP with the overall load (LoadingOverlay drives the 0..1 fraction,
+    // delayed start → full at 100%), only reaching full height as the game starts — so the city keeps rising
+    // across the whole build instead of finishing early.
     private const val BUILD_EASE = 0.12 // how fast the shown height eases toward the live gen-progress target
-    private const val BUILD_DELAY_FRAC = 0.15 // keep the ground empty for the first part of gen, THEN raise the city
-    private const val BUILD_RISE_SPAN = 0.45 // …and finish the rise within this span of gen (snappier than the full build)
     private var buildTarget = 0.0
     private var buildShown = 0.0
     private var buildLoopRunning = false
 
-    /** Drive the building grow-in by world-gen progress (0..1, from LoadingOverlay). Eases up toward
-     *  [fraction] (after a short delay so the bare ground reads first); only snaps to full when gen
-     *  reports done — so growth spans the whole build. */
+    /** Drive the building grow-in by overall load progress (0..1, from LoadingOverlay, which already shapes the
+     *  delayed-start/full-at-100% curve). Eases the shown height toward [fraction]. */
     fun setBuildProgress(fraction: Double) {
         if (demoMode || !Styles.use3DBuildings) return
-        // Delay the rise: stay flat until gen passes BUILD_DELAY_FRAC, then grow (quickly) over BUILD_RISE_SPAN.
-        buildTarget = ((fraction.coerceIn(0.0, 1.0) - BUILD_DELAY_FRAC) / BUILD_RISE_SPAN).coerceIn(0.0, 1.0)
+        buildTarget = fraction.coerceIn(0.0, 1.0)
         if (!buildLoopRunning && buildTarget > 0.0) {
             buildLoopRunning = true
             window.requestAnimationFrame { stepBuildGrow() }

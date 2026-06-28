@@ -64,7 +64,8 @@ object MapCamera {
         cinematicActive = true
         liftViewToCentre() // face the play-area centre from the start (the 3D tilt otherwise sinks it to the bottom)
         window.requestAnimationFrame { spinBuild() }
-        MapController.applyBuildInflate(0.0) // start flat; the city rises in step with world-gen progress (setBuildProgress)
+        // No inflate reset here: the city has already been rising in step with the overall load (LoadingOverlay
+        // → setBuildProgress) since the map appeared, so it keeps growing through the orbit to full at game start.
     }
 
     // The build camera keeps DEFAULT_PITCH for the 3D look, which pushes the play-area centre low on
