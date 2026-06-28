@@ -18,9 +18,9 @@ things change, don't pre-optimize.
 and the rest of `Bootstrap`/`MapController` remain), the **140 → 120 line-length** pass, and the **magic-numbers**
 naming pass. The **commonMain pure-logic migration** had a deep pass (cleanly-liftable core moved + tested);
 **what's left is blocked by deeper coupling** — `Config` gates `Tournament`/`Observation`/`Cycle`, `Portal`/
-`World`/`Agent` gate `Field`/`Inventory`/`knockMods` — so it rides the SoC work, not a separate pass. One
-gameplay item is queued: **field-layering tests + tuning investigation** (under *Gameplay mechanics* — the rules
-are sound, but agents layer too rarely).
+`World`/`Agent` gate `Field`/`Inventory`/`knockMods` — so it rides the SoC work, not a separate pass.
+Field-layering is verified (`MultilayerFieldTest`); the only remaining piece — nudging the AI to actually
+*pursue* layers — is deferred to the next **champion rebake** (see *Gameplay mechanics* / *AI vs AI*).
 
 Optional small wins: a **CSS design-token dedup** (hoist the repeated glass/button magic values — `blur(7px)`,
 the `rgba(255,255,255,.06/.12/.18)` button fills, `rgba(0,0,0,.45)`, `border-radius:6px` — into `:root` custom
@@ -145,16 +145,16 @@ be matched. **Desktop-only**; mobile is blocked.
   synthetic harness into a real per-preset audit gate.
 
 ## Gameplay mechanics
-- [ ] **Field layering — tests + tuning investigation.** The *rules* are sound and match Ingress
-  (`Portal.canLinkOut`: no linking out from a portal **under** a field, so fielding is unidirectional and
-  layers stack from **outside/anchor** portals, innermost-first — confirmed vs the Ingress wiki; the modern
-  `<500 m` exemption is post-2018 and intentionally omitted). But agents seem to **layer far less** than in the
-  2D era — likely a **behaviour/tuning** cause, not logic (suspects: the `Linker` greedily closes *any*
-  triangle with no preference for stacking; faster board churn / `dominanceDecay` tears stable fields down
-  before they can be layered; link Q-weights). **To do:** (a) add **field-layering tests** — assert a link
-  from an outside/anchor portal creates an overlapping field and that `calcTotalMu` sums the layers, and that a
-  link from a covered interior portal is rejected; (b) instrument a headless run for layered-field counts and
-  tune the `Linker`/weights so layering actually emerges.
+- [ ] **Field layering — AI nudge (defer to the next champion rebake).** ✅ The *mechanic* is verified:
+  `MultilayerFieldTest` pins the directional rules (a portal **under** a field can never link out; an **anchor**
+  vertex links *into* the covered portals to close **nested** triangles; a fan sharing two anchors stacks the
+  layers and `calcTotalMu` sums them; a covered→outward link is rejected; neutralising a shared anchor collapses
+  every layer on it; the **closing** agent owns the field + scores its AP). So the rules are sound — the reason
+  agents layer rarely is purely **behavioural**: `Linker.fieldClosingTarget` (Linker.kt:32-35) closes *any*
+  triangle with **no preference for nesting**. **To do, when we rebake champions** (it's a fitness-shaping
+  change, so it belongs with retraining — see *AI vs AI* below): bias the `Linker` toward links that nest under
+  an existing field (anchor-fanning), instrument a headless run for layered-field counts, and re-evaluate. *(Open
+  later: a rose-method scenario test; a **link-amp mod** raising the hard 8-link cap for deeper multi-layers.)*
 - [ ] **Glyph hacking** — a skill-based hack: **~3× rewards**, but **longer**, **needs skill**, **can fail**.
   Glyph skill (+ portal level) sets odds + duration. The collar animation + glassy sound already land
   (`HackFx`/`Sound`); this is the reward/skill/timing model in `Glypher`/`Portal.tryGlyph` + a glyph skill
