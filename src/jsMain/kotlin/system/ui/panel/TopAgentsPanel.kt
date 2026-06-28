@@ -46,6 +46,7 @@ object TopAgentsPanel {
     private val COLS = listOf(
         Col("XM", num = { it.xm.toDouble() }, render = { a -> cell(a.xm.toString(), "taNum") }),
         Col("AP", num = { it.ap.toDouble() }, render = { a -> cell(a.ap.toString(), "taNum") }),
+        Col("Lvl", num = { it.getLevel().toDouble() }, render = { a -> cell("L${a.getLevel()}", "taNum") }),
         Col("Agent", str = { it.faction.abbr + it.name }, render = { a -> nameCell(a) }),
         Col("XMPs", num = {
             it.inventory.findXmps().size.toDouble()
