@@ -77,6 +77,7 @@ object AudioPanel {
         panes["mixer"] = mixerSubtab()
         panes["instruments"] = instrumentsSubtab()
         panes["ambient"] = ambientSubtab()
+        panes["tts"] = TtsPanel.build()
         panes.values.forEach { glass.appendChild(it) }
         glass.appendChild(TuningLab.section()) // collapsed copy-paste JSON export (audio + gameplay) at the bottom
         Footer.tab("audio").appendChild(glass)
@@ -91,6 +92,7 @@ object AudioPanel {
         strip.appendChild(subTabButton("Mixer", "mixer"))
         strip.appendChild(subTabButton("Instruments", "instruments"))
         strip.appendChild(subTabButton("Ambient", "ambient"))
+        strip.appendChild(subTabButton("Voice", "tts"))
         val reset = document.createElement("button") as HTMLButtonElement
         reset.className = "audioReset" // far right: restore audio + gameplay defaults
         reset.textContent = "Reset to defaults"

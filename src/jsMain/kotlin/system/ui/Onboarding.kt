@@ -16,6 +16,7 @@ import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLOptionElement
 import org.w3c.dom.HTMLSelectElement
 import system.audio.Sound
+import system.audio.Tts
 import system.display.TitleWordmark
 import kotlin.math.abs
 
@@ -53,6 +54,7 @@ object Onboarding {
                 // wordmark out (it'd sit under the selection pane) and muffle the audio.
                 TitleWordmark.setVisible(false)
                 Sound.setMuffled(true)
+                Tts.announceFaction(f) // scanner: "Enlightened selected." (high verbosity only)
                 onPick(f)
             }
             row.appendChild(btn)
@@ -72,7 +74,10 @@ object Onboarding {
             TitleWordmark.setVisible(true)
             revealCta()
         } else {
-            TitleSim.onTitleReady = { window.setTimeout({ revealCta() }, CTA_DELAY_MS) } // 1s after the letters land
+            TitleSim.onTitleReady = {
+                Tts.announceTitle() // scanner says "Q-Gress" as the letters land
+                window.setTimeout({ revealCta() }, CTA_DELAY_MS) // 1s after the letters land
+            }
             TitleSim.start() // the real Scene3D demo (portals hacking/XMPing/linking) behind the menu
             window.setTimeout({ revealCta() }, CTA_FALLBACK_MS) // safety net if the wordmark never loads
         }

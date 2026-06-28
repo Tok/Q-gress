@@ -17,6 +17,7 @@ import items.level.PortalLevel
 import items.level.ResonatorLevel
 import system.Com
 import system.audio.Sound
+import system.audio.Tts
 import system.effect.Fx
 import system.grid.Pathfinding
 import system.ui.Bootstrap
@@ -265,6 +266,7 @@ data class Portal(
             if (Rng.random() < glypher.skills.glyphSkill) {
                 glyphItems.addAll(hack(glypher))
             }
+            Tts.announceGlyphHack(glypher.faction) // reads 1–3 glyphs (GLYPH verbosity only; no-op headless)
             return HackResult(glyphItems.toList(), null)
         }
         return HackResult(null, normal.cooldown)

@@ -23,6 +23,7 @@ import system.audio.InstrumentPrefs
 import system.audio.MixerPrefs
 import system.audio.Scale
 import system.audio.Sound
+import system.audio.Tts
 import system.building.BuildingTransparency
 import system.display.Scene3D
 import system.display.Showcases
@@ -105,6 +106,7 @@ object Bootstrap {
         // Master volume + mute live in their own fixed widget so they stay visible across every phase
         // (title, onboarding, world-gen, gameplay) — not bound to a screen/toolbar that comes and goes.
         Sound.restoreVolume() // re-read the saved volume/mute BEFORE the widget builds (survives reloads)
+        Tts.loadPrefs() // restore saved TTS settings (voice/verbosity/tuning)
         AudioPrefs.load() // re-apply the saved master-FX tuning (AudioFx.build later picks it up via applyAll)
         MixerPrefs.load() // re-apply saved per-role mixer levels/mutes (the lazy gain buses pick them up)
         InstrumentPrefs.load() // re-apply saved per-instrument tuning (explosion kick)
@@ -556,6 +558,7 @@ object Bootstrap {
             FpsMeter.start() // arms the FPS readout (menu-toggled display + ?debug console capture)
             document.getElementById("top-controls")?.removeClass("invisible") // reveal the toolbar now
             document.getElementById(LOCATION_LABEL_ID)?.removeClass("invisible") // …and the location name (in #hudTop, not the toolbar)
+            Tts.announceLocation(currentLocationName) // scanner reads the theatre of operations as play begins
             Attribution.collapse() // we've left the title → tuck the map credit into its (i)
             MapController.showSatellite() // terrain stays grayscale (set at map-load) until the fade below
             Navigation.setup()
