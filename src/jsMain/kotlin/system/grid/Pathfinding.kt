@@ -29,6 +29,12 @@ object Pathfinding {
     // straight INTO walls (where the passability clamp then traps them). One max-penalty-cell of repulsion.
     private const val WALL_REPULSION = MAX_HEAT
     private const val MIN_SPEED_FACTOR = 0.45 // slowest terrain still moves at 45% (so agents never stall)
+
+    // Curl guard: the lowest a smoothed vector's alignment with the raw (curl-free) downhill gradient may fall.
+    // ≥ 0 means heat strictly decreases every step, so the field can't form a closed loop — no whirls. 0.3 keeps
+    // the smoothing's gentle arcs wherever it's benign, only correcting cells the blur rotated toward "uphill".
+    private const val MIN_DOWNHILL = 0.3
+    private const val EPS = 1e-9
     private const val YIELD_EVERY_CELLS = 2000 // cooperative yield cadence while filling the field (async path)
     private const val UNREACHED = -1
 
@@ -87,7 +93,10 @@ object Pathfinding {
             val cells = Cells(World.grid)
             val heat = generateHeat(cells, destination, yielding = true)
             val (re, im) = buildVectors(cells, heat, destination)
+            val rawRe = re.copyOf()
+            val rawIm = im.copyOf()
             smooth(cells, re, im, Config.vectorSmoothCount, yielding = true)
+            deWhirl(re, im, rawRe, rawIm)
             val field = emit(cells, re, im)
             Profiler.addFieldMs(Profiler.nowMs() - start)
             onReady(field)
@@ -99,7 +108,10 @@ object Pathfinding {
         val cells = Cells(World.grid)
         val heat = generateHeatSync(cells, destination)
         val (re, im) = buildVectors(cells, heat, destination)
+        val rawRe = re.copyOf()
+        val rawIm = im.copyOf()
         smoothSync(cells, re, im, Config.vectorSmoothCount)
+        deWhirl(re, im, rawRe, rawIm)
         return emit(cells, re, im)
     }
 
@@ -253,6 +265,36 @@ object Pathfinding {
         }
         outRe.copyInto(re)
         outIm.copyInto(im)
+    }
+
+    // --- curl guard (de-whirl) ----------------------------------------------------------------------------
+    // The raw gradient is curl-free (gradient of the scalar heat) → following it always reaches the goal. The
+    // box-blur smoothing, however, can rotate a cell's vector away from downhill, creating closed "whirls" that
+    // trap orbiting agents. Restore a minimum downhill component (vs the saved RAW direction) in every cell, so
+    // heat strictly decreases each step and no closed loop can exist — keeping the smoothed direction wherever
+    // it's already downhill enough.
+    private fun deWhirl(re: DoubleArray, im: DoubleArray, rawRe: DoubleArray, rawIm: DoubleArray) {
+        for (i in re.indices) {
+            // buildVectors always sets a non-zero raw magnitude (>= MIN_SPEED_FACTOR), so rMag is safe to divide.
+            val rMag = sqrt(rawRe[i] * rawRe[i] + rawIm[i] * rawIm[i])
+            val rx = rawRe[i] / rMag
+            val ry = rawIm[i] / rMag
+            val sMag = sqrt(re[i] * re[i] + im[i] * im[i])
+            if (sMag < EPS) { // smoothing cancelled the vector out → fall back to the raw downhill gradient
+                re[i] = rawRe[i]
+                im[i] = rawIm[i]
+            } else {
+                val downhill = re[i] * rx + im[i] * ry // the smoothed vector's component along the raw gradient
+                val floor = MIN_DOWNHILL * sMag
+                if (downhill < floor) { // rotated toward/past sideways → nudge back toward raw, keep the magnitude
+                    val nx = re[i] + (floor - downhill) * rx
+                    val ny = im[i] + (floor - downhill) * ry
+                    val nMag = sqrt(nx * nx + ny * ny)
+                    re[i] = nx / nMag * sMag
+                    im[i] = ny / nMag * sMag
+                }
+            }
+        }
     }
 
     // --- emit the field: wrap the flat arrays directly (no per-cell Map/Complex) --------------------------
