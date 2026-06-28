@@ -32,6 +32,7 @@ object Onboarding {
     /** Step 1 — pick a faction. [onPick] receives it. */
     fun showFaction(onPick: (Faction) -> Unit) {
         currentBack = null // first step — nothing to go back to
+        MorphPane.reset() // faction owns its own glass (the CTA); drop any morph pane left from going back
         document.getElementById(SCREEN_ID)?.remove()
         val screen = div("onboardScreen")
         screen.id = SCREEN_ID
@@ -203,6 +204,7 @@ object Onboarding {
         currentName = initial.displayName
         activate(randomBtn)
         MiniMap.create(mapHolder, initial.lng, initial.lat)
+        installMorph(screen)
     }
 
     private fun modeButton(label: String): HTMLButtonElement {
@@ -254,6 +256,7 @@ object Onboarding {
             },
         )
         screen.appendChild(navRow(onBack, button("Next →", "topButton displayFont onboardStart") { onNext() }))
+        installMorph(screen)
     }
 
     // Opt-in for the experimental in-browser LLM driver — off by default so it isn't an obvious pick.
@@ -378,22 +381,34 @@ object Onboarding {
 
         screen.appendChild(warn)
 
-        val next = button("Next →", "topButton displayFont onboardStart") {
-            Sim.roundField = roundCheck.checked
-            Config.npcMultiplier = npcSlider.valueAsNumber // carried into the game via the reload URL
-            val w = widthInput.value.toIntOrNull() ?: Sim.width
-            val h = heightInput.value.toIntOrNull() ?: Sim.height
-            // Round → square the map so the inscribed circle is large (≈ doubles the radius vs a
-            // wide rectangle) and the round arena actually fills the space.
-            val side = maxOf(w, h)
-            onStart(
-                if (roundCheck.checked) side else w,
-                if (roundCheck.checked) side else h,
-                portalsInput.value.toIntOrNull() ?: defaultPortals,
-                stagePick(),
-            )
-        }
+        val inputs = Triple(widthInput, heightInput, portalsInput)
+        val next = mapSizeNext(defaultPortals, inputs, npcSlider, roundCheck, stagePick, onStart)
         screen.appendChild(navRow(onBack, next))
+        installMorph(screen)
+    }
+
+    // The map-size "Next →" button: commits round/NPC-density to Config + Sim, then reports the chosen
+    // size/portals/stage. Round → square the map so the inscribed circle is large (≈ doubles the radius vs a
+    // wide rectangle) and the round arena actually fills the space. Split out to keep [showMapSize] short.
+    private fun mapSizeNext(
+        defaultPortals: Int,
+        inputs: Triple<HTMLInputElement, HTMLInputElement, HTMLInputElement>,
+        npcSlider: HTMLInputElement,
+        roundCheck: HTMLInputElement,
+        stagePick: () -> StartStage,
+        onStart: (Int, Int, Int, StartStage) -> Unit,
+    ): HTMLButtonElement = button("Next →", "topButton displayFont onboardStart") {
+        Sim.roundField = roundCheck.checked
+        Config.npcMultiplier = npcSlider.valueAsNumber // carried into the game via the reload URL
+        val w = inputs.first.value.toIntOrNull() ?: Sim.width
+        val h = inputs.second.value.toIntOrNull() ?: Sim.height
+        val side = maxOf(w, h)
+        onStart(
+            if (roundCheck.checked) side else w,
+            if (roundCheck.checked) side else h,
+            inputs.third.value.toIntOrNull() ?: defaultPortals,
+            stagePick(),
+        )
     }
 
     /** The big-map caution line. Hidden via CSS (`visibility`, so its v-space stays reserved and the popup
@@ -500,6 +515,7 @@ object Onboarding {
     /** Remove the current onboarding screen (the last step loads the world without a reload). */
     fun close() {
         currentBack = null
+        MorphPane.reset() // onboarding done → the loading overlay (a fresh document after reload) owns its glass
         document.getElementById(SCREEN_ID)?.remove()
     }
 
@@ -515,8 +531,10 @@ object Onboarding {
     }
 
     // Builds the full-screen shaded overlay (the title sim shows through, dimmed) + a glass panel, and
-    // appends the overlay to the body. Returns the PANEL — callers add their controls into it.
+    // appends the overlay to the body. Returns the PANEL — callers add their controls into it, then call
+    // [installMorph] to slide the morphing glass pane into place behind it.
     private fun screen(titleText: String): HTMLElement {
+        pendingFrom = currentPanelRect() // capture the outgoing panel's footprint BEFORE we remove it
         document.getElementById(SCREEN_ID)?.remove()
         val s = div("onboardScreen")
         s.id = SCREEN_ID
@@ -527,6 +545,25 @@ object Onboarding {
         s.appendChild(panel)
         document.body?.appendChild(s)
         return panel
+    }
+
+    // The footprint the morph pane should animate FROM — the glass panel of the screen being replaced,
+    // captured in [screen] before removal. Null only if there was no prior panel (first appearance).
+    private var pendingFrom: dynamic = null
+
+    private fun currentPanelRect(): dynamic =
+        document.querySelector("#$SCREEN_ID .onboardPanel, #$SCREEN_ID .factionCta")?.asDynamic()?.getBoundingClientRect()
+
+    /** Slide the morphing glass pane to sit behind [panel] (called once a step's content is fully built, so
+     *  the pane matches its final size). The pane lerps from the previous step's footprint ([pendingFrom]). */
+    private fun installMorph(panel: HTMLElement) {
+        val overlay = document.getElementById(SCREEN_ID) as? HTMLElement ?: return
+        MorphPane.morphInto(overlay, panel, pendingFrom)
+        if (pendingFrom != null) { // cross-fade the controls in as the glass morphs into place behind them
+            panel.style.opacity = "0"
+            panel.asDynamic().offsetWidth // commit opacity:0 before the transition to 1
+            window.requestAnimationFrame { panel.style.opacity = "1" }
+        }
     }
 
     private fun div(cls: String): HTMLElement {

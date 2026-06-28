@@ -1464,8 +1464,11 @@ html, body {
 .titleScreen .titleGithub {
     pointer-events: auto;
 }
-/* Glass + black-rubber panel holding the selection controls (map size / location), faction-laser edge. */
+/* Selection-step panel (map size / location): the glass itself is the separate, morphing .morphPane behind
+   it (so the frame lerps between steps); the panel only holds + lays out the controls, transparent, on top. */
 .onboardPanel {
+    position: relative;
+    z-index: 1; /* paint the controls ABOVE the .morphPane glass (which sits at z-index 0 in the overlay) */
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -1474,12 +1477,29 @@ html, body {
     max-height: 86vh;
     overflow: auto;
     padding: 22px 30px 26px;
+    background: transparent;
+    border: 1px solid transparent; /* keep the 1px box so the panel's footprint matches the glass edge */
+    border-radius: 10px;
+    transition: opacity 0.4s ease; /* content cross-fades in as the glass morphs into place (set inline) */
+}
+/* The morphing glass frame: a single persistent pane that lerps its bounds between onboarding steps. Carries
+   the glass look the step panels used to own; positioned (left/top/width/height) from JS per step. */
+.morphPane {
+    position: fixed;
+    z-index: 0; /* behind the step's .onboardPanel content (z-index 1) within the overlay's stacking context */
+    box-sizing: border-box;
+    pointer-events: none;
     background: var(--ui-rubber);
     border: 1px solid var(--ui-faction-edge);
     border-radius: 10px;
     backdrop-filter: var(--ui-glass-blur);
     -webkit-backdrop-filter: var(--ui-glass-blur);
     box-shadow: var(--ui-faction-glow), 0 10px 30px rgba(0, 0, 0, 0.6);
+    transition:
+        left 0.45s cubic-bezier(0.4, 0, 0.2, 1),
+        top 0.45s cubic-bezier(0.4, 0, 0.2, 1),
+        width 0.45s cubic-bezier(0.4, 0, 0.2, 1),
+        height 0.45s cubic-bezier(0.4, 0, 0.2, 1);
 }
 /* Thin "source on GitHub" link pinned to the bottom of the title screen. */
 .titleGithub {
