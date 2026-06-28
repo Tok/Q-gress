@@ -118,9 +118,12 @@ CSS design-token dedup is done too: glass/tint/blur literals route through `:roo
   on `agent/Skills`, exposed as a high-risk/high-reward QAction the AI learns to weigh. Drive the glyph count +
   hack duration off portal level (Ingress wiki: L1 = 1 glyph / 20 s … L8 = 5 glyphs / 15 s; perfect-hack +
   speed bonuses) via the `glyph/Glyph` enum; the TTS "glyph" tier already reads the sequence back.
-- [ ] **Recruiting items** *(the per-agent skill shipped).* `Skills.recruiting` (0..1, `recruitingFactor()`
-  → 0.5×–1.5× weight, ~1.0× avg so it changes *who* recruits, not the pace) now scales
-  `Recruiter.selectionWeight(agent)`. Still open: **items** (e.g. *beer* — a temporary recruit boost) on top.
+- [ ] **Recruiting items** *(recruiting is now a faction-neutral SYSTEM process, not an agent Q-action — like
+  the retired EXPLORE).* `Cycle.recruitmentTick` drives it each checkpoint at `Recruiter.expectedRecruits` (base
+  `Config.recruitRate` × `progressSpeed` × anti-snowball `recruitFactor` × roster headroom); each event
+  commandeers an agent — weighted by `Skills.recruitingFactor` (the per-agent aptitude) — to run the visible
+  walk-up. "Faster" = a higher rate, never agents abandoning play to recruit. Still open: **items** (e.g. *beer*
+  — a temporary recruit-rate boost) on top.
 - [ ] **Aim skill (XMP / Ultra-Strike accuracy)** — a per-agent skill: high-aim detonates **closer to portal
   centre** (max damage), low-aim lands **off-centre** (damage falls off with miss distance). Makes the
   small-radius Ultra-Strike reward good aim; feeds the damage calc + blast VFX origin; another AI lever.
