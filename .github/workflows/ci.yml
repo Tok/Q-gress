@@ -40,7 +40,7 @@ jobs:
           fail_ci_if_error: false
 
   deploy:
-    name: Deploy 3D to GitHub Pages (root)
+    name: Deploy Q-Gress to GitHub Pages (root)
     needs: build
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
