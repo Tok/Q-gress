@@ -7,7 +7,11 @@ data class Skills(val speed: Double, val deployPrecision: Double, val glyphSkill
     fun inRangeSpeed() = speed / Constants.phi
 
     companion object {
-        private const val minSpeed = 1.5
+        // Doubled (was 1.5) so agents + NPCs cross the bigger km²-sized maps in reasonable time → more action,
+        // less walking. Safe to scale: the arrival threshold is [inRangeSpeed] (speed/φ), so it tracks the step
+        // size; the fixed deploy/attack ranges (34 / ≥8 px) still dwarf a single doubled step (~5 px). NPC speed
+        // is [randomNpcSpeed] = this ÷ φ, so it doubles too.
+        private const val minSpeed = 3.0
         private const val maxSpeed = minSpeed * Constants.phi
         fun createRandom() = Skills(randomSpeed(), deployPrecision(), randomGlyphSkill(), randomReliability())
         private fun randomSpeed() = (Rng.random() * (maxSpeed - minSpeed)) + minSpeed // distance per tick

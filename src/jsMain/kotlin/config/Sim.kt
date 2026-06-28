@@ -25,8 +25,9 @@ object Sim {
      *  real value is ×cos(lat); we size grids by this nominal value so perf doesn't swing with latitude. */
     const val MPP_REF = 78271.516964 / 262144.0 // ≈ 0.2986 m/px
 
-    // Map-size presets by play-area in km². "tiny" is the title-screen arena, "mid" the onboarding default,
-    // "giant" the warned perf-heavy ceiling. Portal count (the pathfinding driver) follows area sub-linearly.
+    // Map-size presets by play-area in km². "tiny" is the title-screen arena, "small" the onboarding default
+    // (smaller = less walking = more action), "giant" the warned heavy ceiling. Portal count (the pathfinding
+    // driver) follows area sub-linearly.
     const val TINY_KM2 = 0.10
     const val SMALL_KM2 = 0.5
     const val MID_KM2 = 1.0
@@ -44,9 +45,9 @@ object Sim {
      *  bounded as the map grows (≈ 4 · 6 · 8 · 10 · 12 across tiny…giant). */
     fun suggestedPortals(km2: Double): Int = (8.0 * km2.pow(1.0 / 3.0)).roundToInt().coerceAtLeast(3)
 
-    var width = sideForArea(MID_KM2)
+    var width = sideForArea(SMALL_KM2)
         private set
-    var height = sideForArea(MID_KM2)
+    var height = sideForArea(SMALL_KM2)
         private set
 
     /** Round play field (inscribed circle) instead of the rectangle — chosen at onboarding (default on). */
