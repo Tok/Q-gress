@@ -56,6 +56,7 @@ object TuningPanel {
         QActions.values().forEach { list.appendChild(buildRow(it)) }
         list.appendChild(el("div", "tuneDivider"))
         QDestinations.values().forEach { list.appendChild(buildRow(it)) }
+        if (mode == Mode.INTERACTIVE) Hud.left().appendChild(TuningPresets.bar()) // named slider presets (player's faction)
         Hud.left().appendChild(list)
         applyMode()
     }
@@ -116,6 +117,20 @@ object TuningPanel {
         val qs = orderedQValues()
         fun csv(f: Faction) = qs.joinToString(",") { sliderInput(it, f)?.value ?: "0.10" }
         return "${csv(Faction.ENL)}|${csv(Faction.RES)}"
+    }
+
+    /** The player faction's current slider values as a preset CSV (Actions then Destinations) — see [TuningPresets]. */
+    internal fun captureUser(): String = orderedQValues().joinToString(",") { sliderInput(it, userFaction)?.value ?: "0.10" }
+
+    /** Apply a preset CSV (from [captureUser]) onto the player faction's sliders + resync labels/bars (no-op if malformed). */
+    internal fun applyUser(csv: String) {
+        if (!built) return
+        val qs = orderedQValues()
+        val vals = csv.split(",")
+        if (vals.size != qs.size) return
+        qs.forEachIndexed { i, q -> sliderInput(q, userFaction)?.value = vals[i] }
+        rows.forEach { it.valueLabel.textContent = display(it.input.value) }
+        refresh()
     }
 
     /** Restore tuning from [exportTuning]'s format (no-op if not built or malformed). */

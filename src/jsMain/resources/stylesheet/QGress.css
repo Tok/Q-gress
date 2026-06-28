@@ -2171,6 +2171,35 @@ html, body {
     image-rendering: -webkit-optimize-contrast;
 }
 /* The merged tuning list (TUNE tab): one flat list — Actions, a divider, then Destinations. */
+/* Named-preset bar above the tuning sliders: a saved-name select + Save/Delete, in the dock's chrome. */
+.tunePresetBar {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    margin: 4px 5px 8px;
+}
+.tunePresetSelect {
+    flex: 1 1 auto;
+    min-width: 0; /* let it shrink in the flex row instead of overflowing */
+    margin: 0; /* override .select's outer margins inside the bar */
+}
+.tunePresetBtn {
+    flex: 0 0 auto;
+    height: 21px;
+    padding: 2px 8px;
+    font-size: 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    color: #cccccc;
+    background: var(--ui-tint-1);
+    border: 1px solid var(--ui-tint-3);
+    -webkit-backdrop-filter: var(--ui-btn-blur);
+    backdrop-filter: var(--ui-btn-blur);
+    transition: box-shadow 0.15s ease;
+}
+.tunePresetBtn:hover {
+    box-shadow: var(--ui-faction-glow);
+}
 .tuneList {
     width: 100%;
     box-sizing: border-box;
