@@ -7,12 +7,12 @@ object Config {
     const val minPortals = 5 // the board never churns/gens below this (always ≥5 portals on a map)
     const val maxPortals = 89
     const val minFrogs = 2
-    const val maxFrogs = 21
+    const val maxFrogs = 32 // the hard per-faction ceiling (giant-map / end-game roster); the live cap scales by size — see [maxFor]
     const val minSmurfs = 2
-    const val maxSmurfs = 21
-    const val frogQuitRate = 0.1
-    const val smurfQuitRate = 0.1
-    const val factionChangeRate = 0.01
+    const val maxSmurfs = 32
+    const val frogQuitRate = 0.0 // 0 = agents don't quit; rosters only GROW (via recruiting) toward the cap. Raise to re-enable churn.
+    const val smurfQuitRate = 0.0
+    const val factionChangeRate = 0.0 // 0 = no defections either (a defection shrinks a faction). Raise to re-enable.
 
     // Density-driven portal churn (system/Cycle.managePortalDensity, every checkpoint). Portals are
     // DISCOVERED and REMOVED as a neutral process that converges the count toward [targetPortals]: well below
@@ -27,15 +27,16 @@ object Config {
     // Recruiting is FREE (it's persuading a bystander, not an energy field action). The anti-snowball
     // balancing is the per-faction selection weight (smaller team recruits more, Balance.recruitFactor)
     // plus diminishing returns as the faction fills toward its cap — not an XM cost.
-    // Success chance at an empty roster; scales →0 at the cap. Cut ⅓ in step with the 3× shorter RECRUIT
-    // "meeting" (30→10 ticks): same net recruits per unit time, but agents spend less time standing in a
-    // meeting and more time visibly walking between recruits (so they don't read as stuck).
-    const val recruitmentBaseChance = 0.033
+    // Success chance per RECRUIT "meeting" at an empty roster; scales →0 as the faction fills toward its cap
+    // (BalanceMath.recruitSuccessProbability × (1 − fill)). Raised so a meeting actually lands often enough that
+    // rosters fill in a reasonable time — recruiting felt broken at the old 0.033 (×(1−fill) ≈ a few % per try).
+    const val recruitmentBaseChance = 0.20
 
-    // Base recruit selection weight (Recruiter.selectionWeight × Balance.recruitFactor) — recruiting is no
-    // longer a tuning slider. 3× the original 0.00005 so rosters grow faster (the game ramps early→endgame
-    // quicker); the anti-snowball recruitFactor still modulates it per faction so the leader can't run away.
-    var recruitWeight = 0.00015
+    // Base recruit selection weight (Recruiter.selectionWeight × Balance.recruitFactor × progressSpeed). This
+    // competes (roulette, Rng.select) against the 0–1 slider Q-values, so at the old 0.00015 recruiting was
+    // picked ~never. Raised to actually compete; the anti-snowball recruitFactor (0.3–3.0×) still modulates it
+    // per faction (leader recruits less), and the "Progress speed" menu slider scales it further. Tune by feel.
+    var recruitWeight = 0.05
 
     // Anti-snowball recruiting (Balance.recruitFactor): the LARGER faction recruits less, the SMALLER more,
     // so team sizes self-correct instead of the leader running away (recruiting was the dominant snowball).
@@ -50,9 +51,23 @@ object Config {
 
     var startPortals = 8 // initial portal count (chosen at onboarding — the "portal density"); scales by map size
     var startStage = StartStage.MID // onboarding pick: how far along the game starts (roster + level + gear)
-    fun startFrogs() = startStage.agentsPerFaction
-    fun startSmurfs() = startStage.agentsPerFaction
+    fun startFrogs() = rosterForStart()
+    fun startSmurfs() = rosterForStart()
     fun initialAp() = startStage.initialAp
+
+    /** Per-faction starting roster, by START STAGE × MAP SIZE: a normal start is always a single agent; a
+     *  mid-game seeds [Sim.suggestedAgents] (Tiny 3 · Small 5 · Mid 8 · Large 12 · Giant 16); an end-game seeds
+     *  the FULL size roster ([rosterCap] — Tiny 8 · Small 16 · Mid 24 · Large 28 · Giant 32). Recruiting then
+     *  grows the roster up to [rosterCap]. */
+    private fun rosterForStart(): Int = when (startStage) {
+        StartStage.START -> 1
+        StartStage.MID -> Sim.suggestedAgents(Sim.areaKm2())
+        StartStage.END -> rosterCap()
+    }
+
+    /** Live per-faction agent cap, scaled by map size ([Sim.maxAgents]: Tiny 8 … Giant 32, the hard ceiling) so a
+     *  tiny/small map can't fill with the giant roster. Rosters grow via recruiting toward this; nothing shrinks them. */
+    fun rosterCap(): Int = Sim.maxAgents(Sim.areaKm2())
 
     // Per-agent inventory cap (authentic Ingress = 2000). When full, an agent can't hack/glyph for more items
     // (Hacker.isActionPossible) — it must spend (deploy/attack/link) or recycle to free space (Recycler).
@@ -63,8 +78,7 @@ object Config {
     // reaches [MIN_NONFACTION] (Recruiter), so a game never runs out of people to recruit.
     var maxNonFaction = 500 // current target population (set by npcPopulation at world-gen)
     fun maxFor(faction: Faction? = null) = when (faction) {
-        Faction.ENL -> maxFrogs
-        Faction.RES -> maxSmurfs
+        Faction.ENL, Faction.RES -> rosterCap() // the size-scaled per-faction agent cap (not the raw 32 ceiling)
         else -> maxNonFaction
     }
 

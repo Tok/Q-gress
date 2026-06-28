@@ -80,7 +80,7 @@ object World {
     val smurfs = allAgents.filter { it.faction == Faction.RES }.toSet()
     fun countAgents() = allAgents.count()
     fun countAgents(fact: Faction) = allAgents.count { it.faction == fact }
-    fun canRecruitMore(fact: Faction) = countAgents(fact) < Config.maxFrogs
+    fun canRecruitMore(fact: Faction) = countAgents(fact) < Config.maxFor(fact) // size-scaled cap; rosters grow to it
 
     val allNonFaction: MutableSet<NonFaction> = mutableSetOf()
     fun countNonFaction() = allNonFaction.count()

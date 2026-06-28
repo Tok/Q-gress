@@ -41,9 +41,33 @@ object Sim {
     /** Square side (sim px) whose inscribed circle covers [km2] of (nominal) ground: area = π·(side·MPP/2)². */
     fun sideForArea(km2: Double): Int = (2.0 * sqrt(km2 * 1_000_000.0 / PI) / MPP_REF).roundToInt()
 
+    /** The current play field's nominal area (km²) — the inverse of [sideForArea] over the inscribed circle of
+     *  the (smaller) side. Used to scale the roster ([config.Config.rosterForStart] / [config.Config.rosterCap]). */
+    fun areaKm2(): Double = PI * (minOf(width, height).toDouble() * MPP_REF / 2.0).pow(2.0) / 1_000_000.0
+
     /** Suggested start-portal count for a [km2] map — sub-linear (∛) so the per-portal flow-field cost stays
      *  bounded as the map grows (≈ 4 · 5 · 6 · 8 · 10 across tiny…giant). */
     fun suggestedPortals(km2: Double): Int = (8.0 * km2.pow(1.0 / 3.0)).roundToInt().coerceAtLeast(3)
+
+    /** Suggested per-faction MID-GAME roster for a [km2] map — bucketed by the size presets (midpoint thresholds,
+     *  robust to [sideForArea]'s rounding): Tiny 3 · Small 5 · Mid 8 · Large 12 · Giant 16. */
+    fun suggestedAgents(km2: Double): Int = when {
+        km2 < (TINY_KM2 + SMALL_KM2) / 2.0 -> 3
+        km2 < (SMALL_KM2 + MID_KM2) / 2.0 -> 5
+        km2 < (MID_KM2 + LARGE_KM2) / 2.0 -> 8
+        km2 < (LARGE_KM2 + GIANT_KM2) / 2.0 -> 12
+        else -> 16
+    }
+
+    /** Per-faction MAX roster (the recruiting cap / end-game seed) for a [km2] map — bucketed by size so small
+     *  maps can't fill with the giant ceiling: Tiny 8 · Small 16 · Mid 24 · Large 28 · Giant 32 (the hard limit). */
+    fun maxAgents(km2: Double): Int = when {
+        km2 < (TINY_KM2 + SMALL_KM2) / 2.0 -> 8
+        km2 < (SMALL_KM2 + MID_KM2) / 2.0 -> 16
+        km2 < (MID_KM2 + LARGE_KM2) / 2.0 -> 24
+        km2 < (LARGE_KM2 + GIANT_KM2) / 2.0 -> 28
+        else -> 32
+    }
 
     var width = sideForArea(SMALL_KM2)
         private set
