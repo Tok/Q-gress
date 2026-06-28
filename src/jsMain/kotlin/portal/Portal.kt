@@ -7,7 +7,6 @@ import config.Config
 import config.IngressFacts
 import config.Sim
 import extension.*
-import items.QgressItem
 import items.deployable.HeatSink
 import items.deployable.Mod
 import items.deployable.Multihack
@@ -38,7 +37,7 @@ data class Portal(
     var owner: Agent?,
     val mods: MutableMap<ModSlot, Mod> = mutableMapOf(), // up to 4 mod slots (shields / heat sinks / link amps)
 ) {
-    private val lastHacks: MutableMap<String, MutableList<Int>> = mutableMapOf()
+    internal val lastHacks: MutableMap<String, MutableList<Int>> = mutableMapOf() // per-agent hack history ([PortalHacks])
     val id: String = "P-" + location.x + ":" + location.y + "-" + name
     fun isDeprecated() = slots.isEmpty()
 
@@ -56,7 +55,7 @@ data class Portal(
         connected.fields.filter { it.isConnectedTo(this) }.count() > 1
     }
 
-    fun canHack(hacker: Agent): Boolean = handleCooldown(hacker, true) == Cooldown.NONE
+    fun canHack(hacker: Agent): Boolean = PortalHacks.canHack(this, hacker)
     fun canLinkOut(linker: Agent) = isLinkable(linker) &&
         (links.isEmpty() || links.count() < 8) &&
         !isCoveredByField() &&
@@ -64,7 +63,7 @@ data class Portal(
 
     // Level comes from the deployed resonators only: a neutral portal (no resonators) has NO level (0)
     // and can't be attacked/shattered; a captured portal is at least level 1.
-    private fun calculateLevel() = if (numberOfResosLeft() == 0) {
+    internal fun calculateLevel() = if (numberOfResosLeft() == 0) {
         0
     } else {
         clipLevel(slots.values.sumOf { it.resonator?.level?.level ?: 0 } / 8)
@@ -257,71 +256,9 @@ data class Portal(
         }
     }
 
-    fun tryHack(hacker: Agent): HackResult {
-        val cooldown = handleCooldown(hacker, false)
-        if (cooldown == Cooldown.NONE) {
-            val stuff = hack(hacker)
-            return HackResult(stuff, null)
-        }
-        return HackResult(null, cooldown)
-    }
+    fun tryHack(hacker: Agent): HackResult = PortalHacks.tryHack(this, hacker)
 
-    fun tryGlyph(glypher: Agent): HackResult {
-        val normal = tryHack(glypher)
-        if (normal.cooldown == null) {
-            val glyphItems = mutableListOf<QgressItem>()
-            glyphItems.addAll(normal.items ?: emptyList())
-            glyphItems.addAll(hack(glypher))
-            if (Rng.random() < glypher.skills.glyphSkill) {
-                glyphItems.addAll(hack(glypher))
-            }
-            Tts.announceGlyphHack(glypher.faction) // reads 1–3 glyphs (GLYPH verbosity only; no-op headless)
-            return HackResult(glyphItems.toList(), null)
-        }
-        return HackResult(null, normal.cooldown)
-    }
-
-    private fun hack(hacker: Agent): MutableList<QgressItem> {
-        val level = min(calculateLevel(), hacker.getLevel())
-        val newStuff = HackLoot.rollDrops(hacker, level).toMutableList()
-        PortalKey.tryHack(this, hacker)?.let { newStuff.add(it) }
-        chargeHackCost(hacker)
-        return newStuff
-    }
-
-    // The XM cost of a hack (and the AP for hacking an enemy's), scaled by portal level — the portal-specific
-    // half of a hack the drop table ([HackLoot]) can't own.
-    private fun chargeHackCost(hacker: Agent) {
-        val isEnemyPortal = owner != null && hacker.faction != owner?.faction
-        if (isEnemyPortal) {
-            hacker.addAp(100)
-            hacker.removeXm(300 * this.calculateLevel())
-        } else {
-            hacker.removeXm(50 * this.calculateLevel())
-        }
-    }
-
-    /** Hacks allowed before burnout: the base [MAX_HACKS] plus any deployed multi-hacks' bonus. */
-    private fun maxHacks(): Int = MAX_HACKS + Multihack.additionalHacks(mods.values)
-
-    private fun handleCooldown(hacker: Agent, readOnly: Boolean): Cooldown {
-        // Per-agent hack history (tick numbers). Burnout = maxHacks() hacks all still within the burnout window
-        // (PortalMath.isBurnedOut); the time-cooldown between hacks is keyed off the most recent. The list is
-        // kept to the last maxHacks() entries so it's bounded and burnout can recur once old hacks age out.
-        val hacks = lastHacks.getOrPut(hacker.key()) { mutableListOf() }
-        if (hacks.size >= maxHacks() && PortalMath.isBurnedOut(hacks, World.tick)) return Cooldown.BURNOUT
-        val baseCooldownS = (Cooldown.FIVE.seconds * cooldownFactor()).toInt() // heat sinks shorten it
-        val cooldown = if (hacks.isEmpty()) Cooldown.NONE else PortalMath.cooldownAfter(World.tick - hacks.max(), baseCooldownS)
-        if (cooldown == Cooldown.NONE && !readOnly) {
-            hacks.add(World.tick)
-            while (hacks.size > maxHacks()) hacks.removeAt(0)
-            // This hack just tipped the portal into burnout for this agent → vent a one-shot steam puff.
-            if (hacks.size >= maxHacks() && PortalMath.isBurnedOut(hacks, World.tick)) {
-                Fx.sink.steamPuff(location, getLevel().toInt())
-            }
-        }
-        return cooldown
-    }
+    fun tryGlyph(glypher: Agent): HackResult = PortalHacks.tryGlyph(this, glypher)
 
     fun isOwnedByEnemy(agent: Agent) = owner?.faction != null && owner?.faction != agent.faction
     fun deploy(deployer: Agent, resos: Map<Octant, Resonator>, distance: Int) {
