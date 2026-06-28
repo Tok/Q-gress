@@ -545,7 +545,10 @@ html, body {
     height: 20px;
 }
 .footerBody {
-    max-height: 320px; /* a touch taller so the STATS slider-history shows a row or two without maximizing */
+    /* FIXED height (not max-height) so the docked footer is the SAME size on every tab — switching tabs no
+       longer makes it jump taller/shorter, which made navigation jarring. Sparse tabs just have spare room;
+       taller ones (STATS slider-history) scroll. Maximize for the full view. */
+    height: 320px;
     overflow: auto;
     padding: 6px 12px;
 }
