@@ -548,7 +548,7 @@ html, body {
     /* FIXED height (not max-height) so the docked footer is the SAME size on every tab — switching tabs no
        longer makes it jump taller/shorter, which made navigation jarring. Sparse tabs just have spare room;
        taller ones (STATS slider-history) scroll. Maximize for the full view. */
-    height: 210px;
+    height: 220px;
     overflow: auto;
     padding: 6px 12px;
 }
@@ -557,7 +557,8 @@ html, body {
    toolbar so the footer header — with the maximize/collapse buttons — stays clickable (it sits at the top of
    the footer block). 100px toolbar + ~28px header + a gap → 140px. */
 .footer.expanded .footerBody {
-    max-height: calc(100vh - 140px);
+    /* Override the fixed docked height (above) — otherwise maximize can't grow the body. */
+    height: calc(100vh - 140px);
 }
 
 /* Glass panes INSIDE the (now unblurred) footer — only the CONTENT that needs to read over the map gets the
@@ -1751,7 +1752,7 @@ html, body {
 .onboardWarn {
     font-family: "Coda", monospace;
     font-size: 12px;
-    color: #ffcf5c; /* warm amber — a deliberate warning tint (not a UI gray) so it reads as a caution */
+    color: #ffffff; /* bright neutral (R==G==B) — highlighted by brightness + the pulse, not a colour tint */
     font-weight: 600;
     max-width: 420px;
     text-align: center;
