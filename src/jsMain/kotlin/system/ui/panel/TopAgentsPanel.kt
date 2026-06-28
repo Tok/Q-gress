@@ -73,8 +73,13 @@ object TopAgentsPanel {
         Col("Uniq", num = { uniqueKeys(it).toDouble() }, render = { a -> cell(uniqueKeys(a).toString(), "taNum") }),
         Col("m/s", num = { speedMs(it) }, render = { a -> speedCell(a) }),
         Col("Action", str = { it.action.item.text }, render = { a -> actionCell(a) }),
-        Col("Portal", str = { it.actionPortal.name }, render = { a -> cell(a.actionPortal.name, "taCell") }),
+        Col("Portal", str = { it.actionPortal.name }, render = { a -> cell(clip(a.actionPortal.name, PORTAL_NAME_MAX), "taCell") }),
     )
+
+    private const val PORTAL_NAME_MAX = 16 // cut long portal names so the (fit-content) AGENTS pane can't widen
+
+    /** Truncate [s] to [max] chars with an ellipsis, so a long action-portal name can't stretch the table. */
+    private fun clip(s: String, max: Int): String = if (s.length <= max) s else s.take(max - 1) + "…"
 
     private val DEFAULT_SORT = COLS.indexOfFirst { it.header == "AP" }.coerceAtLeast(0) // sort by AP by default
     private var sortIndex = DEFAULT_SORT

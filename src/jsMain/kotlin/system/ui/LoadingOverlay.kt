@@ -3,6 +3,7 @@ package system.ui
 import kotlinx.browser.document
 import org.w3c.dom.HTMLElement
 import system.map.MapController
+import system.ui.panel.TopAgentsPanel
 
 /**
  * Full-screen DOM loading overlay shown from the very first frame, so the long world-build (map
@@ -109,9 +110,9 @@ object LoadingOverlay {
         bandEnd = to.toDouble()
         stageFrac = if (total <= 0) 1.0 else (done.toDouble() / total).coerceIn(0.0, 1.0)
         indeterminate = false
-        // Pad the count to the total's width with a digit-wide figure space (+ tabular figures in CSS) so the
-        // centred line doesn't shimmy left/right a few px as the numbers change ("3/21" → "12/21").
-        val padded = done.toString().padStart(total.toString().length, ' ') // U+2007 figure space (digit-wide)
+        // Right-pad the count to a fixed 4-wide field so the centred line never reflows as the numbers grow
+        // (the detail line is monospace, so a normal space is exactly one cell — no figure-space fallback).
+        val padded = done.toString().padStart(4, ' ') // fixed 4-wide field; in monospace a normal space is one cell
         detail("$label  ($padded/$total)")
         reveal()
     }
@@ -208,10 +209,13 @@ object LoadingOverlay {
         window.setTimeout({ overlay.remove() }, FADE_MS)
     }
 
+    // The AGENTS glass pane (.topAgents) rect — the morph's landing spot. It doesn't exist until the panel
+    // renders (the first game tick hasn't run at done()), so render it once here (builds the footer + populates
+    // the table), then measure the pane itself, not the full-width footer bar.
     private fun dockRect(): dynamic {
-        Footer.tab("agents") // idempotent build of the footer dock (the AGENTS tab is its default)
-        val footer = document.getElementById("footer") ?: return null
-        val r = footer.asDynamic().getBoundingClientRect()
+        TopAgentsPanel.update()
+        val pane = document.querySelector(".topAgents") ?: return null
+        val r = pane.asDynamic().getBoundingClientRect()
         return if ((r.width as Double) > 1.0 && (r.height as Double) > 1.0) r else null
     }
 
