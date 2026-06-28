@@ -28,8 +28,8 @@ object Config {
     // action left ([agent.action.cond.Recruiter] via ActionSelector), NOT a Q-slider and NOT in the roulette.
     // Per-meeting SUCCESS chance at an empty roster: scaled live by [progressSpeed] (the "make it faster" lever),
     // the anti-snowball [agent.Balance.recruitFactor], roster headroom (→0 at the cap) + the recruiter's aptitude.
-    // Kept low so rosters fill gradually even at x1 (recruiting was too fast at 0.3 — cut ~5×).
-    var recruitmentBaseChance = 0.06
+    // Kept low so rosters fill gradually even at x1 (recruiting was too fast — cut from 0.3 → 0.06 → 0.005, ~60× total).
+    var recruitmentBaseChance = 0.005
 
     // Cap on how many agents per faction recruit AT ONCE — the rest of the idle agents explore instead, so a quiet
     // board (everything burnt out) doesn't show EVERY agent recruiting. Recruiting completes + frees a slot.
