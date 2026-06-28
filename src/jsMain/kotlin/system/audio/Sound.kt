@@ -259,15 +259,22 @@ object Sound {
         playSound(osc, createPanner(pos), 0.09, dur)
     }
 
-    /** A marble "tok": a short triangle with a quick downward pitch drop — the NPC dropping in. */
+    /** A soft marble "tup": a short sine with a quick downward pitch drop + a gentle attack/decay envelope
+     *  (no hard click) — the NPC dropping in. Quiet + rounded so a fast world-gen crowd of these doesn't
+     *  machine-gun sharp pings. */
     fun playNpcCreationSound(npc: NonFaction) {
         if (isMuted()) return
-        val duration = 0.05
+        val dur = 0.07
         val sizePitch = 1.0 - npc.size.offset * 0.18 // smaller NPC → higher-pitched marble
-        val start = 1150.0 * sizePitch
-        val end = 480.0 * sizePitch // fast downward chirp = a marble tap
-        val oscNode = createExponentialRampOscillator(OscillatorType.TRIANGLE, start, end, duration)
-        playSound(oscNode, createPanner(npc.pos), 0.22, duration)
+        val start = 860.0 * sizePitch // softer/rounder than the old bright 1150 ping
+        val end = 360.0 * sizePitch // fast downward chirp = a marble tap
+        val osc = createExponentialRampOscillator(OscillatorType.SINE, start, end, dur) // sine = no buzzy harmonics
+        val gainNode = audioCtx.createGain()
+        val n = now()
+        gainNode.gain.setValueAtTime(EPS, n)
+        gainNode.gain.exponentialRampToValueAtTime(0.09, n + 0.008) // soft attack (vs the old instant-on click)
+        gainNode.gain.exponentialRampToValueAtTime(EPS, n + dur) // gentle tail
+        connectVoice(osc, createPanner(npc.pos), gainNode, n + dur)
     }
 
     /** Portal gained a level: a quick note rising up to the NEW [level]'s note on the shared scale. */
