@@ -8,9 +8,9 @@ Branch: `main` · Owner: @zirteq
 to do, not what's been done.
 
 ## North star
-Q-Gress becomes an **AI-vs-AI sandbox**: each faction (ENL/RES) is driven by an agent whose **output _is_ the
+Q-Gress is an **AI-vs-AI sandbox**: each faction (ENL/RES) is driven by an agent whose **output _is_ the
 17 behaviour sliders** — a custom net and/or an in-browser LLM. A human can play any side; any two brains can
-be matched. **Desktop-only**; mobile is blocked.
+be matched. **Desktop-only**; mobile is blocked. (The substrate ships; what's left is tuning + the rebake.)
 
 ## ★ Next up — refactor under the net (Phase B)
 The open structural focus: functional core / imperative shell, module-by-module, with the gate
@@ -19,14 +19,13 @@ The open structural focus: functional core / imperative shell, module-by-module,
   `Portal` (685). Also **extract the demo/showcase subsystem from `Scene3D`** into a `Showcases` object (build
   helpers → `internal`): most of Scene3D's `LargeClass` bulk is that self-contained sandbox, so moving it lets
   the suppress drop. (Otherwise `Scene3D` keeps an intentional suppress — a scene-graph hub is legitimately
-  large.)
+  large.) This also unblocks the remaining **commonMain pure-logic lift**: the cleanly-liftable core is already
+  moved + tested; what's left is gated behind this coupling (`Config` → `Tournament`/`Observation`/`Cycle`;
+  `Portal`/`World`/`Agent` → `Field`/`Inventory`/`knockMods`), so it rides the split rather than a separate pass.
 - **Reduce magic numbers** — name them / fold into `Config` where it aids clarity (detekt `MagicNumber` is
   off → a by-hand judgement pass, not a gate-chase).
 - **Tighten line length 140 → 120** — land *alongside* the class extractions (auto-wrapping inflates
   `LargeClass` otherwise).
-- **commonMain pure-logic migration** — what's left is blocked by deeper coupling (`Config` gates
-  `Tournament`/`Observation`/`Cycle`; `Portal`/`World`/`Agent` gate `Field`/`Inventory`/`knockMods`), so it
-  rides the SoC work above rather than being a separate pass.
 
 Optional small wins: **CSS design-token dedup** (hoist `blur(7px)`, the `rgba(255,255,255,.06/.12/.18)` button
 fills, `rgba(0,0,0,.45)`, `border-radius:6px` into `:root` custom properties — zero-toolchain, a visual
@@ -209,8 +208,8 @@ does **not** replace the per-agent `ActionSelector`.
   to clear); the **hacking-economy triad** (heat-sink / multi-hack / Fracker + ITO) shaping farm rate; **drones**
   (remote hack). Skip the real-world/social bits.
 - **Evaluate NVIDIA Komodo** (per user) — investigate fit (rendering / AI / acceleration?) before committing.
-- **Legacy 2D TODOs still open** — smarter agent behaviour (more destinations, **swarming**); an
-  inventory/capacity limit; an FPS/perf readout (pairs with `?debug`); unit tests for fielding + deploying.
+- **Swarming agent behaviour** — agents coordinate/cluster toward shared objectives (a flocking / group-movement
+  layer + more destination variety) instead of each pathing solo. The last open lever from the old behaviour list.
 
 ## Constraints / agreements
 - Working directly on `main` for now; **no pushing** until something works end-to-end.
