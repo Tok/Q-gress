@@ -70,6 +70,11 @@ object MapController {
     private const val DEFAULT_PITCH = 50.0 // tilt the visible maps so the 3D scene reads as 3D
     internal const val MAX_PITCH = 85.0 // MapLibre's ceiling; lets you tilt to near-horizon (and to 0 = top-down)
 
+    // The map's INITIAL zoom/pitch: for the title, the fly-in's zoomed-out start + top-down pitch, so the close
+    // framing never renders first (no zoom-jump flash); otherwise the framed display zoom + the 3D-reading tilt.
+    private fun initialZoom(): Double = if (titleIntroLoad) MapCamera.titleStartZoom() else displayZoom().toDouble()
+    private fun initialPitch(): Double = if (titleIntroLoad) 0.0 else DEFAULT_PITCH
+
     internal var map: MapLibre.Map? = null
     internal var initMap: MapLibre.Map? = null
     private var shadowMap: MapLibre.Map? = null
@@ -273,8 +278,13 @@ object MapController {
         return Scene3D.lngLatToSimPos(lngLat.lng as Double, lngLat.lat as Double)
     }
 
-    fun loadMaps(center: Json, demo: Boolean = false, callback: (Grid) -> Unit) {
+    // The title initialises its map already zoomed-out (the fly-in start) so the close framing never renders
+    // first → no zoom-jump flash before the swoop. Set by [loadMaps], read by [loadInitialMap].
+    private var titleIntroLoad = false
+
+    fun loadMaps(center: Json, demo: Boolean = false, titleIntro: Boolean = false, callback: (Grid) -> Unit) {
         demoMode = demo
+        titleIntroLoad = titleIntro
         if (!demo) LoadingOverlay.stage(LoadingOverlay.PCT_MAP, "Loading map…")
         document.getElementById(MAP)?.addClass(INVISIBLE)
         document.getElementById(SHADOW_MAP)?.addClass(INVISIBLE)
@@ -320,15 +330,15 @@ object MapController {
             }
             newMap.setMinZoom(MIN_ZOOM)
             newMap.setMaxZoom(MAX_ZOOM)
-            newMap.setZoom(displayZoom())
+            newMap.asDynamic().setZoom(initialZoom()) // fractional title start zoom (the typed binding wants Int)
             newMap.setCenter(center)
-            newMap.setPitch(DEFAULT_PITCH)
+            newMap.setPitch(initialPitch())
         } else {
             existing.on("moveend") {
                 addLayers(existing)
                 callback(existing)
             }
-            val options: Json = JSON.parse("""{"center": [$center], "zoom": ${displayZoom()}}""")
+            val options: Json = JSON.parse("""{"center": [$center], "zoom": ${initialZoom()}, "pitch": ${initialPitch()}}""")
             existing.jumpTo(options)
         }
     }

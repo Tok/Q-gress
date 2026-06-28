@@ -93,7 +93,7 @@ object TitleSim {
     }
 
     private fun loadTitleWorld(center: Json, attempt: Int = 0) {
-        MapController.loadMaps(center, demo = false, callback = fun(grid: Grid) {
+        MapController.loadMaps(center, demo = false, titleIntro = true, callback = fun(grid: Grid) {
             // Not every location is playable at the small round title size — a home over open water (a
             // player on a ship) or an unexpectedly sparse spot has no room for paths/portals. Fall back
             // to an iconic location, forcing the known-good default on the final try. Same gate as the

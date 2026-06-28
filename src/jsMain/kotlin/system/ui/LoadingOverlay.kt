@@ -125,8 +125,9 @@ object LoadingOverlay {
         stageFrac = 0.0
         indeterminate = true
         subShown = 0.0
-        // At the world-build stage, reveal the scene behind so the spawning portals + flow vectors show.
-        if (percent >= PCT_WORLD) reveal()
+        // Reveal the map behind as soon as the shadow-map readback is done (PCT_GRID): the city then visibly
+        // rises + the flow vectors flash during the build (the entertainment), instead of a long black wait.
+        if (percent >= PCT_GRID) reveal()
     }
 
     private fun startLoop() {
@@ -149,11 +150,11 @@ object LoadingOverlay {
 
     private fun pct(v: Double): String = "${(v * 10).toInt() / 10.0}%"
 
-    // Grow the 3D buildings only across the VISIBLE world-build (after the reveal at PCT_WORLD → full at 100%),
-    // so the rise is actually seen + spans the (slow, setTimeout-paced) spawn phase, and the heavy map/shadow
-    // load earlier isn't slowed by per-frame MapLibre paint updates competing with the shadow-map readback.
+    // Grow the 3D buildings across the VISIBLE build — from the reveal (PCT_GRID, once the map shows + the
+    // shadow-map readback is done, so no paint-vs-readback contention) up to full at 100%. The longer window
+    // (60→100 vs 78→100) gives the rise more time on screen as the build's entertainment.
     private fun driveBuildings(overallPercent: Double) {
-        val frac = ((overallPercent - PCT_WORLD) / (100.0 - PCT_WORLD)).coerceIn(0.0, 1.0)
+        val frac = ((overallPercent - PCT_GRID) / (100.0 - PCT_GRID)).coerceIn(0.0, 1.0)
         MapController.setBuildProgress(frac)
     }
 
@@ -169,26 +170,49 @@ object LoadingOverlay {
         (document.documentElement as? HTMLElement)?.style?.setProperty("--faction", color)
     }
 
-    /** Fill to 100% and fade the overlay out, then remove it. */
+    /** Fill to 100%, then morph the panel down into the AGENTS dock and fade out. */
     fun done() {
         bandStart = 100.0
         bandEnd = 100.0
         stageFrac = 1.0
         indeterminate = false
         driveBuildings(100.0) // city reaches full height exactly as world-gen completes
-        // Let the loop ease the bar to 100 first, then stop it, snap, fade + remove.
+        // Let the loop ease the bar to 100 first, then stop it, snap, do the final dock morph + fade.
         window.setTimeout({
             animating = false
             fillEl?.style?.width = "100%"
             subFillEl?.style?.width = "100%"
-            val overlay = document.getElementById(OVERLAY_ID) as? HTMLElement ?: return@setTimeout
-            overlay.className = "loadingOverlay loadingOverlayDone"
-            statusEl = null
-            detailEl = null
-            fillEl = null
-            subFillEl = null
-            window.setTimeout({ overlay.remove() }, FADE_MS)
+            finishIntoDock()
         }, FINISH_HOLD_MS)
+    }
+
+    // The final morph: the loading panel expands down into the AGENTS dock (the footer glass) as the overlay
+    // fades — a continuous handoff from "loading" to the live game's agents panel. The footer usually isn't
+    // built yet here (the first game tick hasn't populated it), so force-build it, then measure + morph to it.
+    private fun finishIntoDock() {
+        val overlay = document.getElementById(OVERLAY_ID) as? HTMLElement ?: return
+        val panel = overlay.firstElementChild as? HTMLElement
+        val dock = dockRect()
+        if (panel != null && dock != null) {
+            val here = panel.asDynamic().getBoundingClientRect()
+            panel.classList.add("loadingPanelMorph")
+            setRect(panel, here) // pin where it currently is…
+            panel.asDynamic().offsetWidth // …commit that…
+            window.requestAnimationFrame { setRect(panel, dock) } // …then expand into the dock
+        }
+        overlay.className = "loadingOverlay loadingOverlayDone" // fades the overlay (incl. the morphing panel) out
+        statusEl = null
+        detailEl = null
+        fillEl = null
+        subFillEl = null
+        window.setTimeout({ overlay.remove() }, FADE_MS)
+    }
+
+    private fun dockRect(): dynamic {
+        Footer.tab("agents") // idempotent build of the footer dock (the AGENTS tab is its default)
+        val footer = document.getElementById("footer") ?: return null
+        val r = footer.asDynamic().getBoundingClientRect()
+        return if ((r.width as Double) > 1.0 && (r.height as Double) > 1.0) r else null
     }
 
     // If the last onboarding step saved a footprint before its reload ([MorphPane.persistForReload]), fly THIS

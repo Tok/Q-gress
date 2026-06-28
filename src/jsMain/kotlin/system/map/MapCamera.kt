@@ -64,9 +64,8 @@ object MapCamera {
         cinematicActive = true
         liftViewToCentre() // face the play-area centre from the start (the 3D tilt otherwise sinks it to the bottom)
         window.requestAnimationFrame { spinBuild() }
-        // Start flat: the city rises across the VISIBLE build (LoadingOverlay → setBuildProgress, from the reveal
-        // at PCT_WORLD) so the player watches it grow to full as the game starts — the build's entertainment.
-        MapController.applyBuildInflate(0.0)
+        // No inflate reset: the city has already begun rising at the reveal (PCT_GRID, before this orbit at
+        // PCT_WORLD), so it keeps growing through the orbit to full at game start — the build's entertainment.
     }
 
     // The build camera keeps DEFAULT_PITCH for the 3D look, which pushes the play-area centre low on
@@ -138,6 +137,10 @@ object MapCamera {
     }
 
     private fun titleZoom() = MapController.displayZoomForSize() + TITLE_ZOOM_BOOST
+
+    /** The fly-in's STARTING zoom (well above the framing zoom). The title map is initialised here
+     *  ([MapController.loadMaps] titleIntro) so it never renders the close framing first → no zoom-jump flash. */
+    fun titleStartZoom(): Double = titleZoom() - TITLE_FLYIN_ZOOM_OUT
 
     // One randomized camera leg: keep the centre on the action (so portals stay in view) and ease to a
     // new yaw/pitch/zoom, then chain another → a flowing orbit around the arena. (MapLibre has no camera
