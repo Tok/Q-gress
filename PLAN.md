@@ -36,18 +36,19 @@ CSS design-token dedup is done too: glass/tint/blur literals route through `:roo
 2–10px, so one token can't dedup them without changing values, i.e. not a no-op.)*
 
 ## Perf — the big deferred lever
-- [ ] **three.js mesh instancing / merging / persistent sync.** World-gen + steady-state are dominated by mesh
-  construction (`setValueM4` / `Object3D` / link tubes / `generateUUID`). `sync()` clear+recreates the portal /
-  link / field / agent groups **every tick** — that per-tick churn is the cost. **First slice landed:**
-  **persistent link meshes** — `syncLinks()` reconciles against `World.allLinks()` (reuse + re-orient existing,
-  add new, remove gone, re-tint on faction flip) instead of clear+recreate, killing the per-tick link allocation
-  with identical visuals. *Next, same diff-sync pattern:* **portals** (poles/orbs/resos/mods — heaviest group,
-  but entangled with grow-in/hack/tumble animation, so persist the static skeleton + keep the animated bits
-  updating) and **fields**. True GPU `InstancedMesh` stays blocked for links (custom `GlassShader` needs
-  `instanceMatrix` support) + resos (per-frame animation); viable only for standard-material static parts
-  (poles=chrome, o-rings=rubber) if draw calls (not construction) turn out to dominate. **Reprofile when things
-  change — don't pre-optimize.** Tooling: `util/Profiler`, `?debug` `FpsMeter`, `./scripts/profiler.sh` (CDP CPU
-  profiler → `build/profiles/*.cpuprofile`).
+- [ ] **three.js mesh instancing / merging / persistent sync.** `sync()` clear+recreates the portal / link /
+  field / NPC / agent groups **every tick** — that per-tick mesh construction (`setValueM4` / `Object3D` /
+  `generateUUID`) is the steady-state cost. **Landed (persistent diff-sync — reuse + reposition, add new, remove
+  gone, identical visuals):** **link meshes** (`syncLinks`) and **NPC spheres** (`syncNpcs` — was 722+ recreated
+  per tick on a big map). **Also landed (the actual 6-FPS killer a profile caught):** the AGENTS table was
+  re-encoding each row's action icon via `toDataURL` every frame (~82% of runtime CPU) and rebuilding off-screen
+  — now the data URL is cached per `ActionItem` and the rebuild is gated to the visible tab (same for PORTALS).
+  *Next, same pattern:* **portals** (poles/orbs/resos/mods — heaviest group, but entangled with
+  grow-in/hack/tumble animation → persist the static skeleton, keep the animated bits updating) and **fields**;
+  **world-gen** mesh construction (profile: portals 5.7s, agents+NPCs 8.4s of a 17.5s gen). True GPU
+  `InstancedMesh` stays blocked for links (custom `GlassShader` needs `instanceMatrix`) + resos (animation);
+  viable only for standard-material static parts if draw calls turn out to dominate. **Reprofile when things
+  change.** Tooling: `util/Profiler`, `?debug` `FpsMeter`, `./scripts/profiler.sh` (→ `build/profiles/*.cpuprofile`).
 
 ## 3D / rendering
 - [ ] **Graphics-settings menu** *(group shipped).* The **Graphics** menu group exists with one persisted, live
