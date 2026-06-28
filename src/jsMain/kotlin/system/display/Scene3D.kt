@@ -3,7 +3,6 @@ package system.display
 import World
 import agent.Agent
 import agent.Faction
-import agent.NonFaction
 import agent.StuckTracker
 import agent.action.ActionItem
 import config.Sim
@@ -167,6 +166,10 @@ object Scene3D {
     private var agentsGroup: dynamic = null
     private var indicatorsGroup: dynamic = null // action-indicator sprites (excluded from raycast)
     private var npcsGroup: dynamic = null
+
+    // Persistent NPC head spheres keyed by npc.id — reused + repositioned across ticks instead of clear+recreate
+    // every tick (722+ NPCs on a big map = a huge per-tick allocation). Cleared in onAdd with the group.
+    private val npcMeshes = mutableMapOf<Int, dynamic>()
     private var xmGroup: dynamic = null // stray collectible XM motes
     private var linksGroup: dynamic = null
 
@@ -254,6 +257,7 @@ object Scene3D {
         linksGroup = Three.Group().also { newScene.add(it) }
         linkMeshes.clear() // the persistent link-mesh cache belongs to the OLD group — drop it with the rebuild
         npcsGroup = Three.Group().also { newScene.add(it) }
+        npcMeshes.clear() // persistent NPC cache belongs to the OLD group — drop it with the rebuild
         xmGroup = Three.Group().also { newScene.add(it) }
         agentsGroup = Three.Group().also { newScene.add(it) }
         indicatorsGroup = Three.Group().also { newScene.add(it) }
@@ -375,8 +379,7 @@ object Scene3D {
         clear(fieldsGroup)
         World.allFields().forEach { addField(it) }
         syncLinks() // persistent: reuse link meshes across ticks (no clear+recreate)
-        clear(npcsGroup)
-        World.allNonFaction.forEach { addNpc(it) }
+        syncNpcs() // persistent: reuse NPC spheres across ticks (no clear+recreate)
         clear(xmGroup)
         XmMap.all().forEach { (pos, heap) -> addXm(pos, heap) }
         clear(agentsGroup)
@@ -1086,23 +1089,31 @@ object Scene3D {
         indicatorsGroup.add(marker)
     }
 
-    private fun addNpc(npc: NonFaction) {
-        // Hide NPCs outside the play area (beyond the inner edge of the boundary wall). Passability isn't
-        // computed out there (to save CPU), so NPCs drift/clip along the border — don't render those, nor
-        // any inside/walking through the wall. Works for round (inscribed circle) and rectangular fields.
-        if (!Sim.isInPlayArea(npc.pos.x, npc.pos.y)) return
-        val sphere = Three.Mesh(headGeo, Materials.solid(NEUTRAL_COLOR))
-        val gz = groundZ(npc.pos)
-        if (Debug.enabled && StuckTracker.isStuck("npc:${npc.id}")) addStuckMarker(sceneX(npc.pos), sceneY(npc.pos), gz)
-        // Marble drop-in: on first appearance the NPC falls from the sky (accelerating, 1−f²) to head
-        // height. Per-NPC start height (by id) so a crowd reads as scattered marbles, not a flat sheet.
-        // Only while the world is first populating — once the game is running, NPCs created during play
-        // (recruit replacements) or wandering back into the play area appear in place, not raining down.
-        val f = if (World.isReady) 1.0 else Spawns.appearRaw("npc:${npc.id}", NPC_DROP_S)
-        val h = NPC_DROP_HEIGHT * (0.55 + 0.45 * ((npc.id * 37) % 100) / 100.0)
-        val z = gz + HEAD_Z + h * (1.0 - f * f)
-        place(sphere.asDynamic(), sceneX(npc.pos), sceneY(npc.pos), z)
-        npcsGroup.add(sphere)
+    /**
+     * Reconcile the NPC head spheres with [World.allNonFaction] WITHOUT clear+recreate every tick: reuse each
+     * NPC's sphere (just reposition it), create only new ones, and remove the gone (recruited NPCs) + any that
+     * have left the play area. NPCs outside the play area aren't rendered (passability isn't computed out there,
+     * so they drift/clip along the border). The marble drop-in (fall from the sky, accelerating 1−f²) only runs
+     * while the world is first populating; once it's running NPCs appear in place.
+     */
+    private fun syncNpcs() {
+        val group = npcsGroup ?: return
+        val present = mutableSetOf<Int>()
+        World.allNonFaction.forEach { npc ->
+            if (!Sim.isInPlayArea(npc.pos.x, npc.pos.y)) return@forEach // culled outside the play area (removed below if it was shown)
+            present.add(npc.id)
+            val gz = groundZ(npc.pos)
+            if (Debug.enabled && StuckTracker.isStuck("npc:${npc.id}")) addStuckMarker(sceneX(npc.pos), sceneY(npc.pos), gz)
+            val f = if (World.isReady) 1.0 else Spawns.appearRaw("npc:${npc.id}", NPC_DROP_S)
+            val h = NPC_DROP_HEIGHT * (0.55 + 0.45 * ((npc.id * 37) % 100) / 100.0)
+            val z = gz + HEAD_Z + h * (1.0 - f * f)
+            val sphere = npcMeshes.getOrPut(npc.id) { Three.Mesh(headGeo, Materials.solid(NEUTRAL_COLOR)).also { group.add(it) } }
+            place(sphere, sceneX(npc.pos), sceneY(npc.pos), z)
+        }
+        (npcMeshes.keys - present).forEach { id ->
+            val m = npcMeshes.remove(id) ?: return@forEach
+            group.remove(m)
+        }
     }
 
     /** A stray-XM heap: a small additive glow mote, scaled a touch by how much XM it holds. */
