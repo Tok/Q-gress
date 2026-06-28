@@ -15,10 +15,7 @@
   {"name": "PLAZA_MAYOR", "displayName": "Plaza Mayor, Madrid, Spain", "lng": -3.7074, "lat": 40.4155, "title": false},
   {"name": "GRAND_BAZAAR", "displayName": "Grand Bazaar, Istanbul, Turkey", "lng": 28.968, "lat": 41.0106, "title": false},
   {"name": "TOWER_BRIDGE", "displayName": "Tower Bridge, London, UK", "lng": -0.0754, "lat": 51.5055, "title": false},
-  {"name": "BROOKLYN_BRIDGE", "displayName": "Brooklyn Bridge, New York, USA", "lng": -73.9969, "lat": 40.7061, "title": false},
   {"name": "RIALTO", "displayName": "Rialto Bridge, Venice, Italy", "lng": 12.3358, "lat": 45.438, "title": false},
-  {"name": "PONTE_VECCHIO", "displayName": "Ponte Vecchio, Florence, Italy", "lng": 11.2531, "lat": 43.768, "title": false},
-  {"name": "SYDNEY_HARBOUR", "displayName": "Sydney Harbour Bridge, Sydney, Australia", "lng": 151.2108, "lat": -33.8523, "title": false},
   {"name": "MARINA_BAY", "displayName": "Marina Bay, Singapore", "lng": 103.8607, "lat": 1.2834, "title": false},
   {"name": "TIANANMEN", "displayName": "Tiananmen Square, Beijing, China", "lng": 116.3975, "lat": 39.9087, "title": true},
   {"name": "CONCORDE", "displayName": "Place de la Concorde, Paris, France", "lng": 2.3216, "lat": 48.8655, "title": false},
@@ -49,11 +46,5 @@
   {"name": "PLACE_STANISLAS", "displayName": "Place Stanislas, Nancy, France", "lng": 6.1844, "lat": 48.6931, "title": false},
   {"name": "CAMPO_SIENA", "displayName": "Piazza del Campo, Siena, Italy", "lng": 11.332, "lat": 43.3188, "title": false},
   {"name": "COMERCIO_LISBON", "displayName": "Praça do Comércio, Lisbon, Portugal", "lng": -9.1366, "lat": 38.7069, "title": false},
-  {"name": "PONT_ALEXANDRE", "displayName": "Pont Alexandre III, Paris, France", "lng": 2.3128, "lat": 48.8638, "title": false},
-  {"name": "PONT_DES_ARTS", "displayName": "Pont des Arts, Paris, France", "lng": 2.3373, "lat": 48.8585, "title": false},
-  {"name": "PONT_NEUF", "displayName": "Pont Neuf, Paris, France", "lng": 2.3406, "lat": 48.8581, "title": false},
-  {"name": "PONT_ALMA", "displayName": "Pont de l'Alma, Paris, France", "lng": 2.3022, "lat": 48.8644, "title": false},
-  {"name": "LONDON_BRIDGE", "displayName": "London Bridge, London, UK", "lng": -0.0866, "lat": 51.5078, "title": false},
-  {"name": "WESTMINSTER_BRIDGE", "displayName": "Westminster Bridge, London, UK", "lng": -0.1214, "lat": 51.501, "title": false},
-  {"name": "MILLENNIUM_BRIDGE", "displayName": "Millennium Bridge, London, UK", "lng": -0.0984, "lat": 51.509, "title": false}
+  {"name": "PONT_DES_ARTS", "displayName": "Pont des Arts, Paris, France", "lng": 2.3373, "lat": 48.8585, "title": false}
 ]
