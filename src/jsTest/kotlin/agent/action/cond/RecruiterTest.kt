@@ -46,6 +46,19 @@ class RecruiterTest {
     }
 
     @Test
+    fun perAgentRecruitingAptitudeScalesTheTeamWeight() {
+        addAgents(Faction.ENL, 3)
+        addAgents(Faction.RES, 3) // even rosters → the team weight is exactly the base
+        val base = Recruiter.selectionWeight(Faction.ENL)
+        val average = Factory.frog().let { it.copy(skills = it.skills.copy(recruiting = 0.5)) }
+        val keen = average.copy(skills = average.skills.copy(recruiting = 1.0))
+        val reluctant = average.copy(skills = average.skills.copy(recruiting = 0.0))
+        assertEquals(base, Recruiter.selectionWeight(average), 1e-12, "0.5 aptitude → 1.0× → the team weight")
+        assertEquals(base * 1.5, Recruiter.selectionWeight(keen), 1e-12, "max aptitude → 1.5×")
+        assertEquals(base * 0.5, Recruiter.selectionWeight(reluctant), 1e-12, "min aptitude → 0.5×")
+    }
+
+    @Test
     fun recruitSuccessProbabilityDiminishesAsTheRosterFills() {
         assertEquals(Config.recruitmentBaseChance, Recruiter.recruitSuccessProbability(0.0), 1e-12, "empty roster → full base")
         assertEquals(0.0, Recruiter.recruitSuccessProbability(1.0), 1e-12, "a full roster recruits at ~0")

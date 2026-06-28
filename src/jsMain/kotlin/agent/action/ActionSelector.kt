@@ -48,7 +48,7 @@ object ActionSelector {
         val moveElsewhereQ = q(agent.faction, QActions.MOVE_ELSEWHERE)
         val recycleQ = if (Recycler.isActionPossible(agent)) q(agent.faction, QActions.RECYCLE) else -1.0
         val rechargeQ = if (Recharger.isActionPossible(agent)) q(agent.faction, QActions.RECHARGE) else -1.0
-        val recruitQ = if (Recruiter.isActionPossible(agent)) Recruiter.selectionWeight(agent.faction) else -1.0
+        val recruitQ = if (Recruiter.isActionPossible(agent)) Recruiter.selectionWeight(agent) else -1.0
         return listOf(
             moveElsewhereQ to { agent.moveElsewhere() },
             recycleQ to { Recycler.performAction(agent) },

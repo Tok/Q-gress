@@ -30,10 +30,16 @@ object Recruiter : ConditionalAction {
     /**
      * How strongly an agent weighs recruiting this tick. A fixed base ([Config.recruitWeight]) ×
      * [Balance.recruitFactor] (the SMALLER team recruits more, so team sizes self-balance) × the global
-     * [Config.progressSpeed] knob (how fast the game ramps — also drives AP gain). (Future: an agent skill +
-     * items — e.g. "beer" — could scale this; see PLAN.)
+     * [Config.progressSpeed] knob (how fast the game ramps — also drives AP gain). This is the *team*-level
+     * weight; the per-agent [selectionWeight] overload scales it by the recruiter's personal aptitude. (Future:
+     * items — e.g. "beer" — could scale it further; see PLAN.)
      */
     fun selectionWeight(faction: Faction): Double = Config.recruitWeight * Balance.recruitFactor(faction) * Config.progressSpeed
+
+    /** Per-agent recruiting weight: the faction's team [selectionWeight] scaled by the agent's personal
+     *  recruiting aptitude ([agent.Skills.recruitingFactor], ~1.0× on average) — some agents are natural
+     *  recruiters. Averages out to the team weight, so it changes *who* recruits, not the overall pace. */
+    fun selectionWeight(agent: Agent): Double = selectionWeight(agent.faction) * agent.skills.recruitingFactor()
 
     // Success chance just diminishes as the faction fills toward its cap (rushing the cap yields ever-smaller
     // returns); the anti-snowball balancing now lives in [selectionWeight], not here, to avoid double-counting.
