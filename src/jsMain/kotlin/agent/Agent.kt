@@ -177,9 +177,14 @@ data class Agent(
             actionPortal.vectors[pos.toShadow()] ?: Movement.headingTo(pos, actionPortal.location)
         }
         velocity = Movement.move(velocity, force, skills.speed)
-        val next = Movement.clampToPlayable(pos, Pos((pos.x + velocity.re).toInt(), (pos.y + velocity.im).toInt()))
-        if (next == pos) { // boxed in (not just looping) → seek a fresh (random) portal so the new heading frees
-            beelineTicks = 0 // us; never park in WAIT. Works in the title sim too (no StuckTracker there).
+        val target = Pos((pos.x + velocity.re).toInt(), (pos.y + velocity.im).toInt())
+        val next = Movement.clampToPlayable(pos, target)
+        // Only bail when we genuinely WANTED to move (target ≠ pos) but a wall held us at pos — NOT on a
+        // sub-pixel tick (a diagonal unit step rounds to no integer move while velocity is still building),
+        // which would re-target every tick and never accelerate. Boxed → seek a fresh (random) portal so the
+        // new heading frees us; never park in WAIT. Works in the title sim too (no StuckTracker there).
+        if (target != pos && next == pos) {
+            beelineTicks = 0
             triedBeeline = false
             return moveElsewhere()
         }
@@ -194,8 +199,10 @@ data class Agent(
             return this
         }
         velocity = Movement.move(velocity, Movement.headingTo(pos, destination), skills.speed)
-        val next = Movement.clampToPlayable(pos, Pos((pos.x + velocity.re).toInt(), (pos.y + velocity.im).toInt()))
-        if (next == pos) return moveElsewhere() // boxed with nowhere to creep → seek a portal instead of idling
+        val target = Pos((pos.x + velocity.re).toInt(), (pos.y + velocity.im).toInt())
+        val next = Movement.clampToPlayable(pos, target)
+        // Wall-boxed (wanted to move but held) → seek a portal; ignore sub-pixel ticks (target == pos).
+        if (target != pos && next == pos) return moveElsewhere()
         return this.copy(pos = next)
     }
 
@@ -213,8 +220,9 @@ data class Agent(
         if (distanceToDestination() > Dim.maxDeploymentRange) {
             action.start(ActionItem.RECRUIT) // keep the meeting timer fresh until we actually arrive
             velocity = Movement.move(velocity, Movement.headingTo(pos, destination), skills.speed)
-            val next = Movement.clampToPlayable(pos, Pos((pos.x + velocity.re).toInt(), (pos.y + velocity.im).toInt()))
-            if (next == pos) { // can't reach the NPC (boxed) → abort and seek a portal instead of idling
+            val target = Pos((pos.x + velocity.re).toInt(), (pos.y + velocity.im).toInt())
+            val next = Movement.clampToPlayable(pos, target)
+            if (target != pos && next == pos) { // wall-boxed (not sub-pixel) → abort and seek a portal
                 recruitTargetId = null
                 return moveElsewhere()
             }
@@ -232,10 +240,11 @@ data class Agent(
         val part = skills.inRangeSpeed() / pos.distanceTo(dest)
         val rawDiffX = (pos.xDiff(dest) * part).toInt()
         val rawDiffY = (pos.yDiff(dest) * part).toInt()
-        val next = Movement.clampToPlayable(pos, Pos(pos.x - rawDiffX, pos.y - rawDiffY))
-        // Boxed approaching the in-range spot (attack/deploy) → seek a reachable target elsewhere instead of
-        // wedging on a dead end; never idle.
-        if (next == pos) return moveElsewhere()
+        val target = Pos(pos.x - rawDiffX, pos.y - rawDiffY)
+        val next = Movement.clampToPlayable(pos, target)
+        // Wall-boxed approaching the in-range spot (attack/deploy) → seek a reachable target elsewhere instead
+        // of wedging on a dead end; ignore sub-pixel ticks (target == pos), never idle.
+        if (target != pos && next == pos) return moveElsewhere()
         return this.copy(pos = next)
     }
 
