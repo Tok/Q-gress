@@ -152,6 +152,13 @@ object BrainsPanel {
         val fuel = if (avgXm < 0.4) " · low XM → hacking to refuel" else ""
         card.appendChild(kv("Stance", stance + fuel))
         card.appendChild(topActions(faction))
+        // Only the player's own faction gets the slider-preset bar: it captures/applies the TUNE-tab sliders for
+        // the user's faction, to seed values to LOCK against the heuristic (an unlocked slider is overwritten each
+        // checkpoint). Showing it on the opponent's heuristic card would apply to the wrong faction.
+        if (faction == (World.userFaction ?: Faction.ENL)) {
+            card.appendChild(el("div", "brainsKey").also { it.textContent = "your slider presets (lock sliders to keep them)" })
+            card.appendChild(TuningPresets.bar())
+        }
     }
 
     private fun renderNet(card: HTMLElement, faction: Faction, net: Net) {

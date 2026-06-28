@@ -56,7 +56,8 @@ object TuningPanel {
         QActions.values().forEach { list.appendChild(buildRow(it)) }
         list.appendChild(el("div", "tuneDivider"))
         QDestinations.values().forEach { list.appendChild(buildRow(it)) }
-        if (mode == Mode.INTERACTIVE) Hud.left().appendChild(TuningPresets.bar()) // named slider presets (player's faction)
+        // The named slider presets live in the BRAINS tab's heuristic card now (only relevant while the player's
+        // faction is on the heuristic driver — seeding sliders to lock from), not always-on in the TUNE column.
         Hud.left().appendChild(list)
         applyMode()
     }
