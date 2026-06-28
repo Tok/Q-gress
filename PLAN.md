@@ -66,9 +66,6 @@ CSS design-token dedup is done too: glass/tint/blur literals route through `:roo
   (pairs with the colony-management attributes, icebox).
 
 ## UI
-- [ ] **Portal-discovery-rate slider** — discovery (`Cycle.managePortalDensity` / `Config.portalChurnRate`)
-  feels too fast now; expose it as a tuning **slider next to the combat-dynamics slider** so the neutral
-  portal churn pace is adjustable (it's a system process, not an agent action — see MECHANICS).
 - [ ] **Schematic base view** (reuse `SHADOW_STYLE`) + more toggleable info overlays (e.g. a
   movement-penalty heatmap) alongside the existing Terrain toggle.
 - [ ] **Per-faction tuning presets** — save/recall named slider sets (the slider↔AI auto-move link is done).
