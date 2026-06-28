@@ -3,6 +3,7 @@ package system.ui.panel
 import World
 import agent.Agent
 import config.Config
+import config.Sim
 import items.deployable.DeployableItem
 import items.level.LevelColor
 import items.types.HeatSinkType
@@ -28,6 +29,7 @@ object TopAgentsPanel {
     private const val MAX_SHIELD_LEVEL = 4
     private const val MAX_MOD_LEVEL = 3 // heat sinks / multi-hacks: Common / Rare / Very Rare
     private const val BAR_MAX_PX = 11
+    private const val MPH_PER_MS = 2.2369363 // m/s → miles per hour (imperial hover)
 
     // A column: a header, an optional numeric/string sort key (null → not sortable), and how to render its cell.
     private class Col(
@@ -67,6 +69,7 @@ object TopAgentsPanel {
         Col("Virus", num = { it.inventory.findViruses().size.toDouble() }, render = { a -> virusCell(a) }),
         Col("Keys", num = { it.inventory.keyCount().toDouble() }, render = { a -> cell(a.inventory.keyCount().toString(), "taNum") }),
         Col("Uniq", num = { uniqueKeys(it).toDouble() }, render = { a -> cell(uniqueKeys(a).toString(), "taNum") }),
+        Col("m/s", num = { speedMs(it) }, render = { a -> speedCell(a) }),
         Col("Action", str = { it.action.item.text }, render = { a -> cell(a.action.item.text, "taCell") }),
         Col("Portal", str = { it.actionPortal.name }, render = { a -> cell(a.actionPortal.name, "taCell") }),
     )
@@ -129,6 +132,18 @@ object TopAgentsPanel {
     }
 
     private fun nameCell(agent: Agent): HTMLElement = cell(agent.name, "taName").also { it.style.color = agent.faction.color }
+
+    // Agent ground speed in m/s: distance moved last tick (sim px) × metres-per-pixel, and a tick is one sim
+    // second ([config.Time.secondsPerTick]), so px/tick already reads as m/s. ~1 m/s is a walking pace; a stuck
+    // agent reads ~0. Hover shows the imperial mph.
+    private fun speedMs(agent: Agent): Double = agent.stepPx * Sim.MPP_REF
+
+    private fun speedCell(agent: Agent): HTMLElement {
+        val ms = speedMs(agent)
+        val td = cell(ms.asDynamic().toFixed(1) as String, "taNum")
+        td.title = "${(ms * MPH_PER_MS).asDynamic().toFixed(1)} mph"
+        return td
+    }
 
     private fun deployColor(level: Int): String = LevelColor.map[level] ?: "#ffffff"
 

@@ -42,6 +42,10 @@ data class Agent(
     private var triedBeeline: Boolean = false, // a bee-line was already spent this stuck episode → escalate to re-target
     var recruitTargetId: Int? = null, // the NPC being recruited (walk up → meet → resolve); null = not recruiting
 ) {
+    // Distance actually moved last tick (sim px), recomputed by act() each tick. NOT a constructor param, so a
+    // movement copy() never carries a stale value. Drives the AGENTS-table speed readout (px/tick → m/s).
+    var stepPx: Double = 0.0
+
     // STABLE identity for equals/hashCode + Scene3D keys. Must NOT include mutable state: toString()
     // embeds getLevel() (from the var ap), so keying on it changed an agent's hashCode when it levelled
     // up — corrupting the allAgents/frogs/smurfs sets ("Have object hashCodes changed?"). faction+name are
@@ -89,6 +93,7 @@ data class Agent(
             else -> ActionSelector.doSomethingElse(this)
         }
         next.collectXm()
+        next.stepPx = pos.distanceTo(next.pos) // actual ground covered this tick → the AGENTS-table speed readout
         return next
     }
 
