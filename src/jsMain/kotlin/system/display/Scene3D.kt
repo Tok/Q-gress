@@ -464,11 +464,23 @@ object Scene3D {
     }
 
     /**
+     * Lift the shared shard physics floor to the terrain UNDER this blast, so debris rests on the *local* ground
+     * rather than the play-area-centre height that [buildBuildingColliders] sets once at world-gen. On varied
+     * terrain a blast far from centre would otherwise sink below / float above the ground. Blasts are localized
+     * and shards settle in ~2 s, so moving the shared plane per blast is fine; before the DEM loads, groundZ is 0
+     * (the old sea-level default). Building-roof colliders are already per-building terrain-aware.
+     */
+    private fun liftShardFloor(location: Pos) {
+        ShatterFx.setGroundZ(groundZ(location))
+    }
+
+    /**
      * Shatter a removed portal (from Portal.remove / the demo RMB): glass shards fly, the gasket
      * drops, the metal pole sinks, and each filled resonator rod ([resos] = octant→level) falls out
      * of its slot. The physics live in [ShatterFx]; we just hand it the geometry + positions.
      */
     fun shatterPortal(location: Pos, color: String, level: Int, resos: Map<Octant, Int> = emptyMap()) {
+        liftShardFloor(location)
         val lv = level.toDouble()
         ShatterFx.shatter(
             sceneX(
@@ -526,6 +538,7 @@ object Scene3D {
     /** Drop a single resonator rod from its slot — used as each reso is destroyed during an attack. Only the
      *  ROD falls; the pole's o-ring cage stays (the slot just reverts to empty, still showing its two rings). */
     fun dropResonator(location: Pos, level: Int, octantIndex: Int, resoLevel: Int) {
+        liftShardFloor(location)
         val poleH = PortalBuilder.poleHeight(level.toDouble())
         val rodLen = poleH * RESO_ROD_LEN_FRAC
         val ringR = POLE_R * RESO_RADIUS_FRAC
@@ -598,6 +611,7 @@ object Scene3D {
     /** Drop the deployed mods out of the orb when a portal is neutralized / removed. */
     fun dropMods(location: Pos, level: Int, mods: List<Mod>) {
         if (mods.isEmpty()) return
+        liftShardFloor(location)
         val lv = level.toDouble()
         val s = PortalBuilder.orbScale(lv)
         val half = TOP_R * MOD_R_FRAC * s
@@ -737,7 +751,9 @@ object Scene3D {
     fun showDamageNumber(portal: Portal, amount: Int) {
         scene ?: return
         val level = portal.getLevel().value.toDouble()
-        val flaskTop = groundZ(portal.location) + PortalBuilder.orbCenterZ(level) + TOP_R * PortalBuilder.orbScale(level)
+        val gz = groundZ(portal.location)
+        DamageNumberFx.setGroundZ(gz) // digits rest on the local terrain under this portal, not the centre height
+        val flaskTop = gz + PortalBuilder.orbCenterZ(level) + TOP_R * PortalBuilder.orbScale(level)
         DamageNumberFx.spawn(sceneX(portal.location), sceneY(portal.location), flaskTop + DAMAGE_NUMBER_GAP, portal.location, amount)
     }
 
