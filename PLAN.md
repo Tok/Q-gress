@@ -44,14 +44,16 @@ CSS design-token dedup is done too: glass/tint/blur literals route through `:roo
   `./scripts/profiler.sh` (headless-Chrome CDP CPU profiler → `build/profiles/*.cpuprofile`).
 
 ## 3D / rendering
-- [ ] **Graphics-settings menu + anti-aliasing** *(group shipped, more levers to add).* The **Graphics** menu
-  group exists with persisted toggles (`GraphicsPrefs`): **Anti-aliasing (MSAA)** — enables MapLibre's own
-  `antialias` on the display maps, which the three.js custom layer inherits (genuine hardware multisampling on
-  every 3D edge; the shadow map stays non-AA for its pixel-exact readback). It's a context-creation option, so
-  it applies on the next reload. **High-detail shadows** (2048↔1024 shadow map, live realloc). *(An earlier
-  geometry-only "Smooth links" segment toggle was dropped — imperceptible at link scale and not edge AA; the
-  real cause was the context being created without `antialias` at all.)* Remaining: more levers — **building
-  cap**, **DEM exaggeration**; surface the group in onboarding too.
+- [ ] **Graphics-settings menu** *(group shipped; AA still unsolved).* The **Graphics** menu group exists with
+  one persisted, live toggle (`GraphicsPrefs`): **High-detail shadows** (2048↔1024 shadow map, live realloc).
+  **Anti-aliasing is the open problem** — three blind attempts all dead-ended and were reverted: (a) link
+  segment count ("Smooth links") isn't edge AA and is imperceptible; (b) MapLibre context `antialias` (MSAA)
+  never reaches the 3D layer because **terrain renders the custom layer to an offscreen texture**; (c) **SSAA
+  via live `setPixelRatio` desyncs the custom layer's screen-space** — objects float/shift on toggle. Needs a
+  **hands-on, in-browser** pass: likely either construction-time SSAA (set `pixelRatio` at map creation, applied
+  on reload — avoids the live-resize desync) verified visually, or an FXAA post-process threaded into the
+  terrain compositing. Other levers to add once AA is sorted: **building cap**, **DEM exaggeration**; surface
+  the group in onboarding too.
 - [ ] **Buildings — per-building replacement** *(the parallel-mode follow-up).* Today both sets render (ours
   on top, MapLibre filling gaps). Cleaner end-state: hide **only** the MapLibre footprints we have our own
   mesh for, so the gap-fillers and our look match and there's no overlap/z-fight. Needs matching our synthetic
