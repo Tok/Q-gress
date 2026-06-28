@@ -3,6 +3,8 @@ package system.ui
 import World
 import agent.Agent
 import agent.Faction
+import agent.StuckTracker
+import agent.action.ActionItem
 import config.Config
 import config.Locations
 import config.Sim
@@ -19,7 +21,7 @@ import kotlinx.browser.window
 import org.w3c.dom.HTMLElement
 import portal.Portal
 import portal.PortalKey
-import portal.XmMap
+import system.Simulation
 import system.audio.Sound
 import system.display.PortalNameTicker
 import system.display.Scene3D
@@ -39,6 +41,7 @@ import kotlin.js.Json
  * when a faction is picked (the game has no in-place teardown; see Bootstrap's reload handoff).
  */
 object TitleSim {
+    private const val STUCK_RECOVERY_TICKS = 20 // match Cycle.isUpdateStuck — run recovery on flagged title agents
     private const val TITLE_PORTALS = 8
     private const val TITLE_COMBAT_DYNAMISM = 0.9 // quite dynamic (near max) so the demo combat reads lively
     private val TITLE_LEVELS = intArrayOf(3, 5, 8) // one agent per faction at each of these levels
@@ -144,6 +147,7 @@ object TitleSim {
     fun stop() {
         if (interval != 0) window.clearInterval(interval)
         interval = 0
+        StuckTracker.reset() // hand a clean slate to the live game's tracker
         MapController.stopTitleOrbit()
     }
 
@@ -160,6 +164,7 @@ object TitleSim {
         equip(smurfs)
         World.allNonFaction.clear()
         World.createNonFaction({}, TITLE_NPCS) // paced serial drop-in (renders each as it lands)
+        StuckTracker.reset() // fresh stuck history for this title scene (it's a shared singleton)
         Scene3D.sync()
         interval = window.setInterval({ tick() }, Time.minTickInterval)
     }
@@ -186,15 +191,15 @@ object TitleSim {
         }
     }
 
-    // The game's tick, minus the HUD: agents + NPCs act, then re-render the scene from world state.
+    // The game's tick, minus the HUD: the shared core steps agents + NPCs and feeds the stuck tracker, then we
+    // run the same stuck-recovery the live game does (via Cycle) so title agents can't freeze against geometry —
+    // the title sim has no Cycle of its own. Finally re-render the scene from world state.
     private fun tick() {
         if (!World.isReady) return
-        val next = World.allAgents.toList().map { it.act() }.toSet()
-        XmMap.updateStrayXm()
-        World.allAgents.clear()
-        World.allAgents.addAll(next)
-        World.flushPendingAgents()
-        World.allNonFaction.forEach { it.act() }
+        Simulation.stepEntities()
+        if (World.tick % STUCK_RECOVERY_TICKS == 0) {
+            World.allAgents.filter { it.action.item == ActionItem.MOVE }.forEach { it.recoverIfStuck() }
+        }
         window.requestAnimationFrame { Scene3D.sync() }
         World.tick++
     }

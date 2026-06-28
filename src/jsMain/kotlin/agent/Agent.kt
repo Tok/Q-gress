@@ -177,9 +177,19 @@ data class Agent(
             actionPortal.vectors[pos.toShadow()] ?: Movement.headingTo(pos, actionPortal.location)
         }
         velocity = Movement.move(velocity, force, skills.speed)
-        // Hold (clamp returns pos) when a step is blocked; the wall-aware flow field redirects next tick, so an
-        // agent slides along walls instead of wedging — no per-tick re-targeting (that thrashed between portals).
-        return this.copy(pos = Movement.clampToPlayable(pos, Pos((pos.x + velocity.re).toInt(), (pos.y + velocity.im).toInt())))
+        return stepByVelocity()
+    }
+
+    // Apply the integrated [velocity] one tick, kept on passable ground. If a wall DEFLECTS the step (the clamp
+    // couldn't reach the intended target), drop the into-wall momentum so the wall-aware flow field re-steers
+    // cleanly NEXT tick instead of grinding into the wall for several ticks while momentum bleeds off — the key
+    // to threading tight corners and not wedging. A sub-pixel tick (target == pos, velocity still building from
+    // rest) keeps its velocity so the agent still accelerates.
+    private fun stepByVelocity(): Agent {
+        val target = Pos((pos.x + velocity.re).toInt(), (pos.y + velocity.im).toInt())
+        val next = Movement.clampToPlayable(pos, target)
+        if (target != pos && next != target) velocity = Complex(next.x - pos.x, next.y - pos.y)
+        return this.copy(pos = next)
     }
 
     // The no-idle stroll (ActionItem.EXPLORE): roam straight toward a nearby open-ground [destination],
@@ -190,7 +200,7 @@ data class Agent(
             return this
         }
         velocity = Movement.move(velocity, Movement.headingTo(pos, destination), skills.speed)
-        return this.copy(pos = Movement.clampToPlayable(pos, Pos((pos.x + velocity.re).toInt(), (pos.y + velocity.im).toInt())))
+        return stepByVelocity()
     }
 
     // Recruiting (ActionItem.RECRUIT): walk straight up to the target NPC (holding it in place), then stand
@@ -207,7 +217,7 @@ data class Agent(
         if (distanceToDestination() > Dim.maxDeploymentRange) {
             action.start(ActionItem.RECRUIT) // keep the meeting timer fresh until we actually arrive
             velocity = Movement.move(velocity, Movement.headingTo(pos, destination), skills.speed)
-            return this.copy(pos = Movement.clampToPlayable(pos, Pos((pos.x + velocity.re).toInt(), (pos.y + velocity.im).toInt())))
+            return stepByVelocity()
         }
         if (action.isBusy()) return this // standing together — the meeting (the head bobs in the render)
         return Recruiter.resolve(this, npc) // meeting over → roll the result
