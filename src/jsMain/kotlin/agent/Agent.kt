@@ -231,12 +231,15 @@ data class Agent(
     private fun hasXmps() = inventory.findXmps().isNotEmpty()
 
     private fun isArrived() = distanceToDestination() <= skills.inRangeSpeed()
-    private fun moveCloserInRange(): Agent = moveCloserTo(destination)
-    private fun moveCloserTo(dest: Pos): Agent {
-        val part = skills.inRangeSpeed() / pos.distanceTo(dest)
-        val rawDiffX = (pos.xDiff(dest) * part).toInt()
-        val rawDiffY = (pos.yDiff(dest) * part).toInt()
-        return this.copy(pos = Movement.clampToPlayable(pos, Pos(pos.x - rawDiffX, pos.y - rawDiffY)))
+
+    // The precise final approach to the in-range spot (attack/deploy). Steered by the PORTAL'S flow field so it
+    // rounds walls toward the target instead of grinding straight into them — the old straight-line approach
+    // wedged against walls and hopped in place forever (agents carrying many XMPs re-attacked the same
+    // unreachable spot endlessly). Slow (inRangeSpeed) for precision; straight heading until the field lands.
+    private fun moveCloserInRange(): Agent {
+        val force = actionPortal.vectors[pos.toShadow()] ?: Movement.headingTo(pos, destination)
+        velocity = Movement.move(velocity, force, skills.inRangeSpeed())
+        return stepByVelocity()
     }
 
     private fun collectXm() {
