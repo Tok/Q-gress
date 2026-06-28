@@ -28,7 +28,7 @@ object Sim {
     // Map-size presets by play-area in km². "tiny" is the title-screen arena, "small" the onboarding default
     // (smaller = less walking = more action), "giant" the warned heavy ceiling. Portal count (the pathfinding
     // driver) follows area sub-linearly.
-    const val TINY_KM2 = 0.10
+    const val TINY_KM2 = 0.20
     const val SMALL_KM2 = 0.5
     const val MID_KM2 = 1.0
     const val LARGE_KM2 = 2.0

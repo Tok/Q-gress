@@ -66,7 +66,7 @@ object MapController {
     // Framed so the chosen play-area size fits; read at call time since the size is picked at onboarding.
     private fun displayZoomForSize() = (ZOOM - log2(Sim.scale)).roundToInt()
     private const val DEMO_ZOOM = 19 // demos frame one central object, so sit closer than the game
-    private const val TITLE_ZOOM_BOOST = 1.1 // a touch closer
+    private const val TITLE_ZOOM_BOOST = 0.4 // was 1.1 — pulled back (the title felt too close; the bigger Tiny arena lifts it further)
     private const val TITLE_PITCH = 35.0 // fairly top-down → the action sits just below screen centre (less sky/skyline)
     private var demoMode = false
     private fun displayZoom() = if (demoMode) DEMO_ZOOM else displayZoomForSize()
