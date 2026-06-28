@@ -1480,7 +1480,9 @@ html, body {
     background: transparent;
     border: 1px solid transparent; /* keep the 1px box so the panel's footprint matches the glass edge */
     border-radius: 10px;
-    transition: opacity 0.4s ease; /* content cross-fades in as the glass morphs into place (set inline) */
+    /* Controls cross-fade in (opacity set inline). Held ~0.12s so the glass leads, then fading to land right
+       as the 0.45s pane morph settles — so content never fully arrives before its glass, without a real delay. */
+    transition: opacity 0.33s ease 0.12s;
 }
 /* The morphing glass frame: a single persistent pane that lerps its bounds between onboarding steps. Carries
    the glass look the step panels used to own; positioned (left/top/width/height) from JS per step. */
@@ -1495,11 +1497,12 @@ html, body {
     backdrop-filter: var(--ui-glass-blur);
     -webkit-backdrop-filter: var(--ui-glass-blur);
     box-shadow: var(--ui-faction-glow), 0 10px 30px rgba(0, 0, 0, 0.6);
+    /* A slightly springy overshoot (back-ease) so the pane wobbles into place rather than easing flatly. */
     transition:
-        left 0.45s cubic-bezier(0.4, 0, 0.2, 1),
-        top 0.45s cubic-bezier(0.4, 0, 0.2, 1),
-        width 0.45s cubic-bezier(0.4, 0, 0.2, 1),
-        height 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+        left 0.5s cubic-bezier(0.34, 1.5, 0.64, 1),
+        top 0.5s cubic-bezier(0.34, 1.5, 0.64, 1),
+        width 0.5s cubic-bezier(0.34, 1.5, 0.64, 1),
+        height 0.5s cubic-bezier(0.34, 1.5, 0.64, 1);
 }
 /* Thin "source on GitHub" link pinned to the bottom of the title screen. */
 .titleGithub {
@@ -1884,6 +1887,23 @@ html, body {
     background: rgba(0, 0, 0, 0.62);
     box-shadow: 0 0 30px rgba(0, 0, 0, 0.7);
     backdrop-filter: blur(3px);
+}
+/* Continuing the onboarding morph across the page reload: the loading panel becomes the travelling glass,
+   pinned by JS (left/top/width/height) and gliding from the last onboarding step's centre footprint down to
+   its footer position. Adopts the onboarding glass look (faction edge + glow) for visual continuity. */
+.loadingPanelMorph {
+    position: fixed;
+    box-sizing: border-box;
+    background: var(--ui-rubber);
+    border: 1px solid var(--ui-faction-edge);
+    backdrop-filter: var(--ui-glass-blur);
+    -webkit-backdrop-filter: var(--ui-glass-blur);
+    box-shadow: var(--ui-faction-glow), 0 10px 30px rgba(0, 0, 0, 0.6);
+    transition:
+        left 0.55s cubic-bezier(0.4, 0, 0.2, 1),
+        top 0.55s cubic-bezier(0.4, 0, 0.2, 1),
+        width 0.55s cubic-bezier(0.4, 0, 0.2, 1),
+        height 0.55s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .loadingStatus {
     font-family: "Coda", monospace;

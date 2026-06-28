@@ -63,10 +63,30 @@ object LoadingOverlay {
         panel.appendChild(detail)
         overlay.appendChild(panel)
         body.appendChild(overlay)
+        morphFromOnboarding(panel) // continue the onboarding glass morph across the reload (down to the footer)
         statusEl = status
         detailEl = detail
         fillEl = fill
         subFillEl = subFill
+    }
+
+    // If the last onboarding step saved a footprint before its reload ([MorphPane.persistForReload]), fly THIS
+    // panel from there down to its footer position — so the morph continues across the page reload. No-op for
+    // an in-game Reset (no saved footprint), where the panel just sits at the footer with its normal glass.
+    private fun morphFromOnboarding(panel: HTMLElement) {
+        val from = MorphPane.consumeReloadFrom() ?: return
+        val natural = panel.asDynamic().getBoundingClientRect() // its flex (footer) rect, measured before we pin it
+        panel.classList.add("loadingPanelMorph")
+        setRect(panel, from) // start on the onboarding panel's centre footprint…
+        panel.asDynamic().offsetWidth // …commit that before the transition…
+        window.requestAnimationFrame { setRect(panel, natural) } // …then glide down to the footer
+    }
+
+    private fun setRect(el: HTMLElement, r: dynamic) {
+        el.style.left = "${r.left as Double}px"
+        el.style.top = "${r.top as Double}px"
+        el.style.width = "${r.width as Double}px"
+        el.style.height = "${r.height as Double}px"
     }
 
     /** Sub-status line for what's being created right now, e.g. "Creating portal X  (3/21)". */

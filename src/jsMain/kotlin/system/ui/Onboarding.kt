@@ -32,7 +32,7 @@ object Onboarding {
     /** Step 1 — pick a faction. [onPick] receives it. */
     fun showFaction(onPick: (Faction) -> Unit) {
         currentBack = null // first step — nothing to go back to
-        MorphPane.reset() // faction owns its own glass (the CTA); drop any morph pane left from going back
+        pendingFrom = currentPanelRect() // the outgoing step's panel — the morph flies back onto the CTA from here
         document.getElementById(SCREEN_ID)?.remove()
         val screen = div("onboardScreen")
         screen.id = SCREEN_ID
@@ -68,7 +68,14 @@ object Onboarding {
         screen.appendChild(createTitleCredit()) // © credit next to the GitHub link
         document.body?.appendChild(screen)
         val revealCta = { cta.style.opacity = "1" } // idempotent
-        if (TitleWordmark.isLoaded()) {
+        if (MorphPane.hasPane()) {
+            // Esc back from a later step: the title's already up. Fly the morph pane back onto the CTA's
+            // footprint, then it removes itself and the CTA's own glass fades in (no double glass).
+            brand.style.display = "none"
+            TitleWordmark.setVisible(true)
+            cta.style.opacity = "0" // stay hidden under the incoming pane until it lands
+            MorphPane.morphAwayTo(screen, cta, pendingFrom) { revealCta() }
+        } else if (TitleWordmark.isLoaded()) {
             // Returning to the title (Esc back): the 3D letters already exist + the sim is still running —
             // keep the flat 2D brand hidden, re-show the 3D wordmark, and reveal the menu right away.
             brand.style.display = "none"
@@ -131,14 +138,7 @@ object Onboarding {
         var selectedLng = 0.0
         var selectedLat = 0.0
 
-        val select = document.createElement("select") as HTMLSelectElement
-        select.addClass("topDrop", "displayFont", "invisible") // shown only in Select mode
-        Locations.all().forEach { loc ->
-            val opt = document.createElement("option") as HTMLOptionElement
-            opt.text = loc.displayName
-            opt.value = loc.name
-            select.appendChild(opt)
-        }
+        val select = locationSelect()
         fun fly(lng: Double, lat: Double, name: String) {
             currentName = name
             selectedLng = lng
@@ -193,6 +193,7 @@ object Onboarding {
                 // centre snapped onto wins; otherwise it's a custom spot — don't mislabel it.
                 val kept = abs(lng - selectedLng) < NAME_KEEP_EPS && abs(lat - selectedLat) < NAME_KEEP_EPS
                 val name = Locations.byCoords(lng, lat)?.displayName ?: if (kept) currentName else "Custom location"
+                MorphPane.persistForReload() // continue the morph across the reload, down into the loading footer
                 onStart(lng, lat, name)
             }
         }
@@ -205,6 +206,20 @@ object Onboarding {
         activate(randomBtn)
         MiniMap.create(mapHolder, initial.lng, initial.lat)
         installMorph(screen)
+    }
+
+    // The location preset dropdown (every catalogue entry), shown only in Select mode. Split out to keep
+    // [showLocation] short.
+    private fun locationSelect(): HTMLSelectElement {
+        val select = document.createElement("select") as HTMLSelectElement
+        select.addClass("topDrop", "displayFont", "invisible")
+        Locations.all().forEach { loc ->
+            val opt = document.createElement("option") as HTMLOptionElement
+            opt.text = loc.displayName
+            opt.value = loc.name
+            select.appendChild(opt)
+        }
+        return select
     }
 
     private fun modeButton(label: String): HTMLButtonElement {

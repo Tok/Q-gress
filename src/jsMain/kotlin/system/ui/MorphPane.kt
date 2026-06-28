@@ -43,6 +43,46 @@ object MorphPane {
         pane = null
     }
 
+    /** True while a morph pane exists — i.e. we arrived from a later step (vs. a fresh faction screen). */
+    fun hasPane(): Boolean = pane != null
+
+    private const val MORPH_AWAY_MS = 560 // a touch past the CSS transition, so the pane lingers through the wobble
+
+    /** Fly the (existing) pane to [target] inside [overlay] from [fromRect], then remove it and run [onDone].
+     *  Used to morph back onto a screen that owns its own glass (the faction CTA): the pane lands on the CTA's
+     *  footprint and vanishes, then the CTA fades in. */
+    fun morphAwayTo(overlay: HTMLElement, target: HTMLElement, fromRect: dynamic, onDone: () -> Unit) {
+        morphInto(overlay, target, fromRect)
+        window.setTimeout({
+            reset()
+            onDone()
+        }, MORPH_AWAY_MS)
+    }
+
+    private const val STORE_KEY = "qg.morphFrom"
+
+    /** Stash the pane's current footprint so the morph can continue across the page reload the location step
+     *  triggers — the loading overlay reads it ([consumeReloadFrom]) and glides its panel down from here. */
+    fun persistForReload() {
+        val r = pane?.asDynamic()?.getBoundingClientRect() ?: return
+        window.sessionStorage.setItem(STORE_KEY, "${r.left as Double},${r.top as Double},${r.width as Double},${r.height as Double}")
+    }
+
+    /** The footprint saved before the reload ([persistForReload]), as a {left,top,width,height} object, or
+     *  null. One-shot: clears it so a later in-game Reset (no onboarding) doesn't inherit a stale morph. */
+    fun consumeReloadFrom(): dynamic {
+        val raw = window.sessionStorage.getItem(STORE_KEY) ?: return null
+        window.sessionStorage.removeItem(STORE_KEY)
+        val parts = raw.split(",").mapNotNull { it.toDoubleOrNull() }
+        if (parts.size != 4) return null
+        val o: dynamic = js("({})")
+        o.left = parts[0]
+        o.top = parts[1]
+        o.width = parts[2]
+        o.height = parts[3]
+        return o
+    }
+
     private fun ensure(): HTMLElement {
         pane?.let { return it }
         val p = document.createElement("div") as HTMLElement
