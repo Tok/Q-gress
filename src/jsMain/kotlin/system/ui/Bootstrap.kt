@@ -32,6 +32,7 @@ import system.display.SunController
 import system.grid.GridCapture
 import system.grid.GridConnectivity
 import system.map.Attribution
+import system.map.MapCamera
 import system.map.MapController
 import system.map.Navigation
 import system.ui.AudioDemo
@@ -150,14 +151,14 @@ object Bootstrap {
         leftGroup.addClass("toolbarGroup")
         leftGroup.append(createMenuSpan()) // New Game / Reset + overlay toggles
         // Recenter top-down over the play area (find your way back after panning/rotating away).
-        leftGroup.append(createButton("homeButton", "topButton displayFont", "HOME") { MapController.goHome() })
+        leftGroup.append(createButton("homeButton", "topButton displayFont", "HOME") { MapCamera.goHome() })
         leftGroup.append(createSpeedControls()) // Pause + ×1/×3/Max (Space toggles pause; -/+ keys nudge speed)
         leftGroup.append(createAutoCamToggle()) // Auto cam sits right after the speed controls (camera ≈ playback)
         bindKeyboardShortcuts() // Space=pause · Home=recenter · zoom/pan/speed/mute/Esc
 
         // Keep the toggle's highlight in sync — incl. when a manual move snaps the drift (and toggle) out.
-        MapController.onAutoCamChanged = { on -> syncAutoCamToggle(on) }
-        MapController.setAutoCam(true)
+        MapCamera.onAutoCamChanged = { on -> syncAutoCamToggle(on) }
+        MapCamera.setAutoCam(true)
         // Install the chosen AI drivers up front (the visible "AI vs AI" pickers now live in the BRAINS tab).
         system.ui.DriverControls.installDefaults()
 
@@ -290,7 +291,7 @@ object Bootstrap {
     /** The Auto cam toggle button (icon-only, rightmost). Snaps out when a manual move cancels the drift. */
     private fun createAutoCamToggle(): HTMLButtonElement {
         val btn =
-            createButton("autoCamToggle", "topButton displayFont autoCamBtn", "") { MapController.setAutoCam(!MapController.isAutoCamOn()) }
+            createButton("autoCamToggle", "topButton displayFont autoCamBtn", "") { MapCamera.setAutoCam(!MapCamera.isAutoCamOn()) }
         btn.innerHTML = Icons.CAM
         btn.title = "Auto cam"
         return btn
@@ -388,8 +389,8 @@ object Bootstrap {
     private fun bindKeyboardShortcuts() = Shortcuts.bind(
         Shortcuts.Handlers(
             command = { onShortcutCommand(it) },
-            zoom = { MapController.zoomBy(it) },
-            pan = { dx, dy -> MapController.panBy(dx, dy) },
+            zoom = { MapCamera.zoomBy(it) },
+            pan = { dx, dy -> MapCamera.panBy(dx, dy) },
             buildingOpacity = { BuildingTransparency.nudge(it) },
             speedDelta = { GameLoop.nudgeSpeed(it) },
         ),
@@ -400,10 +401,10 @@ object Bootstrap {
 
     private fun onShortcutCommand(c: Shortcuts.Command) = when (c) {
         Shortcuts.Command.PAUSE -> GameLoop.togglePause()
-        Shortcuts.Command.HOME -> MapController.goHome()
+        Shortcuts.Command.HOME -> MapCamera.goHome()
         Shortcuts.Command.CYCLE_TAB -> Footer.cycleTab()
         Shortcuts.Command.MUTE -> toggleMuteUi()
-        Shortcuts.Command.AUTO_CAM -> MapController.setAutoCam(!MapController.isAutoCamOn()) // C — highlight syncs via onAutoCamChanged
+        Shortcuts.Command.AUTO_CAM -> MapCamera.setAutoCam(!MapCamera.isAutoCamOn()) // C — highlight syncs via onAutoCamChanged
         Shortcuts.Command.CLOSE -> escClose()
     }
 
@@ -542,7 +543,7 @@ object Bootstrap {
         // this the first build often shows the vectors too low (heights weren't ready); a re-sample after the
         // Home view settles (below) keeps them accurate.
         Scene3D.onTerrainChanged()
-        MapController.startBuildCinematic() // gentle orbit while portals + people spawn
+        MapCamera.startBuildCinematic() // gentle orbit while portals + people spawn
         LoadingOverlay.stage(LoadingOverlay.PCT_WORLD, "Building world…")
         createAgentsAndPortals {
             LoadingOverlay.detail("Computing routes & starting simulation…")
@@ -565,7 +566,7 @@ object Bootstrap {
             Navigation.setup()
             MapController.bindInteractions(::onMapClick, ::onMapMove)
             LoadingOverlay.done()
-            MapController.stopBuildCinematicAndHome() // settle to the Home view (top-down over the play area)
+            MapCamera.stopBuildCinematicAndHome() // settle to the Home view (top-down over the play area)
             if (coloredMap) MapController.fadeInColor() else MapController.setColored(false) // colour eases in post-build
             Scene3D.onTerrainChanged() // sample the DEM height grid (objects sit on the terrain)
             // Once the Home view has settled (buildings on screen), build our own building meshes +

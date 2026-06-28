@@ -29,6 +29,7 @@ import system.display.SunController
 import system.display.VectorFieldOverlay
 import system.grid.GridConnectivity
 import system.map.GeoLocator
+import system.map.MapCamera
 import system.map.MapController
 import util.data.Pos
 import kotlin.js.Json
@@ -108,7 +109,7 @@ object TitleSim {
             World.grid = grid
             World.isReady = true
             MapController.enable3D()
-            MapController.startTitleCinematic() // 3D terrain + zoom to frame the arena + slow orbit
+            MapCamera.startTitleCinematic() // 3D terrain + zoom to frame the arena + slow orbit
             buildWorld()
             bindBlasts()
             // Our own building meshes (→ real shadows) once the title city has risen; then ease the
@@ -148,7 +149,7 @@ object TitleSim {
         if (interval != 0) window.clearInterval(interval)
         interval = 0
         StuckTracker.reset() // hand a clean slate to the live game's tracker
-        MapController.stopTitleOrbit()
+        MapCamera.stopTitleOrbit()
     }
 
     private fun buildWorld() {

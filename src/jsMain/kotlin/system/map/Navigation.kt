@@ -20,14 +20,14 @@ object Navigation {
     fun setup() {
         window.addEventListener("keydown", { event ->
             when ((event as KeyboardEvent).key.lowercase()) {
-                "w" -> MapController.panBy(0.0, -PAN_STEP)
-                "s" -> MapController.panBy(0.0, PAN_STEP)
-                "a" -> MapController.panBy(-PAN_STEP, 0.0)
-                "d" -> MapController.panBy(PAN_STEP, 0.0)
-                "q" -> MapController.rotateBy(-ROTATE_STEP)
-                "e" -> MapController.rotateBy(ROTATE_STEP)
-                "r" -> MapController.pitchBy(PITCH_STEP)
-                "f" -> MapController.pitchBy(-PITCH_STEP)
+                "w" -> MapCamera.panBy(0.0, -PAN_STEP)
+                "s" -> MapCamera.panBy(0.0, PAN_STEP)
+                "a" -> MapCamera.panBy(-PAN_STEP, 0.0)
+                "d" -> MapCamera.panBy(PAN_STEP, 0.0)
+                "q" -> MapCamera.rotateBy(-ROTATE_STEP)
+                "e" -> MapCamera.rotateBy(ROTATE_STEP)
+                "r" -> MapCamera.pitchBy(PITCH_STEP)
+                "f" -> MapCamera.pitchBy(-PITCH_STEP)
             }
         }, false)
     }

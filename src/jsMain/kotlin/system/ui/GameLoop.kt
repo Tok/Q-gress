@@ -8,7 +8,7 @@ import org.w3c.dom.HTMLButtonElement
 import org.w3c.dom.HTMLElement
 import system.audio.Sound
 import system.display.Scene3D
-import system.map.MapController
+import system.map.MapCamera
 import kotlin.math.roundToInt
 
 /**
@@ -99,11 +99,11 @@ object GameLoop {
         Sound.setPausedMute(paused)
         applyAnimationSpeed() // freeze (or restore) the 3D animation clock — sun arc, hack spins, etc.
         if (paused) {
-            autoCamBeforePause = MapController.isAutoCamOn()
-            if (autoCamBeforePause) MapController.setAutoCam(false)
-            MapController.stopCamera() // halt the in-flight camera ease at once (else a 27 s auto-cam leg glides on)
+            autoCamBeforePause = MapCamera.isAutoCamOn()
+            if (autoCamBeforePause) MapCamera.setAutoCam(false)
+            MapCamera.stopCamera() // halt the in-flight camera ease at once (else a 27 s auto-cam leg glides on)
         } else if (autoCamBeforePause) {
-            MapController.setAutoCam(true)
+            MapCamera.setAutoCam(true)
         }
     }
 
