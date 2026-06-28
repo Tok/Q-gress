@@ -36,12 +36,18 @@ CSS design-token dedup is done too: glass/tint/blur literals route through `:roo
 2–10px, so one token can't dedup them without changing values, i.e. not a no-op.)*
 
 ## Perf — the big deferred lever
-- [ ] **three.js mesh instancing / merging.** World-gen + steady-state are dominated by mesh construction
-  (`setValueM4` / `Object3D` / link tubes / `generateUUID`); instancing/merging static meshes is what would let
-  the big map presets run smoothly. A real refactor — worth it only to push map sizes much further; plus a ~5%
-  runtime `update` still to pin down. **Reprofile when things change — don't pre-optimize.** Tooling is in
-  place: `util/Profiler` (world-gen stage timing + flow-field aggregate), `?debug` `FpsMeter`,
-  `./scripts/profiler.sh` (headless-Chrome CDP CPU profiler → `build/profiles/*.cpuprofile`).
+- [ ] **three.js mesh instancing / merging / persistent sync.** World-gen + steady-state are dominated by mesh
+  construction (`setValueM4` / `Object3D` / link tubes / `generateUUID`). `sync()` clear+recreates the portal /
+  link / field / agent groups **every tick** — that per-tick churn is the cost. **First slice landed:**
+  **persistent link meshes** — `syncLinks()` reconciles against `World.allLinks()` (reuse + re-orient existing,
+  add new, remove gone, re-tint on faction flip) instead of clear+recreate, killing the per-tick link allocation
+  with identical visuals. *Next, same diff-sync pattern:* **portals** (poles/orbs/resos/mods — heaviest group,
+  but entangled with grow-in/hack/tumble animation, so persist the static skeleton + keep the animated bits
+  updating) and **fields**. True GPU `InstancedMesh` stays blocked for links (custom `GlassShader` needs
+  `instanceMatrix` support) + resos (per-frame animation); viable only for standard-material static parts
+  (poles=chrome, o-rings=rubber) if draw calls (not construction) turn out to dominate. **Reprofile when things
+  change — don't pre-optimize.** Tooling: `util/Profiler`, `?debug` `FpsMeter`, `./scripts/profiler.sh` (CDP CPU
+  profiler → `build/profiles/*.cpuprofile`).
 
 ## 3D / rendering
 - [ ] **Graphics-settings menu** *(group shipped).* The **Graphics** menu group exists with one persisted, live
