@@ -182,6 +182,13 @@ object MapController {
         loadOwnBuildings(0)
         // Stream buildings for wherever the camera goes (auto-cam drift, title orbit, manual pan).
         initMap?.let { BuildingStream.attach(it) }
+        // Per-building replacement: each time the view settles, hide the MapLibre footprints we've meshed (new
+        // tiles bring fresh generateId ids, so it must re-run on every idle — it's idempotent + gated internally).
+        initMap?.let { m ->
+            m.asDynamic().on("idle", fun() {
+                hideMeshedMapLibreBuildings()
+            })
+        }
     }
 
     private fun loadOwnBuildings(attempt: Int) {
@@ -445,10 +452,43 @@ object MapController {
                 "fill-extrusion-color": "#333333",
                 "fill-extrusion-height": ["+", ["coalesce", ["get", "render_height"], 8], ${BuildingShake.SHAKE_TERM}],
                 "fill-extrusion-base": ["+", ["coalesce", ["get", "render_min_height"], 0], ${BuildingShake.SHAKE_TERM}],
-                "fill-extrusion-opacity": 0.85
+                "fill-extrusion-opacity": ["case", ["boolean", ["feature-state", "hidden"], false], 0, 0.85]
             }
         }""",
     )
+
+    // The building-layer opacity, made feature-state aware: a footprint marked {hidden:true} (by
+    // [hideMeshedMapLibreBuildings] — we've meshed it ourselves) draws at 0; everything else at [op].
+    private fun buildingOpacityExpr(op: Double): dynamic =
+        JSON.parse("""["case", ["boolean", ["feature-state", "hidden"], false], 0, $op]""")
+
+    // Per-building replacement: hide ONLY the MapLibre footprints we've meshed (centroid match), so our mesh is
+    // the sole visual there while MapLibre fills the gaps. Re-run on every idle so newly-streamed tiles (whose
+    // generateId feature ids are tile-local) get hidden too. Idempotent; a no-op unless PARALLEL + PER_BUILDING.
+    fun hideMeshedMapLibreBuildings() {
+        if (!OwnBuildings.PARALLEL_MODE || !OwnBuildings.PER_BUILDING_REPLACE) return
+        val map = initMap?.asDynamic() ?: return
+        if (map.getLayer("3d-buildings") == null) return
+        val params: dynamic = js("({})")
+        params.sourceLayer = "building"
+        val feats = map.querySourceFeatures("openmaptiles", params)
+        val n = (feats.length as? Int) ?: return
+        var i = 0
+        while (i < n) {
+            val f = feats[i]
+            i++
+            // Need a (generateId) feature id to target with setFeatureState, and a centroid match to one of ours.
+            if (f.id != null && OwnBuildings.coversGeometry(f.geometry)) {
+                val ref: dynamic = js("({})")
+                ref.source = "openmaptiles"
+                ref.sourceLayer = "building"
+                ref.id = f.id
+                val state: dynamic = js("({})")
+                state.hidden = true
+                map.setFeatureState(ref, state)
+            }
+        }
+    }
 
     // Layer switching: #initialMap holds the satellite style, #map the street style.
     fun showSatellite() {
@@ -538,7 +578,8 @@ object MapController {
     /** Fade the 3D buildings (0 = invisible … 1 = solid) so crowded areas don't hide the action. */
     fun setBuildingOpacity(opacity: Double) {
         buildingOpacity = opacity.coerceIn(0.0, 1.0)
-        initMap?.setPaintProperty("3d-buildings", "fill-extrusion-opacity", buildingOpacity)
+        // Keep the feature-state-aware form so the slider doesn't un-hide the footprints we've meshed over.
+        initMap?.setPaintProperty("3d-buildings", "fill-extrusion-opacity", buildingOpacityExpr(buildingOpacity))
     }
 
     private var buildingOpacity = 0.85
