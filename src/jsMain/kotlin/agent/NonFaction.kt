@@ -11,7 +11,6 @@ import system.audio.Sound
 import system.grid.Pathfinding
 import system.map.ShadowGridBuilder
 import system.ui.Bootstrap
-import system.ui.LoadingOverlay
 import util.*
 import util.Rng
 import util.data.*
@@ -241,7 +240,9 @@ data class NonFaction(
                 Pathfinding.computeFieldAsync(destination) { field ->
                     fields[destination] = field
                     pending.remove(destination)
-                    LoadingOverlay.detail("Preparing routes…")
+                    // No loading-overlay text here: these async NPC route fields land intermittently DURING the
+                    // "Creating people (n/n)" phase, and overwriting the count with "Preparing routes…" made the
+                    // load screen flicker between people + route text. The count stays; the audio cue remains.
                     Sound.playOffScreenLocationCreationSound()
                 }
             }
