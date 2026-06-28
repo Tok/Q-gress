@@ -6,9 +6,10 @@ for *what's next* see [../PLAN.md](../PLAN.md).
 ## Entry & top-level shape
 
 `Main.kt` → `window.onload` → `Bootstrap.load()`. The simulation lives in a fixed pixel
-space (`config/Dim.kt`, `config/Sim.kt` — Sim is a scaled-up multiple of the screen). The
-world is **rendered in 3D** by a three.js scene mounted as a **MapLibre custom layer**; the
-HUD is **DOM**. There is no on-screen 2D game canvas anymore (see *Rendering* below).
+space (`config/Dim.kt`, `config/Sim.kt` — `Sim` sizes the play area by **real-world km²**, not a
+screen multiple: `sideForArea(km²)` picks the square whose inscribed round field hits the target area,
+window-independent). The world is **rendered in 3D** by a three.js scene mounted as a **MapLibre custom
+layer**; the HUD is **DOM**. There is no on-screen 2D game canvas anymore (see *Rendering* below).
 
 `World` (`World.kt`, a singleton `object`) holds all mutable game state: agents, portals,
 the passability grid, the tick counter, and the selected user faction. Game logic mutates
@@ -39,10 +40,12 @@ The packages split along one line: **`agent`/`portal`/`items`/`ai`/`config` are 
     NN/LLM input), `SimRunner` (the **headless match harness** — see *Rendering* below), and `Tournament`
     (ranks drivers over seeded `SimRunner` matches → a `Standing` leaderboard; the in-game benchmark wraps it
     in `system/WorldSnapshot` so it can run without disturbing the live game).
-- **`portal/`** — portals, resonators, links, fields, XM, cooldowns, level/quality.
+- **`portal/`** — portals, resonators, links, fields, XM, cooldowns, level/quality; hack-reward rolls split
+  into `HackLoot`, portal-placement geometry in `Octant` (`commonMain`).
 - **`items/`** — bursters, power cubes, resonators, mods, levels.
-- **`config/`** — `Config` (balance constants), `ConfigMath` (the pure tuning formulas), `Dim`/`Sim`
-  (geometry), `Location`/`Locations` (the JSON-backed place catalogue), `Styles`, `Colors`, `Time`.
+- **`config/`** — `Config` (balance constants), `ConfigMath`/`SimMath` (the pure tuning + geometry formulas,
+  in `commonMain`), `Dim`/`Sim` (extent), `Location`/`Locations` (the JSON-backed place catalogue), `Styles`,
+  `Colors`, `Time`.
 - **`system/`** — the **engine/runtime**: `Cycle`/`Checkpoint` (scoring/history over time), `Com`
   (message log), `Simulation` (the shared tick step), `WorldSnapshot` (capture/restore the live sim
   singletons so a headless eval can run + the game resume), plus the presentation/IO subsystems:
@@ -53,13 +56,21 @@ The packages split along one line: **`agent`/`portal`/`items`/`ai`/`config` are 
   - **`system/audio/`** — the synth/mixer sound engine (`Sound`, `Mixer`, `AudioFx`, `KickDrum`, …).
   - **`system/map/`** — MapLibre integration (`MapController`, `MapStyles`, `GeoLocator`, `Navigation`).
   - **`system/building/`** — own-mesh buildings (`BuildingTiles`/`BuildingStream`/`BuildingShake`).
-  - **`system/grid/`** — the spatial substrate (`Pathfinding`, `GridConnectivity`, `GridFixture`).
-  - **`system/ui/`** — the DOM HUD: `Bootstrap` (entry/DOM construction + the main tick loop),
-    `HudRenderer`, `Footer`/`Hud`/`Dom`, `Onboarding`/`TitleSim`, with the panels under **`system/ui/panel/`**.
-- **`util/`** — genuine cross-cutting helpers only (no longer a home for subsystems): `ColorUtil`,
-  `ImprovedNoise`, `NameGen`, `PortalNames`, `Prefs`/`GameplayPrefs`, `Debug`, `GameUrl`,
-  `VersionCheck`; geometry under `util/data/`. The pure, seedable core (`Rng`, `MathUtil`, `Time`, …)
-  lives in **`commonMain` `util/`** (Kover-covered; see *Build & toolchain*).
+  - **`system/grid/`** — the spatial substrate: `Pathfinding` (flat-array bucketed Dijkstra → a flat
+    `VectorField` in `extension/`, no `Pos`-keyed maps); the pure `Grid` (`extension/`), `GridConnectivity` and
+    `GridFixture` live in **`commonMain`**.
+  - **`system/ui/`** — the DOM HUD: `Bootstrap` (entry/DOM construction) — the **main tick + RAF loop is split
+    out into `GameLoop`** (pause/speed/scheduling), the offscreen canvases into `extension/CanvasFactory` —
+    plus `HudRenderer`, `Footer`/`Hud`/`Dom`, `FpsMeter`, `Onboarding`/`TitleSim`, with the panels under
+    **`system/ui/panel/`**.
+- **`util/`** (jsMain) — genuine cross-cutting helpers only (no longer a home for subsystems): `ColorUtil`,
+  `ImprovedNoise`, `PortalNames`, `Prefs`/`GameplayPrefs`, `Debug`, `GameUrl`, `VersionCheck`.
+- **`commonMain` — the pure, testable core.** Mirrors the same package names and holds the side-effect-free
+  logic the shell delegates to (Kover-covered): `util/` (`Rng`, `MathUtil`, `Time`, `NameGen`, and `util/data/`
+  `Vec3`/`Complex`/`Pos`/`GeoCoords`), `config/` (`SimMath`, `ConfigMath`), `agent/` (`MovementMath`, the
+  `qvalue/` model), `ai/` (`SliderVector`, `HeuristicTune`) + `ai/net/` (`Activation`, `NetArch`),
+  `portal/Octant`, `extension/Grid`, and `system/grid/` (`GridConnectivity`, `GridFixture`). Grows as more logic
+  migrates out of the shell (see PLAN phase B; *Build & toolchain* for the jvm()-test/Kover setup).
 - **`external/`** — thin `external` declarations: `MapLibre`, `Three`, `GLTFLoader`, `UPlot`,
   the Web Audio API, cannon-es.
 
@@ -91,11 +102,12 @@ feeds the HUD history dashboard.
   **`Grid`** (bright = walkable, dark = impassable; landcover class → movement penalty). Hidden
   after the grid + POI/street names are read.
 
-`MapController.addGrid` reads the shadow pixels into an `ImageData` (allocated via a **detached
-offscreen `World.bgCan`** — the only surviving use of a 2D canvas), `createGrid` turns it into
-the cell grid, and `GridConnectivity.connectIslands` carves corridors so no area is sealed off.
-`Pathfinding` computes per-portal vector fields over that grid (flow magnitude scaled by terrain
-penalty). `util/PortalNames` queries the shadow map's vector source for real POI/street names.
+`MapController.addGrid` reads the shadow pixels and `World.createStreetImage` packs them into an
+`ImageData` (offscreen 2D canvas via `extension/CanvasFactory` — the only surviving 2D-canvas use); then
+**`system/map/ShadowGridBuilder.build`** turns that into the cell `Grid`, and `GridConnectivity.connectIslands`
+carves corridors so no area is sealed off. `Pathfinding` computes per-portal vector fields over that grid
+(flat-array bucketed Dijkstra, flow magnitude scaled by terrain penalty). `util/PortalNames` queries the
+shadow map's vector source for real POI/street names.
 
 **Zoom is calibrated to 18**: the grid, the pixel-to-metre factor, portal sizes, and ranges
 are all implicitly tied to zoom 18. The display zooms out to *frame* the whole Sim area, but
@@ -133,11 +145,12 @@ new regions from Overpass as the camera flies elsewhere. Elevation comes from th
   the offscreen prerender of agent action icons (→ 3D textures). `World.bgCan` survives solely
   as a detached `ImageData` factory for the grid readback.
 
-The tick loop (`Bootstrap.tick`) calls the shared functional-core step `system/Simulation.stepEntities`
-(advance every agent on a snapshot — recruits buffer in `World.pendingAgents`, flushed after — then every
-NPC, then feed the stuck tracker), then a `requestAnimationFrame` drives `HudRenderer.redraw`
-(→ `Scene3D.sync`) + the DOM HUD update + `Cycle` scoring. The headless harness (`ai/SimRunner`) calls the
-*same* `Simulation.stepEntities` with synchronous `Cycle` scoring instead — no rendering loop.
+The tick loop (`system/ui/GameLoop`, split out of `Bootstrap`) calls the shared functional-core step
+`system/Simulation.stepEntities` (advance every agent on a snapshot — recruits buffer in `World.pendingAgents`,
+flushed after — then every NPC, then feed the stuck tracker); `GameLoop` owns pause + the ×1/×3/Max speed (it
+runs N steps per fire), and a `requestAnimationFrame` drives `HudRenderer.redraw` (→ `Scene3D.sync`) + the DOM
+HUD update + `Cycle` scoring. The headless harness (`ai/SimRunner`) calls the *same* `Simulation.stepEntities`
+with synchronous `Cycle` scoring instead — no rendering loop.
 
 **The effect-sink seam (`system/effect/`).** The crash-prone *visual* effects that game logic fires
 inline (XMP bursts, hack/deploy animations, reward motes, retaliation bolts, portal shatter, falling
@@ -193,5 +206,6 @@ browser/WebGL/three.js shell in `jsMain` isn't counted — coverage tracks the f
 grows as more logic migrates into `commonMain` (see PLAN phase B/C).
 
 Small **shared helpers** keep the shell DRY: `util.ColorUtil` (hex↔rgb / blend), `util.Prefs`
-(localStorage load/save), `system.ui.Dom.el()` (DOM-div factory for the footer panels), and in
-`system.display` the `Vec3` vector kit + `Glsl.glsl()` float-literal helper.
+(localStorage load/save), `system.ui.Dom.el()` (DOM-div factory for the footer panels), `extension/CanvasFactory`
+(offscreen 2D canvases / readback contexts), the `util.data.Vec3` vector kit (now in `commonMain`), and
+`system.display.Glsl.glsl()`'s float-literal helper.

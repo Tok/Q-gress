@@ -8,9 +8,10 @@ Branch: `develop` · Owner: @zirteq
 
 ## ★ Next session — start here
 **Phase D's cheap perf wins + baseline tooling are banked** (flat-array flow fields, squared-distance targeting,
-panel throttling, FX physics, `Profiler`/`FpsMeter`/`profiler.sh` — see Phase D); the Large map area was doubled
-(`Sim.LARGE_SCALE` 3.11, Normal the area-midpoint). The next big perf lever (**three.js mesh instancing**) is
-deferred — reprofile when things change, don't pre-optimize.
+panel throttling, FX physics, `Profiler`/`FpsMeter`/`profiler.sh` — see Phase D); map presets are now sized by
+real **km²** (`Sim.sideForArea`, Small default, Giant 3 km² warned) with sub-linear portal counts, and the
+default pace was doubled. The next big perf lever (**three.js mesh instancing**) is deferred — reprofile when
+things change, don't pre-optimize.
 
 **Phase B (refactor) is the open structural work — pick from:** more **god-object seams** (this session cut
 `Portal`→`HackLoot`, `Bootstrap`→`CanvasFactory`+`GameLoop`, `MapController`→`ShadowGridBuilder`; `Sound` (768)
@@ -123,12 +124,13 @@ be matched. **Desktop-only**; mobile is blocked.
   window size. The "real UI" we want to ship behind.
 
 ## Onboarding
-- [ ] **Map-size pass.** Presets are now spaced by **area**, not linear scale: `Sim.NORMAL_SCALE` is the
-  area-midpoint of Small (1.0) and Large, and Large was grown post-phase-D to **3.11** (≈ 9.7× the screen, double
-  the earlier area). Remaining: (a) a **warning popup for large maps** — "reduced FPS to be expected" before the
-  build, so the player opts in knowingly; (b) per-preset **runtime-FPS tuning** on a real GPU now that the build
-  cost is cheap (entity count, not build time, is the constraint — find where Large bites); (c) **drop square
-  maps** if any remain (the round field already inscribes a circle; rectangular presets are the keepers).
+- [ ] **Map-size pass.** ✅ mostly landed: presets are now defined by real **play-area in km²** (`Sim.sideForArea`)
+  — Tiny 0.1 · Small 0.5 (default) · Mid 1 · Large 2 · Giant 3 — with portal count sub-linear (`suggestedPortals`)
+  so the per-portal pathfinding doesn't blow up, and a reserved-space **pacing caution** for Large+ (walking, not
+  just FPS). Remaining: (a) per-preset **runtime-FPS tuning** on a real GPU (entity count, not build time, is the
+  constraint — find where Large/Giant bite); (b) the **dynamic grow/move the play area mid-game** idea (kept in
+  mind during the SimRunner area-decoupling); (c) the deferred **three.js mesh instancing** is what would let the
+  big presets run smoothly (see phase D).
 - [ ] **Location selection polish** — Home / nearest city via Geolocation; a curated preset list; Random;
   surface the free-form search on the onboarding screen (it only exists in-game now).
 - [ ] **Location list import / export** — let the player export the current location catalogue (the

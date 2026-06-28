@@ -193,8 +193,9 @@ Commit hashes are illustrative pointers, not exhaustive.
 - **Collapsible + expandable footer** (`system/ui/Footer`): the full-width bottom tab bar has three body
   heights via two header controls — **collapse** (chevron: hide → just the tab bar) and **maximize** (expand
   → fills up to just below the top scoreboard, with the sim still running behind it) — so space-hungry tabs
-  like NET get room. Normal is a short docked strip; Tab cycles tabs. The **NET** tab **auto-expands** on
-  entry and auto-restores on leave (unless you've taken manual control of the size).
+  like NET get room. Normal is a **fixed-height** docked strip (the same size on every tab, so switching tabs no
+  longer makes the footer jump); Tab cycles tabs. The **NET** tab **auto-expands** on entry and auto-restores on
+  leave (unless you've taken manual control of the size).
 - **Driver picker in the top toolbar** (`system/ui/DriverControls`): per faction, Manual / **Heuristic** /
   **Neural net** / **LLM**, reachable from anywhere. **Neural net is the default** — the sim plays itself
   (AI-vs-AI) out of the box; switch your faction to Manual to drive it with the sliders.
@@ -365,7 +366,12 @@ Commit hashes are illustrative pointers, not exhaustive.
 ## Onboarding
 - **Ordered onboarding** faction → map-size → location → load (`system/ui/Onboarding`), in-memory
   (no reloads); `?local=true` auto-starts; deep links load directly.
-- **Map size + portal density** presets (Small/Normal/Large, editable W/H + portal count).
+- **Map size by play-AREA** (km², `Sim.sideForArea`): five presets — **Tiny 0.1 · Small 0.5 (default) · Mid 1
+  · Large 2 · Giant 3** — labelled in km² (sq-mi on hover), with editable W/H + portal count. Area is the
+  meaningful measure (a "1 km²" map covers ~1 km² of ground regardless of window). Portal count follows area
+  **sub-linearly (∛)** via `Sim.suggestedPortals` so big maps don't drown in per-portal flow-field rebuilds (the
+  pathfinding cost, not raw area, is the real limiter). A reserved-space, pulsing caution shows for **Large+**:
+  bigger maps = agents walk longer between portals = slower-paced, less action.
 - **Staged loading overlay** (`LoadingOverlay`) — map tiles → tracing roads/water/terrain (+ walkable %)
   → place names → grid → deploying agents → spawning people → routes, faction-tinted, translucent at
   build to reveal the spawning world. Compact pane (no Q-GRESS wordmark — the player just came from the
@@ -529,6 +535,9 @@ Commit hashes are illustrative pointers, not exhaustive.
 - **Sliders**: faction-coloured read-only bars; reversed lock semantics (unlocked = editable, locked = the
   AI-driven bar); the numeric value is always shown in a fixed column.
 - **NPC population** lowered (cap 1000, density halved).
+- **Optional on-screen FPS readout** (`system/ui/FpsMeter`): a small Coda number top-right under the volume
+  widget (no glass pane), toggled by a **"FPS"** menu checkbox. Independent of the `?debug` `[perf]` console
+  capture the headless profiler scrapes — the toggle controls only the on-screen display.
 
 ## Settled decisions
 - **Modernize Kotlin/JS in place** (not a TS rewrite; not KMP) — keep the ~7k lines of tested logic.
