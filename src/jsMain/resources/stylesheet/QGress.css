@@ -1956,8 +1956,11 @@ html, body {
     margin-top: 10px;
     /* Render the "\n" before the (n/n) count as a real line break (the count sits on its own line below the
        label, so a variable-width label can't slide it around). Reserve both lines always so single-line
-       details don't shorten the panel and make it jump vertically. */
+       details don't shorten the panel and make it jump vertically. Centre EACH line: the panel sizes this
+       block to its widest line (the label), so without this the count would left-align to that label-width
+       box and slide with the label's length — text-align centres both lines on the panel's centre instead. */
     white-space: pre-line;
+    text-align: center;
     min-height: 32px;
     line-height: 16px;
     font-feature-settings: "frac" 0; /* don't turn counts like "111/200" into a ½ fraction glyph */
