@@ -46,7 +46,6 @@ object Tts {
         private set
 
     private var current: dynamic = null // hold the live utterance so Chrome doesn't GC it mid-speech (known bug)
-    private var warnedNoVoices = false
 
     private fun available(): Boolean =
         !Bootstrap.isNotRunningInBrowser() && js("typeof window !== 'undefined' && 'speechSynthesis' in window").unsafeCast<Boolean>()
@@ -80,9 +79,7 @@ object Tts {
      *  verbosity gate. */
     fun test() {
         val names = Glyph.randomSequence(Rng, 1 + Rng.randomInt(2)).map { it.spokenName } // 1..3 glyphs
-        val text = names.joinToString(". ") + "."
-        console.log("[tts] test → \"$text\" (available=${available()}, voices=${voices().size}, enabled=$enabled)")
-        speak(text, rate, pitch)
+        speak(names.joinToString(". ") + ".", rate, pitch)
     }
 
     // --- core -----------------------------------------------------------------------------------------
@@ -94,7 +91,6 @@ object Tts {
     private fun speak(text: String, rate: Double, pitch: Double) {
         if (!available()) return
         val s = synth()
-        warnIfNoVoices(s)
         s.cancel() // announcements never overlap — the latest wins
         val u = SpeechSynthesisUtterance(text)
         u.volume = volume
@@ -105,16 +101,6 @@ object Tts {
         current = u // keep a reference alive past this call (Chrome GCs utterances mid-speech otherwise)
         s.resume() // some browsers leave the speech queue paused — a no-op when it isn't
         s.speak(u)
-    }
-
-    // A silent TTS is almost always "no system speech engine" (notably Chrome/Firefox on Linux without
-    // speech-dispatcher + espeak/festival). Surface that once so it's diagnosable rather than mysteriously mute.
-    private fun warnIfNoVoices(s: dynamic) {
-        if (warnedNoVoices) return
-        if (((s.getVoices()?.length as? Int) ?: 0) == 0) {
-            warnedNoVoices = true
-            console.warn("[tts] no speech voices installed — TTS will be silent (Linux: install speech-dispatcher + espeak)")
-        }
     }
 
     private fun voiceFor(s: dynamic): dynamic {
