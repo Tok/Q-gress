@@ -576,7 +576,7 @@ object Onboarding {
         MorphPane.morphInto(overlay, panel, pendingFrom)
         if (pendingFrom != null) { // the controls EMERGE from the pane (scale up + fade) rather than just appearing
             panel.style.opacity = "0"
-            panel.style.transform = "scale(0.9)"
+            panel.style.transform = "scale(0.6)"
             panel.asDynamic().offsetWidth // commit the start state before transitioning
             window.requestAnimationFrame {
                 panel.style.opacity = "1"
