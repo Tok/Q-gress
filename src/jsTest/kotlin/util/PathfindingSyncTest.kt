@@ -49,7 +49,7 @@ class PathfindingSyncTest {
     fun fieldVectorsHaveSaneBoundedMagnitudes() {
         val field = Pathfinding.computeFieldSync(goal)
         assertTrue(
-            field.values.all { it.re.isFinite() && it.im.isFinite() && it.magnitude in 0.0..1.0001 },
+            field.all { it.re.isFinite() && it.im.isFinite() && it.magnitude in 0.0..1.0001 },
             "every flow vector is finite with a speed-scaled magnitude in [0, 1]",
         )
     }

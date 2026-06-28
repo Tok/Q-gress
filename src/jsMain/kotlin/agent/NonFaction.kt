@@ -245,7 +245,7 @@ data class NonFaction(
                     Sound.playOffScreenLocationCreationSound()
                 }
             }
-            return emptyMap()
+            return VectorField.EMPTY
         }
 
         private fun findFarPortal(pos: Pos) = World.allPortals.sortedByDescending { pos.distanceTo(it.location) }.first()

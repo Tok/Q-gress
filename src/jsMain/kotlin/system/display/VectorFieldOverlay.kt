@@ -93,7 +93,7 @@ object VectorFieldOverlay {
         val id = selected ?: return
         if (!id.startsWith("portal:")) return
         val portal = World.allPortals.find { "portal:${it.id}" == id } ?: return
-        portal.vectors.forEach { (pos, vec) ->
+        portal.vectors.forEach { pos, vec ->
             val gx = pos.x.toInt()
             val gy = pos.y.toInt()
             val mag = vec.magnitude

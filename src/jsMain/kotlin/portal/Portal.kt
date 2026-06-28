@@ -548,8 +548,8 @@ data class Portal(
             val portal = Portal(
                 uniqueName(PortalNames.nameFor(location) ?: PortalNames.generate()),
                 location,
-                emptyMap(),
-                emptyMap(),
+                emptyMap(), // heatMap (vestigial GridMap — never read)
+                VectorField.EMPTY, // vectors — filled once the flow field computes
                 slots,
                 mutableSetOf(),
                 mutableSetOf(),

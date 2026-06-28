@@ -245,14 +245,8 @@ object Pathfinding {
         outIm.copyInto(im)
     }
 
-    // --- emit the Map<Pos, Complex> output (reusing the grid's Pos keys, one Complex per cell) -------------
+    // --- emit the field: wrap the flat arrays directly (no per-cell Map/Complex) --------------------------
 
-    private fun emit(cells: Cells, re: DoubleArray, im: DoubleArray): VectorField {
-        val field = HashMap<Pos, Complex>(World.grid.size)
-        World.grid.keys.forEach { pos ->
-            val i = cells.idx(pos.x.toInt(), pos.y.toInt())
-            if (i >= 0) field[pos] = Complex(re[i], im[i])
-        }
-        return field
-    }
+    private fun emit(cells: Cells, re: DoubleArray, im: DoubleArray): VectorField =
+        VectorField(cells.minX, cells.minY, cells.w, cells.h, re, im)
 }
