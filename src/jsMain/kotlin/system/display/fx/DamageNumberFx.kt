@@ -98,6 +98,8 @@ object DamageNumberFx {
     fun register(scene: Three.Scene) {
         group = Three.Group().also { scene.add(it) }
         val w = Cannon.World()
+        w.asDynamic().broadphase = Cannon.SAPBroadphase(w) // ~O(n log n) pairs; combat spawns many digits at once
+        w.asDynamic().allowSleep = true // digits that settle on the world stop being simulated
         w.asDynamic().gravity.set(0.0, 0.0, -GRAVITY)
         w.asDynamic().defaultContactMaterial.restitution = RESTITUTION // digits bounce a little when they land
         val groundOpts: dynamic = js("({ mass: 0 })")
@@ -321,6 +323,10 @@ object DamageNumberFx {
         opts.shape = Cannon.Box(Cannon.Vec3(d.hw, d.hh, DEPTH / 2.0))
         opts.linearDamping = 0.05
         opts.angularDamping = 0.15 // low → the digit tumbles freely as it falls
+        // Digits land on the world (ground/buildings/poles — all in the default group 1) but IGNORE each other:
+        // own group 2, mask 1 → no digit-digit collisions, which is the O(n²) cost when combat clusters numbers.
+        opts.collisionFilterGroup = 2
+        opts.collisionFilterMask = 1
         val body = Cannon.Body(opts)
         body.asDynamic().quaternion.setFromEuler(0.0, 0.0, yaw) // detach at the connected orientation (no pop)
         body.asDynamic().velocity.set((Rng.random() - 0.5) * 1.5, (Rng.random() - 0.5) * 1.5, Rng.random() * 1.5)

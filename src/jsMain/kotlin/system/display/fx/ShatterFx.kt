@@ -387,6 +387,8 @@ object ShatterFx {
 
     private fun createWorld(): Cannon.World {
         val w = Cannon.World()
+        w.asDynamic().broadphase = Cannon.SAPBroadphase(w) // ~O(n log n) pairs; a shatter spawns a burst of shards
+        w.asDynamic().allowSleep = true // shards that settle on the ground stop being simulated
         w.asDynamic().gravity.set(0.0, 0.0, -GRAVITY)
         val groundOpts: dynamic = js("({ mass: 0 })") // static ground plane (normal +Z); lifted to terrain via setGroundZ
         groundOpts.shape = Cannon.Plane()

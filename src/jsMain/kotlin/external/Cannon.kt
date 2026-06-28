@@ -21,6 +21,10 @@ external object Cannon {
         fun step(timeStep: Double, timeSinceLastCalled: dynamic = definedExternally, maxSubSteps: dynamic = definedExternally)
     }
 
+    // Sweep-and-prune broadphase: ~O(n log n) instead of NaiveBroadphase's O(n²) candidate pairs — the FX
+    // debris/digit worlds spawn many short-lived bodies, so this cuts the per-step collision cost in combat.
+    class SAPBroadphase(world: World)
+
     class Body(options: dynamic = definedExternally)
 
     class Box(halfExtents: Vec3)
