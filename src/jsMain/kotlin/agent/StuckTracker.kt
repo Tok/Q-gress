@@ -18,23 +18,38 @@ object StuckTracker {
     // ticks, so the same net-displacement test catches loopers ~2× sooner (the border-circling symptom).
     private const val WINDOW = 50 // position samples kept per entity (one per tick)
     private const val MIN_SAMPLES = 30 // judge after this many samples — short so recovery kicks in fast
+    private const val ABSENCE_GRACE = 3 // ticks an entity may drop out of the moving set before its window resets
     private val stuckRadius get() = Dim.maxDeploymentRange // net move under this over the window = stuck
 
     /** When flagged stuck, agents/NPCs bee-line straight at their target for this many ticks before re-targeting. */
     const val RECOVERY_BEELINE_TICKS = 30
 
     private val history = mutableMapOf<String, ArrayDeque<Pos>>()
+    private val absence = mutableMapOf<String, Int>() // consecutive ticks an entity has been out of the moving set
     private var stuck: Set<String> = emptySet()
 
     fun reset() {
         history.clear()
+        absence.clear()
         stuck = emptySet()
     }
 
     /** Record positions of currently-moving entities ([moving] = stableKey→pos) and recompute the stuck set. */
     fun sample(moving: List<Pair<String, Pos>>) {
         val live = moving.mapTo(HashSet()) { it.first }
-        history.keys.retainAll(live) // forget entities that stopped moving / departed (resets their window)
+        // Forget entities that genuinely stopped travelling — but only after [ABSENCE_GRACE] ticks of absence, so a
+        // brief flip out of MOVE (the 1-tick WAIT between two travels) doesn't reset the window. Otherwise an agent
+        // oscillating MOVE↔WAIT in place would clear its history every other tick and never be flagged stuck.
+        history.keys.toList().forEach { key ->
+            if (key in live) {
+                absence.remove(key)
+            } else if ((absence[key] ?: 0) + 1 > ABSENCE_GRACE) {
+                history.remove(key)
+                absence.remove(key)
+            } else {
+                absence[key] = (absence[key] ?: 0) + 1
+            }
+        }
         val nowStuck = HashSet<String>()
         moving.forEach { (key, pos) ->
             val h = history.getOrPut(key) { ArrayDeque() }

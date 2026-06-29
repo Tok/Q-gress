@@ -60,4 +60,22 @@ class StuckTrackerTest {
         StuckTracker.sample(emptyList()) // this entity stopped travelling → dropped from the stuck set
         assertFalse(StuckTracker.isStuck(key))
     }
+
+    @Test
+    fun inPlaceOscillationAcrossBriefGapsIsStuck() {
+        // The MOVE↔WAIT-in-place symptom: present (MOVE, frozen) every other tick, absent (the 1-tick WAIT) between.
+        // The brief gaps must NOT reset the window, or this never reaches the sample count and slips past recovery.
+        repeat(90) { i -> if (i % 2 == 0) StuckTracker.sample(listOf(key to Pos(100, 100))) else StuckTracker.sample(emptyList()) }
+        StuckTracker.sample(listOf(key to Pos(100, 100))) // end on a present tick so it's in the stuck set
+        assertTrue(StuckTracker.isStuck(key), "oscillating in and out of MOVE is still caught")
+    }
+
+    @Test
+    fun aRealStopBeyondTheGraceResetsTheWindow() {
+        feed(150) { Pos(100, 100) }
+        assertTrue(StuckTracker.isStuck(key))
+        repeat(4) { StuckTracker.sample(emptyList()) } // absent past the grace → genuinely stopped → window dropped
+        StuckTracker.sample(listOf(key to Pos(100, 100))) // returns frozen, but must warm up from scratch
+        assertFalse(StuckTracker.isStuck(key), "not instantly re-flagged after a real stop")
+    }
 }

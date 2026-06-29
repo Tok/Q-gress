@@ -100,12 +100,23 @@ object Movement {
     /* End Enemy Portals */
 
     /* All Portals */
+    // Portals the agent is NOT already standing on (≥ a deployment range from the centre) — the valid "move
+    // ELSEWHERE" targets. Picking a portal the agent is already at makes the MOVE arrive instantly → end → re-select
+    // → MOVE again: an in-place oscillation that never relocates and also slips past StuckTracker (its MOVE-only
+    // sampling resets on the 1-tick WAIT between each cycle). When EVERY portal is within range (a tiny/clustered
+    // board) we wander instead, so the agent at least moves rather than spinning on the spot.
+    private fun awayPortals(agent: Agent) = World.allPortals.filter { agent.distanceToPortal(it) >= Dim.maxDeploymentRange }
+
     fun moveToNearestPortal(agent: Agent): Agent {
-        val target = World.allPortals.minByOrNull { agent.distanceToPortal2(it) } ?: return agent
+        val target = awayPortals(agent).minByOrNull { agent.distanceToPortal2(it) } ?: return wander(agent)
         return goToDestinationPortal(agent, target)
     }
 
-    fun moveToRandomPortal(agent: Agent): Agent = goToDestinationPortal(agent, World.randomPortal())
+    fun moveToRandomPortal(agent: Agent): Agent {
+        val away = awayPortals(agent)
+        if (away.isEmpty()) return wander(agent)
+        return goToDestinationPortal(agent, away[(Rng.random() * (away.size - 1)).toInt()])
+    }
     /* End All Portals */
 
     /**
