@@ -1,8 +1,10 @@
 package agent.action
 
+import World
 import agent.Agent
 import agent.Balance
 import agent.Faction
+import agent.Movement
 import agent.action.cond.*
 import agent.qvalue.QActions
 import agent.qvalue.QValue
@@ -44,14 +46,25 @@ object ActionSelector {
         return idle(agent).invoke()
     }
 
-    // Idle behaviour (no productive action AT the agent's current portal) — the two coin-less fallbacks, then seek
-    // work. Recruiting is the LAST resort for an agent already parked AT a portal with nothing to do (burnt out /
-    // fully built / hack on cooldown). Otherwise a capped few DISCOVER (stroll to open ground → density-driven
-    // portal create/remove); the rest head off to FIND a portal ([moveElsewhere]) rather than idle while there's
-    // hacking/capturing to be done. Both caps keep agents from filler-ing at game-start (they spawn away from
-    // portals → go capture first), and a portal-less board still routes everyone to discovery via moveElsewhere.
+    // Reached when there's no productive action AT the agent's current portal. But "nothing HERE" isn't "nothing
+    // to do" — there's almost always a portal worth travelling to: one this agent can still hack (off cooldown,
+    // not burnt out), an enemy portal to attack (with XMPs in hand), or a neutral one to capture. Only when NONE
+    // of those exist anywhere is the agent genuinely idle (the board's burnt out / nothing to take / no XMPs).
+    private fun hasWorkToSeek(agent: Agent): Boolean = (!agent.inventory.isFull() && World.allPortals.any { it.canHack(agent) }) ||
+        // somewhere to hack/farm
+        (agent.inventory.findXmps().isNotEmpty() && Movement.hasEnemyPortals(agent)) ||
+        // an enemy to attack
+        Movement.hasUncapturedPortals() // a neutral portal to capture
+
+    // Idle behaviour. FIRST: if there's real work to seek, GO FIND IT ([moveElsewhere] heads to a productive
+    // portal) — agents shouldn't filler-recruit/discover while there are portals to hack/capture/attack (this is
+    // what stops the game-start idling: every portal is neutral, so everyone goes to capture). Only when the board
+    // genuinely offers nothing do the two coin-less fallbacks kick in: recruit (parked AT a worked-out portal,
+    // capped) or discover (capped — stroll to open ground → density-driven portal create/remove; a portal-less
+    // board routes everyone here, bootstrapping it). Else keep roaming for work.
     private fun idle(agent: Agent): () -> Agent = {
         when {
+            hasWorkToSeek(agent) -> agent.moveElsewhere()
             agent.isAtActionPortal() && Recruiter.canRecruit(agent) -> Recruiter.performAction(agent)
             Discoverer.canDiscover(agent) -> Discoverer.performAction(agent)
             else -> agent.moveElsewhere()

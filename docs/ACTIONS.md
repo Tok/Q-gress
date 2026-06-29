@@ -114,26 +114,31 @@ If **no** candidate is positive — nothing productive to do — the agent is **
 > (default `0`) a leading-faction agent just wanders instead of acting, costing the leader tempo.
 
 ## Idle — recruiting vs discovery — `ActionSelector.idle`
-Idle is the **fallback when there's no productive action at the agent's portal**. It is *not* a Q-value and
-*not* in the roulette. The choice:
+Reached when there's no productive action *at the agent's current portal*. But **"nothing here" ≠ "nothing
+to do"** — the fallbacks (recruit / discover) are *not* Q-values and only fire when the agent has no
+productive work to **seek** anywhere either. The choice:
 
 ```
 idle(agent) = when {
+    hasWorkToSeek(agent)                                    -> agent.moveElsewhere()           // GO do real work
     agent.isAtActionPortal() && Recruiter.canRecruit(agent) -> Recruiter.performAction(agent)  // grow the roster
     Discoverer.canDiscover(agent)                           -> Discoverer.performAction(agent) // churn the board
-    else                                                    -> agent.moveElsewhere()           // go find work
+    else                                                    -> agent.moveElsewhere()           // keep roaming
 }
 ```
 
-- **At a worked-out portal** (burnt out / fully built / hack on cooldown) and under the recruiter cap →
-  **recruit**. This makes recruiting the genuine last resort: an agent that *isn't* at a portal still has
-  work to seek, so it heads off to find one rather than recruit while there are portals to hack/capture
-  (this is also why agents don't recruit at game-start — they spawn away from portals and go capture first).
-- Else, under the discoverer cap → **discover**: stroll to open ground and, on arrival, run a
-  density-driven portal **create/remove** (below).
-- **Otherwise** → `moveElsewhere()` → seek a portal (`MOVE`), or, when there's no portal to head to, roam
-  open ground (`EXPLORE`, via `Movement.wander`) — which *also* resolves discovery on arrival, so a
-  **portal-less board bootstraps itself** (every idle agent floods discovery until portals appear).
+- **`hasWorkToSeek`** is the key gate — there's almost always a portal worth travelling to, so the agent
+  goes (`moveElsewhere` → `MOVE`) instead of filler-recruiting/discovering. It's true when **any** of:
+  a portal this agent can still **hack** (off its per-agent cooldown, not burnt out, inventory not full),
+  an **enemy** portal to attack (with XMPs in hand), or a **neutral** portal to **capture**. This is what
+  stops the game-start idling — every portal is neutral, so everyone heads off to capture.
+- Only when **none** of that exists — the board's burnt out / nothing to take / no XMPs (exactly the "truly
+  idle" case) — do the coin-less fallbacks fire: **recruit** (parked at a worked-out portal, under the cap →
+  grow the roster) or **discover** (under the cap → stroll to open ground and run a density-driven portal
+  **create/remove** on arrival, below).
+- A **portal-less board** has no work to seek *and* no portal to `moveElsewhere` toward, so every idle agent
+  routes into `EXPLORE` (via `Movement.wander`) and resolves discovery on arrival — **bootstrapping** the
+  board until portals appear.
 
 Both idle states render **pill-less** in the 3D scene (no action coin — `ActionItem.isFallback`), each
 with its own tell so they're not mistaken for a stuck agent: **recruiting jumps** in place (a hard
