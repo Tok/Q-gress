@@ -297,6 +297,13 @@ html, body {
 .taInvBar {
     width: 2px;
 }
+/* Flip-item indicator: a small faction-coloured dot per type (green JARVIS / blue ADA). */
+.taInvDot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    align-self: center;
+}
 /* HUD containers — fixed + click-through; only their children opt back into pointer events so the
    map keeps its drag/zoom. Controls on the left, the intel column on the right, a scoreboard strip
    centered up top, and a full-width tabbed footer at the bottom. */
