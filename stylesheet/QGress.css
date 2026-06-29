@@ -532,11 +532,13 @@ html, body {
     cursor: pointer;
 }
 .footerControls {
-    /* Pin to the footer's top-right corner (the footer is position:fixed = the containing block), so the
-       expand/collapse icons sit at the far right regardless of the header's flex flow / content width. */
+    /* Pin near the footer's top-right corner (the footer is position:fixed = the containing block), so the
+       expand/collapse icons sit at the right regardless of the header's flex flow / content width. Offset in
+       from the edge so the collapse chevron clears MapLibre's bottom-right "ⓘ" attribution when the footer is
+       collapsed (just the header bar) — collapse now sits ~where expand was, expand shifts further left. */
     position: absolute;
     top: 9px;
-    right: 14px;
+    right: 46px;
     display: flex;
     align-items: center;
     gap: 10px;
