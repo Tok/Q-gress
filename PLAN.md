@@ -55,15 +55,13 @@ CSS design-token dedup is done too: glass/tint/blur literals route through `:roo
   toggle (`GraphicsPrefs`): **High-detail shadows** (2048↔1024 shadow map, live realloc). Levers to add:
   **building cap**, **DEM exaggeration**; surface the group in onboarding too. *(Anti-aliasing is iceboxed — see
   "Anti-aliasing (the terrain custom-layer problem)" below.)*
-- [x] **Buildings — per-building replacement.** *Done (gated `OwnBuildings.PER_BUILDING_REPLACE`):* in
-  parallel mode we now hide **only** the MapLibre footprints we've meshed, so our mesh is the sole visual there
-  (no overlap/z-fight) while MapLibre fills the gaps. `OwnBuildings.coversGeometry` matches a MapLibre feature to
-  ours by quantized **centroid cell** (±`MATCH_TOL`, reusing our `ringKey` scheme); `MapController` marks matches
-  `setFeatureState(hidden)` and draws hidden footprints as a transparent **fill-extrusion-color** (opacity rejects
-  data exprs), re-running on every map idle for streamed tiles. *Open/verify:* `MATCH_TOL` is the visual knob
-  (widen if MapLibre twins remain, tighten if wrong footprints vanish); consider bumping our mesh opacity now that
-  it's the sole visual on matched buildings; buildings straddling tile edges (clipped vector-tile geometry → drifted
-  centroid) may not match.
+- ~~**Buildings — per-building replacement.**~~ **Decided against — we always render BOTH sets (don't replace,
+  just add).** They come from different sources (ours = Overpass, MapLibre = its own tiles), never guaranteed
+  identical, and they *complement*: MapLibre's mesh has more detail; ours casts real sun shadows, backs the debris
+  collision mesh, and shakes on the title. Built it (centroid-match `setFeatureState` hide) then removed it —
+  hiding the matched twin also killed its visible out-of-phase shake. Clean `PARALLEL_MODE` stands: both render
+  (ours inset on top via `INSET_FRAC`/`ROOF_DROP_M`, MapLibre fills gaps) and both shake out-of-phase (ours
+  13.8 Hz vs `BuildingShake` 12 Hz = a busier shake).
 - [x] **Terrain-aware shatter ground.** *Done:* each blast lifts the shared cannon-es shard/digit floor to
   `groundZ(blastLocation)` at spawn (`liftShardFloor` in shatterPortal/dropMods/dropResonator; the separate digit
   floor in showDamageNumber), so debris rests on the local terrain instead of the play-area-centre height it was
