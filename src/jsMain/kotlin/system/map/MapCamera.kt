@@ -238,21 +238,22 @@ object MapCamera {
      */
     fun focusOn(id: String?) {
         focusKey = id
-        followActive = false
-        stopCamera() // cancel any in-flight drift/fly before the cam-in
+        val resumeAuto = autoCamActive
+        if (autoCamActive) setAutoCam(false) // pause the drift for a clean cam-in (the proven path); resumed below
+        followActive = false // the cam-in fly owns the camera until it lands (setAutoCam(false) may have set this)
+        stopCamera()
         val opts: dynamic = js("({})")
         opts.center = focusCenter()
         opts.zoom = MapController.displayZoom() + FOCUS_ZOOM_BOOST
         opts.duration = FOCUS_MS
         MapController.initMap?.asDynamic()?.flyTo(opts)
         MapController.map?.asDynamic()?.flyTo(opts)
-        // After the cam-in lands: arm per-frame tracking, and (auto-cam on) resume the orbit around the new focus.
-        window.setTimeout({ followActive = true }, FOCUS_MS)
-        if (autoCamActive) {
-            autoCamGen++ // invalidate the old chained leg (was orbiting the previous centre)
-            val gen = autoCamGen
-            window.setTimeout({ autoCamLeg(gen) }, FOCUS_MS)
-        }
+        // When the cam-in lands: resume the auto-cam (it now orbits the focus via [focusCenter]) or, if it was off,
+        // arm the per-frame track. Skip if the focus was cleared/changed mid-flight.
+        window.setTimeout({
+            if (focusKey != id) return@setTimeout
+            if (resumeAuto) setAutoCam(true) else followActive = true
+        }, FOCUS_MS)
     }
 
     /**
