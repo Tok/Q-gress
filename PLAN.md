@@ -17,9 +17,12 @@ The open structural focus: functional core / imperative shell, module-by-module,
 (ktlint/detekt/tests) green throughout. Exit criterion: pure logic testable in isolation. Pick from:
 - **The commonMain pure-logic lift.** *Done so far:* the cleanly-liftable math core; the **`config/`
   package** (behind the `config.Platform` expect/actual seam — only `Location`'s JS `JSON.parse` stays in
-  jsMain); and the **pure `items/` data layer** — all `items/types/*`, the `items/level/*` tables,
-  `QgressItem`/`DeployableItem`/`Mod`, plus `portal.Quality` and `config.DropRates`. *What still blocks the
-  rest:* the item **entity classes** (`Resonator`/`Shield`/`XmpBurster`/`PowerCube`/… — 10 files) carry an
+  jsMain); the **pure `items/` data layer** — all `items/types/*`, the `items/level/*` tables,
+  `QgressItem`/`DeployableItem`/`Mod`, plus `portal.Quality` and `config.DropRates`; and a **batch of leaf
+  pure data/logic** unblocked by those — `system.Checkpoint`, `portal.{HackResult,ModSlot,XmMap,XmHeap}`,
+  `agent.{Skills,AgentSize,StuckTracker}`, `util.data.{Circle,Dim,GeoCoordsExt}`. (`ai.Tournament` looked
+  liftable but has same-package jsMain deps on `FactionPolicy`/`MatchSetup`/`SimRunner` — deferred.)
+  *What still blocks the rest:* the item **entity classes** (`Resonator`/`Shield`/`XmpBurster`/`PowerCube`/… — 10 files) carry an
   `owner: Agent` and/or bind `Portal`/`World`/`Fx`, so they — and `Inventory`, `Field`, the `Config`
   consumers (`Tournament`/`Observation`/`Cycle`) — only lift once the big types `Portal`/`World`/`Agent`
   become `commonMain`. That needs an **audio seam** for Portal/Agent (mirroring `Effects`/`Fx`) and a
