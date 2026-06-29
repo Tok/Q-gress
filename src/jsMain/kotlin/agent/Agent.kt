@@ -212,10 +212,10 @@ data class Agent(
     // together for the meeting (the action timer); when it runs out, [Recruiter.resolve] rolls success + sound.
     private fun recruitStep(): Agent {
         val npc = recruitTargetId?.let { id -> World.allNonFaction.firstOrNull { it.id == id } }
-        if (npc == null) { // target recruited by someone else / churned away → abort, re-select next tick
+        if (npc == null) { // target recruited by someone else / churned away → abort + re-select THIS tick
             recruitTargetId = null
             action.end()
-            return this
+            return ActionSelector.doSomethingElse(this)
         }
         destination = npc.pos
         npc.holdInPlace(World.tick + RECRUIT_HOLD_TICKS) // keep them waiting while we approach + meet
@@ -225,7 +225,10 @@ data class Agent(
             return stepByVelocity()
         }
         if (action.isBusy()) return this // standing together — the meeting (the head bobs in the render)
-        return Recruiter.resolve(this, npc) // meeting over → roll the result
+        // Meeting over → roll the result, then re-select THIS tick. [Recruiter.resolve] ends the action (→ WAIT for
+        // a tick); re-selecting now means that transitional WAIT is never rendered, so its empty pill can't flash in
+        // between the no-pill recruit/roam states (the agent lands straight on its next action this frame).
+        return ActionSelector.doSomethingElse(Recruiter.resolve(this, npc))
     }
 
     private fun hasXmps() = inventory.findXmps().isNotEmpty()

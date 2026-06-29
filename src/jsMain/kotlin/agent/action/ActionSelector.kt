@@ -44,10 +44,13 @@ object ActionSelector {
         return idle(agent).invoke()
     }
 
-    // Idle behaviour (no productive action): recruit a nearby NPC if under the per-faction concurrent cap, else
-    // roam to find work. Both render coin-less (just a head-bob), distinct from a purposeful MOVE.
+    // Idle behaviour (no productive action AT the agent's current portal). Recruiting is the LAST resort: only an
+    // agent already parked AT a portal with nothing to do (burnt out / fully built / hack on cooldown) recruits — and
+    // only a capped few per faction. An agent that ISN'T at a portal still has work to seek, so it heads off to FIND
+    // a portal ([moveElsewhere]) rather than recruit while there's hacking/capturing to be done. This keeps agents
+    // from recruiting at game-start (they spawn away from portals → go capture first). Both render coin-less.
     private fun idle(agent: Agent): () -> Agent = {
-        if (Recruiter.canRecruit(agent)) Recruiter.performAction(agent) else agent.moveElsewhere()
+        if (agent.isAtActionPortal() && Recruiter.canRecruit(agent)) Recruiter.performAction(agent) else agent.moveElsewhere()
     }
 
     private fun doAnywhereAction(agent: Agent): Agent = act(agent, actionsForAnywhere(agent))
