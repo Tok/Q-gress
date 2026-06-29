@@ -29,8 +29,9 @@ object MenuControls {
         "How fast the game ramps early→endgame. Scales the recruiting rate (rosters grow faster) AND AP gain " +
             "(agents level up faster). 1 = baseline."
     private const val CHURN_TIP =
-        "How fast NEUTRAL portals are discovered + abandoned (a system process, not an agent action). " +
-            "0 = a fixed board; higher = portals appear/vanish faster. 0.17 = baseline."
+        "How fast idle agents DISCOVER new neutral portals + find old ones gone (the agent discovery action), " +
+            "converging the board toward its target density. 0 = a fixed board; higher = portals appear/vanish faster. " +
+            "0.17 = baseline."
 
     /**
      * Append the menu's settings controls, split into a **Gameplay** group (affects the run; persisted to
