@@ -110,28 +110,38 @@ heads there as a `MOVE`.
 
 If **no** candidate is positive — nothing productive to do — the agent is **idle**.
 
-> A small anti-snowball tap precedes all of this: with probability `leadShare × Config.leaderDistraction`
-> (default `0`) a leading-faction agent just wanders instead of acting, costing the leader tempo.
+> Two taps precede all of this, each on a re-selection: (1) the anti-snowball handicap — with probability
+> `leadShare × Config.leaderDistraction` (default `0`) a leading-faction agent just wanders, costing the
+> leader tempo; (2) the **breather** — with probability `Config.idleChance` (**5 %**) the agent takes the
+> idle fallback (`idleFallback`) *even when there's work*. Without (2), agents never idle while a portal is
+> hackable, so the roster + board stop growing; this trickle keeps both ticking over. It's still bounded by
+> the recruiter/discoverer caps (so the *concurrent* idlers stay ≤ the caps regardless of the rate).
+> *(Future: a per-agent "tiredness" skill could replace this flat rate, tuning it per player.)*
 
-## Idle — recruiting vs discovery — `ActionSelector.idle`
-Reached when there's no productive action *at the agent's current portal*. But **"nothing here" ≠ "nothing
-to do"** — the fallbacks (recruit / discover) are *not* Q-values and only fire when the agent has no
-productive work to **seek** anywhere either. The choice:
+## Idle — recruiting vs discovery — `ActionSelector.idle` / `idleFallback`
+The agent reaches `idle()` either because there's no productive action *at its current portal*, or because
+the 5 % breather tap chose the fallback directly. The two are slightly different:
+
+- **`idle()`** (no local action) still checks **"nothing here" ≠ "nothing to do"**: if there's productive
+  work to **seek**, the agent goes to it instead of filler-recruiting/discovering.
+- **`idleFallback()`** (the 5 % breather, or `idle()`'s no-work branch) takes the coin-less fallback
+  directly — *not* a Q-value, *not* in the roulette:
 
 ```
-idle(agent) = when {
-    hasWorkToSeek(agent)                                    -> agent.moveElsewhere()           // GO do real work
+idle(agent)         = if (hasWorkToSeek(agent)) moveElsewhere() else idleFallback(agent)
+idleFallback(agent) = when {
     agent.isAtActionPortal() && Recruiter.canRecruit(agent) -> Recruiter.performAction(agent)  // grow the roster
     Discoverer.canDiscover(agent)                           -> Discoverer.performAction(agent) // churn the board
     else                                                    -> agent.moveElsewhere()           // keep roaming
 }
 ```
 
-- **`hasWorkToSeek`** is the key gate — there's almost always a portal worth travelling to, so the agent
-  goes (`moveElsewhere` → `MOVE`) instead of filler-recruiting/discovering. It's true when **any** of:
-  a portal this agent can still **hack** (off its per-agent cooldown, not burnt out, inventory not full),
-  an **enemy** portal to attack (with XMPs in hand), or a **neutral** portal to **capture**. This is what
-  stops the game-start idling — every portal is neutral, so everyone heads off to capture.
+- **`hasWorkToSeek`** is the key gate for the *no-local-action* path — there's almost always a portal worth
+  travelling to, so the agent goes (`moveElsewhere` → `MOVE`) instead of filler-recruiting/discovering. It's
+  true when **any** of: a portal this agent can still **hack** (off its per-agent cooldown, not burnt out,
+  inventory not full), an **enemy** portal to attack (with XMPs in hand), or a **neutral** portal to
+  **capture**. This is what stops the game-start idling — every portal is neutral, so everyone heads off to
+  capture; growth then comes from the 5 % breather (above) plus genuinely-idle agents.
 - Only when **none** of that exists — the board's burnt out / nothing to take / no XMPs (exactly the "truly
   idle" case) — do the coin-less fallbacks fire: **recruit** (parked at a worked-out portal, under the cap →
   grow the roster) or **discover** (under the cap → stroll to open ground and run a density-driven portal

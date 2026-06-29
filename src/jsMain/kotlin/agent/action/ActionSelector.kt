@@ -18,6 +18,10 @@ object ActionSelector {
         // instead of acting, with probability leadShare × Config.leaderDistraction — so being ahead costs
         // tempo and the trailing side keeps its focus. Off (0) by default; an anti-runaway balance lever.
         if (Rng.random() < Balance.leadShare(agent.faction) * Config.leaderDistraction) return agent.moveElsewhere()
+        // A small flat chance to take a breather — recruit / discover instead of working, even when there IS work.
+        // Without it agents never idle while a portal is hackable, so the roster + board stop growing; this keeps
+        // both ticking over. Still bounded by the recruiter/discoverer caps. (Future: a per-agent "tiredness" skill.)
+        if (Rng.random() < Config.idleChance) return idleFallback(agent)
         val portalFaction = agent.actionPortal.owner?.faction
         return when {
             !agent.isAtActionPortal() -> doAnywhereAction(agent)
@@ -59,16 +63,19 @@ object ActionSelector {
     // Idle behaviour. FIRST: if there's real work to seek, GO FIND IT ([moveElsewhere] heads to a productive
     // portal) — agents shouldn't filler-recruit/discover while there are portals to hack/capture/attack (this is
     // what stops the game-start idling: every portal is neutral, so everyone goes to capture). Only when the board
-    // genuinely offers nothing do the two coin-less fallbacks kick in: recruit (parked AT a worked-out portal,
-    // capped) or discover (capped — stroll to open ground → density-driven portal create/remove; a portal-less
-    // board routes everyone here, bootstrapping it). Else keep roaming for work.
+    // genuinely offers nothing do the coin-less fallbacks kick in (the deliberate-breather path in doSomethingElse
+    // takes [idleFallback] directly, bypassing this work-check). Else keep roaming for work.
     private fun idle(agent: Agent): () -> Agent = {
-        when {
-            hasWorkToSeek(agent) -> agent.moveElsewhere()
-            agent.isAtActionPortal() && Recruiter.canRecruit(agent) -> Recruiter.performAction(agent)
-            Discoverer.canDiscover(agent) -> Discoverer.performAction(agent)
-            else -> agent.moveElsewhere()
-        }
+        if (hasWorkToSeek(agent)) agent.moveElsewhere() else idleFallback(agent)
+    }
+
+    // The coin-less idle fallbacks themselves (no work-check): recruit when parked AT a worked-out portal (capped),
+    // else discover (capped — stroll to open ground → density-driven portal create/remove; a portal-less board
+    // routes everyone here, bootstrapping it), else just keep roaming.
+    private fun idleFallback(agent: Agent): Agent = when {
+        agent.isAtActionPortal() && Recruiter.canRecruit(agent) -> Recruiter.performAction(agent)
+        Discoverer.canDiscover(agent) -> Discoverer.performAction(agent)
+        else -> agent.moveElsewhere()
     }
 
     private fun doAnywhereAction(agent: Agent): Agent = act(agent, actionsForAnywhere(agent))

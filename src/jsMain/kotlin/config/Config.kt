@@ -45,6 +45,12 @@ object Config {
     // board (everything burnt out) doesn't show EVERY agent recruiting. Recruiting completes + frees a slot.
     var maxConcurrentRecruiters = 2
 
+    // Flat chance that an agent, on CHANGING actions, takes a breather — recruits or discovers (the idle fallbacks)
+    // instead of doing productive work. Without it agents never idle while there's a portal to hack/capture, so the
+    // roster + board stop growing; this trickle keeps both ticking over. Still bounded by the recruiter/discoverer
+    // caps. (Later: a per-agent "tiredness" skill could replace this flat rate so it's tunable per player.)
+    var idleChance = 0.05
+
     // Anti-snowball recruiting (Balance.recruitFactor): the LARGER faction recruits less, the SMALLER more, so
     // team sizes self-correct instead of the leader running away. Multiplies the recruit RATE (not selection — there
     // is no selection now) by (enemyRoster+1)/(myRoster+1), clamped to this band.
