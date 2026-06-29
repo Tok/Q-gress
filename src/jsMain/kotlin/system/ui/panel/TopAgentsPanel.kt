@@ -71,7 +71,7 @@ object TopAgentsPanel {
         Col("MHack", num = {
             it.inventory.findMultihacks().size.toDouble()
         }, render = { a -> invCell(a.inventory.findMultihacks(), MAX_MOD_LEVEL, MultihackType::getColorForLevel) }),
-        Col("Virus", num = { it.inventory.findViruses().size.toDouble() }, render = { a -> virusCell(a) }),
+        Col("Flip", num = { it.inventory.findViruses().size.toDouble() }, render = { a -> virusCell(a) }),
         Col("Keys", num = { it.inventory.keyCount().toDouble() }, render = { a -> cell(a.inventory.keyCount().toString(), "taNum") }),
         Col("Uniq", num = { uniqueKeys(it).toDouble() }, render = { a -> cell(uniqueKeys(a).toString(), "taNum") }),
         Col("Inv", num = { it.inventory.items.size.toDouble() }, render = { a -> invLimitCell(a) }),
@@ -243,23 +243,22 @@ object TopAgentsPanel {
         return td
     }
 
-    /** Viruses an agent carries: a two-bar strip (JARVIS green, ADA blue) in each type's colour + a trailing count. */
+    /** Flip items an agent carries: one faction-coloured dot per type (JARVIS green, ADA blue) — lit when
+     *  held, dim when not — plus a trailing total count. */
     private fun virusCell(agent: Agent): HTMLElement {
         val viruses = agent.inventory.findViruses()
         val byType = viruses.groupBy { it.type }.mapValues { it.value.size }
-        val maxCount = byType.values.maxOrNull() ?: 1
         val td = el("td", "taInv")
-        // Always render the strip (zero-height bars when empty) so the graph keeps a constant width.
-        val bars = el("span", "taInvBars")
+        // Always render both dots (dim when empty) so the cell keeps a constant width.
+        val dots = el("span", "taInvBars")
         VirusType.values().forEach { type ->
             val c = byType[type] ?: 0
-            val bar = el("span", "taInvBar")
-            bar.style.height = "${(c.toDouble() / maxCount * BAR_MAX_PX).toInt()}px"
-            if (c > 0) bar.style.background = type.color
-            bars.appendChild(bar)
+            val dot = el("span", "taInvDot")
+            dot.style.background = if (c > 0) type.color else "rgba(255, 255, 255, 0.12)" // neutral dim when none held
+            dots.appendChild(dot)
         }
-        td.appendChild(bars)
-        // Number last + fixed width so it right-justifies and never shifts the bars when it changes.
+        td.appendChild(dots)
+        // Number last + fixed width so it right-justifies and never shifts the dots when it changes.
         val count = el("span", "taInvCount")
         count.textContent = viruses.size.toString()
         td.appendChild(count)

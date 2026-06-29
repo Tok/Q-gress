@@ -36,8 +36,9 @@ races a link being made.
 
 ## Mod slots
 Each portal has **4 mod slots** (`portal/ModSlot.kt`), holding any mix of **shields**, **heat sinks**,
-and **link amps** (`items/deployable/Mod.kt`). Mods are deployed one-per-action by agents (`Deployer`),
-fall out when the portal is neutralized/removed, and are dropped (cleared) by a virus flip.
+and **link amps** (`items/deployable/Mod.kt`). Mods are deployed one-per-action by agents (`Deployer`)
+and fall out when the portal is neutralized/removed. A **virus flip keeps the mods** (and resonators) in
+place — only the links/fields are torn down (see *Flip items* below).
 
 ### Shields — `items/types/ShieldType.kt`
 Reduce **incoming XMP damage** (mitigation), capped at 95% total (links + shields). ~2018 values:
@@ -70,10 +71,30 @@ Raise a portal's **hacks-before-burnout** limit for everyone: Common **+4**, Rar
 (`DropRates.multihackChance`, heat-sink-scaled) and **deploy** like any mod (after shields + heat sinks).
 Colour from [rarity]; rendered as a **hollow square ring** in the orb.
 
-## Viruses — `items/types/VirusType.kt`
-**ADA Refactor** (→ ENL) and **JARVIS Virus** (→ RES) flip an **enemy** portal to the user's faction
-(`Portal.refactor` via the `Refactorer` action): resonators are reassigned, mods dropped. The colour
-change animates through `CaptureFx`; a `playVirusSound` plays.
+## Flip items (viruses) — `items/types/VirusType.kt`
+Two flip items: the **JARVIS Virus** (→ **ENL**/green) and the **ADA Refactor** (→ **RES**/blue). The
+**item type** decides the result faction (`VirusType.flipsTo`), *not* the user's — and **either faction
+may carry and use either item** (they drop independently, `1 / VirusType.roll` ≈ 1-in-2500 per hack).
+A flip (`Portal.refactor` via the `Refactorer` action) re-owns the portal **and all of its slot content
+in place** (every resonator + mod stays, just re-owned to the new faction); only the links/fields are
+torn down (they'd be cross-faction now). The orb re-skins through `CaptureFx` **without** the capture
+shatter and a `playVirusSound` (pitched to the new colour) plays.
+
+A flip is allowed only when:
+- the target is a **faction-owned** portal — a **neutral portal can't be flipped** (it's captured by
+  deploying, not flipped);
+- the item's `flipsTo` **differs** from the portal's current faction — you can't flip a portal to the
+  colour it already is; and
+- the portal is **off its flip-immunity cooldown** — after any flip a portal is immune to being flipped
+  again (in **either** direction) for **1 h** of sim time (`Portal.isFlippable`, `FLIP_IMMUNITY_S`).
+
+This makes both directions possible: **attack-flip** an enemy portal to your colour with the matching
+item, or **friendly-flip** your *own* portal to the enemy colour with the off-colour item — e.g. to shed
+a friendly link that blocks a bigger field, or to turn a friendly portal hostile so it can be
+neutralized and re-captured with different mods. A friendly-flip hands the portal to the nearest agent
+of the target faction. These tactics are **emergent**: the AI attack-flips enemy portals on the `VIRUS`
+slider, and is offered the friendly-flip at a heavily damped weight (`ActionSelector.FRIENDLY_FLIP_FACTOR`)
+so it stays rare rather than hand-coded.
 
 ## Keys — `portal/PortalKey.kt`
 Per-agent inventory; used to link to a portal. Surfaced as counts (leaderboard + inspector); no 3D

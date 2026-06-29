@@ -156,7 +156,7 @@ class LinkFieldIntegrityTest {
         link(b, c) // b → c (green), an OUTGOING link stored on b
         field(b, a, c) // a field anchored on b
 
-        b.refactor(Factory.smurf()) // JARVIS / ADA virus: flip b to RES
+        b.refactor(Factory.smurf(), Faction.RES) // ADA Refactor: flip the green portal b to RES
 
         assertEquals(Faction.RES, b.owner?.faction, "the virus flips the portal's faction")
         assertTrue(

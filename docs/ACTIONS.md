@@ -68,9 +68,15 @@ the agent's current situation and picks one by weighted random.
 The candidates depend on where the agent is and what it's standing on:
 
 - not at its target portal → `doAnywhereAction` → `{ RECYCLE, RECHARGE }`
-- at a **friendly** portal → `+ { HACK, GLYPH, DEPLOY, LINK }`
+- at a **friendly** portal → `+ { HACK, GLYPH, DEPLOY, LINK, VIRUS* }`
 - at a **neutral** portal → `+ { HACK, GLYPH, CAPTURE }`
 - at an **enemy** portal → `+ { HACK, GLYPH, ATTACK, VIRUS }`
+
+`VIRUS*` on a friendly portal is the **friendly-flip** — flipping your *own* portal to the enemy colour
+with the off-colour item (`Refactorer` self-selects it) to shed a blocking link, etc. It reuses the
+`VIRUS` slider heavily damped (`ActionSelector.FRIENDLY_FLIP_FACTOR`) so the tactic stays rare/emergent.
+Neither virus targets a **neutral** portal, and a flipped portal is flip-immune for 1 h (see
+`docs/MECHANICS.md` → *Flip items*).
 
 Each candidate is gated by its `cond/*` `isActionPossible(agent)` — an action only enters the list with a
 **positive** weight when it's actually doable right now (a deployable resonator in hand, a key + an

@@ -13,6 +13,8 @@ import config.Config
 import util.Rng
 
 object ActionSelector {
+    private const val FRIENDLY_FLIP_FACTOR = 0.15 // dampen the VIRUS weight when flipping our OWN portal (emergent, rare)
+
     fun doSomethingElse(agent: Agent): Agent {
         // Leader tempo handicap: an agent of the LEADING faction wanders (a neutral, non-contributing move)
         // instead of acting, with probability leadShare × Config.leaderDistraction — so being ahead costs
@@ -116,9 +118,14 @@ object ActionSelector {
         val basicValues = actionsForPortals(agent)
         val deployQ = if (Deployer.isActionPossible(agent)) q(agent.faction, QActions.DEPLOY) else -1.0
         val linkQ = if (Linker.isActionPossible(agent)) q(agent.faction, QActions.LINK) else -1.0
+        // Friendly-flip (off-colour virus on our OWN portal — e.g. to shed a link that blocks a bigger
+        // field): no dedicated slider, so reuse the VIRUS weight heavily dampened. The tactic stays
+        // emergent + rare rather than constant self-sabotage. Refactorer self-selects the off-colour virus.
+        val flipQ = if (Refactorer.isActionPossible(agent)) q(agent.faction, QActions.VIRUS) * FRIENDLY_FLIP_FACTOR else -1.0
         return basicValues + listOf(
             deployQ to { agent.deployPortal(true) },
             linkQ to { Linker.performAction(agent) },
+            flipQ to { Refactorer.performAction(agent) },
         )
     }
 

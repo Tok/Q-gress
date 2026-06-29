@@ -7,6 +7,7 @@ import config.Config
 import config.Dim
 import config.IngressFacts
 import config.Sim
+import config.Time
 import extension.*
 import items.deployable.HeatSink
 import items.deployable.Mod
@@ -39,6 +40,7 @@ data class Portal(
     val mods: MutableMap<ModSlot, Mod> = mutableMapOf(), // up to 4 mod slots (shields / heat sinks / link amps)
 ) {
     internal val lastHacks: MutableMap<String, MutableList<Int>> = mutableMapOf() // per-agent hack history ([PortalHacks])
+    internal var lastFlipTick: Int? = null // tick of the last virus flip — drives the flip-immunity window ([isFlippable])
     val id: String = "P-" + location.x + ":" + location.y + "-" + name
     fun isDeprecated() = slots.isEmpty()
 
@@ -150,22 +152,37 @@ data class Portal(
         else -> 0
     }
 
+    /** Off the virus flip-immunity window? A portal can be flipped (in either direction) only once per
+     *  [FLIP_IMMUNITY_S] of sim time; a never-flipped portal is always flippable. */
+    fun isFlippable(): Boolean = lastFlipTick?.let { World.tick - it >= Time.secondsToTicks(FLIP_IMMUNITY_S) } ?: true
+
     /**
-     * Virus flip (ADA / JARVIS): the portal changes hands — it is **not** destroyed. [agent]'s faction
-     * takes ownership of the portal and **all of its slot content** (every resonator + mod stays in place,
-     * just re-owned). Only the links/fields are torn down (they'd be cross-faction now), and the orb
-     * re-skins to the new colour **without** the capture shatter (see [system.display.CaptureFx]).
+     * Virus flip (ADA / JARVIS): the portal changes hands — it is **not** destroyed. The **item type**
+     * decides the result faction ([flipsTo]), not [agent]'s faction: the new owner becomes the (nearest)
+     * agent of [flipsTo], and **all of the slot content** (every resonator + mod) stays in place, just
+     * re-owned. So [agent] may flip an enemy portal to its own colour OR its own portal to the enemy
+     * colour. Only the links/fields are torn down (they'd be cross-faction now), the orb re-skins to the
+     * new colour **without** the capture shatter (see [system.display.CaptureFx]), and the portal goes
+     * flip-immune for [FLIP_IMMUNITY_S] ([isFlippable]).
      */
-    fun refactor(agent: Agent) {
-        owner = agent
-        slots.values.filter { it.resonator != null }.forEach { it.owner = agent }
+    fun refactor(agent: Agent, flipsTo: Faction) {
+        val newOwner = if (flipsTo == agent.faction) {
+            agent
+        } else {
+            // friendly-flip: hand the portal to the nearest agent of the target faction (both factions
+            // always have agents — the `?: agent` is only a theoretical empty-roster guard).
+            World.allAgents.filter { it.faction == flipsTo }.minByOrNull { it.pos.distanceTo(location) } ?: agent
+        }
+        owner = newOwner
+        slots.values.filter { it.resonator != null }.forEach { it.owner = newOwner }
         // The portal changed faction, so every link/field it touches is now cross-faction → destroy them all
         // (incoming + outgoing + anchored fields). Without this the old faction's links survive on the flipped
         // portal — e.g. a green portal virus-flipped to blue would still show its incoming GREEN links.
         destroyAllLinksAndFields()
+        lastFlipTick = World.tick // start the flip-immunity window
         Fx.sink.refactorPortal("portal:$id") // re-skin the orb to the new faction, no shatter
         agent.addAp(VIRUS_AP)
-        Com.addMessage("$agent refactored $this to ${agent.faction}.", Com.Importance.MAJOR, agent.faction.color)
+        Com.addMessage("$agent refactored $this to $flipsTo.", Com.Importance.MAJOR, flipsTo.color)
     }
 
     private fun findStrongestReso(): Resonator? {
@@ -475,6 +492,7 @@ data class Portal(
         private const val MOD_DESTROY_AP = 75 // AP for knocking a mod off (cf. resonator destroy)
         private const val MIN_COOLDOWN_FACTOR = 0.05 // heat sinks can't reduce cooldown below 5%
         private const val VIRUS_AP = 1000 // AP for flipping a portal with a virus
+        private const val FLIP_IMMUNITY_S = 3600 // 1h: a flipped portal can't be flipped again (either direction)
         private fun clipLevel(level: Int): Int = max(1, min(level, 8))
 
         private const val UNIQUE_NAME_TRIES = 8 // regen a fresh natural name this many times before suffixing
