@@ -39,6 +39,8 @@ object TuningPanel {
         var locked: Boolean = false,
     )
 
+    private const val RAIL_GREY = "#d3d3d3" // the slider/bar rail colour (matches .slider + .qBar backgrounds)
+
     private var built = false
     private var mode = Mode.INTERACTIVE
     private var userFaction = Faction.ENL
@@ -89,6 +91,7 @@ object TuningPanel {
                 r.input.valueAsNumber = vector[r.qValue]
                 r.valueLabel.textContent = display(r.input.value)
                 r.fill.style.width = pct(r.input)
+                paintSlider(r.input) // keep the (hidden) slider's fill in sync, so it's right if the player grabs it
             }
         } else if (mode == Mode.READONLY) {
             rows.forEach { it.fill.style.width = pct(it.input) }
@@ -170,6 +173,7 @@ object TuningPanel {
         val builtRow = Row(qValue, userInput, valueLabel, bar, fill, lock)
         userInput.oninput = {
             valueLabel.textContent = display(userInput.value)
+            paintSlider(userInput) // keep the faction fill tracking the thumb as it's dragged
             // While the AI drives, an edit only sticks if this slider is locked — push it to the override.
             if (builtRow.locked) FactionPolicies.lock(userFaction, qValue, userInput.valueAsNumber)
             null
@@ -245,6 +249,7 @@ object TuningPanel {
             r.input.disabled = !interactive
             setVisible(r.input, interactive)
             setVisible(r.bar, !interactive)
+            paintSlider(r.input) // refresh the slider's faction fill for its current value (build / lock-toggle / mode change)
             // The numeric value is shown in BOTH modes (slider + bar) and always sits in its own fixed grid
             // column, so the lock never shifts into the value's cell when the bar is showing.
             if (!interactive) r.fill.style.width = pct(r.input)
@@ -262,6 +267,15 @@ object TuningPanel {
     }
 
     private fun pct(input: HTMLInputElement) = "${input.valueAsNumber * 100.0}%"
+
+    // Paint the editable slider's track like the read-only bar: a faction-colour fill from the LEFT up to
+    // the thumb, grey rail after — so locking/unlocking barely changes the look. The slider has
+    // `-webkit-appearance: none`, so its track IS the element background; a hard 2-stop gradient at the
+    // value gives the filled/unfilled split (the thumb sits on top).
+    private fun paintSlider(input: HTMLInputElement) {
+        val p = pct(input)
+        input.asDynamic().style.background = "linear-gradient(to right, ${userFaction.color} $p, $RAIL_GREY $p)"
+    }
 
     private fun display(value: String): String {
         val fixed = value.padEnd(4, '0')
