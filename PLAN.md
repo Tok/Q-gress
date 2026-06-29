@@ -15,59 +15,37 @@ be matched. **Desktop-only**; mobile is blocked. (The substrate ships; what's le
 ## ★ Next up — refactor under the net (Phase B)
 The open structural focus: functional core / imperative shell, module-by-module, with the gate
 (ktlint/detekt/tests) green throughout. Exit criterion: pure logic testable in isolation. Pick from:
-- **Split god-objects** along seams as they're touched. The named splits are done (`Sound`/`MapController`/
-  `Bootstrap`/`Portal` all under detekt's 600-line `LargeClass` threshold). What's left is the deeper
-  **commonMain pure-logic lift**: the cleanly-liftable core is already moved + tested, and the rest is gated
+- **The commonMain pure-logic lift.** The cleanly-liftable core is already moved + tested; the rest is gated
   behind type coupling — to lift `Field`/`Inventory`/`knockMods` and `Config` consumers
   (`Tournament`/`Observation`/`Cycle`), the jsMain types they bind (`Portal`/`World`/`Agent` + the `items/`
-  hierarchy) have to become `commonMain` first. That's a large, multi-step move, not a quick extraction.
-  (`Scene3D` keeps an *intentional* `LargeClass` suppress: its showcase sandbox is already out in `Showcases`,
-  and the remaining entity-sync + effect-dispatch bulk is irreducibly bound to the three.js groups — relocating
-  it behind a ~30-member API would be worse.)
+  hierarchy) have to become `commonMain` first. A large, multi-step move, not a quick extraction. (`Scene3D`
+  keeps an *intentional* `LargeClass` suppress: its remaining entity-sync + effect-dispatch bulk is irreducibly
+  bound to the three.js groups — relocating it behind a ~30-member API would be worse.)
 - **Reduce magic numbers** — name them / fold into `Config` where it aids clarity (detekt `MagicNumber` is
   off → a by-hand judgement pass, not a gate-chase).
 - **Tighten line length 140 → 120** — land *alongside* the class extractions (auto-wrapping inflates
   `LargeClass` otherwise).
 
-Optional small wins: *(the named code dupes are done — the two history panels' uPlot series config now
-shares `Sparkline`; the mod-type `getColorForLevel()` companions already share `LeveledColor.colorForLevel`.
-CSS design-token dedup is done too: glass/tint/blur literals route through `:root` vars, plus
-`--ui-active-fill` / `--ui-border-bright`. Deliberately left as literals: `border-radius` — the radii span
-2–10px, so one token can't dedup them without changing values, i.e. not a no-op.)*
-
 ## Perf — the big deferred lever
-- [ ] **three.js mesh instancing / merging / persistent sync.** `sync()` clear+recreates the portal / link /
-  field / NPC / agent groups **every tick** — that per-tick mesh construction (`setValueM4` / `Object3D` /
-  `generateUUID`) is the steady-state cost. **Landed (persistent diff-sync — reuse + reposition, add new, remove
-  gone, identical visuals):** **link meshes** (`syncLinks`) and **NPC spheres** (`syncNpcs` — was 722+ recreated
-  per tick on a big map). **Also landed (the actual 6-FPS killer a profile caught):** the AGENTS table was
-  re-encoding each row's action icon via `toDataURL` every frame (~82% of runtime CPU) and rebuilding off-screen
-  — now the data URL is cached per `ActionItem` and the rebuild is gated to the visible tab (same for PORTALS).
-  *Next, same pattern:* **portals** (poles/orbs/resos/mods — heaviest group, but entangled with
-  grow-in/hack/tumble animation → persist the static skeleton, keep the animated bits updating) and **fields**;
-  **world-gen** mesh construction (profile: portals 5.7s, agents+NPCs 8.4s of a 17.5s gen). True GPU
-  `InstancedMesh` stays blocked for links (custom `GlassShader` needs `instanceMatrix`) + resos (animation);
-  viable only for standard-material static parts if draw calls turn out to dominate. **Reprofile when things
-  change.** Tooling: `util/Profiler`, `?debug` `FpsMeter`, `./scripts/profiler.sh` (→ `build/profiles/*.cpuprofile`).
+- [ ] **three.js mesh instancing / merging / persistent sync.** `sync()` clear+recreates the portal / field /
+  agent groups **every tick** — that per-tick mesh construction (`setValueM4` / `Object3D` / `generateUUID`) is
+  the steady-state cost. The diff-sync pattern (reuse + reposition, add new, remove gone — already used for the
+  link meshes + NPC spheres) is the lever; extend it to **portals** (poles/orbs/resos/mods — the heaviest group,
+  but entangled with grow-in/hack/tumble animation → persist the static skeleton, keep the animated bits
+  updating) and **fields**. Also **world-gen** mesh construction (profiled: portals + agents/NPCs dominate a
+  ~17 s gen). True GPU `InstancedMesh` is blocked for links (custom `GlassShader` needs `instanceMatrix`) + resos
+  (per-frame animation); viable only for standard-material static parts if draw calls turn out to dominate.
+  **Reprofile when things change.** Tooling: `util/Profiler`, `?debug` `FpsMeter`, `./scripts/profiler.sh`
+  (→ `build/profiles/*.cpuprofile`).
 
 ## 3D / rendering
-- [ ] **Graphics-settings menu** *(group shipped).* The **Graphics** menu group exists with one persisted, live
-  toggle (`GraphicsPrefs`): **High-detail shadows** (2048↔1024 shadow map, live realloc). Levers to add:
-  **building cap**, **DEM exaggeration**; surface the group in onboarding too. *(Anti-aliasing is iceboxed — see
-  "Anti-aliasing (the terrain custom-layer problem)" below.)*
-- ~~**Buildings — per-building replacement.**~~ **Decided against — we always render BOTH sets (don't replace,
-  just add).** They come from different sources (ours = Overpass, MapLibre = its own tiles), never guaranteed
-  identical, and they *complement*: MapLibre's mesh has more detail; ours casts real sun shadows, backs the debris
-  collision mesh, and shakes on the title. Built it (centroid-match `setFeatureState` hide) then removed it —
-  hiding the matched twin also killed its visible out-of-phase shake. Clean `PARALLEL_MODE` stands: both render
-  (ours inset on top via `INSET_FRAC`/`ROOF_DROP_M`, MapLibre fills gaps) and both shake out-of-phase (ours
-  13.8 Hz vs `BuildingShake` 12 Hz = a busier shake).
-- [x] **Terrain-aware shatter ground.** *Done:* each blast lifts the shared cannon-es shard/digit floor to
-  `groundZ(blastLocation)` at spawn (`liftShardFloor` in shatterPortal/dropMods/dropResonator; the separate digit
-  floor in showDamageNumber), so debris rests on the local terrain instead of the play-area-centre height it was
-  pinned to. *Open:* a Menu **DEM-exaggeration** slider (pairs with the Graphics group); **per-blast separate
-  planes** only if simultaneous cross-terrain blasts ever visibly clash on the shared plane; **resample on
-  play-area move** (ties into the grand-game movable field).
+- [ ] **Graphics-settings menu — more levers.** The group exists (a live, persisted **High-detail shadows**
+  toggle via `GraphicsPrefs`). Add: a **building cap**, **DEM exaggeration**; surface the group in onboarding
+  too. (Anti-aliasing is iceboxed — see below.)
+- [ ] **Buildings — per-building replacement.** Both sets render (ours inset on top, MapLibre fills gaps); the
+  want is to hide **only** the MapLibre footprints we've meshed, so there's no overlap/z-fight. Needs matching
+  our synthetic centroid keys to MapLibre feature ids (the `openmaptiles` source carries `generateId`) — or a
+  custom building layer we fully own.
 - [ ] **Explosion shader tuning (optional).** GLSL consts in `XmpShaders.VOLUME_FRAG` (`NOISE_FREQ`,
   `DISPLACE`, `DENSITY_GAIN`, `STEPS`) + the rise/grow curve in `XmpBurst.update`; promote to uniforms if the
   fireball needs frequent live tuning.
@@ -85,23 +63,20 @@ CSS design-token dedup is done too: glass/tint/blur literals route through `:roo
 
 ## Onboarding
 - [ ] **Map-size per-preset tuning + dynamic field.** Presets are km²-based (Tiny 0.1 · Small 0.2 default ·
-  Mid 0.5 · Large 1 · Giant 2; Large + Giant warned at ≥ 1 km²) with sub-linear portal counts **and now
-  size-scaled rosters** (`Sim.suggestedAgents` mid-game seed 3·5·8·12·16; `Sim.maxAgents` cap 8·16·24·28·32;
-  recruiting grows rosters to the cap, nothing shrinks them). Remaining: (a) per-preset **runtime-FPS tuning**
-  on a real GPU (entity count, not build time, is the constraint — find where Large/Giant bite); (b) the
-  **dynamic grow/move the play area mid-game** idea (kept in mind during the SimRunner area-decoupling); (c)
-  the deferred **mesh instancing** is what would let the big presets run smoothly (see Perf).
+  Mid 0.5 · Large 1 · Giant 2; Large + Giant warned at ≥ 1 km²) with sub-linear portal counts + size-scaled
+  rosters. Remaining: (a) per-preset **runtime-FPS tuning** on a real GPU (entity count, not build time, is the
+  constraint — find where Large/Giant bite); (b) the **dynamic grow/move the play area mid-game** idea (kept in
+  mind during the SimRunner area-decoupling); (c) **mesh instancing** is what would let the big presets run
+  smoothly (see Perf).
 - [ ] **Location selection polish** — Home / nearest city via Geolocation; a curated preset list; Random;
   surface the free-form search on the onboarding screen (it only exists in-game now).
 - [ ] **Location list import / export** — let the player export the current location catalogue (the
   `Locations` registry / `resources/locations.json`) to a file and import a custom one, so curated place
-  sets can be shared without a rebuild. Builds on the already-externalized JSON catalogue + pure parser
+  sets can be shared without a rebuild. Builds on the externalized JSON catalogue + pure parser
   (`Locations.parse`); pairs with the shareable-scenario seam.
-- [ ] **Real per-stage load %.** The progress bars now move steadily (`LoadingOverlay` steady-creep + a
-  per-stage sub-bar) and the buildings rise across the whole load, but the single-async-wait stages
-  (map/street/shadow/grid) still **creep** rather than report true progress. Wire real signal where the APIs
-  allow it — esp. **flow-field computation** (per-portal field-build counts) and MapLibre tile-load events —
-  so those stages fill for real instead of estimating.
+- [ ] **Real per-stage load %.** The single-async-wait stages (map/street/shadow/grid) still **creep** rather
+  than report true progress. Wire real signal where the APIs allow it — esp. **flow-field computation**
+  (per-portal field-build counts) and MapLibre tile-load events — so those stages fill for real.
 - [ ] **Initial roster "roll"** — light flavour, not a gacha loop; ties to the icebox rarity tiers.
 - [ ] **`?debug` dev tooling — remaining.** Load-timing/profiling logs; and the handoff: run `?debug=capture`
   once in-browser, drop the downloaded `PresetFixtures.kt` into `src/jsTest/kotlin/util/` and commit, flipping
@@ -120,28 +95,23 @@ CSS design-token dedup is done too: glass/tint/blur literals route through `:roo
   on `agent/Skills`, exposed as a high-risk/high-reward QAction the AI learns to weigh. Drive the glyph count +
   hack duration off portal level (Ingress wiki: L1 = 1 glyph / 20 s … L8 = 5 glyphs / 15 s; perfect-hack +
   speed bonuses) via the `glyph/Glyph` enum; the TTS "glyph" tier already reads the sequence back.
-- [ ] **Recruiting items** *(recruiting is the agent's IDLE FALLBACK now — done when no gameplay action is left,
-  like EXPLORE; not a Q-slider, not a timed process).* `ActionSelector` routes an idle agent to recruit a nearby
-  NPC (`Recruiter.canRecruit`) else explore; only `Config.maxConcurrentRecruiters` (2) per faction recruit at
-  once so a quiet board doesn't show every agent recruiting. "Faster" = the per-meeting SUCCESS chance
-  (`recruitmentChance` = base × `progressSpeed` × anti-snowball `recruitFactor` × headroom × `Skills.recruitingFactor`),
-  not more agents recruiting. Still open: **items** (e.g. *beer* — a temporary recruit-success boost) on top.
+- [ ] **Recruiting items** — a temporary recruit-success boost item (e.g. *beer*) on top of the existing
+  idle-fallback recruiting (an idle agent recruits a nearby NPC, capped per faction; success scales with
+  progress speed + the per-agent `Skills.recruitingFactor`).
 - [ ] **Aim skill (XMP / Ultra-Strike accuracy)** — a per-agent skill: high-aim detonates **closer to portal
   centre** (max damage), low-aim lands **off-centre** (damage falls off with miss distance). Makes the
   small-radius Ultra-Strike reward good aim; feeds the damage calc + blast VFX origin; another AI lever.
-  *(Deferred for an eyes-on session: it rewrites the live combat-damage model + blast VFX origin — wants
-  visual + feel verification, not a blind change.)*
-- [ ] **Portal-mod follow-ups** (shields/heat-sinks/**multi-hacks**/viruses ship; link amps inactive):
-  ~~heat-sink instant cooldown reset~~ **(done — deploying a heat sink wipes `Portal.lastHacks`)**;
-  ~~a multi-hack mod~~ **(done — `Multihack.additionalHacks` raises `Portal.maxHacks`, now covered)**;
-  **activate link amps** (range/outbound/SBUL); the **Ultra-Strike** weapon + targeted mod-stripping honouring
-  shield `stickiness`; a **3D key** model; a per-game **drop-rate tuning UI** (`DropRates` is centralized —
-  Menu → Drop rates; `docs/MECHANICS.md`).
+  *(Wants an eyes-on session: it rewrites the live combat-damage model + blast VFX origin — verify visually.)*
+- [ ] **Portal-mod follow-ups** — **activate link amps** (range/outbound/SBUL); the **Ultra-Strike** weapon +
+  targeted mod-stripping honouring shield `stickiness`; a **3D key** model; a per-game **drop-rate tuning UI**
+  (`DropRates` is centralized — Menu → Drop rates; `docs/MECHANICS.md`). When drop rates become player-tunable,
+  also fold them into the training balance lock (`MatchSetup.useDefaultBalance`).
 
 ## Grand game — multiple locations & a living field *(big, exploratory)*
 - [ ] **Movable / expandable play field** — the playable area can **grow** or **shift** over a game (captured
-  territory / objectives push the boundary). Grid + flow-field + border + overlays already key off
-  `Sim.fieldRadius()` / `isInPlayArea`, so the field is the seam to make dynamic (re-mask + re-sample on change).
+  territory / objectives push the boundary). Grid + flow-field + border + overlays + the cannon-es shatter
+  ground already key off `Sim.fieldRadius()` / `isInPlayArea` / `groundZ`, so the field is the seam to make
+  dynamic (re-mask + re-sample on change).
 - [ ] **Multiple linked locations (a "grand game")** — run several real-world locations at once: **one focused
   sim** at full fidelity + **off-site locations in a simplified/abstract form** (aggregate MU/portal counts,
   cheap tick, no 3D) to bound cost. Locations connect (shared roster, cross-site links/objectives).
@@ -163,17 +133,13 @@ CSS design-token dedup is done too: glass/tint/blur literals route through `:roo
 ## AI-vs-AI (the payoff)
 **Fitness objective:** maximize **summed per-checkpoint MU** (sustained field area), not just final MU — a
 team effort to layer fields across the cycle. The net/LLM re-tunes the 17 sliders at checkpoint cadence; it
-does **not** replace the per-agent `ActionSelector`.
+does **not** replace the per-agent `ActionSelector`. (Training/eval is pinned to the shipped default balance via
+`MatchSetup.useDefaultBalance`, so champions are "one fits all".)
 
-- [x] **Lock training to the standard gameplay balance.** *Done:* `MatchSetup.useDefaultBalance` (default ON)
-  pins combat dynamics / progress speed / portal churn to the shipped `GameplayPrefs` defaults for each headless
-  match — `SimRunner` snapshots + restores the live values around the run. One canonical training target →
-  champions are "one fits all"; the menu sliders stay a play-time-only knob. *Remaining:* fold drop rates in
-  once they become player-tunable (the drop-rate UI item); `BalanceSweep` opts out (it drives `Config` itself).
 - [ ] **Rebake the champions (release prep).** Gameplay/balance has shifted since the baked **16×16** champion
-  was trained, so it's stale. Retrain against the now-locked standard balance and re-commit the genome
-  (`GenomeIO`/`NetStore`). Do this **after** the balance lock above and once gameplay tuning has settled — a
-  champion is only as good as the balance it learned. Fold in the **field-layering Linker nudge** above.
+  was trained, so it's stale. Retrain against the locked standard balance and re-commit the genome
+  (`GenomeIO`/`NetStore`). Do this once gameplay tuning has settled — a champion is only as good as the balance
+  it learned. Fold in the **field-layering Linker nudge** above.
 - [ ] **Grid fixtures** — infra is built (`GridFixture` RLE + `GridCapture` ?debug=capture +
   `PresetConnectivityTest`). Only the committed `PresetFixtures.kt` is missing: run `?debug=capture` once
   in-browser, drop the download into `src/jsTest/kotlin/util/`, commit. (Feeds the offline connectivity audit;
@@ -189,14 +155,12 @@ does **not** replace the per-agent `ActionSelector`.
   nets (the `inputs`/`outputs` dim check is the seed). Not needed pre-release while the layout churns.
 
 ## Under consideration (icebox)
-- **Anti-aliasing (the terrain custom-layer problem).** Not critical, deprioritized after three blind attempts
-  dead-ended (all reverted): (a) link segment count ("Smooth links") isn't edge AA and is imperceptible; (b)
-  MapLibre context `antialias` (MSAA) never reaches the three.js 3D layer because **terrain renders the custom
-  layer to an offscreen texture**; (c) **SSAA via live `setPixelRatio` desyncs the custom layer's screen-space**
-  (objects float/shift on toggle). When revisited, do it **hands-on in-browser**: likely construction-time SSAA
-  (`pixelRatio` at map creation, applied on reload — avoids the live-resize desync) verified visually, or an
-  FXAA post-process threaded into the terrain compositing. The Graphics menu group + `GraphicsPrefs` are in
-  place to host a working toggle.
+- **Anti-aliasing (the terrain custom-layer problem).** Deferred (not critical). Under 3D terrain MapLibre
+  renders the three.js custom layer to an offscreen texture, so the GL-context `antialias` (MSAA) never reaches
+  it; live `setPixelRatio` SSAA desyncs the layer's screen-space (objects shift on toggle). When revisited, do it
+  **hands-on in-browser**: likely **construction-time SSAA** (`pixelRatio` at map creation, applied on reload —
+  avoids the live-resize desync), or an **FXAA** post-process threaded into the terrain compositing. The Graphics
+  menu group + `GraphicsPrefs` are in place to host a working toggle.
 - **Mini-map (top-down, north-up, fields always visible).** A small fixed overlay that renders the play area
   from an **exact top-down** view that's **always facing north** — independent of the main 3D camera's pan/
   tilt/rotation — so the **control fields** (and portals/links) stay legible at a glance even while the main
@@ -245,3 +209,5 @@ does **not** replace the per-agent `ActionSelector`.
 - Keep `CLAUDE.md` + this file + `docs/` current as work lands; no overlapping info between them (future →
   here, shipped → FEATURES, how → ARCHITECTURE).
 - Desktop-only; do not invest in mobile support.
+</content>
+</invoke>
