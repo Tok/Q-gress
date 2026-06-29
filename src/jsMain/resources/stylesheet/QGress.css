@@ -252,28 +252,39 @@ html, body {
     text-align: right;
     vertical-align: bottom;
 }
-/* Fixed column widths so the table layout never shifts with content. Every column is pinned: the Action
-   and Portal cells (the last two) inherit the `.taRow td` ellipsis, so changing actions and long portal
-   names never resize the table — overlong portal names just truncate.
-   Columns: 1 XM, 2 AP, 3 Agent, 4 XMPs, 5 US, 6 Resos, 7 Cubes, 8 Shields, 9 Heat, 10 MHack,
-   11 Virus, 12 Keys, 13 Uniq, 14 m/s, 15 Action, 16 Portal. (The PORTALS table reuses .taTable but
-   has only 9 columns, so the 10+ widths below are agents-only — they no-op there.) */
-.taTable th:nth-child(1), .taTable td:nth-child(1) { width: 52px; }
+/* Fixed column widths (table-layout: fixed) so the layout never shifts with content. The base widths below
+   are the AGENTS table; the PORTALS table (.taPortals, fewer + different columns) overrides them further down,
+   so the two no longer have to share a single positional width set.
+   AGENTS columns: 1 XM, 2 AP, 3 Lvl, 4 Agent, 5 XMPs, 6 US, 7 Resos, 8 Cubes, 9 Shields, 10 Heat, 11 MHack,
+   12 Virus, 13 Keys, 14 Uniq, 15 m/s, 16 Action, 17 Portal. */
+.taTable th:nth-child(1), .taTable td:nth-child(1),
 .taTable th:nth-child(2), .taTable td:nth-child(2) { width: 52px; }
-.taTable th:nth-child(3), .taTable td:nth-child(3) { width: 112px; }
-.taTable th:nth-child(4), .taTable td:nth-child(4),
+.taTable th:nth-child(3), .taTable td:nth-child(3) { width: 40px; } /* Lvl */
+.taTable th:nth-child(4), .taTable td:nth-child(4) { width: 112px; } /* Agent */
 .taTable th:nth-child(5), .taTable td:nth-child(5),
 .taTable th:nth-child(6), .taTable td:nth-child(6),
-.taTable th:nth-child(7), .taTable td:nth-child(7) { width: 58px; }
-.taTable th:nth-child(8), .taTable td:nth-child(8) { width: 46px; }
-.taTable th:nth-child(9), .taTable td:nth-child(9),
+.taTable th:nth-child(7), .taTable td:nth-child(7),
+.taTable th:nth-child(8), .taTable td:nth-child(8) { width: 58px; }
+.taTable th:nth-child(9), .taTable td:nth-child(9) { width: 46px; }
 .taTable th:nth-child(10), .taTable td:nth-child(10),
-.taTable th:nth-child(11), .taTable td:nth-child(11) { width: 44px; }
-.taTable th:nth-child(12), .taTable td:nth-child(12),
-.taTable th:nth-child(13), .taTable td:nth-child(13) { width: 40px; }
-.taTable th:nth-child(14), .taTable td:nth-child(14) { width: 48px; }
-.taTable th:nth-child(15), .taTable td:nth-child(15) { width: 96px; }
-.taTable th:nth-child(16), .taTable td:nth-child(16) { width: 150px; }
+.taTable th:nth-child(11), .taTable td:nth-child(11),
+.taTable th:nth-child(12), .taTable td:nth-child(12) { width: 44px; }
+.taTable th:nth-child(13), .taTable td:nth-child(13),
+.taTable th:nth-child(14), .taTable td:nth-child(14) { width: 40px; }
+.taTable th:nth-child(15), .taTable td:nth-child(15) { width: 48px; } /* m/s */
+.taTable th:nth-child(16), .taTable td:nth-child(16) { width: 96px; } /* Action */
+.taTable th:nth-child(17), .taTable td:nth-child(17) { width: 150px; } /* Portal */
+
+/* PORTALS table columns: 1 Portal, 2 Faction, 3 Lvl, 4 Health, 5 Resos, 6 Mods, 7 Links, 8 Fields, 9 Owner. */
+.taTable.taPortals th:nth-child(1), .taTable.taPortals td:nth-child(1) { width: 140px; } /* Portal name */
+.taTable.taPortals th:nth-child(2), .taTable.taPortals td:nth-child(2) { width: 64px; } /* Faction */
+.taTable.taPortals th:nth-child(3), .taTable.taPortals td:nth-child(3) { width: 40px; } /* Lvl */
+.taTable.taPortals th:nth-child(4), .taTable.taPortals td:nth-child(4),
+.taTable.taPortals th:nth-child(5), .taTable.taPortals td:nth-child(5) { width: 56px; } /* Health, Resos */
+.taTable.taPortals th:nth-child(6), .taTable.taPortals td:nth-child(6) { width: 52px; } /* Mods */
+.taTable.taPortals th:nth-child(7), .taTable.taPortals td:nth-child(7),
+.taTable.taPortals th:nth-child(8), .taTable.taPortals td:nth-child(8) { width: 48px; } /* Links, Fields */
+.taTable.taPortals th:nth-child(9), .taTable.taPortals td:nth-child(9) { width: 120px; } /* Owner */
 .taInvBars {
     display: inline-flex;
     align-items: flex-end;

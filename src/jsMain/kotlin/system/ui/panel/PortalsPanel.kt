@@ -116,7 +116,7 @@ object PortalsPanel {
         if (tbody != null) return
         if (document.body == null) return
         val container = el("div", "topAgents")
-        val table = el("table", "taTable")
+        val table = el("table", "taTable taPortals") // taPortals → its own column widths (not the AGENTS set)
         val head = el("tr", "taHead")
         COLS.forEachIndexed { idx, c ->
             val th = el("th", "taHeadCell")
