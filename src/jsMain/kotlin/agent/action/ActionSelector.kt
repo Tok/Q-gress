@@ -50,11 +50,11 @@ object ActionSelector {
     // to do" — there's almost always a portal worth travelling to: one this agent can still hack (off cooldown,
     // not burnt out), an enemy portal to attack (with XMPs in hand), or a neutral one to capture. Only when NONE
     // of those exist anywhere is the agent genuinely idle (the board's burnt out / nothing to take / no XMPs).
-    private fun hasWorkToSeek(agent: Agent): Boolean = (!agent.inventory.isFull() && World.allPortals.any { it.canHack(agent) }) ||
-        // somewhere to hack/farm
-        (agent.inventory.findXmps().isNotEmpty() && Movement.hasEnemyPortals(agent)) ||
-        // an enemy to attack
-        Movement.hasUncapturedPortals() // a neutral portal to capture
+    private fun hasWorkToSeek(agent: Agent): Boolean {
+        val canHackSomewhere = !agent.inventory.isFull() && World.allPortals.any { it.canHack(agent) }
+        val canAttackSomewhere = agent.inventory.findXmps().isNotEmpty() && Movement.hasEnemyPortals(agent)
+        return canHackSomewhere || canAttackSomewhere || Movement.hasUncapturedPortals() // …or a neutral to capture
+    }
 
     // Idle behaviour. FIRST: if there's real work to seek, GO FIND IT ([moveElsewhere] heads to a productive
     // portal) — agents shouldn't filler-recruit/discover while there are portals to hack/capture/attack (this is
