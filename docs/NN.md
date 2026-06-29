@@ -24,8 +24,9 @@ slider vector stays the action substrate — the net does **not** replace per-ag
   re-evaluated **once per checkpoint** (installing it costs no more per-action than a slider read).
 - **`Evolution`** — a resumable `(μ+λ)` GA (elitism + gaussian mutation; the env is non-differentiable and
   the reward episodic, so ES, not gradient RL). Fitness = mean **summed per-checkpoint MU margin** (own −
-  foe) over K seeded `SimRunner` matches. Its RNG (a trainer-local instance) is independent of the global
-  `Rng` (which `SimRunner` reseeds per
+  foe) over K seeded `SimRunner` matches, each pinned to the **shipped default balance** (`MatchSetup.useDefaultBalance`,
+  ignoring the player's live menu sliders) so champions train against one canonical target. Its RNG (a trainer-local
+  instance) is independent of the global `Rng` (which `SimRunner` reseeds per
   match) → fully deterministic given (grid, seed, config). `Evolution.Session.stepGenome()` scores one
   genome at a time so a UI can show live progress; `train()` loops it.
 - **`GenomeIO` / `NetStore` / `Champion`** — JSON encode/decode of genome + arch + fitness; persistence in
@@ -51,8 +52,9 @@ slider vector stays the action substrate — the net does **not** replace per-ag
 ## Open questions / next
 - ES variant (CMA-ES vs the current GA), a self-play **league + Hall-of-Fame** (the baked champion is the
   current opponent).
-- **Fitness shaping**: pure MU-margin can rediscover the recruit-rush degenerate — reward *interesting*
-  play (lead changes / field layering) instead.
+- **Fitness shaping**: pure MU-margin can settle on a dull optimum (e.g. turtle-and-hack-farm) — reward
+  *interesting* play (lead changes / field layering) instead. (Recruiting is no longer a lever here: it's a
+  capped idle-fallback, not one of the 17 sliders, so the net can't recruit-rush.)
 - A **library of trained nets per `NetArch`** (so the onboarding per-arch pick is meaningful).
 - Real line-coverage once the functional core moves to `commonMain` + a `jvm()` test target.
 
