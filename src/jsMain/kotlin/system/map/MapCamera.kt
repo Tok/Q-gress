@@ -38,7 +38,8 @@ object MapCamera {
      * grid anchor at the framed display zoom.
      */
     fun goHome(durationMs: Int = 900) {
-        focusKey = null // Home drops any agent/portal focus → back to the play-area centre of attention
+        val hadFocus = focusKey != null // Home drops any agent/portal focus → back to the play-area centre
+        focusKey = null
         followActive = false
         val center = MapController.anchorCenter ?: return
         val opts: dynamic = js("({ pitch: 0.0, bearing: 0.0 })")
@@ -48,6 +49,12 @@ object MapCamera {
         opts.padding = js("({ top: 0.0, bottom: 0.0, left: 0.0, right: 0.0 })") // clear the build-time centre lift
         MapController.initMap?.asDynamic()?.flyTo(opts)
         MapController.map?.asDynamic()?.flyTo(opts)
+        // We were focused (so the auto-cam legs stood down) → restart the play-area orbit once the Home flight lands.
+        if (hadFocus && autoCamActive) {
+            autoCamGen++
+            val gen = autoCamGen
+            window.setTimeout({ autoCamLeg(gen) }, durationMs)
+        }
     }
 
     /** Zoom the live map by [delta] levels with a short ease (keyboard zoom: PageUp/PageDown). */
@@ -236,37 +243,38 @@ object MapCamera {
      * then EITHER keep the auto-cam orbiting it (if on) OR track it per-frame ([updateFollow], if off). A user
      * pan/rotate/tilt drops the focus ([cancelAutoCamFromUser]). Clicking a name in the HUD tables calls this.
      */
+    private const val FOLLOW_ORBIT_DEG = 0.06 // per-frame bearing spin while auto-cam-orbiting a focus (gentle)
+
     fun focusOn(id: String?) {
         focusKey = id
-        val resumeAuto = autoCamActive
-        if (autoCamActive) setAutoCam(false) // pause the drift for a clean cam-in (the proven path); resumed below
-        followActive = false // the cam-in fly owns the camera until it lands (setAutoCam(false) may have set this)
-        stopCamera()
+        followActive = false // the cam-in fly owns the camera until it lands; THEN per-frame tracking arms
+        stopCamera() // stop the play-area drift; its chained leg dies on its next tick (focusKey != null below)
         val opts: dynamic = js("({})")
         opts.center = focusCenter()
         opts.zoom = MapController.displayZoom() + FOCUS_ZOOM_BOOST
         opts.duration = FOCUS_MS
         MapController.initMap?.asDynamic()?.flyTo(opts)
         MapController.map?.asDynamic()?.flyTo(opts)
-        // When the cam-in lands: resume the auto-cam (it now orbits the focus via [focusCenter]) or, if it was off,
-        // arm the per-frame track. Skip if the focus was cleared/changed mid-flight.
-        window.setTimeout({
-            if (focusKey != id) return@setTimeout
-            if (resumeAuto) setAutoCam(true) else followActive = true
-        }, FOCUS_MS)
+        window.setTimeout({ if (focusKey == id) followActive = true }, FOCUS_MS)
     }
 
     /**
-     * Per-frame (from [system.ui.HudRenderer.redraw]): with the auto-cam OFF, keep both maps centred on the
-     * focused agent/portal as it moves. No-op while the auto-cam is on (its legs do the centring) or nothing is
-     * focused. A user gesture clears the focus first, so this stops the instant the player grabs the map.
+     * Per-frame (from [system.ui.HudRenderer.redraw]): keep both maps centred on the focused agent/portal as it
+     * moves — TIGHT tracking, not the auto-cam's 27 s re-centre. When the auto-cam is on it also spins the bearing a
+     * touch each frame, so the camera ORBITS the focus (the auto-cam legs stand down while focused, so they can't
+     * fight this per-frame centring). No-op until a cam-in lands or once the focus is cleared (a user grab / Home).
      */
     fun updateFollow() {
-        if (autoCamActive || !followActive || focusKey == null) return
-        val center = focusCenter() // resolves the live position (clears + returns the anchor if the entity is gone)
+        if (!followActive || focusKey == null) return
+        val center = focusCenter() // live position (clears focus + returns the anchor if the entity is gone)
         if (focusKey == null) return // vanished this very frame → don't yank a now-free view to the anchor
         MapController.initMap?.asDynamic()?.setCenter(center)
         MapController.map?.asDynamic()?.setCenter(center)
+        if (autoCamActive) {
+            val bearing = (MapController.referenceMap()?.getBearing() ?: 0.0) + FOLLOW_ORBIT_DEG
+            MapController.initMap?.let { it.setBearing(bearing) }
+            MapController.map?.let { it.setBearing(bearing) }
+        }
     }
 
     /**
@@ -284,7 +292,8 @@ object MapCamera {
     // drives both maps like goHome; [gen] guards a stale chain (toggled off→on) outliving its turn.
     private fun autoCamLeg(gen: Int) {
         if (!autoCamActive || gen != autoCamGen) return
-        val center = focusCenter() ?: return // orbit the selected agent/portal, or the play-area centre if none
+        if (focusKey != null) return // a focus is orbited per-frame by [updateFollow] — the 27 s ease would fight it
+        val center = focusCenter() ?: return // the play-area centre (no focus here)
         val ref = MapController.referenceMap() ?: return
         val turn = (50.0 + Rng.random() * 130.0) * (if (Rng.randomBool()) 1.0 else -1.0)
         val opts: dynamic = js("({})")
