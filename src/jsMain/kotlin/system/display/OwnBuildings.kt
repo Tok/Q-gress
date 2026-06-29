@@ -44,17 +44,6 @@ object OwnBuildings {
      */
     const val PARALLEL_MODE = true
 
-    /**
-     * **Per-building replacement** (the parallel-mode follow-up): in [PARALLEL_MODE], hide ONLY the MapLibre
-     * footprints we've meshed (matched by centroid via [coversGeometry]) — so our mesh is the sole visual on
-     * those (no overlap / z-fight) while MapLibre still fills the gaps we didn't mesh. [system.map.MapController]
-     * does the `setFeatureState(hidden)` + the feature-state-aware opacity. Flip to `false` for the old look
-     * (both sets drawn, ours inset on top). The match is by quantized centroid cell (±[MATCH_TOL]) — widen the
-     * tolerance if too many MapLibre twins remain visible, tighten it if the wrong footprints vanish.
-     */
-    const val PER_BUILDING_REPLACE = true
-    private const val MATCH_TOL = 1 // centroid-cell tolerance (~±1 m) absorbing vector-tile-simplification drift
-
     const val COLOR = "#333333"
     const val OPACITY = 0.65 // a touch more see-through than MapLibre's by default (the action reads better)
 
@@ -309,23 +298,6 @@ object OwnBuildings {
         val cx = (lng * 100000.0).toInt()
         val cy = (lat * 100000.0).toInt()
         return "$cx,$cy"
-    }
-
-    /** Have we meshed a building at [geometry]'s footprint (its centroid cell, ±[MATCH_TOL])? Lets MapController
-     *  hide the matching MapLibre extrusion (per-building replacement). [geometry] is GeoJSON (Polygon/MultiPolygon),
-     *  same shape [outerRing] already parses — so MapLibre's `querySourceFeatures` features join to our [keys]. */
-    fun coversGeometry(geometry: dynamic): Boolean {
-        if (!PER_BUILDING_REPLACE) return false
-        val ring = outerRing(geometry) ?: return false
-        val (lng, lat) = ringCentreLngLat(ring)
-        val cx = (lng * 100000.0).toInt()
-        val cy = (lat * 100000.0).toInt()
-        for (dx in -MATCH_TOL..MATCH_TOL) {
-            for (dy in -MATCH_TOL..MATCH_TOL) {
-                if ("${cx + dx},${cy + dy}" in keys) return true
-            }
-        }
-        return false
     }
 
     private fun isArr(v: dynamic): Boolean = js("Array.isArray")(v) as Boolean

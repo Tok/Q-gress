@@ -36,7 +36,6 @@ external object MapLibre {
         fun unproject(point: dynamic): dynamic
         fun getCenter(): dynamic
         fun querySourceFeatures(sourceId: String, parameters: dynamic = definedExternally): dynamic
-        fun setFeatureState(feature: dynamic, state: dynamic) // {source,sourceLayer,id} ← {…}: per-feature render state
         fun isMoving(): Boolean
         fun loaded(): Boolean
         fun addSource(id: String, source: dynamic)
