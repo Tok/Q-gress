@@ -290,10 +290,13 @@ object TopAgentsPanel {
         thead.appendChild(head)
         table.appendChild(thead)
         val newBody = el("tbody", "")
+        // Delegated name-click. The body is rebuilt every frame, so the pressed cell is replaced before mouseup —
+        // the browser then fires `click` on the tbody (the common ancestor), NOT the cell, so ev.target is useless.
+        // Resolve the element currently AT the click point instead.
         newBody.onclick = { ev ->
-            (ev.target as? Element)?.let { onNameClick(it) }
+            document.elementFromPoint(ev.clientX.toDouble(), ev.clientY.toDouble())?.let { onNameClick(it) }
             null
-        } // delegated name-click
+        }
         table.appendChild(newBody)
         container.appendChild(table)
         Footer.tab("agents").appendChild(container) // AGENTS footer tab (full width)
