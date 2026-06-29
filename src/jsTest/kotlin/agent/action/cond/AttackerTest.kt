@@ -2,6 +2,7 @@ package agent.action.cond
 
 import Factory
 import agent.Faction
+import config.Config
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -43,6 +44,30 @@ class AttackerTest {
                 Attacker.isTargetValid(agent),
                 "a portal with no resos left is dead — abandon it so the agent re-selects (was an infinite loop)",
             )
+        }
+    }
+
+    // The 0-XM sibling of the dead-target loop: a well-stocked agent drained to 0 XM can't fire a single burst,
+    // so ATTACK must NOT be actionable — else it re-enters ATTACK every tick firing nothing (the reported freeze).
+    @Test
+    fun outOfXmIsNotActionable() = with(Factory) {
+        Faction.values().forEach { faction ->
+            val agent = agent(faction)
+            agent.actionPortal = portal(faction.enemy())
+            repeat(Config.attackXmpThreshold() + 2) { agent.inventory.items.add(xmpBurster()) }
+            agent.xm = 0
+            assertFalse(Attacker.isActionPossible(agent), "a 0-XM agent can't fire — must not stay committed to ATTACK")
+        }
+    }
+
+    @Test
+    fun stockedAgentWithXmCanAttack() = with(Factory) {
+        Faction.values().forEach { faction ->
+            val agent = agent(faction)
+            agent.actionPortal = portal(faction.enemy())
+            repeat(Config.attackXmpThreshold() + 2) { agent.inventory.items.add(xmpBurster()) }
+            agent.xm = 100_000
+            assertTrue(Attacker.isActionPossible(agent), "enough XMPs + XM to fire → ATTACK is actionable")
         }
     }
 }
