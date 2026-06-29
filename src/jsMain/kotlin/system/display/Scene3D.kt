@@ -1057,15 +1057,15 @@ object Scene3D {
         val id = "agent:${agent.name}"
         val color = if (selected == id) HIGHLIGHT_COLOR else agent.faction.color
         val sphere = Three.Mesh(headGeo, Materials.solid(color))
-        // A head-bob = a visible "I'm active" cue so a standing/roaming agent never reads as stuck: recruiting
-        // (standing with an NPC) bobs hard — a little "jumping" exchange — and exploring/discovering bobs lighter.
-        val bobAmp = when (agent.action.item) {
-            ActionItem.RECRUIT -> HEAD_R * 2.6
-            ActionItem.EXPLORE -> HEAD_R * 1.1
-            else -> 0.0
-        }
-        val bob = abs(sin(animMs() / 130.0)) * bobAmp
-        place(sphere.asDynamic(), x, y, gz + HEAD_Z + bob)
+        // Idle-fallback flavour — both pill-less (see ActionItem.isFallback), each with its OWN tell so a stationary
+        // agent never reads as stuck and the two are distinct at a glance: recruiting "jumps" in place (a hard
+        // vertical bob — a lively exchange with the NPC); discovering "runs a small circle" (a horizontal orbit —
+        // scouting the ground). Every other action sits still (its coin says what it's doing). Render-only: the sim
+        // position is untouched, so this never affects gameplay/pathing.
+        val phase = animMs() / 130.0
+        val bob = if (agent.action.item == ActionItem.RECRUIT) abs(sin(phase)) * HEAD_R * 2.6 else 0.0
+        val circleR = if (agent.action.item == ActionItem.EXPLORE) HEAD_R * 1.5 else 0.0
+        place(sphere.asDynamic(), x + cos(phase) * circleR, y + sin(phase) * circleR, gz + HEAD_Z + bob)
         tag(sphere.asDynamic(), id)
         agentsGroup.add(sphere)
         // Action indicator: a 3D coin/wheel (icon on the round faces) hovering above the head — EXCEPT for the idle
