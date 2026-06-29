@@ -251,14 +251,6 @@ object Sound {
         playSound(osc, createPanner(pos), 0.12, dur)
     }
 
-    /** Recruiting failed: a short, gentle descending blip — the NPC declined the pitch. */
-    fun playRecruitFail(pos: Pos) {
-        if (isMuted()) return
-        val dur = 0.2
-        val osc = createExponentialRampOscillator(OscillatorType.SINE, 340.0, 190.0, dur) // a soft "no thanks"
-        playSound(osc, createPanner(pos), 0.09, dur)
-    }
-
     /** A soft marble "tup": a short sine with a quick downward pitch drop + a gentle attack/decay envelope
      *  (no hard click) — the NPC dropping in. Quiet + rounded so a fast world-gen crowd of these doesn't
      *  machine-gun sharp pings. */

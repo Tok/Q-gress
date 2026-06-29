@@ -75,10 +75,9 @@ object Recruiter : ConditionalAction {
             World.pendingAgents.add(newAgent) // flushed after the agent loop (avoids CME)
             Sound.playRecruitSuccess(agent.pos)
             Tts.announceRecruitment(agent.faction) // VERBOSE TTS
-        } else {
-            Com.addMessage("A recruit turned down the ${agent.faction.nickName}s.", Com.Importance.MINOR, agent.faction.color)
-            Sound.playRecruitFail(agent.pos)
         }
+        // No fail sound or COM message: with capped recruiters cycling through NPCs, declines resolve many times per
+        // second and would machine-gun the blip + spam the feed. Only success (a rarer, meaningful event) is announced.
         agent.recruitTargetId = null
         agent.action.end()
         return agent
