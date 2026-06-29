@@ -47,10 +47,9 @@ object TopAgentsPanel {
     }
 
     private val COLS = listOf(
-        Col("XM", num = { it.xm.toDouble() }, render = { a -> cell(a.xm.toString(), "taNum") }),
-        Col("AP", num = { it.ap.toDouble() }, render = { a -> cell(a.ap.toString(), "taNum") }),
         Col("Lvl", num = { it.getLevel().toDouble() }, render = { a -> cell("L${a.getLevel()}", "taNum") }),
         Col("Agent", str = { it.faction.abbr + it.name }, render = { a -> nameCell(a) }),
+        Col("AP", num = { it.ap.toDouble() }, render = { a -> cell(a.ap.toString(), "taNum") }),
         Col("XMPs", num = {
             it.inventory.findXmps().size.toDouble()
         }, render = { a -> invCell(a.inventory.findXmps(), MAX_DEPLOY_LEVEL, ::deployColor) }),
@@ -75,6 +74,8 @@ object TopAgentsPanel {
         Col("Virus", num = { it.inventory.findViruses().size.toDouble() }, render = { a -> virusCell(a) }),
         Col("Keys", num = { it.inventory.keyCount().toDouble() }, render = { a -> cell(a.inventory.keyCount().toString(), "taNum") }),
         Col("Uniq", num = { uniqueKeys(it).toDouble() }, render = { a -> cell(uniqueKeys(a).toString(), "taNum") }),
+        Col("Inv", num = { it.inventory.items.size.toDouble() }, render = { a -> invLimitCell(a) }),
+        Col("XM", num = { it.xm.toDouble() }, render = { a -> cell(a.xm.toString(), "taNum") }),
         Col("m/s", num = { speedMs(it) }, render = { a -> speedCell(a) }),
         Col("Action", str = { actionLabel(it.action.item) }, render = { a -> actionCell(a) }),
         Col("Portal", str = { it.actionPortal.name }, render = { a -> cell(clip(a.actionPortal.name, PORTAL_NAME_MAX), "taCell") }),
@@ -302,6 +303,15 @@ object TopAgentsPanel {
         container.appendChild(table)
         Footer.tab("agents").appendChild(container) // AGENTS footer tab (full width)
         tbody = newBody
+    }
+
+    // Inventory fill: carried items / the cap (authentic Ingress = a flat 2000, not level-based). Reddens at the
+    // cap — that's when hacking stops (Hacker.isActionPossible) until the agent spends/recycles.
+    private fun invLimitCell(agent: Agent): HTMLElement {
+        val used = agent.inventory.items.size
+        return cell("$used/${Config.maxInventory}", "taNum").also {
+            if (used >= Config.maxInventory) it.style.color = "#e2674a" // at cap → can't hack for more
+        }
     }
 
     private fun cell(text: String, cls: String): HTMLElement {

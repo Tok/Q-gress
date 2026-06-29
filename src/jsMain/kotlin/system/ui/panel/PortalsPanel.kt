@@ -35,9 +35,9 @@ object PortalsPanel {
     }
 
     private val COLS = listOf(
-        Col("Portal", str = { it.name }, render = { p -> nameCell(p) }),
-        Col("Faction", str = { factionAbbr(it) }, render = { p -> factionCell(p) }),
         Col("Lvl", num = { it.getLevel().toInt().toDouble() }, render = { p -> cell("L${p.getLevel().toInt()}", "taNum") }),
+        Col("Faction", str = { factionAbbr(it) }, render = { p -> factionCell(p) }),
+        Col("Portal", str = { it.name }, render = { p -> nameCell(p) }),
         Col("Health", num = { it.calcHealth().toDouble() }, render = { p -> cell("${p.calcHealth()}%", "taNum") }),
         Col("Resos", num = { it.numberOfResosLeft().toDouble() }, render = { p -> cell("${p.numberOfResosLeft()}/$MAX_RESOS", "taNum") }),
         Col("Mods", num = { it.modCount().toDouble() }, render = { p -> cell("${p.modCount()}/$MAX_MODS", "taNum") }),
