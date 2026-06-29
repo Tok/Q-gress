@@ -17,7 +17,10 @@ data class ActionItem(val text: String, val durationSeconds: Int, val qName: Str
         val MOVE = ActionItem("moving", 60, "Move")
         val WAIT = ActionItem("waiting", 10, "Wait")
         val RECHARGE = ActionItem("recharging", 30, "Recharge")
-        val RECRUIT = ActionItem("recruiting", 10, "Recruit") // short "meeting" after walking up (system-driven — see Recruiter)
+
+        // The "meeting" after walking up (system-driven — see Recruiter); long so each recruit is a visible
+        // commitment, with success rolled once at the end (Config.recruitmentBaseChance scaled to match).
+        val RECRUIT = ActionItem("recruiting", 100, "Recruit")
         val EXPLORE = ActionItem("exploring", 300, "Explore")
         val RECYCLE = ActionItem("recycling", 30, "Recycle")
         val HACK = ActionItem("hacking", 10, "Hack")

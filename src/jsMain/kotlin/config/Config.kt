@@ -29,7 +29,10 @@ object Config {
     // Per-meeting SUCCESS chance at an empty roster: scaled live by [progressSpeed] (the "make it faster" lever),
     // the anti-snowball [agent.Balance.recruitFactor], roster headroom (→0 at the cap) + the recruiter's aptitude.
     // Kept low so rosters fill gradually even at x1 (recruiting was too fast — cut from 0.3 → 0.06 → 0.005, ~60× total).
-    var recruitmentBaseChance = 0.005
+    // The chance is rolled ONCE per completed meeting, so it scales inversely with the meeting length (RECRUIT
+    // duration): we lengthened the meeting 10× (10 → 100 s) and raised this 10× (0.005 → 0.05) to match, keeping
+    // the net fill rate ~constant while each meeting is a longer, more visible commitment (less pill churn).
+    var recruitmentBaseChance = 0.05
 
     // Cap on how many agents per faction recruit AT ONCE — the rest of the idle agents explore instead, so a quiet
     // board (everything burnt out) doesn't show EVERY agent recruiting. Recruiting completes + frees a slot.
