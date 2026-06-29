@@ -117,7 +117,7 @@ deliberately gentle so neither faction snowballs.
   — so a quiet board never shows every agent recruiting. Free (no XM).
 - **How:** an idle agent walks to the **nearest** NPC; on meeting it rolls success
   `recruitmentChance = base × Progress-speed × Balance.recruitFactor × (1 − rosterFill) × Skills.recruitingFactor`
-  (`Config.recruitmentBaseChance = 0.005`). To recruit faster you raise the **success chance** (Progress speed),
+  (`Config.recruitmentBaseChance = 0.05`, rolled once per **100 s** meeting). To recruit faster you raise the **success chance** (Progress speed),
   not the number of recruiters. A successful recruit converts that NPC into the new agent **at its own position**
   (`Agent.create(at = npc.pos)`) — it isn't deleted while a fresh agent spawns elsewhere.
 - **Anti-snowball (`Balance.recruitFactor`):** the per-meeting success chance scales by
@@ -131,11 +131,13 @@ deliberately gentle so neither faction snowballs.
   agents recruit and is only refilled once it reaches `Config.MIN_NONFACTION` (30), so a long game thins the
   crowd but never runs out of recruits.
 
-## Portal discovery & removal — `system/Cycle.managePortalDensity`
-Portals are **discovered and removed** by a neutral, density-driven *system* process (every checkpoint),
-not an agent action — discovering a portal helps no faction, so it made a dull behaviour slider (there is no
-`EXPLORE` action). The count converges
-toward `Config.targetPortals()` (≈ 2.5 × the onboarding `startPortals`, capped at `maxPortals` 89):
+## Portal discovery & removal — `agent/action/cond/Discoverer.kt`
+Portals are **discovered and removed** by the agent **discovery** idle action — a neutral, density-driven
+process driven by idle agents (it replaced the old per-checkpoint `Cycle.managePortalDensity`). Discovering
+a portal helps no faction, so it's not a behaviour slider; it's what an idle agent does on a wander's
+**arrival** (the sibling of recruiting — see [ACTIONS.md](ACTIONS.md) for the idle-decision machine). It
+self-throttles: a busy board churns little, a sparse one floods discovery and fills fast. The count
+converges toward `Config.targetPortals()` (≈ 2.5 × the onboarding `startPortals`, capped at `maxPortals` 89):
 - `d = count / target` (1.0 at target). `createChance ∝ (1 − d/2)`, `removeChance ∝ (d/2)` (× `Config.
   portalChurnRate`) — so well below target discovery dominates (~4:1 near empty), at target it's ~1:1, and
   above it removal wins. Equilibrium settles a bit *below* target because combat also destroys portals

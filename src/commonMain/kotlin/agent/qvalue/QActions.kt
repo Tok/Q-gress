@@ -5,8 +5,9 @@ object QActions {
     val MOVE_ELSEWHERE = QValue("move", 0.01, "move elsewhere")
 
     // Retired sliders: RECRUIT and EXPLORE — both are the agent's IDLE FALLBACK now (done when no gameplay action
-    // is left, see agent.action.ActionSelector / Recruiter), not tunable cranks. Both were dull/unfair to tune
-    // (recruiting especially was the dominant snowball). Portal DISCOVERY is a separate Cycle process (managePortalDensity).
+    // is left, see agent.action.ActionSelector + Recruiter / Discoverer), not tunable cranks. Both were dull/unfair
+    // to tune (recruiting especially was the dominant snowball). EXPLORE *is* portal discovery: on arrival it runs
+    // the density-driven portal create/remove (agent.action.cond.Discoverer — replaced the old Cycle churn tick).
     val RECYCLE = QValue("recycle", 1.0, "recycle items")
     val RECHARGE = QValue("recharge", 1.0, "recharge portals")
 

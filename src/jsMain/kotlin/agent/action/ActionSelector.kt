@@ -44,13 +44,18 @@ object ActionSelector {
         return idle(agent).invoke()
     }
 
-    // Idle behaviour (no productive action AT the agent's current portal). Recruiting is the LAST resort: only an
-    // agent already parked AT a portal with nothing to do (burnt out / fully built / hack on cooldown) recruits — and
-    // only a capped few per faction. An agent that ISN'T at a portal still has work to seek, so it heads off to FIND
-    // a portal ([moveElsewhere]) rather than recruit while there's hacking/capturing to be done. This keeps agents
-    // from recruiting at game-start (they spawn away from portals → go capture first). Both render coin-less.
+    // Idle behaviour (no productive action AT the agent's current portal) — the two coin-less fallbacks, then seek
+    // work. Recruiting is the LAST resort for an agent already parked AT a portal with nothing to do (burnt out /
+    // fully built / hack on cooldown). Otherwise a capped few DISCOVER (stroll to open ground → density-driven
+    // portal create/remove); the rest head off to FIND a portal ([moveElsewhere]) rather than idle while there's
+    // hacking/capturing to be done. Both caps keep agents from filler-ing at game-start (they spawn away from
+    // portals → go capture first), and a portal-less board still routes everyone to discovery via moveElsewhere.
     private fun idle(agent: Agent): () -> Agent = {
-        if (agent.isAtActionPortal() && Recruiter.canRecruit(agent)) Recruiter.performAction(agent) else agent.moveElsewhere()
+        when {
+            agent.isAtActionPortal() && Recruiter.canRecruit(agent) -> Recruiter.performAction(agent)
+            Discoverer.canDiscover(agent) -> Discoverer.performAction(agent)
+            else -> agent.moveElsewhere()
+        }
     }
 
     private fun doAnywhereAction(agent: Agent): Agent = act(agent, actionsForAnywhere(agent))

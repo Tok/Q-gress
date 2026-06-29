@@ -14,11 +14,18 @@ object Config {
     const val smurfQuitRate = 0.0
     const val factionChangeRate = 0.0 // 0 = no defections either (a defection shrinks a faction). Raise to re-enable.
 
-    // Density-driven portal churn (system/Cycle.managePortalDensity, every checkpoint). Portals are
-    // DISCOVERED and REMOVED as a neutral process that converges the count toward [targetPortals]: well below
-    // target, discovery ≫ removal (~4:1) so the board fills; at target, ~1:1; above, removal wins. Replaces
-    // the old agent EXPLORE action + cycle-end removePortals.
-    var portalChurnRate = 0.17 // per-checkpoint activity (chance scale for a create/remove); ~⅓ the old 0.5 (churn was too fast)
+    // Density-driven portal churn, driven by the agent DISCOVERY idle action ([agent.action.cond.Discoverer], on
+    // a wander's arrival). Portals are DISCOVERED and REMOVED as a neutral process that converges the count toward
+    // [targetPortals]: well below target, discovery ≫ removal (~4:1) so the board fills; at target, ~1:1; above,
+    // removal wins. The board self-limits at its walkable capacity regardless (Positions.hasPortalSpace gates
+    // creation). Per-DISCOVERY chance scale now (was per-checkpoint in the retired Cycle.managePortalDensity);
+    // discovery is bounded by [maxConcurrentDiscoverers], so this stays gentle.
+    var portalChurnRate = 0.17
+
+    // Cap on how many agents per faction DISCOVER (wander → density-driven portal create/remove) at once — the
+    // rest of the idle agents go seek work. A sparse/portal-less board still floods discovery via the wander
+    // fallback (see Discoverer.canDiscover), so the board bootstraps fast then settles to a gentle churn.
+    var maxConcurrentDiscoverers = 2
 
     /** Equilibrium portal count the churn converges toward — grows from [startPortals], capped at [maxPortals]. */
     fun targetPortals(): Int = ConfigMath.targetPortals(startPortals, maxPortals)

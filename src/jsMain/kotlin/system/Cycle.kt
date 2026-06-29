@@ -5,7 +5,6 @@ import agent.Faction
 import agent.action.ActionItem
 import config.Config
 import config.Dim
-import portal.Portal
 import portal.XmHeap
 import portal.XmMap
 import system.audio.Sound
@@ -45,7 +44,8 @@ enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>) {
                 logCheckpoint(enlMu, resMu)
                 spawnXm() // every checkpoint (not just cycle end) so agent XM is replenished mid-cycle
                 World.allPortals.toList().forEach { it.erodeByDominance() } // the leader's empire erodes → board reopens
-                managePortalDensity() // neutral portal discovery + removal, density-driven toward the target
+                // Portal discovery/removal is no longer a checkpoint tick — it's the agent DISCOVERY idle action now
+                // (agent/action/cond/Discoverer, on a wander's arrival); density-driven toward Config.targetPortals.
                 if (cp.isCycleEnd) {
                     removeFrogs()
                     removeSmurfs()
@@ -73,30 +73,6 @@ enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>) {
                     ),
                 ),
             )
-        }
-
-        // Neutral, density-driven portal churn (run every checkpoint). The board's portal count converges to
-        // [Config.targetPortals]: discovery dominates when sparse (~4:1 near empty), evens to ~1:1 at target,
-        // and removal dominates above it. d = count / target (1.0 at target); create fades as d rises, remove
-        // grows — they cross at the target. Helps no faction directly; it just keeps the map alive + bounded.
-        // The pure math lives in [ChurnMath]; this just supplies live World/Config state and acts on the result.
-        private fun managePortalDensity() {
-            val count = World.countPortals()
-            // No room to place a non-clipping portal → don't even try (no wasted attempt); roll the would-be
-            // discovery budget into REMOVAL instead, so a packed board thins out rather than stalling.
-            val hasSpace = count < Config.maxPortals && Positions.hasPortalSpace()
-            val (createChance, removeChance) =
-                ChurnMath.churnChances(count, Config.targetPortals(), Config.portalChurnRate, hasSpace)
-            if (hasSpace && Rng.random() < createChance) {
-                val discovered = Portal.createRandom()
-                World.allPortals.add(discovered)
-                Com.addMessage("A new portal $discovered was discovered.", Com.Importance.MAJOR, Com.NEUTRAL)
-            }
-            if (count > Config.minPortals && Rng.random() < removeChance) {
-                val gone = World.randomPortal()
-                gone.remove()
-                Com.addMessage("Portal $gone no longer exists.", Com.Importance.MAJOR, Com.NEUTRAL)
-            }
         }
 
         private fun removeAgents(agents: Set<Agent>, minCount: Int, maxCount: Int, fc: Boolean = false) {

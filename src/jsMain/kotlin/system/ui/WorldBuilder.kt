@@ -153,6 +153,7 @@ object WorldBuilder {
             createQSliders(World.userFactionOrThrow())
             Profiler.mark("agents+NPCs (${World.allAgents.size}+${World.allNonFaction.size})")
             GameLoop.start { Bootstrap.tick() }
+            World.portalDiscoveryEnabled = true // live game: idle agents churn the board (title sim turns this off)
             World.isReady = true
             console.log("[perf] WORLD READY") // headless profiler waits on this before the runtime window
             FpsMeter.start() // arms the FPS readout (menu-toggled display + ?debug console capture)

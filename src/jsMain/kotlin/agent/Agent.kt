@@ -6,6 +6,7 @@ import agent.action.ActionItem
 import agent.action.ActionSelector
 import agent.action.cond.Attacker
 import agent.action.cond.Deployer
+import agent.action.cond.Discoverer
 import agent.action.cond.Recruiter
 import agent.qvalue.QDestinations
 import config.Config
@@ -197,12 +198,18 @@ data class Agent(
         return this.copy(pos = next)
     }
 
-    // The no-idle stroll (ActionItem.EXPLORE): roam straight toward a nearby open-ground [destination],
-    // sweeping up stray XM on the way; end on arrival so the agent re-evaluates (likely able to act again).
+    // The discovery stroll (ActionItem.EXPLORE): roam straight toward a nearby open-ground [destination], sweeping
+    // up stray XM on the way. On ARRIVAL, [Discoverer.resolve] rolls the density-driven portal create/remove, then
+    // we re-select THIS tick (so the transitional WAIT from action.end never renders as a flashing pill).
     private fun wanderStep(): Agent {
-        if (!World.isReady || distanceToDestination() <= skills.inRangeSpeed()) {
+        if (!World.isReady) {
             action.end()
             return this
+        }
+        if (distanceToDestination() <= skills.inRangeSpeed()) {
+            Discoverer.resolve(this) // arrived → discover a new portal / find one gone (density-driven)
+            action.end()
+            return ActionSelector.doSomethingElse(this)
         }
         velocity = Movement.move(velocity, Movement.headingTo(pos, destination), skills.speed)
         return stepByVelocity()

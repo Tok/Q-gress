@@ -107,6 +107,7 @@ object TitleSim {
                 return
             }
             World.grid = grid
+            World.portalDiscoveryEnabled = false // the title arena is curated — agents may roam but not churn portals
             World.isReady = true
             MapController.enable3D()
             MapCamera.startTitleCinematic() // 3D terrain + zoom to frame the arena + slow orbit

@@ -118,16 +118,22 @@ Idle is the **fallback when there's no productive action at the agent's portal**
 *not* in the roulette. The choice:
 
 ```
-idle(agent) = if (agent.isAtActionPortal() && Recruiter.canRecruit(agent))  Recruiter.performAction(agent)
-              else                                                          agent.moveElsewhere()
+idle(agent) = when {
+    agent.isAtActionPortal() && Recruiter.canRecruit(agent) -> Recruiter.performAction(agent)  // grow the roster
+    Discoverer.canDiscover(agent)                           -> Discoverer.performAction(agent) // churn the board
+    else                                                    -> agent.moveElsewhere()           // go find work
+}
 ```
 
 - **At a worked-out portal** (burnt out / fully built / hack on cooldown) and under the recruiter cap →
   **recruit**. This makes recruiting the genuine last resort: an agent that *isn't* at a portal still has
   work to seek, so it heads off to find one rather than recruit while there are portals to hack/capture
   (this is also why agents don't recruit at game-start — they spawn away from portals and go capture first).
-- **Otherwise** → `moveElsewhere()` → seek a portal (`MOVE`), or, **only if the board has no portals at
-  all**, roam open ground (`EXPLORE` = discovery, via `Movement.wander`).
+- Else, under the discoverer cap → **discover**: stroll to open ground and, on arrival, run a
+  density-driven portal **create/remove** (below).
+- **Otherwise** → `moveElsewhere()` → seek a portal (`MOVE`), or, when there's no portal to head to, roam
+  open ground (`EXPLORE`, via `Movement.wander`) — which *also* resolves discovery on arrival, so a
+  **portal-less board bootstraps itself** (every idle agent floods discovery until portals appear).
 
 Both idle states render **pill-less** in the 3D scene (no action coin — `ActionItem.isFallback`), each
 with its own tell so they're not mistaken for a stuck agent: **recruiting jumps** in place (a hard
@@ -169,18 +175,49 @@ higher (0.005 → 0.05) together, so each recruit is a longer visible commitment
 rate. `progressSpeed` makes recruiting *faster* (higher per-meeting odds) without adding recruiters.
 Headroom drives the rate to `0` as the roster fills, so a faction never overflows its cap.
 
-### Discovery (EXPLORE) — `Agent.wanderStep`, `Movement.wander`
-The no-portals roam: pick a nearby open-ground point and walk to it, sweeping up stray XM on the way; **end
-on arrival** (then re-select). Rare in normal play — only reached when `moveElsewhere` finds no portal to
-head to. Pill-less; animated as a small running circle in the scene. There is **no success roll** — it's
-pure relocation, the "never sit idle" stroll.
+### Discovery (EXPLORE) — `agent/action/cond/Discoverer.kt`, `Agent.wanderStep`, `Movement.wander`
+The sibling of recruiting: an idle agent strolls to a nearby open-ground point (sweeping up stray XM on the
+way) and, **on arrival**, resolves a neutral, **density-driven portal change** — a new portal is
+**discovered** or a random one is found **gone** — then re-selects in the same tick (no `WAIT` flash).
+Pill-less; animated as a small running circle in the scene.
+
+This **replaces** the old per-checkpoint `Cycle.managePortalDensity`: portal churn is now something agents
+*do* when idle, not a disembodied tick. It self-throttles — a busy board churns little (few agents idle),
+while a sparse / portal-less board **floods** discovery (every idle agent routes here via the
+`moveElsewhere` wander fallback) and fills fast.
+
+**Concurrency cap.** `Config.maxConcurrentDiscoverers` (**2**) per faction discover at once *by choice*; the
+rest seek work. (The flood case is the exception — when there's no portal to seek, agents wander regardless,
+which is what bootstraps an empty board.)
+
+**Outcome on arrival** — `Discoverer.resolve` → `ChurnMath.churnChances(count, target, rate, hasSpace)`:
+```
+d = count / targetPortals
+create = rate × clamp01(1 − d/2)          // discovery ≫ removal when sparse, fades as the board fills
+remove = rate × clamp01(d/2) (+ create if no space)   // removal grows past the target; tops up when packed
+// on arrival: if (hasSpace && rnd < create) discover a new portal;  else if (count > minPortals && rnd < remove) one is gone
+```
+| knob | source | default |
+|---|---|---|
+| `rate` | `Config.portalChurnRate` (per-discovery chance scale) | `0.17` |
+| `target` | `Config.targetPortals()` = `startPortals × 2.5`, capped `[startPortals, maxPortals]` | `20` at default `startPortals 8` |
+| `hasSpace` | `count < maxPortals (89)` **and** `Positions.hasPortalSpace()` (room for a non-clipping portal) | — |
+| floor | `Config.minPortals` | `5` |
+
+The count **converges to the target**: when sparse, `create ≫ remove` so the board fills; at the target
+they're ~equal (gentle churn); above it, removal wins. It's also hard-capped at the board's **walkable
+capacity** — when there's no room for a non-clipping portal, `hasSpace` is false and the create budget rolls
+into removal, so a packed board can't overflow its open ground. **No success/fail beyond these rolls** — the
+agent always completes the stroll; the portal change is the (probabilistic) payoff.
 
 ## Where to look
 - `agent/Agent.kt` — `act()`, the self-managed steps (`attackPortal` / `deployPortal` /
   `moveCloserToDestinationPortal` / `wanderStep` / `recruitStep`).
 - `agent/action/ActionSelector.kt` — context routing, `q()`, the candidate lists, `idle()`.
 - `agent/action/ActionItem.kt` / `Action.kt` — the action records + the busy timer.
-- `agent/action/cond/*` — one `ConditionalAction` per action (`isActionPossible` + `performAction`).
+- `agent/action/cond/*` — one handler per action (`isActionPossible` + `performAction`), plus the two idle
+  fallbacks `Recruiter` and `Discoverer`.
 - `agent/qvalue/` — `QValue`, `QActions`, `QDestinations` (the sliders + base weights).
 - `ai/FactionPolicy.kt` — how a slider weighting is sourced (DOM / AI / overrides).
 - `agent/Balance.kt` + `agent/BalanceMath.kt` — `recruitFactor` and the anti-snowball math.
+- `system/ChurnMath.kt` — the pure density-churn curve behind discovery (create/remove vs target).

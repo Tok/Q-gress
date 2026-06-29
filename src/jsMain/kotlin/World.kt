@@ -24,6 +24,10 @@ import kotlin.math.sqrt
 object World {
     var tick: Int = 0
     var isReady = false
+
+    // Whether idle agents may churn the board's portal count (agent.action.cond.Discoverer). On in the live game;
+    // the title sim turns it OFF so its curated arena stays put (the title has no Cycle and shouldn't drift).
+    var portalDiscoveryEnabled = true
     var userFaction: Faction? = null
 
     fun userFactionOrThrow(): Faction = requireNotNull(userFaction) { "user faction has not been chosen yet" }
