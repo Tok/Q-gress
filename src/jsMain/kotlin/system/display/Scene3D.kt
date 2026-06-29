@@ -1068,14 +1068,12 @@ object Scene3D {
         place(sphere.asDynamic(), x, y, gz + HEAD_Z + bob)
         tag(sphere.asDynamic(), id)
         agentsGroup.add(sphere)
-        // Action indicator: a 3D coin/wheel (icon on the round faces) hovering above the head — EXCEPT for the
-        // idle states, which show NO coin (just the head-bob): recruiting, exploring/discovering, and the 1-tick
-        // transitional WAIT between actions. Suppressing WAIT too matters because it's the frame an agent passes
-        // through when one recruit meeting ends before the next begins (RECRUIT → WAIT → RECRUIT) — without this
-        // the blank WAIT coin flashed in for that single tick, so a steadily-recruiting agent's pill blinked. So a
-        // coin-less, bobbing agent at 0 m/s reads as plainly mid-recruit / roaming; a coin-bearing one stuck at 0 is sus.
+        // Action indicator: a 3D coin/wheel (icon on the round faces) hovering above the head — EXCEPT for the idle
+        // FALLBACK actions (recruiting + exploring/discovering — see ActionItem.isFallback), which show NO coin (just
+        // the head-bob). So a coin-less, bobbing agent at 0 m/s reads as plainly mid-recruit / roaming, while a
+        // coin-bearing one stuck at 0 m/s is sus. WAIT is not a fallback — it shows an empty coin (its glyph is blank).
         val item = agent.action.item
-        if (item != ActionItem.RECRUIT && item != ActionItem.EXPLORE && item != ActionItem.WAIT) {
+        if (!item.isFallback) {
             val coin = Three.Mesh(indicatorGeo, indicatorMaterial(item, agent.faction))
             coin.asDynamic().rotation.x = PI / 2 // stand the cylinder's faces up (axis → world Z)
             place(coin.asDynamic(), x, y, gz + INDICATOR_Z)
