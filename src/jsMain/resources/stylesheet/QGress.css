@@ -1402,6 +1402,27 @@ html, body {
     height: 42px;
     margin-top: 1px;
 }
+.historyTotal {
+    color: #ffffff; /* white combined total, beside the green/RES-blue per-faction numbers */
+}
+/* The per-checkpoint winner strip under the MU graph: one dot per checkpoint, spread across the chart
+   width so each sits ~under its checkpoint (matches uPlot's first/last points at the edges). */
+.historyDots {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 212px;
+    height: 7px;
+    margin-top: 2px;
+    padding: 0 1px;
+    box-sizing: border-box;
+}
+.historyDot {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    flex: 0 0 auto;
+}
 
 /* Action log lines — live in the footer's EVENT LOG tab (the footer owns the label + collapse). The glass
    pane (above) hugs the text (fit-content) rather than the whole footer width, so only the text is blurred. */
@@ -2244,18 +2265,22 @@ html, body {
 .tuneHidden {
     display: none;
 }
-/* Read-only mode: a 0–1 progress bar replaces the slider (agent-vs-agent matches). */
+/* Read-only mode: a 0–1 progress bar replaces the slider (agent-vs-agent matches). Styled to MATCH the
+   native `.slider` rail (grey track, faction-colour fill from the left) so locking/unlocking a control
+   barely changes the look — the only intended difference is the absent thumb. */
 .qBar {
     width: 92px;
     height: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.35);
-    border-radius: 2px;
-    overflow: hidden;
+    background: #d3d3d3; /* same grey rail as .slider */
+    border-radius: 5px; /* same rounding as .slider */
+    opacity: 0.7; /* same resting opacity as .slider */
+    overflow: hidden; /* clips the fill to the rounded rail (rounded left cap, flat right edge) */
 }
 .qBarFill {
     height: 100%;
     width: 0;
-    background: #a0a0a0;
+    margin: 0; /* beats the global `* { margin: 0 auto }` so the fill anchors LEFT, not centered */
+    background: #a0a0a0; /* overridden inline to the faction colour, like the native accent-color track */
 }
 #locationSelect {
     width: 233px;
