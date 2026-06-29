@@ -5,7 +5,11 @@ import system.ui.Bootstrap
 
 object Config {
     const val minPortals = 5 // the board never churns/gens below this (always ≥5 portals on a map)
-    const val maxPortals = 89
+
+    // Hard ceiling on portal count. With the walkable-area density target + hasPortalSpace gate the board self-limits,
+    // so this is a soft perf backstop (per-portal flow fields), not a balance lever — kept for when growing the play
+    // area becomes a thing. A round 100 (was an oddly-specific 89).
+    const val maxPortals = 100
     const val minFrogs = 2
     const val maxFrogs = 32 // the hard per-faction ceiling (giant-map / end-game roster); the live cap scales by size — see [maxFor]
     const val minSmurfs = 2
