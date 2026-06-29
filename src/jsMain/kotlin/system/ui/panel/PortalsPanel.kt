@@ -155,11 +155,13 @@ object PortalsPanel {
         thead.appendChild(head)
         table.appendChild(thead)
         val newBody = el("tbody", "")
-        // Delegated name-click. The body is rebuilt every frame, so the pressed cell is replaced before mouseup —
-        // the browser then fires `click` on the tbody (the common ancestor), NOT the cell, so ev.target is useless.
-        // Resolve the element currently AT the click point instead.
-        newBody.onclick = { ev ->
-            document.elementFromPoint(ev.clientX.toDouble(), ev.clientY.toDouble())?.let { onNameClick(it) }
+        // Delegated name-click via MOUSEDOWN, not click: the body is rebuilt every frame while the sim runs, so the
+        // pressed cell is removed from the DOM before mouseup — and the browser then fires NO click on the tbody at
+        // all (the mousedown target is gone), which is why clicking only worked while paused. mousedown fires on
+        // press, before any rebuild, so ev.target is the live cell. (elementFromPoint as a belt-and-suspenders.)
+        newBody.onmousedown = { ev ->
+            (ev.target as? Element ?: document.elementFromPoint(ev.clientX.toDouble(), ev.clientY.toDouble()))
+                ?.let { onNameClick(it) }
             null
         }
         table.appendChild(newBody)
