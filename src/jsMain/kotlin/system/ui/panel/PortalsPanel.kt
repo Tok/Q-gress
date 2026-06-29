@@ -109,20 +109,21 @@ object PortalsPanel {
     private fun factionColor(p: Portal): String = p.owner?.faction?.color ?: NEUTRAL_COLOR
 
     // The name cell is clickable (delegated from the persistent tbody — see [ensure]): tag it with the portal id.
+    // userSelect=none so a single click registers cleanly instead of starting a text selection on the name.
     private fun nameCell(portal: Portal): HTMLElement = cell(portal.name, "taName").also {
         it.style.color = factionColor(portal)
         it.style.cursor = "pointer"
-        it.title = "Focus on this portal"
+        it.style.asDynamic().userSelect = "none"
+        it.title = "Focus the camera on this portal"
         it.setAttribute("data-portal-id", portal.id)
     }
 
-    // Delegated name-click (rows are wiped + rebuilt every frame, so a per-cell onclick never fires — the tbody
-    // persists): select the portal (3D highlight + inspector) and cam in on it. No follow-lock — portals don't move.
+    // Delegated name-click: select the portal (3D highlight + inspector) and make it the camera's centre of
+    // attention — the auto-cam orbits it (if on) or the camera centres on it (if off); see MapCamera.focusOn.
     private fun onNameClick(target: Element) {
         val id = target.closest(".taName")?.getAttribute("data-portal-id") ?: return
-        val portal = World.allPortals.firstOrNull { it.id == id } ?: return
-        Inspector.select("portal:" + portal.id)
-        MapCamera.focusOnPos(portal.location)
+        Inspector.select("portal:$id")
+        MapCamera.focusOn("portal:$id")
     }
 
     private fun factionCell(portal: Portal): HTMLElement =

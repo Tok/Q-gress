@@ -155,23 +155,22 @@ object TopAgentsPanel {
         }
     }
 
-    // The name cell is clickable (delegated from the persistent tbody — see [ensure]): tag it with the agent key.
+    // The name cell is clickable (delegated from the persistent tbody — see [ensure]): tag it with the agent name.
+    // userSelect=none so a single click registers cleanly instead of starting a text selection on the name.
     private fun nameCell(agent: Agent): HTMLElement = cell(agent.name, "taName").also {
         it.style.color = agent.faction.color
         it.style.cursor = "pointer"
-        it.title = "Focus + follow this agent"
-        it.setAttribute("data-agent-key", agent.key())
+        it.style.asDynamic().userSelect = "none"
+        it.title = "Focus the camera on this agent"
+        it.setAttribute("data-agent-name", agent.name)
     }
 
-    // Delegated name-click: select the agent (3D highlight + inspector) and cam in, LOCK-following it until the
-    // player breaks away (pans/rotates the map or hits the auto-cam button — see MapCamera.focusOnPos). Delegation
-    // is required because rebuild() wipes + recreates every row each frame, so a per-cell onclick is destroyed
-    // between mousedown and mouseup and never fires; the tbody persists.
+    // Delegated name-click: select the agent (3D highlight + inspector) and make it the camera's centre of
+    // attention — the auto-cam orbits it (if on) or the camera tracks it (if off); see MapCamera.focusOn.
     private fun onNameClick(target: Element) {
-        val key = target.closest(".taName")?.getAttribute("data-agent-key") ?: return
-        val agent = World.allAgents.firstOrNull { it.key() == key } ?: return
-        Inspector.select("agent:" + agent.name)
-        MapCamera.focusOnPos(agent.pos, lockKey = agent.key())
+        val name = target.closest(".taName")?.getAttribute("data-agent-name") ?: return
+        Inspector.select("agent:$name")
+        MapCamera.focusOn("agent:$name")
     }
 
     // Agent ground speed in m/s: distance moved last tick (sim px) × metres-per-pixel, and a tick is one sim

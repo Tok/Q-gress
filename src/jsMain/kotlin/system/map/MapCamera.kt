@@ -4,7 +4,6 @@ import World
 import kotlinx.browser.window
 import system.display.Scene3D
 import util.Rng
-import util.data.Pos
 
 /**
  * Camera + cinematics for the map views, split out of [MapController] (the map hub). Owns every camera
@@ -39,6 +38,8 @@ object MapCamera {
      * grid anchor at the framed display zoom.
      */
     fun goHome(durationMs: Int = 900) {
+        focusKey = null // Home drops any agent/portal focus → back to the play-area centre of attention
+        followActive = false
         val center = MapController.anchorCenter ?: return
         val opts: dynamic = js("({ pitch: 0.0, bearing: 0.0 })")
         opts.duration = durationMs
@@ -180,75 +181,89 @@ object MapCamera {
 
     fun isAutoCamOn() = autoCamActive
 
-    /** Toggle the in-game auto-cam. On → start the slow cinematic drift; off → it settles where it is. */
+    /**
+     * Toggle the in-game auto-cam. On → start the slow cinematic drift around the current [focusCenter] (the
+     * selected agent/portal, or the play-area centre when nothing is selected); off → it settles where it is, and
+     * a focused entity is then tracked statically by [updateFollow]. The focus is KEPT across the toggle.
+     */
     fun setAutoCam(on: Boolean) {
-        releaseFollow() // entering OR leaving the drift (incl. the auto-cam button) breaks any agent follow-lock
         if (on == autoCamActive) return
         autoCamActive = on
         autoCamGen++
         if (on) {
             cinematicActive = false // don't fight the build spin (if somehow still running)
             autoCamLeg(autoCamGen)
+        } else if (focusKey != null) {
+            followActive = true // drift off but still focused → the per-frame follow takes over the centring
         }
         onAutoCamChanged?.invoke(on)
     }
 
-    // User grabbed the camera (pan/rotate/tilt) → drop the drift + the follow-lock + snap the toggle out (zoom is exempt).
+    // User grabbed the camera (pan/rotate/tilt) → drop the drift AND the focus (back to a free, play-area view).
     internal fun cancelAutoCamFromUser() {
-        releaseFollow()
+        focusKey = null
+        followActive = false
         if (autoCamActive) setAutoCam(false)
     }
 
-    // --- Focus / follow: cam in on an AGENTS/PORTALS table entry; agents stay LOCKED (followed) ---
+    // --- Focus: the camera's "centre of attention". A selected agent/portal becomes the point the auto-cam ORBITS
+    // (exactly as it orbits the play-area centre when nothing is selected); with the auto-cam OFF the camera simply
+    // TRACKS it. Set by clicking a name in the AGENTS/PORTALS tables. ---
     private const val FOCUS_ZOOM_BOOST = 1.6 // cam IN closer than the framed overview when focusing a target
     private const val FOCUS_MS = 900 // the cam-in flight
-    private var followKey: String? = null // agent.key() being followed; null = no lock
-    private var followActive = false // true once the cam-in lands → per-frame tracking begins (doesn't fight the fly)
+    private var focusKey: String? = null // "agent:<name>" / "portal:<id>", or null = the play-area centre
+    private var followActive = false // true once a cam-in lands → per-frame tracking may run (auto-cam OFF only)
 
-    fun isFollowing() = followKey != null
-
-    private fun releaseFollow() {
-        followKey = null
-        followActive = false
+    /** The current centre of attention as a map centre: the live position of the focused agent/portal, or the
+     *  play-area anchor when nothing is focused (or the entity is gone — which also clears the stale focus). */
+    private fun focusCenter(): dynamic {
+        val key = focusKey ?: return MapController.anchorCenter
+        val pos = when {
+            key.startsWith("agent:") -> World.allAgents.firstOrNull { "agent:" + it.name == key }?.pos
+            key.startsWith("portal:") -> World.allPortals.firstOrNull { "portal:" + it.id == key }?.location
+            else -> null
+        }
+        if (pos == null) {
+            focusKey = null // the entity vanished → fall back to the play-area centre
+            return MapController.anchorCenter
+        }
+        val ll = Scene3D.simPosToLngLat(pos)
+        return arrayOf(ll[0], ll[1])
     }
 
     /**
-     * Fly the camera to a sim [pos] and cam in (clicking an agent/portal name in the HUD tables). A non-null
-     * [lockKey] (an agent's [agent.Agent.key]) keeps the camera FOLLOWING that agent until the player breaks away
-     * — pan/rotate/tilt the map, or hit the auto-cam button (see [cancelAutoCamFromUser]/[setAutoCam]). A null key
-     * is a one-shot focus (portals don't move). Takes over from the auto-cam drift while focused.
+     * Make [id] ("agent:<name>" / "portal:<id>", or null to clear) the camera's centre of attention: cam in on it,
+     * then EITHER keep the auto-cam orbiting it (if on) OR track it per-frame ([updateFollow], if off). A user
+     * pan/rotate/tilt drops the focus ([cancelAutoCamFromUser]). Clicking a name in the HUD tables calls this.
      */
-    fun focusOnPos(pos: Pos, lockKey: String? = null) {
-        if (autoCamActive) setAutoCam(false) // hand over from the drift (also clears any prior follow)
-        stopCamera()
-        followKey = lockKey
+    fun focusOn(id: String?) {
+        focusKey = id
         followActive = false
-        val ll = Scene3D.simPosToLngLat(pos)
+        stopCamera() // cancel any in-flight drift/fly before the cam-in
         val opts: dynamic = js("({})")
-        opts.center = arrayOf(ll[0], ll[1])
+        opts.center = focusCenter()
         opts.zoom = MapController.displayZoom() + FOCUS_ZOOM_BOOST
         opts.duration = FOCUS_MS
         MapController.initMap?.asDynamic()?.flyTo(opts)
         MapController.map?.asDynamic()?.flyTo(opts)
-        // Begin per-frame tracking only after the cam-in flight lands, so setCenter doesn't cut the flyTo short.
-        if (lockKey != null) window.setTimeout({ followActive = true }, FOCUS_MS)
+        // After the cam-in lands: arm per-frame tracking, and (auto-cam on) resume the orbit around the new focus.
+        window.setTimeout({ followActive = true }, FOCUS_MS)
+        if (autoCamActive) {
+            autoCamGen++ // invalidate the old chained leg (was orbiting the previous centre)
+            val gen = autoCamGen
+            window.setTimeout({ autoCamLeg(gen) }, FOCUS_MS)
+        }
     }
 
     /**
-     * Per-frame: if locked onto an agent, keep both maps centred on its live position (called from the render
-     * loop, [system.ui.HudRenderer.redraw]). Releases the lock if the agent is gone. A user gesture clears
-     * [followKey] first (via [cancelAutoCamFromUser]), so this no-ops the instant the player grabs the map.
+     * Per-frame (from [system.ui.HudRenderer.redraw]): with the auto-cam OFF, keep both maps centred on the
+     * focused agent/portal as it moves. No-op while the auto-cam is on (its legs do the centring) or nothing is
+     * focused. A user gesture clears the focus first, so this stops the instant the player grabs the map.
      */
     fun updateFollow() {
-        val key = followKey ?: return
-        if (!followActive) return
-        val agent = World.allAgents.firstOrNull { it.key() == key }
-        if (agent == null) {
-            releaseFollow()
-            return
-        }
-        val ll = Scene3D.simPosToLngLat(agent.pos)
-        val center = arrayOf(ll[0], ll[1])
+        if (autoCamActive || !followActive || focusKey == null) return
+        val center = focusCenter() // resolves the live position (clears + returns the anchor if the entity is gone)
+        if (focusKey == null) return // vanished this very frame → don't yank a now-free view to the anchor
         MapController.initMap?.asDynamic()?.setCenter(center)
         MapController.map?.asDynamic()?.setCenter(center)
     }
@@ -268,7 +283,7 @@ object MapCamera {
     // drives both maps like goHome; [gen] guards a stale chain (toggled off→on) outliving its turn.
     private fun autoCamLeg(gen: Int) {
         if (!autoCamActive || gen != autoCamGen) return
-        val center = MapController.anchorCenter ?: return
+        val center = focusCenter() ?: return // orbit the selected agent/portal, or the play-area centre if none
         val ref = MapController.referenceMap() ?: return
         val turn = (50.0 + Rng.random() * 130.0) * (if (Rng.randomBool()) 1.0 else -1.0)
         val opts: dynamic = js("({})")
