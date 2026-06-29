@@ -7,7 +7,7 @@ package config
  * curves are JVM-unit-tested + Kover-covered. [Config] holds the live state and delegates here.
  */
 object ConfigMath {
-    const val PORTAL_TARGET_GROWTH = 2.5 // equilibrium density ≈ this × the onboarding startPortals
+    const val PORTALS_PER_WALKABLE_KM2 = 200.0 // discovery equilibrium: portals per km² of FULLY-walkable ground
 
     const val MIN_NONFACTION = 30 // floor: always enough to recruit, even on a tiny/dense map (or a low multiplier)
     const val MAX_NONFACTION_CAP = 1000 // ceiling: keep huge/dense maps from spawning a perf-killing crowd
@@ -22,9 +22,16 @@ object ConfigMath {
     private const val XMP_THRESHOLD_SPAN = 22 // …falling by this much at full dynamism
     private const val XMP_THRESHOLD_MIN = 8
 
-    /** Equilibrium portal count the churn converges toward — grows from [startPortals], capped at [maxPortals]. */
-    fun targetPortals(startPortals: Int, maxPortals: Int): Int =
-        (startPortals * PORTAL_TARGET_GROWTH).toInt().coerceIn(startPortals, maxPortals)
+    /**
+     * Equilibrium portal count the discovery churn converges toward (agent.action.cond.Discoverer), set by the map's
+     * WALKABLE ground — its [areaKm2] × [walkability] — at a constant [PORTALS_PER_WALKABLE_KM2] density. So open maps
+     * support proportionally more portals and built-up / cramped ones fewer, independent of window size. Clamped to
+     * keep at least the onboarding [startPortals] and never exceed [maxPortals] (the per-portal flow-field perf ceiling).
+     */
+    fun targetPortals(areaKm2: Double, walkability: Double, startPortals: Int, maxPortals: Int): Int {
+        val walkableKm2 = areaKm2 * walkability.coerceIn(0.0, 1.0)
+        return (PORTALS_PER_WALKABLE_KM2 * walkableKm2).toInt().coerceIn(startPortals, maxPortals)
+    }
 
     /** Shield/link mitigation cap for the current [combatDynamism]: higher dynamism → lower cap → more flips. */
     fun maxMitigation(combatDynamism: Double): Int {

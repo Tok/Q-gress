@@ -136,8 +136,10 @@ Portals are **discovered and removed** by the agent **discovery** idle action �
 process driven by idle agents (it replaced the old per-checkpoint `Cycle.managePortalDensity`). Discovering
 a portal helps no faction, so it's not a behaviour slider; it's what an idle agent does on a wander's
 **arrival** (the sibling of recruiting — see [ACTIONS.md](ACTIONS.md) for the idle-decision machine). It
-self-throttles: a busy board churns little, a sparse one floods discovery and fills fast. The count
-converges toward `Config.targetPortals()` (≈ 2.5 × the onboarding `startPortals`, capped at `maxPortals` 89):
+self-throttles: a busy board churns little, a sparse one floods discovery and fills fast. The count converges
+toward `Config.targetPortals(walkability)` — set by the map's **walkable ground** (`200 × Sim.areaKm2 ×
+walkability`, a constant portals-per-walkable-km² density), clamped to `[startPortals, maxPortals 89]`, so an
+open map supports more portals than a built-up one of the same size:
 - `d = count / target` (1.0 at target). `createChance ∝ (1 − d/2)`, `removeChance ∝ (d/2)` (× `Config.
   portalChurnRate`) — so well below target discovery dominates (~4:1 near empty), at target it's ~1:1, and
   above it removal wins. Equilibrium settles a bit *below* target because combat also destroys portals

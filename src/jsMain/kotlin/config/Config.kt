@@ -27,8 +27,11 @@ object Config {
     // fallback (see Discoverer.canDiscover), so the board bootstraps fast then settles to a gentle churn.
     var maxConcurrentDiscoverers = 2
 
-    /** Equilibrium portal count the churn converges toward — grows from [startPortals], capped at [maxPortals]. */
-    fun targetPortals(): Int = ConfigMath.targetPortals(startPortals, maxPortals)
+    /** Equilibrium portal count the discovery churn converges toward, set by the map's WALKABLE ground — its
+     *  [Sim.areaKm2] × [walkability] at a constant density — clamped to [[startPortals], [maxPortals]]. So an open
+     *  map supports more portals than a built-up one of the same size. [walkability] is [World.walkability], passed
+     *  in by the caller (keeps Config off the World singleton). Pure model in [ConfigMath.targetPortals]. */
+    fun targetPortals(walkability: Double): Int = ConfigMath.targetPortals(Sim.areaKm2(), walkability, startPortals, maxPortals)
 
     // --- Recruitment balance (Phase 5) ---------------------------------------
     // Recruiting is the IDLE FALLBACK (like EXPLORE) — an agent recruits a nearby NPC when it has no gameplay

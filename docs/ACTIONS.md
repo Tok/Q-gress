@@ -215,7 +215,7 @@ remove = rate × clamp01(d/2) (+ create if no space)   // removal grows past the
 | knob | source | default |
 |---|---|---|
 | `rate` | `Config.portalChurnRate` (per-discovery chance scale) | `0.17` |
-| `target` | `Config.targetPortals()` = `startPortals × 2.5`, capped `[startPortals, maxPortals]` | `20` at default `startPortals 8` |
+| `target` | `Config.targetPortals(walkability)` = `200 × Sim.areaKm2 × walkability`, capped `[startPortals, maxPortals]` | ≈ `20` on a `0.2 km²` map at `~0.5` walkability |
 | `hasSpace` | `count < maxPortals (89)` **and** `Positions.hasPortalSpace()` (room for a non-clipping portal) | — |
 | floor | `Config.minPortals` | `5` |
 

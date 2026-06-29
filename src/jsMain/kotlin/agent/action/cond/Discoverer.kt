@@ -44,7 +44,7 @@ object Discoverer {
         if (!World.portalDiscoveryEnabled) return // title sim et al. keep a fixed board (the stroll still happens)
         val count = World.countPortals()
         val hasSpace = count < Config.maxPortals && Positions.hasPortalSpace()
-        val churn = ChurnMath.churnChances(count, Config.targetPortals(), Config.portalChurnRate, hasSpace)
+        val churn = ChurnMath.churnChances(count, Config.targetPortals(World.walkability), Config.portalChurnRate, hasSpace)
         if (hasSpace && Rng.random() < churn.create) {
             val discovered = Portal.createRandom()
             World.allPortals.add(discovered)

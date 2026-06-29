@@ -4,6 +4,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 /**
  * Characterization tests (PLAN non-functional track, phase A) for the pure tuning formulas in [Config].
@@ -18,12 +19,18 @@ class ConfigTest {
     private var savedMultiplier = 0.0
     private var savedStartPortals = 0
     private var savedDynamism = 0.0
+    private var savedSimWidth = 0
+    private var savedSimHeight = 0
 
     @BeforeTest
     fun save() {
         savedMultiplier = Config.npcMultiplier
         savedStartPortals = Config.startPortals
         savedDynamism = Config.combatDynamism
+        // targetPortals reads the live Sim area — pin it (other suites share + perturb the Sim singleton).
+        savedSimWidth = Sim.width
+        savedSimHeight = Sim.height
+        Sim.setExactSize(Sim.sideForArea(Sim.SMALL_KM2), Sim.sideForArea(Sim.SMALL_KM2))
     }
 
     @AfterTest
@@ -31,6 +38,7 @@ class ConfigTest {
         Config.npcMultiplier = savedMultiplier
         Config.startPortals = savedStartPortals
         Config.combatDynamism = savedDynamism
+        Sim.setExactSize(savedSimWidth, savedSimHeight)
     }
 
     // --- npcPopulation -------------------------------------------------------
@@ -71,24 +79,25 @@ class ConfigTest {
     }
 
     // --- targetPortals -------------------------------------------------------
-    // (startPortals × 2.5).toInt(), clamped to [startPortals, maxPortals=89].
+    // 200 portals / fully-walkable km² (Sim.areaKm2 × walkability), clamped to [startPortals, maxPortals=89].
 
     @Test
-    fun targetPortalsGrowsFromTheStartCount() {
+    fun targetPortalsUsesTheWalkableAreaDensity() {
+        Config.startPortals = 1 // low floor so the walkable-area term shows through
+        val expected = (ConfigMath.PORTALS_PER_WALKABLE_KM2 * Sim.areaKm2() * 0.5).toInt().coerceIn(1, Config.maxPortals)
+        assertEquals(expected, Config.targetPortals(walkability = 0.5), "density × walkable km², clamped")
+    }
+
+    @Test
+    fun targetPortalsFloorsAtTheStartCountWithNoWalkableGround() {
         Config.startPortals = 8
-        assertEquals(20, Config.targetPortals(), "8 × 2.5 = 20")
+        assertEquals(8, Config.targetPortals(walkability = 0.0), "no walkable area → the start-count floor")
     }
 
     @Test
-    fun targetPortalsNeverDropsBelowTheStartCount() {
+    fun targetPortalsRisesWithWalkableGround() {
         Config.startPortals = 1
-        assertEquals(2, Config.targetPortals(), "1 × 2.5 → 2, still ≥ the start count")
-    }
-
-    @Test
-    fun targetPortalsIsCappedAtMaxPortals() {
-        Config.startPortals = 50
-        assertEquals(Config.maxPortals, Config.targetPortals(), "50 × 2.5 = 125 → clamped to 89")
+        assertTrue(Config.targetPortals(walkability = 1.0) > Config.targetPortals(walkability = 0.2), "more open ground → more portals")
     }
 
     // --- combat dynamism knobs ----------------------------------------------

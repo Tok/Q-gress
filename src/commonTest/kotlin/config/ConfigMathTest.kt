@@ -33,10 +33,15 @@ class ConfigMathTest {
     }
 
     @Test
-    fun targetPortalsGrowsClampedToTheBand() {
-        assertEquals(20, ConfigMath.targetPortals(startPortals = 8, maxPortals = 89), "8 × 2.5 = 20")
-        assertEquals(2, ConfigMath.targetPortals(startPortals = 1, maxPortals = 89), "never below the start count")
-        assertEquals(89, ConfigMath.targetPortals(startPortals = 50, maxPortals = 89), "125 → clamped to 89")
+    fun targetPortalsScalesWithWalkableAreaClampedToTheBand() {
+        // 200 portals / fully-walkable km²: 0.2 km² at half walkability → 200 × 0.2 × 0.5 = 20
+        assertEquals(20, ConfigMath.targetPortals(areaKm2 = 0.2, walkability = 0.5, startPortals = 8, maxPortals = 89))
+        // a big, open map exceeds the perf ceiling → clamped to maxPortals
+        assertEquals(89, ConfigMath.targetPortals(areaKm2 = 0.5, walkability = 1.0, startPortals = 8, maxPortals = 89))
+        // little walkable ground → below the start count → clamped UP to it
+        assertEquals(8, ConfigMath.targetPortals(areaKm2 = 0.01, walkability = 0.2, startPortals = 8, maxPortals = 89))
+        // walkability is clamped to [0,1]; 0 walkable → the start-count floor
+        assertEquals(8, ConfigMath.targetPortals(areaKm2 = 1.0, walkability = 0.0, startPortals = 8, maxPortals = 89))
     }
 
     @Test
