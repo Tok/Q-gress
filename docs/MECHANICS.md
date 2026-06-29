@@ -54,8 +54,9 @@ inside the orb + a φ× **shield bubble** (`ShieldShader`).
 
 ### Heat sinks — `items/types/HeatSinkType.kt`
 Reduce the portal **hack cooldown** for everyone. ~2018 values: Common **20%**, Rare **50%**, Very
-Rare **70%**. Multiple: rarest applies full, each subsequent **halved** (`Portal.cooldownFactor`).
-Visual: a **pentagonal radiator**.
+Rare **70%**. Multiple: rarest applies full, each subsequent **halved** (`Portal.cooldownFactor`). Deploying one
+also **instantly resets** the portal's cooldown (wipes the per-agent hack history `Portal.lastHacks`), so it's
+immediately hackable again. Visual: a **pentagonal radiator**.
 
 ### Link amps — `items/types/LinkAmpType.kt`  *(inactive)*
 Boost link range / outbound-link count. **Inactive in Q-Gress** (linking range isn't a balance lever
@@ -109,18 +110,26 @@ the lowest resonators / surplus weapons / power cubes.
 ## Recruiting — `agent/action/cond/Recruiter.kt`, `agent/Balance.kt`
 Growing a faction's roster by persuading a bystander **NPC** to join. It is the *team-size* lever, kept
 deliberately gentle so neither faction snowballs.
-- **Free:** recruiting costs **no XM** (it's persuasion, not an energy action). The old XM cost was removed.
-- **How:** an agent walks to a random NPC; on meeting it rolls success
-  `recruitmentBaseChance × (1 − rosterFill)` (`Config.recruitmentBaseChance = 0.05`), so an empty roster
-  recruits at ~5% and a full one at ~0 (diminishing returns toward `Config.maxFor(faction)`).
-- **The NPC turns faction in place:** a successful recruit converts that NPC into the new agent **at its own
-  position** (`Agent.create(at = npc.pos)`) — it isn't deleted while a fresh agent spawns elsewhere.
-- **Anti-snowball (`Balance.recruitFactor`):** how *often* an agent even tries to recruit scales by
+- **An idle fallback, not a slider.** Recruiting is **not** a behaviour slider and never competes in the action
+  roulette — agent action is purely the 17 sliders. It's what an agent does when it has **no gameplay action
+  left** (portals burnt out, nothing to hack/deploy/attack), exactly like EXPLORE (`Recruiter.canRecruit` from
+  `ActionSelector`). Only `Config.maxConcurrentRecruiters` (2) per faction recruit **at once** — the rest explore
+  — so a quiet board never shows every agent recruiting. Free (no XM).
+- **How:** an idle agent walks to the **nearest** NPC; on meeting it rolls success
+  `recruitmentChance = base × Progress-speed × Balance.recruitFactor × (1 − rosterFill) × Skills.recruitingFactor`
+  (`Config.recruitmentBaseChance = 0.005`). To recruit faster you raise the **success chance** (Progress speed),
+  not the number of recruiters. A successful recruit converts that NPC into the new agent **at its own position**
+  (`Agent.create(at = npc.pos)`) — it isn't deleted while a fresh agent spawns elsewhere.
+- **Anti-snowball (`Balance.recruitFactor`):** the per-meeting success chance scales by
   `(enemyRoster + 1) / (myRoster + 1)`, clamped to `[0.3, 3.0]` — the **smaller** team recruits more, the
-  **larger** less, so sizes self-correct.
+  **larger** less — and by the roster's remaining headroom (→ 0 at the cap), so sizes self-correct.
+- **Rosters only grow.** No quitting / faction-change (`frogQuitRate` / `smurfQuitRate` / `factionChangeRate` = 0);
+  recruiting fills the roster up to the **size-scaled cap** (`Config.maxFor` → `Sim.maxAgents`: Tiny 8 · Small 16 ·
+  Mid 24 · Large 28 · Giant 32). The start roster scales too (`Sim.suggestedAgents` 3·5·8·12·16 at mid-game; 1 at
+  a normal start; the full cap at end-game).
 - **The crowd drains toward a floor:** recruiting is **not** topped up 1-for-1. The NPC population shrinks as
   agents recruit and is only refilled once it reaches `Config.MIN_NONFACTION` (30), so a long game thins the
-  crowd but never runs out of recruits. There is **no `RECRUIT` behaviour slider** (retired — too snowbally).
+  crowd but never runs out of recruits.
 
 ## Portal discovery & removal — `system/Cycle.managePortalDensity`
 Portals are **discovered and removed** by a neutral, density-driven *system* process (every checkpoint),
