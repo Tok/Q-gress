@@ -2,6 +2,8 @@ package system.building
 
 import config.Config
 import items.Combat
+import kotlin.math.PI
+import kotlin.math.cos
 import kotlin.math.hypot
 import kotlin.math.sin
 
@@ -51,33 +53,37 @@ object BuildingShake {
     fun blast(lng: Double, lat: Double, rangeM: Int, level: Int, ultra: Boolean, now: Double) {
         val m = map ?: return
         if (m.getLayer(LAYER) == null) return // no building layer (demo style, or not added yet)
-        val origin: dynamic = js("[0.0, 0.0]")
-        origin[0] = lng
-        origin[1] = lat
-        val pt = m.project(origin)
-        val ox = pt.x as Double
-        val oy = pt.y as Double
-        val radiusPx = metersToPx(m, lng, lat, rangeM * RANGE_MULT)
-        if (radiusPx <= 1.0) return
-        val feats = queryNear(m, ox, oy, radiusPx) ?: return
+        // querySourceFeatures (NOT queryRenderedFeatures): in MapLibre 5 the rendered-feature query frequently
+        // omits the generateId feature id, so feature-state can't address the building → it never shakes. The
+        // SOURCE query reliably carries the id. Distance is real-world metres (zoom-independent) via the quintile falloff.
+        val params: dynamic = js("({})")
+        params.sourceLayer = SOURCE_LAYER
+        val feats = m.querySourceFeatures(SOURCE, params) ?: return
+        val n = (feats.length as? Int) ?: return
+        val rangeRef = rangeM * RANGE_MULT
         val levelGain = 0.4 + 0.6 * (level.coerceIn(1, 8) / 8.0)
         val intensity = if (ultra) ULTRA_SHAKE_MULT else 1.0
         val clampFrac = if (ultra) ULTRA_BOB_MAX_FRAC else BOB_MAX_FRAC
-        val count = (feats.length as Int).coerceAtMost(MAX_SHAKEN)
-        for (i in 0 until count) {
+        var added = 0
+        var i = 0
+        while (i < n && added < MAX_SHAKEN) {
             val f = feats[i]
+            i++
             val id = f.id
-            if (id == null) continue // need a native feature id to drive feature-state
-            val falloff = Combat.rangeFalloff(featureDistPx(m, f, ox, oy) / radiusPx) // quintile; 0 beyond range
-            val renderHeight = (f.properties?.render_height as? Double) ?: 8.0
-            val mass = REF_HEIGHT_M / maxOf(renderHeight, REF_HEIGHT_M) // taller → smaller bob
-            val amp = minOf(
-                BASE_AMP_M * levelGain * falloff * mass * intensity * Config.buildingShakeMultiplier,
-                renderHeight * clampFrac,
-            )
-            if (amp > 0.0) { // out of range (falloff 0) → no bob
-                val key = "$id"
-                active[key] = Shake(id, now + DURATION, amp, (key.hashCode() % 628) / 100.0)
+            val ll = firstLngLat(f.geometry)
+            // Need a (generateId) feature id to drive feature-state, and an in-range footprint (falloff > 0).
+            if (id != null && ll != null) {
+                val falloff = Combat.rangeFalloff(metresBetween(lng, lat, ll[0] as Double, ll[1] as Double) / rangeRef)
+                val renderHeight = (f.properties?.render_height as? Double) ?: 8.0
+                val mass = REF_HEIGHT_M / maxOf(renderHeight, REF_HEIGHT_M) // taller → smaller bob
+                val amp = minOf(
+                    BASE_AMP_M * levelGain * falloff * mass * intensity * Config.buildingShakeMultiplier,
+                    renderHeight * clampFrac,
+                )
+                if (amp > 0.0) { // in range → bob (keyed by id, so the same building isn't doubled)
+                    active["$id"] = Shake(id, now + DURATION, amp, ("$id".hashCode() % 628) / 100.0)
+                    added++
+                }
             }
         }
     }
@@ -100,35 +106,12 @@ object BuildingShake {
         done.forEach { active.remove(it) }
     }
 
-    // Screen-px distance from a feature (its first vertex) to the blast point — for the falloff.
-    private fun featureDistPx(m: dynamic, f: dynamic, ox: Double, oy: Double): Double {
-        val ll = firstLngLat(f.geometry) ?: return 0.0
-        val p = m.project(ll)
-        return hypot((p.x as Double) - ox, (p.y as Double) - oy)
-    }
-
-    // Convert a real-world [meters] length at [lng]/[lat] to screen px (so the radius tracks map zoom).
-    private fun metersToPx(m: dynamic, lng: Double, lat: Double, meters: Double): Double {
-        val a: dynamic = js("[0.0, 0.0]")
-        a[0] = lng
-        a[1] = lat
-        val b: dynamic = js("[0.0, 0.0]")
-        b[0] = lng
-        b[1] = lat + meters / 111_320.0
-        val pa = m.project(a)
-        val pb = m.project(b)
-        return hypot((pa.x as Double) - (pb.x as Double), (pa.y as Double) - (pb.y as Double))
-    }
-
-    private fun queryNear(m: dynamic, x: Double, y: Double, r: Double): dynamic {
-        val box: dynamic = js("[[0.0, 0.0], [0.0, 0.0]]")
-        box[0][0] = x - r
-        box[0][1] = y - r
-        box[1][0] = x + r
-        box[1][1] = y + r
-        val opts: dynamic = js("({})")
-        opts.layers = arrayOf(LAYER)
-        return m.queryRenderedFeatures(box, opts)
+    // Approx real-world metres between two lng/lat points (equirectangular — plenty accurate at building scale).
+    private fun metresBetween(lng1: Double, lat1: Double, lng2: Double, lat2: Double): Double {
+        val mPerDeg = 111_320.0
+        val dx = (lng2 - lng1) * mPerDeg * cos(lat1 * PI / 180.0)
+        val dy = (lat2 - lat1) * mPerDeg
+        return hypot(dx, dy)
     }
 
     // Descend the GeoJSON coordinate nest until we reach a single [lng, lat] pair.
