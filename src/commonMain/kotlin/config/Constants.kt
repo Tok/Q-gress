@@ -1,7 +1,5 @@
 package config
 
-import system.ui.Bootstrap
-
 object Constants {
     const val phi = 1.61803398874989484820
     const val tau = 2.0 * kotlin.math.PI
@@ -12,6 +10,6 @@ object Constants {
     private const val location = "https://tok.github.io/"
     private const val token = "Q-gress/"
 
-    fun token() = if (Bootstrap.isLocal()) localToken else token
-    fun targetUrl() = if (Bootstrap.isLocal()) localLocation else location
+    fun token() = if (Platform.isLocal()) localToken else token
+    fun targetUrl() = if (Platform.isLocal()) localLocation else location
 }

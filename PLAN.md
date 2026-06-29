@@ -15,12 +15,18 @@ be matched. **Desktop-only**; mobile is blocked. (The substrate ships; what's le
 ## ★ Next up — refactor under the net (Phase B)
 The open structural focus: functional core / imperative shell, module-by-module, with the gate
 (ktlint/detekt/tests) green throughout. Exit criterion: pure logic testable in isolation. Pick from:
-- **The commonMain pure-logic lift.** The cleanly-liftable core is already moved + tested; the rest is gated
-  behind type coupling — to lift `Field`/`Inventory`/`knockMods` and `Config` consumers
-  (`Tournament`/`Observation`/`Cycle`), the jsMain types they bind (`Portal`/`World`/`Agent` + the `items/`
-  hierarchy) have to become `commonMain` first. A large, multi-step move, not a quick extraction. (`Scene3D`
-  keeps an *intentional* `LargeClass` suppress: its remaining entity-sync + effect-dispatch bulk is irreducibly
-  bound to the three.js groups — relocating it behind a ~30-member API would be worse.)
+- **The commonMain pure-logic lift.** *Done so far:* the cleanly-liftable math core, **plus the `config/`
+  package** (`Config`/`Dim`/`Sim`/`Constants`/`Colors`/… moved to `commonMain` behind the `config.Platform`
+  expect/actual seam — the host facts `isBrowser`/`isLocal`/window size; only `DropRates` (binds `items.types`)
+  and `Location` (JS `JSON.parse`) stay in jsMain pending their own slices). *Next:* the `items/` hierarchy
+  (28 files; only `XmpBurster`'s lone `Fx.sink` call couples it — push that through the Effects seam), which
+  unblocks `DropRates` + `Inventory`. The remaining gate is the big types — to lift `Field`/`Inventory` and
+  the `Config` consumers (`Tournament`/`Observation`/`Cycle`), the jsMain types they bind
+  (`Portal`/`World`/`Agent`) must become `commonMain` (Portal/Agent need an **audio seam** mirroring
+  `Effects`/`Fx`; `World` needs its canvas/Scene3D split off). A large, multi-step move, not a quick
+  extraction. (`Scene3D` keeps an *intentional* `LargeClass` suppress: its remaining entity-sync +
+  effect-dispatch bulk is irreducibly bound to the three.js groups — relocating it behind a ~30-member API
+  would be worse.)
 - **Reduce magic numbers** — name them / fold into `Config` where it aids clarity (detekt `MagicNumber` is
   off → a by-hand judgement pass, not a gate-chase).
 - **Tighten line length 140 → 120** — land *alongside* the class extractions (auto-wrapping inflates

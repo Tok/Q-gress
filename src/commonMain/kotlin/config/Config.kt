@@ -1,7 +1,6 @@
 package config
 
 import agent.Faction
-import system.ui.Bootstrap
 
 object Config {
     const val minPortals = 5 // the board never churns/gens below this (always ≥5 portals on a map)
@@ -176,7 +175,7 @@ object Config {
     // roaming (collected passively in range). Raise for an energy-rich, attack-heavy sim.
     var strayXmMultiplier = 2.0
 
-    val isSoundOn = !Bootstrap.isLocal()
+    val isSoundOn = !Platform.isLocal()
     const val isPlayInitialSound = false
     const val isSatOn = false
 
