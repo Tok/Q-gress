@@ -26,6 +26,7 @@ import system.building.BuildingTransparency
 import system.display.Scene3D
 import system.display.Showcases
 import system.grid.GridCapture
+import system.grid.StreetImage
 import system.map.MapCamera
 import system.map.MapController
 import system.map.Navigation
@@ -109,7 +110,7 @@ object Bootstrap {
         // Offscreen ImageData factory for the passability-grid readback (never displayed). No
         // on-screen 2D canvas layer remains — the world renders in the three.js custom layer and
         // the HUD is DOM.
-        World.bgCan = CanvasFactory.createOffscreenCanvas(Dim.width, Dim.height)
+        StreetImage.canvas = CanvasFactory.createOffscreenCanvas(Dim.width, Dim.height)
 
         // /demo harness (hash-routed): a menu of effect demo scenes, separate from the game.
         // Reload on any hash change so switching game ⇄ demo (or between scenes) re-bootstraps.

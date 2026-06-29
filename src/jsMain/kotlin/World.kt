@@ -4,19 +4,8 @@ import agent.NonFaction
 import config.Config
 import config.Dim
 import config.Sim
-import extension.Canvas
-import extension.CanvasFactory
 import extension.Grid
-import extension.clear
-import kotlinx.browser.document
-import kotlinx.dom.clear
-import org.khronos.webgl.Uint8Array
-import org.khronos.webgl.get
-import org.w3c.dom.ImageData
 import portal.Portal
-import system.display.Scene3D
-import system.ui.Bootstrap
-import system.ui.LoadingOverlay
 import util.Rng
 import util.data.*
 import kotlin.math.sqrt
@@ -32,11 +21,9 @@ object World {
 
     fun userFactionOrThrow(): Faction = requireNotNull(userFaction) { "user faction has not been chosen yet" }
 
-    // Offscreen factory canvas: its 2D context only allocates ImageData buffers for the passability
-    // grid readback (see createStreetImage). Never displayed — the world renders in the three.js
-    // custom layer and the HUD is DOM, so the old on-screen main/UI canvases are gone.
-    lateinit var bgCan: Canvas
-    fun bgCtx() = CanvasFactory.getContext2D(bgCan)
+    // The offscreen passability-readback canvas + street→ImageData conversion live in the imperative edge
+    // ([system.grid.StreetImage]); the NPC drop-in spawner in [system.NonFactionSpawner] — both split out so
+    // World stays pure game state.
 
     // var center: JSON = MapController.INITIAL_MAP_CENTER
     var mousePos: Pos? = null
@@ -132,38 +119,4 @@ object World {
     }
 
     fun calcTotalMu(fact: Faction) = allFields().filter { it.owner.faction == fact }.map { it.calculateMu() }.sum()
-
-    private fun imageDataIndex(x: Int, y: Int, w: Int) = (x + (y * w)) * 4
-
-    fun createStreetImage(streetMap: Uint8Array, w: Int, h: Int): ImageData {
-        with(World) {
-            val imageData: ImageData = bgCtx().createImageData(w.toDouble(), h.toDouble())
-            for (x in 0 until w) {
-                for (y in 0 until h) {
-                    val rawNoise = streetMap[imageDataIndex(x, y, imageData.width)]
-                    val index = imageDataIndex(x, h - 1 - y, imageData.width)
-                    imageData.data.set(arrayOf(rawNoise, rawNoise, rawNoise, Byte.MAX_VALUE), index)
-                }
-            }
-            return imageData
-        }
-    }
-
-    fun createNonFaction(callback: () -> Unit, count: Int) {
-        document.defaultView?.setTimeout(fun() {
-            if (count > 0) {
-                val total = Config.maxFor()
-                LoadingOverlay.building(LoadingOverlay.PCT_PEOPLE, 100, total - count + 1, total, "Creating people")
-                val newNonFaction = NonFaction.create(World.grid)
-                World.allNonFaction.add(newNonFaction)
-                if (Bootstrap.isRunningInBrowser()) {
-                    Scene3D.sync() // render each NPC as created → serial drop-in
-                    // (Flow fields flash once per portal when each portal's field is ready — not per NPC.)
-                }
-                createNonFaction(callback, count - 1)
-            } else {
-                callback()
-            }
-        }, 0)
-    }
 }

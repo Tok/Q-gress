@@ -18,6 +18,7 @@ import system.building.BuildingStream
 import system.building.BuildingTiles
 import system.display.OwnBuildings
 import system.display.Scene3D
+import system.grid.StreetImage
 import system.ui.LoadingOverlay
 import util.PortalNames
 import util.Profiler
@@ -411,7 +412,7 @@ object MapController {
         val height = gl.canvas.height as Int
         val rawBuf = Uint8Array((width * height * 4))
         gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, rawBuf)
-        val imageData: ImageData = World.createStreetImage(rawBuf, width, height)
+        val imageData: ImageData = StreetImage.create(rawBuf, width, height)
         if (!demoMode) LoadingOverlay.detail("Tracing roads, water & terrain…")
         val grid = Profiler.time("grid-build") { ShadowGridBuilder.build(imageData, width, height) }
         if (!demoMode) LoadingOverlay.detail("Walkable ground: ${(World.walkability * 100).toInt()}% · reading place names…")

@@ -14,6 +14,7 @@ import kotlinx.dom.addClass
 import kotlinx.dom.removeClass
 import org.w3c.dom.HTMLDivElement
 import portal.Portal
+import system.NonFactionSpawner
 import system.audio.Tts
 import system.display.Scene3D
 import system.display.SunController
@@ -110,7 +111,7 @@ object WorldBuilder {
         // Curated showpiece (title-eligible) locations count as tourist hotspots → a crowd bonus.
         val tourist = Locations.byCoords(Bootstrap.currentLng, Bootstrap.currentLat)?.title ?: false
         Config.maxNonFaction = Config.npcPopulation(Sim.width, Sim.height, World.walkability, tourist)
-        World.createNonFaction(callback, Config.maxFor())
+        NonFactionSpawner.spawn(callback, Config.maxFor())
     }
 
     private fun createAgentsAndPortals(callback: () -> Unit) = createPortals(fun() {

@@ -21,6 +21,7 @@ import kotlinx.browser.window
 import org.w3c.dom.HTMLElement
 import portal.Portal
 import portal.PortalKey
+import system.NonFactionSpawner
 import system.Simulation
 import system.audio.Sound
 import system.display.PortalNameTicker
@@ -165,7 +166,7 @@ object TitleSim {
         equip(frogs)
         equip(smurfs)
         World.allNonFaction.clear()
-        World.createNonFaction({}, TITLE_NPCS) // paced serial drop-in (renders each as it lands)
+        NonFactionSpawner.spawn({}, TITLE_NPCS) // paced serial drop-in (renders each as it lands)
         StuckTracker.reset() // fresh stuck history for this title scene (it's a shared singleton)
         Scene3D.sync()
         interval = window.setInterval({ tick() }, Time.minTickInterval)
