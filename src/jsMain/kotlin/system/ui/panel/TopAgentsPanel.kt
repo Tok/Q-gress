@@ -73,7 +73,7 @@ object TopAgentsPanel {
         Col("Keys", num = { it.inventory.keyCount().toDouble() }, render = { a -> cell(a.inventory.keyCount().toString(), "taNum") }),
         Col("Uniq", num = { uniqueKeys(it).toDouble() }, render = { a -> cell(uniqueKeys(a).toString(), "taNum") }),
         Col("m/s", num = { speedMs(it) }, render = { a -> speedCell(a) }),
-        Col("Action", str = { it.action.item.text }, render = { a -> actionCell(a) }),
+        Col("Action", str = { actionLabel(it.action.item) }, render = { a -> actionCell(a) }),
         Col("Portal", str = { it.actionPortal.name }, render = { a -> cell(clip(a.actionPortal.name, PORTAL_NAME_MAX), "taCell") }),
     )
 
@@ -171,7 +171,18 @@ object TopAgentsPanel {
     // The action icon is static per ActionItem, but toDataURL (canvas → PNG base64) is expensive — and this
     // table rebuilds every frame. Encode each item's icon ONCE and reuse the data URL (was ~80% of runtime CPU).
     private val actionIconUrls = mutableMapOf<ActionItem, String>()
-    private fun actionIconUrl(item: ActionItem): String = actionIconUrls.getOrPut(item) { ActionItem.getHiResIcon(item).toDataURL() }
+
+    // Idle FALLBACKS (recruiting / discovery — see ActionItem.isFallback) aren't gameplay actions, so they get the
+    // EMPTY coin (the blank WAIT glyph) instead of their own, matching the pill-less head-bob in the 3D scene.
+    private fun actionIconUrl(item: ActionItem): String =
+        actionIconUrls.getOrPut(item) { ActionItem.getHiResIcon(if (item.isFallback) ActionItem.WAIT else item).toDataURL() }
+
+    // …and read as "idle/recruiting" / "idle/discovery" so the table makes plain they're filler, not real work.
+    private fun actionLabel(item: ActionItem): String = when (item) {
+        ActionItem.RECRUIT -> "idle/recruiting"
+        ActionItem.EXPLORE -> "idle/discovery"
+        else -> item.text
+    }
 
     private fun actionCell(agent: Agent): HTMLElement {
         val td = el("td", "taCell")
@@ -180,7 +191,7 @@ object TopAgentsPanel {
         img.className = "taActionIcon"
         td.appendChild(img)
         val label = el("span", "taActionLabel")
-        label.textContent = agent.action.item.text
+        label.textContent = actionLabel(agent.action.item)
         td.appendChild(label)
         return td
     }
