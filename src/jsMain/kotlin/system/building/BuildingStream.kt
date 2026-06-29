@@ -36,6 +36,7 @@ object BuildingStream {
 
     private fun tick(map: MapLibre.Map) {
         if (busy || !Styles.use3DBuildings || !OwnBuildings.REPLACE_BUILDINGS) return
+        if (OwnBuildings.isFull()) return // meshed enough nearby buildings → stop hammering Overpass for far regions
         if (!Scene3D.terrainReady()) return
         val c = map.asDynamic().getCenter()
         val clng = c.lng as Double

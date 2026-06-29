@@ -51,7 +51,11 @@ object OwnBuildings {
     // extrusion never darkens). A generous emissive of the same gray lifts the shaded-face floor back toward
     // (and a little above) MapLibre's tone while keeping cast + received shadows and the 3D depth.
     private const val EMISSIVE_INTENSITY = 0.6
-    private const val MAX_BUILDINGS = 8000 // safety cap (separate mesh per building; perf is fine at our scale)
+
+    // Meshing cap (separate mesh per building). The play-area + nearby buildings load first; the auto-cam drift
+    // then streams ever-further regions, so an uncapped run climbs into the thousands long after the useful set is
+    // up. 1000 keeps the meaningful nearby buildings and stops the stream there (see BuildingStream + [isFull]).
+    private const val MAX_BUILDINGS = 1000
     private const val DEFAULT_HEIGHT = 8.0 // when a footprint has no render_height
 
     // In PARALLEL_MODE MapLibre's identical extrusion stays visible underneath ours, so coincident
@@ -117,6 +121,9 @@ object OwnBuildings {
         activeBobs.clear()
         keys.clear()
     }
+
+    /** Whether the meshing cap is reached — BuildingStream stops fetching further regions once so. */
+    fun isFull() = keys.size >= MAX_BUILDINGS
 
     /** Mesh any not-yet-seen buildings from [feats] (decoded building features). Idempotent. */
     fun addFeatures(feats: dynamic) {
