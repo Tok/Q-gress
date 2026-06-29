@@ -4,6 +4,7 @@ import World
 import kotlinx.browser.window
 import system.display.Scene3D
 import util.Rng
+import kotlin.math.abs
 
 /**
  * Camera + cinematics for the map views, split out of [MapController] (the map hub). Owns every camera
@@ -217,64 +218,80 @@ object MapCamera {
     // (exactly as it orbits the play-area centre when nothing is selected); with the auto-cam OFF the camera simply
     // TRACKS it. Set by clicking a name in the AGENTS/PORTALS tables. ---
     private const val FOCUS_ZOOM_BOOST = 1.6 // cam IN closer than the framed overview when focusing a target
-    private const val FOCUS_MS = 900 // the cam-in flight
+    private const val FOLLOW_ORBIT_DEG = 0.06 // per-frame bearing spin while auto-cam-orbiting a focus (gentle)
+    private const val FOLLOW_LERP = 0.12 // per-frame ease toward the focus (cam-in glide + steady-state tracking)
+    private const val ZOOM_SETTLE = 0.04 // cam-in zoom considered "arrived" within this of target → stop adjusting it
     private var focusKey: String? = null // "agent:<name>" / "portal:<id>", or null = the play-area centre
-    private var followActive = false // true once a cam-in lands → per-frame tracking may run (auto-cam OFF only)
+    private var followActive = false // true while a focus is being tracked/eased
+    private var followRaf = false // a requestAnimationFrame follow loop is currently running
+    private var zoomSettled = false // cam-in zoom has reached the focus zoom → leave zoom to the player thereafter
 
-    /** The current centre of attention as a map centre: the live position of the focused agent/portal, or the
-     *  play-area anchor when nothing is focused (or the entity is gone — which also clears the stale focus). */
-    private fun focusCenter(): dynamic {
-        val key = focusKey ?: return MapController.anchorCenter
+    private fun lerp(a: Double, b: Double, t: Double) = a + (b - a) * t
+
+    /** The focused agent/portal's live ground position as [lng, lat], or null when nothing is focused (or the
+     *  entity is gone — which also clears the now-stale focus). */
+    private fun focusPos(): DoubleArray? {
+        val key = focusKey ?: return null
         val pos = when {
             key.startsWith("agent:") -> World.allAgents.firstOrNull { "agent:" + it.name == key }?.pos
             key.startsWith("portal:") -> World.allPortals.firstOrNull { "portal:" + it.id == key }?.location
             else -> null
         }
         if (pos == null) {
-            focusKey = null // the entity vanished → fall back to the play-area centre
-            return MapController.anchorCenter
+            focusKey = null // the entity vanished → drop the stale focus
+            return null
         }
-        val ll = Scene3D.simPosToLngLat(pos)
-        return arrayOf(ll[0], ll[1])
+        return Scene3D.simPosToLngLat(pos)
     }
 
     /**
-     * Make [id] ("agent:<name>" / "portal:<id>", or null to clear) the camera's centre of attention: cam in on it,
-     * then EITHER keep the auto-cam orbiting it (if on) OR track it per-frame ([updateFollow], if off). A user
+     * Make [id] ("agent:<name>" / "portal:<id>", or null to clear) the camera's centre of attention. [updateFollow]
+     * then eases the camera onto it (a smooth cam-in glide that tracks the LIVE position, so a moving agent never
+     * gets a fly-to-stale-spot-then-jump); the auto-cam (if on) orbits it via a per-frame bearing spin. A user
      * pan/rotate/tilt drops the focus ([cancelAutoCamFromUser]). Clicking a name in the HUD tables calls this.
      */
-    private const val FOLLOW_ORBIT_DEG = 0.06 // per-frame bearing spin while auto-cam-orbiting a focus (gentle)
-
     fun focusOn(id: String?) {
         focusKey = id
-        followActive = false // the cam-in fly owns the camera until it lands; THEN per-frame tracking arms
-        stopCamera() // stop the play-area drift; its chained leg dies on its next tick (focusKey != null below)
-        val opts: dynamic = js("({})")
-        opts.center = focusCenter()
-        opts.zoom = MapController.displayZoom() + FOCUS_ZOOM_BOOST
-        opts.duration = FOCUS_MS
-        MapController.initMap?.asDynamic()?.flyTo(opts)
-        MapController.map?.asDynamic()?.flyTo(opts)
-        window.setTimeout({ if (focusKey == id) followActive = true }, FOCUS_MS)
+        followActive = id != null
+        zoomSettled = false // re-run the cam-in zoom glide for the new focus
+        stopCamera() // stop the play-area drift; its chained leg dies on its next tick (focusKey != null in autoCamLeg)
+        if (followActive && !followRaf) { // drive the ease off requestAnimationFrame (frame-rate smooth, sim-speed- and pause-independent)
+            followRaf = true
+            window.requestAnimationFrame { followFrame() }
+        }
+    }
+
+    private fun followFrame() {
+        if (!followActive || focusKey == null) {
+            followRaf = false // focus cleared (a user grab / Home / entity gone) → stop the loop
+            return
+        }
+        stepFollow()
+        window.requestAnimationFrame { followFrame() }
     }
 
     /**
-     * Per-frame (from [system.ui.HudRenderer.redraw]): keep both maps centred on the focused agent/portal as it
-     * moves — TIGHT tracking, not the auto-cam's 27 s re-centre. When the auto-cam is on it also spins the bearing a
-     * touch each frame, so the camera ORBITS the focus (the auto-cam legs stand down while focused, so they can't
-     * fight this per-frame centring). No-op until a cam-in lands or once the focus is cleared (a user grab / Home).
+     * One ease step: nudge both maps toward the focused agent/portal — a smooth cam-in glide that converges onto the
+     * LIVE position and then tracks it (so a moving agent never gets a fly-to-stale-spot then a jump). Zoom glides to
+     * the focus zoom once, then is left to the player; the auto-cam adds a gentle per-frame bearing orbit (its 27 s
+     * legs stand down while focused, so they can't fight this).
      */
-    fun updateFollow() {
-        if (!followActive || focusKey == null) return
-        val center = focusCenter() // live position (clears focus + returns the anchor if the entity is gone)
-        if (focusKey == null) return // vanished this very frame → don't yank a now-free view to the anchor
-        MapController.initMap?.asDynamic()?.setCenter(center)
-        MapController.map?.asDynamic()?.setCenter(center)
-        if (autoCamActive) {
-            val bearing = (MapController.referenceMap()?.getBearing() ?: 0.0) + FOLLOW_ORBIT_DEG
-            MapController.initMap?.let { it.setBearing(bearing) }
-            MapController.map?.let { it.setBearing(bearing) }
+    private fun stepFollow() {
+        val target = focusPos() ?: return // null (and focus cleared) if the entity is gone — followFrame stops next tick
+        val ref = MapController.referenceMap() ?: return
+        val cur = ref.asDynamic().getCenter()
+        val lng = lerp(cur.lng as Double, target[0], FOLLOW_LERP)
+        val lat = lerp(cur.lat as Double, target[1], FOLLOW_LERP)
+        val opts: dynamic = js("({})")
+        opts.center = arrayOf(lng, lat)
+        if (!zoomSettled) { // glide the zoom IN once, then leave it so the player can zoom while followed
+            val targetZoom = MapController.displayZoom() + FOCUS_ZOOM_BOOST
+            val z = ref.getZoom()
+            if (abs(z - targetZoom) <= ZOOM_SETTLE) zoomSettled = true else opts.zoom = lerp(z, targetZoom, FOLLOW_LERP)
         }
+        if (autoCamActive) opts.bearing = ref.getBearing() + FOLLOW_ORBIT_DEG // orbit the focus
+        MapController.initMap?.asDynamic()?.jumpTo(opts)
+        MapController.map?.asDynamic()?.jumpTo(opts)
     }
 
     /**
@@ -293,7 +310,7 @@ object MapCamera {
     private fun autoCamLeg(gen: Int) {
         if (!autoCamActive || gen != autoCamGen) return
         if (focusKey != null) return // a focus is orbited per-frame by [updateFollow] — the 27 s ease would fight it
-        val center = focusCenter() ?: return // the play-area centre (no focus here)
+        val center = MapController.anchorCenter ?: return // the play-area centre (no focus here)
         val ref = MapController.referenceMap() ?: return
         val turn = (50.0 + Rng.random() * 130.0) * (if (Rng.randomBool()) 1.0 else -1.0)
         val opts: dynamic = js("({})")
