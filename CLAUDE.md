@@ -21,6 +21,9 @@ reads + heavy 3D + future WebGPU inference); mobile is explicitly out of scope a
   selection brain, map→grid pipeline, the 3D + DOM rendering, locations, toolchain).
 - **`PLAN.md`** — the roadmap / future TODOs (incl. the Phase 6 AI plan).
 - **`docs/FEATURES.md`** — what's already shipped.
+- **`docs/ACTIONS.md`** — the per-agent action machine: the tick loop, how the Q-value sliders pick an
+  action, and the idle fallbacks (recruiting / discovery) with their timing + success odds.
+- **`docs/MECHANICS.md`** — items / mods / drop rates and the links→fields→MU objective.
 - **`docs/NN.md` / `docs/LLM.md`** — design notes for the two AI-driver tracks.
 
 Keep these current as work lands, and **don't duplicate** info across them (architecture →
