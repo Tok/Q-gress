@@ -164,8 +164,9 @@ Commit hashes are illustrative pointers, not exhaustive.
   `MINOR` or `MAJOR`; an **"only key events"** filter hides the routine ones. The tab shows the last few lines
   collapsed and the **whole scrolling backlog when expanded** (`Com.CAP` = 250).
 - **AGENTS & PORTALS tables** (`system/ui/panel/TopAgentsPanel`, `system/ui/panel/PortalsPanel`): two sortable DOM tables as
-  footer tabs. **AGENTS** lists every agent with XM/AP, faction colour, and per-item count+level-bar columns
-  (XMPs, US, Resos, Cubes, Shields, Heat sinks, Multi-hacks) plus Keys / unique Keys. **PORTALS** lists every
+  footer tabs. **AGENTS** lists every agent with XM/AP, agent **level** (L1–L8), faction colour, and per-item
+  count+level-bar columns (XMPs, US, Resos, Cubes, Shields, Heat sinks, Multi-hacks) plus Keys / unique Keys.
+  Both tables only rebuild while their tab is visible (off-screen they're idle). **PORTALS** lists every
   portal — owner-faction-coloured name, Faction, Level, Health, Resos (n/8), Mods (n/4), Links, Fields, Owner.
   Click any header to sort (toggles asc/desc; stable, tie-broken on name); collapsed shows the top rows,
   expanded scrolls the full roster.
@@ -251,10 +252,11 @@ Commit hashes are illustrative pointers, not exhaustive.
   `groundZAtLngLat`), so falling pieces land on the ground and on **building roofs**, not hundreds of
   metres below at sea level.
 - **Settings — gameplay vs visual, persisted + resettable.** The game Menu splits its controls into a
-  **Gameplay** group (Drop rates, **Combat dynamics**, **Progress speed**) and a **Visual** group
-  (Passability, Damage numbers, Portal names, Buildings transparency/shake), each slider carrying a hover
-  tooltip of what it affects. **Progress speed** (`Config.progressSpeed`) is one composite knob — like combat
-  dynamics — that scales **both** the recruiting rate (`Recruiter.selectionWeight`) **and** AP gain
+  **Gameplay** group (Drop rates, **Combat dynamics**, **Progress speed**, **Portal discovery** rate), a
+  **Visual** group (Passability map, 3D Damage numbers, 3D Portal names, **Flow-field arrows**, **FPS**,
+  Buildings transparency/shake), and a **Graphics** group (**High-detail shadows** — a live 2048↔1024 shadow-map
+  toggle; `GraphicsPrefs`), each control carrying a hover tooltip of what it affects. **Progress speed** (`Config.progressSpeed`) is one composite knob — like combat
+  dynamics — that scales **both** the recruiting **success chance** (`Recruiter.recruitmentChance`) **and** AP gain
   (`Agent.addAp` → agents level faster), so the game ramps early→endgame quicker. Gameplay knobs persist
   (`util/GameplayPrefs`), audio FX persist (`util/AudioPrefs`); both load at startup. A **Reset to defaults**
   button at the top of the AUDIO tab restores audio + gameplay (re-syncing the AUDIO knobs + Menu sliders),
@@ -302,9 +304,17 @@ Commit hashes are illustrative pointers, not exhaustive.
   to fit the science-vs-luddite theme. Coda for text.
 
 ## Gameplay, balance & map playability
-- **Anti-snowball balance**: recruiting is **free** (no XM cost) but has **diminishing returns** near the
-  roster cap, and the **smaller faction recruits more often** (`Balance.recruitFactor`), so recruit-rush is
-  no longer a runaway snowball. (See `docs/MECHANICS.md` for the recruiting + combat rubber-band details.)
+- **Recruiting is the idle fallback** (`agent.action.cond.Recruiter`, like EXPLORE) — an agent recruits a nearby
+  NPC only when it has **no gameplay action left** (portals burnt out, nothing to hack/deploy/attack); it is **not**
+  a behaviour slider and never competes in the action roulette. Only `Config.maxConcurrentRecruiters` (2) per
+  faction recruit **at once** — the rest explore — so a quiet board never shows every agent recruiting. Rosters
+  only **grow** (no quitting / faction-change); to recruit faster you raise the per-meeting **success chance**, not
+  the number of recruiters: `recruitmentChance = base × Progress-speed × the anti-snowball `Balance.recruitFactor`
+  (smaller faction succeeds more) × roster headroom (→ 0 at the cap) × the per-agent `Skills.recruitingFactor`.
+- **Size-scaled rosters.** The per-faction agent cap + start roster scale with **map size**: cap (`Sim.maxAgents`)
+  Tiny 8 · Small 16 · Mid 24 · Large 28 · Giant 32 (the hard ceiling); a normal start seeds **1** agent, a mid-game
+  the size's `Sim.suggestedAgents` (3 · 5 · 8 · 12 · 16), an end-game the full cap. Recruiting grows the roster up
+  to the cap. (See `docs/MECHANICS.md` for the recruiting + combat rubber-band details.)
 - **Auto NPC population** (`Config.npcPopulation` / `ConfigMath`): the NPC count is derived from **map area
   + location walkability** at world-gen, **clamped to [30, 1000]** (always recruits, never a perf-killing
   crowd on a huge map), and held constant by **1-for-1 replacement** when an NPC is recruited (`Recruiter`),
@@ -366,12 +376,16 @@ Commit hashes are illustrative pointers, not exhaustive.
 ## Onboarding
 - **Ordered onboarding** faction → map-size → location → load (`system/ui/Onboarding`), in-memory
   (no reloads); `?local=true` auto-starts; deep links load directly.
-- **Map size by play-AREA** (km², `Sim.sideForArea`): five presets — **Tiny 0.1 · Small 0.5 (default) · Mid 1
-  · Large 2 · Giant 3** — labelled in km² (sq-mi on hover), with editable W/H + portal count. Area is the
+- **Map size by play-AREA** (km², `Sim.sideForArea`): five presets — **Tiny 0.1 · Small 0.2 (default) · Mid 0.5
+  · Large 1 · Giant 2** — labelled in km² (sq-mi on hover), with editable W/H + portal count. Area is the
   meaningful measure (a "1 km²" map covers ~1 km² of ground regardless of window). Portal count follows area
-  **sub-linearly (∛)** via `Sim.suggestedPortals` so big maps don't drown in per-portal flow-field rebuilds (the
-  pathfinding cost, not raw area, is the real limiter). A reserved-space, pulsing caution shows for **Large+**:
-  bigger maps = agents walk longer between portals = slower-paced, less action.
+  **sub-linearly (∛)** via `Sim.suggestedPortals`, and the **roster** scales by size too (`Sim.suggestedAgents` /
+  `Sim.maxAgents`), so big maps don't drown in per-portal flow-field rebuilds (the pathfinding cost, not raw area,
+  is the real limiter). A reserved-space, pulsing caution shows for **≥ 1 km² (Large + Giant)**: bigger maps =
+  agents walk longer between portals = slower-paced, less action.
+- **Start stage** (`StartStage`, a 3-way pick): **Normal** (a single L1 agent, no gear — a cold open),
+  **Mid-game** (default — a partial squad with light gear + AP), or **End-game** (the full size roster at L8 with
+  full gear). Sets each agent's level/gear and, with the map size, the starting roster (see *Size-scaled rosters*).
 - **Staged loading overlay** (`LoadingOverlay`) — map tiles → tracing roads/water/terrain (+ walkable %)
   → place names → grid → deploying agents → spawning people → routes, faction-tinted, translucent at
   build to reveal the spawning world. Compact pane (no Q-GRESS wordmark — the player just came from the
@@ -463,7 +477,10 @@ Commit hashes are illustrative pointers, not exhaustive.
   - **Shields** (`ShieldType`) reduce incoming **XMP damage** — `Portal.totalMitigation` (links +
     shields, capped 95%) is applied in `XmpBurster.dealDamage`.
   - **Heat sinks** (`HeatSinkType`, 20/50/70%) cut the portal **hack cooldown** — `Portal.cooldownFactor`
-    (rarest full, each subsequent halved) feeds `handleCooldown`.
+    (rarest full, each subsequent halved) feeds `handleCooldown`; deploying one also **instantly resets** the
+    portal's cooldown (wipes `Portal.lastHacks`), so it's immediately hackable again.
+  - **Multi-hacks** (`MultihackType`, +4/+8/+12) raise the **hacks-before-burnout** limit (`Portal.maxHacks` via
+    `Multihack.additionalHacks` — rarest full, each subsequent halved).
   - **Link amps** (`LinkAmpType`) are defined + drawable but **inactive** (never drop, no effect).
   - Rarity colours are shared (`items/types/Rarity`: mint / purple / pink).
 - **Deploy** is one item per action (`Deployer`): a resonator if one fits, else a mod into a free slot
@@ -478,7 +495,9 @@ Commit hashes are illustrative pointers, not exhaustive.
   flip animation + sounds are triggerable in the `#demo` sandbox (ADA / JARVIS buttons).
 - **Items fall on loss**: resonators tumble out as each is destroyed (`removeReso` → `dropResonator`);
   mods tumble out when the portal is neutralized (`destroy` → `dropMods`) or fully shattered
-  (`shatterPortal`) — cannon-es physics in `ShatterFx`.
+  (`shatterPortal`) — cannon-es physics in `ShatterFx`. Each blast lifts the shared shard/digit floor to the
+  **local terrain height** under it (`groundZ`), so debris rests on the ground on hills instead of sinking to
+  sea level.
 - **Drop rates** are centralized + tunable in `config/DropRates` (single source; future per-game
   override), surfaced in-app via **Menu → Drop rates** and documented (with ~2018 Ingress sources) in
   `docs/MECHANICS.md`. Fixed a long-standing bug where viruses never dropped (integer `1/roll` = 0).
@@ -517,7 +536,13 @@ Commit hashes are illustrative pointers, not exhaustive.
   ({4, 8, 16, 24, 32} → 4×4 … 32×32), a live per-genome progress bar, white chart axes, and **Download / Load
   champion JSON** (share nets; `GenomeIO` + `NetStore` persist across reload). Training runs **silent**
   (`Sound` mutes during a `HeadlessRun`) and **parked** (the live tick pauses), with a full-CPU warning.
-- **Manual is user-only** — the opponent is AI-only (`DomSliderPolicy` reads the visible sliders).
+- **Training pinned to the standard balance** (`MatchSetup.useDefaultBalance`, default on): every headless match
+  (`SimRunner`) runs on the shipped default balance (combat dynamics / progress speed / portal churn) regardless
+  of the player's live menu sliders (snapshot + restore around the run) — one canonical target, so champions are
+  "one fits all", not a champion-per-balance matrix.
+- **Manual is user-only** — the opponent is AI-only (`DomSliderPolicy` reads the visible sliders). The **heuristic
+  card** also hosts a **named slider-preset** bar (save / recall the player faction's TUNE-tab sliders), so you can
+  seed values to lock against while the heuristic drives.
 
 ## Recent UI / UX polish
 - **Pause** truly stops everything: the sim tick, the **auto-cam**, the 3D animation clock (sun arc, hack
@@ -535,9 +560,10 @@ Commit hashes are illustrative pointers, not exhaustive.
 - **Sliders**: faction-coloured read-only bars; reversed lock semantics (unlocked = editable, locked = the
   AI-driven bar); the numeric value is always shown in a fixed column.
 - **NPC population** lowered (cap 1000, density halved).
-- **Optional on-screen FPS readout** (`system/ui/FpsMeter`): a small Coda number top-right under the volume
-  widget (no glass pane), toggled by a **"FPS"** menu checkbox. Independent of the `?debug` `[perf]` console
-  capture the headless profiler scrapes — the toggle controls only the on-screen display.
+- **On-screen FPS readout** (`system/ui/FpsMeter`, **on by default**): a small Coda number top-right under the
+  volume widget (no glass pane), toggled by a **"FPS"** menu checkbox **persisted across sessions** (`Prefs`).
+  Independent of the `?debug` `[perf]` console capture the headless profiler scrapes — the toggle controls only
+  the on-screen display.
 - **Spoken announcer / TTS** (`system/audio/Tts` + `TtsPanel`): an **opt-in** Web Speech announcer with verbosity
   tiers — **Off** · **Minimal** (location on start, "Q-Gress" on the title) · **Verbose** (+ faction on pick,
   checkpoint leads, huge fields, portal discovery, recruitment) · **Glyph** (+ 1–3 Ingress glyphs read on a glyph
