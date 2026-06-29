@@ -14,7 +14,9 @@ import items.types.VirusType
 import kotlinx.browser.document
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLImageElement
+import system.map.MapCamera
 import system.ui.Footer
+import system.ui.Inspector
 import system.ui.el
 
 /**
@@ -152,7 +154,18 @@ object TopAgentsPanel {
         }
     }
 
-    private fun nameCell(agent: Agent): HTMLElement = cell(agent.name, "taName").also { it.style.color = agent.faction.color }
+    // Clicking an agent's name selects it (3D highlight + inspector) and cams in, LOCK-following it until the
+    // player breaks away (pans/rotates the map or hits the auto-cam button — see MapCamera.focusOnPos).
+    private fun nameCell(agent: Agent): HTMLElement = cell(agent.name, "taName").also {
+        it.style.color = agent.faction.color
+        it.style.cursor = "pointer"
+        it.title = "Focus + follow this agent"
+        it.onclick = {
+            Inspector.select("agent:" + agent.name)
+            MapCamera.focusOnPos(agent.pos, lockKey = agent.key())
+            null
+        }
+    }
 
     // Agent ground speed in m/s: distance moved last tick (sim px) × metres-per-pixel, and a tick is one sim
     // second ([config.Time.secondsPerTick]), so px/tick already reads as m/s. ~1 m/s is a walking pace; a stuck

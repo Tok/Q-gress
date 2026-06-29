@@ -6,6 +6,7 @@ import extension.Ctx
 import org.w3c.dom.*
 import system.audio.AmbientBed
 import system.display.Scene3D
+import system.map.MapCamera
 import system.ui.DebugHud
 import system.ui.Inspector
 import system.ui.SidePanelCollapse
@@ -32,6 +33,7 @@ object HudRenderer {
     fun redraw() {
         // The world renders in the three.js custom layer (Scene3D); the HUD is DOM. No 2D canvas
         // to paint or clear anymore — just drive the 3D sync and the inspector.
+        MapCamera.updateFollow() // keep a locked camera tracking its agent (no-op unless following)
         Scene3D.sync()
         Inspector.refresh()
     }

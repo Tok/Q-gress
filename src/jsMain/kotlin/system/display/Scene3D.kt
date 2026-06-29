@@ -849,8 +849,9 @@ object Scene3D {
         return doubleArrayOf(east, -south) // sceneY = -(south) (the scene's Y is up)
     }
 
-    /** Inverse of [lngLatToSimPos]: a sim Pos → ground [lng, lat] (web-mercator unproject). */
-    private fun simPosToLngLat(pos: Pos): DoubleArray {
+    /** Inverse of [lngLatToSimPos]: a sim Pos → ground [lng, lat] (web-mercator unproject). Public so the
+     *  camera ([system.map.MapCamera]) can fly/follow an entity by its sim position. */
+    fun simPosToLngLat(pos: Pos): DoubleArray {
         val mx = (originMerc.x as Double) + sceneX(pos) * metersScale
         val my = (originMerc.y as Double) - sceneY(pos) * metersScale // sceneY flips sim-y → undo it
         return doubleArrayOf(mx * 360.0 - 180.0, atan(sinh(PI * (1.0 - 2.0 * my))) * 180.0 / PI)

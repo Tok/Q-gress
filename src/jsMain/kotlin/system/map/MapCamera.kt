@@ -1,8 +1,10 @@
 package system.map
 
+import World
 import kotlinx.browser.window
 import system.display.Scene3D
 import util.Rng
+import util.data.Pos
 
 /**
  * Camera + cinematics for the map views, split out of [MapController] (the map hub). Owns every camera
@@ -180,6 +182,7 @@ object MapCamera {
 
     /** Toggle the in-game auto-cam. On → start the slow cinematic drift; off → it settles where it is. */
     fun setAutoCam(on: Boolean) {
+        releaseFollow() // entering OR leaving the drift (incl. the auto-cam button) breaks any agent follow-lock
         if (on == autoCamActive) return
         autoCamActive = on
         autoCamGen++
@@ -190,9 +193,64 @@ object MapCamera {
         onAutoCamChanged?.invoke(on)
     }
 
-    // User grabbed the camera (pan/rotate/tilt) → drop the drift + snap the toggle out (zoom is exempt).
+    // User grabbed the camera (pan/rotate/tilt) → drop the drift + the follow-lock + snap the toggle out (zoom is exempt).
     internal fun cancelAutoCamFromUser() {
+        releaseFollow()
         if (autoCamActive) setAutoCam(false)
+    }
+
+    // --- Focus / follow: cam in on an AGENTS/PORTALS table entry; agents stay LOCKED (followed) ---
+    private const val FOCUS_ZOOM_BOOST = 1.6 // cam IN closer than the framed overview when focusing a target
+    private const val FOCUS_MS = 900 // the cam-in flight
+    private var followKey: String? = null // agent.key() being followed; null = no lock
+    private var followActive = false // true once the cam-in lands → per-frame tracking begins (doesn't fight the fly)
+
+    fun isFollowing() = followKey != null
+
+    private fun releaseFollow() {
+        followKey = null
+        followActive = false
+    }
+
+    /**
+     * Fly the camera to a sim [pos] and cam in (clicking an agent/portal name in the HUD tables). A non-null
+     * [lockKey] (an agent's [agent.Agent.key]) keeps the camera FOLLOWING that agent until the player breaks away
+     * — pan/rotate/tilt the map, or hit the auto-cam button (see [cancelAutoCamFromUser]/[setAutoCam]). A null key
+     * is a one-shot focus (portals don't move). Takes over from the auto-cam drift while focused.
+     */
+    fun focusOnPos(pos: Pos, lockKey: String? = null) {
+        if (autoCamActive) setAutoCam(false) // hand over from the drift (also clears any prior follow)
+        stopCamera()
+        followKey = lockKey
+        followActive = false
+        val ll = Scene3D.simPosToLngLat(pos)
+        val opts: dynamic = js("({})")
+        opts.center = arrayOf(ll[0], ll[1])
+        opts.zoom = MapController.displayZoom() + FOCUS_ZOOM_BOOST
+        opts.duration = FOCUS_MS
+        MapController.initMap?.asDynamic()?.flyTo(opts)
+        MapController.map?.asDynamic()?.flyTo(opts)
+        // Begin per-frame tracking only after the cam-in flight lands, so setCenter doesn't cut the flyTo short.
+        if (lockKey != null) window.setTimeout({ followActive = true }, FOCUS_MS)
+    }
+
+    /**
+     * Per-frame: if locked onto an agent, keep both maps centred on its live position (called from the render
+     * loop, [system.ui.HudRenderer.redraw]). Releases the lock if the agent is gone. A user gesture clears
+     * [followKey] first (via [cancelAutoCamFromUser]), so this no-ops the instant the player grabs the map.
+     */
+    fun updateFollow() {
+        val key = followKey ?: return
+        if (!followActive) return
+        val agent = World.allAgents.firstOrNull { it.key() == key }
+        if (agent == null) {
+            releaseFollow()
+            return
+        }
+        val ll = Scene3D.simPosToLngLat(agent.pos)
+        val center = arrayOf(ll[0], ll[1])
+        MapController.initMap?.asDynamic()?.setCenter(center)
+        MapController.map?.asDynamic()?.setCenter(center)
     }
 
     /**

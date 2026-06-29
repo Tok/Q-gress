@@ -5,7 +5,9 @@ import config.Config
 import kotlinx.browser.document
 import org.w3c.dom.HTMLElement
 import portal.Portal
+import system.map.MapCamera
 import system.ui.Footer
+import system.ui.Inspector
 import system.ui.el
 
 /**
@@ -105,7 +107,18 @@ object PortalsPanel {
     private fun factionAbbr(p: Portal): String = p.owner?.faction?.abbr ?: "—"
     private fun factionColor(p: Portal): String = p.owner?.faction?.color ?: NEUTRAL_COLOR
 
-    private fun nameCell(portal: Portal): HTMLElement = cell(portal.name, "taName").also { it.style.color = factionColor(portal) }
+    // Clicking a portal's name selects it (3D highlight + inspector) and cams in on it. No follow-lock — portals
+    // don't move (a one-shot focus; see MapCamera.focusOnPos).
+    private fun nameCell(portal: Portal): HTMLElement = cell(portal.name, "taName").also {
+        it.style.color = factionColor(portal)
+        it.style.cursor = "pointer"
+        it.title = "Focus on this portal"
+        it.onclick = {
+            Inspector.select("portal:" + portal.id)
+            MapCamera.focusOnPos(portal.location)
+            null
+        }
+    }
 
     private fun factionCell(portal: Portal): HTMLElement =
         cell(factionAbbr(portal), "taCell").also { it.style.color = factionColor(portal) }
