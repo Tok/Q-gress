@@ -12,6 +12,7 @@ import items.types.MultihackType
 import items.types.ShieldType
 import items.types.VirusType
 import kotlinx.browser.document
+import org.w3c.dom.Element
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLImageElement
 import system.map.MapCamera
@@ -154,17 +155,23 @@ object TopAgentsPanel {
         }
     }
 
-    // Clicking an agent's name selects it (3D highlight + inspector) and cams in, LOCK-following it until the
-    // player breaks away (pans/rotates the map or hits the auto-cam button — see MapCamera.focusOnPos).
+    // The name cell is clickable (delegated from the persistent tbody — see [ensure]): tag it with the agent key.
     private fun nameCell(agent: Agent): HTMLElement = cell(agent.name, "taName").also {
         it.style.color = agent.faction.color
         it.style.cursor = "pointer"
         it.title = "Focus + follow this agent"
-        it.onclick = {
-            Inspector.select("agent:" + agent.name)
-            MapCamera.focusOnPos(agent.pos, lockKey = agent.key())
-            null
-        }
+        it.setAttribute("data-agent-key", agent.key())
+    }
+
+    // Delegated name-click: select the agent (3D highlight + inspector) and cam in, LOCK-following it until the
+    // player breaks away (pans/rotates the map or hits the auto-cam button — see MapCamera.focusOnPos). Delegation
+    // is required because rebuild() wipes + recreates every row each frame, so a per-cell onclick is destroyed
+    // between mousedown and mouseup and never fires; the tbody persists.
+    private fun onNameClick(target: Element) {
+        val key = target.closest(".taName")?.getAttribute("data-agent-key") ?: return
+        val agent = World.allAgents.firstOrNull { it.key() == key } ?: return
+        Inspector.select("agent:" + agent.name)
+        MapCamera.focusOnPos(agent.pos, lockKey = agent.key())
     }
 
     // Agent ground speed in m/s: distance moved last tick (sim px) × metres-per-pixel, and a tick is one sim
@@ -283,6 +290,10 @@ object TopAgentsPanel {
         thead.appendChild(head)
         table.appendChild(thead)
         val newBody = el("tbody", "")
+        newBody.onclick = { ev ->
+            (ev.target as? Element)?.let { onNameClick(it) }
+            null
+        } // delegated name-click
         table.appendChild(newBody)
         container.appendChild(table)
         Footer.tab("agents").appendChild(container) // AGENTS footer tab (full width)

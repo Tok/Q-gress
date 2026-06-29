@@ -3,6 +3,7 @@ package system.ui.panel
 import World
 import config.Config
 import kotlinx.browser.document
+import org.w3c.dom.Element
 import org.w3c.dom.HTMLElement
 import portal.Portal
 import system.map.MapCamera
@@ -107,17 +108,21 @@ object PortalsPanel {
     private fun factionAbbr(p: Portal): String = p.owner?.faction?.abbr ?: "—"
     private fun factionColor(p: Portal): String = p.owner?.faction?.color ?: NEUTRAL_COLOR
 
-    // Clicking a portal's name selects it (3D highlight + inspector) and cams in on it. No follow-lock — portals
-    // don't move (a one-shot focus; see MapCamera.focusOnPos).
+    // The name cell is clickable (delegated from the persistent tbody — see [ensure]): tag it with the portal id.
     private fun nameCell(portal: Portal): HTMLElement = cell(portal.name, "taName").also {
         it.style.color = factionColor(portal)
         it.style.cursor = "pointer"
         it.title = "Focus on this portal"
-        it.onclick = {
-            Inspector.select("portal:" + portal.id)
-            MapCamera.focusOnPos(portal.location)
-            null
-        }
+        it.setAttribute("data-portal-id", portal.id)
+    }
+
+    // Delegated name-click (rows are wiped + rebuilt every frame, so a per-cell onclick never fires — the tbody
+    // persists): select the portal (3D highlight + inspector) and cam in on it. No follow-lock — portals don't move.
+    private fun onNameClick(target: Element) {
+        val id = target.closest(".taName")?.getAttribute("data-portal-id") ?: return
+        val portal = World.allPortals.firstOrNull { it.id == id } ?: return
+        Inspector.select("portal:" + portal.id)
+        MapCamera.focusOnPos(portal.location)
     }
 
     private fun factionCell(portal: Portal): HTMLElement =
@@ -149,6 +154,10 @@ object PortalsPanel {
         thead.appendChild(head)
         table.appendChild(thead)
         val newBody = el("tbody", "")
+        newBody.onclick = { ev ->
+            (ev.target as? Element)?.let { onNameClick(it) }
+            null
+        } // delegated name-click
         table.appendChild(newBody)
         container.appendChild(table)
         Footer.tab("portals").appendChild(container) // PORTALS footer tab (full width)
