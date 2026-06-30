@@ -2,6 +2,7 @@ package system.ui.panel
 
 import World
 import agent.Agent
+import agent.action.ActionIcons
 import agent.action.ActionItem
 import config.Config
 import config.Sim
@@ -195,7 +196,7 @@ object TopAgentsPanel {
     // Idle FALLBACKS (recruiting / discovery — see ActionItem.isFallback) aren't gameplay actions, so they get the
     // EMPTY coin (the blank WAIT glyph) instead of their own, matching the pill-less head-bob in the 3D scene.
     private fun actionIconUrl(item: ActionItem): String =
-        actionIconUrls.getOrPut(item) { ActionItem.getHiResIcon(if (item.isFallback) ActionItem.WAIT else item).toDataURL() }
+        actionIconUrls.getOrPut(item) { ActionIcons.getHiResIcon(if (item.isFallback) ActionItem.WAIT else item).toDataURL() }
 
     // …and read as "idle/recruiting" / "idle/discovery" so the table makes plain they're filler, not real work.
     private fun actionLabel(item: ActionItem): String = when (item) {

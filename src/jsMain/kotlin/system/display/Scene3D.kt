@@ -4,6 +4,7 @@ import World
 import agent.Agent
 import agent.Faction
 import agent.StuckTracker
+import agent.action.ActionIcons
 import agent.action.ActionItem
 import config.Sim
 import external.GLTFLoader
@@ -1276,7 +1277,7 @@ object Scene3D {
     // ON so portals occlude the coin (it sits in the depth-cleared sim pass, so buildings/terrain still
     // don't — it reads in front of the city).
     private fun indicatorMaterial(item: ActionItem, faction: Faction): dynamic = spriteCache.getOrPut("coin:" + item.text + faction.abbr) {
-        val tex = Three.CanvasTexture(ActionItem.getHiResIcon(item, faction)) // hi-res → crisp
+        val tex = Three.CanvasTexture(ActionIcons.getHiResIcon(item, faction)) // hi-res → crisp
         val top = coinFace(tex, 1.0)
         val bottom = coinFace(tex, COIN_BODY_OPACITY)
         val rimParams: dynamic = js("({})")

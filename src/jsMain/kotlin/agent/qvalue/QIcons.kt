@@ -1,5 +1,6 @@
 package agent.qvalue
 
+import agent.action.ActionIcons
 import agent.action.ActionItem
 import extension.Canvas
 import system.ui.Bootstrap
@@ -14,16 +15,16 @@ import system.ui.Bootstrap
 object QIcons {
     private val byId: Map<String, Canvas> = if (Bootstrap.isRunningInBrowser()) {
         mapOf(
-            QActions.MOVE_ELSEWHERE.id to ActionItem.getHiResIcon(ActionItem.MOVE),
-            QActions.RECYCLE.id to ActionItem.getHiResIcon(ActionItem.RECYCLE),
-            QActions.RECHARGE.id to ActionItem.getHiResIcon(ActionItem.RECHARGE),
-            QActions.HACK.id to ActionItem.getHiResIcon(ActionItem.HACK),
-            QActions.GLYPH.id to ActionItem.getHiResIcon(ActionItem.GLYPH),
-            QActions.DEPLOY.id to ActionItem.getHiResIcon(ActionItem.DEPLOY),
-            QActions.CAPTURE.id to ActionItem.getHiResIcon(ActionItem.CAPTURE),
-            QActions.LINK.id to ActionItem.getHiResIcon(ActionItem.LINK),
-            QActions.ATTACK.id to ActionItem.getHiResIcon(ActionItem.ATTACK),
-            QActions.VIRUS.id to ActionItem.getHiResIcon(ActionItem.VIRUS),
+            QActions.MOVE_ELSEWHERE.id to ActionIcons.getHiResIcon(ActionItem.MOVE),
+            QActions.RECYCLE.id to ActionIcons.getHiResIcon(ActionItem.RECYCLE),
+            QActions.RECHARGE.id to ActionIcons.getHiResIcon(ActionItem.RECHARGE),
+            QActions.HACK.id to ActionIcons.getHiResIcon(ActionItem.HACK),
+            QActions.GLYPH.id to ActionIcons.getHiResIcon(ActionItem.GLYPH),
+            QActions.DEPLOY.id to ActionIcons.getHiResIcon(ActionItem.DEPLOY),
+            QActions.CAPTURE.id to ActionIcons.getHiResIcon(ActionItem.CAPTURE),
+            QActions.LINK.id to ActionIcons.getHiResIcon(ActionItem.LINK),
+            QActions.ATTACK.id to ActionIcons.getHiResIcon(ActionItem.ATTACK),
+            QActions.VIRUS.id to ActionIcons.getHiResIcon(ActionItem.VIRUS),
         )
     } else {
         emptyMap()
