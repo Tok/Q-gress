@@ -2,9 +2,6 @@ package ai
 
 import agent.Faction
 import agent.qvalue.QValue
-import kotlinx.browser.window
-import org.w3c.dom.HTMLInputElement
-import system.ui.Bootstrap
 
 /**
  * A per-faction source of behaviour-slider weightings — the **action substrate** (PLAN Phase 6.0). For
@@ -12,10 +9,9 @@ import system.ui.Bootstrap
  * the QValue's own [QValue.weight]. The slider vector stays the action substrate: a policy only re-tunes
  * the weightings, it does **not** replace per-agent action selection.
  *
- * Today the only live policy is [DomSliderPolicy] (reads the tuning sliders — the pre-6.0 behaviour); a
- * future net/LLM driver installs a [SliderVectorPolicy] via [FactionPolicies.set] and rewrites it at
- * checkpoint cadence, with no change to how agents pick actions. (The pure [SliderVector] model lives in
- * commonMain; the policy plumbing here — DOM slider reads, overrides, the registry — is the jsMain shell.)
+ * The interface + the pure policies ([DefaultPolicy], [SliderVectorPolicy], [OverridePolicy]) + the
+ * [FactionPolicies] registry live in commonMain; the live UI policy that reads the tuning sliders
+ * (`DomSliderPolicy`) is the jsMain shell and installs itself as [FactionPolicies.defaultPolicy] at boot.
  */
 interface FactionPolicy {
     /** The raw slider weighting (0..1) for [value], before [QValue.weight] is applied. */
@@ -23,25 +19,19 @@ interface FactionPolicy {
 
     /**
      * The full slider vector this policy is currently driving, or `null` when the policy IS the live UI
-     * sliders ([DomSliderPolicy]) — i.e. **non-null means "an AI is in control"**, so the tuning UI should
+     * sliders (`DomSliderPolicy`) — i.e. **non-null means "an AI is in control"**, so the tuning UI should
      * stop being interactive and auto-move to mirror what the AI chose. Re-read at display cadence.
      */
     fun currentVector(): SliderVector? = null
 }
 
 /**
- * The default policy: read the live tuning slider for [faction] (id `"<qvalue>Slider<nickName>"`), or
- * [SliderVector.DEFAULT_WEIGHT] when there's no tuning UI (the title sim / headless matches). Byte-for-byte
- * the pre-6.0 `ActionSelector.q` read, so installing it changes nothing.
+ * The headless default policy: every weighting is [SliderVector.DEFAULT_WEIGHT] — what a faction reads with
+ * no tuning UI (Node tests / headless matches), matching `DomSliderPolicy`'s headless branch. The jsMain
+ * shell swaps in `DomSliderPolicy` as the live default at boot (see [FactionPolicies.defaultPolicy]).
  */
-class DomSliderPolicy(private val faction: Faction) : FactionPolicy {
-    override fun weight(value: QValue): Double {
-        // Headless (Node tests / future SimRunner) there's no `window` at all — skip the DOM read entirely.
-        if (Bootstrap.isNotRunningInBrowser()) return SliderVector.DEFAULT_WEIGHT
-        val id = value.id + "Slider" + faction.nickName
-        val slider = window.document.getElementById(id) as? HTMLInputElement
-        return slider?.valueAsNumber ?: SliderVector.DEFAULT_WEIGHT
-    }
+object DefaultPolicy : FactionPolicy {
+    override fun weight(value: QValue): Double = SliderVector.DEFAULT_WEIGHT
 }
 
 /**
@@ -75,15 +65,20 @@ class OverridePolicy(val inner: FactionPolicy) : FactionPolicy {
 }
 
 /**
- * The live per-faction [FactionPolicy] registry. Each faction defaults to its own [DomSliderPolicy] (zero
- * gameplay change vs pre-6.0); an AI driver calls [set] to install a [SliderVectorPolicy] / net / LLM, and
- * [reset] restores the defaults (e.g. between headless matches). [lock]/[unlock] let the player override
- * individual sliders of an AI-driven faction (the AI keeps driving the rest).
+ * The live per-faction [FactionPolicy] registry. Each faction defaults to [defaultPolicy] (the jsMain shell
+ * installs `DomSliderPolicy` there at boot → zero gameplay change vs pre-6.0; headless stays [DefaultPolicy]);
+ * an AI driver calls [set] to install a [SliderVectorPolicy] / net / LLM, and [reset] restores the defaults
+ * (e.g. between headless matches). [lock]/[unlock] let the player override individual sliders of an AI-driven
+ * faction (the AI keeps driving the rest).
  */
 object FactionPolicies {
     private val policies = mutableMapOf<Faction, FactionPolicy>()
 
-    fun of(faction: Faction): FactionPolicy = policies.getOrPut(faction) { DomSliderPolicy(faction) }
+    /** The per-faction default-policy factory. commonMain defaults to [DefaultPolicy] (headless weighting);
+     *  the jsMain shell installs `::DomSliderPolicy` at boot so the browser reads the live tuning sliders. */
+    var defaultPolicy: (Faction) -> FactionPolicy = { DefaultPolicy }
+
+    fun of(faction: Faction): FactionPolicy = policies.getOrPut(faction) { defaultPolicy(faction) }
 
     fun set(faction: Faction, policy: FactionPolicy) {
         policies[faction] = policy // installing a fresh driver drops any prior overrides (intentional reset)

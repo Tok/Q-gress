@@ -1,6 +1,8 @@
 package system.ui
 import World
 import agent.Faction
+import ai.DomSliderPolicy
+import ai.FactionPolicies
 import config.*
 import config.Sim
 import extension.CanvasFactory
@@ -89,6 +91,7 @@ object Bootstrap {
 
     fun load() {
         if (isNotRunningInBrowser()) return
+        FactionPolicies.defaultPolicy = { DomSliderPolicy(it) } // browser default: read the live tuning sliders
         if (Controls.isUnsupported()) {
             Controls.showUnsupportedNotice()
             return
