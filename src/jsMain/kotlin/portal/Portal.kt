@@ -500,7 +500,7 @@ data class Portal(
             val taken = World.allPortals.mapTo(HashSet()) { it.name }
             if (candidate !in taken) return candidate
             repeat(UNIQUE_NAME_TRIES) {
-                val fresh = PortalNames.generate()
+                val fresh = PortalNameGen.generate()
                 if (fresh !in taken) return fresh
             }
             var n = 2
@@ -517,7 +517,7 @@ data class Portal(
         fun create(location: Pos): Portal {
             val slots: Slots = Octant.values().map { it to ResonatorSlot.create() }.toMap().toMutableMap()
             val portal = Portal(
-                uniqueName(PortalNames.nameFor(location) ?: PortalNames.generate()),
+                uniqueName(Names.sink.nameFor(location) ?: PortalNameGen.generate()),
                 location,
                 emptyMap(), // heatMap (vestigial GridMap — never read)
                 VectorField.EMPTY, // vectors — filled once the flow field computes

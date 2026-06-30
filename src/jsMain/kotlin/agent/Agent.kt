@@ -11,6 +11,7 @@ import agent.action.cond.Recruiter
 import agent.qvalue.QDestinations
 import config.Config
 import config.Dim
+import config.Platform
 import extension.Grid
 import items.deployable.Resonator
 import items.level.XmpLevel
@@ -18,7 +19,6 @@ import portal.Portal
 import portal.XmMap
 import system.audio.Snd
 import system.effect.Fx
-import system.ui.Bootstrap
 import util.MathUtil
 import util.NameGen
 import util.Rng
@@ -415,7 +415,7 @@ data class Agent(
             val coords = at ?: Positions.createRandomPassable(grid)
             val actionPortal = initialActionPortal(coords)
             val agent = Agent(
-                faction, NameGen.handle(faction, Bootstrap.locationName()), coords, Skills.createRandom(),
+                faction, NameGen.handle(faction, Platform.locationName()), coords, Skills.createRandom(),
                 Inventory.empty(), Action.create(), actionPortal, actionPortal.location,
                 ap, initialXm,
             )

@@ -17,4 +17,7 @@ expect object Platform {
 
     /** Browser window inner height, or [fallback] when headless. */
     fun windowHeight(fallback: Int): Int
+
+    /** The current play location's display name (seeds agent handles), or "" when headless. */
+    fun locationName(): String
 }

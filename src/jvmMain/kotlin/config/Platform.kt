@@ -7,4 +7,5 @@ actual object Platform {
     actual fun isLocal(): Boolean = false
     actual fun windowWidth(fallback: Int): Int = fallback
     actual fun windowHeight(fallback: Int): Int = fallback
+    actual fun locationName(): String = ""
 }

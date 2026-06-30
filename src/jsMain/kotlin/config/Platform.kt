@@ -10,4 +10,5 @@ actual object Platform {
     actual fun isLocal(): Boolean = Bootstrap.isLocal()
     actual fun windowWidth(fallback: Int): Int = if (isBrowser()) window.innerWidth else fallback
     actual fun windowHeight(fallback: Int): Int = if (isBrowser()) window.innerHeight else fallback
+    actual fun locationName(): String = Bootstrap.locationName()
 }
