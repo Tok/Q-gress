@@ -91,6 +91,6 @@ Requires **JDK 21** on `JAVA_HOME`. The app is desktop-only and needs WebGL.
 
 ## Working agreements
 
-- Branch is **`develop`**. Commit there; **do not push** until something works end-to-end.
+- Committing directly to **`main`** is fine for now on this project. **Do not push** until something works end-to-end.
 - End commit messages with the `Co-Authored-By` trailer.
 - The user does the visual checks (`./start.sh`); don't block on screenshots.
