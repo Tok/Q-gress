@@ -2,9 +2,10 @@ package util.data
 
 import World
 import config.Dim
+import config.Platform
 import config.Sim
 import extension.Grid
-import system.ui.Bootstrap
+import util.Log
 import util.Rng
 
 /**
@@ -41,7 +42,7 @@ object Positions {
     /** Whether a new portal can still be placed without clipping an existing one (a free, well-spaced
      *  candidate exists). Always true headless (no rendering → spacing irrelevant). Lets the density
      *  system skip discovery when the map is packed instead of failing to place. */
-    fun hasPortalSpace(): Boolean = Bootstrap.isNotRunningInBrowser() || portalCandidates().isNotEmpty()
+    fun hasPortalSpace(): Boolean = !Platform.isBrowser() || portalCandidates().isNotEmpty()
 
     fun createRandomForPortal(): Pos {
         if (!World.hasGrid()) return createRandomNoOffset() // bare unit test, no grid → any position will do
@@ -70,7 +71,7 @@ object Positions {
 
     fun createRandomPassable(grid: Grid) = createRandomPassable(grid, retries = 10)
     private fun createRandomPassable(grid: Grid, retries: Int): Pos {
-        if (Bootstrap.isNotRunningInBrowser()) {
+        if (!Platform.isBrowser()) {
             val keys = passableKeys(grid)
             if (keys.isEmpty()) return Pos(0, 0)
             // Grid keys are SHADOW cells; agents/portals live in SIM space. Return the cell centre in sim
@@ -87,7 +88,7 @@ object Positions {
             if (retries > 0) {
                 createRandomPassable(grid, retries - 1)
             } else {
-                console.warn("Blocked Position: $random")
+                Log.warn("Blocked Position: $random")
                 random // FIXME workaround..
             }
         }

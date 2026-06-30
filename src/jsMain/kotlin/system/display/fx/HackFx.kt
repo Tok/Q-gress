@@ -1,6 +1,7 @@
 package system.display.fx
 
 import agent.Faction
+import agent.action.HackTiming
 import external.Three
 import system.display.Scene3D
 import kotlin.math.PI
@@ -16,19 +17,16 @@ import kotlin.math.sin
  * current reso group each sync, [update] each frame. [spin] is also reused by the demo's showcases.
  */
 object HackFx {
-    const val HACK_S = 4.5 // seconds a normal hacked collar spins (real hacks are a few s; cooldown lets us stretch)
+    const val HACK_S = HackTiming.HACK_S // re-exported from the pure timing core (single source)
     const val GLYPH_SPIN_S = 7.0 // demo-showcase glyph spin; gameplay uses glyphDuration(level)
-    private const val GLYPH_BASE_S = 4.0 // glyph floor (~a skilled glypher); + per level below
-    private const val GLYPH_PER_LEVEL_S = 0.8 // higher portals take more glyphs → longer (skill TBD)
     private const val PEAK_RATE = 15.0 // peak spin rad/s, reached mid-hack; 0 at the ends (spins up then stops)
     private const val SMOOTH_PEAK = 1.875 // max slope of smootherstep → normalise so peak rate == PEAK_RATE
     private const val TILT_MAX = 0.7 // peak outward rod splay (rad ≈ 40°)
     private const val GLYPH_RATE_MUL = 1.5 // glyph spins faster
     private const val GLYPH_TILT_MUL = 1.35 // ...and splays wider
 
-    /** Glyph spin time grows with portal [level] (more glyphs to draw). Real range is wider (agent skill,
-     *  not yet modelled) — a skilled glypher could clear a low portal in ~5s. */
-    fun glyphDuration(level: Int) = GLYPH_BASE_S + level.coerceIn(1, 8) * GLYPH_PER_LEVEL_S
+    /** Glyph spin time by portal [level] — re-exported from the pure [HackTiming] timing core. */
+    fun glyphDuration(level: Int) = HackTiming.glyphDuration(level)
 
     /** Total radians the collar turns over a [dur]-second hack (the integral of the spin envelope).
      *  HackSound uses this to time a click each 1/8 turn the collar passes a filled reso slot. */

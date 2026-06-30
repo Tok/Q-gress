@@ -5,6 +5,7 @@ import agent.NonFaction
 import portal.Field
 import portal.Link
 import system.Checkpoint
+import system.display.Scene3D
 import util.data.Pos
 
 /**
@@ -33,10 +34,16 @@ object BrowserAudio : Audio {
 
     override fun playCheckpointSound(checkpoint: Checkpoint) = Sound.playCheckpointSound(checkpoint)
     override fun playCycleSound() = Sound.playCycleSound()
-    override fun hack(id: String, pos: Pos, dur: Double, faction: Faction, slots: IntArray) = HackSound.hack(id, pos, dur, faction, slots)
+
+    // [dur] is the base spin time; scale it by the live sim animation speed here (a renderer concern) so the
+    // sound tracks the visual collar spin — kept out of the pure callers (Hacker/Glypher).
+    override fun hack(id: String, pos: Pos, dur: Double, faction: Faction, slots: IntArray) =
+        HackSound.hack(id, pos, dur / animationSpeed(), faction, slots)
 
     override fun glyph(id: String, pos: Pos, level: Int, dur: Double, faction: Faction, slots: IntArray) =
-        HackSound.glyph(id, pos, level, dur, faction, slots)
+        HackSound.glyph(id, pos, level, dur / animationSpeed(), faction, slots)
+
+    private fun animationSpeed() = Scene3D.animationSpeed.coerceAtLeast(0.1)
 
     override fun announceHugeField(owner: Faction, mu: Int) = Tts.announceHugeField(owner, mu)
     override fun announcePortalDiscovery(name: String) = Tts.announcePortalDiscovery(name)

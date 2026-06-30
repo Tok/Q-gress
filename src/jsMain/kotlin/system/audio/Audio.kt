@@ -71,10 +71,11 @@ interface Audio {
     /** A full cycle completed. */
     fun playCycleSound()
 
-    /** The portal collar hack spin (records the per-resonator slot levels for the visual collar's audio). */
+    /** The portal collar hack spin ([dur] = the *base* spin seconds; the live sink scales it by sim animation
+     *  speed). [slots] are the per-resonator levels driving the collar's per-reso clicks. */
     fun hack(id: String, pos: Pos, dur: Double, faction: Faction, slots: IntArray)
 
-    /** The stronger glyph-hack spin. */
+    /** The stronger glyph-hack spin ([dur] = base spin seconds, scaled by the live sink — as [hack]). */
     fun glyph(id: String, pos: Pos, level: Int, dur: Double, faction: Faction, slots: IntArray)
 
     /** TTS: a huge field was created. */

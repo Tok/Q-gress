@@ -23,7 +23,7 @@ import util.data.Pos
  * [MapController.addGrid] does the raw pixel readback and hands the [ImageData] here.
  */
 object ShadowGridBuilder {
-    const val OFFSCREEN_CELL_ROWS = 10
+    private val OFFSCREEN_CELL_ROWS = Sim.OFFSCREEN_CELL_ROWS
 
     fun build(imageData: ImageData, width: Int, height: Int): Grid {
         // Grid resolution follows the game canvas (CSS pixels), not the raw WebGL readback (which is

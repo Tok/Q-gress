@@ -9,7 +9,6 @@ import extension.VectorField
 import portal.Portal
 import system.audio.Snd
 import system.grid.Nav
-import system.map.ShadowGridBuilder
 import util.*
 import util.Rng
 import util.data.*
@@ -149,7 +148,7 @@ data class NonFaction(
     }
 
     companion object {
-        private val OFFSCREEN_DISTANCE = Pos.res * (ShadowGridBuilder.OFFSCREEN_CELL_ROWS / 2)
+        private val OFFSCREEN_DISTANCE = Pos.res * (Sim.OFFSCREEN_CELL_ROWS / 2)
 
         // Roughly the gap between adjacent off-map destinations along the border (sim units ≈ half a screen).
         // The count then scales with the field perimeter, bounded so we don't compute too many full-map flow

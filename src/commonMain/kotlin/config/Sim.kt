@@ -38,6 +38,11 @@ object Sim {
     private const val MIN_SIDE = 600
     private const val MAX_SIDE = 9000
 
+    /** How many shadow-cell rows the grid extends *beyond* each edge of the play area (off-screen margin so NPCs
+     *  can stream in/out + flow fields resolve past the border). The grid build ([system.map.ShadowGridBuilder])
+     *  and the off-map NPC destinations ([agent.NonFaction]) both key off this. */
+    const val OFFSCREEN_CELL_ROWS = 10
+
     /** Square side (sim px) whose inscribed circle covers [km2] of (nominal) ground: area = π·(side·MPP/2)². */
     fun sideForArea(km2: Double): Int = (2.0 * sqrt(km2 * 1_000_000.0 / PI) / MPP_REF).roundToInt()
 

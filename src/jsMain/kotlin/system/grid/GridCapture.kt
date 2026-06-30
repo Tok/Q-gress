@@ -2,6 +2,7 @@ package system.grid
 
 import config.Location
 import config.Locations
+import config.Sim
 import extension.Grid
 import kotlinx.browser.document
 import org.w3c.dom.HTMLAnchorElement
@@ -9,7 +10,6 @@ import org.w3c.dom.url.URL
 import org.w3c.files.Blob
 import org.w3c.files.BlobPropertyBag
 import system.map.MapController
-import system.map.ShadowGridBuilder
 import system.ui.LoadingOverlay
 
 /**
@@ -28,7 +28,7 @@ object GridCapture {
     /** Called from ShadowGridBuilder.build (capture mode) with the raw, pre-connectIslands grid. */
     fun onGridBuilt(rawGrid: Grid, w: Int, h: Int) {
         val preset = currentPreset ?: return
-        fixtures.add(GridFixture.fromGrid(preset.name, rawGrid, w, h, ShadowGridBuilder.OFFSCREEN_CELL_ROWS))
+        fixtures.add(GridFixture.fromGrid(preset.name, rawGrid, w, h, Sim.OFFSCREEN_CELL_ROWS))
     }
 
     fun sweep() {
