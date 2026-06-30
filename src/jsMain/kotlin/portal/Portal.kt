@@ -19,8 +19,7 @@ import items.level.ResonatorLevel
 import system.Com
 import system.audio.Snd
 import system.effect.Fx
-import system.grid.Pathfinding
-import system.ui.Bootstrap
+import system.grid.Nav
 import util.*
 import util.Rng
 import util.data.*
@@ -30,7 +29,7 @@ data class Portal(
     val name: String,
     val location: Pos,
     val heatMap: GridMap,
-    var vectors: VectorField, // filled asynchronously after creation (Pathfinding.computeFieldAsync)
+    var vectors: VectorField, // filled asynchronously after creation (Nav.sink.compute)
     val slots: Slots,
     val links: MutableSet<Link>,
     val fields: MutableSet<Field>,
@@ -512,7 +511,7 @@ data class Portal(
         // The pure link-defense curve, retaliation damage, hack cooldown + burnout math now live in the shared
         // core ([PortalMath]); callers below use it directly.
 
-        // Non-blocking: the portal is built with an empty flow field, then Pathfinding.computeFieldAsync
+        // Non-blocking: the portal is built with an empty flow field, then Nav.sink.compute
         // fills portal.vectors off-thread (heatMap stays empty — it's never read externally). Agents
         // fall back to a straight-line heading while vectors is empty (Agent.moveCloserToDestinationPortal).
         fun create(location: Pos): Portal {
@@ -527,14 +526,11 @@ data class Portal(
                 mutableSetOf(),
                 null,
             )
-            if (Bootstrap.isRunningInBrowser()) {
-                Snd.sink.playPortalCreationSound(location)
-                Pathfinding.computeFieldAsync(location) { field ->
-                    portal.vectors = field
-                    Fx.sink.flashVectorField("portal:${portal.id}")
-                }
-            } else if (Config.headlessFieldCompute) {
-                portal.vectors = Pathfinding.computeFieldSync(location) // headless match: deterministic, inline
+            Snd.sink.playPortalCreationSound(location) // NoOpAudio headless
+            Nav.sink.compute(location) { field ->
+                // async in-browser / inline headless-sync / skipped
+                portal.vectors = field
+                Fx.sink.flashVectorField("portal:${portal.id}") // NoOpEffects headless
             }
             if (World.isReady) Snd.sink.announcePortalDiscovery(portal.name) // VERBOSE TTS (in-game spawns only, not world-gen)
             return portal

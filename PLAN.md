@@ -20,19 +20,24 @@ The open structural focus: functional core / imperative shell, module-by-module,
   jsMain); the **pure `items/` data layer** — all `items/types/*`, the `items/level/*` tables,
   `QgressItem`/`DeployableItem`/`Mod`, plus `portal.Quality` and `config.DropRates`; and a **batch of leaf
   pure data/logic** unblocked by those — `system.Checkpoint`, `portal.{HackResult,ModSlot,XmMap,XmHeap}`,
-  `agent.{Skills,AgentSize,StuckTracker}`, `util.data.{Circle,Dim,GeoCoordsExt}`. (`ai.Tournament` looked
-  liftable but has same-package jsMain deps on `FactionPolicy`/`MatchSetup`/`SimRunner` — deferred.)
+  `agent.{Skills,AgentSize,StuckTracker}`, `util.data.{Circle,Dim,GeoCoordsExt}`, and the pure flow-field
+  data `extension.{VectorField,GridMap}` (lifted alongside the Pathfinding seam below). (`ai.Tournament`
+  looked liftable but has same-package jsMain deps on `FactionPolicy`/`MatchSetup`/`SimRunner` — deferred.)
   *What still blocks the rest:* the item **entity classes** (`Resonator`/`Shield`/`XmpBurster`/`PowerCube`/… — 10 files) carry an
   `owner: Agent` and/or bind `Portal`/`World`/`Fx`, so they — and `Inventory`, `Field`, the `Config`
   consumers (`Tournament`/`Observation`/`Cycle`) — only lift once the big types `Portal`/`World`/`Agent`
-  become `commonMain`. Two of the prerequisites are now **done**: the **audio seam** (`system.audio.Audio`
-  + `Snd.sink` + `NoOpAudio`/`BrowserAudio`, mirroring `Effects`/`Fx`) — every game-logic audio call now
-  routes through `Snd.sink`, so the entities no longer name the Web-Audio-bound `Sound`/`BlastSound`/`Tts`/
-  `HackSound` objects; and the **canvas/Scene3D split off `World`** (World is already JS-API-clean — its
-  only remaining blockers are the `Agent`/`Portal`/`NonFaction` types it aggregates). Still open before the
-  big types can move: a **Pathfinding seam** off `Portal` (`computeFieldAsync/Sync` + `VectorField`/`GridMap`
-  are coroutine/jsMain-bound), and routing `Portal`/`Agent`'s remaining jsMain leaves (`Com`, `Bootstrap`,
-  `console.warn`, `PortalNames`, `Movement`, the `action/*` collaborators). A large, multi-step move, not a
+  become `commonMain`. Three of the prerequisites are now **done**: (1) the **audio seam**
+  (`system.audio.Audio` + `Snd.sink` + `NoOpAudio`/`BrowserAudio`, mirroring `Effects`/`Fx`) — every
+  game-logic audio call routes through `Snd.sink`, so the entities no longer name the Web-Audio-bound
+  `Sound`/`BlastSound`/`Tts`/`HackSound` objects; (2) the **flow-field-compute seam** (`system.grid.FieldFlow`
+  + `Nav.sink` + `NoOpFieldFlow`/`PathFieldFlow`) — `Portal.create`/`NonFaction.getOrCreateVectorField` now
+  request fields via `Nav.sink.compute(dest){…}` instead of naming the coroutine-bound `Pathfinding`; the
+  pure `VectorField`/`GridMap` data types lifted to commonMain, and dropping the old inline
+  `Bootstrap`/`Config.headlessFieldCompute` branches removed `Portal`'s last `Bootstrap` dependency; and
+  (3) the **canvas/Scene3D split off `World`** (World is already JS-API-clean — its only remaining blockers
+  are the `Agent`/`Portal`/`NonFaction` types it aggregates). Still open before the big types can move:
+  routing `Portal`/`Agent`'s remaining jsMain leaves (`Com`, `Bootstrap` on `Agent`, `console.warn`,
+  `PortalNames`, `Movement`, the `action/*` collaborators). A large, multi-step move, not a
   quick extraction. (`Scene3D` keeps an
   *intentional* `LargeClass` suppress: its remaining entity-sync + effect-dispatch bulk is irreducibly bound
   to the three.js groups — relocating it behind a ~30-member API would be worse.)

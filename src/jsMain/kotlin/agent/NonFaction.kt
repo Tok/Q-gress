@@ -8,9 +8,8 @@ import extension.Grid
 import extension.VectorField
 import portal.Portal
 import system.audio.Snd
-import system.grid.Pathfinding
+import system.grid.Nav
 import system.map.ShadowGridBuilder
-import system.ui.Bootstrap
 import util.*
 import util.Rng
 import util.data.*
@@ -233,11 +232,9 @@ data class NonFaction(
             if (maybeField != null && maybeField.isNotEmpty()) {
                 return maybeField
             }
-            if (Config.headlessFieldCompute && Bootstrap.isNotRunningInBrowser()) {
-                return Pathfinding.computeFieldSync(destination).also { fields[destination] = it } // headless match
-            }
             if (pending.add(destination)) {
-                Pathfinding.computeFieldAsync(destination) { field ->
+                Nav.sink.compute(destination) { field ->
+                    // inline headless-sync (fills the cache below) / async browser / skip
                     fields[destination] = field
                     pending.remove(destination)
                     // No loading-overlay text here: these async NPC route fields land intermittently DURING the
@@ -246,7 +243,8 @@ data class NonFaction(
                     Snd.sink.playOffScreenLocationCreationSound()
                 }
             }
-            return VectorField.EMPTY
+            // Inline (headless-sync) compute populated the cache above; async/skip leaves it empty.
+            return fields[destination] ?: VectorField.EMPTY
         }
 
         private fun findFarPortal(pos: Pos) = World.allPortals.sortedByDescending { pos.distanceTo(it.location) }.first()

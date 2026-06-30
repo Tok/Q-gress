@@ -17,6 +17,7 @@ import system.Cycle
 import system.Simulation
 import system.audio.Snd
 import system.effect.Fx
+import system.grid.Nav
 import util.GameplayPrefs
 import util.NameGen
 import util.Rng
@@ -196,6 +197,7 @@ object SimRunner {
         FactionPolicies.reset()
         Fx.reset()
         Snd.reset()
+        Nav.reset()
         Config.headlessFieldCompute = false
         Config.startStage = StartStage.START
     }
