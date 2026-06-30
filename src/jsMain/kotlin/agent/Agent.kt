@@ -19,6 +19,7 @@ import portal.Portal
 import portal.XmMap
 import system.audio.Snd
 import system.effect.Fx
+import util.Log
 import util.MathUtil
 import util.NameGen
 import util.Rng
@@ -166,7 +167,7 @@ data class Agent(
 
     private fun moveCloserToDestinationPortal(): Agent {
         if (!World.isReady) {
-            console.warn("World is not ready.")
+            Log.warn("World is not ready.")
             return this // init/teardown only — keep the action; re-selecting here would touch a half-built World
         }
         if (isAtActionPortal()) {

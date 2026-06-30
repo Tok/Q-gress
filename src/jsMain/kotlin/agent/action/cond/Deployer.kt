@@ -15,6 +15,7 @@ import portal.Portal
 import portal.ResonatorSlot
 import system.audio.Snd
 import system.effect.Fx
+import util.Log
 import kotlin.math.max
 
 object Deployer : ConditionalAction {
@@ -69,7 +70,7 @@ object Deployer : ConditionalAction {
     private fun deployOneMod(agent: Agent) {
         val mod = deployableMod(agent)
         if (mod == null || !canDeployMod(agent)) {
-            console.warn("Deployment failed..")
+            Log.warn("Deployment failed..")
             return
         }
         val portal = agent.actionPortal
