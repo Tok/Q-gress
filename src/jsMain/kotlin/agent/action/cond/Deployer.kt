@@ -13,7 +13,7 @@ import items.level.ResonatorLevel
 import portal.Octant
 import portal.Portal
 import portal.ResonatorSlot
-import system.audio.Sound
+import system.audio.Snd
 import system.effect.Fx
 import kotlin.math.max
 
@@ -75,7 +75,7 @@ object Deployer : ConditionalAction {
         val portal = agent.actionPortal
         portal.deployMod(agent, mod)
         val lvl = mod.getLevel().coerceAtLeast(1)
-        if (mod is Shield) Sound.playShieldDeploySound(portal.location, lvl) else Sound.playModDeploySound(portal.location, lvl)
+        if (mod is Shield) Snd.sink.playShieldDeploySound(portal.location, lvl) else Snd.sink.playModDeploySound(portal.location, lvl)
         agent.action.start(ActionItem.DEPLOY)
     }
 
@@ -94,7 +94,7 @@ object Deployer : ConditionalAction {
         val portal = agent.actionPortal
         val distance = max(agent.distanceToPortal(portal), Dim.minDeploymentRange).toInt()
         portal.deploy(agent, mapOf(octant to reso), distance) // handles AP/XM + consumes the reso
-        Sound.playResoDeploySound(portal.location, reso.level.level)
+        Snd.sink.playResoDeploySound(portal.location, reso.level.level)
         Fx.sink.recordDeploy("portal:${portal.id}", octant, agent.pos) // fly the rod in from the agent
         agent.action.start(ActionItem.DEPLOY)
     }

@@ -4,7 +4,7 @@ import agent.Agent
 import agent.action.ActionItem
 import items.QgressItem
 import items.rewardMote
-import system.audio.HackSound
+import system.audio.Snd
 import system.display.Scene3D
 import system.display.fx.HackFx
 import system.effect.Fx
@@ -24,7 +24,7 @@ object Hacker : ConditionalAction {
         val sp = Scene3D.animationSpeed.coerceAtLeast(0.1)
         val slots = IntArray(8)
         agent.actionPortal.resoMap().forEach { (oct, reso) -> slots[oct.ordinal] = reso.getLevel() }
-        HackSound.hack(id, agent.actionPortal.location, HackFx.HACK_S / sp, agent.faction, slots)
+        Snd.sink.hack(id, agent.actionPortal.location, HackFx.HACK_S / sp, agent.faction, slots)
         // ENL spins clockwise, RES counter-clockwise; a plain hack (not a glyph).
         Fx.sink.recordHack(id, agent.faction, glyph = false, HackFx.HACK_S)
         val newStuff: List<QgressItem>? = hackResult.items

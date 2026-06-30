@@ -4,7 +4,7 @@ import World
 import agent.Agent
 import items.QgressItem
 import items.deployable.Multihack
-import system.audio.Tts
+import system.audio.Snd
 import system.effect.Fx
 import util.Rng
 import kotlin.math.min
@@ -35,7 +35,7 @@ internal object PortalHacks {
             if (Rng.random() < glypher.skills.glyphSkill) {
                 glyphItems.addAll(hack(portal, glypher))
             }
-            Tts.announceGlyphHack(glypher.faction) // reads 1–3 glyphs (GLYPH verbosity only; no-op headless)
+            Snd.sink.announceGlyphHack(glypher.faction) // reads 1–3 glyphs (GLYPH verbosity only; no-op headless)
             return HackResult(glyphItems.toList(), null)
         }
         return HackResult(null, normal.cooldown)

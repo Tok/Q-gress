@@ -17,9 +17,7 @@ import items.deployable.Shield
 import items.level.PortalLevel
 import items.level.ResonatorLevel
 import system.Com
-import system.audio.BlastSound
-import system.audio.Sound
-import system.audio.Tts
+import system.audio.Snd
 import system.effect.Fx
 import system.grid.Pathfinding
 import system.ui.Bootstrap
@@ -126,7 +124,7 @@ data class Portal(
         val mod = mods.remove(slot) ?: return null
         destroyer?.addAp(MOD_DESTROY_AP)
         // Subtle "plop" as the item pops out of its slot (any mod — shield, heat sink, …).
-        if (Bootstrap.isRunningInBrowser()) BlastSound.playKnockOutSound(location)
+        Snd.sink.playKnockOutSound(location)
         Com.addMessage("$destroyer knocked a ${mod.abbr} off $this.", Com.Importance.MINOR, destroyer?.faction?.color)
         return mod
     }
@@ -244,7 +242,7 @@ data class Portal(
     // VERBOSE TTS: call out a field covering a big slice of the play box (rare → not spammy).
     private fun announceIfHugeField(field: Field, faction: Faction) {
         if (field.calculateMu().toLong() > Sim.width.toLong() * Sim.height / HUGE_FIELD_FRACTION) {
-            Tts.announceHugeField(faction, field.calculateMu())
+            Snd.sink.announceHugeField(faction, field.calculateMu())
         }
     }
 
@@ -255,7 +253,7 @@ data class Portal(
             links.add(newLink)
             linker.inventory.consumeKeyToPortal(target)
             Com.addMessage("$linker created a link from $this to $target", Com.Importance.MINOR, linker.faction.color)
-            Sound.playLinkingSound(newLink)
+            Snd.sink.playLinkingSound(newLink)
             linker.addAp(IngressFacts.AP_CREATE_LINK) // 313 (was 187 — that's the DESTROY-link value)
             linker.removeXm(250)
 
@@ -268,7 +266,7 @@ data class Portal(
                     val newField = Field.create(this, target, anchor, linker)
                     if (newField != null) {
                         Com.addMessage("$linker created a field at $this. +$newField", Com.Importance.MAJOR, linker.faction.color)
-                        Sound.playFieldingSound(newField)
+                        Snd.sink.playFieldingSound(newField)
                         fields.add(newField)
                         linker.addAp(IngressFacts.AP_CREATE_FIELD) // 1250, flat (size drives MU, not AP)
                         announceIfHugeField(newField, linker.faction) // VERBOSE TTS
@@ -364,7 +362,7 @@ data class Portal(
         val level = getLevel().value
         agent.removeXm(PortalMath.retaliationDamage(level, totalMitigation()))
         Fx.sink.fireBolt(location, level, agent.pos, defender.faction.color)
-        BlastSound.playThunderSound((agent.pos.x / Sim.width * 2.0 - 1.0).coerceIn(-1.0, 1.0))
+        Snd.sink.playThunderSound((agent.pos.x / Sim.width * 2.0 - 1.0).coerceIn(-1.0, 1.0))
     }
 
     fun destroy(destroyer: Agent? = null) {
@@ -377,7 +375,7 @@ data class Portal(
         mods.clear()
         if (droppedMods.isNotEmpty()) {
             Fx.sink.dropMods(location, lvl, droppedMods) // mods tumble out when the portal goes down
-            droppedMods.filterIsInstance<Shield>().firstOrNull()?.let { Sound.playShieldRemoveSound(location, it.getLevel()) }
+            droppedMods.filterIsInstance<Shield>().firstOrNull()?.let { Snd.sink.playShieldRemoveSound(location, it.getLevel()) }
         }
         destroyAllLinksAndFields(destroyer)
         World.allAgents.forEach { agent ->
@@ -396,7 +394,7 @@ data class Portal(
         val heaviness = (0.1 + level * 0.06).coerceAtMost(0.7)
         destroy()
         Fx.sink.shatterPortal(location, shardColor, level, resoLevels) // glass shards + resonators fall
-        BlastSound.playGlassShatterSound(location, heaviness, 0.8)
+        Snd.sink.playGlassShatterSound(location, heaviness, 0.8)
         World.allAgents.forEach { agent ->
             val portalKeys: List<PortalKey>? = agent.inventory.findKeys().filter { key -> key.portal == this }.toList()
             if (portalKeys != null) {
@@ -530,7 +528,7 @@ data class Portal(
                 null,
             )
             if (Bootstrap.isRunningInBrowser()) {
-                Sound.playPortalCreationSound(location)
+                Snd.sink.playPortalCreationSound(location)
                 Pathfinding.computeFieldAsync(location) { field ->
                     portal.vectors = field
                     Fx.sink.flashVectorField("portal:${portal.id}")
@@ -538,7 +536,7 @@ data class Portal(
             } else if (Config.headlessFieldCompute) {
                 portal.vectors = Pathfinding.computeFieldSync(location) // headless match: deterministic, inline
             }
-            if (World.isReady) Tts.announcePortalDiscovery(portal.name) // VERBOSE TTS (in-game spawns only, not world-gen)
+            if (World.isReady) Snd.sink.announcePortalDiscovery(portal.name) // VERBOSE TTS (in-game spawns only, not world-gen)
             return portal
         }
 

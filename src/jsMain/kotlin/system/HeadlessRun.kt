@@ -1,6 +1,7 @@
 package system
 
 import ai.SimRunner
+import system.audio.Snd
 import system.effect.Fx
 
 /**
@@ -21,7 +22,8 @@ object HeadlessRun {
     fun begin() {
         if (active) return
         snapshot = WorldSnapshot.capture()
-        Fx.headless = true // survives SimRunner's per-match Fx.reset(), so eval matches fire no 3D/sound FX
+        Fx.headless = true // survives SimRunner's per-match Fx.reset(), so eval matches fire no 3D FX
+        Snd.headless = true // ditto for audio: eval matches stay silent through their per-match Snd.reset()
         active = true
     }
 
@@ -33,6 +35,8 @@ object HeadlessRun {
         snapshot = null
         Fx.headless = false
         Fx.reset()
+        Snd.headless = false
+        Snd.reset()
         active = false
     }
 }

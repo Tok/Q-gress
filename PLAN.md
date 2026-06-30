@@ -25,8 +25,15 @@ The open structural focus: functional core / imperative shell, module-by-module,
   *What still blocks the rest:* the item **entity classes** (`Resonator`/`Shield`/`XmpBurster`/`PowerCube`/… — 10 files) carry an
   `owner: Agent` and/or bind `Portal`/`World`/`Fx`, so they — and `Inventory`, `Field`, the `Config`
   consumers (`Tournament`/`Observation`/`Cycle`) — only lift once the big types `Portal`/`World`/`Agent`
-  become `commonMain`. That needs an **audio seam** for Portal/Agent (mirroring `Effects`/`Fx`) and a
-  canvas/Scene3D split off `World`. A large, multi-step move, not a quick extraction. (`Scene3D` keeps an
+  become `commonMain`. Two of the prerequisites are now **done**: the **audio seam** (`system.audio.Audio`
+  + `Snd.sink` + `NoOpAudio`/`BrowserAudio`, mirroring `Effects`/`Fx`) — every game-logic audio call now
+  routes through `Snd.sink`, so the entities no longer name the Web-Audio-bound `Sound`/`BlastSound`/`Tts`/
+  `HackSound` objects; and the **canvas/Scene3D split off `World`** (World is already JS-API-clean — its
+  only remaining blockers are the `Agent`/`Portal`/`NonFaction` types it aggregates). Still open before the
+  big types can move: a **Pathfinding seam** off `Portal` (`computeFieldAsync/Sync` + `VectorField`/`GridMap`
+  are coroutine/jsMain-bound), and routing `Portal`/`Agent`'s remaining jsMain leaves (`Com`, `Bootstrap`,
+  `console.warn`, `PortalNames`, `Movement`, the `action/*` collaborators). A large, multi-step move, not a
+  quick extraction. (`Scene3D` keeps an
   *intentional* `LargeClass` suppress: its remaining entity-sync + effect-dispatch bulk is irreducibly bound
   to the three.js groups — relocating it behind a ~30-member API would be worse.)
 - **Reduce magic numbers** — name them / fold into `Config` where it aids clarity (detekt `MagicNumber` is

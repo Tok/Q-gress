@@ -4,7 +4,7 @@ import agent.Agent
 import agent.action.ActionItem
 import items.QgressItem
 import items.rewardMote
-import system.audio.HackSound
+import system.audio.Snd
 import system.display.Scene3D
 import system.display.fx.HackFx
 import system.effect.Fx
@@ -25,7 +25,7 @@ object Glypher : ConditionalAction {
         val sp = Scene3D.animationSpeed.coerceAtLeast(0.1)
         val slots = IntArray(8)
         agent.actionPortal.resoMap().forEach { (oct, reso) -> slots[oct.ordinal] = reso.getLevel() }
-        HackSound.glyph(id, agent.actionPortal.location, level, spin / sp, agent.faction, slots)
+        Snd.sink.glyph(id, agent.actionPortal.location, level, spin / sp, agent.faction, slots)
         // Glyph hacking gets the stronger collar animation (faster, wider, longer).
         Fx.sink.recordHack(id, agent.faction, glyph = true, spin)
         val newStuff: List<QgressItem>? = glyphResult.items

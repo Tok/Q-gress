@@ -14,8 +14,8 @@ import util.data.Pos
  * (headless: Node tests / the future `SimRunner`). No three.js / DOM types cross this seam, so the whole
  * tick loop runs headless without touching the renderer.
  *
- * Audio is **not** here — [util.Sound] already self-guards headless; the message log [system.Com] is
- * pure. This seam covers only the renderer (`system/display/`) calls. Mirrors [ai.FactionPolicies].
+ * Audio is **not** here — it has its own parallel seam, [system.audio.Audio] (`Snd.sink`); the message log
+ * [system.Com] is pure. This seam covers only the renderer (`system/display/`) calls. Mirrors [ai.FactionPolicies].
  */
 interface Effects {
     /** XMP detonation burst at [location] (records the blast origin so destroyed parts fly away from it). */

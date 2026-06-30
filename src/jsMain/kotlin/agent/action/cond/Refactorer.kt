@@ -3,7 +3,7 @@ package agent.action.cond
 import agent.Agent
 import agent.action.ActionItem
 import items.deployable.Virus
-import system.audio.Sound
+import system.audio.Snd
 
 /**
  * Using a flip item (JARVIS Virus or ADA Refactor — **either faction may carry and use either one**)
@@ -24,7 +24,7 @@ object Refactorer : ConditionalAction {
         val portal = agent.actionPortal
         portal.refactor(agent, virus.type.flipsTo)
         agent.inventory.items.remove(virus)
-        Sound.playVirusSound(portal.location, virus.type.flipsTo) // glitch sweep pitched to the NEW colour
+        Snd.sink.playVirusSound(portal.location, virus.type.flipsTo) // glitch sweep pitched to the NEW colour
         agent.action.start(ActionItem.VIRUS)
         return agent
     }

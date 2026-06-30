@@ -9,8 +9,7 @@ import agent.NonFaction
 import agent.action.ActionItem
 import config.Config
 import system.Com
-import system.audio.Sound
-import system.audio.Tts
+import system.audio.Snd
 import util.Rng
 
 /**
@@ -73,8 +72,8 @@ object Recruiter : ConditionalAction {
             }
             Com.addMessage("$newAgent has completed the training.", Com.Importance.MAJOR, newAgent.faction.color)
             World.pendingAgents.add(newAgent) // flushed after the agent loop (avoids CME)
-            Sound.playRecruitSuccess(agent.pos)
-            Tts.announceRecruitment(agent.faction) // VERBOSE TTS
+            Snd.sink.playRecruitSuccess(agent.pos)
+            Snd.sink.announceRecruitment(agent.faction) // VERBOSE TTS
         }
         // No fail sound or COM message: with capped recruiters cycling through NPCs, declines resolve many times per
         // second and would machine-gun the blip + spam the feed. Only success (a rarer, meaningful event) is announced.

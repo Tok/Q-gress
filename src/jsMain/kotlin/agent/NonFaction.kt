@@ -7,7 +7,7 @@ import config.Time
 import extension.Grid
 import extension.VectorField
 import portal.Portal
-import system.audio.Sound
+import system.audio.Snd
 import system.grid.Pathfinding
 import system.map.ShadowGridBuilder
 import system.ui.Bootstrap
@@ -243,7 +243,7 @@ data class NonFaction(
                     // No loading-overlay text here: these async NPC route fields land intermittently DURING the
                     // "Creating people (n/n)" phase, and overwriting the count with "Preparing routes…" made the
                     // load screen flicker between people + route text. The count stays; the audio cue remains.
-                    Sound.playOffScreenLocationCreationSound()
+                    Snd.sink.playOffScreenLocationCreationSound()
                 }
             }
             return VectorField.EMPTY
@@ -292,7 +292,7 @@ data class NonFaction(
                 val portal = World.allPortals[(Rng.random() * (World.allPortals.size - 1)).toInt()]
                 NonFaction(position, speed, size, portal.location, portal.vectors, World.tick)
             }
-            Sound.playNpcCreationSound(newNonFaction)
+            Snd.sink.playNpcCreationSound(newNonFaction)
             return newNonFaction // rendered in 3D by Scene3D.sync(); no 2D draw (it'd just flash then clear)
         }
     }

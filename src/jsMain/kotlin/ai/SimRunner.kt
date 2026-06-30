@@ -15,6 +15,7 @@ import system.Checkpoint
 import system.Com
 import system.Cycle
 import system.Simulation
+import system.audio.Snd
 import system.effect.Fx
 import util.GameplayPrefs
 import util.NameGen
@@ -194,6 +195,7 @@ object SimRunner {
         NameGen.reset()
         FactionPolicies.reset()
         Fx.reset()
+        Snd.reset()
         Config.headlessFieldCompute = false
         Config.startStage = StartStage.START
     }

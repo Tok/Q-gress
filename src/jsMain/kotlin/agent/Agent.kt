@@ -16,7 +16,7 @@ import items.deployable.Resonator
 import items.level.XmpLevel
 import portal.Portal
 import portal.XmMap
-import system.audio.Sound
+import system.audio.Snd
 import system.effect.Fx
 import system.ui.Bootstrap
 import util.MathUtil
@@ -77,7 +77,7 @@ data class Agent(
     fun addAp(v: Int) {
         val before = getLevel()
         this.ap += (v * Config.apMultiplier * Config.progressSpeed).roundToInt() // progressSpeed → faster levelling
-        if (faction == World.userFaction && getLevel() > before) Sound.playLevelUp(pos) // player agent dinged up
+        if (faction == World.userFaction && getLevel() > before) Snd.sink.playLevelUp(pos) // player agent dinged up
     }
 
     fun act(): Agent {
