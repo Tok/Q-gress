@@ -4,19 +4,16 @@ import config.Config
 import config.Sim
 import extension.Grid
 import extension.VectorField
-import kotlinx.coroutines.MainScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import util.Profiler
 import util.data.*
 import kotlin.math.sqrt
 
 /**
- * Flow-field pathfinding. The heavy world-gen + per-tick math runs over FLAT arrays indexed by a packed cell
- * index (origin at the grid's bounding-box corner, row stride [Cells.w]) — not `Pos`-keyed HashMaps of boxed
- * `Complex`. The phase-D profile showed the old Map/Complex version dominating world-gen (per-cell `Pos`
- * allocation ×8 in the Dijkstra and ×9 per smoothing pass, plus `equals`/`hashCode`/`get` churn). The output
- * is still a [VectorField] (`Map<Pos, Complex>`) so consumers are unchanged; only the internals are flat.
+ * Flow-field pathfinding — the **pure, synchronous** core. The heavy world-gen + per-tick math runs over FLAT
+ * arrays indexed by a packed cell index (origin at the grid's bounding-box corner, row stride [Cells.w]) — not
+ * `Pos`-keyed HashMaps of boxed `Complex`. The output is a [VectorField] so consumers are unchanged; only the
+ * internals are flat. This lives in `commonMain` so headless matches ([ai.SimRunner]) + the JVM tests compute
+ * fields with no coroutine. The frame-yielding **async** wrapper for the live browser world-gen is the jsMain
+ * [PathfindingAsync], which reuses the `internal` helpers here.
  */
 object Pathfinding {
     const val MIN_HEAT = 35
@@ -35,8 +32,8 @@ object Pathfinding {
     // the smoothing's gentle arcs wherever it's benign, only correcting cells the blur rotated toward "uphill".
     private const val MIN_DOWNHILL = 0.3
     private const val EPS = 1e-9
-    private const val YIELD_EVERY_CELLS = 2000 // cooperative yield cadence while filling the field (async path)
-    private const val UNREACHED = -1
+    internal const val YIELD_EVERY_CELLS = 2000 // cooperative yield cadence while filling the field (async path)
+    internal const val UNREACHED = -1
 
     // The 8 neighbour offsets (reused, not re-allocated per cell).
     private val NEIGHBOURS = arrayOf(-1 to -1, -1 to 0, -1 to 1, 0 to -1, 0 to 1, 1 to -1, 1 to 0, 1 to 1)
@@ -45,7 +42,7 @@ object Pathfinding {
      * The grid as flat per-cell arrays over its bounding box. Replaces the `Pos`-keyed HashMaps: `idx(x,y)`
      * maps a shadow cell to a packed index (or -1 outside the box), and [passable]/[penalty] are read in O(1).
      */
-    private class Cells(grid: Grid) {
+    internal class Cells(grid: Grid) {
         val minX: Int
         val minY: Int
         val w: Int
@@ -84,26 +81,10 @@ object Pathfinding {
         fun idx(x: Int, y: Int): Int = if (x in minX until minX + w && y in minY until minY + h) (y - minY) * w + (x - minX) else -1
     }
 
-    // --- public entry points -----------------------------------------------------------------------------
+    // --- public entry point ------------------------------------------------------------------------------
 
-    /** Async (browser): yields to the frame between chunks so a full-grid fill never freezes rendering. */
-    fun computeFieldAsync(destination: Pos, onReady: (VectorField) -> Unit) {
-        MainScope().launch {
-            val start = Profiler.nowMs()
-            val cells = Cells(World.grid)
-            val heat = generateHeat(cells, destination, yielding = true)
-            val (re, im) = buildVectors(cells, heat, destination)
-            val rawRe = re.copyOf()
-            val rawIm = im.copyOf()
-            smooth(cells, re, im, Config.vectorSmoothCount, yielding = true)
-            deWhirl(re, im, rawRe, rawIm)
-            val field = emit(cells, re, im)
-            Profiler.addFieldMs(Profiler.nowMs() - start)
-            onReady(field)
-        }
-    }
-
-    /** Synchronous twin (headless matches / Node): identical result, no coroutine, no frame-yielding. */
+    /** Compute the flow field to [destination] inline (no coroutine, no frame-yielding). The jsMain
+     *  [PathfindingAsync.computeFieldAsync] is the frame-yielding twin for the live browser world-gen. */
     fun computeFieldSync(destination: Pos): VectorField {
         val cells = Cells(World.grid)
         val heat = generateHeatSync(cells, destination)
@@ -118,29 +99,6 @@ object Pathfinding {
     // --- heat (bucketed Dijkstra over flat indices) -------------------------------------------------------
     // Each cell's cost = the wave it's reached on + its terrain movement penalty (high penalty reads as
     // "farther"). A frontier bucket per cost level → each cell is set exactly once (O(cells)).
-
-    private suspend fun generateHeat(cells: Cells, goal: Pos, yielding: Boolean): IntArray {
-        val heat = IntArray(cells.w * cells.h) { UNREACHED }
-        val buckets = HashMap<Int, MutableList<Int>>()
-        val start = goal.toShadow()
-        val startIdx = cells.idx(start.x.toInt(), start.y.toInt())
-        if (startIdx < 0) return heat // goal outside the grid → no field (all cells fall back below)
-        heat[startIdx] = 0
-        buckets[0] = mutableListOf(startIdx)
-        var wave = 0
-        var sinceYield = 0
-        while (buckets.isNotEmpty()) {
-            for (i in buckets.remove(wave) ?: emptyList()) {
-                sinceYield += expand(cells, heat, buckets, i, wave)
-                if (yielding && sinceYield >= YIELD_EVERY_CELLS) {
-                    sinceYield = 0
-                    delay(0)
-                }
-            }
-            wave++
-        }
-        return heat
-    }
 
     private fun generateHeatSync(cells: Cells, goal: Pos): IntArray {
         val heat = IntArray(cells.w * cells.h) { UNREACHED }
@@ -159,7 +117,7 @@ object Pathfinding {
     }
 
     // Mark + bucket cell [i]'s unreached passable neighbours at their cost; returns how many were added.
-    private fun expand(cells: Cells, heat: IntArray, buckets: HashMap<Int, MutableList<Int>>, i: Int, wave: Int): Int {
+    internal fun expand(cells: Cells, heat: IntArray, buckets: HashMap<Int, MutableList<Int>>, i: Int, wave: Int): Int {
         val x = cells.minX + i % cells.w
         val y = cells.minY + i / cells.w
         var added = 0
@@ -177,7 +135,7 @@ object Pathfinding {
 
     // --- raw vectors (gradient of the heat field, scaled by terrain speed) --------------------------------
 
-    private fun buildVectors(cells: Cells, heat: IntArray, destination: Pos): Pair<DoubleArray, DoubleArray> {
+    internal fun buildVectors(cells: Cells, heat: IntArray, destination: Pos): Pair<DoubleArray, DoubleArray> {
         val n = cells.w * cells.h
         val re = DoubleArray(n)
         val im = DoubleArray(n)
@@ -231,18 +189,11 @@ object Pathfinding {
 
     // --- smoothing (3×3 box blur — averaging the 9 neighbour vectors, missing ones count as zero) ----------
 
-    private suspend fun smooth(cells: Cells, re: DoubleArray, im: DoubleArray, passes: Int, yielding: Boolean) {
-        repeat(passes) {
-            blur(cells, re, im)
-            if (yielding) delay(0) // yield between smooth passes
-        }
-    }
-
     private fun smoothSync(cells: Cells, re: DoubleArray, im: DoubleArray, passes: Int) {
         repeat(passes) { blur(cells, re, im) }
     }
 
-    private fun blur(cells: Cells, re: DoubleArray, im: DoubleArray) {
+    internal fun blur(cells: Cells, re: DoubleArray, im: DoubleArray) {
         val n = cells.w * cells.h
         val outRe = DoubleArray(n)
         val outIm = DoubleArray(n)
@@ -273,7 +224,7 @@ object Pathfinding {
     // trap orbiting agents. Restore a minimum downhill component (vs the saved RAW direction) in every cell, so
     // heat strictly decreases each step and no closed loop can exist — keeping the smoothed direction wherever
     // it's already downhill enough.
-    private fun deWhirl(re: DoubleArray, im: DoubleArray, rawRe: DoubleArray, rawIm: DoubleArray) {
+    internal fun deWhirl(re: DoubleArray, im: DoubleArray, rawRe: DoubleArray, rawIm: DoubleArray) {
         for (i in re.indices) {
             // buildVectors always sets a non-zero raw magnitude (>= MIN_SPEED_FACTOR), so rMag is safe to divide.
             val rMag = sqrt(rawRe[i] * rawRe[i] + rawIm[i] * rawIm[i])
@@ -299,6 +250,6 @@ object Pathfinding {
 
     // --- emit the field: wrap the flat arrays directly (no per-cell Map/Complex) --------------------------
 
-    private fun emit(cells: Cells, re: DoubleArray, im: DoubleArray): VectorField =
+    internal fun emit(cells: Cells, re: DoubleArray, im: DoubleArray): VectorField =
         VectorField(cells.minX, cells.minY, cells.w, cells.h, re, im)
 }

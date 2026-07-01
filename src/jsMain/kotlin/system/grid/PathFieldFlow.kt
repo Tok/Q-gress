@@ -16,7 +16,7 @@ import util.data.Pos
 object PathFieldFlow : FieldFlow {
     override fun compute(destination: Pos, onReady: (VectorField) -> Unit) {
         when {
-            Bootstrap.isRunningInBrowser() -> Pathfinding.computeFieldAsync(destination, onReady)
+            Bootstrap.isRunningInBrowser() -> PathfindingAsync.computeFieldAsync(destination, onReady)
             Config.headlessFieldCompute -> onReady(Pathfinding.computeFieldSync(destination))
             else -> Unit // fields skipped: caller keeps its empty field + straight-line fallback
         }

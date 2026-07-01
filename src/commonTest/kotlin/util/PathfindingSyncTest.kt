@@ -5,7 +5,9 @@ import config.Config
 import extension.VectorField
 import portal.Portal
 import system.grid.GridFixture
+import system.grid.Nav
 import system.grid.Pathfinding
+import system.grid.SyncFieldFlow
 import util.data.Pos
 import util.data.toShadow
 import kotlin.math.sqrt
@@ -30,11 +32,15 @@ class PathfindingSyncTest {
     fun setUp() {
         val onScreen = List(12 * 12) { true }
         World.grid = GridFixture("TEST", 12, 12, 2, GridFixture.rleEncode(onScreen)).toGrid()
+        Nav.install(SyncFieldFlow) // route Portal.create's field request through the sync compute
+        World.allPortals.clear()
     }
 
     @AfterTest
     fun tearDown() {
         Config.headlessFieldCompute = false
+        Nav.reset()
+        World.allPortals.clear()
     }
 
     @Test
