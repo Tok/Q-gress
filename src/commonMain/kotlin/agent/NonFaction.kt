@@ -215,7 +215,7 @@ data class NonFaction(
         fun offscreenDestinations(): List<Pos> {
             val w = World.simW()
             val h = World.simH()
-            return if (Sim.roundField) {
+            val candidates = if (Sim.roundField) {
                 val cx = w / 2.0
                 val cy = h / 2.0
                 val r = Sim.fieldRadius() + OFFSCREEN_DISTANCE
@@ -227,6 +227,16 @@ data class NonFaction(
             } else {
                 rectBorderDestinations(w, h)
             }
+            return walkableOnly(candidates)
+        }
+
+        /** Keep only ring points on WALKABLE ground — built the same way the interior is: drop any the grid
+         *  marks impassable (off-map buildings/water, or the masked round-arena edge), so the flow field to a
+         *  destination never lands on a wall and NPCs never straight-line into it. Points beyond the grid (no
+         *  data) stay — only KNOWN walls are dropped; falls back to the raw ring if that would empty it. */
+        private fun walkableOnly(candidates: List<Pos>): List<Pos> {
+            if (!World.hasGrid()) return candidates
+            return candidates.filter { World.grid[it.toShadow()]?.isPassable != false }.ifEmpty { candidates }
         }
 
         // Points spaced evenly along the rectangle border, one [OFFSCREEN_DISTANCE] past each edge.

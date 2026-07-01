@@ -7,7 +7,9 @@ import config.Sim
 import extension.VectorField
 import system.grid.GridFixture
 import util.Rng
+import util.data.Cell
 import util.data.Pos
+import util.data.toShadow
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -226,6 +228,31 @@ class NonFactionActTest {
             World.allNonFaction.add(inside)
             inside.act()
             assertTrue(inside.busyUntil > World.tick, "an NPC at an interior target still rests a beat")
+        } finally {
+            Sim.setSize(w0, h0)
+        }
+    }
+
+    @Test
+    fun offscreenRingDropsDestinationsOnImpassableCells() {
+        val w0 = Sim.width
+        val h0 = Sim.height
+        try {
+            Sim.roundField = false
+            Sim.setSize(800, 600)
+            // An all-walkable grid covering the ring margin.
+            val cells = mutableMapOf<Pos, Cell>()
+            for (cx in -20..100) for (cy in -20..80) cells[Pos(cx, cy)] = Cell(Pos(cx, cy), true, 50)
+            World.grid = cells
+            val all = NonFaction.offscreenDestinations()
+            assertTrue(all.size >= 4, "the border ring has points")
+            // Mark ONE destination's cell impassable → it must drop out, the rest stay.
+            val victim = all.first()
+            cells[victim.toShadow()] = Cell(victim.toShadow(), false, 50)
+            World.grid = cells
+            val filtered = NonFaction.offscreenDestinations()
+            assertTrue(victim !in filtered, "a destination on an impassable cell is dropped")
+            assertEquals(all.size - 1, filtered.size, "only the impassable destination is dropped")
         } finally {
             Sim.setSize(w0, h0)
         }

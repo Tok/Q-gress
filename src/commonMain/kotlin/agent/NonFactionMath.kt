@@ -9,12 +9,12 @@ import kotlin.math.sqrt
  */
 object NonFactionMath {
     private const val LANE_BUCKETS = 7
-    private const val MAX_LANE_OFFSET = 0.1 // ± this rotates each NPC's heading only ~6° into its own lane
+    private const val MAX_LANE_OFFSET = 0.03 // ± this rotates each NPC's heading only ~1.7° into its own lane
 
     /**
      * A stable per-NPC lateral "lane" in [-[MAX_LANE_OFFSET], +[MAX_LANE_OFFSET]], spread across [LANE_BUCKETS]
      * buckets by [id]. Rotating an NPC's travel heading by this GENTLY fans a shared flow-field stream into a
-     * ribbon so they don't walk single-file — kept small (~6° max) so NPCs still overwhelmingly follow the
+     * ribbon so they don't walk single-file — kept tiny (~1.7° max) so NPCs still almost entirely follow the
      * flow field and its movement penalties (walking roads, avoiding water/buildings), which is the point of
      * having them. Deterministic (no RNG) so it's stable across ticks for a given NPC.
      */

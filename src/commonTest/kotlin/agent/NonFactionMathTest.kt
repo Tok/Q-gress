@@ -58,7 +58,7 @@ class NonFactionMathTest {
     @Test
     fun laneOffsetsFanNpcsOutSymmetricallyAndStayBounded() {
         val lanes = (0 until 7).map { NonFactionMath.laneOffset(it) }
-        assertTrue(lanes.all { it in -0.1001..0.1001 }, "every lane stays within the small ± bound (gentle, penalty-obeying)")
+        assertTrue(lanes.all { it in -0.0301..0.0301 }, "every lane stays within the tiny ± bound (gentle, penalty-obeying)")
         assertTrue(lanes.toSet().size >= 5, "different NPC ids land in different lanes (not single-file)")
         assertTrue(lanes.min() < 0.0 && lanes.max() > 0.0, "lanes fan out to BOTH sides of the heading")
         assertEquals(NonFactionMath.laneOffset(3), NonFactionMath.laneOffset(3 + 7), "the lane is stable per id (mod buckets)")
