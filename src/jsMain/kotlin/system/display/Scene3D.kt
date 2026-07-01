@@ -1241,8 +1241,8 @@ object Scene3D {
             present.add(pos)
             val mote = xmMotes.getOrPut(pos) { Three.Mesh(xmGeo, Materials.xmGlow()).also { group.add(it) } }
             val s = 0.85 + (heap.xm / 300.0).coerceIn(0.0, 1.0) * 0.5 // bigger heaps glow a touch larger
-            mote.asDynamic().scale.set(s, s, s)
-            place(mote.asDynamic(), sceneX(pos), sceneY(pos), groundZ(pos) + XM_Z)
+            mote.scale.set(s, s, s) // mote is already dynamic (from the map) — no .asDynamic()
+            place(mote, sceneX(pos), sceneY(pos), groundZ(pos) + XM_Z)
         }
         (xmMotes.keys - present).forEach { pos ->
             val m = xmMotes.remove(pos) ?: return@forEach
@@ -1366,9 +1366,9 @@ object Scene3D {
                 updateFieldGeometry(existing.mesh, rel, field)
                 existing.mesh
             }
-            mesh.asDynamic().position.set(cx, cy, cz)
+            mesh.position.set(cx, cy, cz) // mesh is already dynamic (created/stored dynamic) — no .asDynamic()
             val g = Spawns.appear(fid, FIELD_FILL_S).coerceIn(0.0, 1.0) // fill-in on creation; back to full scale after
-            mesh.asDynamic().scale.set(g, g, g)
+            mesh.scale.set(g, g, g)
         }
         (fieldMeshes.keys - present).forEach { fid ->
             val fm = fieldMeshes.remove(fid) ?: return@forEach
