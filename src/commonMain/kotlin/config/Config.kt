@@ -3,6 +3,13 @@ package config
 import agent.Faction
 
 object Config {
+    // The shipped default gameplay balance — the reset values for the three live tuning sliders, and the
+    // canonical balance training/eval pins to (see [ai.SimRunner], `util.GameplayPrefs`). Single-sourced here
+    // so commonMain (SimRunner, tests) and the jsMain prefs/menu read the same numbers.
+    const val DEFAULT_COMBAT_DYNAMISM = 0.6
+    const val DEFAULT_PROGRESS_SPEED = 1.0
+    const val DEFAULT_PORTAL_CHURN = 0.17
+
     const val minPortals = 5 // the board never churns/gens below this (always ≥5 portals on a map)
 
     // Hard ceiling on portal count. With the walkable-area density target + hasPortalSpace gate the board self-limits,
@@ -23,7 +30,7 @@ object Config {
     // removal wins. The board self-limits at its walkable capacity regardless (Positions.hasPortalSpace gates
     // creation). Per-DISCOVERY chance scale now (was per-checkpoint in the retired Cycle.managePortalDensity);
     // discovery is bounded by [maxConcurrentDiscoverers], so this stays gentle.
-    var portalChurnRate = 0.17
+    var portalChurnRate = DEFAULT_PORTAL_CHURN
 
     // Cap on how many agents per faction DISCOVER (wander → density-driven portal create/remove) at once — the
     // rest of the idle agents go seek work. A sparse/portal-less board still floods discovery via the wander
@@ -142,7 +149,7 @@ object Config {
     // agents attack, and the underdog comeback. Default 0.6: the headless balanced-dynamics sweep optimum
     // (ai/BalanceSweep) — the MU lead alternates and is shared ~evenly between equally-tuned factions, with
     // real fields forming, without descending into chaos. (The authentic 95% mitigation cap is in IngressFacts.)
-    var combatDynamism = 0.6
+    var combatDynamism = DEFAULT_COMBAT_DYNAMISM
 
     /** Gameplay shield/link mitigation cap for the current dynamism: higher dynamism → lower cap → flips. */
     fun maxMitigation(): Int = ConfigMath.maxMitigation(combatDynamism)
@@ -164,7 +171,7 @@ object Config {
     // One "Progress speed" knob (like combatDynamism) for how fast the game ramps early→endgame: it scales
     // BOTH the recruiting success chance (Recruiter.recruitmentChance) AND AP gain (Agent.addAp → level faster).
     // 1.0 = baseline; <1 slower, >1 faster. Live-tunable + persisted (GameplayPrefs).
-    var progressSpeed = 1.0
+    var progressSpeed = DEFAULT_PROGRESS_SPEED
 
     const val isNpcSwarming = true
     const val npcXmSpawnRatio = 0.2

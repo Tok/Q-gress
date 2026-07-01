@@ -56,9 +56,9 @@ class SimRunnerTest {
         config.Config.combatDynamism = live
         var midMatch = -1.0
         SimRunner.runMatch(openGrid(), seed = 5, maxTicks = 5, onTick = { midMatch = config.Config.combatDynamism })
-        assertEquals(util.GameplayPrefs.DEFAULT_COMBAT, midMatch, "the match runs on the canonical default balance")
+        assertEquals(config.Config.DEFAULT_COMBAT_DYNAMISM, midMatch, "the match runs on the canonical default balance")
         assertEquals(live, config.Config.combatDynamism, "…and the player's live value is restored after the match")
-        config.Config.combatDynamism = util.GameplayPrefs.DEFAULT_COMBAT // tidy the shared singleton for later tests
+        config.Config.combatDynamism = config.Config.DEFAULT_COMBAT_DYNAMISM // tidy the shared singleton for later tests
     }
 
     @Test
@@ -74,7 +74,7 @@ class SimRunnerTest {
             onTick = { midMatch = config.Config.combatDynamism },
         )
         assertEquals(live, midMatch, "opting out runs the player's live balance, untouched")
-        config.Config.combatDynamism = util.GameplayPrefs.DEFAULT_COMBAT
+        config.Config.combatDynamism = config.Config.DEFAULT_COMBAT_DYNAMISM
     }
 
     @Test

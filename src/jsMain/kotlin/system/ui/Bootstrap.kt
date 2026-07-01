@@ -3,6 +3,7 @@ import World
 import agent.Faction
 import ai.DomSliderPolicy
 import ai.FactionPolicies
+import ai.SimRunner
 import config.*
 import config.Sim
 import extension.CanvasFactory
@@ -106,6 +107,7 @@ object Bootstrap {
         Snd.bind(BrowserAudio)
         Nav.bind(PathFieldFlow)
         Names.bind(MapPortalNamer)
+        SimRunner.fieldFlow = PathFieldFlow // in-browser evals compute fields async (headless stays sync)
     }
 
     fun load() {

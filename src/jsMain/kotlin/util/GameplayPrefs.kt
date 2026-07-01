@@ -11,9 +11,11 @@ import config.Config
 object GameplayPrefs {
     private const val KEY = "qgress.gameplay"
 
-    const val DEFAULT_COMBAT = 0.6
-    const val DEFAULT_PROGRESS = 1.0
-    const val DEFAULT_CHURN = 0.17
+    // The canonical defaults live in commonMain [Config] (single source); kept aliased here for the menu/slider
+    // call sites that read them.
+    const val DEFAULT_COMBAT = Config.DEFAULT_COMBAT_DYNAMISM
+    const val DEFAULT_PROGRESS = Config.DEFAULT_PROGRESS_SPEED
+    const val DEFAULT_CHURN = Config.DEFAULT_PORTAL_CHURN
 
     fun load() {
         val o = Prefs.read(KEY) ?: return

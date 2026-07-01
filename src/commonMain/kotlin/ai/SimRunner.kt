@@ -17,9 +17,9 @@ import system.Cycle
 import system.Simulation
 import system.audio.Snd
 import system.effect.Fx
+import system.grid.FieldFlow
 import system.grid.Nav
-import system.grid.PathFieldFlow
-import util.GameplayPrefs
+import system.grid.SyncFieldFlow
 import util.NameGen
 import util.Rng
 import util.data.Pos
@@ -102,6 +102,12 @@ data class MatchSetup(
  * pathfinding, and [Simulation.stepEntities] is the shared tick core the live game also runs.
  */
 object SimRunner {
+    /**
+     * The flow-field compute a match binds when it opts into fields. Defaults to the pure commonMain
+     * [SyncFieldFlow] (inline compute — headless Node/JVM matches + the in-Node trainer); the jsMain shell
+     * swaps in the frame-yielding `PathFieldFlow` at boot (`Bootstrap.load`) so in-browser evals stay async.
+     */
+    var fieldFlow: FieldFlow = SyncFieldFlow
 
     /**
      * Run a deterministic match and return its per-checkpoint MU history. [grid] is the passability grid
@@ -121,7 +127,7 @@ object SimRunner {
     ): MatchResult {
         reset()
         Rng.seed(seed)
-        Nav.bind(PathFieldFlow) // headless (Node/browser eval) matches compute flow fields when flowFields is on
+        Nav.bind(fieldFlow) // matches compute flow fields when flowFields is on (sync headless; async in-browser)
         Config.headlessFieldCompute = setup.flowFields // off by default → cheap abstract (straight-line) movement
         // END = full L8 gear + AP (what "quick start" meant); the roster COUNT is setup.frogs/smurfs, not the
         // stage, so this only sets each seeded agent's level + loadout.
@@ -147,9 +153,9 @@ object SimRunner {
         // Pin the player-tunable balance to the shipped defaults (canonical training target); snapshot + restore.
         val liveBalance = Triple(Config.combatDynamism, Config.progressSpeed, Config.portalChurnRate)
         if (setup.useDefaultBalance) {
-            Config.combatDynamism = GameplayPrefs.DEFAULT_COMBAT
-            Config.progressSpeed = GameplayPrefs.DEFAULT_PROGRESS
-            Config.portalChurnRate = GameplayPrefs.DEFAULT_CHURN
+            Config.combatDynamism = Config.DEFAULT_COMBAT_DYNAMISM
+            Config.progressSpeed = Config.DEFAULT_PROGRESS_SPEED
+            Config.portalChurnRate = Config.DEFAULT_PORTAL_CHURN
         }
 
         try {
