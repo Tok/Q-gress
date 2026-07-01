@@ -34,7 +34,10 @@ if [ "${1:-}" = "--bench" ]; then
 fi
 
 echo "==> Baking one champion per architecture (this takes many minutes)…"
-BAKE_CHAMPS=1 ./gradlew jsNodeTest --tests 'ai.net.ChampionBake' -PmochaTimeout=3600s --console=plain --rerun
+echo "    Live progress streams below: 'BAKE [n/25 arch] gen g/G …' per generation, then a per-arch DONE line."
+# -PbakeVerbose streams the test's stdout live (the whole sweep is one long test), so you can watch it work.
+BAKE_CHAMPS=1 ./gradlew jsNodeTest --tests 'ai.net.ChampionBake' \
+    -PmochaTimeout=3600s -PbakeVerbose=1 --console=plain --rerun
 
 echo "==> Harvesting baked genomes from the JUnit XML…"
 python3 - "$XML_DIR" "$GEN" <<'PY'

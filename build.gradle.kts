@@ -143,6 +143,11 @@ kotlin {
                     // per-arch champion bakes (a full training run is minutes, not seconds).
                     timeout = (findProperty("mochaTimeout") as? String) ?: "60s"
                 }
+                // -PbakeVerbose=1 (set by scripts/bake-champs.sh) streams test stdout live, so the long bake
+                // shows per-generation progress instead of going silent until the single test method returns.
+                if ((findProperty("bakeVerbose") as? String) == "1") {
+                    testLogging { showStandardStreams = true }
+                }
             }
         }
     }

@@ -57,6 +57,7 @@ class ChampionBake {
         val grid = grid()
         val archs = archs()
         val start = nowMs()
+        println("BAKE start: ${archs.size} archs, pop $POP x gen $GENS x $MATCHES_PER_EVAL seeds, $BAKE_TICKS ticks/match")
         archs.forEachIndexed { i, arch ->
             val config = EvolutionConfig(
                 populationSize = POP,
@@ -67,12 +68,10 @@ class ChampionBake {
                 matchTicks = BAKE_TICKS,
                 setup = MatchSetup(flowFields = false), // train cheap (straight-line); select on held-out below
             )
-            val bake = bakeArch(grid, config)
-            val elapsed = fmt((nowMs() - start) / 1000.0)
-            println(
-                "BAKE ${arch.label()} (${i + 1}/${archs.size}) heldOut=${fmt(bake.heldOut)} " +
-                    "trainBest=${fmt(bake.trainFit)} @${elapsed}s",
-            )
+            val tag = "[${i + 1}/${archs.size} ${arch.label()}]"
+            println("BAKE $tag training… (@${fmt((nowMs() - start) / 1000.0)}s)")
+            val bake = bakeArch(grid, config, tag, start)
+            println("BAKE $tag DONE heldOut=${fmt(bake.heldOut)} trainBest=${fmt(bake.trainFit)} @${fmt((nowMs() - start) / 1000.0)}s")
             println("BAKEGENOME|${arch.label()}|${GenomeIO.encode(bake.genome, arch, bake.heldOut)}")
         }
         println("BAKE done: ${archs.size} archs in ${fmt((nowMs() - start) / 1000.0)}s")
@@ -83,10 +82,17 @@ class ChampionBake {
     // Train one arch, then pick the committed genome from the elite pool by HELD-OUT margin (unseen seeds under
     // the live flow-field movement model) — the training-best genome routinely overfits the fixed training
     // seeds (huge train fitness, negative held-out), so selection, not training rank, decides the champion.
-    private fun bakeArch(grid: Grid, config: EvolutionConfig): Bake {
+    // Logs each generation + the held-out selection so a live bake visibly ticks along.
+    private fun bakeArch(grid: Grid, config: EvolutionConfig, tag: String, start: Double): Bake {
         val session = Evolution.Session(grid, BAKE_SEED, config) { HeuristicPolicy(Faction.RES) }
-        while (!session.done) session.step()
+        while (!session.done) {
+            val fit = session.step()
+            println(
+                "BAKE $tag   gen ${session.generation}/${config.generations} trainBest=${fmt(fit)} (@${fmt((nowMs() - start) / 1000.0)}s)",
+            )
+        }
         val candidates = listOf(session.bestGenome) + session.elites()
+        println("BAKE $tag   selecting champion from ${candidates.size} candidates over $VALIDATE_SEEDS held-out seeds…")
         val scored = candidates.map { g -> g to heldOutScore(g, config.arch) }
         val best = scored.maxByOrNull { it.second } ?: (session.bestGenome to 0.0)
         return Bake(best.first, best.second, session.bestFitness)
