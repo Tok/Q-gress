@@ -102,6 +102,9 @@ object Footer {
             autoExpanded = false // the user took manual control of the size
             if (expanded) collapsed = false // expanding always reveals the body
             applyState()
+            // ONLY the arrow's full-expand collapses the side HUD columns (restored when it drops back to normal);
+            // the ▾ minimize chevron + the tab auto-expand leave the columns alone.
+            SidePanelCollapse.setFooterMaxed(expanded && !collapsed)
             null
         }
         maximize = max
@@ -155,8 +158,6 @@ object Footer {
         // .expanded grows the body to near-full-screen (CSS); only meaningful while the body is shown.
         rootEl?.let { if (expanded && !collapsed) it.classList.add("expanded") else it.classList.remove("expanded") }
         maximize?.innerHTML = if (expanded && !collapsed) ICON_RESTORE else ICON_MAXIMIZE
-        // A maximized footer auto-collapses the two side HUD columns (and restores them when it's back to normal).
-        SidePanelCollapse.setFooterMaxed(isExpanded())
     }
 
     // Simple monochrome maximize/restore icons (feather-style, currentColor) — not OS emoji.
