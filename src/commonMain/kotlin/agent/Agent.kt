@@ -63,7 +63,6 @@ data class Agent(
 
     private fun calcAbsXmBar() = min(xmCapacity(), max(0, xm))
     private fun xmBarPercent() = calcAbsXmBar() * 100 / xmCapacity()
-    private fun isXmBarEmpty() = xmBarPercent() == 0
     fun isXmFilled() = xmBarPercent() >= 80
     fun keySet() = inventory.findUniqueKeys().orEmpty()
 
@@ -387,18 +386,6 @@ data class Agent(
             in 17000000..24000000 -> 14 // + 2 Platinum 7 Gold
             in 24000000..40000000 -> 15 // + 3 Platinum 7 Gold
             else -> 16 // TODO + 2 Black 4 Platinum 7 Gold
-        }
-
-        private fun getLinkingRange(level: Int): Int = when (level) {
-            9 -> 2250
-            10 -> 2500
-            11 -> 2750
-            12 -> 3000
-            13 -> 3250
-            14 -> 3500
-            15 -> 3750
-            16 -> 4000
-            else -> 2000
         }
 
         // Prefer an existing world portal (browser + headless): a fresh agent shouldn't mint a throwaway

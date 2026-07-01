@@ -202,8 +202,6 @@ data class Portal(
         return MathUtil.clip(health, 0, 100)
     }
 
-    private fun calcTotalXm(): Int = getAllResos().map { it.energy }.sum()
-
     // AUTHENTIC Ingress link-range formula: 160 × (avg resonator level)⁴ metres (see config.IngressFacts)
     // — DON'T change the 160/⁴ to tune; it's the original. (Note: currently returns a lambda, not the value.)
     fun calculateLinkingRangeInMeters() = {
