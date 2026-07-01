@@ -131,6 +131,7 @@ object Footer {
 
     private fun activate(bodyId: String) {
         active = bodyId
+        rootEl?.setAttribute("data-tab", bodyId) // drives the per-tab docked body height (see .footer[data-tab] CSS)
         tabs.forEach { (_, id) ->
             (document.getElementById(id) as? HTMLElement)?.style?.display = if (id == bodyId) "block" else "none"
             tabButtons[id]?.let { if (id == bodyId) it.classList.add("active") else it.classList.remove("active") }
