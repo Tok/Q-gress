@@ -62,7 +62,7 @@ data class NonFaction(
         // strike out for the next one. (Stuck recovery is the one exception, so a wedged NPC isn't frozen.)
         if (isAtDestination()) {
             moveElsewhere() // pick the next destination…
-            wait() // …then rest here a beat before setting off
+            restHere() // …then rest here a beat before setting off
             return
         }
 
@@ -112,7 +112,7 @@ data class NonFaction(
         it.pos.distanceTo2(this.pos) // nearest → squared distance is enough (no sqrt), over the whole swarm
     } ?: throw IllegalStateException("Unable to find nearest to $pos")
 
-    private fun wait() {
+    private fun restHere() {
         this.velocity = Complex.ZERO
         this.busyUntil = World.tick + createWaitTime()
         this.beelineTicks = 0 // drop any in-flight un-stick override; we've stopped to wait
