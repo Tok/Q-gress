@@ -12,9 +12,14 @@ Q-Gress is an **AI-vs-AI sandbox**: each faction (ENL/RES) is driven by an agent
 17 behaviour sliders** — a custom net and/or an in-browser LLM. A human can play any side; any two brains can
 be matched. **Desktop-only**; mobile is blocked. (The substrate ships; what's left is tuning + the rebake.)
 
-## ★ Next up — refactor under the net (Phase B)
-The open structural focus: functional core / imperative shell, module-by-module, with the gate
-(ktlint/detekt/tests) green throughout. Exit criterion: pure logic testable in isolation. Pick from:
+## Phase B — functional core / imperative shell — ✅ DONE
+The structural focus: functional core / imperative shell, module-by-module, gate green throughout. Exit
+criterion — *pure logic testable in isolation* — **met**: the whole game core (entities, action machine,
+side-effect seams, **and the `SimRunner` match/eval cluster**) lives in `commonMain`, JVM-measured at
+**~96%** (`./scripts/coverage.sh`). The only game logic still in jsMain is the genuine imperative shell
+(renderer/audio/DOM engines + the platform seam impls) and the **net-driver storage/serialization** — `ai.net`
+(`GenomeIO`'s `dynamic` JSON, `NetStore`'s `localStorage`) — which would want a serialization + storage seam
+to lift (optional; only the net `Champion`/`Evolution` tests still run JS-only). History below for reference:
 - **The commonMain pure-logic lift — DONE (the whole functional core is now in `commonMain`).** The entity
   SCC moved: `World`, `agent.{Agent,NonFaction,Movement,Inventory,Balance}`, `portal.{Portal,Field,Link,
   ResonatorSlot,PortalKey,PortalHacks,HackLoot}`, the item entity classes (`items.{XmpBurster,PowerCube,
@@ -37,20 +42,21 @@ The open structural focus: functional core / imperative shell, module-by-module,
     `agent.qvalue.QIcons` / `util.data.CellOverlay`, `util.data.GeoCoordsExt`, and the renderer/audio/DOM/
     MapLibre engines. (`Scene3D` keeps an *intentional* `LargeClass` suppress — its entity-sync +
     effect-dispatch bulk is irreducibly bound to the three.js groups.)
-  - **Coverage: ~95.8%** (JVM Kover, `./scripts/coverage.sh`) — back over the codecov green threshold. Got
-    there with commonTest unit-test batches over the whole lifted core (post-lift baseline was ~60%): the
-    entity/action machine (`Agent`/`Portal`/`World`/`NonFaction`/`Movement`/`Inventory`/`cond.*`), item
-    damage/deploy, and the data/enum/util leaves. Remaining <5% is genuinely hard/unreachable — browser-only
-    `Platform.isBrowser()` branches and a few low-value edge paths (huge-field TTS, uniqueName numeral
-    fallback). Further gains would need lever 2 below.
-    - **(optional, later) Lift the `SimRunner` cluster** so the *existing* integration tests
-       (`SimRunnerTest`/`TournamentTest`/`EvolutionTest`/`WorldSnapshotTest`) run on the JVM too. That cluster
-       (`ai.SimRunner`, `system.{Cycle,WorldSnapshot,Simulation}`, `ai.{Tournament,Observation}`, `ai.net.*`)
-       is mostly JS-API-clean already; the real blockers are **`system.grid.Pathfinding`** (coroutine-bound →
-       split its pure *sync* compute into commonMain, async stays jsMain) and **`ai.net.GenomeIO`** (`dynamic`
-       JSON parse → a small serialization seam), plus relocating the `Nav.bind(PathFieldFlow)` boot hook.
+  - **Coverage: ~96%** (JVM Kover, `./scripts/coverage.sh`) — over the codecov green threshold. Got there with
+    commonTest unit-test batches over the whole lifted core (post-lift baseline was ~60%): the entity/action
+    machine (`Agent`/`Portal`/`World`/`NonFaction`/`Movement`/`Inventory`/`cond.*`), item damage/deploy, the
+    data/enum/util leaves, and the `SimRunner`-cluster integration path. Remaining ~4% is genuinely
+    hard/unreachable — browser-only `Platform.isBrowser()` branches, the net-driver storage (jsMain), and a few
+    low-value edge paths (huge-field TTS, uniqueName numeral fallback).
+  - **`SimRunner` cluster lift — DONE.** `ai.{SimRunner,Tournament,Observation,HeuristicPolicy}` +
+    `system.{Cycle,WorldSnapshot,Simulation}` are in commonMain; `SimRunnerTest`/`TournamentTest`/
+    `WorldSnapshotTest` run on the JVM. Enabled by the **`Pathfinding` sync-split** (pure core → commonMain,
+    coroutine `PathfindingAsync` → jsMain) + `SyncFieldFlow` injected via `SimRunner.fieldFlow` (Bootstrap
+    swaps in the async `PathFieldFlow` for in-browser evals), and hoisting the default-balance constants into
+    `Config`. Still jsMain: the **`ai.net` driver** (`GenomeIO` JSON, `NetStore` localStorage) — a
+    serialization + storage seam would let `EvolutionTest`/net tests run on the JVM too (optional).
   - **Eyes-on still owed:** one `./start.sh` pass to confirm the seam boot-binds (FX / audio / flow-field
-    flash / real portal names) after the accessor rewire.
+    flash / real portal names) + the in-browser trainer/eval still compute fields, after the accessor rewire.
 - **Reduce magic numbers** — name them / fold into `Config` where it aids clarity (detekt `MagicNumber` is
   off → a by-hand judgement pass, not a gate-chase).
 - **Tighten line length 140 → 120** — land *alongside* the class extractions (auto-wrapping inflates
@@ -98,8 +104,9 @@ The open structural focus: functional core / imperative shell, module-by-module,
   constraint — find where Large/Giant bite); (b) the **dynamic grow/move the play area mid-game** idea (kept in
   mind during the SimRunner area-decoupling); (c) **mesh instancing** is what would let the big presets run
   smoothly (see Perf).
-- [ ] **Location selection polish** — Home / nearest city via Geolocation; a curated preset list; Random;
-  surface the free-form search on the onboarding screen (it only exists in-game now).
+- [ ] **Location selection polish** — Home / nearest city via Geolocation; a curated preset list; Random.
+  *(Done: the onboarding LOCATION step now has a keyless OSM/Nominatim free-form search + a live name/place/
+  country readout + editable lng/lat.)* Remaining: a nearest-city Home refinement + a curated shortlist.
 - [ ] **Location list import / export** — let the player export the current location catalogue (the
   `Locations` registry / `resources/locations.json`) to a file and import a custom one, so curated place
   sets can be shared without a rebuild. Builds on the externalized JSON catalogue + pure parser
