@@ -70,7 +70,8 @@ object MapStyles {
     // Brightness = walkability: white FOOTPATHS (pedestrians prefer them) > bright-grey grass/park >
     // darker-grey default ground > darker-grey STREETS (roads — a touch darker than the built-up ground so
     // NPCs/agents avoid walking down them) > black buildings & water (impassable). Layer order matters (later
-    // paints over earlier): the transportation line sits on top, so bridges/streets stay walkable.
+    // paints over earlier): roads paint over the ground, then FOOTPATHS paint over roads — so where a footpath
+    // overlaps a street (sidewalks run along/under roads) the white path wins → brighter beats darker.
     val SHADOW_STYLE = """{
         "version": 8,
         "sources": {
@@ -122,12 +123,21 @@ object MapStyles {
                 "type": "line",
                 "source": "openmaptiles",
                 "source-layer": "transportation",
+                "filter": ["!", ["match", ["get", "class"], ["path", "pedestrian"], true, false]],
                 "paint": {
-                    "line-color": ["match", ["get", "class"],
-                        ["path", "pedestrian"], "#ffffff",
-                        "#4a4a4a"
-                    ],
+                    "line-color": "#4a4a4a",
                     "line-width": ["interpolate", ["linear"], ["zoom"], 14, 6, 18, 24]
+                }
+            },
+            {
+                "id": "footpaths",
+                "type": "line",
+                "source": "openmaptiles",
+                "source-layer": "transportation",
+                "filter": ["match", ["get", "class"], ["path", "pedestrian"], true, false],
+                "paint": {
+                    "line-color": "#ffffff",
+                    "line-width": ["interpolate", ["linear"], ["zoom"], 14, 5, 18, 18]
                 }
             }
         ]
