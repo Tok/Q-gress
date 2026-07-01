@@ -39,12 +39,6 @@ and a field that can grow, so settle the shape here first.
   or extend `agent/Skills`, so settle the attribute model here before those land.
 
 ## 3D / rendering
-- [ ] **Buildings — per-building replacement.** *(Verified still pending.)* Both sets render (ours inset on top,
-  MapLibre fills gaps) and z-fighting is today avoided only **geometrically** (footprint inset + roof drop) with
-  the MapLibre extrusion layer hidden all-or-nothing. The want is to hide **only** the MapLibre footprints we've
-  meshed, so there's no overlap/z-fight. Needs matching our synthetic centroid keys to MapLibre feature ids (the
-  `openmaptiles` source carries `generateId`, and our key is currently used only to dedup our own meshes) — or a
-  custom building layer we fully own.
 - [ ] **Pathfinding scalability.** Flow fields are still **per-portal full-map**: the want is multi-mode nav
   (flow fields near, cheap nav far) + a coarser `pathResolution` lever for very large maps, plus a field viz.
 - [ ] **Humanoid glTF models** — people are head-sized spheres at head height today; swap in real models
