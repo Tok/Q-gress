@@ -211,6 +211,14 @@ object Scene3D {
     private class FieldRecord(val cx: Double, val cy: Double, val cz: Double, val rel: Array<DoubleArray>, val color: String)
 
     private val fieldRecords = mutableMapOf<String, FieldRecord>()
+
+    // A field's persistent plasma mesh + its current owner colour, so [syncFields] reuses the mesh across ticks
+    // (updating its 3 vertices / per-vertex health / fill scale in place) instead of allocating a new
+    // BufferGeometry + Mesh every tick. [color] is tracked so a recaptured field re-tints without a new mesh.
+    private class FieldMesh(val mesh: dynamic, var color: String)
+
+    // Persistent field meshes keyed by [fieldId]. Cleared in onAdd with the group.
+    private val fieldMeshes = mutableMapOf<String, FieldMesh>()
     private val displayedLevel = mutableMapOf<String, Double>() // per-portal eased level (for level-up tween)
 
     // Shared geometries (created lazily once three.js is loaded).
@@ -262,6 +270,7 @@ object Scene3D {
         VectorFieldOverlay.register(newScene)
         portalsGroup = Three.Group().also { newScene.add(it) }
         fieldsGroup = Three.Group().also { newScene.add(it) }
+        fieldMeshes.clear() // the persistent field-mesh cache belongs to the OLD group — drop it with the rebuild
         linksGroup = Three.Group().also { newScene.add(it) }
         linkMeshes.clear() // the persistent link-mesh cache belongs to the OLD group — drop it with the rebuild
         npcsGroup = Three.Group().also { newScene.add(it) }
@@ -386,8 +395,7 @@ object Scene3D {
         clear(portalsGroup)
         World.allPortals.forEach { addPortal(it) }
         syncPoleColliders()
-        clear(fieldsGroup)
-        World.allFields().forEach { addField(it) }
+        syncFields() // persistent: reuse field plasma meshes across ticks (no clear+recreate)
         syncLinks() // persistent: reuse link meshes across ticks (no clear+recreate)
         syncNpcs() // persistent: reuse NPC spheres across ticks (no clear+recreate)
         syncXm() // persistent: reuse XM motes across ticks (no clear+recreate)
@@ -1251,23 +1259,56 @@ object Scene3D {
         mesh.quaternion.copy(quat)
     }
 
-    /** A control field is an animated plasma sheet across the three portals' orbs; it fills in on creation. */
-    private fun addField(field: Field) {
-        val a = orbPos(field.origin)
-        val b = orbPos(field.primaryAnchor)
-        val c = orbPos(field.secondaryAnchor)
-        val cx = (a[0] + b[0] + c[0]) / 3.0
-        val cy = (a[1] + b[1] + c[1]) / 3.0
-        val cz = (a[2] + b[2] + c[2]) / 3.0
-        // Vertices relative to the centroid so the mesh can scale in/out from its centre.
-        val rel = arrayOf(
-            doubleArrayOf(a[0] - cx, a[1] - cy, a[2] - cz),
-            doubleArrayOf(b[0] - cx, b[1] - cy, b[2] - cz),
-            doubleArrayOf(c[0] - cx, c[1] - cy, c[2] - cz),
-        )
-        val color = field.owner.faction.color
-        val fid = fieldId(field)
-        fieldRecords[fid] = FieldRecord(cx, cy, cz, rel, color) // remembered for the teardown dissolve
+    /**
+     * Reconcile the control-field plasma sheets with [World.allFields] WITHOUT clear+recreate every tick: reuse
+     * each field's mesh (rewrite its 3 vertices + per-vertex health + fill scale in place), create only new
+     * fields, and remove vanished ones ([teardownGone] plays the dissolve). Keyed by [fieldId] (its three
+     * portals, sorted). A field is an animated plasma sheet across the portals' orbs; it fills in on creation.
+     */
+    private fun syncFields() {
+        val group = fieldsGroup ?: return
+        val present = mutableSetOf<String>()
+        World.allFields().forEach { field ->
+            val fid = fieldId(field)
+            present.add(fid)
+            val a = orbPos(field.origin)
+            val b = orbPos(field.primaryAnchor)
+            val c = orbPos(field.secondaryAnchor)
+            val cx = (a[0] + b[0] + c[0]) / 3.0
+            val cy = (a[1] + b[1] + c[1]) / 3.0
+            val cz = (a[2] + b[2] + c[2]) / 3.0
+            // Vertices relative to the centroid so the mesh can scale in/out from its centre.
+            val rel = arrayOf(
+                doubleArrayOf(a[0] - cx, a[1] - cy, a[2] - cz),
+                doubleArrayOf(b[0] - cx, b[1] - cy, b[2] - cz),
+                doubleArrayOf(c[0] - cx, c[1] - cy, c[2] - cz),
+            )
+            val color = field.owner.faction.color
+            fieldRecords[fid] = FieldRecord(cx, cy, cz, rel, color) // remembered for the teardown dissolve
+            val existing = fieldMeshes[fid]
+            val mesh = if (existing == null) {
+                val created = createFieldMesh(group, rel, color, field)
+                fieldMeshes[fid] = FieldMesh(created, color)
+                created
+            } else {
+                if (existing.color != color) { // recapture: re-tint the plasma without a new mesh
+                    existing.mesh.material = PlasmaShader.material(color)
+                    existing.color = color
+                }
+                updateFieldGeometry(existing.mesh, rel, field)
+                existing.mesh
+            }
+            mesh.asDynamic().position.set(cx, cy, cz)
+            val g = Spawns.appear(fid, FIELD_FILL_S).coerceIn(0.0, 1.0) // fill-in on creation; back to full scale after
+            mesh.asDynamic().scale.set(g, g, g)
+        }
+        (fieldMeshes.keys - present).forEach { fid ->
+            val fm = fieldMeshes.remove(fid) ?: return@forEach
+            group.remove(fm.mesh)
+        }
+    }
+
+    private fun createFieldMesh(group: dynamic, rel: Array<DoubleArray>, color: String, field: Field): dynamic {
         val geo = Three.BufferGeometry().setFromPoints(rel.map { Three.Vector3(it[0], it[1], it[2]) }.toTypedArray())
         // Per-vertex health (0..1): the plasma fades toward a low-health portal corner (PlasmaShader.aHealth).
         val health = Float32Array(3)
@@ -1276,10 +1317,21 @@ object Scene3D {
         health[2] = (field.secondaryAnchor.calcHealth() / 100.0).toFloat()
         geo.asDynamic().setAttribute("aHealth", Three.Float32BufferAttribute(health, 1))
         val mesh = Three.Mesh(geo, PlasmaShader.material(color))
-        mesh.asDynamic().position.set(cx, cy, cz)
-        val g = Spawns.appear(fid, FIELD_FILL_S)
-        if (g < 1.0) mesh.asDynamic().scale.set(g.coerceAtLeast(0.0), g.coerceAtLeast(0.0), g.coerceAtLeast(0.0))
-        fieldsGroup.add(mesh)
+        mesh.asDynamic().frustumCulled = false // vertices move with the orbs; skip stale-bounds culling on the reused mesh
+        group.add(mesh)
+        return mesh
+    }
+
+    // Rewrite the reused field mesh's 3 vertices (orbs may have tweened) + per-vertex health (portals took damage).
+    private fun updateFieldGeometry(mesh: dynamic, rel: Array<DoubleArray>, field: Field) {
+        val pos = mesh.geometry.attributes.position
+        for (i in 0..2) pos.setXYZ(i, rel[i][0], rel[i][1], rel[i][2])
+        pos.needsUpdate = true
+        val health = mesh.geometry.attributes.aHealth
+        health.setX(0, (field.origin.calcHealth() / 100.0))
+        health.setX(1, (field.primaryAnchor.calcHealth() / 100.0))
+        health.setX(2, (field.secondaryAnchor.calcHealth() / 100.0))
+        health.needsUpdate = true
     }
 
     /** Spawn the dissolve effect for any fields that vanished this sync (and play the collapse sound). */
