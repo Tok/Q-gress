@@ -9,8 +9,9 @@ object Recycler : ConditionalAction {
 
     private const val SPACE_TRIGGER = 0.95 // recycle to free space once the inventory is ≥95% full
     private const val RECYCLE_BATCH = 50 // items dumped per recycle action when freeing space
+    private const val LOW_XM_DIVISOR = 10 // "drained" = XM below 1/this of capacity (10%)
 
-    private fun lowXm(agent: Agent) = agent.xm < agent.xmCapacity() / 10
+    private fun lowXm(agent: Agent) = agent.xm < agent.xmCapacity() / LOW_XM_DIVISOR
     private fun hasCube(agent: Agent) = agent.inventory.findPowerCubes().isNotEmpty()
     private fun nearFull(agent: Agent) = agent.inventory.size() >= (Config.maxInventory * SPACE_TRIGGER).toInt()
 

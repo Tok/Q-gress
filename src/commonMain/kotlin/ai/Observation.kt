@@ -16,6 +16,11 @@ object Observation {
     /** Length of [observe]'s vector — keep in sync with the `doubleArrayOf` below. */
     const val SIZE = 13
 
+    // Named slot indices into [observe]'s vector, for consumers that read individual features by hand (e.g.
+    // [HeuristicTune]) — keep in sync with the layout comments in [observe].
+    const val SLOT_MU_SHARE = 1 // Mind-Unit dominance (the headline score)
+    const val SLOT_AVG_XM = 11 // our average agent XM (fraction of capacity)
+
     private const val MAX_LEVEL = 8.0
 
     /** The 0..1 feature vector for [faction] vs its enemy, from the current [World] state. */

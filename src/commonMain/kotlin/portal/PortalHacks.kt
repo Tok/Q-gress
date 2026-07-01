@@ -15,6 +15,10 @@ import kotlin.math.min
  * delegates (so callers are unchanged) and owns the per-portal `lastHacks` state this reads + mutates.
  */
 internal object PortalHacks {
+    private const val ENEMY_HACK_AP = 100 // AP awarded for hacking an ENEMY portal
+    private const val ENEMY_HACK_XM_PER_LEVEL = 300 // XM an enemy hack costs, per portal level
+    private const val FRIENDLY_HACK_XM_PER_LEVEL = 50 // XM a friendly hack costs, per portal level
+
     fun canHack(portal: Portal, hacker: Agent): Boolean = handleCooldown(portal, hacker, true) == Cooldown.NONE
 
     fun tryHack(portal: Portal, hacker: Agent): HackResult {
@@ -54,10 +58,10 @@ internal object PortalHacks {
     private fun chargeHackCost(portal: Portal, hacker: Agent) {
         val isEnemyPortal = portal.owner != null && hacker.faction != portal.owner?.faction
         if (isEnemyPortal) {
-            hacker.addAp(100)
-            hacker.removeXm(300 * portal.calculateLevel())
+            hacker.addAp(ENEMY_HACK_AP)
+            hacker.removeXm(ENEMY_HACK_XM_PER_LEVEL * portal.calculateLevel())
         } else {
-            hacker.removeXm(50 * portal.calculateLevel())
+            hacker.removeXm(FRIENDLY_HACK_XM_PER_LEVEL * portal.calculateLevel())
         }
     }
 

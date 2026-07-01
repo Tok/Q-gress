@@ -57,7 +57,7 @@ data class Portal(
 
     fun canHack(hacker: Agent): Boolean = PortalHacks.canHack(this, hacker)
     fun canLinkOut(linker: Agent) = isLinkable(linker) &&
-        (links.isEmpty() || links.count() < 8) &&
+        (links.isEmpty() || links.count() < MAX_OUTGOING_LINKS) &&
         !isCoveredByField() &&
         isInside()
 
@@ -66,7 +66,7 @@ data class Portal(
     internal fun calculateLevel() = if (numberOfResosLeft() == 0) {
         0
     } else {
-        clipLevel(slots.values.sumOf { it.resonator?.level?.level ?: 0 } / 8)
+        clipLevel(slots.values.sumOf { it.resonator?.level?.level ?: 0 } / IngressFacts.RESO_SLOTS)
     }
 
     fun getLevel() = if (World.isReady) {
@@ -80,7 +80,7 @@ data class Portal(
 
     private fun getAllResos() = this.slots.map { it.value.resonator }.filterNotNull()
     fun numberOfResosLeft() = this.slots.count { it.value.resonator != null }
-    private fun isFullyDeployed() = numberOfResosLeft() == 8
+    private fun isFullyDeployed() = numberOfResosLeft() == IngressFacts.RESO_SLOTS
     private fun averageResoLevel(): Double {
         val resos = getAllResos()
         return resos.map { it.level.level }.sum() / resos.count().toDouble()
@@ -252,7 +252,7 @@ data class Portal(
             Com.addMessage("$linker created a link from $this to $target", Com.Importance.MINOR, linker.faction.color)
             Snd.sink.playLinkingSound(newLink)
             linker.addAp(IngressFacts.AP_CREATE_LINK) // 313 (was 187 — that's the DESTROY-link value)
-            linker.removeXm(250)
+            linker.removeXm(LINK_XM_COST)
 
             // create fields
             val connectedToTarget = target.findConnectedPortals()
@@ -288,7 +288,7 @@ data class Portal(
         }
 
         val initialResoCount = slots.count { it.value.resonator != null }
-        val firstResoCount = max(resos.size, (8 - initialResoCount))
+        val firstResoCount = max(resos.size, (IngressFacts.RESO_SLOTS - initialResoCount))
         resos.asIterable().forEachIndexed { index, (octant, resonator) ->
             val level = resonator.level
             val oldReso = slots[octant]
@@ -303,14 +303,15 @@ data class Portal(
 
             deployer.addAp(
                 when {
-                    isCapture && index == 0 -> 500
-                    index < firstResoCount -> 125
-                    index == firstResoCount && firstResoCount + initialResoCount == 8 -> 250
-                    (oldReso?.isOwnedBy(deployer) ?: false) -> 65
+                    isCapture && index == 0 -> IngressFacts.AP_CAPTURE_PORTAL
+                    index < firstResoCount -> IngressFacts.AP_DEPLOY_RESONATOR
+                    index == firstResoCount && firstResoCount + initialResoCount == IngressFacts.RESO_SLOTS ->
+                        IngressFacts.AP_COMPLETE_PORTAL
+                    (oldReso?.isOwnedBy(deployer) ?: false) -> IngressFacts.AP_UPGRADE_RESONATOR
                     else -> 0
                 },
             )
-            deployer.removeXm(level.level * 20)
+            deployer.removeXm(level.level * RESO_DEPLOY_XM_PER_LEVEL)
             val oldDistance = oldReso?.distance
             // Clamp into the legal deploy band: a stored upgrade distance — or the agent's per-tick step
             // granularity landing it a hair outside max range — could otherwise trip ResonatorSlot.deployReso's
@@ -418,7 +419,7 @@ data class Portal(
                 Com.addMessage(message, Com.Importance.MAJOR, color)
                 destroy(destroyer)
             }
-            leftResos <= 2 -> destroyAllLinksAndFields(destroyer)
+            leftResos <= LINK_TEARDOWN_RESO_THRESHOLD -> destroyAllLinksAndFields(destroyer)
         }
     }
 
@@ -433,12 +434,12 @@ data class Portal(
     }
 
     fun leakXm(): Pair<Pos, Int> {
-        val fluct = Rng.randomInt(300)
+        val fluct = Rng.randomInt(LEAK_XM_JITTER)
         val offset = if (Rng.randomBool()) fluct else -fluct
-        return location to if (getLevel().toInt() <= 4.5) {
-            (calculateLevel() * 1000) + offset
+        return location to if (getLevel().toInt() <= LEAK_LEVEL_SPLIT) {
+            (calculateLevel() * LOW_LEVEL_LEAK_XM_PER_LEVEL) + offset
         } else {
-            (calculateLevel() * 750) + offset
+            (calculateLevel() * HIGH_LEVEL_LEAK_XM_PER_LEVEL) + offset
         }
     }
 
@@ -474,7 +475,7 @@ data class Portal(
         }
 
         fun findChargeableForKeys(agent: Agent, keys: List<PortalKey>): List<Portal>? {
-            val chargeable = World.factionPortals(agent.faction).filter { it.calcHealth() <= 90 }.toSet()
+            val chargeable = World.factionPortals(agent.faction).filter { it.calcHealth() <= CHARGEABLE_HEALTH_MAX }.toSet()
             return chargeable.filter { keys.map { a -> a.portal }.contains(it) }
         }
 
@@ -488,6 +489,21 @@ data class Portal(
         private const val MIN_COOLDOWN_FACTOR = 0.05 // heat sinks can't reduce cooldown below 5%
         private const val VIRUS_AP = 1000 // AP for flipping a portal with a virus
         private const val FLIP_IMMUNITY_S = 3600 // 1h: a flipped portal can't be flipped again (either direction)
+
+        // A SIM cap (not authentic Ingress, which limits links by keys/range) — the hard outbound-link ceiling
+        // per portal. Raising it (a future link-amp mod) enables deeper nested fields (see PLAN).
+        private const val MAX_OUTGOING_LINKS = 8
+        private const val LINK_XM_COST = 250 // XM an agent spends to place one link
+        private const val RESO_DEPLOY_XM_PER_LEVEL = 20 // XM to deploy one resonator, per its level
+        private const val CHARGEABLE_HEALTH_MAX = 90 // a friendly portal below this health% can be recharged
+        private const val LINK_TEARDOWN_RESO_THRESHOLD = 2 // at/below this many resos left, links + fields drop
+
+        // Passive stray-XM leak a portal emits each cycle (agents refuel from it): calculateLevel × the per-level
+        // payout, jittered ± up to LEAK_XM_JITTER. Low-level portals leak more per level than high-level ones.
+        private const val LEAK_XM_JITTER = 300
+        private const val LEAK_LEVEL_SPLIT = 4.5 // ≤ L4 uses the low-level payout, ≥ L5 the high-level one
+        private const val LOW_LEVEL_LEAK_XM_PER_LEVEL = 1000
+        private const val HIGH_LEVEL_LEAK_XM_PER_LEVEL = 750
         private fun clipLevel(level: Int): Int = max(1, min(level, 8))
 
         private const val UNIQUE_NAME_TRIES = 8 // regen a fresh natural name this many times before suffixing

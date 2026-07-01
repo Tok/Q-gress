@@ -78,6 +78,8 @@ object IngressFacts {
     const val AP_DESTROY_MOD = 75
     const val AP_DEPLOY_RESONATOR = 125
     const val AP_CAPTURE_PORTAL = 500 // full capture (deploy on a neutral portal)
+    const val AP_COMPLETE_PORTAL = 250 // bonus for deploying the last resonator (all 8 slots filled)
+    const val AP_UPGRADE_RESONATOR = 65 // upgrading a resonator (replacing one with a higher level)
     const val AP_CREATE_LINK = 313
     const val AP_CREATE_FIELD = 1250
 }

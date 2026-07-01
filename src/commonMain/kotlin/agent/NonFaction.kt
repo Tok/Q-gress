@@ -123,7 +123,7 @@ data class NonFaction(
         // Mostly head for the FAR side of the map (even when already off-screen) so NPCs walk clear across
         // it, edge to edge, instead of clumping around the central portals.
         moveToOpposingOffscreenDestination()
-    } else if (Rng.random() < 0.7) {
+    } else if (Rng.random() < FAR_PORTAL_CHANCE) {
         moveToFarPortal() // ...but still send some to portals so there's life around them too
     } else {
         moveToRandomPortal()
@@ -157,6 +157,7 @@ data class NonFaction(
         private const val MIN_OFFSCREEN = 8
         private const val MAX_OFFSCREEN = 14
         private const val OFFSCREEN_DEST_CHANCE = 0.85 // mostly cross the map edge-to-edge; the rest head to portals
+        private const val FAR_PORTAL_CHANCE = 0.7 // of the non-offscreen remainder, this fraction heads to a FAR portal
 
         /**
          * Hidden destinations placed JUST OUTSIDE the play field, spaced evenly around its border, that NPCs

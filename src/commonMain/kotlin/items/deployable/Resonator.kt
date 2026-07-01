@@ -1,6 +1,7 @@
 package items.deployable
 
 import agent.Agent
+import config.IngressFacts
 import items.level.ResonatorLevel
 import portal.Octant
 import portal.Portal
@@ -19,14 +20,14 @@ data class Resonator(
     // TODO move location and octant to ResonatorSlot
     fun calcHealthPercent() = energy * 100 / level.energy
 
-    fun isAtCriticalLevel() = calcHealthPercent() < 20
+    fun isAtCriticalLevel() = calcHealthPercent() < CRITICAL_HEALTH_PCT
     fun totalCapacity() = level.energy
     fun openCapacity() = totalCapacity() - energy
     fun recharge(agent: Agent, xm: Int) {
         val value = min(xm, openCapacity())
         this.energy = min(energy + value, totalCapacity())
         agent.removeXm(value)
-        agent.addAp(10)
+        agent.addAp(RECHARGE_AP)
     }
 
     private fun decayEnergy() = (level.energy * DECAY_RATIO).toInt()
@@ -44,7 +45,7 @@ data class Resonator(
         val newEnergy = max(energy - damage, 0)
         this.energy = newEnergy
         if (newEnergy <= 0) { // only destroyed when fully drained (was `<= newEnergy` — a bug: every hit killed it)
-            agent.addAp(75)
+            agent.addAp(IngressFacts.AP_DESTROY_RESONATOR)
             octant?.let { portal?.removeReso(it, agent) }
         }
     }
@@ -61,6 +62,8 @@ data class Resonator(
 
     companion object {
         const val DECAY_RATIO = 0.15
+        private const val CRITICAL_HEALTH_PCT = 20 // a resonator below this health% reads as "critical"
+        private const val RECHARGE_AP = 10 // AP for recharging a resonator
         fun create(owner: Agent, level: ResonatorLevel) = Resonator(owner, level, level.energy)
         fun create(owner: Agent, level: Int) = create(owner, ResonatorLevel.valueOf(level))
     }

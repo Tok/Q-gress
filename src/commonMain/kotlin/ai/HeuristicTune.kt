@@ -15,8 +15,8 @@ object HeuristicTune {
      * just saturates. Untouched slots keep the uniform default so the vector reads like a tuned panel.
      */
     fun tune(obs: DoubleArray): SliderVector {
-        val muShare = obs.getOrElse(1) { 0.5 }
-        val avgXm = obs.getOrElse(11) { 0.5 }
+        val muShare = obs.getOrElse(Observation.SLOT_MU_SHARE) { 0.5 }
+        val avgXm = obs.getOrElse(Observation.SLOT_AVG_XM) { 0.5 }
         val ahead = ((muShare - 0.5) * 2.0).coerceIn(0.0, 1.0) // 0 even … 1 fully dominant
         val behind = ((0.5 - muShare) * 2.0).coerceIn(0.0, 1.0) // 0 even … 1 fully shut out
         val lowXm = (1.0 - avgXm).coerceIn(0.0, 1.0)

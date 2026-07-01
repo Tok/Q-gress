@@ -13,6 +13,7 @@ import config.Config
 import config.Dim
 import config.Platform
 import extension.Grid
+import items.Combat
 import items.deployable.Resonator
 import items.level.XmpLevel
 import portal.Portal
@@ -63,7 +64,7 @@ data class Agent(
 
     private fun calcAbsXmBar() = min(xmCapacity(), max(0, xm))
     private fun xmBarPercent() = calcAbsXmBar() * 100 / xmCapacity()
-    fun isXmFilled() = xmBarPercent() >= 80
+    fun isXmFilled() = xmBarPercent() >= XM_FILLED_PCT
     fun keySet() = inventory.findUniqueKeys().orEmpty()
 
     fun removeXm(v: Int) {
@@ -324,10 +325,10 @@ data class Agent(
     }
 
     private fun findPortalsInAttackRange(level: XmpLevel): List<Portal> =
-        enemyPortalsInRange(World.allPortals, faction, pos, (level.rangeM * 0.5) + Dim.portalRadius)
+        enemyPortalsInRange(World.allPortals, faction, pos, (level.rangeM * Combat.RANGE_FRAC) + Dim.portalRadius)
 
     fun findResosInAttackRange(level: XmpLevel): List<Resonator> {
-        val attackDistance = level.rangeM * 0.5
+        val attackDistance = level.rangeM * Combat.RANGE_FRAC
         val portals = findPortalsInAttackRange(level)
         val slots = portals.flatMap { it.slots.map { s -> s.value } }
         val resosInRange =
@@ -342,6 +343,7 @@ data class Agent(
     companion object {
         private val BEELINE_DURATION = StuckTracker.RECOVERY_BEELINE_TICKS // ticks to bee-line before re-targeting
         private const val RECRUIT_HOLD_TICKS = 8 // re-applied each tick → the target NPC waits while approached + met
+        private const val XM_FILLED_PCT = 80 // XM bar at/above this % reads as "filled" (gates recharge behaviour)
 
         /** Pure: enemy (non-[faction]) portals within [attackDistance] of [from], nearest first. Takes the
          *  portal list as a parameter (not the `World` singleton) so the targeting filter is unit-testable. */
