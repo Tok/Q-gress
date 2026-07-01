@@ -69,6 +69,7 @@ class DeployerTest {
         portal.deploy(a, mapOf(Octant.N to resonator(a, 5)), Dim.maxDeploymentRange.toInt())
         portal.deploy(a, mapOf(Octant.S to resonator(a, 5)), Dim.maxDeploymentRange.toInt())
         assertEquals(2, portal.filledSlots().count { it.resonator?.level == ResonatorLevel.FIVE })
+        b.inventory.items.clear() // drop the random starting loadout so b ONLY carries the L5 below (test intent)
         b.inventory.items.add(resonator(b, 5)) // b only carries an L5 — but the L5 cap is reached
         assertFalse(Deployer.isActionPossible(b), "same-level cap reached → no deploy offered (was an infinite loop)")
     }
