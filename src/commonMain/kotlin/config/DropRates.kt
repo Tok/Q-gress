@@ -17,10 +17,11 @@ object DropRates {
     /** Portal-key drop chance per hack. */
     var keyChance: Double = Probabilities.keyChance
 
-    /** XMP yield multiplier per hack (sim-tuning, not authentic): the base draws give ~4 XMPs/hack, too few
-     *  for agents to sustain assaults on defended portals — this scales that up so attacks stay frequent.
-     *  Scaled live by the menu "Weapon drops" slider ([config.Config.weaponDropMultiplier]). */
-    var xmpDropMultiplier: Int = 2
+    /** Weapon-draw multiplier per hack (sim-tuning, not authentic): sets how many weapon draws a hack rolls,
+     *  driving BOTH the XMP yield and the Ultra-Strike yield ([portal.HackLoot.weaponDraws]). Was 2× (a boost
+     *  so agents could sustain assaults on defended portals); halved to 1 to trim the XMP/US glut. Scaled live
+     *  on top of this by the menu "Weapon drops" slider ([config.Config.weaponDropMultiplier]). */
+    var xmpDropMultiplier: Int = 1
 
     /** Ultra-Strike drop chance per weapon draw (rarer than XMP, one Bernoulli vs XMP's quality cascade —
      *  as in Ingress). Also scaled live by the "Weapon drops" slider ([config.Config.weaponDropMultiplier]). */

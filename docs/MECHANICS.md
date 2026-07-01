@@ -191,8 +191,8 @@ neutral. Recharging (`Recharger`, via a held key) tops them back up at an XM cos
   GOOD 0.5 / MORE 0.7, with level offsets). Community estimate: ~1.5 resonators per item roll.
 - **XMP + Ultra-Strike yield** is scaled by **`Config.weaponDropMultiplier()`**, now derived from the
   single **Combat dynamics** slider (`Config.combatDynamism`, `1×`…`20×`) — higher dynamism hands out more
-  firepower so agents flip defended portals. It multiplies the XMP draw count
-  (`DropRates.xmpDropMultiplier`, base 2) and the Ultra-Strike draw count.
+  firepower so agents flip defended portals. It multiplies the weapon-draw count
+  (`DropRates.xmpDropMultiplier`, base 1), which drives both the XMP and the Ultra-Strike yields.
 - **Ultra Strikes** *(sim-tuning, not authentic)*: drop from hacks at `DropRates.usDropChance`
   (default 0.25) per weapon draw — a single Bernoulli per draw, so **rarer** than XMP's quality cascade.
   In an assault (`Attacker`) the agent spends Ultra-Strikes **first**, to strip the portal's shields/mods
