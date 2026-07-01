@@ -67,9 +67,10 @@ object MapStyles {
     }"""
 
     // Grayscale passability mask, read back via readPixels to build the movement grid.
-    // Brightness = walkability: white roads/paths (cheap) > bright-grey grass/park > darker-grey
-    // default ground (high penalty) > black buildings & water (impassable). Layer order matters
-    // (later paints over earlier): roads sit on top, so bridges/streets stay walkable.
+    // Brightness = walkability: white FOOTPATHS (pedestrians prefer them) > bright-grey grass/park >
+    // darker-grey default ground > darker-grey STREETS (roads — a touch darker than the built-up ground so
+    // NPCs/agents avoid walking down them) > black buildings & water (impassable). Layer order matters (later
+    // paints over earlier): the transportation line sits on top, so bridges/streets stay walkable.
     val SHADOW_STYLE = """{
         "version": 8,
         "sources": {
@@ -122,7 +123,10 @@ object MapStyles {
                 "source": "openmaptiles",
                 "source-layer": "transportation",
                 "paint": {
-                    "line-color": "#ffffff",
+                    "line-color": ["match", ["get", "class"],
+                        ["path", "pedestrian"], "#ffffff",
+                        "#4a4a4a"
+                    ],
                     "line-width": ["interpolate", ["linear"], ["zoom"], 14, 6, 18, 24]
                 }
             }
