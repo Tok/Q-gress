@@ -15,32 +15,34 @@ be matched. **Desktop-only**; mobile is blocked. (The substrate ships; what's le
 ## ★ Next up — refactor under the net (Phase B)
 The open structural focus: functional core / imperative shell, module-by-module, with the gate
 (ktlint/detekt/tests) green throughout. Exit criterion: pure logic testable in isolation. Pick from:
-- **The commonMain pure-logic lift.** *Done so far:* the cleanly-liftable math core; the **`config/`
-  package** (behind the `config.Platform` expect/actual seam — only `Location`'s JS `JSON.parse` stays in
-  jsMain); the **pure `items/` data layer** — all `items/types/*`, the `items/level/*` tables,
-  `QgressItem`/`DeployableItem`/`Mod`, plus `portal.Quality` and `config.DropRates`; and a **batch of leaf
-  pure data/logic** unblocked by those — `system.Checkpoint`, `portal.{HackResult,ModSlot,XmMap,XmHeap}`,
-  `agent.{Skills,AgentSize,StuckTracker}`, `util.data.{Circle,Dim,GeoCoordsExt}`, and the pure flow-field
-  data `extension.{VectorField,GridMap}` (lifted alongside the Pathfinding seam below). (`ai.Tournament`
-  looked liftable but has same-package jsMain deps on `FactionPolicy`/`MatchSetup`/`SimRunner` — deferred.)
-  *What still blocks the rest:* the item **entity classes** (`Resonator`/`Shield`/`XmpBurster`/`PowerCube`/… — 10 files) carry an
-  `owner: Agent` and/or bind `Portal`/`World`/`Fx`, so they — and `Inventory`, `Field`, the `Config`
-  consumers (`Tournament`/`Observation`/`Cycle`) — only lift once the big types `Portal`/`World`/`Agent`
-  become `commonMain`. Three of the prerequisites are now **done**: (1) the **audio seam**
-  (`system.audio.Audio` + `Snd.sink` + `NoOpAudio`/`BrowserAudio`, mirroring `Effects`/`Fx`) — every
-  game-logic audio call routes through `Snd.sink`, so the entities no longer name the Web-Audio-bound
-  `Sound`/`BlastSound`/`Tts`/`HackSound` objects; (2) the **flow-field-compute seam** (`system.grid.FieldFlow`
-  + `Nav.sink` + `NoOpFieldFlow`/`PathFieldFlow`) — `Portal.create`/`NonFaction.getOrCreateVectorField` now
-  request fields via `Nav.sink.compute(dest){…}` instead of naming the coroutine-bound `Pathfinding`; the
-  pure `VectorField`/`GridMap` data types lifted to commonMain, and dropping the old inline
-  `Bootstrap`/`Config.headlessFieldCompute` branches removed `Portal`'s last `Bootstrap` dependency; and
-  (3) the **canvas/Scene3D split off `World`** (World is already JS-API-clean — its only remaining blockers
-  are the `Agent`/`Portal`/`NonFaction` types it aggregates). Still open before the big types can move:
-  routing `Portal`/`Agent`'s remaining jsMain leaves (`Com`, `Bootstrap` on `Agent`, `console.warn`,
-  `PortalNames`, `Movement`, the `action/*` collaborators). A large, multi-step move, not a
-  quick extraction. (`Scene3D` keeps an
-  *intentional* `LargeClass` suppress: its remaining entity-sync + effect-dispatch bulk is irreducibly bound
-  to the three.js groups — relocating it behind a ~30-member API would be worse.)
+- **The commonMain pure-logic lift — DONE (the whole functional core is now in `commonMain`).** The entity
+  SCC moved: `World`, `agent.{Agent,NonFaction,Movement,Inventory,Balance}`, `portal.{Portal,Field,Link,
+  ResonatorSlot,PortalKey,PortalHacks,HackLoot}`, the item entity classes (`items.{XmpBurster,PowerCube,
+  UltraStrike,RewardVisual}` + `items.deployable.*`), the action machine (`agent.action.{Action,ActionItem,
+  ActionSelector}` + `agent.action.cond.*`), plus `util.data.{Positions,PosExt,CellExt}` and `extension.Slots`.
+  This came after the earlier leaf lifts (the math core; the `config/` package behind the `config.Platform`
+  seam; the `items/` data layer; `Checkpoint`/`HackResult`/`ModSlot`/`XmMap`/`XmHeap`/`Skills`/`AgentSize`/
+  `StuckTracker`/`Circle`/`Dim`/`VectorField`/`GridMap`; `system.Com`; `util.PortalNameGen`;
+  `agent.action.HackTiming`; `ai.FactionPolicy`+registry).
+  - **Side-effect seams (the imperative shell).** Four mirror the same shape — a commonMain interface +
+    `<accessor>.sink` + a `NoOp*` default, with the jsMain platform impl `bind`-installed at boot
+    (`Bootstrap.load`): **visual** `system.effect.{Effects,Fx}`→`BrowserEffects`; **audio**
+    `system.audio.{Audio,Snd}`→`BrowserAudio`; **flow-field compute** `system.grid.{FieldFlow,Nav}`→
+    `PathFieldFlow` (also bound per `SimRunner` match); **map naming** `util.{PortalNamer,Names}`→
+    `MapPortalNamer`. Host facts go through `config.Platform` (`isBrowser`/`locationName`/…); diagnostics
+    through `util.Log`; the AI slider read through `ai.FactionPolicies.defaultPolicy`→`DomSliderPolicy`.
+    Accessors default to NoOp headless, so the Node/JVM tests + `SimRunner` run the full tick loop with no
+    renderer/audio/DOM.
+  - **The jsMain shell keeps only** the platform impls above, the JS-canvas `agent.action.ActionIcons` /
+    `agent.qvalue.QIcons` / `util.data.CellOverlay`, `util.data.GeoCoordsExt`, and the renderer/audio/DOM/
+    MapLibre engines. (`Scene3D` keeps an *intentional* `LargeClass` suppress — its entity-sync +
+    effect-dispatch bulk is irreducibly bound to the three.js groups.)
+  - **Coverage:** the core is now JVM-measured via Kover (`./scripts/coverage.sh`); the pure tests live in
+    `commonTest` and run on both targets. Follow-ons: the remaining jsMain `Config`-consumers
+    (`system.Cycle`, `ai.{Tournament,Observation}`) are `SimRunner`-coupled and can lift later; push JVM
+    coverage of the big classes (`Portal`/`Agent`/`World`) higher by porting the `SimRunner`-based
+    integration tests off the jsMain harness. **Needs one eyes-on `./start.sh`** to confirm the boot binds
+    (FX/audio/flow-field flash/real portal names) after the seam rewire.
 - **Reduce magic numbers** — name them / fold into `Config` where it aids clarity (detekt `MagicNumber` is
   off → a by-hand judgement pass, not a gate-chase).
 - **Tighten line length 140 → 120** — land *alongside* the class extractions (auto-wrapping inflates
