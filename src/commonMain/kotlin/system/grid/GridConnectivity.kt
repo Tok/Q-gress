@@ -102,14 +102,21 @@ object GridConnectivity {
 
     /**
      * Full gameplay connectivity: first seal every enclosed pocket to the outside (whole-grid), then
-     * join the **on-screen** regions to each other directly. The first pass alone leaves regions that
+     * join the **on-screen play** regions to each other directly. The first pass alone leaves regions that
      * both touch the off-screen ring reachable only by detouring around the map edge ([onScreenComponents]
      * > 1) — agents path the long way and look stuck. The second pass carves on-screen corridors between
      * them, so afterwards every playable cell reaches every other without leaving the screen.
+     *
+     * [inCircle] marks the play area for a round field (default `{ true }` = the whole on-screen rectangle):
+     * neither pass may flood/carve a corridor through an on-screen cell OUTSIDE it, because the caller masks
+     * those impassable afterwards — a corridor riding one would be re-severed, re-fragmenting the grid (the
+     * `UNHEALTHY` connectivity warning). Off-screen ring cells stay traversable (they're never masked), so
+     * pass 1 still reaches in-circle pockets via the mid-edges where the circle meets the ring.
      */
-    fun connectIslands(grid: Grid, w: Int, h: Int): Grid {
-        val sealed = connectComponents(grid, components(grid)) { true }
-        return connectComponents(sealed, onScreenComponents(sealed, w, h)) { isOnScreen(it, w, h) }
+    fun connectIslands(grid: Grid, w: Int, h: Int, inCircle: (Pos) -> Boolean = { true }): Grid {
+        val sealed = connectComponents(grid, components(grid)) { !(isOnScreen(it, w, h) && !inCircle(it)) }
+        val inPlay = { p: Pos -> isOnScreen(p, w, h) && inCircle(p) }
+        return connectComponents(sealed, componentsWhere(sealed, inPlay), inPlay)
     }
 
     /**

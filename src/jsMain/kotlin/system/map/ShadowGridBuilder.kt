@@ -62,10 +62,11 @@ object ShadowGridBuilder {
             nextRow(passData, costData, w, h, x)
         }.toMap()
         // No closed-off areas + on-screen routes: seal pockets to the outside AND join on-screen regions
-        // directly (else agents detour around the map edge between them and look stuck). Mask the round
-        // field AFTER connectivity (the carver would otherwise re-open the corners it carries corridors
-        // through) so flow fields / walkability / movement truly stay in the circle.
-        val grid = maskToCircle(GridConnectivity.connectIslands(rawGrid, w, h), w, h)
+        // directly (else agents detour around the map edge between them and look stuck). The connect pass is
+        // circle-aware ([inCircle]) so it never carves a corridor through an on-screen cell the round mask
+        // then blocks — which used to re-sever corridors and re-fragment the grid. Mask AFTER (now a no-op on
+        // connectivity, since no corridor rides an out-of-circle cell) so walkability/flow truly stay in the circle.
+        val grid = maskToCircle(GridConnectivity.connectIslands(rawGrid, w, h, inCircle(w, h)), w, h)
         World.walkability = GridConnectivity.walkability(grid, w, h)
         console.log(
             "grid built: walkability ${(World.walkability * 100).toInt()}% (${GridConnectivity.components(
@@ -116,6 +117,17 @@ object ShadowGridBuilder {
             }
         }
         console.log("[debug] footpaths: brightest shadow cell $brightest (≈255 ⇒ present), near-white cells $white / ${w * h}")
+    }
+
+    // The play area as a predicate for [GridConnectivity.connectIslands] — the SAME inscribed circle
+    // [maskToCircle] enforces, so the connector never carves a corridor through a cell the mask will block.
+    // Non-round fields play the whole rectangle, so every cell is "in play".
+    private fun inCircle(w: Int, h: Int): (Pos) -> Boolean {
+        if (!Sim.roundField) return { true }
+        val cx = w / 2.0
+        val cy = h / 2.0
+        val rSq = (minOf(w, h) / 2.0).let { it * it }
+        return { pos -> (pos.x - cx) * (pos.x - cx) + (pos.y - cy) * (pos.y - cy) <= rSq }
     }
 
     /** Round field: force on-screen cells outside the inscribed circle impassable (a true circular arena). */

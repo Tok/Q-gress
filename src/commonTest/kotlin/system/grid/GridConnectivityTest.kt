@@ -85,6 +85,26 @@ class GridConnectivityTest {
     }
 
     @Test
+    fun connectIslandsRespectsTheCircleAndNeverCarvesOutOfPlayCells() {
+        // Left column | wall column | right column = two regions. Row y=0 is OUT of the play area
+        // (inCircle = y >= 1) — as the round-field mask will block afterwards. A circle-aware connect must join
+        // the regions through an IN-play wall cell and never carve the out-of-play cell (1,0), or the mask would
+        // re-sever that corridor and re-fragment the grid.
+        val g = grid(
+            ".#.", // y=0 — out of play
+            ".#.", // y=1
+            ".#.", // y=2
+        )
+        val connected = GridConnectivity.connectIslands(g, 3, 3) { it.y >= 1.0 }
+        assertTrue(!connected.getValue(Pos(1.0, 0.0)).isPassable, "the out-of-play wall cell is never carved")
+        assertTrue(
+            (1..2).any { connected.getValue(Pos(1.0, it.toDouble())).isPassable },
+            "an in-play wall cell was carved to join the two regions",
+        )
+        assertEquals(1, GridConnectivity.components(connected).size, "the regions end up connected (via an in-play corridor)")
+    }
+
+    @Test
     fun connectIslandsIsNoOpWhenAlreadyConnected() {
         val g = grid("..", "..")
         assertEquals(g, GridConnectivity.connectIslands(g))
