@@ -1,28 +1,26 @@
 package util
 
 /**
- * The game's single randomness source — a **seedable mulberry32 PRNG** plus the weighted-random [select] that
- * drives every AI choice. Lives in the shared functional core (`commonMain`) so a seeded world/match is
- * reproducible on every platform and the picker is JVM-unit-tested + Kover-covered. The one platform bit — a
- * fresh 32-bit seed when none is set — is [freshSeed] (expect/actual). [Util] delegates here, so the ~150
- * `Rng.random()` / `Rng.select()` call sites are unchanged. (Kotlin Int arithmetic wraps mod 2^32.)
+ * A **seedable mulberry32 PRNG stream** plus the weighted-random [select] that drives AI choices. The game runs
+ * TWO independent streams built on this class so that one can't perturb the other:
+ *  - [Rng] — agents, portals, drops, world-gen: the deterministic training/eval sequence.
+ *  - [NpcRng] — ambient NPC movement/destination choices.
+ * Keeping ambient NPCs off the [Rng] stream means NPC tuning never shifts the agent-driven sequence, so headless
+ * matches stay reproducible (and JVM↔JS-stable) across NPC-behaviour changes. (Kotlin Int arithmetic wraps 2^32.)
  */
-object Rng {
-    private const val MULBERRY_INC = 0x6D2B79F5
-    private const val UINT32 = 4294967296.0
-
+class RngStream {
     private var rngState = 0
     private var theSeed = 0
     private var seeded = false
 
-    /** Seed the RNG (resets the sequence). Call before world generation to reproduce a world. */
+    /** Seed the stream (resets the sequence). */
     fun seed(value: Int) {
         theSeed = value
         rngState = value
         seeded = true
     }
 
-    /** The seed driving the current world (for sharing). */
+    /** The seed driving this stream (for sharing). */
     fun currentSeed(): Int = theSeed
 
     fun random(): Double {
@@ -74,7 +72,51 @@ object Rng {
         }
         throw IllegalArgumentException("Invalid Q-values: $probabilityList")
     }
+
+    companion object {
+        private const val MULBERRY_INC = 0x6D2B79F5
+        private const val UINT32 = 4294967296.0
+    }
 }
 
-/** A fresh random 32-bit seed (used when no seed is supplied) — the one platform-specific bit of [Rng]. */
+/**
+ * The primary game RNG — agents, portals, drops, world-gen. Seeding it also reseeds [NpcRng] (with a derived
+ * seed) so a given world seed stays fully reproducible while the two streams remain independent. [Util] delegates
+ * here, so the ~150 `Rng.random()` / `Rng.select()` call sites are unchanged.
+ */
+object Rng {
+    private val stream = RngStream()
+
+    /** Seed the game RNG (resets the sequence + the derived NPC stream). Call before world generation. */
+    fun seed(value: Int) {
+        stream.seed(value)
+        NpcRng.seedFrom(value)
+    }
+
+    fun currentSeed(): Int = stream.currentSeed()
+    fun random(): Double = stream.random()
+    fun randomBool(): Boolean = stream.randomBool()
+    fun randomInt(max: Int): Int = stream.randomInt(max)
+    fun randomInt(min: Int, max: Int): Int = stream.randomInt(min, max)
+    fun <T> shuffle(items: Set<T>): Set<T> = stream.shuffle(items)
+    fun <T> shuffle(items: List<T>): List<T> = stream.shuffle(items)
+    fun <T> select(probabilityList: List<Pair<Double, T>>, default: T): T = stream.select(probabilityList, default)
+}
+
+/**
+ * The ambient-NPC RNG stream — [agent.NonFaction] movement + destination choices. Independent of [Rng] so NPC
+ * tuning never shifts the agent-driven sequence. Reseeded (with a derived value) whenever [Rng] is seeded, so a
+ * world seed still fully reproduces the NPCs.
+ */
+object NpcRng {
+    private const val DERIVE = 1013904223 // decorrelate the NPC stream from the game seed (an LCG increment)
+    private val stream = RngStream()
+
+    fun seedFrom(gameSeed: Int) = stream.seed(gameSeed xor DERIVE)
+    fun random(): Double = stream.random()
+    fun randomInt(max: Int): Int = stream.randomInt(max)
+    fun randomInt(min: Int, max: Int): Int = stream.randomInt(min, max)
+}
+
+/** A fresh random 32-bit seed (used when no seed is supplied) — the one platform-specific bit of [RngStream]. */
 expect fun freshSeed(): Int
