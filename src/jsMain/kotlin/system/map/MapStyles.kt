@@ -72,6 +72,8 @@ object MapStyles {
     // NPCs/agents avoid walking down them) > black buildings & water (impassable). Layer order matters (later
     // paints over earlier): roads paint over the ground, then FOOTPATHS paint over roads — so where a footpath
     // overlaps a street (sidewalks run along/under roads) the white path wins → brighter beats darker.
+    // Footpaths are drawn deliberately BOLD (~4 grid cells at z18): a real ~2 m path is ~1 cell, which the
+    // 3-cell cost-blur would average into grey — too thin to register a walkable corridor in the grid at all.
     val SHADOW_STYLE = """{
         "version": 8,
         "sources": {
@@ -137,7 +139,7 @@ object MapStyles {
                 "filter": ["match", ["get", "class"], ["path", "pedestrian"], true, false],
                 "paint": {
                     "line-color": "#ffffff",
-                    "line-width": ["interpolate", ["linear"], ["zoom"], 14, 5, 18, 18]
+                    "line-width": ["interpolate", ["linear"], ["zoom"], 14, 14, 18, 44]
                 }
             }
         ]
