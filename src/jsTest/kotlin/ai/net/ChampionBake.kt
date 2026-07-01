@@ -26,13 +26,22 @@ class ChampionBake {
     private fun nowMs(): Double = js("Date.now()").unsafeCast<Double>()
 
     // A js() argument must be a constant, so read the whole env object in JS and index it (by the Kotlin
-    // [name]) here — the script sets BAKE_CHAMPS=1 / BAKE_BENCH=1 to turn a run on.
-    private fun envFlag(name: String): Boolean {
+    // [name]) here — the script sets BAKE_CHAMPS=1 / BAKE_BENCH=1 / BAKE_ARCH=16-16 to drive a run.
+    private fun envValue(name: String): String? {
         val env: dynamic = js("(typeof process !== 'undefined' && process.env) ? process.env : null")
-        return env != null && env[name] == "1"
+        val raw = if (env == null) null else env[name]
+        return (raw as? String)?.takeIf { it.isNotEmpty() }
     }
 
-    private fun archs(): List<NetArch> = WIDTHS.flatMap { h1 -> WIDTHS.map { h2 -> NetArch(listOf(h1, h2)) } }
+    private fun envFlag(name: String): Boolean = envValue(name) == "1"
+
+    // The archs to bake: just BAKE_ARCH (e.g. "16-16") when set — the script bakes ONE arch per fresh Node
+    // process so a long full sweep can't leak memory into one process — else the whole 25-arch sweep.
+    private fun archs(): List<NetArch> {
+        val only = envValue("BAKE_ARCH")
+        if (only != null) return listOf(NetArch(only.split("-").mapNotNull { it.trim().toIntOrNull() }))
+        return WIDTHS.flatMap { h1 -> WIDTHS.map { h2 -> NetArch(listOf(h1, h2)) } }
+    }
 
     @Test
     fun bench() {

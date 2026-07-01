@@ -4,27 +4,32 @@
 #
 #   ./scripts/bake-champs.sh          # train every arch, regenerate ChampionGenomes.kt
 #   ./scripts/bake-champs.sh --bench  # just time a match (size the training budget), no bake
+#   ./scripts/bake-champs.sh --resume # skip archs already baked in build/champions/ (continue a run)
 #
-# The heavy lifting lives in the reusable harness `ai.net.ChampionBake` (jsTest): it trains a net per
-# NetArch (the TRAIN-tab 4/8/16/24/32 x 4/8/16/24/32 sweep) against the adaptive HeuristicPolicy baseline
-# and, per arch, commits the ELITE genome with the best HELD-OUT (unseen-seed) margin — so an overfit
-# champion is never shipped. Each winner is printed as `BAKEGENOME|<label>|<json>`; this script harvests
-# those from the JUnit XML and rewrites src/jsMain/kotlin/ai/net/ChampionGenomes.kt. Review the diff, run
-# the gate (`./gradlew ktlintCheck detekt compileKotlinJs jsNodeTest`), then commit.
+# The heavy lifting lives in the reusable harness `ai.net.ChampionBake` (jsTest): it trains a net for the
+# arch named by BAKE_ARCH against the adaptive HeuristicPolicy baseline and, per arch, commits the ELITE
+# genome with the best HELD-OUT (unseen-seed) margin — so an overfit champion is never shipped. It prints
+# `BAKEGENOME|<label>|<json>`.
 #
-# It's env-gated (BAKE_CHAMPS=1) so the normal test run skips it, and lifts Mocha's 60 s per-test cap via
-# -PmochaTimeout for the minutes-long training runs.
+# We bake ONE arch per fresh Gradle/Node process (not all 25 in one long-lived process): a full sweep runs
+# thousands of matches over ~1-2 h, and a single Node process can exhaust its heap partway through. Per-arch
+# processes bound memory (each arch is ~600 matches, proven to fit), make the run resumable, and let a
+# transient crash retry just that arch instead of losing everything.
 #
-set -euo pipefail
+set -uo pipefail
 cd "$(dirname "$0")/.."
 
 # Pick up the project toolchain (JDK 21) if the shell doesn't already have it.
 if [ -z "${JAVA_HOME:-}" ] && [ -x /usr/lib/jvm/java-21-openjdk-amd64/bin/java ]; then
     export JAVA_HOME="/usr/lib/jvm/java-21-openjdk-amd64"
 fi
+# Give the test Node process a generous heap for the long headless sims.
+export NODE_OPTIONS="${NODE_OPTIONS:-} --max-old-space-size=4096"
 
 GEN="src/jsMain/kotlin/ai/net/ChampionGenomes.kt"
 XML_DIR="build/test-results/jsNodeTest"
+OUT="build/champions"
+WIDTHS="4 8 16 24 32"
 
 if [ "${1:-}" = "--bench" ]; then
     echo "==> Timing a bake match (BAKE_BENCH)…"
@@ -33,31 +38,55 @@ if [ "${1:-}" = "--bench" ]; then
     exit 0
 fi
 
-echo "==> Baking one champion per architecture (this takes many minutes)…"
-echo "    Live progress streams below: 'BAKE [n/25 arch] gen g/G …' per generation, then a per-arch DONE line."
-# -PbakeVerbose streams the test's stdout live (the whole sweep is one long test), so you can watch it work.
-BAKE_CHAMPS=1 ./gradlew jsNodeTest --tests 'ai.net.ChampionBake' \
-    -PmochaTimeout=3600s -PbakeVerbose=1 --console=plain --rerun
+RESUME=0
+[ "${1:-}" = "--resume" ] && RESUME=1
+[ "$RESUME" = 1 ] || rm -rf "$OUT"
+mkdir -p "$OUT"
 
-echo "==> Harvesting baked genomes from the JUnit XML…"
-python3 - "$XML_DIR" "$GEN" <<'PY'
-import sys, os, re, glob, html
+echo "==> Baking one champion per architecture (one fresh process per arch; this takes ~1-2 h)…"
+FAILED=""
+for h1 in $WIDTHS; do
+    for h2 in $WIDTHS; do
+        key="$h1-$h2"
+        if [ "$RESUME" = 1 ] && [ -s "$OUT/$key.line" ]; then
+            echo "==> [$key] already baked — skipping (--resume)"
+            continue
+        fi
+        echo "==> [$key] baking… (live per-generation progress streams below)"
+        ok=0
+        for attempt in 1 2; do
+            if BAKE_CHAMPS=1 BAKE_ARCH="$key" ./gradlew jsNodeTest --tests 'ai.net.ChampionBake' \
+                -PmochaTimeout=3600s -PbakeVerbose=1 --console=plain --rerun; then
+                line=$(grep -rhoE 'BAKEGENOME\|[^<]*' "$XML_DIR"/*.xml 2>/dev/null | tail -1)
+                if [ -n "$line" ]; then
+                    printf '%s\n' "$line" > "$OUT/$key.line"
+                    ok=1
+                    break
+                fi
+                echo "   [$key] ran but produced no genome line (attempt $attempt)"
+            else
+                echo "   [$key] process failed (attempt $attempt)"
+            fi
+        done
+        [ "$ok" = 1 ] || FAILED="$FAILED $key"
+    done
+done
 
-xml_dir, gen_path = sys.argv[1], sys.argv[2]
-lines = []
-for path in glob.glob(os.path.join(xml_dir, "*.xml")):
+echo "==> Harvesting baked genomes into $GEN…"
+python3 - "$OUT" "$GEN" <<'PY'
+import sys, os, glob, html, re
+
+out_dir, gen_path = sys.argv[1], sys.argv[2]
+entries = {}
+for path in sorted(glob.glob(os.path.join(out_dir, "*.line"))):
     with open(path, encoding="utf-8") as f:
         for raw in f:
-            for m in re.finditer(r"BAKEGENOME\|[^\n<]*", html.unescape(raw)):
-                lines.append(m.group(0))
-
-entries = {}
-for line in lines:
-    _, label, js = line.split("|", 2)
-    entries[label] = js.strip()
+            for m in re.finditer(r"BAKEGENOME\|[^\n]*", html.unescape(raw)):
+                _, label, js = m.group(0).split("|", 2)
+                entries[label] = js.strip()
 
 if not entries:
-    sys.exit("ERROR: no BAKEGENOME lines found — did the bake run? (ChampionGenomes.kt left untouched)")
+    sys.exit("ERROR: no baked genomes found in %s — nothing regenerated (ChampionGenomes.kt untouched)" % out_dir)
 
 def kt_key(label):   # embed the arch label as an ASCII-safe Kotlin string key (U+2192 arrow -> →)
     return label.replace("→", "\\u2192")
@@ -85,6 +114,9 @@ print("wrote %d champions to %s" % (len(entries), gen_path))
 PY
 
 echo
-echo "==> ChampionGenomes.kt regenerated. Next:"
+if [ -n "$FAILED" ]; then
+    echo "!!! These archs failed to bake (rerun with --resume to retry just them):$FAILED"
+fi
+echo "==> Done. Next:"
 echo "    ./gradlew ktlintFormat && ./gradlew ktlintCheck detekt compileKotlinJs jsNodeTest"
 echo "    git add -A && git commit   # after reviewing the diff"
