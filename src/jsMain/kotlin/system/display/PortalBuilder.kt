@@ -33,6 +33,7 @@ import util.data.Pos
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.pow
+import kotlin.math.roundToInt
 import kotlin.math.sin
 import kotlin.math.sqrt
 
@@ -51,6 +52,7 @@ object PortalBuilder {
     private const val MAX_SHIELD_SHELLS = 4 // up to 4 shields per portal → 4 concentric bubbles
     private const val SHIELD_SHELL_STEP = 0.09 // each shield shell sits this much larger than the last (× radius)
     private const val MOD_RING_FRAC = 0.55 // tetra vertex distance from orb centre (× orb radius)
+    private const val LEVEL_SIG_BUCKETS = 5 // reuse-signature buckets the display level to 1/5 (0.2) — see portalSignature
 
     // Unit regular-tetrahedron vertices (magnitude √3); the 4 mod slots sit at these inside the orb.
     private val TETRA = arrayOf(
@@ -227,13 +229,19 @@ object PortalBuilder {
         }
     }
 
+    /** A portal's mod meshes: the tumbling tetra group (null if no mods) + the shield-bubble materials — handed
+     *  back to [Scene3D] so it can (re-)register them into [modTetras]/[shieldMats] for the per-frame animation
+     *  each tick, even when the portal mesh itself is reused (the diff-sync clears those lists every sync). */
+    class ModHandles(val tetra: dynamic, val shellMats: List<dynamic>)
+
     /**
      * Deployed shields: chrome mods in a tetrahedron inside the orb + a sci-fi shield bubble at φ× the
      * orb radius. Added as children of the [orb] so they inherit its per-level scale + grow-in tween.
+     * Returns the built [ModHandles] — the caller registers them for the per-frame tumble/ripple.
      */
-    fun buildMods(orb: dynamic, portal: Portal) {
+    fun buildMods(orb: dynamic, portal: Portal): ModHandles {
         val mods = portal.mods.values.toList()
-        if (mods.isEmpty()) return
+        if (mods.isEmpty()) return ModHandles(null, emptyList())
         val r = TOP_R * MOD_RING_FRAC / sqrt(3.0) // normalize the √3-magnitude tetra verts to the ring radius
         val tetra = Three.Group() // the whole mod tetrahedron — slowly tumbled per frame (see tumbleModTetras)
         mods.forEachIndexed { i, mod ->
@@ -252,33 +260,66 @@ object PortalBuilder {
             tetra.asDynamic().add(mesh)
         }
         orb.add(tetra) // orb is already dynamic (no .asDynamic())
-        modTetras.add(tetra)
-        addShieldShells(orb, portal, mods)
+        return ModHandles(tetra, buildShieldShells(orb, portal, mods))
     }
 
     // Up to MAX_SHIELD_SHELLS concentric energy bubbles (one per deployed shield), each a touch larger
     // than the last → a layered shield that also reads with depth. Stay put (not in the mod tumble).
-    private fun addShieldShells(orb: dynamic, portal: Portal, mods: List<Mod>) {
+    // Returns the shell materials so the caller can register them for the per-frame ShieldWave ripple.
+    private fun buildShieldShells(orb: dynamic, portal: Portal, mods: List<Mod>): List<dynamic> {
         val shells = mods.count { it is Shield }.coerceIn(0, MAX_SHIELD_SHELLS)
-        if (shells == 0) return
+        if (shells == 0) return emptyList()
         val color = portal.owner?.faction?.color ?: NEUTRAL_COLOR
         val baseIntensity = portal.totalMitigation() / 100.0
+        val mats = mutableListOf<dynamic>()
         repeat(shells) { i ->
             val mat = ShieldShader.material(color, baseIntensity * (1.0 - i * 0.12))
             val bubble = Three.Mesh(shieldGeo, mat)
             val s = 1.0 + i * SHIELD_SHELL_STEP
             bubble.asDynamic().scale.set(s, s, s)
             orb.add(bubble)
-            shieldMats.add(Pair(mat, portal.id)) // so ShieldWave can ripple it; Pair() not `to` (dynamic receiver)
+            mats.add(mat)
         }
+        return mats
     }
 
-    private val modTetras = mutableListOf<dynamic>() // mod tetrahedra, rebuilt each sync, tumbled each frame
+    /**
+     * A signature of everything that changes a portal's MESH tree, so [Scene3D] can reuse the whole tree across
+     * ticks when it's unchanged: the (bucketed) display [level], each slot's reso level + quantized
+     * [Materials.fillStep], the deployed mod types (order = tetra slot), and the shield count + mitigation bucket.
+     * Deliberately EXCLUDES orb colour / selection (retinted in place) and grow-in (re-applied as a transform
+     * every tick) — so a stable portal reuses its meshes while combat / capture visuals still update. The level
+     * is the *displayed* (eased) level bucketed to 0.2, NOT the raw target: the reso rod LENGTHS are baked from
+     * it, so a level-up re-bakes them a handful of times as the ease plays out, then settles at the right length
+     * (keying on the target int would bake them once mid-ease and leave the rods ~10% short).
+     */
+    fun portalSignature(portal: Portal, level: Double, resos: Map<Octant, Pair<Int, Double>>): String {
+        val sb = StringBuilder()
+        sb.append((level * LEVEL_SIG_BUCKETS).roundToInt()).append('|')
+        Octant.values().forEach { oct ->
+            val r = resos[oct]
+            if (r == null) sb.append('_') else sb.append(r.first).append(':').append(Materials.fillStep(r.second))
+            sb.append(',')
+        }
+        sb.append('|')
+        portal.mods.values.forEach { sb.append(it.modType().name).append(',') }
+        sb.append('|').append(portal.mods.values.count { it is Shield }).append(':').append(portal.totalMitigation())
+        return sb.toString()
+    }
 
-    /** Shield bubble materials + their portal id, rebuilt each sync → driven per frame by ShieldWave (ripple). */
+    private val modTetras = mutableListOf<dynamic>() // mod tetrahedra, (re-)registered each sync, tumbled each frame
+
+    /** Shield bubble materials + their portal id, (re-)registered each sync → driven per frame by ShieldWave. */
     val shieldMats = mutableListOf<Pair<dynamic, String>>()
 
-    /** Drop the per-sync mod/shield state (the scene rebuilds it each sync). */
+    /** (Re-)register a portal's [ModHandles] into the per-frame tumble/ripple lists — called every sync (for both
+     *  freshly-built and reused portals) after [resetSyncState] has cleared them. */
+    fun registerMods(handles: ModHandles, portalId: String) {
+        if (handles.tetra != null) modTetras.add(handles.tetra)
+        handles.shellMats.forEach { shieldMats.add(Pair(it, portalId)) }
+    }
+
+    /** Drop the per-sync mod/shield registrations (the scene re-registers each live portal's every sync). */
     fun resetSyncState() {
         modTetras.clear()
         shieldMats.clear()

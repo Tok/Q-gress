@@ -165,6 +165,23 @@ object Scene3D {
 
     // Category groups, cleared & rebuilt each sync.
     private var portalsGroup: dynamic = null
+
+    // A portal's persistent mesh tree (pole/gasket/orb+inner/resonators/mods) — reused across ticks instead of
+    // clear+recreate. [parts] = [orb, gasket, pole, resoGroup]; [inner] retints with the orb; [mods] is re-
+    // registered for the per-frame tumble/ripple each tick. [sig] captures the built shape (level, resos, mods)
+    // so we rebuild ONLY when it changes — orb colour/selection retint in place and grow/level-tween re-apply as
+    // transforms. Keyed by "portal:<id>". Cleared in onAdd with the group.
+    private class PortalMeshes(
+        val parts: Array<dynamic>,
+        val inner: dynamic,
+        val mods: PortalBuilder.ModHandles,
+        var color: String,
+        var selected: Boolean,
+        val sig: String,
+        val wasDeploying: Boolean, // built while a slot was mid-deploy (rings pole-fixed) → force one rebuild when it lands
+    )
+
+    private val portalMeshes = mutableMapOf<String, PortalMeshes>()
     private var agentsGroup: dynamic = null
     private var indicatorsGroup: dynamic = null // action-indicator sprites (excluded from raycast)
     private var npcsGroup: dynamic = null
@@ -286,6 +303,7 @@ object Scene3D {
         MovementPenaltyOverlay.register(newScene)
         VectorFieldOverlay.register(newScene)
         portalsGroup = Three.Group().also { newScene.add(it) }
+        portalMeshes.clear() // the persistent portal-tree cache belongs to the OLD group — drop it with the rebuild
         fieldsGroup = Three.Group().also { newScene.add(it) }
         fieldMeshes.clear() // the persistent field-mesh cache belongs to the OLD group — drop it with the rebuild
         linksGroup = Three.Group().also { newScene.add(it) }
@@ -410,10 +428,9 @@ object Scene3D {
         Spawns.beginSync()
         HackFx.resetBindings() // re-bound below as each portal's reso group is rebuilt
         DeployFx.resetBindings()
-        PortalBuilder.resetSyncState() // mod tetras + shield mats are rebuilt by PortalBuilder.buildMods below
+        PortalBuilder.resetSyncState() // mod tetra / shield-mat registries — re-populated per live portal in syncPortals
         clear(stuckGroup) // ?debug markers: cleared up front so syncNpcs + syncAgents can re-add this tick's
-        clear(portalsGroup)
-        World.allPortals.forEach { addPortal(it) }
+        syncPortals() // persistent: reuse each portal's mesh tree across ticks (rebuild only when its shape signature changes)
         syncPoleColliders()
         syncFields() // persistent: reuse field plasma meshes across ticks (no clear+recreate)
         syncLinks() // persistent: reuse link meshes across ticks (no clear+recreate)
@@ -1033,16 +1050,50 @@ object Scene3D {
         return next
     }
 
-    private fun addPortal(portal: Portal) {
+    /**
+     * Reconcile every portal's 3D tree with [World.allPortals] WITHOUT clear+recreate every tick: reuse each
+     * portal's whole mesh tree (rebuilding only when its shape signature changes — [PortalBuilder.portalSignature]),
+     * and remove gone ones. The per-tick state machines (sounds / level tween / capture shatter) still run every
+     * tick; only the mesh construction is skipped on reuse.
+     */
+    private fun syncPortals() {
+        val group = portalsGroup ?: return
+        val present = mutableSetOf<String>()
+        World.allPortals.forEach { present.add(syncPortal(group, it)) }
+        (portalMeshes.keys - present).forEach { id ->
+            val rec = portalMeshes.remove(id) ?: return@forEach
+            removePortalMeshes(group, rec)
+        }
+    }
+
+    // Sync one portal (returns its id for the present set): run the per-tick state machines, reuse-or-rebuild its
+    // mesh tree, retint the orb, re-register its mods, re-bind the hack spin + re-apply the grow/level transforms.
+    private fun syncPortal(group: dynamic, portal: Portal): String {
         val id = "portal:${portal.id}"
         PortalChangeSound.check(id, portal) // upgrade / downgrade / neutralize sounds on state change
         val baseColor = portal.owner?.faction?.color ?: NEUTRAL_COLOR
         val level = tweenedLevel(id, portal.getLevel().toInt()) // eases on level-up
         val gz = groundZ(portal.location) // terrain height under this portal
-        // Colour change → the OLD orb shatters in place, the new one pops back in (reform factor).
-        // A *neutral* orb never shatters (no resonators = nothing there): only a captured (faction-
-        // coloured) orb breaks, so capturing a neutral portal grows the faction orb in with no white
-        // glass. Neutralising a portal still shatters its coloured orb.
+        checkCaptureShatter(portal, id, baseColor, level, gz)
+        // A virus flip morphs the orb from the old faction colour to the new one (no shatter); everywhere else this
+        // is just baseColor. Lerp in RGB so green↔blue passes through a believable midpoint.
+        val orbColor = CaptureFx.recolorFrom(id)?.let { blendColor(it, baseColor, CaptureFx.recolorT(id)) } ?: baseColor
+        // octant → (reso level, health 0..1) — both real-time, so the rod's energy bar tracks its charge.
+        val resos = portal.resoMap().mapValues { Pair(it.value.getLevel(), it.value.calcHealthPercent() / 100.0) }
+        val rec = resolvePortalRecord(group, portal, level, orbColor, resos)
+        retintOrb(rec, orbColor, selected == id) // selection keeps the faction hue but lights the orb brighter
+        PortalBuilder.registerMods(rec.mods, portal.id) // re-arm the per-frame tumble/ripple (lists cleared each sync)
+        HackFx.bind(id, rec.parts[3]) // spin the collar if this portal is being hacked
+        // Build-in: the pole rises + the orb grows from the ground; reform re-pops the orb after a capture. Applied
+        // every tick so grow-in / level-tween / terrain-resample keep animating on the reused tree.
+        PortalBuilder.applyBuildGrow(level, Spawns.appear(id, PORTAL_GROW_S), rec.parts, CaptureFx.reformFactor(id), gz)
+        return id
+    }
+
+    // Colour change → the OLD orb shatters in place, the new one pops back in (reform factor). A *neutral* orb
+    // never shatters (no resonators = nothing there): only a captured (faction-coloured) orb breaks, so capturing
+    // a neutral portal grows the faction orb in with no white glass. Neutralising a portal still shatters its orb.
+    private fun checkCaptureShatter(portal: Portal, id: String, baseColor: String, level: Double, gz: Double) {
         CaptureFx.check(id, baseColor) { old ->
             if (old == NEUTRAL_COLOR) return@check
             val lv = displayedLevel[id] ?: level
@@ -1057,24 +1108,50 @@ object Scene3D {
             )
             BlastSound.playGlassShatterSound(portal.location, CAPTURE_SHATTER_WEIGHT)
         }
-        val reform = CaptureFx.reformFactor(id)
-        // A virus flip morphs the orb from the old faction colour to the new one (no shatter); everywhere
-        // else this is just baseColor. Lerp in RGB so green↔blue passes through a believable midpoint.
-        val orbColor = CaptureFx.recolorFrom(id)?.let { blendColor(it, baseColor, CaptureFx.recolorT(id)) } ?: baseColor
-        // octant → (reso level, health 0..1) — both real-time, so the rod's energy bar tracks its charge.
-        val resos = portal.resoMap().mapValues { Pair(it.value.getLevel(), it.value.calcHealthPercent() / 100.0) }
-        // Selection keeps the faction hue but lights the orb brighter (no neutral-looking white tint);
-        // buildPortal derives that from id == selected.
-        val parts = PortalBuilder.buildPortal(portalsGroup, portal.location, level, orbColor, id, resos)
-        PortalBuilder.buildMods(parts[0], portal) // chrome mods + shield bubble inside/around the orb (if shielded)
-        HackFx.bind(id, parts[3]) // spin the collar if this portal is being hacked
-        // Build-in: the pole rises and the orb grows from the ground; [reform] re-pops the orb only.
-        val g = Spawns.appear(id, PORTAL_GROW_S)
-        if (g < 1.0) {
-            PortalBuilder.applyBuildGrow(level, g, parts, reform, gz)
-        } else if (reform < 1.0) {
-            PortalBuilder.applyBuildGrow(level, 1.0, parts, reform, gz) // orb pops back in after a capture
-        }
+    }
+
+    // Reuse the portal's cached tree when its shape signature is unchanged AND no slot is mid-deploy (a deploy
+    // fly-in restructures the reso rings, so let those rebuild); otherwise (re)build it. Returns the live record.
+    private fun resolvePortalRecord(
+        group: dynamic,
+        portal: Portal,
+        level: Double,
+        orbColor: String,
+        resos: Map<Octant, Pair<Int, Double>>,
+    ): PortalMeshes {
+        val id = "portal:${portal.id}"
+        val deploying = resos.keys.any { DeployFx.fromOf(id, it) != null }
+        val sig = PortalBuilder.portalSignature(portal, level, resos)
+        val existing = portalMeshes[id]
+        if (existing != null && canReusePortal(existing, deploying, sig)) return existing
+        if (existing != null) removePortalMeshes(group, existing)
+        val parts = PortalBuilder.buildPortal(group, portal.location, level, orbColor, id, resos)
+        val inner = parts[0].children[0] // buildPortal adds the inner glass shell to the orb before any mods
+        val mods = PortalBuilder.buildMods(parts[0], portal) // chrome mods + shield bubbles inside/around the orb
+        val rec = PortalMeshes(parts, inner, mods, orbColor, selected == id, sig, deploying)
+        portalMeshes[id] = rec
+        return rec
+    }
+
+    // Reuse a cached portal tree only when it's settled: not mid-deploy, not the tick right after a deploy landed
+    // (rings switch pole-fixed → pivot-riding, which the signature doesn't capture), and its shape signature matches.
+    private fun canReusePortal(rec: PortalMeshes, deploying: Boolean, sig: String): Boolean =
+        !deploying && !rec.wasDeploying && rec.sig == sig
+
+    // Swap the orb (+ its inner shell) material when the capture/virus colour or the selection highlight changes —
+    // in place, no new mesh (the glass materials are cached). No-op when unchanged (the common case).
+    private fun retintOrb(rec: PortalMeshes, color: String, isSel: Boolean) {
+        if (rec.color == color && rec.selected == isSel) return
+        rec.parts[0].material = if (isSel) Materials.glassBright(color) else Materials.glass(color)
+        rec.inner.material = rec.parts[0].material
+        rec.color = color
+        rec.selected = isSel
+    }
+
+    // Drop a gone/rebuilt portal's four top-level objects from the group (inner + mods ride the orb; rods/rings
+    // ride the resoGroup, so they leave with their parents).
+    private fun removePortalMeshes(group: dynamic, rec: PortalMeshes) {
+        rec.parts.forEach { group.remove(it) }
     }
 
     // Refresh portal-pole colliders in the FX physics worlds so falling debris/digits hit the poles.

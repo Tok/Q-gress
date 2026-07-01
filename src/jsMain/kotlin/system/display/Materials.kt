@@ -99,10 +99,15 @@ object Materials {
     // first health to hit the bucket), so it's deterministic and within ~1/64 of the real charge.
     private const val RESO_FILL_STEPS = 32
 
+    /** The quantized fill bucket (0..[RESO_FILL_STEPS]) a 0..1 reso charge maps to — the reso rod material +
+     *  cap are stepped to this, so it's also the granularity at which a portal's mesh actually changes (the
+     *  portal diff-sync keys its reuse signature on it, so a reused reso is pixel-identical). */
+    fun fillStep(fill: Double): Int = (fill * RESO_FILL_STEPS).roundToInt().coerceIn(0, RESO_FILL_STEPS)
+
     /** Resonator rods: a glowing energy rod with a vertical bar — [fill] (0..1 health) lights it
      *  bottom→top (glows in colour), dim + see-through above the line. Cached per colour + fill step. */
     fun resonator(color: String, fill: Double): dynamic {
-        val step = (fill * RESO_FILL_STEPS).roundToInt().coerceIn(0, RESO_FILL_STEPS)
+        val step = fillStep(fill)
         return cache.getOrPut("reso$color$step") {
             // Front faces only, and NO depth write: a translucent rod that doesn't occlude the energy-surface
             // cap discs (which draw just after it) — so a far reso's cap can't be hidden behind a nearer rod.
