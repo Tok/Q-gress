@@ -9,16 +9,11 @@ import system.grid.Pathfinding
  */
 
 /**
- * Colour for the 3D passability overlay: blocked cells read as dark blocks, walkable cells as a
- * white(fast road)→grey(high-penalty ground) ramp. Semi-transparent so the map shows through.
+ * Colour for the 3D passability overlay: **binary** — walkable = white, blocked = black (semi-transparent so
+ * the map shows through). The nuanced cost gradient is the separate [penaltyColor] view; this one just answers
+ * "can you stand here" so the two overlays read distinctly.
  */
-fun Cell.overlayColor(): String {
-    if (!isPassable) return "rgba(0, 0, 0, 0.75)"
-    val span = (Pathfinding.MAX_HEAT - Pathfinding.MIN_HEAT).toDouble()
-    val t = ((movementPenalty - Pathfinding.MIN_HEAT) / span).coerceIn(0.0, 1.0)
-    val v = (255 - t * 175).toInt() // 255 = road, ~80 = high-penalty ground
-    return "rgba($v, $v, $v, 0.45)"
-}
+fun Cell.overlayColor(): String = if (isPassable) "rgba(255, 255, 255, 0.5)" else "rgba(0, 0, 0, 0.75)"
 
 /**
  * Colour for the 3D MOVEMENT-PENALTY overlay: a full white→black greyscale over the cost — **0% penalty

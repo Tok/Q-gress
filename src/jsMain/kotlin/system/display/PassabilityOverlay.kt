@@ -5,9 +5,9 @@ import util.data.overlayColor
 
 /**
  * The walkability/terrain overlay: a ground quad textured one texel per grid cell, coloured by
- * [util.data.Cell.overlayColor] (white road → grey high-penalty ground → dark blocked). The draped-mesh
- * plumbing lives in [GridOverlay]; this owns the "Terrain" display view's group + toggle. [register] once,
- * then [setVisible] to toggle.
+ * [util.data.Cell.overlayColor] — **binary** walkable=white / blocked=black (the cost gradient is the separate
+ * [MovementPenaltyOverlay]). The draped-mesh plumbing lives in [GridOverlay]; this owns the "Terrain" display
+ * view's group + toggle. [register] once, then [setVisible] to toggle.
  */
 object PassabilityOverlay {
     private var group: dynamic = null
