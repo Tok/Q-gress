@@ -62,8 +62,20 @@ object MenuControls {
         )
         menu.append(gameplayResetButton())
         menu.append(sectionHead("Visual"))
-        menu.append(checkbox("passabilityToggle", "Passability map", false) { PassabilityOverlay.setVisible(it) })
-        menu.append(checkbox("penaltyToggle", "Movement penalty map", false) { MovementPenaltyOverlay.setVisible(it) })
+        // The two terrain overlays are mutually exclusive (drawing both at once just muddles the ground) —
+        // turning one on clears the other's checkbox + hides it.
+        menu.append(
+            checkbox("passabilityToggle", "Passability map", false) {
+                PassabilityOverlay.setVisible(it)
+                if (it) clearOverlay("penaltyToggle") { MovementPenaltyOverlay.setVisible(false) }
+            },
+        )
+        menu.append(
+            checkbox("penaltyToggle", "Movement penalty map", false) {
+                MovementPenaltyOverlay.setVisible(it)
+                if (it) clearOverlay("passabilityToggle") { PassabilityOverlay.setVisible(false) }
+            },
+        )
         menu.append(checkbox("damageNumbersToggle", "3D Damage numbers", DamageNumberFx.enabled) { DamageNumberFx.enabled = it })
         menu.append(checkbox("portalNamesToggle", "3D Portal names", PortalNameTicker.enabled) { PortalNameTicker.setEnabled(it) })
         menu.append(
@@ -143,6 +155,12 @@ object MenuControls {
         label.onclick = { check.click() }
         span.append(check, label)
         return span
+    }
+
+    // Uncheck the given checkbox (by id) + run its hide action — for the mutually-exclusive terrain overlays.
+    private fun clearOverlay(checkboxId: String, hide: () -> Unit) {
+        (document.getElementById(checkboxId) as? HTMLInputElement)?.checked = false
+        hide()
     }
 
     // Reset the gameplay knobs (combat dynamics / progress speed / portal churn) to their shipped defaults and
