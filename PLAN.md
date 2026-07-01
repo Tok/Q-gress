@@ -105,21 +105,19 @@ re-tunes the 17 sliders at checkpoint cadence; it does **not** replace the per-a
 (Training/eval is pinned to the shipped default balance via `MatchSetup.useDefaultBalance`, so champions are
 "one fits all".)
 
-- [ ] **Rebake the champions (release prep).** The bundled genomes are stale (the old **16×16** was trained vs
-  a uniform-slider baseline on the pre-checkpoint-win objective). Tooling now ships — **`scripts/bake-champs.sh`**
-  trains one champion per `NetArch` (the 25 TRAIN-tab archs) vs the adaptive `HeuristicPolicy` baseline over full
-  cycles, selecting each by **held-out** fitness, and regenerates `ChampionGenomes`. Run it once gameplay tuning
-  has settled (a champion is only as good as the balance it learned), review, commit. Fold in the **field-layering
-  Linker nudge** above. Only the default arch is baked so far.
+- [ ] **Re-bake after the field-layering Linker nudge.** A full 25-arch library is baked (`scripts/bake-champs.sh`
+  → `ChampionGenomes`, each arch beating the `HeuristicPolicy` baseline on held-out seeds on the checkpoint-win
+  objective). Re-run the bake once the **field-layering Linker nudge** above lands (and after any further balance
+  changes — a champion is only as good as the balance it learned). Deeper budget / self-play would strengthen the
+  champions further.
 - [ ] **Grid fixtures** — infra is built (`GridFixture` RLE + `GridCapture` ?debug=capture +
   `PresetConnectivityTest`). Only the committed `PresetFixtures.kt` is missing — it's currently an **empty
   placeholder** (`PRESET_FIXTURES = emptyList()`), so the connectivity test audits nothing. Run `?debug=capture`
   once in-browser, drop the download into `src/jsTest/kotlin/util/`, commit. (Feeds the offline connectivity
   audit; the trainer/leaderboard already run on the live `World.grid`.)
-- [x] **Per-side net-architecture / variant pick in onboarding** — *wired*: the opponent-selection screen (and
+- [x] **Per-side net-architecture / variant pick in onboarding** — *done*: the opponent-selection screen (and
   the in-game DriverControls) offer a per-NN-side arch pick (Random default, seed-resolved so shared links
-  reproduce, overridable), reading `ChampionLibrary`. Fully meaningful once `scripts/bake-champs.sh` has
-  populated all 25 archs (until then non-default picks fall back to the default champion).
+  reproduce, overridable), reading `ChampionLibrary` — all 25 archs baked.
 - [ ] **icebox — download / upload trained nets.** `GenomeIO` JSON-ables a genome+arch (~16 KB at 16×16): a
   "download champion" (Blob → file) + "load from file/paste", and a small saved-net library — share/version
   nets outside `localStorage`.
