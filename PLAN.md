@@ -57,9 +57,16 @@ to lift (optional; only the net `Champion`/`Evolution` tests still run JS-only).
     serialization + storage seam would let `EvolutionTest`/net tests run on the JVM too (optional).
   - **Eyes-on still owed:** one `./start.sh` pass to confirm the seam boot-binds (FX / audio / flow-field
     flash / real portal names) + the in-browser trainer/eval still compute fields, after the accessor rewire.
-- **Reduce magic numbers** — name them / fold into `Config` where it aids clarity (detekt `MagicNumber` is
-  off → a by-hand judgement pass, not a gate-chase).
-- **Tighten line length 140 → 120** — land *alongside* the class extractions (auto-wrapping inflates
+
+## Code quality — the remaining refactor pass
+The structural lift is done; what's left is clarity/consistency work over the now-lifted core.
+- [ ] **Reduce magic numbers** — name them / fold into `Config` (or a local `private const`/`companion`)
+  where it aids clarity. detekt `MagicNumber` is **off** on purpose → this is a by-hand judgement pass, not a
+  gate-chase: promote the numbers that carry *meaning* (thresholds, ratios, tuning knobs, physical constants),
+  leave the self-evident ones (`0`/`1`/`2`, array indices, `0.5` midpoints, obvious geometry). Prefer a named
+  constant *near its use* over a distant `Config` entry unless the value is a genuine shared tunable. Gate stays
+  green throughout; behaviour must not change (pure rename/extract).
+- [ ] **Tighten line length 140 → 120** — land *alongside* the class extractions (auto-wrapping inflates
   `LargeClass` otherwise).
 
 ## Perf — the big deferred lever
