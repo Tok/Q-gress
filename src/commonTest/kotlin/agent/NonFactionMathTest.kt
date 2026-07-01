@@ -1,6 +1,9 @@
 package agent
 
 import util.data.Pos
+import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.sin
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -35,6 +38,21 @@ class NonFactionMathTest {
         // Within nearCentre of the middle there's no meaningful 'opposite' → return all candidates.
         val half = NonFactionMath.opposingHalf(all, from = Pos(1, 0), cx = 0.0, cy = 0.0, nearCentre = 10.0)
         assertEquals(all.toSet(), half.toSet(), "no directional bias near the centre")
+    }
+
+    @Test
+    fun opposingHalfTargetsAreAlwaysAtLeastAQuarterCircleAway() {
+        // A 12-point ring around the origin: from ANY point, every opposing-hemisphere target must be more than
+        // 90° (a quarter circle) around the ring — so an NPC at an off-map target never picks a near-by one.
+        val n = 12
+        val ring = (0 until n).map { Pos((100 * cos(2 * PI * it / n)).toInt(), (100 * sin(2 * PI * it / n)).toInt()) }
+        ring.forEach { from ->
+            NonFactionMath.opposingHalf(ring, from, cx = 0.0, cy = 0.0, nearCentre = 1.0).forEach { to ->
+                // centre is (0,0): the dot of the two bearings ≤ 0 ⇔ they're AT LEAST 90° (a quarter circle) apart
+                val dot = from.x.toDouble() * to.x + from.y.toDouble() * to.y
+                assertTrue(dot <= 0.0, "opposing target is ≥90° from the source (dot=$dot)")
+            }
+        }
     }
 
     @Test

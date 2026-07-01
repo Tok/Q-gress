@@ -63,7 +63,9 @@ data class NonFaction(
         // strike out for the next one. (Stuck recovery is the one exception, so a wedged NPC isn't frozen.)
         if (isAtDestination()) {
             moveElsewhere() // pick the next destination…
-            restHere() // …then rest here a beat before setting off
+            // …then rest a beat — but ONLY at interior spots (life around portals). At an off-map (border)
+            // target, head straight back into the map instead of loitering, so NPCs don't pile up at the edges.
+            if (Sim.isInPlayArea(pos.x.toDouble(), pos.y.toDouble())) restHere() else departImmediately()
             return
         }
 
@@ -149,6 +151,14 @@ data class NonFaction(
         this.velocity = Complex.ZERO
         this.busyUntil = World.tick + createWaitTime()
         this.beelineTicks = 0 // drop any in-flight un-stick override; we've stopped to wait
+        this.triedBeeline = false
+    }
+
+    // Reached an off-map border target → clear momentum + any un-stick override but set NO rest timer, so the
+    // NPC heads straight to its next destination next tick (no loitering + piling up at the edges).
+    private fun departImmediately() {
+        this.velocity = Complex.ZERO
+        this.beelineTicks = 0
         this.triedBeeline = false
     }
 

@@ -37,7 +37,9 @@ class TournamentTest {
         // edge over an idle driver is robust in the mean even if any single seed is a vacuous 0–0 tie (any
         // sim tweak shifts which seeds form fields, so don't pin the property to one or two).
         val seeds = listOf(1, 2, 3, 4, 5, 6, 7, 8)
-        val table = Tournament.roundRobin(grid(), drivers, seeds = seeds)
+        // No ambient NPCs: this compares DRIVER quality (builder vs idle), and NPCs only add shared-RNG noise
+        // (which also drifts JVM↔JS on borderline seeds). Isolating the agents makes the builder's edge robust.
+        val table = Tournament.roundRobin(grid(), drivers, seeds = seeds, setup = MatchSetup(npcs = 0))
 
         assertEquals(2, table.size)
         assertEquals("builder", table.first().name, "the active builder ranks above the idle driver")

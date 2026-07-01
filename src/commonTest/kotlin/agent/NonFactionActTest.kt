@@ -209,6 +209,29 @@ class NonFactionActTest {
     }
 
     @Test
+    fun npcsLeaveOffMapTargetsImmediatelyButRestInside() {
+        val w0 = Sim.width
+        val h0 = Sim.height
+        try {
+            Sim.setSize(1600, 1000)
+            addPortals()
+            World.tick = 10
+            // Arrived AT an off-map target (outside the play area) → head straight back, no rest timer set.
+            val offMap = npc(Pos(-3000, 400), Pos(-3000, 400))
+            World.allNonFaction.add(offMap)
+            offMap.act()
+            assertTrue(offMap.busyUntil <= World.tick, "an NPC at an off-map border target departs immediately (no rest)")
+            // Arrived at an INTERIOR target → still rests a beat.
+            val inside = npc(Pos(400, 300), Pos(400, 300))
+            World.allNonFaction.add(inside)
+            inside.act()
+            assertTrue(inside.busyUntil > World.tick, "an NPC at an interior target still rests a beat")
+        } finally {
+            Sim.setSize(w0, h0)
+        }
+    }
+
+    @Test
     fun findRandomPrefersInPlayAreaNpcs() {
         val inside = npc(Pos(400, 400), Pos(400, 400))
         val offMap = npc(Pos(-5000, -5000), Pos(-5000, -5000))
