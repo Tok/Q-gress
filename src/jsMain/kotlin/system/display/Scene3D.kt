@@ -255,6 +255,7 @@ object Scene3D {
         // The directional "sun" + shadows are set up by SunController.register below (needs the renderer).
 
         PassabilityOverlay.register(newScene)
+        MovementPenaltyOverlay.register(newScene)
         VectorFieldOverlay.register(newScene)
         portalsGroup = Three.Group().also { newScene.add(it) }
         fieldsGroup = Three.Group().also { newScene.add(it) }
@@ -876,6 +877,7 @@ object Scene3D {
         sampleHeights()
         rebuildBorder()
         PassabilityOverlay.refresh() // re-drape the walkability overlay onto the freshly-sampled heights
+        MovementPenaltyOverlay.refresh()
         window.setTimeout({ resampleTerrain() }, 1500)
         window.setTimeout({ resampleTerrain() }, 4000)
     }

@@ -10,6 +10,7 @@ import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLSpanElement
 import org.w3c.dom.events.Event
 import system.building.BuildingTransparency
+import system.display.MovementPenaltyOverlay
 import system.display.PassabilityOverlay
 import system.display.PortalNameTicker
 import system.display.Scene3D
@@ -62,6 +63,7 @@ object MenuControls {
         menu.append(gameplayResetButton())
         menu.append(sectionHead("Visual"))
         menu.append(checkbox("passabilityToggle", "Passability map", false) { PassabilityOverlay.setVisible(it) })
+        menu.append(checkbox("penaltyToggle", "Movement penalty map", false) { MovementPenaltyOverlay.setVisible(it) })
         menu.append(checkbox("damageNumbersToggle", "3D Damage numbers", DamageNumberFx.enabled) { DamageNumberFx.enabled = it })
         menu.append(checkbox("portalNamesToggle", "3D Portal names", PortalNameTicker.enabled) { PortalNameTicker.setEnabled(it) })
         menu.append(
