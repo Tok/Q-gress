@@ -18,6 +18,7 @@ import system.display.SunController
 import system.display.VectorFieldOverlay
 import system.display.fx.DamageNumberFx
 import system.ui.panel.DropRatesPanel
+import util.Debug
 import util.GameplayPrefs
 import util.GraphicsPrefs
 
@@ -62,6 +63,30 @@ object MenuControls {
         )
         menu.append(gameplayResetButton())
         menu.append(sectionHead("Visual"))
+        menu.append(checkbox("damageNumbersToggle", "3D Damage numbers", DamageNumberFx.enabled) { DamageNumberFx.enabled = it })
+        menu.append(checkbox("portalNamesToggle", "3D Portal names", PortalNameTicker.enabled) { PortalNameTicker.setEnabled(it) })
+        menu.append(
+            checkbox("vectorFieldToggle", "Flow-field arrows", VectorFieldOverlay.flashEnabled) {
+                VectorFieldOverlay.setEnabled(it)
+            },
+        )
+        menu.append(checkbox("fpsToggle", "FPS", FpsMeter.displayEnabled) { FpsMeter.setDisplay(it) })
+        if (Debug.enabled) appendDebugOverlays(menu) // ?debug only: terrain overlays + NPC destination markers
+        menu.append(slider("Buildings transparency", BuildingTransparency.default()) { BuildingTransparency.set(it) })
+        menu.append(slider("Building shake", Config.buildingShakeMultiplier, Spec(0.0..2.0, 0.1)) { Config.buildingShakeMultiplier = it })
+        menu.append(sectionHead("Graphics"))
+        menu.append(
+            checkbox("highShadowsToggle", "High-detail shadows", GraphicsPrefs.highShadows) {
+                GraphicsPrefs.setHighShadows(it)
+                SunController.setShadowDetail(it)
+            },
+        )
+    }
+
+    // ?debug-only viz toggles, grouped together at the end of the Visual section: the two mutually-exclusive
+    // terrain overlays (passability / movement-penalty — the "map boxes") sit right above the NPC off-map
+    // destination markers. Hidden entirely outside ?debug.
+    private fun appendDebugOverlays(menu: HTMLElement) {
         // The two terrain overlays are mutually exclusive (drawing both at once just muddles the ground) —
         // turning one on clears the other's checkbox + hides it.
         menu.append(
@@ -76,25 +101,8 @@ object MenuControls {
                 if (it) clearOverlay("passabilityToggle") { PassabilityOverlay.setVisible(false) }
             },
         )
-        menu.append(checkbox("damageNumbersToggle", "3D Damage numbers", DamageNumberFx.enabled) { DamageNumberFx.enabled = it })
-        menu.append(checkbox("portalNamesToggle", "3D Portal names", PortalNameTicker.enabled) { PortalNameTicker.setEnabled(it) })
-        menu.append(
-            checkbox("vectorFieldToggle", "Flow-field arrows", VectorFieldOverlay.flashEnabled) {
-                VectorFieldOverlay.setEnabled(it)
-            },
-        )
-        menu.append(checkbox("fpsToggle", "FPS", FpsMeter.displayEnabled) { FpsMeter.setDisplay(it) })
         menu.append(
             checkbox("npcDestToggle", "NPC destinations (debug)", Scene3D.showOffscreenDebug) { Scene3D.showOffscreenDebug = it },
-        )
-        menu.append(slider("Buildings transparency", BuildingTransparency.default()) { BuildingTransparency.set(it) })
-        menu.append(slider("Building shake", Config.buildingShakeMultiplier, Spec(0.0..2.0, 0.1)) { Config.buildingShakeMultiplier = it })
-        menu.append(sectionHead("Graphics"))
-        menu.append(
-            checkbox("highShadowsToggle", "High-detail shadows", GraphicsPrefs.highShadows) {
-                GraphicsPrefs.setHighShadows(it)
-                SunController.setShadowDetail(it)
-            },
         )
     }
 
