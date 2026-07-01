@@ -24,4 +24,7 @@ object ChampionLibrary {
 
     /** The architectures with a baked champion (for the onboarding per-arch pick / random-arch NN matches). */
     fun bakedArchs(): List<NetArch> = BAKED.keys.mapNotNull { runCatching { GenomeIO.decode(BAKED.getValue(it)).arch }.getOrNull() }
+
+    /** The held-out fitness the [arch]'s baked champion was tagged with (net checkpoints led vs the baseline), or null. */
+    fun fitnessFor(arch: NetArch): Double? = BAKED[arch.label()]?.let { GenomeIO.fitnessOf(it) }
 }

@@ -69,6 +69,12 @@ object DriverControls {
 
     private fun archKey(arch: NetArch): String = arch.hiddens.joinToString("-")
 
+    // A signed 2-decimal fitness for the arch dropdown, e.g. +2.00 / -0.50.
+    private fun signed(v: Double): String {
+        val fixed = v.asDynamic().toFixed(2) as String
+        return if (v >= 0) "+$fixed" else fixed
+    }
+
     private fun parseArchKey(key: String): NetArch? {
         val parts = key.split("-")
         val hiddens = parts.mapNotNull { it.toIntOrNull() }
@@ -153,7 +159,11 @@ object DriverControls {
         val sel = document.createElement("select") as HTMLSelectElement
         sel.className = "aiDriverSelect aiArchSelect"
         sel.appendChild(option(RANDOM_ARCH, "Random arch", disabled = false))
-        ChampionLibrary.bakedArchs().forEach { sel.appendChild(option(archKey(it), it.hiddens.joinToString("×"), disabled = false)) }
+        ChampionLibrary.bakedArchs().forEach { arch ->
+            // e.g. "16×8  +2.00" — the held-out fitness (net checkpoints led vs the baseline) it was baked with.
+            val fit = ChampionLibrary.fitnessFor(arch)?.let { "  ${signed(it)}" } ?: ""
+            sel.appendChild(option(archKey(arch), arch.hiddens.joinToString("×") + fit, disabled = false))
+        }
         sel.value = chosenArch(faction)
         sel.onchange = {
             selectArch(faction, sel.value)
