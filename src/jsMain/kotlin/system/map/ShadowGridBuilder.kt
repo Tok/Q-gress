@@ -73,6 +73,7 @@ object ShadowGridBuilder {
             ).size} islands connected)",
         )
         if (Debug.enabled) logConnectivity(rawGrid, grid, w, h)
+        if (Debug.enabled) logFootpathSignal(passData, w, h)
         if (Debug.mode == "capture") GridCapture.onGridBuilt(rawGrid, w, h) // raw passability snapshot for fixtures
         return grid
     }
@@ -98,6 +99,23 @@ object ShadowGridBuilder {
                 pos to Cell(pos, isPassable, penalty)
             }
         }
+    }
+
+    // ?debug: since roads now render mid-grey and ONLY footpaths render white, this reports whether footpath
+    // data actually lands in the downsampled grid at this location — the brightest cell + how many are near-
+    // white. brightest ≈ 255 ⇒ footpaths present; brightest well below 255 (e.g. ~154 grass, ~110 wood) ⇒ no
+    // footpath features rendered here (nothing to prefer), so it's OSM coverage / zoom, not our colouring.
+    private fun logFootpathSignal(passData: Uint8ClampedArray, w: Int, h: Int) {
+        var white = 0
+        var brightest = 0
+        for (y in 0 until h) {
+            for (x in 0 until w) {
+                val v = passData[(y * w + x) * 4].toInt() and 0xFF // red channel, as unsigned 0..255
+                if (v >= 240) white++
+                if (v > brightest) brightest = v
+            }
+        }
+        console.log("[debug] footpaths: brightest shadow cell $brightest (≈255 ⇒ present), near-white cells $white / ${w * h}")
     }
 
     /** Round field: force on-screen cells outside the inscribed circle impassable (a true circular arena). */
