@@ -2,6 +2,7 @@ package agent
 
 import Factory
 import World
+import agent.action.ActionItem
 import config.Sim
 import extension.VectorField
 import system.grid.GridFixture
@@ -121,6 +122,56 @@ class NonFactionActTest {
         ring.forEach { assertTrue(!Sim.isInPlayArea(it.x, it.y), "each ring point sits outside the play area") }
         NonFaction.prepareOffscreenLocations() // computes a field per ring point (headless inline)
         assertTrue(NonFaction.offscreenTotal() > 0, "the ring is counted")
+    }
+
+    @Test
+    fun anIdleAgentAttractsAPassingNpc() {
+        addPortals()
+        val recruiter = Factory.frog()
+        recruiter.action.start(ActionItem.EXPLORE) // an idle/recruit FALLBACK action → gathers a crowd
+        World.allAgents.add(recruiter)
+        val ap = recruiter.pos
+        // An NPC passing ~60 px away, its own destination far the OTHER way — attraction must beat the destination.
+        val passer = npc(Pos(ap.x + 60, ap.y), Pos(ap.x + 10_000, ap.y))
+        World.allNonFaction.add(passer)
+        val before = passer.pos.distanceTo(ap)
+        passer.act()
+        assertTrue(passer.pos.distanceTo(ap) < before, "a passing NPC veers toward the idling/recruiting agent")
+    }
+
+    @Test
+    fun anAgentDoingRealWorkDoesNotAttract() {
+        addPortals()
+        val worker = Factory.frog()
+        worker.action.start(ActionItem.HACK) // a real (non-fallback) action → no crowd
+        World.allAgents.add(worker)
+        val ap = worker.pos
+        val passer = npc(Pos(ap.x + 60, ap.y), Pos(ap.x + 10_000, ap.y))
+        World.allNonFaction.add(passer)
+        // A distant neighbour so a (rare) swarm roll's findNearest() always has a target — it's far enough to never pull.
+        World.allNonFaction.add(npc(Pos(ap.x - 5_000, ap.y), Pos(ap.x - 5_000, ap.y), busyUntil = Int.MAX_VALUE))
+        val before = passer.pos.distanceTo(ap)
+        passer.act()
+        assertTrue(passer.pos.distanceTo(ap) > before, "an NPC ignores a working agent and heads to its own destination")
+    }
+
+    @Test
+    fun offscreenRingSpreadsAroundARoundField() {
+        val w0 = Sim.width
+        val h0 = Sim.height
+        try {
+            Sim.roundField = true
+            Sim.setSize(1000, 800)
+            val ring = NonFaction.offscreenDestinations()
+            assertTrue(ring.size in 8..14, "8..14 evenly-spaced ring points (was ${ring.size})")
+            val cx = Sim.width / 2
+            val cy = Sim.height / 2
+            assertTrue(ring.any { it.x < cx } && ring.any { it.x > cx }, "points on both the west and east sides")
+            assertTrue(ring.any { it.y < cy } && ring.any { it.y > cy }, "points on both the north and south sides")
+            ring.forEach { assertTrue(!Sim.isInPlayArea(it.x, it.y), "each ring point sits outside the play area") }
+        } finally {
+            Sim.setSize(w0, h0)
+        }
     }
 
     @Test

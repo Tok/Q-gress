@@ -70,21 +70,50 @@ data class NonFaction(
         val force: Complex = if (beelineTicks > 0) {
             beelineTicks--
             Movement.headingTo(pos, destination) // un-stick override: straight line through the spiral
-        } else if (Config.isNpcSwarming && Rng.random() < swarmChance) {
-            val nearPos = findNearest().pos
-            if (nearPos.distanceTo(pos) < Dim.agentRadius) {
-                val re = -(this.pos.x - nearPos.x)
-                val im = -(this.pos.y - nearPos.y)
-                val acceleration = 1.2
-                Complex(re * acceleration, im * acceleration)
-            } else {
-                Complex(pos.x, pos.y)
-            }
         } else {
-            vectors[pos.toShadow()] ?: Movement.headingTo(pos, destination)
+            steerForce()
         }
         velocity = Movement.move(velocity, force, speed)
         this.pos = Pos(pos.x + velocity.re, pos.y + velocity.im)
+    }
+
+    /**
+     * The per-tick steering force, in priority order:
+     *  1. a nearby AGENT doing an idle/recruit fallback action ([nearbyAttractor]) briefly draws a passing NPC
+     *     toward it — a recruiter gathers a small crowd; it reverts to normal travel the moment the agent stops
+     *     idling or the NPC drifts out of range, so the pull is only ever temporary;
+     *  2. a rare swarm nudge toward a co-located neighbour (NPC clustering);
+     *  3. otherwise follow the flow field toward the destination (straight-line heading until the field lands).
+     *
+     * (The old code returned the NPC's absolute position `Complex(pos.x, pos.y)` as the "no near neighbour"
+     * swarm force — a full-speed shove radially outward from the origin every ~2nd tick a swarm rolled, which
+     * drifted NPCs toward the bottom-right border instead of letting them cross the map. Fixed by falling
+     * through to the destination force here.)
+     */
+    private fun steerForce(): Complex {
+        nearbyAttractor()?.let { return Movement.headingTo(pos, it) }
+        if (Config.isNpcSwarming && Rng.random() < swarmChance) {
+            val nearPos = findNearest().pos
+            if (nearPos.distanceTo(pos) < Dim.agentRadius) return Movement.headingTo(pos, nearPos)
+        }
+        return vectors[pos.toShadow()] ?: Movement.headingTo(pos, destination)
+    }
+
+    /** The position of the nearest AGENT doing an idle/recruit fallback action within [NPC_ATTRACT_RADIUS], or
+     *  null if none. One allocation-free min pass over the (small) agent roster. */
+    private fun nearbyAttractor(): Pos? {
+        var best: Pos? = null
+        var bestD2 = NPC_ATTRACT_RADIUS_SQ
+        World.allAgents.forEach { agent ->
+            if (agent.action.item.isFallback) { // RECRUIT / EXPLORE — the idle fallbacks
+                val d2 = agent.pos.distanceTo2(pos)
+                if (d2 < bestD2) {
+                    bestD2 = d2
+                    best = agent.pos
+                }
+            }
+        }
+        return best
     }
 
     /**
@@ -158,6 +187,8 @@ data class NonFaction(
         private const val MAX_OFFSCREEN = 14
         private const val OFFSCREEN_DEST_CHANCE = 0.85 // mostly cross the map edge-to-edge; the rest head to portals
         private const val FAR_PORTAL_CHANCE = 0.7 // of the non-offscreen remainder, this fraction heads to a FAR portal
+        private const val NPC_ATTRACT_RADIUS = 70.0 // idle/recruiting agents draw passing NPCs within this many sim px
+        private const val NPC_ATTRACT_RADIUS_SQ = NPC_ATTRACT_RADIUS * NPC_ATTRACT_RADIUS
 
         /**
          * Hidden destinations placed JUST OUTSIDE the play field, spaced evenly around its border, that NPCs
