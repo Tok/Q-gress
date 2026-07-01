@@ -116,6 +116,9 @@ object MiniMap {
         return (c.lng as Double) to (c.lat as Double)
     }
 
+    /** Fired on every pan/zoom with the current centre — lets the onboarding readout track the live location. */
+    var onMove: ((Double, Double) -> Unit)? = null
+
     private fun updateBox() {
         val m = mini ?: return
         val c = m.getCenter()
@@ -123,6 +126,7 @@ object MiniMap {
         val lat = c.lat as Double
         m.getSource("areaBox")?.setData(areaBox(lng, lat))
         m.getSource("areaMask")?.setData(areaMask(lng, lat))
+        onMove?.invoke(lng, lat)
     }
 
     /** A GeoJSON outline of the sim's play area (metres → degrees) centred at [lng]/[lat] — a

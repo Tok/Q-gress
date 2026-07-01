@@ -1739,6 +1739,42 @@ html, body {
     max-width: 380px;
     text-align: center;
 }
+/* Free-form place search + editable coord fields on the LOCATION step — glassed to match .topDrop. */
+.onboardSearch,
+.onboardCoord {
+    font-size: 13px;
+    border-radius: 4px;
+    padding: 5px 8px;
+    background: var(--ui-glass-bg);
+    -webkit-backdrop-filter: var(--ui-btn-blur);
+    backdrop-filter: var(--ui-btn-blur);
+    color: #e8e8e8;
+    border: 1px solid var(--ui-glass-border);
+}
+.onboardSearch {
+    width: 380px;
+}
+.onboardSearch::placeholder,
+.onboardCoord::placeholder {
+    color: #808080;
+}
+/* The current location's name/place/country under the box. */
+.onboardLocName {
+    font-family: "Coda", monospace;
+    font-size: 13px;
+    color: #e8e8e8;
+    max-width: 400px;
+    text-align: center;
+}
+.onboardCoords {
+    display: flex;
+    gap: 8px;
+}
+.onboardCoord {
+    width: 110px;
+    font-family: "Coda", monospace;
+    text-align: center;
+}
 .onboardMap .miniMapToggle {
     position: absolute;
     left: auto;

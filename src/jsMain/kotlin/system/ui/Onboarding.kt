@@ -139,47 +139,69 @@ object Onboarding {
         var selectedLat = 0.0
 
         val select = locationSelect()
+
+        // Live readout of the place currently under the box: its name/place/country + editable lng/lat.
+        val nameLabel = div("onboardLocName")
+        val lngInput = coordInput("lng")
+        val latInput = coordInput("lat")
+        fun showCoords(lng: Double, lat: Double) {
+            lngInput.value = lng.asDynamic().toFixed(5) as String
+            latInput.value = lat.asDynamic().toFixed(5) as String
+        }
+
+        // Update only the DISPLAY as the user pans (not the picked name/coords the confirm logic keys off).
+        fun readout(lng: Double, lat: Double) {
+            nameLabel.textContent = confirmedName(lng, lat, selectedLng, selectedLat, currentName)
+            showCoords(lng, lat)
+        }
+
         fun fly(lng: Double, lat: Double, name: String) {
             currentName = name
             selectedLng = lng
             selectedLat = lat
+            nameLabel.textContent = name
+            showCoords(lng, lat)
             MiniMap.setCenter(lng, lat)
         }
+        MiniMap.onMove = { lng, lat -> readout(lng, lat) } // track the location as the player pans/zooms
         select.onchange = {
             Locations.byName(select.value)?.let { fly(it.lng, it.lat, it.displayName) }
         }
 
-        val modes = div("onboardRow")
-        val homeBtn = modeButton("Home")
-        val randomBtn = modeButton("Random")
-        val selectBtn = modeButton("Select")
-        val all = listOf(homeBtn, randomBtn, selectBtn)
-        fun activate(btn: HTMLButtonElement) {
-            all.forEach { it.removeClass("onboardActive") }
-            btn.addClass("onboardActive")
+        // Free-form place search (keyless OSM/Nominatim forward geocode): fly to the first match by its full
+        // name. Its display_name IS "place, city, …, country", so it also labels custom spots the presets miss.
+        val search = searchInput { q -> geocode(q) { lng, lat, name -> fly(lng, lat, name) } }
+        // Editable coords: type an exact lng/lat and commit to fly there (a preset name if it lands on one).
+        val flyToTypedCoords = {
+            val lng = lngInput.value.toDoubleOrNull()
+            val lat = latInput.value.toDoubleOrNull()
+            if (lng != null && lat != null) fly(lng, lat, Locations.byCoords(lng, lat)?.displayName ?: "Custom location")
         }
+        onEnterKey(lngInput, flyToTypedCoords)
+        onEnterKey(latInput, flyToTypedCoords)
+
         fun rollRandom() {
             val loc = Locations.random()
             select.value = loc.name
             fly(loc.lng, loc.lat, loc.displayName)
         }
-        homeBtn.onclick = {
-            activate(homeBtn)
-            select.addClass("invisible")
-            useGeolocation { lng, lat -> fly(lng, lat, "Your location") }
-        }
-        randomBtn.onclick = {
-            activate(randomBtn)
-            select.addClass("invisible")
-            rollRandom()
-        }
-        selectBtn.onclick = {
-            activate(selectBtn)
-            select.removeClass("invisible")
-        }
-        all.forEach { modes.appendChild(it) }
+        val modes = locationModes(
+            select,
+            onHome = { useGeolocation { lng, lat -> fly(lng, lat, "Your location") } },
+            onRandom = { rollRandom() },
+        )
         screen.appendChild(modes)
         screen.appendChild(select)
+
+        // Free-form search, then the live location readout (name/place/country + editable lng/lat).
+        val searchRow = div("onboardRow")
+        searchRow.appendChild(search)
+        screen.appendChild(searchRow)
+        screen.appendChild(nameLabel)
+        val coords = div("onboardCoords")
+        coords.appendChild(lngInput)
+        coords.appendChild(latInput)
+        screen.appendChild(coords)
 
         val mapHolder = div("onboardMap")
         screen.appendChild(mapHolder)
@@ -189,12 +211,8 @@ object Onboarding {
 
         val confirm = button("Confirm location →", "topButton displayFont onboardStart") {
             MiniMap.confirmCenter()?.let { (lng, lat) ->
-                // Keep the selected name only if the confirmed centre is still near it; a preset that the
-                // centre snapped onto wins; otherwise it's a custom spot — don't mislabel it.
-                val kept = abs(lng - selectedLng) < NAME_KEEP_EPS && abs(lat - selectedLat) < NAME_KEEP_EPS
-                val name = Locations.byCoords(lng, lat)?.displayName ?: if (kept) currentName else "Custom location"
                 MorphPane.persistForReload() // continue the morph across the reload, down into the loading footer
-                onStart(lng, lat, name)
+                onStart(lng, lat, confirmedName(lng, lat, selectedLng, selectedLat, currentName))
             }
         }
         screen.appendChild(navRow(onBack, confirm))
@@ -203,7 +221,10 @@ object Onboarding {
         val initial = Locations.random()
         select.value = initial.name
         currentName = initial.displayName
-        activate(randomBtn)
+        selectedLng = initial.lng
+        selectedLat = initial.lat
+        nameLabel.textContent = initial.displayName
+        showCoords(initial.lng, initial.lat)
         MiniMap.create(mapHolder, initial.lng, initial.lat)
         installMorph(screen)
     }
@@ -220,6 +241,92 @@ object Onboarding {
             select.appendChild(opt)
         }
         return select
+    }
+
+    // A free-form place-search box; [onEnter] gets the query when the player presses Enter (see [geocode]).
+    private fun searchInput(onEnter: (String) -> Unit): HTMLInputElement {
+        val input = document.createElement("input") as HTMLInputElement
+        input.type = "text"
+        input.placeholder = "Search a place…"
+        input.addClass("onboardSearch", "displayFont")
+        onEnterKey(input) { onEnter(input.value) }
+        return input
+    }
+
+    // The name to show/confirm for the centre at [lng]/[lat]: a preset it snapped onto wins; else keep the
+    // [picked] name while the centre stays within ~5km of it (the "Brandenburg Gate but actually elsewhere"
+    // guard); else it's a custom spot. Shared by the live readout and the Confirm handler.
+    private fun confirmedName(lng: Double, lat: Double, pickedLng: Double, pickedLat: Double, picked: String): String {
+        val near = abs(lng - pickedLng) < NAME_KEEP_EPS && abs(lat - pickedLat) < NAME_KEEP_EPS
+        return Locations.byCoords(lng, lat)?.displayName ?: if (near) picked else "Custom location"
+    }
+
+    // Run [action] when Enter is pressed in [input].
+    private fun onEnterKey(input: HTMLInputElement, action: () -> Unit) {
+        input.onkeydown = { e ->
+            if (e.key == "Enter") action()
+            null
+        }
+    }
+
+    // The Home/Random/Select mode buttons for the location step (Random active by default). [onHome]/[onRandom]
+    // run on their clicks; Select just reveals the preset dropdown. Split out to keep [showLocation] short.
+    private fun locationModes(select: HTMLSelectElement, onHome: () -> Unit, onRandom: () -> Unit): HTMLElement {
+        val modes = div("onboardRow")
+        val home = modeButton("Home")
+        val random = modeButton("Random")
+        val selectBtn = modeButton("Select")
+        val all = listOf(home, random, selectBtn)
+        fun activate(btn: HTMLButtonElement) {
+            all.forEach { it.removeClass("onboardActive") }
+            btn.addClass("onboardActive")
+        }
+        home.onclick = {
+            activate(home)
+            select.addClass("invisible")
+            onHome()
+        }
+        random.onclick = {
+            activate(random)
+            select.addClass("invisible")
+            onRandom()
+        }
+        selectBtn.onclick = {
+            activate(selectBtn)
+            select.removeClass("invisible")
+        }
+        all.forEach { modes.appendChild(it) }
+        activate(random) // default mode
+        return modes
+    }
+
+    // An editable lng/lat field (commit with Enter — see [showLocation]).
+    private fun coordInput(which: String): HTMLInputElement {
+        val input = document.createElement("input") as HTMLInputElement
+        input.type = "text"
+        input.placeholder = which
+        input.title = "$which — type a value and press Enter to jump there"
+        input.addClass("onboardCoord", "displayFont")
+        return input
+    }
+
+    // Keyless forward geocode via OpenStreetMap/Nominatim: [query] → the first match's lng/lat + full
+    // "place, city, …, country" display name. Silent on no match / network error (keeps the current spot).
+    private fun geocode(query: String, onResult: (Double, Double, String) -> Unit) {
+        if (query.isBlank()) return
+        val url = "https://nominatim.openstreetmap.org/search?format=json&limit=1&q=" + encodeURIComponent(query)
+        window.asDynamic().fetch(url)
+            .then { r: dynamic -> if (r.ok == true) r.json() else null }
+            .then { j: dynamic ->
+                val hit = if (j != null && (j.length as? Int ?: 0) > 0) j[0] else null
+                if (hit != null) {
+                    val lat = (hit.lat as? String)?.toDoubleOrNull()
+                    val lng = (hit.lon as? String)?.toDoubleOrNull()
+                    val name = hit.display_name as? String ?: query
+                    if (lng != null && lat != null) onResult(lng, lat, name)
+                }
+            }
+            .catch { _: dynamic -> } // no match / offline → leave the picker where it is
     }
 
     private fun modeButton(label: String): HTMLButtonElement {
