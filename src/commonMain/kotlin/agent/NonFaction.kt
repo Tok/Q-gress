@@ -245,7 +245,8 @@ data class NonFaction(
             val cx = World.simW() / 2.0
             val cy = World.simH() / 2.0
             val nearCentre = minOf(World.simW(), World.simH()) * NEAR_CENTRE_FRAC
-            return Rng.shuffle(NonFactionMath.opposingHalf(offscreenDestinations(), from, cx, cy, nearCentre)).first()
+            val opposing = NonFactionMath.opposingHalf(offscreenDestinations(), from, cx, cy, nearCentre)
+            return opposing[Rng.randomInt(opposing.size - 1)] // uniform pick (Rng.shuffle isn't a uniform permutation)
         }
 
         private const val NEAR_CENTRE_FRAC = 0.15 // within this fraction of the field, "opposite" is meaningless

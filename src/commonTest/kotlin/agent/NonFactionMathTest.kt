@@ -22,11 +22,12 @@ class NonFactionMathTest {
 
     @Test
     fun picksTheHalfOpposingTheNpcsBearing() {
-        // Standing in the East → the opposing half must include West and exclude East.
+        // Standing in the East → the opposing hemisphere is West only; the perpendicular North/South points
+        // (dot 0) are dropped SYMMETRICALLY, so there's no tie-break skew toward one pole.
         val half = NonFactionMath.opposingHalf(all, from = east, cx = 0.0, cy = 0.0, nearCentre = 10.0)
-        assertEquals(2, half.size, "the opposing HALF of four points")
         assertTrue(half.contains(west), "West most opposes an Eastern bearing")
         assertTrue(!half.contains(east), "never send the NPC back the way it came")
+        assertTrue(!half.contains(north) && !half.contains(south), "perpendicular points aren't 'across' → excluded (no N/S skew)")
     }
 
     @Test

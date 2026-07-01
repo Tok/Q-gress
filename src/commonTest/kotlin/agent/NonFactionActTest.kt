@@ -175,6 +175,40 @@ class NonFactionActTest {
     }
 
     @Test
+    fun offscreenDestinationsAreNotPoleBiased() {
+        val w0 = Sim.width
+        val h0 = Sim.height
+        try {
+            Sim.roundField = true
+            Sim.setSize(1600, 1000)
+            Rng.seed(7)
+            val cy = Sim.height / 2
+            var north = 0
+            var south = 0
+            // A north/south-SYMMETRIC set of interior from-positions (past nearCentre) — each opposing pick
+            // should split ~evenly. The old take-half tie-break + non-uniform Rng.shuffle skewed this ~40:60.
+            for (px in 300..1300 step 100) {
+                for (dy in intArrayOf(-250, -150, 150, 250)) {
+                    val from = Pos(px, cy + dy)
+                    if (!Sim.isInPlayArea(from.x.toDouble(), from.y.toDouble())) continue
+                    repeat(40) {
+                        val d = NonFaction.opposingOffscreenDestination(from)
+                        if (d.y < cy) {
+                            north++
+                        } else if (d.y > cy) {
+                            south++ // equator (E/W) points count for neither
+                        }
+                    }
+                }
+            }
+            val northShare = north.toDouble() / (north + south)
+            assertTrue(northShare in 0.4..0.6, "N/S offscreen picks are balanced (north share was $northShare)")
+        } finally {
+            Sim.setSize(w0, h0)
+        }
+    }
+
+    @Test
     fun findRandomPrefersInPlayAreaNpcs() {
         val inside = npc(Pos(400, 400), Pos(400, 400))
         val offMap = npc(Pos(-5000, -5000), Pos(-5000, -5000))
