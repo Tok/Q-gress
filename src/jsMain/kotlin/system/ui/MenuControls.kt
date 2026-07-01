@@ -90,13 +90,13 @@ object MenuControls {
         // The two terrain overlays are mutually exclusive (drawing both at once just muddles the ground) —
         // turning one on clears the other's checkbox + hides it.
         menu.append(
-            checkbox("passabilityToggle", "Passability map", false) {
+            checkbox("passabilityToggle", "Passability map (debug)", false) {
                 PassabilityOverlay.setVisible(it)
                 if (it) clearOverlay("penaltyToggle") { MovementPenaltyOverlay.setVisible(false) }
             },
         )
         menu.append(
-            checkbox("penaltyToggle", "Movement penalty map", false) {
+            checkbox("penaltyToggle", "Movement penalty map (debug)", false) {
                 MovementPenaltyOverlay.setVisible(it)
                 if (it) clearOverlay("passabilityToggle") { PassabilityOverlay.setVisible(false) }
             },
