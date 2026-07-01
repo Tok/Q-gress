@@ -141,9 +141,9 @@ object Evolution {
         fun elites(): List<DoubleArray> = population.take(config.elite)
     }
 
-    // Mean over [matchesPerEval] seeded matches of (our summed checkpoint MU − the foe's) — the fitness
-    // objective: sustain the larger fields across the cycle. Match seeds are fixed across generations so
-    // selection compares genomes on the same scenarios.
+    // Mean over [matchesPerEval] seeded matches of the checkpoint-win fitness (net checkpoints led, MU margin
+    // as a sub-integer tiebreak) — the objective: win the cycle by leading the most checkpoints. Match seeds
+    // are fixed across generations so selection compares genomes on the same scenarios.
     private fun evaluate(genome: DoubleArray, grid: Grid, seed: Int, config: EvolutionConfig, opponent: () -> FactionPolicy?): Double {
         val net = Net.fromGenome(genome, config.arch)
         var total = 0.0
@@ -156,7 +156,7 @@ object Evolution {
                 policyEnl = NetPolicy(net, Faction.ENL),
                 policyRes = opponent(),
             )
-            total += result.checkpointMuSum(Faction.ENL) - result.checkpointMuSum(Faction.RES)
+            total += result.checkpointFitness(Faction.ENL)
         }
         return total / config.matchesPerEval
     }

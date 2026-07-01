@@ -8,7 +8,8 @@ import extension.Grid
  *  default uniform-slider baseline). The factory is called per match so each gets its own policy instance. */
 class Driver(val name: String, val policy: (Faction) -> FactionPolicy?)
 
-/** One driver's standing after a [Tournament]: its record + summed Mind-Unit margin across its matches. */
+/** One driver's standing after a [Tournament]: its cycle record (won by leading the most checkpoints) + summed
+ *  Mind-Unit margin (the tiebreak) across its matches. */
 class Standing(val name: String) {
     var matches = 0
         private set
@@ -23,16 +24,17 @@ class Standing(val name: String) {
     var muAgainst = 0L
         private set
 
-    /** Average per-match MU margin (for − against) — the ranking key (ties broken by wins). */
+    /** Average per-match MU margin (for − against) — the tiebreak once checkpoint-win records are equal. */
     fun avgMargin(): Double = if (matches == 0) 0.0 else (muFor - muAgainst).toDouble() / matches
 
-    internal fun record(forMu: Int, againstMu: Int) {
+    // A match is won/lost/tied by [checkpointMargin] (net checkpoints led); MU is tracked only for the tiebreak.
+    internal fun record(forMu: Int, againstMu: Int, checkpointMargin: Int) {
         matches++
         muFor += forMu
         muAgainst += againstMu
         when {
-            forMu > againstMu -> wins++
-            forMu < againstMu -> losses++
+            checkpointMargin > 0 -> wins++
+            checkpointMargin < 0 -> losses++
             else -> ties++
         }
     }
@@ -40,8 +42,8 @@ class Standing(val name: String) {
 
 /**
  * Headless **driver tournament** (PLAN Phase 6.4): pits AI drivers (Manual baseline / Heuristic / a trained
- * Net / …) against each other over seeded [SimRunner] matches and ranks them by average per-checkpoint MU
- * margin — the same fitness objective the trainer optimizes. Every unordered pair plays **both** faction
+ * Net / …) against each other over seeded [SimRunner] matches and ranks them by cycle wins (leading the most
+ * checkpoints, MU margin as tiebreak) — the same fitness objective the trainer optimizes. Every unordered pair plays **both** faction
  * assignments per seed (so colour/turn-order can't bias the result), and the run is fully deterministic given
  * (grid, drivers, seeds). Pure over the headless harness — the live in-game benchmark wraps this in a
  * [system.WorldSnapshot] capture/restore so it doesn't disturb the player's game.
@@ -97,14 +99,15 @@ object Tournament {
             val result = SimRunner.runMatch(grid, m.seed, ticks, setup, m.enl.policy(Faction.ENL), m.res.policy(Faction.RES))
             val enlMu = result.checkpointMuSum(Faction.ENL)
             val resMu = result.checkpointMuSum(Faction.RES)
-            standings.getValue(m.enl.name).record(enlMu, resMu)
-            standings.getValue(m.res.name).record(resMu, enlMu)
+            val enlMargin = result.checkpointWinMargin(Faction.ENL) // net checkpoints ENL led (RES = the negation)
+            standings.getValue(m.enl.name).record(enlMu, resMu, enlMargin)
+            standings.getValue(m.res.name).record(resMu, enlMu, -enlMargin)
             played++
         }
 
-        /** The current standings, ranked by average MU margin (ties broken by wins). */
+        /** The current standings, ranked by cycle wins (checkpoints led), ties broken by average MU margin. */
         fun standings(): List<Standing> =
-            standings.values.sortedWith(compareByDescending<Standing> { it.avgMargin() }.thenByDescending { it.wins })
+            standings.values.sortedWith(compareByDescending<Standing> { it.wins }.thenByDescending { it.avgMargin() })
 
         private class Match(val enl: Driver, val res: Driver, val seed: Int)
     }

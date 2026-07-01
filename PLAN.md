@@ -98,23 +98,28 @@ and a field that can grow, so settle the shape here first.
   already land — the title inherits the game FX).
 
 ## AI-vs-AI (the payoff)
-**Fitness objective:** maximize **summed per-checkpoint MU** (sustained field area), not just final MU — a
-team effort to layer fields across the cycle. The net/LLM re-tunes the 17 sliders at checkpoint cadence; it
-does **not** replace the per-agent `ActionSelector`. (Training/eval is pinned to the shipped default balance via
-`MatchSetup.useDefaultBalance`, so champions are "one fits all".)
+**Fitness objective:** **win the cycle by leading the most checkpoints** — fitness is the net checkpoint-win
+margin over a full cycle (summed MU margin only as a sub-integer tiebreak — `MatchResult.checkpointFitness`,
+matching `CheckpointStats`' cycle-winner rule). Rewards consistently leading over one blowout. The net/LLM
+re-tunes the 17 sliders at checkpoint cadence; it does **not** replace the per-agent `ActionSelector`.
+(Training/eval is pinned to the shipped default balance via `MatchSetup.useDefaultBalance`, so champions are
+"one fits all".)
 
-- [ ] **Rebake the champions (release prep).** Gameplay/balance has shifted since the baked **16×16** champion
-  was trained, so it's stale. Retrain against the locked standard balance and re-commit the genome
-  (`GenomeIO`/`NetStore`). Do this once gameplay tuning has settled — a champion is only as good as the balance
-  it learned. Fold in the **field-layering Linker nudge** above.
+- [ ] **Rebake the champions (release prep).** The bundled genomes are stale (the old **16×16** was trained vs
+  a uniform-slider baseline on the pre-checkpoint-win objective). Tooling now ships — **`scripts/bake-champs.sh`**
+  trains one champion per `NetArch` (the 25 TRAIN-tab archs) vs the adaptive `HeuristicPolicy` baseline over full
+  cycles, selecting each by **held-out** fitness, and regenerates `ChampionGenomes`. Run it once gameplay tuning
+  has settled (a champion is only as good as the balance it learned), review, commit. Fold in the **field-layering
+  Linker nudge** above. Only the default arch is baked so far.
 - [ ] **Grid fixtures** — infra is built (`GridFixture` RLE + `GridCapture` ?debug=capture +
   `PresetConnectivityTest`). Only the committed `PresetFixtures.kt` is missing — it's currently an **empty
   placeholder** (`PRESET_FIXTURES = emptyList()`), so the connectivity test audits nothing. Run `?debug=capture`
   once in-browser, drop the download into `src/jsTest/kotlin/util/`, commit. (Feeds the offline connectivity
   audit; the trainer/leaderboard already run on the live `World.grid`.)
-- [ ] **Per-side net-architecture / variant pick in onboarding** — *blocked*: only meaningful once there's a
-  library of trained nets per `NetArch` (a net of an untrained arch plays randomly). Fold into the
-  download/upload + saved-net library item below.
+- [x] **Per-side net-architecture / variant pick in onboarding** — *wired*: the opponent-selection screen (and
+  the in-game DriverControls) offer a per-NN-side arch pick (Random default, seed-resolved so shared links
+  reproduce, overridable), reading `ChampionLibrary`. Fully meaningful once `scripts/bake-champs.sh` has
+  populated all 25 archs (until then non-default picks fall back to the default champion).
 - [ ] **icebox — download / upload trained nets.** `GenomeIO` JSON-ables a genome+arch (~16 KB at 16×16): a
   "download champion" (Blob → file) + "load from file/paste", and a small saved-net library — share/version
   nets outside `localStorage`.

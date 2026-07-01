@@ -98,7 +98,7 @@ class ChampionBake {
         return Bake(best.first, best.second, session.bestFitness)
     }
 
-    // Mean per-checkpoint MU margin over VALIDATE_SEEDS unseen seeds, under real flow-field pathing (the live
+    // Mean checkpoint-win fitness over VALIDATE_SEEDS unseen seeds, under real flow-field pathing (the live
     // serve model) vs the same HeuristicPolicy baseline. Seeds are disjoint from the training seeds.
     private fun heldOutScore(genome: DoubleArray, arch: NetArch): Double {
         val net = Net.fromGenome(genome, arch)
@@ -113,7 +113,7 @@ class ChampionBake {
                 policyEnl = NetPolicy(net, Faction.ENL),
                 policyRes = HeuristicPolicy(Faction.RES),
             )
-            total += r.checkpointMuSum(Faction.ENL) - r.checkpointMuSum(Faction.RES)
+            total += r.checkpointFitness(Faction.ENL)
             SimRunner.reset()
         }
         return total / VALIDATE_SEEDS

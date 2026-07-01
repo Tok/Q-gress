@@ -12,6 +12,7 @@ import extension.Grid
 import portal.Portal
 import portal.XmMap
 import system.Checkpoint
+import system.CheckpointStats
 import system.Com
 import system.Cycle
 import system.Simulation
@@ -25,9 +26,10 @@ import util.Rng
 import util.data.Pos
 
 /**
- * The outcome of a headless match — the per-checkpoint MU history is the **fitness signal** (PLAN
- * Phase 6.1): each faction maximizes its Mind Units at every checkpoint, so we score the *sum/average*
- * of per-checkpoint MU (sustained large fields), not just the final MU.
+ * The outcome of a headless match — the per-checkpoint winner history is the **fitness signal** (PLAN
+ * Phase 6.1): a cycle is won by leading the MOST checkpoints (the [system.CheckpointStats] rule), so
+ * [checkpointFitness] scores the net checkpoints won across the cycle, with the summed MU margin only as a
+ * sub-integer tiebreak — reward consistently leading, not one blowout.
  */
 data class MatchResult(
     val seed: Int,
@@ -41,15 +43,34 @@ data class MatchResult(
     fun checkpointMuAvg(faction: Faction): Double =
         if (checkpoints.isEmpty()) 0.0 else checkpointMuSum(faction).toDouble() / checkpoints.size
 
-    /** The faction with the greater summed per-checkpoint MU (the fitness objective), or null on a tie. */
+    /** Net checkpoints [faction] led across the cycle (won minus lost; ties count for neither). */
+    fun checkpointWinMargin(faction: Faction): Int {
+        val tally = CheckpointStats.tally(checkpoints)
+        return tally.getValue(faction) - tally.getValue(faction.enemy())
+    }
+
+    /**
+     * The bake/eval fitness for [faction]: net checkpoints won, plus a fractional MU-margin tiebreak (kept ≪ 1
+     * by [MU_TIEBREAK_SCALE]) so more checkpoint wins always ranks higher and equal win-counts break toward the
+     * bigger fields. The objective the champion bake + [Tournament] optimize.
+     */
+    fun checkpointFitness(faction: Faction): Double =
+        checkpointWinMargin(faction) + (checkpointMuSum(faction) - checkpointMuSum(faction.enemy())) / MU_TIEBREAK_SCALE
+
+    /** The faction that won the cycle (led the most checkpoints), or null on a tie. */
     fun winner(): Faction? {
-        val enl = checkpointMuSum(Faction.ENL)
-        val res = checkpointMuSum(Faction.RES)
+        val margin = checkpointWinMargin(Faction.ENL)
         return when {
-            enl > res -> Faction.ENL
-            res > enl -> Faction.RES
+            margin > 0 -> Faction.ENL
+            margin < 0 -> Faction.RES
             else -> null
         }
+    }
+
+    companion object {
+        // Large enough that the MU-margin tiebreak stays a fraction < 1 (so it never overturns a checkpoint-win
+        // difference), while still ordering genomes that tie on checkpoint wins toward the bigger fields.
+        const val MU_TIEBREAK_SCALE = 1_000_000.0
     }
 }
 
