@@ -9,11 +9,19 @@ import org.w3c.dom.HTMLElement
  * right-aligned on the right); clicking it collapses the column to just that button (which flips to "+"),
  * clicking again restores it. No separate restore bubble — the one button is the whole control.
  *
+ * Also **auto-collapses both columns while the footer is maximized** ([setFooterMaxed], called from
+ * [Footer.applyState]) so a full-screen footer tab (NET / TRAIN) isn't crowded by the side panes, restoring
+ * each column to its prior state when the footer returns to normal.
+ *
  * Idempotent: [ensure] is called each frame and attaches a side's control the first time that column exists
  * (the panels create `#hudLeft` / `#hudRight` lazily), so it survives the panels building in any order.
  */
 object SidePanelCollapse {
-    private val attached = mutableSetOf<String>()
+    private class Control(val container: HTMLElement, val button: HTMLElement)
+
+    private val controls = mutableMapOf<String, Control>()
+    private var footerMaxed = false
+    private val savedCollapsed = mutableMapOf<String, Boolean>() // per side: collapsed state before the footer forced it
 
     fun ensure() {
         attach("hudLeft", "left")
@@ -21,9 +29,8 @@ object SidePanelCollapse {
     }
 
     private fun attach(containerId: String, side: String) {
-        if (side in attached) return
+        if (side in controls) return
         val container = document.getElementById(containerId) as? HTMLElement ?: return
-        attached += side
 
         // The toggle is a direct flex child of the column (no wrapper) so the column's align-items + the
         // button's own align-self pin it to the column's outer edge — identical in the expanded and collapsed
@@ -32,10 +39,40 @@ object SidePanelCollapse {
         collapse.textContent = "–"
         collapse.title = "Collapse / expand"
         collapse.onclick = {
-            val collapsed = container.classList.toggle("collapsed")
-            collapse.textContent = if (collapsed) "+" else "–"
+            setCollapsed(side, !container.classList.contains("collapsed"))
             null
         }
         container.insertBefore(collapse, container.firstChild)
+        controls[side] = Control(container, collapse)
+        // A column that appears while the footer is already maxed starts collapsed (its natural state = expanded).
+        if (footerMaxed) {
+            savedCollapsed[side] = false
+            setCollapsed(side, true)
+        }
+    }
+
+    // Set one column's collapsed state, keeping the button glyph in sync.
+    private fun setCollapsed(side: String, collapsed: Boolean) {
+        val control = controls[side] ?: return
+        control.container.classList.toggle("collapsed", collapsed)
+        control.button.textContent = if (collapsed) "+" else "–"
+    }
+
+    /**
+     * Footer maximized → collapse both side columns (remembering each one's current state); footer restored →
+     * put each column back to what it was. Edge-triggered, so calling it every [Footer.applyState] is a no-op
+     * until the maximized state actually flips.
+     */
+    fun setFooterMaxed(maxed: Boolean) {
+        if (maxed == footerMaxed) return
+        footerMaxed = maxed
+        if (maxed) {
+            controls.keys.forEach { side ->
+                savedCollapsed[side] = controls.getValue(side).container.classList.contains("collapsed")
+                setCollapsed(side, true)
+            }
+        } else {
+            controls.keys.forEach { side -> setCollapsed(side, savedCollapsed[side] ?: false) }
+        }
     }
 }
