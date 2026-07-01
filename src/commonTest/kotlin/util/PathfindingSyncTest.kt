@@ -15,6 +15,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 /**
@@ -92,6 +93,35 @@ class PathfindingSyncTest {
             p = Pos(p.x + v.re * Pos.res, p.y + v.im * Pos.res)
         }
         return false
+    }
+
+    @Test
+    fun unreachedPocketCellsSteerAwayFromWallsNotIntoThem() {
+        // A fully-sealed passable pocket (a 2-cell-thick wall box) with the goal OUTSIDE it, to the LEFT. The heat
+        // flood never reaches the pocket, so its cells are UNREACHED. The bug: such a cell aimed `destination -
+        // cell` — straight at the goal THROUGH the wall — pinning the agent against it (the red stuck marker). The
+        // fix repels it from adjacent walls, so a pocket cell against the box's left (goal-side) wall must steer
+        // right (re > 0), never left into the wall.
+        World.grid = GridFixture(
+            "POCKET",
+            24,
+            24,
+            2,
+            GridFixture.rleEncode(
+                List(24 * 24) { idx ->
+                    val x = idx % 24
+                    val y = idx / 24
+                    val inBox = x in 7..15 && y in 7..15
+                    val isWall = inBox && (x <= 8 || x >= 14 || y <= 8 || y >= 14) // 2-thick perimeter seals the interior
+                    !isWall
+                },
+            ),
+        ).toGrid()
+        val goalSim = Pos(20, 120) // shadow (2, 12) — outside the box, to the LEFT
+        val field = Pathfinding.computeFieldSync(goalSim)
+        val v = field[Pos(90, 120).toShadow()] // shadow (9, 12): pocket cell against the box's left (goal-side) wall
+        assertNotNull(v, "the sealed pocket cell still has a flow vector")
+        assertTrue(v.re > 0.0, "an unreached pocket cell steers away from the wall (right), not toward the goal through it")
     }
 
     @Test

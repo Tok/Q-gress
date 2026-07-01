@@ -153,16 +153,9 @@ object Pathfinding {
                 rawX = lr.toDouble()
                 rawY = ud.toDouble()
             } else {
-                // Blocked / unreached: outside the play area, point at the field centre (a tidy flash default);
-                // inside, fall back toward the destination (matches the old createVec).
-                val sim = Pos(x.toDouble(), y.toDouble()).fromShadow()
-                if (!Sim.isInPlayArea(sim.x, sim.y)) {
-                    rawX = Sim.width / 2.0 - sim.x
-                    rawY = Sim.height / 2.0 - sim.y
-                } else {
-                    rawX = destination.x - x
-                    rawY = destination.y - y
-                }
+                val fb = fallbackVector(cells, heat, i, x, y, destination)
+                rawX = fb.first
+                rawY = fb.second
             }
             // Scale to the terrain speed factor (= old raw.copyWithNewMagnitude(speed): magnitude speed, same
             // direction). MIN_HEAT cell → full speed, high penalty → slower; a zero raw → (speed, 0) like
@@ -178,6 +171,37 @@ object Pathfinding {
             }
         }
         return re to im
+    }
+
+    // The direction to use when the heat gradient is flat (all four axis-neighbours read equal). Outside the play
+    // area → point at the field centre (a tidy flash default). Inside: a REACHED cell has a route, so fall back
+    // toward the destination (matches the old createVec); an UNREACHED cell — a passable pocket the flood never
+    // reached (e.g. a region the round-mask sealed off from the goal) — must NOT aim at the destination through the
+    // wall, or the agent pins against it and reads as stuck. Repel it from adjacent walls so it drifts into open
+    // space instead (fix #2, connectivity, shrinks how often a cell is unreached in the first place).
+    private fun fallbackVector(cells: Cells, heat: IntArray, i: Int, x: Int, y: Int, destination: Pos): Pair<Double, Double> {
+        val sim = Pos(x.toDouble(), y.toDouble()).fromShadow()
+        return when {
+            !Sim.isInPlayArea(sim.x, sim.y) -> (Sim.width / 2.0 - sim.x) to (Sim.height / 2.0 - sim.y)
+            heat[i] != UNREACHED -> (destination.x - x) to (destination.y - y)
+            else -> wallRepulsion(cells, x, y)
+        }
+    }
+
+    // Sum of unit pushes AWAY from each adjacent wall / off-grid cell (8-neighbourhood) — the degenerate-gradient
+    // safety net for an unreached pocket, so an agent there drifts into open space instead of into a wall. A cell
+    // with no wall neighbour nets ~zero (it simply idles rather than driving into anything).
+    private fun wallRepulsion(cells: Cells, x: Int, y: Int): Pair<Double, Double> {
+        var wx = 0.0
+        var wy = 0.0
+        for ((dx, dy) in NEIGHBOURS) {
+            val ni = cells.idx(x + dx, y + dy)
+            if (ni < 0 || !cells.passable[ni]) {
+                wx -= dx.toDouble()
+                wy -= dy.toDouble()
+            }
+        }
+        return wx to wy
     }
 
     // Heat at a cell, or [wallHeat] (the caller's own heat + a repulsion margin) when off-grid or unreached, so
