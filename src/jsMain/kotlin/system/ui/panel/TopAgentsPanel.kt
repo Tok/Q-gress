@@ -38,10 +38,13 @@ object TopAgentsPanel {
     private const val MPH_PER_MS = 2.2369363 // m/s → miles per hour (imperial hover)
 
     // A column: a header, an optional numeric/string sort key (null → not sortable), and how to render its cell.
+    // [headerColor]/[headerTitle] let a header be a compact coloured glyph (e.g. the JARVIS/ADA flip dots).
     private class Col(
         val header: String,
         val num: ((Agent) -> Double)? = null,
         val str: ((Agent) -> String)? = null,
+        val headerColor: String? = null,
+        val headerTitle: String? = null,
         val render: (Agent) -> HTMLElement,
     ) {
         val sortable get() = num != null || str != null
@@ -72,7 +75,22 @@ object TopAgentsPanel {
         Col("MHack", num = {
             it.inventory.findMultihacks().size.toDouble()
         }, render = { a -> invCell(a.inventory.findMultihacks(), MAX_MOD_LEVEL, MultihackType::getColorForLevel) }),
-        Col("Flip", num = { it.inventory.findViruses().size.toDouble() }, render = { a -> virusCell(a) }),
+        // Flip items split into their two kinds — a compact coloured dot header each (green JARVIS / blue ADA),
+        // then a plain count. (Was one "Flip" column with both dots + a combined total.)
+        Col(
+            "●",
+            headerColor = VirusType.JARVIS_VIRUS.color,
+            headerTitle = "JARVIS viruses (flip a portal to ENL)",
+            num = { virusCount(it, VirusType.JARVIS_VIRUS).toDouble() },
+            render = { a -> cell(virusCount(a, VirusType.JARVIS_VIRUS).toString(), "taNum") },
+        ),
+        Col(
+            "●",
+            headerColor = VirusType.ADA_REFACTOR.color,
+            headerTitle = "ADA refactors (flip a portal to RES)",
+            num = { virusCount(it, VirusType.ADA_REFACTOR).toDouble() },
+            render = { a -> cell(virusCount(a, VirusType.ADA_REFACTOR).toString(), "taNum") },
+        ),
         Col("Keys", num = { it.inventory.keyCount().toDouble() }, render = { a -> cell(a.inventory.keyCount().toString(), "taNum") }),
         Col("Uniq", num = { uniqueKeys(it).toDouble() }, render = { a -> cell(uniqueKeys(a).toString(), "taNum") }),
         Col("Inv", num = { it.inventory.items.size.toDouble() }, render = { a -> invLimitCell(a) }),
@@ -82,7 +100,7 @@ object TopAgentsPanel {
         Col("Portal", str = { it.actionPortal.name }, render = { a -> cell(clip(a.actionPortal.name, PORTAL_NAME_MAX), "taCell") }),
     )
 
-    private const val PORTAL_NAME_MAX = 16 // cut long portal names so the (fit-content) AGENTS pane can't widen
+    private const val PORTAL_NAME_MAX = 20 // cut long portal names so the (fit-content) AGENTS pane can't widen
 
     /** Truncate [s] to [max] chars with an ellipsis, so a long action-portal name can't stretch the table. */
     private fun clip(s: String, max: Int): String = if (s.length <= max) s else s.take(max - 1) + "…"
@@ -222,11 +240,16 @@ object TopAgentsPanel {
     // Distinct portals an agent holds keys to (vs total Keys, which counts duplicates).
     private fun uniqueKeys(agent: Agent): Int = agent.inventory.findUniqueKeys()?.size ?: 0
 
-    /** A per-level bar strip (height = count, colour = level via [colorFor]) + a trailing right-justified count. */
+    /** A leading right-justified count + a per-level bar strip (height = count, colour = level via [colorFor]). */
     private fun invCell(items: List<DeployableItem>, maxLevel: Int, colorFor: (Int) -> String): HTMLElement {
         val byLevel = items.groupBy { it.getLevel() }.mapValues { it.value.size }
         val maxCount = byLevel.values.maxOrNull() ?: 1
         val td = el("td", "taInv")
+        // Number FIRST (fixed width, right-justified against the bars) so the (right-pinned) bar strip stays put
+        // as the count changes digits — the count grows leftward instead of pushing the graph around.
+        val count = el("span", "taInvCount")
+        count.textContent = items.size.toString()
+        td.appendChild(count)
         // Always render the full strip (zero-height bars when empty) so the graph keeps a constant width.
         val bars = el("span", "taInvBars")
         for (lvl in 1..maxLevel) {
@@ -237,34 +260,11 @@ object TopAgentsPanel {
             bars.appendChild(bar)
         }
         td.appendChild(bars)
-        // Number last + fixed width so it pins to the cell's right edge and never shifts the bars when it changes.
-        val count = el("span", "taInvCount")
-        count.textContent = items.size.toString()
-        td.appendChild(count)
         return td
     }
 
-    /** Flip items an agent carries: one faction-coloured dot per type (JARVIS green, ADA blue) — lit when
-     *  held, dim when not — plus a trailing total count. */
-    private fun virusCell(agent: Agent): HTMLElement {
-        val viruses = agent.inventory.findViruses()
-        val byType = viruses.groupBy { it.type }.mapValues { it.value.size }
-        val td = el("td", "taInv")
-        // Always render both dots (dim when empty) so the cell keeps a constant width.
-        val dots = el("span", "taInvBars")
-        VirusType.values().forEach { type ->
-            val c = byType[type] ?: 0
-            val dot = el("span", "taInvDot")
-            dot.style.background = if (c > 0) type.color else "rgba(255, 255, 255, 0.12)" // neutral dim when none held
-            dots.appendChild(dot)
-        }
-        td.appendChild(dots)
-        // Number last + fixed width so it right-justifies and never shifts the dots when it changes.
-        val count = el("span", "taInvCount")
-        count.textContent = viruses.size.toString()
-        td.appendChild(count)
-        return td
-    }
+    /** How many flip items of [type] (JARVIS virus / ADA refactor) an agent carries — one per split column. */
+    private fun virusCount(agent: Agent, type: VirusType): Int = agent.inventory.findViruses().count { it.type == type }
 
     private fun ensure() {
         if (tbody != null) return
@@ -275,6 +275,8 @@ object TopAgentsPanel {
         COLS.forEachIndexed { idx, c ->
             val th = el("th", "taHeadCell")
             th.textContent = c.header
+            c.headerColor?.let { th.style.color = it } // compact coloured-glyph header (the JARVIS/ADA flip dots)
+            c.headerTitle?.let { th.title = it }
             if (c.str != null) th.classList.add("taHeadLeft") // string columns left-justify (header + cells)
             if (c.sortable) {
                 th.classList.add("taSortable")
