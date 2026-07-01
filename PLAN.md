@@ -38,11 +38,19 @@ The open structural focus: functional core / imperative shell, module-by-module,
     MapLibre engines. (`Scene3D` keeps an *intentional* `LargeClass` suppress — its entity-sync +
     effect-dispatch bulk is irreducibly bound to the three.js groups.)
   - **Coverage:** the core is now JVM-measured via Kover (`./scripts/coverage.sh`); the pure tests live in
-    `commonTest` and run on both targets. Follow-ons: the remaining jsMain `Config`-consumers
-    (`system.Cycle`, `ai.{Tournament,Observation}`) are `SimRunner`-coupled and can lift later; push JVM
-    coverage of the big classes (`Portal`/`Agent`/`World`) higher by porting the `SimRunner`-based
-    integration tests off the jsMain harness. **Needs one eyes-on `./start.sh`** to confirm the boot binds
-    (FX/audio/flow-field flash/real portal names) after the seam rewire.
+    `commonTest` and run on both targets. Baseline after the lift: **~60%** over the whole functional core.
+    Two independent levers to raise it, in order:
+    1. **(active) New `commonTest` unit tests** for the hot uncovered paths in the big classes
+       (`Portal`/`Agent`/`World`/`Field`/the `agent.action.cond.*` machine). No further lifting needed — the
+       core is already commonMain. This is the quick, low-risk win.
+    2. **(optional, later) Lift the `SimRunner` cluster** so the *existing* integration tests
+       (`SimRunnerTest`/`TournamentTest`/`EvolutionTest`/`WorldSnapshotTest`) run on the JVM too. That cluster
+       (`ai.SimRunner`, `system.{Cycle,WorldSnapshot,Simulation}`, `ai.{Tournament,Observation}`, `ai.net.*`)
+       is mostly JS-API-clean already; the real blockers are **`system.grid.Pathfinding`** (coroutine-bound →
+       split its pure *sync* compute into commonMain, async stays jsMain) and **`ai.net.GenomeIO`** (`dynamic`
+       JSON parse → a small serialization seam), plus relocating the `Nav.bind(PathFieldFlow)` boot hook.
+  - **Eyes-on still owed:** one `./start.sh` pass to confirm the seam boot-binds (FX / audio / flow-field
+    flash / real portal names) after the accessor rewire.
 - **Reduce magic numbers** — name them / fold into `Config` where it aids clarity (detekt `MagicNumber` is
   off → a by-hand judgement pass, not a gate-chase).
 - **Tighten line length 140 → 120** — land *alongside* the class extractions (auto-wrapping inflates
