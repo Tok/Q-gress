@@ -54,7 +54,7 @@ for h1 in $WIDTHS; do
         fi
         echo "==> [$key] baking… (live per-generation progress streams below)"
         ok=0
-        for attempt in 1 2; do
+        for attempt in 1 2 3 4; do
             if BAKE_CHAMPS=1 BAKE_ARCH="$key" ./gradlew jsNodeTest --tests 'ai.net.ChampionBake' \
                 -PmochaTimeout=3600s -PbakeVerbose=1 --console=plain --rerun; then
                 line=$(grep -rhoE 'BAKEGENOME\|[^<]*' "$XML_DIR"/*.xml 2>/dev/null | tail -1)
