@@ -1,32 +1,36 @@
 package system.audio
 
-import system.ui.Bootstrap
-
 /**
- * The live [Audio] sink — the install point for the audio imperative-shell boundary. Self-selects
- * [BrowserAudio] in the browser / [NoOpAudio] headless at first reference (assigning the sink *object*
- * touches no Web-Audio node, so no `AudioContext` is forced). A harness installs a fake via [install];
- * [reset] restores the default (e.g. between headless matches / tests). Mirrors [system.effect.Fx].
+ * The live [Audio] sink — the install point for the audio imperative-shell boundary. Defaults to [NoOpAudio]
+ * (headless: Node tests / the `SimRunner`); the JS shell [bind]s [BrowserAudio] once at boot (`Bootstrap.load`)
+ * so the browser plays. A harness [install]s a transient fake override; [reset] drops it back to the bound
+ * sink. The bound-vs-override split lets the accessor live in `commonMain` — it never names the jsMain
+ * [BrowserAudio]. Mirrors [system.effect.Fx] / [system.grid.Nav] / [util.Names].
  */
 object Snd {
     /**
      * Force the headless ([NoOpAudio]) sink even in the browser. An in-browser headless eval (the TRAIN tab
-     * trainer / the leaderboard) runs many [ai.SimRunner] matches, each of which calls [reset] — so a one-off
-     * [install] wouldn't stick. Setting this makes [default]/[reset] yield [NoOpAudio] for the duration, so
-     * those matches fire no stray SFX/TTS; clear it (then [reset]) to restore the live engine.
+     * trainer / the leaderboard) runs many [ai.SimRunner] matches; setting this makes [sink] yield [NoOpAudio]
+     * for the duration, so those matches fire no stray SFX/TTS. Clear it to restore the live engine.
      */
     var headless: Boolean = false
 
-    private fun default(): Audio = if (headless || Bootstrap.isNotRunningInBrowser()) NoOpAudio else BrowserAudio
+    private var bound: Audio = NoOpAudio // the boot-bound platform sink (NoOp until the shell binds one)
+    private var overrideSink: Audio? = null // a transient test/harness override
 
-    var sink: Audio = default()
-        private set
+    val sink: Audio get() = if (headless) NoOpAudio else (overrideSink ?: bound)
 
+    /** Wire the real platform sink once, at boot (the JS shell binds [BrowserAudio]). */
+    fun bind(audio: Audio) {
+        bound = audio
+    }
+
+    /** Install a transient override (a test fake); [reset] drops it. */
     fun install(audio: Audio) {
-        sink = audio
+        overrideSink = audio
     }
 
     fun reset() {
-        sink = default()
+        overrideSink = null
     }
 }

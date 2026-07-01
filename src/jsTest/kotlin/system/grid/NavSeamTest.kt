@@ -32,10 +32,10 @@ class NavSeamTest {
 
     @Test
     fun portalCreationLeavesAnEmptyFieldWithDefaultSink() {
-        // Default Node sink is PathFieldFlow → not-browser + no headless compute = skip; the field stays empty.
+        // Default sink is NoOpFieldFlow (unbound headless) → no field delivered; the portal stays empty.
         val portal = Factory.portal()
 
-        assertTrue(portal.vectors.isEmpty(), "a headless portal starts with an empty flow field (skip branch)")
+        assertTrue(portal.vectors.isEmpty(), "a headless portal starts with an empty flow field (no-op sink)")
     }
 
     @Test

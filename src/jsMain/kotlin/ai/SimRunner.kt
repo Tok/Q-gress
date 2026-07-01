@@ -18,6 +18,7 @@ import system.Simulation
 import system.audio.Snd
 import system.effect.Fx
 import system.grid.Nav
+import system.grid.PathFieldFlow
 import util.GameplayPrefs
 import util.NameGen
 import util.Rng
@@ -120,6 +121,7 @@ object SimRunner {
     ): MatchResult {
         reset()
         Rng.seed(seed)
+        Nav.bind(PathFieldFlow) // headless (Node/browser eval) matches compute flow fields when flowFields is on
         Config.headlessFieldCompute = setup.flowFields // off by default → cheap abstract (straight-line) movement
         // END = full L8 gear + AP (what "quick start" meant); the roster COUNT is setup.frogs/smurfs, not the
         // stage, so this only sets each seeded agent's level + loadout.

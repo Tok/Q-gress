@@ -19,15 +19,21 @@ import system.Simulation
 import system.audio.AmbientPrefs
 import system.audio.AudioPrefs
 import system.audio.BlastSound
+import system.audio.BrowserAudio
 import system.audio.InstrumentPrefs
 import system.audio.MixerPrefs
 import system.audio.Scale
+import system.audio.Snd
 import system.audio.Sound
 import system.audio.Tts
 import system.building.BuildingTransparency
 import system.display.Scene3D
 import system.display.Showcases
+import system.effect.BrowserEffects
+import system.effect.Fx
 import system.grid.GridCapture
+import system.grid.Nav
+import system.grid.PathFieldFlow
 import system.grid.StreetImage
 import system.map.MapCamera
 import system.map.MapController
@@ -48,6 +54,8 @@ import util.Debug
 import util.GameUrl
 import util.GameplayPrefs
 import util.GraphicsPrefs
+import util.MapPortalNamer
+import util.Names
 import util.data.*
 import util.data.toJson
 import kotlin.js.Json
@@ -89,9 +97,20 @@ object Bootstrap {
         }
     }
 
+    // Wire the real (jsMain) shell impls for the seams the pure core drives through commonMain sinks — the
+    // browser default policy + the four side-effect seams (FX/audio/flow-fields/names). Headless (Node /
+    // SimRunner) stays on the NoOp defaults. Must run before any world ticks so the browser isn't silent.
+    private fun bindShellSinks() {
+        FactionPolicies.defaultPolicy = { DomSliderPolicy(it) }
+        Fx.bind(BrowserEffects)
+        Snd.bind(BrowserAudio)
+        Nav.bind(PathFieldFlow)
+        Names.bind(MapPortalNamer)
+    }
+
     fun load() {
         if (isNotRunningInBrowser()) return
-        FactionPolicies.defaultPolicy = { DomSliderPolicy(it) } // browser default: read the live tuning sliders
+        bindShellSinks()
         if (Controls.isUnsupported()) {
             Controls.showUnsupportedNotice()
             return

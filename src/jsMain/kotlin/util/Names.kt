@@ -1,24 +1,29 @@
 package util
 
-import system.ui.Bootstrap
-
 /**
- * The live [PortalNamer] sink — the install point for map-derived portal naming. Self-selects
- * [MapPortalNamer] in the browser / [NoOpPortalNamer] headless at first reference. A harness installs a fake
- * via [install]; [reset] restores the default. Mirrors [system.effect.Fx] / [system.audio.Snd] /
- * [system.grid.Nav].
+ * The live [PortalNamer] sink — the install point for map-derived portal naming. Defaults to
+ * [NoOpPortalNamer] (headless → the [PortalNameGen] fallback); the JS shell [bind]s [MapPortalNamer] at boot
+ * (`Bootstrap.load`) so the browser reads real map names. A harness [install]s a transient override; [reset]
+ * drops it. The bound-vs-override split lets the accessor live in `commonMain` — it never names the jsMain
+ * [MapPortalNamer]. Mirrors [system.effect.Fx] / [system.audio.Snd] / [system.grid.Nav].
  */
 object Names {
-    private fun default(): PortalNamer = if (Bootstrap.isNotRunningInBrowser()) NoOpPortalNamer else MapPortalNamer
+    private var bound: PortalNamer = NoOpPortalNamer // the boot-bound platform sink (NoOp until the shell binds one)
+    private var overrideSink: PortalNamer? = null // a transient test/harness override
 
-    var sink: PortalNamer = default()
-        private set
+    val sink: PortalNamer get() = overrideSink ?: bound
 
+    /** Wire the real platform sink at boot (the JS shell binds [MapPortalNamer]). */
+    fun bind(namer: PortalNamer) {
+        bound = namer
+    }
+
+    /** Install a transient override (a test fake); [reset] drops it. */
     fun install(namer: PortalNamer) {
-        sink = namer
+        overrideSink = namer
     }
 
     fun reset() {
-        sink = default()
+        overrideSink = null
     }
 }
