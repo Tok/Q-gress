@@ -35,6 +35,9 @@ object GameUrl {
     /** The chosen AI/Human driver for [faction] (`?enl=…&res=…`: manual/heuristic/net/llm), or null. */
     fun driver(faction: Faction): String? = param(if (faction == Faction.ENL) "enl" else "res")
 
+    /** The chosen neural-net architecture for [faction] (`?enlarch=…&resarch=…`: a `"16-16"` key or `random`), or null. */
+    fun netArch(faction: Faction): String? = param(if (faction == Faction.ENL) "enlarch" else "resarch")
+
     /** Whether the experimental LLM driver was unlocked at onboarding (`?exp=true`). */
     fun experimentalLlm(): Boolean = param("exp")?.toBoolean() ?: false
 
@@ -63,7 +66,8 @@ object GameUrl {
         // Per-faction driver picks (AI vs AI by default) + the experimental-LLM unlock — carried across the reload.
         val drivers = "&enl=${DriverControls.chosen(
             Faction.ENL,
-        )}&res=${DriverControls.chosen(Faction.RES)}&exp=${DriverControls.experimentalLlm}"
+        )}&res=${DriverControls.chosen(Faction.RES)}&exp=${DriverControls.experimentalLlm}" +
+            "&enlarch=${DriverControls.chosenArch(Faction.ENL)}&resarch=${DriverControls.chosenArch(Faction.RES)}"
         // NPC *count* is auto-derived at world-gen; only the player's density multiplier is carried.
         return "$base?faction=$fact&lng=$lng&lat=$lat&name=${encodeURIComponent(name)}" +
             "&w=${Sim.width}&h=${Sim.height}&portals=${Config.startPortals}&npcmult=${Config.npcMultiplier}" +

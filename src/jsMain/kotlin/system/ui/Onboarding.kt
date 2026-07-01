@@ -414,35 +414,62 @@ object Onboarding {
         }
         grid.style.setProperty("grid-template-columns", "auto repeat(${options.size}, minmax(108px, 1fr))") // visible count
         listOf(userFaction to true, userFaction.enemy() to false).forEach { (faction, isYou) ->
-            // If LLM was picked then hidden again, don't let that stale pick ride the start URL.
-            if (!showLlm && DriverControls.chosen(faction) == "llm") DriverControls.select(faction, DriverControls.DEFAULT)
-            grid.appendChild(
-                div("driverLabel").also {
-                    it.textContent = (if (isYou) "You · " else "Against · ") + faction.abbr
-                    it.style.color = faction.color
-                },
-            )
-            val current = DriverControls.chosen(faction)
-            DriverControls.select(faction, current) // seed the pick so it rides the URL even with no click
-            val btns = mutableListOf<HTMLButtonElement>()
-            options.forEach { (value, text) ->
-                // Only YOUR side offers Human (manual sliders) — no enemy slider UI, so the opponent is AI-only.
-                if (value == "manual" && !isYou) {
-                    grid.appendChild(div("driverEmpty")) // keep the column aligned under "Human"
-                    return@forEach
-                }
-                lateinit var btn: HTMLButtonElement
-                btn = button(text, "onboardPreset driverBtn") {
-                    DriverControls.select(faction, value)
-                    btns.forEach { it.removeClass("onboardActive") }
-                    btn.addClass("onboardActive")
-                }
-                if (value == current) btn.addClass("onboardActive")
-                btns.add(btn)
-                grid.appendChild(btn)
-            }
+            appendDriverRow(grid, faction, isYou, options, showLlm)
         }
         return grid
+    }
+
+    // One faction's row of the driver grid: the coloured label, the option buttons (the opponent's Human cell is
+    // left empty for alignment), and a spanning Neural-net arch-picker row shown only while that side is on net.
+    private fun appendDriverRow(
+        grid: HTMLElement,
+        faction: Faction,
+        isYou: Boolean,
+        options: List<Pair<String, String>>,
+        showLlm: Boolean,
+    ) {
+        // If LLM was picked then hidden again, don't let that stale pick ride the start URL.
+        if (!showLlm && DriverControls.chosen(faction) == "llm") DriverControls.select(faction, DriverControls.DEFAULT)
+        grid.appendChild(
+            div("driverLabel").also {
+                it.textContent = (if (isYou) "You · " else "Against · ") + faction.abbr
+                it.style.color = faction.color
+            },
+        )
+        val current = DriverControls.chosen(faction)
+        DriverControls.select(faction, current) // seed the pick so it rides the URL even with no click
+        // Arch picker row (spans the grid, under this side's buttons) — shown only while this side is Neural net.
+        val archRow = archPickerRow(faction)
+        archRow.style.display = if (current == "net") "" else "none"
+        val btns = mutableListOf<HTMLButtonElement>()
+        options.forEach { (value, text) ->
+            // Only YOUR side offers Human (manual sliders) — no enemy slider UI, so the opponent is AI-only.
+            if (value == "manual" && !isYou) {
+                grid.appendChild(div("driverEmpty")) // keep the column aligned under "Human"
+                return@forEach
+            }
+            lateinit var btn: HTMLButtonElement
+            btn = button(text, "onboardPreset driverBtn") {
+                DriverControls.select(faction, value)
+                btns.forEach { it.removeClass("onboardActive") }
+                btn.addClass("onboardActive")
+                archRow.style.display = if (value == "net") "" else "none" // reveal the arch picker for Neural net
+            }
+            if (value == current) btn.addClass("onboardActive")
+            btns.add(btn)
+            grid.appendChild(btn)
+        }
+        grid.appendChild(archRow)
+    }
+
+    // A full-width row under a faction's driver buttons holding its Neural-net architecture picker (Random or a
+    // baked arch). Spans every grid column so it sits on its own line without breaking the option-button alignment.
+    private fun archPickerRow(faction: Faction): HTMLElement {
+        val row = div("driverArchRow")
+        row.style.setProperty("grid-column", "1 / -1")
+        row.appendChild(div("driverArchLabel").also { it.textContent = "NN architecture" })
+        row.appendChild(DriverControls.archPicker(faction))
+        return row
     }
 
     /** Step 3 — map size + portal density + start stage. [onStart] gets w, h, portals, startStage.

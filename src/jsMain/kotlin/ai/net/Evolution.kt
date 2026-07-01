@@ -132,6 +132,13 @@ object Evolution {
         }
 
         fun result(): EvolutionResult = EvolutionResult(bestGenome, bestFitness, history.toList(), config.arch)
+
+        /**
+         * The carried **elite** genomes after the final generation (the top [EvolutionConfig.elite] by training
+         * fitness). A bake selects its committed champion from these by HELD-OUT (unseen-seed) fitness rather
+         * than training fitness, so it doesn't ship a genome that merely overfit the fixed training seeds.
+         */
+        fun elites(): List<DoubleArray> = population.take(config.elite)
     }
 
     // Mean over [matchesPerEval] seeded matches of (our summed checkpoint MU − the foe's) — the fitness

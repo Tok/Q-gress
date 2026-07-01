@@ -139,7 +139,9 @@ kotlin {
         nodejs {
             testTask {
                 useMocha {
-                    timeout = "60s"
+                    // Default 60 s per test; scripts/bake-champs.sh raises it via -PmochaTimeout for the long
+                    // per-arch champion bakes (a full training run is minutes, not seconds).
+                    timeout = (findProperty("mochaTimeout") as? String) ?: "60s"
                 }
             }
         }

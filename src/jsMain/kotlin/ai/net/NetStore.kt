@@ -31,4 +31,12 @@ object NetStore {
 
     /** Decode the active genome into a [Net]; falls back to the baked [Champion] if a saved override is corrupt. */
     fun loadNet(): Net = runCatching { GenomeIO.decode(activeJson()) }.getOrElse { GenomeIO.decode(Champion.JSON) }
+
+    /**
+     * The baked champion for a specific [arch] from the [ChampionLibrary] (the onboarding per-arch pick /
+     * random-arch NN matches) — ignores the single saved override, which is tied to one arch. Falls back to
+     * the default champion if that arch's genome is somehow corrupt.
+     */
+    fun loadNet(arch: NetArch): Net =
+        runCatching { GenomeIO.decode(ChampionLibrary.jsonFor(arch)) }.getOrElse { GenomeIO.decode(ChampionLibrary.defaultJson()) }
 }
