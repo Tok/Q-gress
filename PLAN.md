@@ -37,14 +37,13 @@ The open structural focus: functional core / imperative shell, module-by-module,
     `agent.qvalue.QIcons` / `util.data.CellOverlay`, `util.data.GeoCoordsExt`, and the renderer/audio/DOM/
     MapLibre engines. (`Scene3D` keeps an *intentional* `LargeClass` suppress — its entity-sync +
     effect-dispatch bulk is irreducibly bound to the three.js groups.)
-  - **Coverage:** the core is now JVM-measured via Kover (`./scripts/coverage.sh`); the pure tests live in
-    `commonTest` and run on both targets. Baseline after the lift: **~60%** over the whole functional core.
-    Now at **~83%** after two unit-test batches. Two independent levers to raise it further, in order:
-    1. **(largely done) New `commonTest` unit tests** for the hot paths in the big classes
-       (`Portal`/`Agent`/`World`/`NonFaction`/`Movement`/the `agent.action.cond.*` machine + item damage/deploy).
-       No lifting needed — the core is already commonMain. Remaining bits are diminishing-returns granular
-       gaps (e.g. `Recharger.performAction`'s positive path, `Agent.recoverIfStuck`'s re-target branch).
-    2. **(optional, later) Lift the `SimRunner` cluster** so the *existing* integration tests
+  - **Coverage: ~95.8%** (JVM Kover, `./scripts/coverage.sh`) — back over the codecov green threshold. Got
+    there with commonTest unit-test batches over the whole lifted core (post-lift baseline was ~60%): the
+    entity/action machine (`Agent`/`Portal`/`World`/`NonFaction`/`Movement`/`Inventory`/`cond.*`), item
+    damage/deploy, and the data/enum/util leaves. Remaining <5% is genuinely hard/unreachable — browser-only
+    `Platform.isBrowser()` branches and a few low-value edge paths (huge-field TTS, uniqueName numeral
+    fallback). Further gains would need lever 2 below.
+    - **(optional, later) Lift the `SimRunner` cluster** so the *existing* integration tests
        (`SimRunnerTest`/`TournamentTest`/`EvolutionTest`/`WorldSnapshotTest`) run on the JVM too. That cluster
        (`ai.SimRunner`, `system.{Cycle,WorldSnapshot,Simulation}`, `ai.{Tournament,Observation}`, `ai.net.*`)
        is mostly JS-API-clean already; the real blockers are **`system.grid.Pathfinding`** (coroutine-bound →
