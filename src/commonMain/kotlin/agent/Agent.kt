@@ -268,7 +268,11 @@ data class Agent(
         if (isFirst) {
             action.start(ActionItem.ATTACK)
             fun findExactDestination(): Pos {
-                if (actionPortal.calcHealth() > 0.8) {
+                // Healthy portal → aim at the CENTRE so the AoE blast spreads evenly over all 8 resonators;
+                // once it's damaged, concentrate fire on the strongest surviving resonator to finish it off.
+                // (calcHealth() is a 0..100 percent — the old `> 0.8` compared it as a fraction, so the
+                // centre branch fired for any portal with ≥1 health and the reso-targeting never ran.)
+                if (actionPortal.calcHealth() > HEALTHY_PORTAL_PCT) {
                     return actionPortal.location // center
                 }
                 val maybeDestination = actionPortal.findStrongestResoPos()
@@ -344,6 +348,7 @@ data class Agent(
         private val BEELINE_DURATION = StuckTracker.RECOVERY_BEELINE_TICKS // ticks to bee-line before re-targeting
         private const val RECRUIT_HOLD_TICKS = 8 // re-applied each tick → the target NPC waits while approached + met
         private const val XM_FILLED_PCT = 80 // XM bar at/above this % reads as "filled" (gates recharge behaviour)
+        private const val HEALTHY_PORTAL_PCT = 80 // above this portal health%, attackers aim centre; below, the strongest reso
 
         /** Pure: enemy (non-[faction]) portals within [attackDistance] of [from], nearest first. Takes the
          *  portal list as a parameter (not the `World` singleton) so the targeting filter is unit-testable. */
