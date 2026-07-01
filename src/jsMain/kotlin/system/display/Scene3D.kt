@@ -23,7 +23,6 @@ import portal.Field
 import portal.Link
 import portal.Octant
 import portal.Portal
-import portal.XmHeap
 import portal.XmMap
 import system.audio.BlastSound
 import system.audio.PortalChangeSound
@@ -173,6 +172,10 @@ object Scene3D {
     // Persistent NPC head spheres keyed by npc.id — reused + repositioned across ticks instead of clear+recreate
     // every tick (722+ NPCs on a big map = a huge per-tick allocation). Cleared in onAdd with the group.
     private val npcMeshes = mutableMapOf<Int, dynamic>()
+
+    // Persistent stray-XM motes keyed by heap cell (Pos) — reused + repositioned/rescaled across ticks instead
+    // of clear+recreate every tick (the per-tick Object3D/UUID churn the PLAN flags). Cleared in onAdd with the group.
+    private val xmMotes = mutableMapOf<Pos, dynamic>()
     private var xmGroup: dynamic = null // stray collectible XM motes
     private var linksGroup: dynamic = null
 
@@ -264,6 +267,7 @@ object Scene3D {
         npcsGroup = Three.Group().also { newScene.add(it) }
         npcMeshes.clear() // persistent NPC cache belongs to the OLD group — drop it with the rebuild
         xmGroup = Three.Group().also { newScene.add(it) }
+        xmMotes.clear() // persistent XM-mote cache belongs to the OLD group — drop it with the rebuild
         agentsGroup = Three.Group().also { newScene.add(it) }
         indicatorsGroup = Three.Group().also { newScene.add(it) }
         markerGroup = Three.Group().also { newScene.add(it) }
@@ -386,8 +390,7 @@ object Scene3D {
         World.allFields().forEach { addField(it) }
         syncLinks() // persistent: reuse link meshes across ticks (no clear+recreate)
         syncNpcs() // persistent: reuse NPC spheres across ticks (no clear+recreate)
-        clear(xmGroup)
-        XmMap.all().forEach { (pos, heap) -> addXm(pos, heap) }
+        syncXm() // persistent: reuse XM motes across ticks (no clear+recreate)
         clear(agentsGroup)
         clear(indicatorsGroup)
         World.allAgents.forEach { addAgent(it) }
@@ -1149,13 +1152,26 @@ object Scene3D {
         }
     }
 
-    /** A stray-XM heap: a small additive glow mote, scaled a touch by how much XM it holds. */
-    private fun addXm(pos: Pos, heap: XmHeap) {
-        val mote = Three.Mesh(xmGeo, Materials.xmGlow())
-        val s = 0.85 + (heap.xm / 300.0).coerceIn(0.0, 1.0) * 0.5 // bigger heaps glow a touch larger
-        mote.asDynamic().scale.set(s, s, s)
-        place(mote.asDynamic(), sceneX(pos), sceneY(pos), groundZ(pos) + XM_Z)
-        xmGroup.add(mote)
+    /**
+     * Reconcile the stray-XM motes with [XmMap] WITHOUT clear+recreate every tick: reuse each heap's mote (just
+     * reposition + rescale to its current XM), create only new heaps, and remove the collected/vanished ones.
+     * Keyed by the heap's cell [Pos], which is stable across ticks even though World rebuilds the heap objects.
+     * A heap is a small additive glow mote, scaled a touch by how much XM it holds.
+     */
+    private fun syncXm() {
+        val group = xmGroup ?: return
+        val present = mutableSetOf<Pos>()
+        XmMap.all().forEach { (pos, heap) ->
+            present.add(pos)
+            val mote = xmMotes.getOrPut(pos) { Three.Mesh(xmGeo, Materials.xmGlow()).also { group.add(it) } }
+            val s = 0.85 + (heap.xm / 300.0).coerceIn(0.0, 1.0) * 0.5 // bigger heaps glow a touch larger
+            mote.asDynamic().scale.set(s, s, s)
+            place(mote.asDynamic(), sceneX(pos), sceneY(pos), groundZ(pos) + XM_Z)
+        }
+        (xmMotes.keys - present).forEach { pos ->
+            val m = xmMotes.remove(pos) ?: return@forEach
+            group.remove(m)
+        }
     }
 
     // A link's persistent meshes: the glass pipe + the two near-opaque ball-joints at each orb. [color] is the
