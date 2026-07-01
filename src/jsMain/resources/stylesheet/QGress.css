@@ -294,6 +294,9 @@ html, body {
     gap: 1px;
     margin-left: 3px; /* gap after the leading count; the strip itself pins to the cell's right edge */
     vertical-align: bottom;
+    /* Thin white baseline spanning ALL level slots so the strip shows its full reserved width even with no
+       high-level items yet — the bars grow up from it, and empty levels read as reserved space, not a gap. */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.5);
 }
 .taInvBar {
     width: 2px;
