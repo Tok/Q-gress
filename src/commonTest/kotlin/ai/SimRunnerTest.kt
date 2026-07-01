@@ -94,11 +94,12 @@ class SimRunnerTest {
     @Test
     fun reproducibleAfterAnotherMatch() {
         val grid = muGrid()
-        // 3600 ticks (not 1800): enough for fields to reliably form regardless of the exact RNG sequence, so
-        // the non-vacuous guard below isn't knife-edge on one seed (adding any new drop shifts the sequence).
-        val a = SimRunner.runMatch(grid, seed = 1, maxTicks = 3600, setup = MatchSetup(npcs = 12))
+        // seed 6 @ 3600 ticks reliably forms fields (the non-vacuous guard below) — the exact seed is arbitrary
+        // for the reproducibility check, but a shifting RNG sequence can leave some seeds field-less, so we pin
+        // one that isn't. Reproducibility itself (a == b) is seed-independent.
+        val a = SimRunner.runMatch(grid, seed = 6, maxTicks = 3600, setup = MatchSetup(npcs = 12))
         SimRunner.runMatch(grid, seed = 1001, maxTicks = 600) // a DIFFERENT match in between
-        val b = SimRunner.runMatch(grid, seed = 1, maxTicks = 3600, setup = MatchSetup(npcs = 12))
+        val b = SimRunner.runMatch(grid, seed = 6, maxTicks = 3600, setup = MatchSetup(npcs = 12))
 
         assertTrue(
             a.checkpointMuSum(Faction.ENL) + a.checkpointMuSum(Faction.RES) > 0,

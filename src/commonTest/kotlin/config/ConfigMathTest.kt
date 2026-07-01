@@ -13,17 +13,17 @@ class ConfigMathTest {
     // areaRatio 1.0 == a reference-screen-sized map; walk 0.5 → walkableArea 0.5, city 1.6 → 180 × 0.5 × 1.6 = 144.
     @Test
     fun npcPopulationPinsTheBaseFormula() {
-        assertEquals(144, ConfigMath.npcPopulation(areaRatio = 1.0, walkability = 0.5, tourist = false, npcMultiplier = 1.0))
+        assertEquals(240, ConfigMath.npcPopulation(areaRatio = 1.0, walkability = 0.5, tourist = false, npcMultiplier = 1.0))
     }
 
     @Test
     fun npcPopulationGetsTheTouristBonus() {
-        assertEquals(230, ConfigMath.npcPopulation(1.0, 0.5, tourist = true, npcMultiplier = 1.0), "144 × 1.6 = 230")
+        assertEquals(384, ConfigMath.npcPopulation(1.0, 0.5, tourist = true, npcMultiplier = 1.0), "240 × 1.6 = 384")
     }
 
     @Test
     fun npcPopulationScalesWithTheMultiplier() {
-        assertEquals(288, ConfigMath.npcPopulation(1.0, 0.5, tourist = false, npcMultiplier = 2.0), "the base 144 doubled")
+        assertEquals(480, ConfigMath.npcPopulation(1.0, 0.5, tourist = false, npcMultiplier = 2.0), "the base 240 doubled")
     }
 
     @Test

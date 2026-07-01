@@ -10,8 +10,9 @@ object ConfigMath {
     const val PORTALS_PER_WALKABLE_KM2 = 200.0 // discovery equilibrium: portals per km² of FULLY-walkable ground
 
     const val MIN_NONFACTION = 30 // floor: always enough to recruit, even on a tiny/dense map (or a low multiplier)
-    const val MAX_NONFACTION_CAP = 1000 // ceiling: keep huge/dense maps from spawning a perf-killing crowd
-    private const val NPC_DENSITY = 180.0 // NPCs per one screenful (Dim.width × Dim.height) of walkable area
+    const val MAX_NONFACTION_CAP = 1000 // ceiling for tiny…mid maps: keep them from spawning a perf-killing crowd
+    const val MAX_NONFACTION_CAP_LARGE = 2000 // higher ceiling for LARGE/GIANT maps (more room for a big crowd)
+    private const val NPC_DENSITY = 300.0 // NPCs per one screenful (Dim.width × Dim.height) of walkable area
     private const val CITY_GAIN = 1.2 // built-up (low-walkable) areas pack in more people
     private const val TOURIST_MUL = 1.6 // famous tourist spots draw extra crowds
 
@@ -53,15 +54,21 @@ object ConfigMath {
      * Appropriate NPC population for a map whose area is [areaRatio]× the reference screen, at a location of the
      * given [walkability] (fraction of passable cells). Driven by the **walkable area**, boosted by **city
      * density** (built-up = low-walkable → more people) and, for a [tourist] hotspot, a crowd bonus. Scaled by
-     * [npcMultiplier], then clamped to [[MIN_NONFACTION], [MAX_NONFACTION_CAP]]. The caller computes
-     * [areaRatio] from the (browser-derived) map vs reference dimensions.
+     * [npcMultiplier], then clamped to [[MIN_NONFACTION], [maxCap]]. The caller computes [areaRatio] from the
+     * (browser-derived) map vs reference dimensions and picks [maxCap] by map tier (larger on big maps).
      */
-    fun npcPopulation(areaRatio: Double, walkability: Double, tourist: Boolean, npcMultiplier: Double): Int {
+    fun npcPopulation(
+        areaRatio: Double,
+        walkability: Double,
+        tourist: Boolean,
+        npcMultiplier: Double,
+        maxCap: Int = MAX_NONFACTION_CAP,
+    ): Int {
         val walk = walkability.coerceIn(0.0, 1.0)
         val walkableArea = areaRatio * walk // NPCs roam open ground → the primary driver
         val cityDensity = 1.0 - walk // proxy: the less walkable a (playable) area is, the more built-up
         val touristMul = if (tourist) TOURIST_MUL else 1.0
         val pop = NPC_DENSITY * walkableArea * (1.0 + CITY_GAIN * cityDensity) * touristMul * npcMultiplier
-        return pop.toInt().coerceIn(MIN_NONFACTION, MAX_NONFACTION_CAP)
+        return pop.toInt().coerceIn(MIN_NONFACTION, maxCap)
     }
 }

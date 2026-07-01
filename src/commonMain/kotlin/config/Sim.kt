@@ -48,7 +48,11 @@ object Sim {
 
     /** The current play field's nominal area (km²) — the inverse of [sideForArea] over the inscribed circle of
      *  the (smaller) side. Used to scale the roster ([config.Config.rosterForStart] / [config.Config.rosterCap]). */
-    fun areaKm2(): Double = PI * (minOf(width, height).toDouble() * MPP_REF / 2.0).pow(2.0) / 1_000_000.0
+    fun areaKm2(): Double = areaKm2For(width, height)
+
+    /** Pure km² for an arbitrary [width]×[height] (px) — lets callers size things off a map they name explicitly
+     *  (e.g. the NPC-cap tier in [config.Config.npcPopulation]) without touching the live [width]/[height]. */
+    fun areaKm2For(width: Int, height: Int): Double = PI * (minOf(width, height).toDouble() * MPP_REF / 2.0).pow(2.0) / 1_000_000.0
 
     /** Suggested start-portal count for a [km2] map — sub-linear (∛) so the per-portal flow-field cost stays
      *  bounded as the map grows (≈ 4 · 5 · 6 · 8 · 10 across tiny…giant). */

@@ -23,9 +23,11 @@ internal object Sparkline {
 
     /**
      * A uPlot instance with the shared 4-series layout (x, ENL, RES, overlap) and chrome-less look; the caller
-     * supplies the panel-specific [width]/[height] and uPlot [scales] (e.g. a fixed `y: [0, 1]` range).
+     * supplies the panel-specific [width]/[height] and uPlot [scales] (e.g. a fixed `y: [0, 1]` range). [bgDraw],
+     * if given, is registered as a uPlot `drawClear` hook (fires after the canvas clears, before the series) so
+     * the caller can paint background grid lines (checkpoint/cycle verticals) beneath the data.
      */
-    fun plot(target: HTMLElement, width: Int, height: Int, scales: dynamic): UPlot {
+    fun plot(target: HTMLElement, width: Int, height: Int, scales: dynamic, bgDraw: ((dynamic) -> Unit)? = null): UPlot {
         val opts: dynamic = js("({})")
         opts.width = width
         opts.height = height
@@ -34,6 +36,11 @@ internal object Sparkline {
         opts.scales = scales
         opts.axes = arrayOf(js("({ show: false })"), js("({ show: false })"))
         opts.series = arrayOf(js("({})"), factionSeries(Faction.ENL), factionSeries(Faction.RES), overlapSeries())
+        if (bgDraw != null) {
+            val hooks: dynamic = js("({})")
+            hooks.drawClear = arrayOf(bgDraw)
+            opts.hooks = hooks
+        }
         val empty: dynamic = arrayOf(arrayOf<Double>(), arrayOf<Double>(), arrayOf<Double>(), arrayOf<Double>())
         return UPlot(opts, empty, target)
     }

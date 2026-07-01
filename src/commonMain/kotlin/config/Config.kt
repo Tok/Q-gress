@@ -112,6 +112,13 @@ object Config {
     // existing Config.MIN_NONFACTION / MAX_NONFACTION_CAP call sites are unchanged.
     val MIN_NONFACTION = ConfigMath.MIN_NONFACTION
     val MAX_NONFACTION_CAP = ConfigMath.MAX_NONFACTION_CAP
+    val MAX_NONFACTION_CAP_LARGE = ConfigMath.MAX_NONFACTION_CAP_LARGE
+
+    // LARGE/GIANT maps (≥ this km²) get the higher NPC ceiling; tiny…mid keep the base one. Threshold is the
+    // midpoint between the MID and LARGE presets, so exactly the Large + Giant tiers cross it.
+    private val LARGE_MAP_KM2 = (Sim.MID_KM2 + Sim.LARGE_KM2) / 2.0
+    private fun npcCapFor(width: Int, height: Int): Int =
+        if (Sim.areaKm2For(width, height) >= LARGE_MAP_KM2) MAX_NONFACTION_CAP_LARGE else MAX_NONFACTION_CAP
 
     /** Player NPC-density multiplier (0.1–3.0), chosen at onboarding — scales the auto population. */
     var npcMultiplier = 1.0
@@ -120,7 +127,7 @@ object Config {
      *  hotspot bonus), scaled by [npcMultiplier]. Pure model in [ConfigMath.npcPopulation]. */
     fun npcPopulation(width: Int, height: Int, walkability: Double, tourist: Boolean = false): Int {
         val areaRatio = (width.toDouble() * height) / (Dim.width.toDouble() * Dim.height)
-        return ConfigMath.npcPopulation(areaRatio, walkability, tourist, npcMultiplier)
+        return ConfigMath.npcPopulation(areaRatio, walkability, tourist, npcMultiplier, npcCapFor(width, height))
     }
 
     /** Building-shake intensity multiplier (0–2), tunable live from the menu "Building shake" slider. */
@@ -194,7 +201,13 @@ object Config {
     const val topAgentsMessageLimit = 8
 
     val ticksPerCheckpoint = Time.secondsToTicks(300)
+
+    // [ticksPerCycle] is the GAME-EVENT cadence (portal decay + roster churn) and the AI retune/eval window — a
+    // short ~6-checkpoint beat kept for balance + fast training. The SCORING/display cycle is separate and
+    // Ingress-accurate: [checkpointsPerCycle] checkpoints (175 h ÷ 5 h) — it drives only the winner dots/lines +
+    // the deeper cycle sound, so lengthening it doesn't touch decay cadence or match length.
     val ticksPerCycle = Time.secondsToTicks(1800)
+    const val checkpointsPerCycle = 35
 
     // Headless flow-field compute (PLAN Phase 6.1 / the SimRunner). Off by default: in the browser fields
     // are computed async (Pathfinding.computeFieldAsync) and in plain Node unit tests we skip them entirely

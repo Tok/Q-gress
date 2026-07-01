@@ -33,6 +33,7 @@ data class NonFaction(
 
     private val swarmTendency = 0.02
     private val swarmChance = swarmTendency - (swarmTendency * 0.5 * size.offset)
+    private val laneOffset = NonFactionMath.laneOffset(id) // stable per-NPC heading rotation → NPCs spread into lanes
 
     fun isOnScreen() = pos.isOffGrid()
     private val isDrunk = Rng.random() <= 0.02 // TODO
@@ -96,7 +97,10 @@ data class NonFaction(
             val nearPos = findNearest().pos
             if (nearPos.distanceTo(pos) < Dim.agentRadius) return Movement.headingTo(pos, nearPos)
         }
-        return vectors[pos.toShadow()] ?: Movement.headingTo(pos, destination)
+        val base = vectors[pos.toShadow()] ?: Movement.headingTo(pos, destination)
+        // Rotate the travel heading into this NPC's stable lane so a shared flow-field stream fans into a
+        // ribbon (NPCs spread out) instead of every NPC tracking the identical field single-file.
+        return Complex(base.re - base.im * laneOffset, base.im + base.re * laneOffset)
     }
 
     /** The position of the nearest AGENT doing an idle/recruit fallback action within [NPC_ATTRACT_RADIUS], or
@@ -183,8 +187,8 @@ data class NonFaction(
         // The count then scales with the field perimeter, bounded so we don't compute too many full-map flow
         // fields (each destination needs one).
         private val OFFSCREEN_SPACING = minOf(Dim.width, Dim.height) * 0.5
-        private const val MIN_OFFSCREEN = 8
-        private const val MAX_OFFSCREEN = 14
+        private const val MIN_OFFSCREEN = 12
+        private const val MAX_OFFSCREEN = 20 // more off-map targets → the crowd spreads over more destinations
         private const val OFFSCREEN_DEST_CHANCE = 0.85 // mostly cross the map edge-to-edge; the rest head to portals
         private const val FAR_PORTAL_CHANCE = 0.7 // of the non-offscreen remainder, this fraction heads to a FAR portal
         private const val NPC_ATTRACT_RADIUS = 70.0 // idle/recruiting agents draw passing NPCs within this many sim px
@@ -279,7 +283,14 @@ data class NonFaction(
             return fields[destination] ?: VectorField.EMPTY
         }
 
-        private fun findFarPortal(pos: Pos) = World.allPortals.sortedByDescending { pos.distanceTo(it.location) }.first()
+        // A RANDOM portal from the farther HALF — not THE single farthest. The old `.first()` was deterministic,
+        // so every NPC in the same area picked the identical target and they streamed to it in lockstep (looked
+        // like a shared-seed bug). Squared distance: ordering only, no sqrt.
+        private fun findFarPortal(pos: Pos): Portal {
+            val byFar = World.allPortals.sortedByDescending { pos.distanceTo2(it.location) }
+            val farHalf = byFar.take((byFar.size / 2).coerceAtLeast(1))
+            return farHalf[Rng.randomInt(farHalf.size - 1)]
+        }
 
         private val MIN_WAIT = Time.secondsToTicks(5)
         private val MAX_WAIT = Time.secondsToTicks(45)

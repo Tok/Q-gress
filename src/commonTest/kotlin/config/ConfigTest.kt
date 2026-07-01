@@ -42,13 +42,14 @@ class ConfigTest {
     }
 
     // --- npcPopulation -------------------------------------------------------
-    // pop = 180 (density) × walkableArea × (1 + 1.2 × cityDensity) × touristMul × npcMultiplier, clamped [30,1000]
-    // At 1200×800 areaRatio == 1, walk 0.5 → walkableArea 0.5, cityDensity 0.5 → 180 × 0.5 × 1.6 = 144.
+    // pop = 300 (density) × walkableArea × (1 + 1.2 × cityDensity) × touristMul × npcMultiplier, clamped [30, cap]
+    // where cap is 1000 (tiny…mid maps) or 2000 (large/giant). At 1200×800 areaRatio == 1, walk 0.5 →
+    // walkableArea 0.5, cityDensity 0.5 → 300 × 0.5 × 1.6 = 240.
 
     @Test
     fun npcPopulationPinsTheBaseFormula() {
         Config.npcMultiplier = 1.0
-        assertEquals(144, Config.npcPopulation(1200, 800, walkability = 0.5), "density 180 × area 0.5 × city 1.6")
+        assertEquals(240, Config.npcPopulation(1200, 800, walkability = 0.5), "density 300 × area 0.5 × city 1.6")
     }
 
     @Test
@@ -56,14 +57,14 @@ class ConfigTest {
         Config.npcMultiplier = 1.0
         val plain = Config.npcPopulation(1200, 800, walkability = 0.5)
         val tourist = Config.npcPopulation(1200, 800, walkability = 0.5, tourist = true)
-        assertEquals(144, plain)
-        assertEquals(230, tourist, "144 × 1.6 tourist multiplier = 230 (truncated)")
+        assertEquals(240, plain)
+        assertEquals(384, tourist, "240 × 1.6 tourist multiplier = 384 (truncated)")
     }
 
     @Test
     fun npcPopulationScalesWithThePlayerMultiplier() {
         Config.npcMultiplier = 2.0
-        assertEquals(288, Config.npcPopulation(1200, 800, walkability = 0.5), "the base 144 doubled")
+        assertEquals(480, Config.npcPopulation(1200, 800, walkability = 0.5), "the base 240 doubled")
     }
 
     @Test
@@ -73,9 +74,14 @@ class ConfigTest {
     }
 
     @Test
-    fun npcPopulationIsCappedOnAHugeMap() {
-        Config.npcMultiplier = 3.0
-        assertEquals(Config.MAX_NONFACTION_CAP, Config.npcPopulation(20000, 20000, walkability = 1.0), "perf ceiling")
+    fun npcCapIs1000OnMidAndBelowBut2000OnLargeAndGiant() {
+        Config.npcMultiplier = 3.0 // over-populate so the ceiling always bites
+        val mid = Sim.sideForArea(Sim.MID_KM2)
+        val large = Sim.sideForArea(Sim.LARGE_KM2)
+        val giant = Sim.sideForArea(Sim.GIANT_KM2)
+        assertEquals(Config.MAX_NONFACTION_CAP, Config.npcPopulation(mid, mid, walkability = 1.0), "mid map keeps the 1000 cap")
+        assertEquals(Config.MAX_NONFACTION_CAP_LARGE, Config.npcPopulation(large, large, walkability = 1.0), "large map → 2000 cap")
+        assertEquals(Config.MAX_NONFACTION_CAP_LARGE, Config.npcPopulation(giant, giant, walkability = 1.0), "giant map → 2000 cap")
     }
 
     // --- targetPortals -------------------------------------------------------

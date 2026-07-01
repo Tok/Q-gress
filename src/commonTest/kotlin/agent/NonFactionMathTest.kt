@@ -36,4 +36,13 @@ class NonFactionMathTest {
         val half = NonFactionMath.opposingHalf(all, from = Pos(1, 0), cx = 0.0, cy = 0.0, nearCentre = 10.0)
         assertEquals(all.toSet(), half.toSet(), "no directional bias near the centre")
     }
+
+    @Test
+    fun laneOffsetsFanNpcsOutSymmetricallyAndStayBounded() {
+        val lanes = (0 until 7).map { NonFactionMath.laneOffset(it) }
+        assertTrue(lanes.all { it in -0.45..0.45 }, "every lane stays within the ± bound")
+        assertTrue(lanes.toSet().size >= 5, "different NPC ids land in different lanes (not single-file)")
+        assertTrue(lanes.any { it < -0.1 } && lanes.any { it > 0.1 }, "lanes fan out to BOTH sides of the heading")
+        assertEquals(NonFactionMath.laneOffset(3), NonFactionMath.laneOffset(3 + 7), "the lane is stable per id (mod buckets)")
+    }
 }

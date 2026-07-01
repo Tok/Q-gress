@@ -235,9 +235,12 @@ object Sound {
         playSound(osc, createNoisePan(), 0.1, 0.5)
     }
 
+    // Cycle end reuses the checkpoint blip an OCTAVE LOWER (220 vs 440 Hz) — same sine/duration/gain, so a
+    // cycle reads as "a deeper checkpoint" (the bigger 35-checkpoint milestone).
     fun playCycleSound() {
+        Mixer.current = Mixer.Group.FIELD
         if (isMuted()) return
-        val duration = 0.01
+        val duration = 0.05
         val pan = 0.0 // centre
         val oscNode = createLinearRampOscillator(OscillatorType.SINE, 220.0, 220.0, duration)
         playSound(oscNode, createStaticPan(pan), 0.5, duration)

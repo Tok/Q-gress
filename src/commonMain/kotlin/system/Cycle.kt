@@ -16,10 +16,18 @@ enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>) {
     ;
 
     companion object {
-        private const val numberOfCheckpoints = 35
+        // The rolling history window = one full SCORING cycle, so the graph fills across a cycle then scrolls.
+        private val numberOfCheckpoints = Config.checkpointsPerCycle
         private fun isUpdateStuck(tick: Int) = tick % 20 == 0 // react quickly once flagged (not once a minute)
         private fun isNewCheckpoint(tick: Int) = tick % Config.ticksPerCheckpoint == 0
-        private fun isNewCycle(tick: Int) = tick % Config.ticksPerCycle == 0
+
+        // GAME-EVENT cadence (portal decay + roster churn) — the short ~6-checkpoint beat, UNCHANGED.
+        private fun isGameEventCycle(tick: Int) = tick % Config.ticksPerCycle == 0
+
+        // SCORING/display cycle end: Ingress's 35 checkpoints. Drives Checkpoint.isCycleEnd (winner dots/lines)
+        // + the deeper cycle sound. `tick > 0` so the very first checkpoint isn't a spurious cycle end.
+        private fun isScoringCycleEnd(tick: Int) = tick > 0 && tick % (Config.checkpointsPerCycle * Config.ticksPerCheckpoint) == 0
+
         fun updateCheckpoints(tick: Int, enlMu: Int, resMu: Int) {
             if (isUpdateStuck(tick)) {
                 World.allAgents.filter { it.action.item == ActionItem.MOVE }
@@ -27,7 +35,7 @@ enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>) {
             }
             if (isNewCheckpoint(tick)) {
                 val cp = Checkpoint(
-                    enlMu, resMu, isNewCycle(tick),
+                    enlMu, resMu, isScoringCycleEnd(tick),
                     World.countPortals(Faction.ENL), World.countPortals(Faction.RES),
                     World.countLinks(Faction.ENL), World.countLinks(Faction.RES),
                     World.countFields(Faction.ENL), World.countFields(Faction.RES),
@@ -45,15 +53,16 @@ enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>) {
                 World.allPortals.toList().forEach { it.erodeByDominance() } // the leader's empire erodes → board reopens
                 // Portal discovery/removal is no longer a checkpoint tick — it's the agent DISCOVERY idle action now
                 // (agent/action/cond/Discoverer, on a wander's arrival); density-driven toward Config.targetPortals.
-                if (cp.isCycleEnd) {
+                // Game events (portal decay + roster churn) stay on the short game-event cadence — NOT the
+                // scoring cycle — so lengthening the scoring cycle doesn't make the board tankier.
+                if (isGameEventCycle(tick)) {
                     removeFrogs()
                     removeSmurfs()
                     factionChange()
-                    Snd.sink.playCycleSound() // headless → NoOpAudio
                     World.allPortals.forEach { it.decay() }
-                } else {
-                    Snd.sink.playCheckpointSound(cp)
                 }
+                // The deeper cycle blip marks a SCORING cycle end (the big milestone); else the checkpoint blip.
+                if (cp.isCycleEnd) Snd.sink.playCycleSound() else Snd.sink.playCheckpointSound(cp) // headless → NoOpAudio
             }
         }
 
