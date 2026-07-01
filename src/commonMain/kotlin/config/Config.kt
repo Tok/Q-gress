@@ -195,7 +195,12 @@ object Config {
 
     const val isHighlighActionLimit = true
     const val vectorSmoothCount = 3
-    const val shadowBlurCount = 3
+
+    // Blur (grid cells) applied to the movement-COST downsample only (passability stays crisp). Kept low so
+    // the bold white footpaths keep their low cost instead of being averaged into grey — the wider it is, the
+    // more thin walkable features (paths) wash out. The vector field is still smoothed post-hoc
+    // ([vectorSmoothCount]), so flow fields stay curvy even at a small blur.
+    const val shadowBlurCount = 1
 
     const val comMessageLimit = 8
     const val topAgentsMessageLimit = 8
