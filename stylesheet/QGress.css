@@ -256,7 +256,7 @@ html, body {
    are the AGENTS table; the PORTALS table (.taPortals, fewer + different columns) overrides them further down,
    so the two no longer have to share a single positional width set.
    AGENTS columns: 1 Lvl, 2 Agent, 3 AP, 4 XMPs, 5 US, 6 Resos, 7 Cubes, 8 Shields, 9 Heat, 10 MHack,
-   11 Virus, 12 Keys, 13 Uniq, 14 Inv, 15 XM, 16 m/s, 17 Action, 18 Portal. */
+   11 JARVIS, 12 ADA, 13 Keys, 14 Uniq, 15 Inv, 16 XM, 17 m/s, 18 Action, 19 Portal. */
 .taTable th:nth-child(1), .taTable td:nth-child(1) { width: 40px; } /* Lvl */
 .taTable th:nth-child(2), .taTable td:nth-child(2) { width: 112px; } /* Agent */
 .taTable th:nth-child(3), .taTable td:nth-child(3) { width: 52px; } /* AP */
@@ -266,15 +266,16 @@ html, body {
 .taTable th:nth-child(7), .taTable td:nth-child(7) { width: 58px; } /* XMPs, US, Resos, Cubes */
 .taTable th:nth-child(8), .taTable td:nth-child(8) { width: 46px; } /* Shields */
 .taTable th:nth-child(9), .taTable td:nth-child(9),
-.taTable th:nth-child(10), .taTable td:nth-child(10),
-.taTable th:nth-child(11), .taTable td:nth-child(11) { width: 44px; } /* Heat, MHack, Virus */
-.taTable th:nth-child(12), .taTable td:nth-child(12),
-.taTable th:nth-child(13), .taTable td:nth-child(13) { width: 40px; } /* Keys, Uniq */
-.taTable th:nth-child(14), .taTable td:nth-child(14) { width: 64px; } /* Inv */
-.taTable th:nth-child(15), .taTable td:nth-child(15) { width: 52px; } /* XM */
-.taTable th:nth-child(16), .taTable td:nth-child(16) { width: 48px; } /* m/s */
-.taTable th:nth-child(17), .taTable td:nth-child(17) { width: 96px; } /* Action */
-.taTable th:nth-child(18), .taTable td:nth-child(18) { width: 150px; } /* Portal */
+.taTable th:nth-child(10), .taTable td:nth-child(10) { width: 44px; } /* Heat, MHack */
+.taTable th:nth-child(11), .taTable td:nth-child(11),
+.taTable th:nth-child(12), .taTable td:nth-child(12) { width: 32px; } /* JARVIS, ADA (dot header + count) */
+.taTable th:nth-child(13), .taTable td:nth-child(13),
+.taTable th:nth-child(14), .taTable td:nth-child(14) { width: 40px; } /* Keys, Uniq */
+.taTable th:nth-child(15), .taTable td:nth-child(15) { width: 64px; } /* Inv */
+.taTable th:nth-child(16), .taTable td:nth-child(16) { width: 52px; } /* XM */
+.taTable th:nth-child(17), .taTable td:nth-child(17) { width: 48px; } /* m/s */
+.taTable th:nth-child(18), .taTable td:nth-child(18) { width: 96px; } /* Action */
+.taTable th:nth-child(19), .taTable td:nth-child(19) { width: 180px; } /* Portal (wider — room for longer names) */
 
 /* PORTALS table columns: 1 Lvl, 2 Faction, 3 Portal, 4 Health, 5 Resos, 6 Mods, 7 Links, 8 Fields, 9 Owner. */
 .taTable.taPortals th:nth-child(1), .taTable.taPortals td:nth-child(1) { width: 40px; } /* Lvl */
@@ -291,18 +292,15 @@ html, body {
     align-items: flex-end;
     height: 11px;
     gap: 1px;
-    margin-right: 3px;
+    margin-left: 3px; /* gap after the leading count; the strip itself pins to the cell's right edge */
     vertical-align: bottom;
+    transform: translateY(-3px); /* nudge the strip + baseline up to sit level with the row's text/count */
+    /* Thin white baseline spanning ALL level slots so the strip shows its full reserved width even with no
+       high-level items yet — the bars grow up from it, and empty levels read as reserved space, not a gap. */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.5);
 }
 .taInvBar {
     width: 2px;
-}
-/* Flip-item indicator: a small faction-coloured dot per type (green JARVIS / blue ADA). */
-.taInvDot {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    align-self: center;
 }
 /* HUD containers — fixed + click-through; only their children opt back into pointer events so the
    map keeps its drag/zoom. Controls on the left, the intel column on the right, a scoreboard strip
@@ -593,6 +591,18 @@ html, body {
     height: 220px;
     overflow: auto;
     padding: 6px 12px;
+}
+/* Per-tab docked height (set via .footer[data-tab] in Footer.activate): the dense tables + the log read fine
+   ~15% shorter, while the AUDIO knobs and the STATS graphs want ~15% more room. Placed BEFORE the .expanded
+   rule below so maximize still wins on the specificity tie. */
+.footer[data-tab="footerAgents"] .footerBody,
+.footer[data-tab="footerPortals"] .footerBody,
+.footer[data-tab="footerLog"] .footerBody {
+    height: 187px;
+}
+.footer[data-tab="footerAudio"] .footerBody,
+.footer[data-tab="footerAi"] .footerBody {
+    height: 253px;
 }
 /* Expanded: pull the footer up to fill the screen up to just below the top toolbar (which is 100px tall,
    z-index 100), for space-hungry tabs (NET viz); the sim keeps running behind it. The reserve MUST clear the
@@ -1739,6 +1749,42 @@ html, body {
     font-size: 12px;
     color: #a0a0a0;
     max-width: 380px;
+    text-align: center;
+}
+/* Free-form place search + editable coord fields on the LOCATION step — glassed to match .topDrop. */
+.onboardSearch,
+.onboardCoord {
+    font-size: 13px;
+    border-radius: 4px;
+    padding: 5px 8px;
+    background: var(--ui-glass-bg);
+    -webkit-backdrop-filter: var(--ui-btn-blur);
+    backdrop-filter: var(--ui-btn-blur);
+    color: #e8e8e8;
+    border: 1px solid var(--ui-glass-border);
+}
+.onboardSearch {
+    width: 380px;
+}
+.onboardSearch::placeholder,
+.onboardCoord::placeholder {
+    color: #808080;
+}
+/* The current location's name/place/country under the box. */
+.onboardLocName {
+    font-family: "Coda", monospace;
+    font-size: 13px;
+    color: #e8e8e8;
+    max-width: 400px;
+    text-align: center;
+}
+.onboardCoords {
+    display: flex;
+    gap: 8px;
+}
+.onboardCoord {
+    width: 110px;
+    font-family: "Coda", monospace;
     text-align: center;
 }
 .onboardMap .miniMapToggle {
