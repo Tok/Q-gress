@@ -3,6 +3,7 @@ package system.display
 import World
 import agent.Agent
 import agent.Faction
+import agent.NonFaction
 import agent.StuckTracker
 import agent.action.ActionIcons
 import agent.action.ActionItem
@@ -92,6 +93,7 @@ object Scene3D {
     private const val NPC_DROP_S = 1.7 // seconds for an NPC to fall in from the sky on first appearance
     private const val NPC_DROP_HEIGHT = 650.0 // metres an NPC drops from (well off-screen → a long plunge in)
     internal const val INDICATOR_Z = 5.0 // raised to clear the head now the indicator is ~3× bigger
+    private const val OFFSCREEN_POLE_H = 400.0 // metres: height of a debug off-map-destination marker pole
     private const val INDICATOR_SIZE = 4.8 // action label above an agent (was 1.6 — barely visible)
     private const val INDICATOR_THICK = 1.2 // action-coin thickness (the extruded "wheel" depth)
     private const val COIN_BODY_OPACITY = 0.5 // the coin body (rim + underside) is see-through; the top icon stays solid
@@ -181,6 +183,7 @@ object Scene3D {
     private var fieldsGroup: dynamic = null
     private var markerGroup: dynamic = null // build-preview marker
     private var borderGroup: dynamic = null // playable-area boundary outline
+    private var debugGroup: dynamic = null // ?debug / menu toggle: NPC off-map destination markers
 
     /** Draw the play-area boundary (wall + outline + dim mask). Off for the title scene. */
     var showBorder = true
@@ -264,6 +267,7 @@ object Scene3D {
         indicatorsGroup = Three.Group().also { newScene.add(it) }
         markerGroup = Three.Group().also { newScene.add(it) }
         borderGroup = Three.Group().also { newScene.add(it) }
+        debugGroup = Three.Group().also { newScene.add(it) }
         XmpBurst.register(newScene)
         FieldFx.register(newScene)
         ShatterFx.register(newScene)
@@ -387,6 +391,7 @@ object Scene3D {
         clear(indicatorsGroup)
         World.allAgents.forEach { addAgent(it) }
         refreshNameTicker() // keep the selected portal's name ring positioned (level-ups / terrain resample)
+        buildOffscreenDebug() // ?debug / menu: NPC off-map destination markers
         teardownGone(Spawns.endSync())
     }
 
@@ -1091,6 +1096,28 @@ object Scene3D {
         val marker = Three.Mesh(stuckGeo, Materials.solid("#ff2d2d"))
         place(marker.asDynamic(), x, y, gz + INDICATOR_Z + 3.5)
         indicatorsGroup.add(marker)
+    }
+
+    // Debug viz: a tall cyan pole (+ orb on top) at each NPC off-map destination
+    // ([NonFaction.offscreenDestinations]), so their spread around the border is visible at a glance. Toggled
+    // by `?debug` or the "NPC destinations" menu checkbox; rebuilt each sync (the ring rarely changes, cheap).
+    var showOffscreenDebug = false
+    private val offscreenPoleGeo: dynamic by lazy { Three.CylinderGeometry(2.0, 2.0, OFFSCREEN_POLE_H, 8) }
+    private val offscreenOrbGeo: dynamic by lazy { Three.SphereGeometry(8.0, 12, 12) }
+    private fun buildOffscreenDebug() {
+        val g = debugGroup ?: return
+        g.clear()
+        if (!(Debug.enabled || showOffscreenDebug)) return
+        NonFaction.offscreenDestinations().forEach { p ->
+            val base = groundZ(p)
+            val pole = Three.Mesh(offscreenPoleGeo, Materials.solid("#00e5ff"))
+            pole.asDynamic().rotation.x = PI / 2.0 // stand the Y-axis cylinder up on world Z
+            place(pole.asDynamic(), sceneX(p), sceneY(p), base + OFFSCREEN_POLE_H / 2.0) // centred → base at ground
+            g.add(pole)
+            val orb = Three.Mesh(offscreenOrbGeo, Materials.solid("#00e5ff"))
+            place(orb.asDynamic(), sceneX(p), sceneY(p), base + OFFSCREEN_POLE_H)
+            g.add(orb)
+        }
     }
 
     /**

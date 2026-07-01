@@ -189,8 +189,8 @@ data class NonFaction(
         private val OFFSCREEN_SPACING = minOf(Dim.width, Dim.height) * 0.5
         private const val MIN_OFFSCREEN = 12
         private const val MAX_OFFSCREEN = 20 // more off-map targets → the crowd spreads over more destinations
-        private const val OFFSCREEN_DEST_CHANCE = 0.85 // mostly cross the map edge-to-edge; the rest head to portals
-        private const val FAR_PORTAL_CHANCE = 0.7 // of the non-offscreen remainder, this fraction heads to a FAR portal
+        private const val OFFSCREEN_DEST_CHANCE = 0.6 // cross the map edge-to-edge; the rest (now 40%) head to a portal
+        private const val FAR_PORTAL_CHANCE = 0.5 // of the non-offscreen remainder, half head to a FAR portal, half a random one
         private const val NPC_ATTRACT_RADIUS = 70.0 // idle/recruiting agents draw passing NPCs within this many sim px
         private const val NPC_ATTRACT_RADIUS_SQ = NPC_ATTRACT_RADIUS * NPC_ATTRACT_RADIUS
 

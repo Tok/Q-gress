@@ -12,6 +12,7 @@ import org.w3c.dom.events.Event
 import system.building.BuildingTransparency
 import system.display.PassabilityOverlay
 import system.display.PortalNameTicker
+import system.display.Scene3D
 import system.display.SunController
 import system.display.VectorFieldOverlay
 import system.display.fx.DamageNumberFx
@@ -69,6 +70,9 @@ object MenuControls {
             },
         )
         menu.append(checkbox("fpsToggle", "FPS", FpsMeter.displayEnabled) { FpsMeter.setDisplay(it) })
+        menu.append(
+            checkbox("npcDestToggle", "NPC destinations (debug)", Scene3D.showOffscreenDebug) { Scene3D.showOffscreenDebug = it },
+        )
         menu.append(slider("Buildings transparency", BuildingTransparency.default()) { BuildingTransparency.set(it) })
         menu.append(slider("Building shake", Config.buildingShakeMultiplier, Spec(0.0..2.0, 0.1)) { Config.buildingShakeMultiplier = it })
         menu.append(sectionHead("Graphics"))
