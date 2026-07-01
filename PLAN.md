@@ -30,6 +30,13 @@ and a field that can grow, so settle the shape here first.
   reason at both the local-tactical and roster/strategic level). *Open:* the off-site model (pure stats vs
   coarse grid), travel/relocation cost, and how cross-site links/fields score. Underpins the per-agent skill /
   colony-attribute features below.
+- [ ] **Colony-management / per-agent attributes** *(the per-entity layer under the roster — promoted out of the
+  icebox)*. Per-entity attributes (endurance/speed/agility/radius on `agent/Skills` + `AgentSize`); **rarity-
+  tiered agents** (randomised attributes, **no gambling UX** — manage composition, not a gacha); **items**
+  (skateboards, **jet-skis** → makes marina/bridge presets playable, power-banks, second phones); **battery %**
+  (depleted phone → the player leaves). Pairs with the 3D humanoid work. This is the substrate the *Gameplay*
+  skill features build on — **glyph hacking** (glyph skill), the **aim skill**, and **recruiting items** all read
+  or extend `agent/Skills`, so settle the attribute model here before those land.
 
 ## Perf — the big deferred lever
 - [ ] **three.js mesh instancing / merging / persistent sync.** `sync()` clear+recreates the **portal / field /
@@ -54,7 +61,7 @@ and a field that can grow, so settle the shape here first.
 - [ ] **Pathfinding scalability.** Flow fields are still **per-portal full-map**: the want is multi-mode nav
   (flow fields near, cheap nav far) + a coarser `pathResolution` lever for very large maps, plus a field viz.
 - [ ] **Humanoid glTF models** — people are head-sized spheres at head height today; swap in real models
-  (pairs with the colony-management attributes, icebox).
+  (pairs with the colony-management attributes under *Grand game*).
 
 ## UI
 - [ ] **Schematic base view** (reuse `SHADOW_STYLE`) + more toggleable info overlays (e.g. a
@@ -152,11 +159,6 @@ does **not** replace the per-agent `ActionSelector`. (Training/eval is pinned to
   - **A directional sun** (with time-of-day): a real key light so chrome poles cast highlights + terrain gets
     shading; plus a render-to-cubemap/PMREM of sky+terrain so chrome/glass reflect the *actual* scene (today a
     static gradient env in `Materials`). Sun direction drives shadow mood.
-- **Colony-management / roster.** Per-entity attributes (endurance/speed/agility/radius on `agent/Skills` +
-  `AgentSize`); **rarity-tiered agents** (randomised attributes, **no gambling UX** — manage composition, not a
-  gacha); **items** (skateboards, **jet-skis** → makes marina/bridge presets playable, power-banks, second
-  phones); **battery %** (depleted phone → the player leaves). Pairs with the 3D humanoid work + the Grand-game
-  roster layer.
 - **Movement/pathfinding rework.** Derive walkability/penalties from **vector-tile road geometry** (features /
   GeoJSON) and/or a navmesh instead of reading rasterized shadow pixels — decouples the sim from the screen and
   unblocks dynamic zoom + a pitched/3D camera. Natural partner of the functional-core split. (The
