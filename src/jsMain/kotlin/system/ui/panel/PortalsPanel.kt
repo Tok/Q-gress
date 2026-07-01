@@ -10,6 +10,7 @@ import system.map.MapCamera
 import system.ui.Footer
 import system.ui.Inspector
 import system.ui.el
+import util.Profiler
 
 /**
  * The **PORTALS** footer tab: every portal (both factions + neutral) as a DOM table, styled like the AGENTS
@@ -53,11 +54,26 @@ object PortalsPanel {
     private var tbody: HTMLElement? = null
     private val headerCells = mutableListOf<HTMLElement>()
 
-    /** Rebuild the table body from the current portals (sorted by the chosen column). Skips the rebuild when the
-     *  PORTALS tab is hidden — the table is DOM-heavy and was rebuilt every frame even off-screen. */
+    // The table is DOM-heavy (a full teardown + rebuild of every row/cell); cap the periodic refresh to ~5 Hz
+    // instead of every frame — the stats it shows don't need per-frame updates. Interactions (sort) call
+    // rebuild() directly so they stay instant. [Profiler.nowMs] is the wall clock (0 outside the browser).
+    private const val TABLE_REFRESH_MS = 200.0
+    private var lastRebuildMs = 0.0
+
+    /** Skips the rebuild when the PORTALS tab is hidden — the table is DOM-heavy and was rebuilt every frame even
+     *  off-screen — and throttles the periodic refresh to [TABLE_REFRESH_MS]. Re-activating the tab rebuilds at
+     *  once (the clock isn't advanced while hidden). */
     fun update() {
         ensure()
         if (!Footer.isActive("portals")) return
+        val now = Profiler.nowMs()
+        if (now - lastRebuildMs < TABLE_REFRESH_MS) return
+        lastRebuildMs = now
+        rebuild()
+    }
+
+    /** Rebuild the table body from the current portals (sorted by the chosen column). */
+    private fun rebuild() {
         val body = tbody ?: return
         refreshHeaders()
         body.textContent = ""
@@ -95,7 +111,7 @@ object PortalsPanel {
             sortIndex = idx
             sortAsc = col.str != null
         }
-        update() // immediate feedback (even while the sim is paused)
+        rebuild() // immediate feedback (even while the sim is paused) — bypasses the update() throttle
     }
 
     private fun refreshHeaders() {

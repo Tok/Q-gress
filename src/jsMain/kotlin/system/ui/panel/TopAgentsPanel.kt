@@ -20,6 +20,7 @@ import system.map.MapCamera
 import system.ui.Footer
 import system.ui.Inspector
 import system.ui.el
+import util.Profiler
 
 /**
  * The **AGENTS** footer tab: a leaderboard of agents (both factions mixed) as a DOM table. Columns: #, XM, AP,
@@ -112,11 +113,22 @@ object TopAgentsPanel {
     private var tbody: HTMLElement? = null
     private val headerCells = mutableListOf<HTMLElement>()
 
+    // The table is DOM-heavy (a full teardown + rebuild of every row/cell); cap the periodic refresh to ~5 Hz
+    // instead of every frame — the stats it shows don't need per-frame updates. Interactions (sort) call
+    // rebuild() directly so they stay instant. [Profiler.nowMs] is the wall clock (0 outside the browser).
+    private const val TABLE_REFRESH_MS = 200.0
+    private var lastRebuildMs = 0.0
+
     /** Rebuild the table body from the current roster (sorted by the chosen column). Skips the rebuild when the
-     *  AGENTS tab is hidden — the table is DOM-heavy and was rebuilt every frame even off-screen. */
+     *  AGENTS tab is hidden — the table is DOM-heavy and was rebuilt every frame even off-screen — and throttles
+     *  the periodic refresh to [TABLE_REFRESH_MS]. Re-activating the tab rebuilds at once (the clock isn't
+     *  advanced while hidden). */
     fun update() {
         ensure()
         if (!Footer.isActive("agents")) return
+        val now = Profiler.nowMs()
+        if (now - lastRebuildMs < TABLE_REFRESH_MS) return
+        lastRebuildMs = now
         rebuild()
     }
 
@@ -165,7 +177,7 @@ object TopAgentsPanel {
             sortIndex = idx
             sortAsc = col.str != null
         }
-        update() // immediate feedback (even while the sim is paused)
+        rebuild() // immediate feedback (even while the sim is paused) — bypasses the update() throttle
     }
 
     private fun refreshHeaders() {
