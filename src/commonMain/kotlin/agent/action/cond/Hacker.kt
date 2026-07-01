@@ -16,6 +16,8 @@ object Hacker : ConditionalAction {
 
     override fun performAction(agent: Agent): Agent {
         agent.action.start(actionItem)
+        agent.actionPortal.retaliate(agent) // an enemy portal zaps the intruder up front — as the hack STARTS,
+        // not once its collar spin finishes (no-op on a friendly/neutral portal)
         val hackResult = agent.actionPortal.tryHack(agent)
         // Sound keyed by portal + synced to the collar spin (re-hack interrupts it). The audio shell scales the
         // base spin time by sim speed so it tracks the animation; slots drive the per-reso clicks.
@@ -37,7 +39,6 @@ object Hacker : ConditionalAction {
                 )
             }
         }
-        agent.actionPortal.retaliate(agent) // an enemy portal zaps the intruder (no-op on friendly/neutral)
         return agent
     }
 }

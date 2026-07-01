@@ -15,6 +15,8 @@ object Glypher : ConditionalAction {
 
     override fun performAction(agent: Agent): Agent {
         agent.action.start(actionItem)
+        agent.actionPortal.retaliate(agent) // an enemy portal zaps the glypher up front, as the glyph STARTS
+        // (no-op on a friendly/neutral portal)
         val glyphResult = agent.actionPortal.tryGlyph(agent)
         // Glyph spin grows with portal level (and, later, agent skill); sound synced to that spin, keyed
         // by portal so a re-hack interrupts it; slots drive the per-reso clicks.
