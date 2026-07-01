@@ -50,6 +50,7 @@ import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.atan
 import kotlin.math.cos
+import kotlin.math.max
 import kotlin.math.pow
 import kotlin.math.roundToInt
 import kotlin.math.sin
@@ -132,6 +133,13 @@ object Scene3D {
     private const val SHIELD_WAVE_RANGE_FRAC = 0.6 // a blast ripples shields within this × the XMP's range
     private const val DAMAGE_NUMBER_GAP = 2.0 // start the damage number this far above the flask top
     private const val MAX_BUILDING_COLLIDERS = 1500 // cap on static building boxes added to the FX worlds
+
+    // Debris (glass shards / damage digits) only ever spawns AT a portal, so a building box whose nearest edge is
+    // farther than debris can travel from EVERY portal can never catch a piece — cull it (both FX worlds re-sweep
+    // every static box each physics step, so fewer boxes = cheaper broadphase). 60 m clears the worst case — a
+    // resonator blast-flung at ~18 m/s and bouncing — with margin; blasts also happen only at portals, so re-flung
+    // debris stays within range of some portal too.
+    private const val COLLIDER_PORTAL_RADIUS = 60.0
     internal const val HIGHLIGHT_COLOR = "#f0f0f0" // selection: off-tint grayscale (no new hues)
     internal const val OVERLAY_Z = 0.2 // passability quad just above ground
     private const val MARKER_R = 10.0 // build-preview marker radius (metres)
@@ -743,6 +751,8 @@ object Scene3D {
         val centreGroundZ = groundZ(Pos(Sim.width / 2, Sim.height / 2))
         DamageNumberFx.setGroundZ(centreGroundZ)
         ShatterFx.setGroundZ(centreGroundZ)
+        // Debris only spawns at portals → keep only the boxes within shard-travel range of one (see below).
+        val portalPts = World.allPortals.map { doubleArrayOf(sceneX(it.location), sceneY(it.location)) }
         val total = (feats.length as? Int) ?: return
         var added = 0
         var i = 0
@@ -752,11 +762,12 @@ object Scene3D {
             // Default a missing/zero render_height to ~8 m (same as the extrusion default) so small or
             // un-tagged buildings still get a collider and debris can't fall straight through them.
             val h = (f.properties?.render_height as? Double)?.takeIf { it > 0.5 } ?: 8.0
-            if (addBuildingBox(f.geometry, h)) added++
+            if (addBuildingBox(f.geometry, h, portalPts)) added++
         }
+        console.log("building colliders: $added of $total kept (within ${COLLIDER_PORTAL_RADIUS.toInt()}m of a portal)")
     }
 
-    private fun addBuildingBox(geom: dynamic, h: Double): Boolean {
+    private fun addBuildingBox(geom: dynamic, h: Double, portalPts: List<DoubleArray>): Boolean {
         val bb = lngLatBBox(geom) ?: return false
         val c0 = lngLatToSceneXY(bb[0], bb[1]) // exact float corners (no integer-cell rounding)
         val c1 = lngLatToSceneXY(bb[2], bb[3])
@@ -765,12 +776,24 @@ object Scene3D {
         val hx = abs(c1[0] - c0[0]) / 2.0
         val hy = abs(c1[1] - c0[1]) / 2.0
         if (hx < 0.3 || hy < 0.3) return false // skip only truly degenerate footprints
+        if (!boxNearAnyPortal(cx, cy, hx, hy, portalPts)) return false // out of debris range → nothing can land on it
         // Sit the collider on the terrain (base at the building's ground), not at sea level z=0 — else it
         // sits ~hundreds of metres below the actual building and debris/digits fall straight through.
         val cz = groundZAtLngLat((bb[0] + bb[2]) / 2.0, (bb[1] + bb[3]) / 2.0) + h / 2.0
         ShatterFx.addStaticBox(cx, cy, cz, hx, hy, h / 2.0)
         DamageNumberFx.addStaticBox(cx, cy, cz, hx, hy, h / 2.0)
         return true
+    }
+
+    // True if the box's NEAREST edge is within [COLLIDER_PORTAL_RADIUS] of any portal (the box→portal AABB
+    // distance, so a large footprint isn't wrongly culled by its centre being out of range).
+    private fun boxNearAnyPortal(cx: Double, cy: Double, hx: Double, hy: Double, portalPts: List<DoubleArray>): Boolean {
+        val rSq = COLLIDER_PORTAL_RADIUS * COLLIDER_PORTAL_RADIUS
+        return portalPts.any { p ->
+            val dx = max(0.0, abs(p[0] - cx) - hx) // 0 when the portal is inside the box on this axis
+            val dy = max(0.0, abs(p[1] - cy) - hy)
+            dx * dx + dy * dy <= rSq
+        }
     }
 
     // Lng/lat bounding box [minLng, minLat, maxLng, maxLat] of a GeoJSON polygon, or null if empty.

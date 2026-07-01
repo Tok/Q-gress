@@ -38,19 +38,6 @@ and a field that can grow, so settle the shape here first.
   skill features build on — **glyph hacking** (glyph skill), the **aim skill**, and **recruiting items** all read
   or extend `agent/Skills`, so settle the attribute model here before those land.
 
-## Perf — the big deferred lever
-- [ ] **three.js mesh instancing / merging / persistent sync.** `sync()` clear+recreates the **portal / field /
-  agent / XM-mote** groups **every tick** — that per-tick mesh construction (`setValueM4` / `Object3D` /
-  `generateUUID`) is the steady-state cost. The diff-sync pattern (reuse + reposition, add new, remove gone —
-  **already done for the link meshes + NPC spheres**) is the lever; extend it to **portals** (poles/orbs/resos/
-  mods — the heaviest group, but entangled with grow-in/hack/tumble animation → persist the static skeleton,
-  keep the animated bits updating) and **fields** (+ agents / motes). Also **world-gen** mesh construction
-  (profiled: portals + agents/NPCs dominate a ~17 s gen). True GPU `InstancedMesh` is **not started** anywhere
-  and is blocked for links (custom `GlassShader` needs `instanceMatrix`) + resos (per-frame animation); viable
-  only for standard-material static parts if draw calls turn out to dominate. The big presets (Large/Giant) are
-  the runtime-FPS driver to profile on a real GPU. **Reprofile when things change.** Tooling: `util/Profiler`,
-  `?debug` `FpsMeter`, `./scripts/profiler.sh` (→ `build/profiles/*.cpuprofile`).
-
 ## 3D / rendering
 - [ ] **Buildings — per-building replacement.** *(Verified still pending.)* Both sets render (ours inset on top,
   MapLibre fills gaps) and z-fighting is today avoided only **geometrically** (footprint inset + roof drop) with
