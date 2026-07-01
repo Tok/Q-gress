@@ -169,6 +169,22 @@ object Scene3D {
     private var indicatorsGroup: dynamic = null // action-indicator sprites (excluded from raycast)
     private var npcsGroup: dynamic = null
 
+    // A faction agent's persistent meshes: head sphere (agentsGroup) + XM-bar backing + optional action coin +
+    // optional XM-bar fill (all indicatorsGroup), reused/repositioned/retinted across ticks instead of
+    // clear+recreate. Tracked [headColor] (selection retint) + [coinItem] (the action the coin renders, null = no
+    // coin) drive in-place material swaps + add/remove.
+    private class AgentMeshes(
+        val sphere: dynamic,
+        val energyBack: dynamic,
+        var coin: dynamic,
+        var fill: dynamic,
+        var headColor: String,
+        var coinItem: ActionItem?,
+    )
+
+    // Persistent agent meshes keyed by "agent:<name>". Cleared in onAdd with the groups.
+    private val agentMeshes = mutableMapOf<String, AgentMeshes>()
+
     // Persistent NPC head spheres keyed by npc.id — reused + repositioned across ticks instead of clear+recreate
     // every tick (722+ NPCs on a big map = a huge per-tick allocation). Cleared in onAdd with the group.
     private val npcMeshes = mutableMapOf<Int, dynamic>()
@@ -187,6 +203,7 @@ object Scene3D {
     private var markerGroup: dynamic = null // build-preview marker
     private var borderGroup: dynamic = null // playable-area boundary outline
     private var debugGroup: dynamic = null // ?debug / menu toggle: NPC off-map destination markers
+    private var stuckGroup: dynamic = null // ?debug: stuck/loop markers over agents + NPCs (cleared each sync)
 
     /** Draw the play-area boundary (wall + outline + dim mask). Off for the title scene. */
     var showBorder = true
@@ -279,9 +296,11 @@ object Scene3D {
         xmMotes.clear() // persistent XM-mote cache belongs to the OLD group — drop it with the rebuild
         agentsGroup = Three.Group().also { newScene.add(it) }
         indicatorsGroup = Three.Group().also { newScene.add(it) }
+        agentMeshes.clear() // persistent agent cache belongs to the OLD groups — drop it with the rebuild
         markerGroup = Three.Group().also { newScene.add(it) }
         borderGroup = Three.Group().also { newScene.add(it) }
         debugGroup = Three.Group().also { newScene.add(it) }
+        stuckGroup = Three.Group().also { newScene.add(it) }
         XmpBurst.register(newScene)
         FieldFx.register(newScene)
         ShatterFx.register(newScene)
@@ -392,6 +411,7 @@ object Scene3D {
         HackFx.resetBindings() // re-bound below as each portal's reso group is rebuilt
         DeployFx.resetBindings()
         PortalBuilder.resetSyncState() // mod tetras + shield mats are rebuilt by PortalBuilder.buildMods below
+        clear(stuckGroup) // ?debug markers: cleared up front so syncNpcs + syncAgents can re-add this tick's
         clear(portalsGroup)
         World.allPortals.forEach { addPortal(it) }
         syncPoleColliders()
@@ -399,9 +419,7 @@ object Scene3D {
         syncLinks() // persistent: reuse link meshes across ticks (no clear+recreate)
         syncNpcs() // persistent: reuse NPC spheres across ticks (no clear+recreate)
         syncXm() // persistent: reuse XM motes across ticks (no clear+recreate)
-        clear(agentsGroup)
-        clear(indicatorsGroup)
-        World.allAgents.forEach { addAgent(it) }
+        syncAgents() // persistent: reuse agent head + coin + XM-bar meshes across ticks (no clear+recreate)
         refreshNameTicker() // keep the selected portal's name ring positioned (level-ups / terrain resample)
         buildOffscreenDebug() // ?debug / menu: NPC off-map destination markers
         teardownGone(Spawns.endSync())
@@ -1070,45 +1088,95 @@ object Scene3D {
         DamageNumberFx.setPoleColliders(specs)
     }
 
-    private fun addAgent(agent: Agent) {
-        val x = sceneX(agent.pos)
-        val y = sceneY(agent.pos)
-        val gz = groundZ(agent.pos) // walk on the terrain
-        val id = "agent:${agent.name}"
-        val color = if (selected == id) HIGHLIGHT_COLOR else agent.faction.color
-        val sphere = Three.Mesh(headGeo, Materials.solid(color))
-        // Idle-fallback flavour — both pill-less (see ActionItem.isFallback), each with its OWN tell so a stationary
-        // agent never reads as stuck and the two are distinct at a glance: recruiting "jumps" in place (a hard
-        // vertical bob — a lively exchange with the NPC); discovering "runs a small circle" (a horizontal orbit —
-        // scouting the ground). Every other action sits still (its coin says what it's doing). Render-only: the sim
-        // position is untouched, so this never affects gameplay/pathing.
+    /**
+     * Reconcile the faction-agent meshes with [World.allAgents] WITHOUT clear+recreate every tick: reuse each
+     * agent's head sphere (agentsGroup) + XM-bar backing + optional action coin + optional XM-bar fill
+     * (indicatorsGroup), repositioning + retinting in place, creating only new agents and removing gone ones.
+     * Keyed by "agent:<name>". Render-only (the sim position is untouched), so it never affects gameplay/pathing.
+     */
+    private fun syncAgents() {
+        val ag = agentsGroup ?: return
+        val ind = indicatorsGroup ?: return
+        val present = mutableSetOf<String>()
+        World.allAgents.forEach { agent ->
+            val id = "agent:${agent.name}"
+            present.add(id)
+            val x = sceneX(agent.pos)
+            val y = sceneY(agent.pos)
+            val gz = groundZ(agent.pos) // walk on the terrain
+            val color = if (selected == id) HIGHLIGHT_COLOR else agent.faction.color
+            val rec = agentMeshes[id] ?: createAgentMeshes(ag, ind, id, color).also { agentMeshes[id] = it }
+            syncAgentHead(rec, agent, color, x, y, gz)
+            syncAgentCoin(ind, rec, agent, x, y, gz)
+            syncEnergyBar(ind, rec, agent, x, y, gz)
+            if (Debug.enabled && StuckTracker.isStuck(agent.key())) addStuckMarker(x, y, gz)
+        }
+        (agentMeshes.keys - present).forEach { id ->
+            val rec = agentMeshes.remove(id) ?: return@forEach
+            ag.remove(rec.sphere)
+            ind.remove(rec.energyBack)
+            val c = rec.coin
+            if (c != null) ind.remove(c)
+            val f = rec.fill
+            if (f != null) ind.remove(f)
+        }
+    }
+
+    // Retint the head on selection change (selection lights the orb brighter, keeps the faction hue) + reposition
+    // it with its idle-fallback tell: RECRUIT bobs in place, EXPLORE runs a small circle; every other action sits
+    // still (its coin says what it's doing) — so a coin-less bobbing agent at 0 m/s reads as plainly mid-recruit /
+    // roaming, while a coin-bearing one stuck at 0 m/s is sus.
+    private fun syncAgentHead(rec: AgentMeshes, agent: Agent, color: String, x: Double, y: Double, gz: Double) {
+        if (rec.headColor != color) {
+            rec.sphere.material = Materials.solid(color)
+            rec.headColor = color
+        }
         val phase = animMs() / 130.0
         val bob = if (agent.action.item == ActionItem.RECRUIT) abs(sin(phase)) * HEAD_R * 2.6 else 0.0
         val circleR = if (agent.action.item == ActionItem.EXPLORE) HEAD_R * 1.5 else 0.0
-        place(sphere.asDynamic(), x + cos(phase) * circleR, y + sin(phase) * circleR, gz + HEAD_Z + bob)
+        place(rec.sphere, x + cos(phase) * circleR, y + sin(phase) * circleR, gz + HEAD_Z + bob)
+    }
+
+    private fun createAgentMeshes(ag: dynamic, ind: dynamic, id: String, color: String): AgentMeshes {
+        val sphere = Three.Mesh(headGeo, Materials.solid(color))
         tag(sphere.asDynamic(), id)
-        agentsGroup.add(sphere)
-        // Action indicator: a 3D coin/wheel (icon on the round faces) hovering above the head — EXCEPT for the idle
-        // FALLBACK actions (recruiting + exploring/discovering — see ActionItem.isFallback), which show NO coin (just
-        // the head-bob). So a coin-less, bobbing agent at 0 m/s reads as plainly mid-recruit / roaming, while a
-        // coin-bearing one stuck at 0 m/s is sus. WAIT is not a fallback — it shows an empty coin (its glyph is blank).
-        val item = agent.action.item
-        if (!item.isFallback) {
-            val coin = Three.Mesh(indicatorGeo, indicatorMaterial(item, agent.faction))
-            coin.asDynamic().rotation.x = PI / 2 // stand the cylinder's faces up (axis → world Z)
-            place(coin.asDynamic(), x, y, gz + INDICATOR_Z)
-            indicatorsGroup.add(coin)
+        ag.add(sphere)
+        val back = Three.Mesh(energyBarGeo, energyMat("#0a0a0a")) // black backing for the whole XM capacity
+        back.asDynamic().rotation.x = PI / 2 // cylinder axis (Y) → world Z (stand it up)
+        ind.add(back)
+        return AgentMeshes(sphere.asDynamic(), back.asDynamic(), null, null, color, null)
+    }
+
+    // The action indicator: a 3D coin/wheel (icon on the round faces) hovering above the head — EXCEPT for the idle
+    // FALLBACK actions (recruiting + exploring, see ActionItem.isFallback) which show NO coin (just the head-bob).
+    // Added / removed / reskinned as the action changes (WAIT isn't a fallback — it shows an empty coin).
+    private fun syncAgentCoin(ind: dynamic, rec: AgentMeshes, agent: Agent, x: Double, y: Double, gz: Double) {
+        val want = if (agent.action.item.isFallback) null else agent.action.item
+        if (rec.coinItem != want) {
+            val old = rec.coin
+            if (old != null) {
+                ind.remove(old)
+                rec.coin = null
+            }
+            if (want != null) {
+                val coin = Three.Mesh(indicatorGeo, indicatorMaterial(want, agent.faction))
+                coin.asDynamic().rotation.x = PI / 2 // stand the cylinder's faces up (axis → world Z)
+                ind.add(coin)
+                rec.coin = coin.asDynamic()
+            }
+            rec.coinItem = want
         }
-        addEnergyBar(x, y, gz, agent) // XM gauge to the side (height scales with the agent's level)
-        if (Debug.enabled && StuckTracker.isStuck(agent.key())) addStuckMarker(x, y, gz)
+        val c = rec.coin
+        if (c != null) place(c, x, y, gz + INDICATOR_Z)
     }
 
     // ?debug: a vivid marker floating over an entity flagged as stuck/looping (see StuckTracker).
     private val stuckGeo: dynamic by lazy { Three.SphereGeometry(2.2, 8, 8) }
     private fun addStuckMarker(x: Double, y: Double, gz: Double = 0.0) {
+        val g = stuckGroup ?: return
         val marker = Three.Mesh(stuckGeo, Materials.solid("#ff2d2d"))
         place(marker.asDynamic(), x, y, gz + INDICATOR_Z + 3.5)
-        indicatorsGroup.add(marker)
+        g.add(marker)
     }
 
     // Debug viz: a tall cyan pole (+ orb on top) at each NPC off-map destination
@@ -1409,28 +1477,35 @@ object Scene3D {
         Three.MeshBasicMaterial(p)
     }
 
-    private fun addEnergyBar(x: Double, y: Double, gz: Double, agent: Agent) {
+    // Reposition + rescale the reused XM bar: the black backing to the agent's capacity (bar height scales with
+    // XM capacity — at the max, L16+, it's 5× the coin; shorter below), and the faction-coloured fill to its
+    // current XM (created/removed as the bar fills/empties).
+    private fun syncEnergyBar(ind: dynamic, rec: AgentMeshes, agent: Agent, x: Double, y: Double, gz: Double) {
         val cap = agent.xmCapacity()
         val pct = (agent.xm.toDouble() / cap).coerceIn(0.0, 1.0)
-        // Bar height scales with XM capacity: at the max capacity (L16+) it's 5× the coin; shorter below.
         val h = ENERGY_BAR_MAX_H * (cap.toDouble() / MAX_XM_CAPACITY)
-        val bottom = gz + INDICATOR_Z + INDICATOR_THICK / 2.0 + ENERGY_BAR_GAP // stand it centered just above the coin
-        val zc = bottom + h / 2.0
-        // Black backing for the whole capacity…
-        val back = Three.Mesh(energyBarGeo, energyMat("#0a0a0a"))
-        back.asDynamic().rotation.x = PI / 2 // cylinder axis (Y) → world Z (stand it up)
-        back.asDynamic().scale.set(1.0, h, 1.0)
-        place(back.asDynamic(), x, y, zc)
-        indicatorsGroup.add(back)
-        // …faction-coloured fill rising from the bottom for the current XM. It's a hair fatter + longer
-        // than the backing so its caps clear the backing's (no z-fighting at the top when full).
+        val bottom = gz + INDICATOR_Z + INDICATOR_THICK / 2.0 + ENERGY_BAR_GAP // centered just above the coin
+        rec.energyBack.scale.set(1.0, h, 1.0)
+        place(rec.energyBack, x, y, bottom + h / 2.0)
         val fillH = h * pct
         if (fillH > 0.01) {
-            val fill = Three.Mesh(energyBarGeo, energyMat(agent.faction.color))
-            fill.asDynamic().rotation.x = PI / 2
-            fill.asDynamic().scale.set(ENERGY_BAR_FILL_FRAC, fillH + ENERGY_BAR_EPS * 2.0, ENERGY_BAR_FILL_FRAC)
-            place(fill.asDynamic(), x, y, bottom + fillH / 2.0)
-            indicatorsGroup.add(fill)
+            var fill = rec.fill
+            if (fill == null) {
+                val f = Three.Mesh(energyBarGeo, energyMat(agent.faction.color))
+                f.asDynamic().rotation.x = PI / 2
+                ind.add(f)
+                fill = f.asDynamic()
+                rec.fill = fill
+            }
+            // A hair fatter + longer than the backing so its caps clear the backing's (no z-fighting when full).
+            fill.scale.set(ENERGY_BAR_FILL_FRAC, fillH + ENERGY_BAR_EPS * 2.0, ENERGY_BAR_FILL_FRAC)
+            place(fill, x, y, bottom + fillH / 2.0)
+        } else {
+            val f = rec.fill
+            if (f != null) {
+                ind.remove(f)
+                rec.fill = null
+            }
         }
     }
 
