@@ -39,10 +39,11 @@ The open structural focus: functional core / imperative shell, module-by-module,
     effect-dispatch bulk is irreducibly bound to the three.js groups.)
   - **Coverage:** the core is now JVM-measured via Kover (`./scripts/coverage.sh`); the pure tests live in
     `commonTest` and run on both targets. Baseline after the lift: **~60%** over the whole functional core.
-    Two independent levers to raise it, in order:
-    1. **(active) New `commonTest` unit tests** for the hot uncovered paths in the big classes
-       (`Portal`/`Agent`/`World`/`Field`/the `agent.action.cond.*` machine). No further lifting needed — the
-       core is already commonMain. This is the quick, low-risk win.
+    Now at **~83%** after two unit-test batches. Two independent levers to raise it further, in order:
+    1. **(largely done) New `commonTest` unit tests** for the hot paths in the big classes
+       (`Portal`/`Agent`/`World`/`NonFaction`/`Movement`/the `agent.action.cond.*` machine + item damage/deploy).
+       No lifting needed — the core is already commonMain. Remaining bits are diminishing-returns granular
+       gaps (e.g. `Recharger.performAction`'s positive path, `Agent.recoverIfStuck`'s re-target branch).
     2. **(optional, later) Lift the `SimRunner` cluster** so the *existing* integration tests
        (`SimRunnerTest`/`TournamentTest`/`EvolutionTest`/`WorldSnapshotTest`) run on the JVM too. That cluster
        (`ai.SimRunner`, `system.{Cycle,WorldSnapshot,Simulation}`, `ai.{Tournament,Observation}`, `ai.net.*`)
