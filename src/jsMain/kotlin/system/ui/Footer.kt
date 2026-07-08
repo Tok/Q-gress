@@ -23,7 +23,6 @@ object Footer {
     private var active = AGENTS_ID
     private var collapsed = false
     private var expanded = false
-    private var autoExpanded = false // expansion driven by entering a space-hungry tab (NET), not a manual click
     private val tabButtons = mutableMapOf<String, HTMLElement>()
     private var rootEl: HTMLElement? = null
     private var body: HTMLElement? = null
@@ -97,7 +96,6 @@ object Footer {
         max.title = "Expand / restore the panel"
         max.onclick = {
             expanded = !expanded
-            autoExpanded = false // the user took manual control of the size
             if (expanded) collapsed = false // expanding always reveals the body
             applyState()
             // ONLY the arrow's full-expand collapses the side HUD columns (restored when it drops back to normal);
@@ -132,21 +130,13 @@ object Footer {
 
     private fun activate(bodyId: String) {
         active = bodyId
-        rootEl?.setAttribute("data-tab", bodyId) // drives the per-tab docked body height (see .footer[data-tab] CSS)
+        rootEl?.setAttribute("data-tab", bodyId)
         tabs.forEach { (_, id) ->
             (document.getElementById(id) as? HTMLElement)?.style?.display = if (id == bodyId) "block" else "none"
             tabButtons[id]?.let { if (id == bodyId) it.classList.add("active") else it.classList.remove("active") }
         }
-        // The BRAINS tab wants the whole screen — auto-expand on entry, auto-restore on leave (unless the
-        // player has since taken manual control of the size, in which case we leave their choice alone).
-        if (bodyId == BRAINS_ID) {
-            expanded = true
-            collapsed = false
-            autoExpanded = true
-        } else if (autoExpanded) {
-            expanded = false
-            autoExpanded = false
-        }
+        // Every tab now docks to the SAME height (see .footerBody CSS) — no per-tab auto-expand, so switching
+        // tabs (or entering BRAINS) never resizes the footer; the maximize toggle is the only size control.
         applyState()
     }
 

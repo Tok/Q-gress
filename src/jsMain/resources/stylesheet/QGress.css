@@ -636,18 +636,8 @@ html, body {
     overflow: auto;
     padding: 6px 12px;
 }
-/* Per-tab docked height (set via .footer[data-tab] in Footer.activate): the dense tables + the log read fine
-   ~15% shorter, while the AUDIO knobs and the STATS graphs want ~15% more room. Placed BEFORE the .expanded
-   rule below so maximize still wins on the specificity tie. */
-.footer[data-tab="footerAgents"] .footerBody,
-.footer[data-tab="footerPortals"] .footerBody,
-.footer[data-tab="footerLog"] .footerBody {
-    height: 187px;
-}
-.footer[data-tab="footerAudio"] .footerBody,
-.footer[data-tab="footerAi"] .footerBody {
-    height: 253px;
-}
+/* Every tab docks to the SAME 220px height (above) — switching tabs never resizes the footer. Sparse tabs have
+   spare room; denser ones (tables / STATS graphs / AUDIO knobs) scroll within it. Maximize for the full view. */
 /* Expanded: pull the footer up to fill the screen up to just below the top toolbar (which is 100px tall,
    z-index 100), for space-hungry tabs (NET viz); the sim keeps running behind it. The reserve MUST clear the
    toolbar so the footer header — with the maximize/collapse buttons — stays clickable (it sits at the top of
