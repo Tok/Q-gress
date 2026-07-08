@@ -165,7 +165,7 @@ kotlin {
                 // Cooperative async for the heat-map / vector-field calc (non-blocking portal creation).
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
                 // three.js is bundled via webpack (was a UMD CDN <script>); npm/ESM unlocks GLTFLoader.
-                implementation(npm("three", "0.160.0"))
+                implementation(npm("three", "0.185.1"))
                 // cannon-es: rigid-body physics for the glass shards (tumble + settle).
                 implementation(npm("cannon-es", "0.20.0"))
             }
