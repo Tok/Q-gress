@@ -66,7 +66,11 @@ object ShadowGridBuilder {
         // circle-aware ([inCircle]) so it never carves a corridor through an on-screen cell the round mask
         // then blocks — which used to re-sever corridors and re-fragment the grid. Mask AFTER (now a no-op on
         // connectivity, since no corridor rides an out-of-circle cell) so walkability/flow truly stay in the circle.
-        val grid = maskToCircle(GridConnectivity.connectIslands(rawGrid, w, h, inCircle(w, h)), w, h)
+        val connected = GridConnectivity.connectIslands(rawGrid, w, h, inCircle(w, h))
+        val grid = maskToCircle(connected, w, h)
+        // Ambient NPCs navigate the UNMASKED (pre-mask) grid so they roam the whole map — the round-arena moat
+        // is a wall only for agents (masked [grid] + clampToPlayable), never for NPCs (see [World.npcGrid]).
+        World.npcGrid = connected
         World.walkability = GridConnectivity.walkability(grid, w, h)
         console.log(
             "grid built: walkability ${(World.walkability * 100).toInt()}% (${GridConnectivity.components(

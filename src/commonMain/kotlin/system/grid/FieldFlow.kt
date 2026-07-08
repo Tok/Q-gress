@@ -1,5 +1,7 @@
 package system.grid
 
+import World
+import extension.Grid
 import extension.VectorField
 import util.data.Pos
 
@@ -18,10 +20,13 @@ import util.data.Pos
  */
 interface FieldFlow {
     /**
-     * Request the flow field to [destination], delivering it to [onReady] when ready. [onReady] runs inline
-     * (same call) for the synchronous/headless sink, on a later frame for the async/browser sink, or not at
-     * all when fields are skipped — so a caller that needs the value synchronously must read its own cache
-     * after this returns (it'll be populated only in the inline case), else use [VectorField.EMPTY].
+     * Request the flow field to [destination] over [grid], delivering it to [onReady] when ready. [onReady]
+     * runs inline (same call) for the synchronous/headless sink, on a later frame for the async/browser sink,
+     * or not at all when fields are skipped — so a caller that needs the value synchronously must read its own
+     * cache after this returns (it'll be populated only in the inline case), else use [VectorField.EMPTY].
+     *
+     * [grid] defaults to the masked [World.gridOrEmpty] (agents/portals stay in the round arena); ambient NPCs
+     * pass [World.npcGrid] (unmasked) so they route clear across the whole map.
      */
-    fun compute(destination: Pos, onReady: (VectorField) -> Unit)
+    fun compute(destination: Pos, grid: Grid = World.gridOrEmpty, onReady: (VectorField) -> Unit)
 }

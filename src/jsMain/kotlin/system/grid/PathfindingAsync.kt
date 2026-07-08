@@ -2,6 +2,7 @@ package system.grid
 
 import World
 import config.Config
+import extension.Grid
 import extension.VectorField
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.delay
@@ -17,11 +18,12 @@ import util.data.toShadow
  * only the yield cadence differs from [Pathfinding.computeFieldSync].
  */
 object PathfindingAsync {
-    /** Async (browser): yields to the frame between chunks so a full-grid fill never freezes rendering. */
-    fun computeFieldAsync(destination: Pos, onReady: (VectorField) -> Unit) {
+    /** Async (browser): yields to the frame between chunks so a full-grid fill never freezes rendering. [grid]
+     *  defaults to the masked [World.grid]; NPC callers pass the unmasked [World.npcGrid]. */
+    fun computeFieldAsync(destination: Pos, grid: Grid = World.grid, onReady: (VectorField) -> Unit) {
         MainScope().launch {
             val start = Profiler.nowMs()
-            val cells = Pathfinding.Cells(World.grid)
+            val cells = Pathfinding.Cells(grid)
             val heat = generateHeat(cells, destination)
             val (re, im) = Pathfinding.buildVectors(cells, heat, destination)
             val rawRe = re.copyOf()

@@ -83,10 +83,11 @@ object Pathfinding {
 
     // --- public entry point ------------------------------------------------------------------------------
 
-    /** Compute the flow field to [destination] inline (no coroutine, no frame-yielding). The jsMain
-     *  [PathfindingAsync.computeFieldAsync] is the frame-yielding twin for the live browser world-gen. */
-    fun computeFieldSync(destination: Pos): VectorField {
-        val cells = Cells(World.grid)
+    /** Compute the flow field to [destination] over [grid] inline (no coroutine, no frame-yielding). The jsMain
+     *  [PathfindingAsync.computeFieldAsync] is the frame-yielding twin for the live browser world-gen. [grid]
+     *  defaults to the masked [World.grid]; NPC callers pass the unmasked [World.npcGrid]. */
+    fun computeFieldSync(destination: Pos, grid: Grid = World.grid): VectorField {
+        val cells = Cells(grid)
         val heat = generateHeatSync(cells, destination)
         val (re, im) = buildVectors(cells, heat, destination)
         val rawRe = re.copyOf()

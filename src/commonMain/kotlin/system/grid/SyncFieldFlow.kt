@@ -1,6 +1,7 @@
 package system.grid
 
 import config.Config
+import extension.Grid
 import extension.VectorField
 import util.data.Pos
 
@@ -12,7 +13,7 @@ import util.data.Pos
  * the frame-yielding jsMain [PathFieldFlow] instead.
  */
 object SyncFieldFlow : FieldFlow {
-    override fun compute(destination: Pos, onReady: (VectorField) -> Unit) {
-        if (Config.headlessFieldCompute) onReady(Pathfinding.computeFieldSync(destination))
+    override fun compute(destination: Pos, grid: Grid, onReady: (VectorField) -> Unit) {
+        if (Config.headlessFieldCompute) onReady(Pathfinding.computeFieldSync(destination, grid))
     }
 }

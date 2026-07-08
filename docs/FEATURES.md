@@ -334,6 +334,15 @@ Commit hashes are illustrative pointers, not exhaustive.
   gentle drift, not a route). The ring **distance scales with the field radius** (capped just inside the
   off-screen grid band) so it doesn't hug the edge on a giant map. The rectangle keeps its per-edge even
   spacing + walkable filter.
+- **NPCs walk *through* the map** (`World.npcGrid`): ambient NPCs navigate an **unmasked** copy of the grid
+  (the pre-`maskToCircle` build product), so the round-arena moat is **not** a wall for them — they route
+  clear across the whole map, edge to edge, from one off-map destination to another. The play-field border
+  confines only **agents** (the masked `World.grid` + `Movement.clampToPlayable`). Implemented by threading a
+  `grid` through the flow-field seam (`FieldFlow.compute(destination, grid, onReady)`, default masked
+  `World.grid`); `NonFaction.getOrCreateVectorField` passes `World.npcGrid`, portals/agents use the default.
+  The debug **"NPC destinations"** marker toggle honours the menu checkbox (not just `?debug`), and the
+  passability / movement-penalty overlays now render the **off-screen band** too, so you can see the off-map
+  destinations sit on passable ground.
 - **Plausible agent handles** (`util/NameGen`): Ingress-style names from themed word banks (per-faction
   flavour + adjectives/nouns/titles), CamelCase/snake/dot styling, light leet, numeric + `xX_…_Xx`
   wraps, and a location token — deduped per game. Replaces the old gibberish generator.

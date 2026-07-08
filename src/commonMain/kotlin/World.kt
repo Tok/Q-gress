@@ -43,8 +43,30 @@ object World {
     lateinit var grid: Grid
     var walkability = 0.0 // fraction of on-screen cells that are passable (set at grid build)
 
+    // The grid AMBIENT NPCs navigate on. Same as [grid] but WITHOUT the round-arena mask, so NPCs walk clear
+    // through the whole map (edge to edge, across the moat) instead of hitting the play-field border like a wall
+    // — the border confines only agents (via the masked [grid] + clampToPlayable). Set at build; falls back to
+    // the masked grid when unset (headless / bare tests) so NPCs behave as before there.
+    private var npcGridOrNull: Grid? = null
+    var npcGrid: Grid
+        // Fall back to the masked grid, or an empty grid when no world is built (bare tests still evaluate this
+        // arg into a no-op [system.grid.NoOpFieldFlow.compute], so it must not throw on uninitialized [grid]).
+        get() = npcGridOrNull ?: if (::grid.isInitialized) grid else emptyMap()
+        set(value) {
+            npcGridOrNull = value
+        }
+
+    /** Test hook: drop the NPC-grid override so [npcGrid] falls back to [grid] again (keeps test isolation). */
+    fun resetNpcGrid() {
+        npcGridOrNull = null
+    }
+
     /** Whether the passability grid is set yet — false in bare unit tests that build an entity without a world. */
     fun hasGrid() = ::grid.isInitialized
+
+    /** The masked grid, or an empty grid when no world is built — the safe default for the flow-field seam so a
+     *  bare-test portal (NoOp sink) never trips the `lateinit` [grid] just by evaluating the default argument. */
+    val gridOrEmpty: Grid get() = if (::grid.isInitialized) grid else emptyMap()
 
     fun passableCells(): Grid = grid.filter { it.value.isPassable }
     private fun wellPassableCells(): Grid = grid.filter { it.value.isPassableInAllDirections() }

@@ -1,5 +1,6 @@
 package system.grid
 
+import extension.Grid
 import extension.VectorField
 import util.data.Pos
 
@@ -9,5 +10,5 @@ import util.data.Pos
  * clean install target for tests (and the pure default once this seam migrates to `commonMain`).
  */
 object NoOpFieldFlow : FieldFlow {
-    override fun compute(destination: Pos, onReady: (VectorField) -> Unit) = Unit
+    override fun compute(destination: Pos, grid: Grid, onReady: (VectorField) -> Unit) = Unit
 }

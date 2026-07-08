@@ -2,7 +2,10 @@ package system.grid
 
 import Factory
 import World
+import agent.NonFaction
+import extension.Grid
 import extension.VectorField
+import util.data.Cell
 import util.data.Pos
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -27,6 +30,7 @@ class NavSeamTest {
     @AfterTest
     fun restore() {
         World.allPortals.clear()
+        World.resetNpcGrid()
         Nav.reset()
     }
 
@@ -49,14 +53,36 @@ class NavSeamTest {
         assertEquals(1, fake.requests, "portal creation requests exactly one flow-field compute through the sink")
         assertTrue(portal.vectors.isNotEmpty(), "the field the sink delivers is stored on the portal")
     }
+
+    @Test
+    fun npcFieldsRouteOverTheUnmaskedGridWhilePortalsUseTheMaskedOne() {
+        val masked: Grid = mapOf(Pos(0, 0) to Cell(Pos(0, 0), true, 0)) // stand-ins; only identity matters here
+        val unmasked: Grid = mapOf(Pos(1, 1) to Cell(Pos(1, 1), true, 0))
+        World.grid = masked
+        World.npcGrid = unmasked
+        val fake = RecordingFieldFlow(null)
+        Nav.install(fake)
+
+        NonFaction.getOrCreateVectorField(Pos(-500, -500)) // an NPC off-map destination
+        assertEquals(unmasked, fake.lastGrid, "NPC flow fields flood the UNMASKED npc grid (they cross the moat)")
+
+        Factory.portal() // a portal/agent field
+        assertEquals(masked, fake.lastGrid, "portal/agent flow fields use the masked grid (stay in the arena)")
+
+        World.grid = emptyMap()
+        NonFaction.reset()
+    }
 }
 
-/** A test [FieldFlow] sink that counts requests and (optionally) delivers a fixed field inline. */
+/** A test [FieldFlow] sink that counts requests, records the grid it was asked to flood, and (optionally)
+ *  delivers a fixed field inline. */
 private class RecordingFieldFlow(private val deliver: VectorField?) : FieldFlow {
     var requests = 0
+    var lastGrid: Grid? = null
 
-    override fun compute(destination: Pos, onReady: (VectorField) -> Unit) {
+    override fun compute(destination: Pos, grid: Grid, onReady: (VectorField) -> Unit) {
         requests++
+        lastGrid = grid
         deliver?.let(onReady)
     }
 }

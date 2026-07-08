@@ -281,10 +281,10 @@ data class NonFaction(
             return slots.ifEmpty { (0 until targetCount).map { it.toDouble() * samples / targetCount } }.map { pointAt(it) }
         }
 
-        // A ring sample sits on placeable ground when the grid marks its cell passable — or when there's no
-        // grid data there (off-map margin / bare unit test), matching [walkableOnly]. Blocked = a KNOWN wall
-        // (an off-map building or the masked round-arena edge).
-        private fun isRingPointPlaceable(pos: Pos): Boolean = !World.hasGrid() || World.grid[pos.toShadow()]?.isPassable != false
+        // A ring sample sits on placeable ground when the NPC grid marks its cell passable — or when there's no
+        // grid data there (off-map margin / bare unit test). Uses the UNMASKED [World.npcGrid], so the round-arena
+        // moat reads as passable (NPCs can reach it) and only KNOWN walls (off-map buildings/water) are blocked.
+        private fun isRingPointPlaceable(pos: Pos): Boolean = !World.hasGrid() || World.npcGrid[pos.toShadow()]?.isPassable != false
 
         /** Keep only ring points on WALKABLE ground — built the same way the interior is: drop any the grid
          *  marks impassable (off-map buildings/water, or the masked round-arena edge), so the flow field to a
@@ -344,7 +344,9 @@ data class NonFaction(
                 return maybeField
             }
             if (pending.add(destination)) {
-                Nav.sink.compute(destination) { field ->
+                // Route NPCs over the UNMASKED grid so their field crosses the whole map (the round-arena moat
+                // is not a wall for them — see [World.npcGrid]); agents/portals keep the masked default.
+                Nav.sink.compute(destination, World.npcGrid) { field ->
                     // inline headless-sync (fills the cache below) / async browser / skip
                     fields[destination] = field
                     pending.remove(destination)

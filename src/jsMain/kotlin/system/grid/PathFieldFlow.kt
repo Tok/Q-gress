@@ -1,6 +1,7 @@
 package system.grid
 
 import config.Config
+import extension.Grid
 import extension.VectorField
 import system.ui.Bootstrap
 import util.data.Pos
@@ -14,10 +15,10 @@ import util.data.Pos
  * skip branch — the Node-test default — never calls into [Pathfinding]).
  */
 object PathFieldFlow : FieldFlow {
-    override fun compute(destination: Pos, onReady: (VectorField) -> Unit) {
+    override fun compute(destination: Pos, grid: Grid, onReady: (VectorField) -> Unit) {
         when {
-            Bootstrap.isRunningInBrowser() -> PathfindingAsync.computeFieldAsync(destination, onReady)
-            Config.headlessFieldCompute -> onReady(Pathfinding.computeFieldSync(destination))
+            Bootstrap.isRunningInBrowser() -> PathfindingAsync.computeFieldAsync(destination, grid, onReady)
+            Config.headlessFieldCompute -> onReady(Pathfinding.computeFieldSync(destination, grid))
             else -> Unit // fields skipped: caller keeps its empty field + straight-line fallback
         }
     }
