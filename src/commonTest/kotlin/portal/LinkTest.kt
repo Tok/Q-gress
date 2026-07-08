@@ -4,9 +4,20 @@ import Factory
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class LinkTest {
+
+    @Test
+    fun toStringAndConnectivity() = with(Factory) {
+        val (origin, destination) = portalPair()
+        val link = requireNotNull(Link.create(origin, destination, linker())) { "the link forms" }
+        assertTrue(link.isConnectedTo(origin), "connected to its origin")
+        assertTrue(link.isConnectedTo(destination), "connected to its destination")
+        assertFalse(link.isConnectedTo(Portal.createRandom()), "an unrelated portal is not connected")
+        assertEquals("$origin --> $destination", link.toString(), "toString renders origin --> destination")
+    }
 
     @Test
     fun agentSwitchEquality() = with(Factory) {
