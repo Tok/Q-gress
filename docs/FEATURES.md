@@ -320,19 +320,19 @@ Commit hashes are illustrative pointers, not exhaustive.
   crowd on a huge map), and held constant by **1-for-1 replacement** when an NPC is recruited (`Recruiter`),
   so a game can't run dry. The onboarding **NPC-density slider** scales it from **×0.1 to ×3.0** (thin the
   crowd or pack it in; the ×30 floor still applies).
-- **Off-map NPC destinations** (`NonFaction.offscreenDestinations`): ~8–20 hidden targets **just outside the
+- **Off-map NPC destinations** (`NonFaction.offscreenDestinations`): ~16 hidden targets **just outside the
   play field** that ambient NPCs walk toward, so they stream across the whole map instead of clumping at the
   central portals. Computed from the **current** field size + shape (cached until it changes) — they used to
   be captured once at class-load with the default size, which dropped targets *inside* a larger map and
   re-caused the centre-clustering. The round-field ring is **street-aware** (`NonFactionMath.ringDestinations`):
-  it finely samples the ring for passability, splits it into contiguous **walkable arcs** (the streets that
-  cross the ring, plus the off-screen gaps in the round-arena mask), and places targets at a **constant
-  angular density** (the budget spread over the whole circle) — each arc gets its proportional share (min 1
-  so a real street always gets one), **centred** per arc, and the blocked spans stay empty. So a city's
-  targets land in the streets, while an open ring keeps the old even spread — instead of the old "even
-  angles, then drop whatever hit a building" (which left few, off-centre targets), and without re-packing the
-  whole budget into the few open arcs (which clustered them into a "cross"). Fully blocked ring → falls back
-  to a raw even ring. The rectangle keeps its per-edge even spacing + walkable filter.
+  ~16 **evenly-spaced candidate angles** around the ring, each **snapped onto nearby walkable ground** (so a
+  candidate that lands on a building shifts onto the adjacent street) and **dropped** when there's no street
+  within reach (a big masked gap — e.g. the round-arena moat between the off-screen pokes; NPCs can't head
+  there anyway), with a **min-gap** so placed targets never bunch up. This keeps the old even spread while
+  avoiding houses — instead of the old "even angles, then drop whatever hit a building" (few, off-centre
+  targets) and without re-packing the budget into the few open arcs (which clustered them into a "cross").
+  Fully blocked ring → falls back to a raw even ring. The rectangle keeps its per-edge even spacing + walkable
+  filter.
 - **Plausible agent handles** (`util/NameGen`): Ingress-style names from themed word banks (per-faction
   flavour + adjectives/nouns/titles), CamelCase/snake/dot styling, light leet, numeric + `xX_…_Xx`
   wraps, and a location token — deduped per game. Replaces the old gibberish generator.

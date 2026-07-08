@@ -12,8 +12,6 @@ import util.data.Pos
 import util.data.toShadow
 import kotlin.math.PI
 import kotlin.math.atan2
-import kotlin.math.cos
-import kotlin.math.sin
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -169,7 +167,7 @@ class NonFactionActTest {
             Sim.roundField = true
             Sim.setSize(1000, 800)
             val ring = NonFaction.offscreenDestinations()
-            assertTrue(ring.size in 8..14, "8..14 evenly-spaced ring points (was ${ring.size})")
+            assertTrue(ring.size in 14..20, "~16 evenly-spaced ring points (was ${ring.size})")
             val cx = Sim.width / 2
             val cy = Sim.height / 2
             assertTrue(ring.any { it.x < cx } && ring.any { it.x > cx }, "points on both the west and east sides")
@@ -190,33 +188,33 @@ class NonFactionActTest {
             NonFaction.reset() // start from a clean ring cache
             val cx = 500.0
             val cy = 500.0
-            val r = Sim.fieldRadius() + Pos.res * 7 // = fieldRadius + OFFSCREEN_DISTANCE (OFFSCREEN_CELL_ROWS/2)
 
-            // A grid covering the ring margin, all walkable…
-            val cells = mutableMapOf<Pos, Cell>()
-            for (sx in -10..110) for (sy in -10..110) cells[Pos(sx, sy)] = Cell(Pos(sx, sy), true, 50)
-            // …except a solid contiguous block of buildings over the sector θ ∈ [0.6π, 1.4π].
+            // A grid covering the ring margin: every cell in the angular sector θ ∈ [0.6π, 1.4π] is a solid
+            // block of buildings, the rest walkable (blocking by cell-angle covers the whole sector, ring and all).
             val blockedFrom = 0.6 * PI
             val blockedTo = 1.4 * PI
-            var a = blockedFrom
-            while (a <= blockedTo) {
-                val s = Pos((cx + r * cos(a)).toInt(), (cy + r * sin(a)).toInt()).toShadow()
-                cells[s] = Cell(s, false, 50)
-                a += 0.004 // finer than the ring sample step → every blocked-sector sample cell is a wall
+            val cells = mutableMapOf<Pos, Cell>()
+            for (sx in -10..110) {
+                for (sy in -10..110) {
+                    val px = sx * Pos.res + Pos.res / 2.0
+                    val py = sy * Pos.res + Pos.res / 2.0
+                    val ang = (atan2(py - cy, px - cx) + 2 * PI) % (2 * PI)
+                    cells[Pos(sx, sy)] = Cell(Pos(sx, sy), ang !in blockedFrom..blockedTo, 50)
+                }
             }
             World.grid = cells
 
             val dests = NonFaction.offscreenDestinations()
 
-            // The open ~216° arc is filled at even density (a spread of targets, not clustered), while the
-            // blocked building sector stays an empty gap.
-            assertTrue(dests.size >= 4, "the open street arc hosts a spread of targets (was ${dests.size})")
+            // The open ~216° arc is filled with evenly-spaced targets (candidates near the building edge snap
+            // onto the adjacent street; those deep in the blocked sector are dropped — no clustering).
+            assertTrue(dests.size >= 6, "the open street arc hosts a spread of targets (was ${dests.size})")
             dests.forEach {
                 assertTrue(World.grid[it.toShadow()]?.isPassable != false, "every destination sits on walkable ground")
                 val ang = (atan2(it.y - cy, it.x - cx) + 2 * PI) % (2 * PI)
                 assertTrue(
-                    ang < blockedFrom - 0.05 || ang > blockedTo + 0.05,
-                    "no destination falls in the blocked building sector (ang=$ang)",
+                    ang < blockedFrom + 0.25 || ang > blockedTo - 0.25, // deep interior of the building sector stays empty
+                    "no destination falls deep inside the blocked building sector (ang=$ang)",
                 )
                 assertTrue(!Sim.isInPlayArea(it.x, it.y), "and still sits outside the play area")
             }

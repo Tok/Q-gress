@@ -196,16 +196,18 @@ data class NonFaction(
         // The count then scales with the field perimeter, bounded so we don't compute too many full-map flow
         // fields (each destination needs one).
         private val OFFSCREEN_SPACING = minOf(Dim.width, Dim.height) * 0.5
-        private const val MIN_OFFSCREEN = 12
+        private const val MIN_OFFSCREEN = 16 // ~16 evenly-spaced candidates around the ring (some drop where blocked)
         private const val MAX_OFFSCREEN = 20 // more off-map targets → the crowd spreads over more destinations
 
         // Round-ring street-awareness (see [computeRoundRing]): sample the ring ~ every cell to resolve which
-        // arcs are walkable, bounded so a huge map doesn't over-sample; ignore walkable slivers under a couple
-        // of cells (diagonal noise) when hosting a destination.
+        // spots are walkable, bounded so a huge map doesn't over-sample. A candidate may shift up to NUDGE× the
+        // candidate spacing to find a nearby street (but not across a big masked moat); placed targets stay at
+        // least MIN_GAP× the spacing apart so they never bunch up.
         private const val RING_SAMPLE_CELLS = 1.0
         private const val RING_MIN_SAMPLES = 120
         private const val RING_MAX_SAMPLES = 900
-        private const val RING_MIN_ARC_SAMPLES = 2
+        private const val RING_NUDGE_FRACTION = 0.45
+        private const val RING_MIN_GAP_FRACTION = 0.5
         private const val OFFSCREEN_DEST_CHANCE = 0.6 // cross the map edge-to-edge; the rest (now 40%) head to a portal
         private const val FAR_PORTAL_CHANCE = 0.5 // of the non-offscreen remainder, half head to a FAR portal, half a random one
         private const val NPC_ATTRACT_RADIUS = 70.0 // idle/recruiting agents draw passing NPCs within this many sim px
@@ -262,8 +264,11 @@ data class NonFaction(
                 return Pos((cx + r * cos(a)).toInt(), (cy + r * sin(a)).toInt())
             }
             val placeable = BooleanArray(samples) { i -> isRingPointPlaceable(pointAt(i.toDouble())) }
-            val slots = NonFactionMath.ringDestinations(placeable, targetCount, RING_MIN_ARC_SAMPLES)
-            // Fully blocked ring (no walkable arc at all) → fall back to a raw even ring so NPCs still have targets.
+            val slot = samples.toDouble() / targetCount // samples between evenly-spaced candidates
+            val maxNudge = (slot * RING_NUDGE_FRACTION).toInt() // shift onto a nearby street, but not across a big moat
+            val minGap = (slot * RING_MIN_GAP_FRACTION).toInt() // keep placed targets from bunching up
+            val slots = NonFactionMath.ringDestinations(placeable, targetCount, maxNudge, minGap)
+            // Fully blocked ring (no walkable ground at all) → fall back to a raw even ring so NPCs still have targets.
             return slots.ifEmpty { (0 until targetCount).map { it.toDouble() * samples / targetCount } }.map { pointAt(it) }
         }
 

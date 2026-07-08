@@ -1,6 +1,7 @@
 package agent
 
 import util.data.Pos
+import kotlin.math.abs
 import kotlin.math.roundToInt
 import kotlin.math.sqrt
 
@@ -46,80 +47,48 @@ object NonFactionMath {
     }
 
     /**
-     * Choose off-map ring destinations that land on WALKABLE arcs only (streets, not buildings). [placeable]
-     * is the ring sampled at N even angles (index i ⇔ angle 2π·i/N; `true` = walkable ground). Contiguous
-     * walkable samples form an **arc** (a street crossing the ring, or an off-screen gap in the round-arena
-     * mask).
+     * Place ~[targetCount] off-map destinations EVENLY spaced around the ring, but only where there's walkable
+     * space. [placeable] is the ring sampled at N even angles (index i ⇔ angle 2π·i/N; `true` = walkable
+     * ground). For each of [targetCount] evenly-spaced candidate angles we snap to the nearest walkable sample
+     * within [maxNudgeSamples] — so a candidate landing on a building shifts onto the adjacent street — and
+     * DROP it when there's no walkable ground within reach (a big blocked span, e.g. the round-arena moat
+     * between the off-screen pokes; NPCs can't head there anyway). A [minGapSamples] spacing floor stops two
+     * candidates snapping onto the same spot.
      *
-     * Points are placed at a constant angular **density** — [targetCount] over the WHOLE circle — so each arc
-     * gets its proportional share (min 1, so any real street still gets one centred target) and the blocked
-     * spans simply stay empty. We deliberately do NOT re-pack the whole budget into the few open arcs: that
-     * concentrated e.g. 20/4 points into each narrow poke of the round mask → four tight clusters (a "cross").
-     * Constant density instead reproduces the old even spread on an open ring while still centring on streets
-     * in a city. Within an arc the k points are centred (1 ⇒ midpoint, k ⇒ k evenly spaced). Arcs narrower
-     * than [minArcSamples] are ignored as noise (single-cell diagonal artefacts) unless that drops them all.
-     * Total is capped at [targetCount] (widest arcs kept). Returns fractional sample indices in `[0, N)` (the
-     * caller maps each to an angle); empty when nothing is walkable — the caller then falls back to a raw even
-     * ring. No World/RNG coupling → JVM-unit-tested.
+     * This keeps the even spread of the old ring while avoiding houses — instead of segmenting into arcs and
+     * re-packing the budget into the few open ones, which clustered them into a "cross". Returns fractional
+     * sample indices in `[0, N)` (the caller maps each to an angle); empty when nothing is walkable — the
+     * caller then falls back to a raw even ring. No World/RNG coupling → JVM-unit-tested.
      */
-    fun ringDestinations(placeable: BooleanArray, targetCount: Int, minArcSamples: Int): List<Double> {
+    fun ringDestinations(placeable: BooleanArray, targetCount: Int, maxNudgeSamples: Int, minGapSamples: Int): List<Double> {
         val n = placeable.size
-        if (n == 0 || targetCount <= 0) return emptyList()
-        val allArcs = walkableArcs(placeable, n)
-        if (allArcs.isEmpty()) return emptyList()
-        val arcs = allArcs.filter { it.second >= minArcSamples }.ifEmpty { allArcs }
-        val density = targetCount.toDouble() / n // points per sample over the FULL ring (even angular density)
-        val wanted = arcs.map { maxOf(1, (it.second * density).roundToInt()) }
-        val counts = capToBudget(arcs, wanted, targetCount)
-        val result = mutableListOf<Double>()
-        arcs.forEachIndexed { i, (start, len) ->
-            val k = counts[i]
-            for (j in 0 until k) {
-                result.add((start + (j + 0.5) / k * len) % n) // centred: 1 ⇒ midpoint, k ⇒ evenly spaced
-            }
+        if (n == 0 || targetCount <= 0 || placeable.none { it }) return emptyList()
+        val placed = mutableListOf<Double>()
+        for (i in 0 until targetCount) {
+            val ideal = i.toDouble() * n / targetCount // the evenly-spaced candidate
+            val snapped = nearestWalkable(placeable, ideal, maxNudgeSamples) ?: continue // no street nearby → skip
+            if (placed.none { circularGapSamples(it, snapped, n) < minGapSamples }) placed.add(snapped)
         }
-        return result
+        return placed
     }
 
-    /**
-     * Contiguous runs of walkable samples around the circular ring, each as `(startIndex, lengthInSamples)`.
-     * Scanning starts at a blocked sample so no run straddles the array seam; an all-walkable ring is one
-     * full arc `(0, n)`; a fully blocked ring is no arcs.
-     */
-    private fun walkableArcs(placeable: BooleanArray, n: Int): List<Pair<Int, Int>> {
-        if (placeable.none { it }) return emptyList()
-        val firstBlocked = (0 until n).firstOrNull { !placeable[it] } ?: return listOf(0 to n) // all walkable
-        val arcs = mutableListOf<Pair<Int, Int>>()
-        var runStart = -1
-        var runLen = 0
-        for (i in 0 until n) {
-            val idx = (firstBlocked + i) % n
-            if (placeable[idx]) {
-                if (runLen == 0) runStart = idx
-                runLen++
-            } else if (runLen > 0) {
-                arcs.add(runStart to runLen)
-                runLen = 0
-            }
+    /** The walkable sample nearest [ideal] (searching out symmetrically up to [maxNudge] samples), or null if
+     *  every sample in that window is blocked. Returned as a sample index (Double) the caller turns into an angle. */
+    private fun nearestWalkable(placeable: BooleanArray, ideal: Double, maxNudge: Int): Double? {
+        val n = placeable.size
+        val base = ((ideal.roundToInt() % n) + n) % n
+        for (d in 0..maxNudge) {
+            val up = (base + d) % n
+            if (placeable[up]) return up.toDouble()
+            val down = ((base - d) % n + n) % n
+            if (placeable[down]) return down.toDouble()
         }
-        if (runLen > 0) arcs.add(runStart to runLen)
-        return arcs
+        return null
     }
 
-    /**
-     * Bound the total destinations to [budget] (flow-field cost) when the min-1-per-arc floor overshoots it
-     * (a very fragmented ring with many arcs). Keeps the WIDEST arcs' shares and drops the thinnest — a no-op
-     * when the density counts already fit.
-     */
-    private fun capToBudget(arcs: List<Pair<Int, Int>>, wanted: List<Int>, budget: Int): IntArray {
-        if (wanted.sum() <= budget) return wanted.toIntArray()
-        val counts = IntArray(arcs.size)
-        var left = budget
-        for (idx in arcs.indices.sortedByDescending { arcs[it].second }) {
-            if (left <= 0) break
-            counts[idx] = minOf(wanted[idx], left)
-            left -= counts[idx]
-        }
-        return counts
+    /** Shortest gap between two sample indices around the circular ring of [n] samples. */
+    private fun circularGapSamples(a: Double, b: Double, n: Int): Double {
+        val diff = abs(a - b) % n
+        return minOf(diff, n - diff)
     }
 }
