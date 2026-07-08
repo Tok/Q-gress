@@ -491,6 +491,14 @@ object Bootstrap {
         span.addClass("menuSpan")
         val menu = document.createElement("div") as HTMLDivElement
         menu.addClass("gameMenu", "invisible")
+        // TRAIN opens the in-browser neuro-evolution trainer as its own screen (game paused behind it); it's the
+        // top entry and is also linked from the BRAINS tab.
+        menu.append(
+            createButton("menuTrain", "menuItem displayFont", "Train NN") {
+                menu.addClass("invisible") // close the dropdown
+                system.ui.panel.TrainerPanel.open()
+            },
+        )
         menu.append(createButton("menuNewGame", "menuItem displayFont", "New Game") { doNewGame() })
         menu.append(createButton("menuReset", "menuItem displayFont", "Reset") { doReset() })
         menu.append(createButton("menuShare", "menuItem displayFont", "Copy link") { copyShareLink() })

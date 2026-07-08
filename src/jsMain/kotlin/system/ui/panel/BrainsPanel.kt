@@ -18,6 +18,7 @@ import config.Config
 import kotlinx.browser.document
 import kotlinx.browser.window
 import org.w3c.dom.CanvasRenderingContext2D
+import org.w3c.dom.HTMLButtonElement
 import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.HTMLElement
 import system.ui.DriverControls
@@ -71,12 +72,28 @@ object BrainsPanel {
         return listOf(left, left.enemy())
     }
 
+    // A "Train a net →" button that opens the trainer screen (the same thing the MENU's TRAIN entry opens).
+    private fun trainLink(): HTMLElement {
+        val btn = el("button", "brainsTrainLink") as HTMLButtonElement
+        btn.type = "button"
+        btn.textContent = "Train NN →"
+        btn.title = "Open the trainer (pauses the game)"
+        btn.onclick = {
+            TrainerPanel.open()
+            null
+        }
+        return btn
+    }
+
     private fun ensure(): Boolean {
         if (built) return true
         if (document.body == null) return false
         // The per-faction driver pickers ("AI vs AI") moved here from the top toolbar — you pick each side's
         // brain in the same tab that explains what each brain is doing.
-        Footer.tab("brains").appendChild(DriverControls.toolbarGroup())
+        val header = el("div", "brainsHeaderRow")
+        header.appendChild(DriverControls.toolbarGroup())
+        header.appendChild(trainLink()) // link to the trainer screen (also reachable from the MENU's TRAIN entry)
+        Footer.tab("brains").appendChild(header)
         val split = el("div", "brainsSplit")
         sides().forEach { faction ->
             val side = el("div", "brainsSide")

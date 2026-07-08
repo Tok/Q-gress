@@ -214,6 +214,11 @@ object Config {
     val ticksPerCycle = Time.secondsToTicks(1800)
     const val checkpointsPerCycle = 35
 
+    // A full SCORING cycle in ticks — [checkpointsPerCycle] (35) checkpoints of [ticksPerCheckpoint] each. This is
+    // the training/eval MATCH LENGTH: the fitness goal is "win the cycle" (lead the most checkpoints), which can't
+    // be assessed in less than a whole cycle. (Distinct from [ticksPerCycle], the short game-event / decay beat.)
+    val ticksPerScoringCycle = checkpointsPerCycle * ticksPerCheckpoint
+
     // Headless flow-field compute (PLAN Phase 6.1 / the SimRunner). Off by default: in the browser fields
     // are computed async (Pathfinding.computeFieldAsync) and in plain Node unit tests we skip them entirely
     // (agents bee-line). A headless match flips this on so Portal/NonFaction compute fields synchronously

@@ -141,7 +141,7 @@ class ChampionBake {
         private const val ARENA_H = 40
         private const val BAKE_SEED = 42
         private const val HELD_OUT_SEED_BASE = 10_000 // held-out validation seeds sit far from the training seeds
-        private val BAKE_TICKS = Config.ticksPerCycle // one full scoring cycle — win it by scoring the most MU across its checkpoints
+        private val BAKE_TICKS = Config.ticksPerScoringCycle // a full scoring cycle (~35 checkpoints): win the cycle
 
         // Train cheap on few seeds (fast), then SELECT the champion from the elite pool by held-out fitness —
         // robustness comes from selection, not a huge training budget. ~16x12x3 = 576 train matches per arch.

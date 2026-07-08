@@ -918,6 +918,89 @@ html, body {
 }
 
 /* TRAIN tab (TrainerPanel) — in-browser neuro-evolution: a config row, a live fitness curve, a champion preview. */
+/* The trainer is now its own screen (opened from the MENU's TRAIN entry / the BRAINS link), not a footer tab:
+   a full-screen scrim with the paused game dimmed behind it + a centred glass panel. */
+.trainScreen {
+    position: fixed;
+    inset: 0;
+    z-index: 120; /* above the footer (60) + top bar */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.55);
+    -webkit-backdrop-filter: var(--ui-glass-blur);
+    backdrop-filter: var(--ui-glass-blur);
+}
+.trainScreenPanel {
+    width: min(920px, 94vw);
+    max-height: 90vh;
+    overflow: auto;
+    background: var(--ui-glass-bg);
+    border: 1px solid var(--ui-glass-border);
+    border-radius: 10px;
+    padding: 0 14px 14px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+.trainScreenHead {
+    position: sticky;
+    top: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 2px 10px;
+    margin-bottom: 4px;
+    background: var(--ui-glass-bg);
+    border-bottom: 1px solid var(--ui-tint-2);
+}
+.trainScreenTitle {
+    font-family: "Chakra Petch", "Coda", monospace;
+    font-weight: 700;
+    font-size: 16px;
+    letter-spacing: 0.12em;
+    color: #ffffff;
+}
+.trainScreenClose {
+    background: transparent;
+    border: 1px solid var(--ui-tint-3);
+    border-radius: 4px;
+    color: #e8e8e8;
+    font-size: 16px;
+    line-height: 1;
+    width: 26px;
+    height: 26px;
+    cursor: pointer;
+}
+.trainScreenClose:hover {
+    background: var(--ui-tint-2);
+}
+/* BRAINS-tab link to the trainer screen. */
+.brainsHeaderRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+.brainsTrainLink {
+    background: var(--ui-tint-1);
+    border: 1px solid var(--ui-tint-3);
+    border-radius: 4px;
+    color: #e8e8e8;
+    font-family: "Coda", monospace;
+    font-size: 12px;
+    padding: 4px 10px;
+    cursor: pointer;
+}
+.brainsTrainLink:hover {
+    background: var(--ui-tint-2);
+}
+.trainWarn {
+    flex-basis: 100%;
+    font-family: "Coda", monospace;
+    font-size: 11px;
+    color: #d8a24a; /* semantic warning amber */
+    margin-top: 2px;
+}
 .trainPanel {
     display: flex;
     flex-direction: column;

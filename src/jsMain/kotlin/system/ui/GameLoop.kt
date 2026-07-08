@@ -34,7 +34,7 @@ object GameLoop {
     private var speedMult = 1.0
     private var autoCamBeforePause = false
     private var tickFn: () -> Unit = {}
-    private var evalPauseHeld = false // true while an in-browser eval (trainer / leaderboard) forced a pause
+    private var evalPauseDepth = 0 // nested eval-pause holders (trainer screen open + a training run inside it)
     private var playingBeforeEval = false
 
     /** (Re)start the loop, running [tick] each speed-scaled interval — the live game's `tick` or the demo's. */
@@ -61,23 +61,25 @@ object GameLoop {
     }
 
     /**
-     * Force a full pause for the duration of an in-browser eval (the TRAIN trainer / the leaderboard), so the
-     * live game is truly still behind it — not just sim-frozen but with the 3D animation clock, auto-cam and
-     * audio parked too. Remembers whether the game was playing so [resumeAfterEval] restores the prior state.
-     * Idempotent; a no-op before the live game loop exists (onboarding / title).
+     * Force a full pause for the duration of an in-browser eval (the TRAIN screen being open / a training run /
+     * the leaderboard), so the live game is truly still behind it — not just sim-frozen but with the 3D
+     * animation clock, auto-cam and audio parked too. **Reference-counted**, so the trainer screen and a
+     * training run inside it nest without fighting; remembers whether the game was playing so the last
+     * [resumeAfterEval] restores the prior state. A no-op before the live game loop exists (onboarding / title).
      */
     fun pauseForEval() {
-        if (evalPauseHeld || document.getElementById(PAUSE_BUTTON_ID) == null) return
-        playingBeforeEval = !isPaused()
-        if (playingBeforeEval) togglePause() // engage the real pause (side-effects + button label)
-        evalPauseHeld = true
+        if (evalPauseDepth == 0) {
+            playingBeforeEval = !isPaused()
+            if (playingBeforeEval && document.getElementById(PAUSE_BUTTON_ID) != null) togglePause()
+        }
+        evalPauseDepth++
     }
 
-    /** Release an eval pause — resumes only if the eval was what paused it (respects a manual pause the player set). */
+    /** Release one eval pause; the LAST release resumes — only if an eval was what paused it (respects a manual pause). */
     fun resumeAfterEval() {
-        if (!evalPauseHeld) return
-        evalPauseHeld = false
-        if (playingBeforeEval && isPaused()) togglePause()
+        if (evalPauseDepth == 0) return
+        evalPauseDepth--
+        if (evalPauseDepth == 0 && playingBeforeEval && isPaused()) togglePause()
     }
 
     // Highlight the preset matching the live speed (none while paused, i.e. intervalID == -1).

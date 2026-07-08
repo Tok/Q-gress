@@ -16,7 +16,6 @@ object Footer {
         "PORTALS" to PORTALS_ID,
         "BRAINS" to BRAINS_ID,
         "STATS" to AI_ID,
-        "TRAIN" to TRAIN_ID,
         "AUDIO" to AUDIO_ID,
         "EVENT LOG" to LOG_ID,
     )
@@ -45,7 +44,6 @@ object Footer {
         "portals" -> PORTALS_ID
         "brains" -> BRAINS_ID
         "ai" -> AI_ID
-        "train" -> TRAIN_ID
         "audio" -> AUDIO_ID
         else -> LOG_ID
     }
@@ -139,9 +137,9 @@ object Footer {
             (document.getElementById(id) as? HTMLElement)?.style?.display = if (id == bodyId) "block" else "none"
             tabButtons[id]?.let { if (id == bodyId) it.classList.add("active") else it.classList.remove("active") }
         }
-        // The NET viz + TRAIN tab want the whole screen — auto-expand on entry, auto-restore on leave (unless
-        // the player has since taken manual control of the size, in which case we leave their choice alone).
-        if (bodyId == TRAIN_ID || bodyId == BRAINS_ID) {
+        // The BRAINS tab wants the whole screen — auto-expand on entry, auto-restore on leave (unless the
+        // player has since taken manual control of the size, in which case we leave their choice alone).
+        if (bodyId == BRAINS_ID) {
             expanded = true
             collapsed = false
             autoExpanded = true
@@ -177,6 +175,5 @@ object Footer {
     private const val PORTALS_ID = "footerPortals"
     private const val BRAINS_ID = "footerBrains"
     private const val AI_ID = "footerAi"
-    private const val TRAIN_ID = "footerTrain"
     private const val AUDIO_ID = "footerAudio"
 }

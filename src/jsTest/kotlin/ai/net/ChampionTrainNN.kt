@@ -162,7 +162,7 @@ class ChampionTrainNN {
         private const val ARENA_H = 40
         private const val TRAIN_SEED = 42
         private const val HELD_OUT_SEED_BASE = 10_000
-        private val TICKS = Config.ticksPerCycle // one full scoring cycle
+        private val TICKS = Config.ticksPerScoringCycle // a full scoring cycle (~35 checkpoints) — assess "winning the cycle"
 
         private const val POP = 16
         private const val GENS = 12

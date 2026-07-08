@@ -8,25 +8,27 @@ import ai.HeuristicPolicy
 import ai.Tournament
 import ai.net.NetPolicy
 import ai.net.NetStore
+import config.Config
 import kotlinx.browser.document
 import kotlinx.browser.window
 import org.w3c.dom.HTMLButtonElement
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLInputElement
 import system.HeadlessRun
-import system.ui.Footer
 import system.ui.el
 import kotlin.math.roundToInt
 
 /**
- * The **leaderboard** (PLAN Phase 6) — a second section of the TRAIN tab that ranks AI drivers head-to-head on
- * the live map. Pick which drivers enter, hit **Run ladder**, and a [Tournament.Session] plays a round-robin
+ * The **leaderboard** (PLAN Phase 6) — a second section of the TRAIN screen that ranks AI drivers head-to-head
+ * on the live map. Pick which drivers enter, hit **Run ladder**, and a [Tournament.Session] plays a round-robin
  * one match per `setTimeout` (so the UI never blocks), showing the live `Standing` table (W-L-T + avg MU
  * margin). It reuses the trainer's [HeadlessRun] harness: the live game is parked + FX silenced for the run and
  * restored untouched afterwards (the tick loop pauses meanwhile).
  */
 object LeaderboardPanel {
-    private const val MATCH_TICKS = 601 // short, in-browser-friendly matches (3 checkpoints: 0/300/600)
+    // A full SCORING cycle per match (~35 checkpoints) — the fitness goal is "win the cycle", which can't be
+    // assessed in less. The old 601 ticks (3 checkpoints) was too short for fields/MU to form, so every match tied.
+    private val MATCH_TICKS = Config.ticksPerScoringCycle
     private val SEEDS = listOf(1, 2, 3)
 
     // A possible entrant — a named driver factory + an on/off toggle.
@@ -48,21 +50,17 @@ object LeaderboardPanel {
     private var statusEl: HTMLElement? = null
     private var tbody: HTMLElement? = null
 
-    fun update() {
-        ensure()
-    }
-
-    private fun ensure(): Boolean {
-        if (built) return true
-        if (document.body == null) return false
+    /** Build the leaderboard section into [parent] (the trainer screen, which now hosts both the trainer and
+     *  this driver ladder). Called once when the screen is built; a no-op afterwards. */
+    fun buildInto(parent: HTMLElement) {
+        if (built || document.body == null) return
         val section = el("div", "trainPanel")
         section.appendChild(el("div", "trainColHead").also { it.textContent = "Leaderboard — rank the drivers head-to-head" })
         section.appendChild(buildConfigRow())
         section.appendChild(buildTable())
-        Footer.tab("train").appendChild(section)
+        parent.appendChild(section)
         built = true
         setStatus("Pick the drivers and press Run ladder (a round-robin on the live map).")
-        return true
     }
 
     private fun buildConfigRow(): HTMLElement {

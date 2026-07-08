@@ -13,6 +13,7 @@ import ai.net.Net
 import ai.net.NetArch
 import ai.net.NetPolicy
 import ai.net.NetStore
+import config.Config
 import external.UPlot
 import kotlinx.browser.document
 import kotlinx.browser.window
@@ -25,24 +26,30 @@ import org.w3c.dom.HTMLOptionElement
 import org.w3c.dom.HTMLSelectElement
 import system.HeadlessRun
 import system.ui.DriverControls
-import system.ui.Footer
+import system.ui.GameLoop
 import system.ui.el
 import kotlin.math.roundToInt
 
 /**
- * The **TRAIN** footer tab (PLAN Phase 6.5) — an in-browser neuro-evolution trainer. Pick a [NetArch] +
- * [EvolutionConfig], hit **Train**, and an [Evolution.Session] runs one generation per `setTimeout(…, 0)`
- * (so the UI never blocks), drawing a live fitness curve and a champion-genome preview. The run is bracketed by
- * [HeadlessRun] (parks the live world + silences FX; the tick loop pauses while it's active), so the headless
- * matches it spins up never disturb the live game — which resumes untouched when the run ends. The winner can be
- * **saved** to [NetStore] or **installed** as either faction's driver.
+ * The **Train NN** screen (PLAN Phase 6.5) — an in-browser neuro-evolution trainer, opened from the MENU's
+ * "Train NN" entry / the BRAINS-tab link (not a footer tab) as its own full-screen overlay with the live game
+ * paused behind it. Pick a [NetArch] + [EvolutionConfig], hit **Train**, and an [Evolution.Session] runs one
+ * generation per `setTimeout(…, 0)` (so the UI never blocks), drawing a live fitness curve + a champion-genome
+ * preview. The run is bracketed by [HeadlessRun] (parks the live world + silences FX; the game is paused while
+ * the screen is up), so the headless matches never disturb the live game — which resumes untouched on close.
+ * The winner can be **saved** to [NetStore] or **installed** as either faction's driver.
  *
- * Serious training stays headless (`Evolution.train`); the in-browser defaults are deliberately small so each
- * generation is sub-second on the live map.
+ * Each match is a full scoring cycle ([Config.ticksPerScoringCycle], ~35 checkpoints) — the fitness goal is to
+ * win the cycle, so it can't be assessed in less; a big run is therefore minutes, not seconds. Serious training
+ * still belongs headless (`scripts/bake-champs.sh` / `train-champs.sh`).
  */
 object TrainerPanel {
     private const val SEED = 12345 // fixed → a run is reproducible (re-train gives the same champion)
-    private const val MATCH_TICKS = 601 // checkpoints at 0/300/600 — short, in-browser-friendly matches
+
+    // A full SCORING cycle per match (~35 checkpoints). The fitness goal is "win the cycle" — lead the most
+    // checkpoints — which can't be assessed in less than a whole cycle. The old 601 ticks (3 checkpoints) never
+    // gave fields time to form on the live map, so MU stayed 0 and every match tied.
+    private val MATCH_TICKS = Config.ticksPerScoringCycle
     private const val PREVIEW_W = 540
     private const val PREVIEW_H = 96
     private const val CHART_W = 560
@@ -75,27 +82,61 @@ object TrainerPanel {
     private var progressFill: HTMLElement? = null
     private var progressLabel: HTMLElement? = null
     private val actionButtons = mutableListOf<HTMLButtonElement>()
+    private var overlay: HTMLElement? = null
 
     /** True while a training run is in flight — the tick loop pauses on this so matches don't fight the game. */
     fun isTraining(): Boolean = running
 
-    /** Lazy-build the panel; called each frame from [util.HudRenderer] (paused during a run, which drives its own UI). */
-    fun update() {
-        ensure()
+    /** Open the trainer as its own full-screen screen (from the MENU's TRAIN entry / the BRAINS tab link),
+     *  pausing the live game behind it. Builds lazily on first open. */
+    fun open() {
+        if (!ensure()) return // uPlot CDN not ready yet — try again on the next click
+        overlay?.classList?.remove("invisible")
+        GameLoop.pauseForEval() // freeze the live game while the trainer screen is up
+    }
+
+    /** Close the trainer screen and resume the game (stopping any run in progress first). */
+    fun close() {
+        if (running) stop() // ends the run + restores the live world via HeadlessRun.end()
+        overlay?.classList?.add("invisible")
+        GameLoop.resumeAfterEval()
     }
 
     private fun ensure(): Boolean {
         if (built) return true
         if (document.body == null) return false
-        if (js("typeof uPlot === 'undefined'").unsafeCast<Boolean>()) return false // CDN not ready → retry next frame
+        if (js("typeof uPlot === 'undefined'").unsafeCast<Boolean>()) return false // CDN not ready → retry next open
         val panel = el("div", "trainPanel")
         panel.appendChild(buildConfigRow())
         panel.appendChild(buildMain())
-        Footer.tab("train").appendChild(panel)
+        val screen = el("div", "trainScreen invisible")
+        val glass = el("div", "trainScreenPanel")
+        glass.appendChild(buildScreenHeader())
+        glass.appendChild(panel)
+        LeaderboardPanel.buildInto(glass) // the driver ladder shares the training screen (was the same TRAIN tab)
+        screen.appendChild(glass)
+        document.body?.appendChild(screen)
+        overlay = screen
         built = true
         refreshActions()
         setStatus("Idle — set the knobs and press Train to evolve a net on the live map.")
         return true
+    }
+
+    // The screen's header: the TRAIN title + a close (×) that resumes the game.
+    private fun buildScreenHeader(): HTMLElement {
+        val head = el("div", "trainScreenHead")
+        head.appendChild(el("span", "trainScreenTitle").also { it.textContent = "Train NN" })
+        val closeBtn = el("button", "trainScreenClose") as HTMLButtonElement
+        closeBtn.type = "button"
+        closeBtn.textContent = "×"
+        closeBtn.title = "Close (resumes the game)"
+        closeBtn.onclick = {
+            close()
+            null
+        }
+        head.appendChild(closeBtn)
+        return head
     }
 
     private fun buildConfigRow(): HTMLElement {

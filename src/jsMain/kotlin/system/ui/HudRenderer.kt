@@ -13,13 +13,11 @@ import system.ui.panel.AiPanel
 import system.ui.panel.AudioPanel
 import system.ui.panel.BrainsPanel
 import system.ui.panel.HistoryPanel
-import system.ui.panel.LeaderboardPanel
 import system.ui.panel.LlmReasoningPanel
 import system.ui.panel.PortalsPanel
 import system.ui.panel.SliderHistoryPanel
 import system.ui.panel.StatsPanel
 import system.ui.panel.TopAgentsPanel
-import system.ui.panel.TrainerPanel
 import system.ui.panel.TuningPanel
 import util.data.Circle
 import util.data.Line
@@ -47,8 +45,6 @@ object HudRenderer {
         TuningPanel.refresh() // mirror an AI driver's vector onto the sliders (no-op under manual control)
         AiPanel.update() // AI footer tab: per-faction driver + live observation readout
         BrainsPanel.update() // BRAINS footer tab: per-faction driver summary + live NN activation / LLM reasoning
-        TrainerPanel.update() // TRAIN footer tab: lazy-build the in-browser neuro-evolution trainer
-        LeaderboardPanel.update() // TRAIN footer tab: the driver leaderboard (round-robin ranking)
         SliderHistoryPanel.update() // AI tab: each slider's value over the checkpoint window
         LlmReasoningPanel.update() // AI tab: the LLM driver's prompt/reply/parsed reasoning
         AmbientBed.updateFromFields() // field hum: volume ∝ % field coverage, panned to the field centroid
