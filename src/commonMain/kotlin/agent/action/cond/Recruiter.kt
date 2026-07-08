@@ -39,7 +39,7 @@ object Recruiter : ConditionalAction {
     /** Start the walk-up: head to the NEAREST NPC (short, reliable walk so a capped recruit slot frees up
      *  quickly) and the Agent drives the walk + meeting. */
     override fun performAction(agent: Agent): Agent {
-        val npc = NonFaction.findNearestTo(agent.pos) ?: return agent // no NPCs (never, given MIN_NONFACTION)
+        val npc = NonFaction.findNearestTo(agent.pos) // always present (MIN_NONFACTION); findNearestTo throws if none
         agent.recruitTargetId = npc.id
         agent.destination = npc.pos
         agent.action.start(actionItem)

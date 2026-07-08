@@ -64,7 +64,7 @@ data class NonFaction(
             moveElsewhere() // pick the next destination…
             // …then rest a beat — but ONLY at interior spots (life around portals). At an off-map (border)
             // target, head straight back into the map instead of loitering, so NPCs don't pile up at the edges.
-            if (Sim.isInPlayArea(pos.x.toDouble(), pos.y.toDouble())) restHere() else departImmediately()
+            if (Sim.isInPlayArea(pos.x, pos.y)) restHere() else departImmediately()
             return
         }
 
