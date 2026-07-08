@@ -23,7 +23,8 @@ enum class ResonatorLevel(val level: Int, val deployablePerPlayer: Int, val ener
     override fun getColor(): String = LevelColor.map[level] ?: "#FFFFFF"
 
     companion object {
-        fun valueOf(level: Int) = values().find { it.level == clipLevel(level) } ?: error("No ResonatorLevel for level $level")
+        // clipLevel clamps to 1..8 and every level 1..8 exists, so first { } always matches (no dead fallback).
+        fun valueOf(level: Int) = values().first { it.level == clipLevel(level) }
         fun find(level: Int, quality: Quality): ResonatorLevel = valueOf(clipLevel(level + quality.addLevels))
         private fun clipLevel(level: Int): Int = max(1, min(level, 8))
     }

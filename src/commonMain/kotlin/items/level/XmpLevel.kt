@@ -24,7 +24,9 @@ enum class XmpLevel(val level: Int, val damage: Int, val rangeM: Int, val xmCost
 
     companion object {
         fun find(level: Int, quality: Quality): XmpLevel = valueOf(clipLevel(level + quality.addLevels))
-        fun valueOf(level: Int) = XmpLevel.values().find { it.level == clipLevel(level) } ?: error("No XmpLevel for level $level")
+
+        // clipLevel clamps to 1..8 and every level 1..8 exists, so first { } always matches (no dead fallback).
+        fun valueOf(level: Int) = XmpLevel.values().first { it.level == clipLevel(level) }
         private fun clipLevel(level: Int): Int = max(1, min(level, 8))
     }
 }

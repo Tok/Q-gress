@@ -22,8 +22,9 @@ enum class PowerCubeLevel(val level: Int, private val xmValue: Int) : ItemLevel 
 
     companion object {
         fun find(level: Int, quality: Quality): PowerCubeLevel = valueOf(clipLevel(level + quality.addLevels))
-        fun valueOf(level: Int) =
-            PowerCubeLevel.values().find { it.level == clipLevel(level) } ?: error("No PowerCubeLevel for level $level")
+
+        // clipLevel clamps to 1..8 and every level 1..8 exists, so first { } always matches (no dead fallback).
+        fun valueOf(level: Int) = PowerCubeLevel.values().first { it.level == clipLevel(level) }
         private fun clipLevel(level: Int): Int = max(1, min(level, 8))
     }
 }
