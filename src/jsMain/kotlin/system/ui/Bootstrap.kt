@@ -212,6 +212,7 @@ object Bootstrap {
      * directly (e.g. the in-game location dropdown's reload). Demo scenes returned earlier, before this.
      */
     private fun startOnboardingOrWorld() {
+        ai.net.ChampionLibrary.restore() // apply user-installed champions (localStorage) before onboarding reads them
         if (Debug.mode == "capture") { // ?debug=capture: sweep presets → download fixtures, no world
             LoadingOverlay.show()
             GridCapture.sweep()

@@ -41,25 +41,18 @@ class ChampionLibraryTest {
     }
 
     @Test
-    fun exportRoundTripsBackThroughInstall() {
-        val exported = ChampionLibrary.exportJson() // the bundled library, serialized to champions.json shape
-        ChampionLibrary.installLibrary(exported) // installing our own export must succeed…
-        assertEquals(25, ChampionLibrary.bakedArchs().size, "…and preserve every arch")
-        ChampionLibrary.installLibrary("") // blank resets to the bundled library
-        assertEquals(25, ChampionLibrary.bakedArchs().size)
+    fun installChampionReplacesThatArchsChampion() {
+        val arch = NetArch(listOf(4, 4)) // "13 → 4 → 4 → 17"
+        val json = ChampionLibrary.jsonFor(arch) // a valid genome for this build
+        ChampionLibrary.installChampion(json) // installing a single champion must succeed…
+        assertEquals(json, ChampionLibrary.jsonFor(arch), "…and become that arch's champion")
+        assertEquals(25, ChampionLibrary.bakedArchs().size, "replacing an existing arch doesn't change the count")
     }
 
     @Test
-    fun installRejectsAnIncompatibleSchemaVersion() {
-        val doc = JSON.parse<Json>(ChampionLibrary.exportJson())
-        doc.asDynamic().schemaVersion = ChampionLibrary.SCHEMA_VERSION + 1
-        assertFailsWith<IllegalStateException> { ChampionLibrary.installLibrary(JSON.stringify(doc)) }
-    }
-
-    @Test
-    fun installRejectsMismatchedNetIoDims() {
-        val doc = JSON.parse<Json>(ChampionLibrary.exportJson())
-        doc.asDynamic().inputs = NetArch.INPUTS + 7 // a library built against a different Observation layout
-        assertFailsWith<IllegalStateException> { ChampionLibrary.installLibrary(JSON.stringify(doc)) }
+    fun installChampionRejectsAGenomeBuiltForADifferentNetIo() {
+        val doc = JSON.parse<Json>(ChampionLibrary.defaultJson())
+        doc.asDynamic().inputs = NetArch.INPUTS + 7 // a genome trained against a different Observation layout
+        assertFailsWith<IllegalArgumentException> { ChampionLibrary.installChampion(JSON.stringify(doc)) }
     }
 }

@@ -17,7 +17,7 @@ import kotlin.test.Test
  * offers) against the adaptive [HeuristicPolicy] baseline — a real opponent, not the uniform-slider default the
  * old champion beat — and commits, per arch, the ELITE genome with the best **held-out** (unseen-seed) margin,
  * so a champion that merely overfit its fixed training seeds is never shipped. Each winner is printed as
- * `BAKEGENOME|<label>|<json>` for the script to harvest into the `champions.json` resource ([ChampionLibrary]).
+ * `BAKEGENOME|<label>|<json>` for the script to harvest into the per-arch `champions/` resources ([ChampionLibrary]).
  */
 class ChampionBake {
 

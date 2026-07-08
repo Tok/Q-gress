@@ -26,7 +26,7 @@ fi
 # Give the test Node process a generous heap for the long headless sims.
 export NODE_OPTIONS="${NODE_OPTIONS:-} --max-old-space-size=4096"
 
-GEN="src/jsMain/resources/champions.json"
+GEN="src/jsMain/resources/champions"   # one <arch>.json per architecture + an index.json manifest
 XML_DIR="build/test-results/jsNodeTest"
 OUT="build/champions"
 WIDTHS="4 8 16 24 32"
@@ -72,16 +72,18 @@ for h1 in $WIDTHS; do
     done
 done
 
-echo "==> Harvesting baked genomes into $GEN…"
+echo "==> Harvesting baked genomes into $GEN/ (one file per arch + index.json)…"
 python3 - "$OUT" "$GEN" <<'PY'
 import sys, os, glob, html, re, json
 
-out_dir, gen_path = sys.argv[1], sys.argv[2]
+out_dir, gen_dir = sys.argv[1], sys.argv[2]
 DEFAULT_LABEL = "13 → 16 → 16 → 17"   # NetArch.DEFAULT — the fallback champion (keep in sync with ChampionLibrary)
 SCHEMA_VERSION = 1                     # keep in sync with ChampionLibrary.SCHEMA_VERSION
 
-# Each build/champions/<arch>.line holds a BAKEGENOME|<label>|<genome-json> record; parse the genome JSON into
-# a nested object so champions.json stays human-diffable (not a double-encoded string).
+def fname(label):   # "13 → 16 → 16 → 17" -> "13-16-16-17.json" (the per-arch file, no timestamp = a dev default)
+    return label.replace(" → ", "-").replace(" ", "") + ".json"
+
+# Each build/champions/<arch>.line holds a BAKEGENOME|<label>|<genome-json> record.
 entries = {}
 for path in sorted(glob.glob(os.path.join(out_dir, "*.line"))):
     with open(path, encoding="utf-8") as f:
@@ -91,21 +93,35 @@ for path in sorted(glob.glob(os.path.join(out_dir, "*.line"))):
                 entries[label] = json.loads(js.strip())
 
 if not entries:
-    sys.exit("ERROR: no baked genomes found in %s — nothing regenerated (%s untouched)" % (out_dir, gen_path))
+    sys.exit("ERROR: no baked genomes found in %s — nothing regenerated (%s untouched)" % (out_dir, gen_dir))
 if DEFAULT_LABEL not in entries:
     sys.exit("ERROR: default champion %r not among the baked archs — refusing to write a library without it" % DEFAULT_LABEL)
 
+os.makedirs(gen_dir, exist_ok=True)
+archs = {}                              # arch label -> filename (the manifest body)
+for label, genome in entries.items():
+    fn = fname(label)
+    archs[label] = fn
+    with open(os.path.join(gen_dir, fn), "w", encoding="utf-8") as f:
+        json.dump(genome, f, ensure_ascii=False, separators=(",", ":"))
+
+# Prune any stale per-arch files no longer in the sweep (keep index.json + the current set).
+keep = set(archs.values()) | {"index.json"}
+for stale in glob.glob(os.path.join(gen_dir, "*.json")):
+    if os.path.basename(stale) not in keep:
+        os.remove(stale)
+
 sample = entries[DEFAULT_LABEL]
-doc = {
+index = {
     "schemaVersion": SCHEMA_VERSION,
     "inputs": sample["inputs"],
     "outputs": sample["outputs"],
     "default": DEFAULT_LABEL,
-    "champions": entries,
+    "archs": archs,
 }
-with open(gen_path, "w", encoding="utf-8") as f:
-    json.dump(doc, f, ensure_ascii=False, separators=(",", ":"))
-print("wrote %d champions to %s" % (len(entries), gen_path))
+with open(os.path.join(gen_dir, "index.json"), "w", encoding="utf-8") as f:
+    json.dump(index, f, ensure_ascii=False, separators=(",", ":"))
+print("wrote %d per-arch champions + index.json to %s/" % (len(entries), gen_dir))
 PY
 
 echo

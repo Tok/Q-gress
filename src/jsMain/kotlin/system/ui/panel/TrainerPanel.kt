@@ -5,6 +5,7 @@ import agent.Faction
 import ai.FactionPolicies
 import ai.MatchSetup
 import ai.net.Activation
+import ai.net.ChampionLibrary
 import ai.net.Evolution
 import ai.net.EvolutionConfig
 import ai.net.GenomeIO
@@ -173,7 +174,8 @@ object TrainerPanel {
         actionButtons += button("Install → ${Faction.RES.abbr}", "trainAction") { install(Faction.RES) }
         actionButtons += button("Download JSON", "trainAction") { downloadChampion() }
         actionButtons.forEach { box.appendChild(it) }
-        // "Load JSON" is always usable (no champion needed) — it imports a shared net + makes it the net driver.
+        // "Load JSON" is always usable (no champion needed) — it imports a shared champion, installs it as its
+        // arch's champion (persisted), and makes it the net driver.
         box.appendChild(button("Load JSON", "trainAction") { triggerLoad() })
         box.appendChild(buildLoadInput())
         return box
@@ -195,37 +197,50 @@ object TrainerPanel {
 
     private fun triggerLoad() = loadInput?.click()
 
-    // Read a shared genome JSON, validate it (GenomeIO.decode throws on a bad shape), persist it as the net
-    // driver's net (survives reload, like Save champion), and install it for both factions on the spot.
+    // Read a shared champion JSON, validate it (GenomeIO.decode throws on a bad shape / wrong net I/O), register
+    // it as its architecture's champion in the library (persisted), save it as the net driver's net, and install
+    // it for both factions on the spot.
     private fun loadFile(file: org.w3c.files.File) {
         val reader = org.w3c.files.FileReader()
         reader.onload = {
             val text = reader.result as? String ?: ""
             runCatching { GenomeIO.decode(text) }
                 .onSuccess {
+                    ChampionLibrary.installChampion(text) // register it as its arch's champion (persisted)
                     NetStore.save(text)
                     Faction.all().forEach { f ->
                         FactionPolicies.set(f, NetPolicy(GenomeIO.decode(text), f))
                         DriverControls.reflect(f, "net")
                     }
-                    setStatus("Loaded net from ${file.name} — saved + installed for both factions.")
+                    setStatus("Loaded champion from ${file.name} — installed as its arch's champion + the net driver.")
                 }
-                .onFailure { setStatus("Couldn't load that file: ${it.message ?: "not a valid net JSON"}") }
+                .onFailure { setStatus("Couldn't load that file: ${it.message ?: "not a valid champion JSON"}") }
             null
         }
         reader.readAsText(file)
     }
 
-    // Offer the current champion as a downloadable .json (Blob → object URL → synthetic click) for sharing.
+    // Offer the current trained champion as a downloadable .json (Blob → object URL → synthetic click) for
+    // sharing. The filename carries the arch + a timestamp so a UI-baked champion is unique and self-describing
+    // (vs the dev-default per-arch files, which are plain `<arch>.json`).
     private fun downloadChampion() {
+        val winner = session ?: return
         val json = championJson() ?: return
+        val name = "qgress-${winner.config.arch.hiddens.joinToString("x")}-${fileTimestamp()}.json"
         val url = objectUrlFor(json)
         val a = document.createElement("a") as org.w3c.dom.HTMLAnchorElement
         a.href = url
-        a.asDynamic().download = "qgress-net.json"
+        a.asDynamic().download = name
         a.click()
         revokeObjectUrl(url)
-        setStatus("Champion downloaded as qgress-net.json — share it; Load JSON imports it back.")
+        setStatus("Champion downloaded as $name — share it; Load JSON installs it as that arch's champion.")
+    }
+
+    // yyyymmdd-hhmmss (local) — a filename-safe stamp so each UI-baked download is unique.
+    private fun fileTimestamp(): String {
+        val d = kotlin.js.Date()
+        fun p(n: Int) = n.toString().padStart(2, '0')
+        return "${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}"
     }
 
     @Suppress("UnusedParameter") // referenced inside the js() intrinsic, invisible to detekt
