@@ -208,9 +208,9 @@ class NonFactionActTest {
 
             val dests = NonFaction.offscreenDestinations()
 
-            // The OLD "even angles then drop the blocked ones" would lose ~40% of the ring here; the street-aware
-            // ring instead relocates the budget onto the open arc, so it's (almost) fully placed…
-            assertTrue(dests.size >= 10, "the budget is placed onto the open streets, not dropped (was ${dests.size})")
+            // The open ~216° arc is filled at even density (a spread of targets, not clustered), while the
+            // blocked building sector stays an empty gap.
+            assertTrue(dests.size >= 4, "the open street arc hosts a spread of targets (was ${dests.size})")
             dests.forEach {
                 assertTrue(World.grid[it.toShadow()]?.isPassable != false, "every destination sits on walkable ground")
                 val ang = (atan2(it.y - cy, it.x - cx) + 2 * PI) % (2 * PI)

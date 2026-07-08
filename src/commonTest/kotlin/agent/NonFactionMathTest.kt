@@ -71,17 +71,19 @@ class NonFactionMathTest {
     }
 
     @Test
-    fun destinationsOnlyLandOnWalkableArcs() {
-        // Left half walkable, right half a wall.
+    fun destinationsOnlyLandOnWalkableArcsAtEvenDensity() {
+        // Left half walkable, right half a wall. At density 10/100 the walkable half gets HALF the budget (5),
+        // NOT the whole 10 crammed in — the blocked half just stays an empty gap (no clustering).
         val placeable = BooleanArray(100) { it < 50 }
         val slots = NonFactionMath.ringDestinations(placeable, targetCount = 10, minArcSamples = 2)
-        assertEquals(10, slots.size, "the whole budget still fits on the one walkable arc")
+        assertEquals(5, slots.size, "even density ⇒ the walkable half gets its proportional share, not the whole budget")
         assertTrue(slots.all { it in 0.0..50.0 }, "no destination lands on the blocked half (slots=$slots)")
     }
 
     @Test
-    fun oneDestinationInAnArcSitsAtItsCentre() {
-        // Two thin, equal streets far apart; a budget of 2 ⇒ exactly one centred point in each.
+    fun aNarrowStreetGetsExactlyOneCentredDestination() {
+        // Two thin, equal streets far apart at a low density ⇒ exactly one centred point in each (the min-1
+        // floor: a real street always gets a target, centred).
         val placeable = BooleanArray(100) { it in 10..14 || it in 60..64 }
         val slots = NonFactionMath.ringDestinations(placeable, targetCount = 2, minArcSamples = 2).sorted()
         assertEquals(2, slots.size, "one per street")
@@ -90,33 +92,42 @@ class NonFactionMathTest {
     }
 
     @Test
-    fun twoDestinationsInAnArcAreCentredAndSpread() {
-        val placeable = BooleanArray(100) { it < 20 } // one 20-wide arc
-        val slots = NonFactionMath.ringDestinations(placeable, targetCount = 2, minArcSamples = 2).sorted()
-        assertEquals(2, slots.size)
+    fun aWideArcSpreadsItsShareCentred() {
+        // One 20-wide arc at density 10/100 ⇒ 2 points, centred + spread (not on the edges).
+        val placeable = BooleanArray(100) { it < 20 }
+        val slots = NonFactionMath.ringDestinations(placeable, targetCount = 10, minArcSamples = 2).sorted()
+        assertEquals(2, slots.size, "20 samples × density 0.1 ⇒ 2")
         assertEquals(5.0, slots[0], 0.001, "first at 1/4 into the arc")
         assertEquals(15.0, slots[1], 0.001, "second at 3/4 into the arc (both centred, not on the edges)")
     }
 
     @Test
-    fun aWiderStreetHostsProportionallyMoreDestinations() {
-        // A 30-wide arc and a 10-wide arc, budget 8 ⇒ 6 and 2 by width.
+    fun aWiderStreetHostsProportionallyMoreAtTheSameDensity() {
+        // A 30-wide arc and a 10-wide arc at density 20/100 ⇒ 6 and 2 — the SAME spacing in both, so the
+        // wider street just fits more (no re-packing of a fixed budget).
         val placeable = BooleanArray(100) { it < 30 || it in 50..59 }
-        val slots = NonFactionMath.ringDestinations(placeable, targetCount = 8, minArcSamples = 2)
+        val slots = NonFactionMath.ringDestinations(placeable, targetCount = 20, minArcSamples = 2)
         val wide = slots.count { it < 30 }
         val thin = slots.count { it in 50.0..60.0 }
-        assertEquals(8, slots.size, "the full budget is placed")
-        assertEquals(6, wide, "the 30-wide street gets ~3× the thin one")
-        assertEquals(2, thin, "the 10-wide street gets the remaining share")
+        assertEquals(6, wide, "the 30-wide street gets 30×0.2 = 6")
+        assertEquals(2, thin, "the 10-wide street gets 10×0.2 = 2 (same density)")
     }
 
     @Test
     fun sliverArcsBelowTheMinWidthAreIgnored() {
         // A 1-sample sliver (diagonal artefact) plus a real 20-wide street; the sliver is dropped.
         val placeable = BooleanArray(100) { it == 40 || it in 70..89 }
-        val slots = NonFactionMath.ringDestinations(placeable, targetCount = 5, minArcSamples = 2)
-        assertEquals(5, slots.size)
+        val slots = NonFactionMath.ringDestinations(placeable, targetCount = 20, minArcSamples = 2)
+        assertTrue(slots.isNotEmpty(), "the real street is used")
         assertTrue(slots.all { it in 70.0..90.0 }, "everything lands on the real street, none on the sliver at 40")
+    }
+
+    @Test
+    fun aVeryFragmentedRingIsCappedToTheBudget() {
+        // 8 thin streets, each forced to min-1 ⇒ 8 wanted, but a budget of 5 caps it to the 5 widest.
+        val placeable = BooleanArray(100) { it % 12 < 3 } // 9 slivers of width 3 (…but minArc keeps them)
+        val slots = NonFactionMath.ringDestinations(placeable, targetCount = 5, minArcSamples = 2)
+        assertEquals(5, slots.size, "the min-1-per-arc floor is capped back to the flow-field budget")
     }
 
     @Test

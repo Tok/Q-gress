@@ -326,10 +326,13 @@ Commit hashes are illustrative pointers, not exhaustive.
   be captured once at class-load with the default size, which dropped targets *inside* a larger map and
   re-caused the centre-clustering. The round-field ring is **street-aware** (`NonFactionMath.ringDestinations`):
   it finely samples the ring for passability, splits it into contiguous **walkable arcs** (the streets that
-  cross the ring between off-map buildings), and spreads the budget across those arcs proportional to width,
-  **centred** per arc — so in a dense city the targets land in the streets instead of the old "even angles,
-  then drop whatever hit a building" (which left few, off-centre targets). Fully blocked ring → falls back to
-  a raw even ring. The rectangle keeps its per-edge even spacing + walkable filter.
+  cross the ring, plus the off-screen gaps in the round-arena mask), and places targets at a **constant
+  angular density** (the budget spread over the whole circle) — each arc gets its proportional share (min 1
+  so a real street always gets one), **centred** per arc, and the blocked spans stay empty. So a city's
+  targets land in the streets, while an open ring keeps the old even spread — instead of the old "even
+  angles, then drop whatever hit a building" (which left few, off-centre targets), and without re-packing the
+  whole budget into the few open arcs (which clustered them into a "cross"). Fully blocked ring → falls back
+  to a raw even ring. The rectangle keeps its per-edge even spacing + walkable filter.
 - **Plausible agent handles** (`util/NameGen`): Ingress-style names from themed word banks (per-faction
   flavour + adjectives/nouns/titles), CamelCase/snake/dot styling, light leet, numeric + `xX_…_Xx`
   wraps, and a location token — deduped per game. Replaces the old gibberish generator.
