@@ -3,6 +3,7 @@ package system.ui.panel
 import World
 import agent.Faction
 import ai.FactionPolicies
+import ai.HeuristicPolicy
 import ai.MatchSetup
 import ai.SimRunner
 import ai.net.Activation
@@ -81,7 +82,9 @@ object TrainerPanel {
     // Held-out decider phase (runs after training): best challenger vs the opponent over unseen seeds, both colours.
     private var deciding = false
     private var deciderMatch = 0
-    private var deciderMarginSum = 0.0
+    private var deciderMarginSum = 0.0 // net checkpoints led vs the OPPONENT (the accept/reject verdict)
+    private var deciderBaselineSum = 0.0 // checkpoint fitness vs the HEURISTIC baseline (the champion's fitness tag)
+    private var deciderBaselineFitness: Double? = null // the re-tag: fitness vs baseline, comparable to repo champions
     private var deciderCand: Net? = null
     private var deciderOpp: Net? = null
 
@@ -511,13 +514,16 @@ object TrainerPanel {
         deciderOpp = opp
         deciderMatch = 0
         deciderMarginSum = 0.0
+        deciderBaselineSum = 0.0
+        deciderBaselineFitness = null
         setProgress(0.0, "Deciding…")
-        setStatus("Training done — held-out decider vs the opponent over $DECIDER_SEEDS unseen cycles (both colours)…")
+        setStatus("Training done — held-out decider over unseen cycles (vs the opponent, then vs the baseline)…")
         timeoutId = window.setTimeout({ deciderStep() }, 0)
     }
 
-    // One held-out match per tick (~2.8 s each) so the UI never freezes for long: the challenger plays the
-    // opponent on an unseen seed, alternating colours, and we sum the challenger's net checkpoint margin.
+    // One held-out match per tick (~2.8 s each) so the UI never freezes for long. Two phases over UNSEEN seeds:
+    // first vs the OPPONENT (both colours) → the accept/reject verdict; then vs the HEURISTIC baseline → the
+    // champion's fitness TAG (so an installed/downloaded net carries a vs-baseline number like the repo champions).
     private fun deciderStep() {
         if (!running) return
         val cand = deciderCand
@@ -526,27 +532,40 @@ object TrainerPanel {
             finishDecider()
             return
         }
-        val total = DECIDER_SEEDS * 2
-        val seed = DECIDER_SEED_BASE + deciderMatch / 2
-        val candIsEnl = deciderMatch % 2 == 0
-        val result = runCatching {
-            if (candIsEnl) {
-                SimRunner.runMatch(World.grid, seed, MATCH_TICKS, runSetup, NetPolicy(cand, Faction.ENL), NetPolicy(opp, Faction.RES))
+        val oppTotal = DECIDER_SEEDS * 2
+        val total = oppTotal + DECIDER_SEEDS
+        runCatching {
+            if (deciderMatch < oppTotal) {
+                val seed = DECIDER_SEED_BASE + deciderMatch / 2
+                val candIsEnl = deciderMatch % 2 == 0
+                val r = if (candIsEnl) {
+                    SimRunner.runMatch(World.grid, seed, MATCH_TICKS, runSetup, NetPolicy(cand, Faction.ENL), NetPolicy(opp, Faction.RES))
+                } else {
+                    SimRunner.runMatch(World.grid, seed, MATCH_TICKS, runSetup, NetPolicy(opp, Faction.ENL), NetPolicy(cand, Faction.RES))
+                }
+                deciderMarginSum += r.checkpointWinMargin(if (candIsEnl) Faction.ENL else Faction.RES)
             } else {
-                SimRunner.runMatch(World.grid, seed, MATCH_TICKS, runSetup, NetPolicy(opp, Faction.ENL), NetPolicy(cand, Faction.RES))
+                val seed = DECIDER_SEED_BASE + 500 + (deciderMatch - oppTotal)
+                val r = SimRunner.runMatch(
+                    World.grid,
+                    seed,
+                    MATCH_TICKS,
+                    runSetup,
+                    NetPolicy(cand, Faction.ENL),
+                    HeuristicPolicy(Faction.RES),
+                )
+                deciderBaselineSum += r.checkpointFitness(Faction.ENL)
             }
         }.getOrElse {
             abort(it.message)
             return
         }
-        deciderMarginSum += result.checkpointWinMargin(if (candIsEnl) Faction.ENL else Faction.RES)
         SimRunner.reset()
         deciderMatch++
         setProgress(deciderMatch.toDouble() / total, "Deciding…")
+        val phase = if (deciderMatch <= oppTotal) "vs opponent" else "vs baseline"
         setStatus(
-            "Held-out decider · match $deciderMatch/$total · challenger leads by ${signedInt(
-                deciderMarginSum,
-            )} checkpoints (unseen seeds)…",
+            "Held-out decider · match $deciderMatch/$total ($phase) · leads the opponent by ${signedInt(deciderMarginSum)} checkpoints…",
         )
         if (deciderMatch >= total) finishDecider() else timeoutId = window.setTimeout({ deciderStep() }, 0)
     }
@@ -554,6 +573,7 @@ object TrainerPanel {
     private fun finishDecider() {
         val done = session
         val margin = deciderMarginSum
+        deciderBaselineFitness = deciderBaselineSum / DECIDER_SEEDS // the champion's vs-baseline fitness tag
         teardown() // HeadlessRun.end() → restores the live world, clears the decider flag
         setProgress(1.0, "Done")
         val verdict = when {
@@ -563,8 +583,10 @@ object TrainerPanel {
         }
         val gens = done?.generation ?: 0
         setStatus(
-            "Done · $gens generations · held-out decider: the challenger $verdict the opponent by " +
-                "${signedInt(margin)} checkpoints over ${DECIDER_SEEDS * 2} unseen matches — save / install / download if better.",
+            "Done · $gens generations · the challenger $verdict the opponent by ${signedInt(margin)} checkpoints, and " +
+                "scores ${muLabel(
+                    deciderBaselineFitness ?: 0.0,
+                )} vs the baseline (its saved fitness) — save / install / download if better.",
         )
         deciderCand?.let { renderActivation(it) } // show the trained challenger "thinking" on the restored game
         refreshActions()
@@ -615,7 +637,9 @@ object TrainerPanel {
 
     private fun championJson(): String? {
         val winner = session ?: return null
-        return GenomeIO.encode(winner.bestGenome, winner.config.arch, winner.bestFitness)
+        // Tag with the held-out fitness vs the HEURISTIC baseline (from the decider), comparable to the repo
+        // champions — not the vs-opponent training fitness. Falls back to the training fitness if no decider ran.
+        return GenomeIO.encode(winner.bestGenome, winner.config.arch, deciderBaselineFitness ?: winner.bestFitness)
     }
 
     private fun readConfig(): EvolutionConfig {
