@@ -25,9 +25,9 @@ object OwnBuildings {
     /**
      * Master switch for the own-mesh building replacement.
      *
-     * ON: we get a COMPLETE footprint set by fetching + decoding the OpenFreeMap `.pbf` vector tiles
-     * ourselves (see [util.BuildingTiles]) — MapLibre's own query APIs only ever returned a far-flung
-     * fraction. With our own meshes we control them: real sun shadows (cast + receive), per-mesh shake
+     * ON: we get a COMPLETE footprint set by querying the OSM Overpass API ourselves (see
+     * [system.building.BuildingTiles]) — MapLibre's own query APIs only ever returned a far-flung
+     * fraction (and OpenFreeMap's vector tiles heavily simplify the building layer). With our own meshes we control them: real sun shadows (cast + receive), per-mesh shake
      * (no native feature-id needed, so it works on the title too), debris colliders, and the door open
      * for walkable roofs / more. MapLibre's fill-extrusion layer is hidden (opacity 0) once ours are in.
      * Flip to `false` to fall back to MapLibre's buildings (no building-cast shadows, MapLibre shake).

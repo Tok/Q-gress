@@ -170,12 +170,11 @@ object MapController {
     private const val OWN_BUILD_MAX_RETRY = 16 // …up to ~8 s (DEM tiles can be slow)
 
     /**
-     * Load a COMPLETE set of play-area building footprints by fetching + decoding the OpenFreeMap `.pbf`
-     * vector tiles ourselves ([BuildingTiles]) — MapLibre's query APIs only ever returned a fraction.
-     * Then seed debris colliders from them, and — when [OwnBuildings.REPLACE_BUILDINGS] is on — mesh our
-     * OWN buildings and hide MapLibre's fill-extrusion layer (opacity 0). Deterministic: we know exactly
-     * which tiles cover the area, so there's no wait-and-retry on tile streaming (only on terrain, which
-     * we need for correct building base z).
+     * Load a COMPLETE set of play-area building footprints by querying the OSM Overpass API ourselves
+     * ([BuildingTiles]) — MapLibre's query APIs only ever returned a fraction. Then seed debris colliders
+     * from them, and — when [OwnBuildings.REPLACE_BUILDINGS] is on — mesh our OWN buildings and hide
+     * MapLibre's fill-extrusion layer (opacity 0). A single bbox query covers the whole area, so there's
+     * no wait-and-retry on tile streaming (only on terrain, which we need for correct building base z).
      */
     fun buildBuildingColliders() {
         if (demoMode || !Styles.use3DBuildings || ownBuildingsHooked) return
