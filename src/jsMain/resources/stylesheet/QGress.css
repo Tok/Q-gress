@@ -162,6 +162,23 @@ html, body {
     margin-left: 3px;
     max-width: 120px;
 }
+.aiArchPickers {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    margin-left: 3px;
+}
+.aiArchTimes {
+    color: #a0a0a0; /* neutral (R==G==B) */
+    font-family: "Coda", monospace;
+    font-size: 11px;
+}
+.aiArchInfo {
+    color: #a0a0a0; /* neutral (R==G==B) */
+    font-family: "Coda", monospace;
+    font-size: 10px;
+    margin-left: 4px;
+}
 .aiLoadNet {
     display: inline-flex;
     align-items: center;

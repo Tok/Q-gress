@@ -37,11 +37,18 @@ object DriverControls {
     private val selects = mutableMapOf<Faction, HTMLSelectElement>() // live pickers, so others can reflect a change
     private val llmModel = mutableMapOf<Faction, String>() // each faction's chosen LLM model id
     private val llmClients = mutableMapOf<Faction, WebLlmClient>() // one client per faction (its own model load)
-    private val netArch = mutableMapOf<Faction, String>() // each faction's chosen net-arch key ("16-16") or RANDOM_ARCH
-    private val resolvedRandom = mutableMapOf<Faction, NetArch>() // a RANDOM pick resolved to a concrete arch (cached)
-    private val archSelects = mutableMapOf<Faction, HTMLSelectElement>() // live arch <select>s, so an upload can add/select an arch
 
-    const val RANDOM_ARCH = "random" // the "let the seed pick a baked arch" option (the NN-driver default)
+    // Each faction's chosen hidden-layer widths — a width string ("16") or [RANDOM_LAYER]; two dropdowns, not one
+    // flat "13-X-Y-17" list. The combined value rides the URL as "h1-h2" (e.g. "16-8", "r-8"); see [chosenArch].
+    private val netH1 = mutableMapOf<Faction, String>()
+    private val netH2 = mutableMapOf<Faction, String>()
+    private val resolvedRandom = mutableMapOf<Faction, NetArch>() // a RANDOM pick resolved to a concrete arch (cached)
+    private val archSelects = mutableMapOf<Faction, Pair<HTMLSelectElement, HTMLSelectElement>>() // live H1/H2 <select>s
+    private val archInfo = mutableMapOf<Faction, HTMLElement>() // the resolved-arch fitness/provenance label
+
+    const val RANDOM_LAYER = "r" // a hidden-layer dropdown set to "Rnd" — the seed picks that layer's width
+    private val ARCH_WIDTHS = listOf(4, 8, 16, 24, 32) // the per-layer width choices (matches the baked sweep)
+    private const val DEFAULT_WIDTH = 16
     private const val ARCH_SALT = 0x51A5 // decorrelate the arch pick from the world seed's other draws
 
     /** Whether the experimental LLM driver is unlocked (the onboarding opt-in; carried in the start URL). */
@@ -64,44 +71,50 @@ object DriverControls {
     /** The driver for [faction]: the onboarding pick, else the start-URL (`?enl=…&res=…`), else the default. */
     fun chosen(faction: Faction): String = pending[faction] ?: GameUrl.driver(faction) ?: DEFAULT
 
-    /** Record [faction]'s chosen net architecture (a `"16-16"` key or [RANDOM_ARCH]); re-resolves any RANDOM. */
-    fun selectArch(faction: Faction, key: String) {
-        netArch[faction] = key
+    /** Record [faction]'s chosen width for hidden [layer] (1 or 2) — a width string or [RANDOM_LAYER]; re-resolves. */
+    fun selectLayer(faction: Faction, layer: Int, value: String) {
+        (if (layer == 1) netH1 else netH2)[faction] = value
         resolvedRandom.remove(faction) // a fresh pick re-resolves next apply
     }
 
-    /** The chosen net-arch key for [faction]: onboarding pick, else the start-URL (`?enlarch/?resarch`), else RANDOM. */
-    fun chosenArch(faction: Faction): String = netArch[faction] ?: GameUrl.netArch(faction) ?: RANDOM_ARCH
+    // [layer]'s chosen width: the picker value, else the start-URL ("h1-h2" / legacy "random"), else RANDOM.
+    private fun chosenLayer(faction: Faction, layer: Int): String {
+        val stored = (if (layer == 1) netH1 else netH2)[faction]
+        return stored ?: urlLayer(faction, layer) ?: RANDOM_LAYER
+    }
 
-    private fun archKey(arch: NetArch): String = arch.hiddens.joinToString("-")
+    private fun urlLayer(faction: Faction, layer: Int): String? {
+        val arch = GameUrl.netArch(faction) ?: return null
+        if (arch == "random" || arch == RANDOM_LAYER) return RANDOM_LAYER // legacy whole-arch random
+        return arch.split("-").getOrNull(layer - 1)
+    }
 
-    // A signed 2-decimal fitness for the arch dropdown, e.g. +2.00 / -0.50.
+    /** The combined arch key for [faction] (`"h1-h2"`, e.g. `"16-8"` / `"r-8"`) — rides the shared URL. */
+    fun chosenArch(faction: Faction): String = "${chosenLayer(faction, 1)}-${chosenLayer(faction, 2)}"
+
+    // Set both hidden-layer widths from a concrete [arch] (an uploaded net) so the picker + resolve track it.
+    private fun setArch(faction: Faction, arch: NetArch) {
+        selectLayer(faction, 1, arch.hiddens.getOrElse(0) { DEFAULT_WIDTH }.toString())
+        selectLayer(faction, 2, arch.hiddens.getOrElse(1) { DEFAULT_WIDTH }.toString())
+    }
+
+    // A signed 2-decimal fitness for the arch info label, e.g. +2.00 / -0.50.
     private fun signed(v: Double): String {
         val fixed = v.asDynamic().toFixed(2) as String
         return if (v >= 0) "+$fixed" else fixed
     }
 
-    private fun parseArchKey(key: String): NetArch? {
-        val parts = key.split("-")
-        val hiddens = parts.mapNotNull { it.toIntOrNull() }
-        return if (hiddens.size == parts.size && hiddens.all { it > 0 }) NetArch(hiddens) else null
-    }
+    // The concrete arch to install for [faction], resolving each RANDOM layer off the WORLD SEED (a throwaway
+    // stream, so the live RNG sequence is untouched) → a shared `?seed=…` link reproduces the same pick. Cached
+    // per faction so it stays put across re-applies within a game.
+    private fun resolvedArch(faction: Faction): NetArch =
+        resolvedRandom.getOrPut(faction) { NetArch(listOf(resolveLayer(faction, 1), resolveLayer(faction, 2))) }
 
-    // The concrete arch to install for [faction]. RANDOM resolves off the WORLD SEED (a throwaway stream, so the
-    // live RNG sequence is untouched) → a shared `?seed=…` link reproduces the same pick, while a fresh no-seed
-    // game randomizes. Cached per faction so it stays put across re-applies within a game.
-    private fun resolvedArch(faction: Faction): NetArch {
-        val choice = chosenArch(faction)
-        if (choice != RANDOM_ARCH) return parseArchKey(choice) ?: NetArch.DEFAULT
-        return resolvedRandom.getOrPut(faction) {
-            val archs = ChampionLibrary.bakedArchs()
-            if (archs.isEmpty()) {
-                NetArch.DEFAULT
-            } else {
-                val rng = RngStream().apply { seed(Rng.currentSeed() xor ARCH_SALT xor faction.ordinal) }
-                archs[rng.randomInt(archs.size - 1)]
-            }
-        }
+    private fun resolveLayer(faction: Faction, layer: Int): Int {
+        val v = chosenLayer(faction, layer)
+        if (v != RANDOM_LAYER) return v.toIntOrNull() ?: DEFAULT_WIDTH // a concrete (incl. uploaded non-sweep) width
+        val rng = RngStream().apply { seed(Rng.currentSeed() xor ARCH_SALT xor faction.ordinal xor (layer shl 12)) }
+        return ARCH_WIDTHS[rng.randomInt(ARCH_WIDTHS.size - 1)]
     }
 
     /** Install each faction's chosen driver up front so the picked brains play from the first tick — the
@@ -161,27 +174,48 @@ object DriverControls {
     }
 
     /**
-     * Per-faction **net-architecture** picker (shown only while the Neural-net driver is selected) — pick the
-     * baked champion arch, or **Random** (the seed-picked default, so AI-vs-AI stays varied). Changing it
-     * reinstalls the net driver with the chosen arch's champion. Shared by the toolbar picker + onboarding.
+     * Per-faction **net-architecture** picker (shown only while the Neural-net driver is selected) — **two**
+     * dropdowns, one per hidden layer (width **4 / 8 / 16 / 24 / 32** or **Rnd**, seed-picked so AI-vs-AI stays
+     * varied), plus a small label with the resolved arch + its baked fitness. Changing either reinstalls the net
+     * driver with the chosen arch's champion. Shared by the toolbar picker + onboarding.
      */
-    fun archPicker(faction: Faction): HTMLSelectElement {
+    fun archPicker(faction: Faction): HTMLElement {
+        val wrap = el("span", "aiArchPickers")
+        val s1 = layerSelect(faction, 1)
+        val s2 = layerSelect(faction, 2)
+        archSelects[faction] = s1 to s2
+        val info = el("span", "aiArchInfo")
+        archInfo[faction] = info
+        wrap.appendChild(s1)
+        wrap.appendChild(el("span", "aiArchTimes").also { it.textContent = "×" })
+        wrap.appendChild(s2)
+        wrap.appendChild(info)
+        refreshArchInfo(faction)
+        return wrap
+    }
+
+    private fun layerSelect(faction: Faction, layer: Int): HTMLSelectElement {
         val sel = document.createElement("select") as HTMLSelectElement
         sel.className = "aiDriverSelect aiArchSelect"
-        sel.appendChild(option(RANDOM_ARCH, "Random arch", disabled = false))
-        ChampionLibrary.bakedArchs().forEach { arch ->
-            // e.g. "16×8  +2.00" — the held-out fitness (net checkpoints led vs the baseline) it was baked with.
-            val fit = ChampionLibrary.fitnessFor(arch)?.let { "  ${signed(it)}" } ?: ""
-            sel.appendChild(option(archKey(arch), arch.hiddens.joinToString("×") + fit, disabled = false))
-        }
-        sel.value = chosenArch(faction)
+        sel.title = "Hidden layer $layer width"
+        sel.appendChild(option(RANDOM_LAYER, "Rnd", disabled = false))
+        ARCH_WIDTHS.forEach { sel.appendChild(option(it.toString(), it.toString(), disabled = false)) }
+        sel.value = chosenLayer(faction, layer)
         sel.onchange = {
-            selectArch(faction, sel.value)
+            selectLayer(faction, layer, sel.value)
+            refreshArchInfo(faction)
             if (selects[faction]?.value == "net") apply(faction, "net") // swap to the new arch's champion live
             null
         }
-        archSelects[faction] = sel
         return sel
+    }
+
+    // Update the resolved-arch label (e.g. "16×8 · +12.00") beside a faction's two dropdowns.
+    private fun refreshArchInfo(faction: Faction) {
+        val info = archInfo[faction] ?: return
+        val arch = resolvedArch(faction)
+        val fit = ChampionLibrary.fitnessFor(arch)?.let { signed(it) } ?: "—"
+        info.textContent = "${arch.hiddens.joinToString("×")} · $fit"
     }
 
     /**
@@ -239,8 +273,8 @@ object DriverControls {
     }
 
     private fun activateLoadedNet(faction: Faction, arch: NetArch, onActivated: () -> Unit) {
-        ensureArchOption(faction, arch)
-        selectArch(faction, archKey(arch))
+        setArch(faction, arch)
+        syncArchSelects(faction, arch)
         select(faction, "net") // pending pick (onboarding carries it on the start URL)
         selects[faction]?.let {
             it.value = "net"
@@ -250,16 +284,14 @@ object DriverControls {
         onActivated()
     }
 
-    // Add [arch] to the faction's arch <select> if it isn't listed yet (a non-sweep uploaded arch), then select it.
-    private fun ensureArchOption(faction: Faction, arch: NetArch) {
-        val sel = archSelects[faction] ?: return
-        val key = archKey(arch)
-        val exists = (0 until sel.length).any { (sel.item(it) as? HTMLOptionElement)?.value == key }
-        if (!exists) {
-            val fit = ChampionLibrary.fitnessFor(arch)?.let { "  ${signed(it)}" } ?: ""
-            sel.appendChild(option(key, arch.hiddens.joinToString("×") + fit, disabled = false))
+    // Reflect a concrete [arch] onto the faction's two dropdowns + info label (an uploaded net). A non-sweep width
+    // has no matching <option>, so the select just won't show it — but [resolveLayer] still reads the real width.
+    private fun syncArchSelects(faction: Faction, arch: NetArch) {
+        archSelects[faction]?.let { (s1, s2) ->
+            s1.value = arch.hiddens.getOrElse(0) { DEFAULT_WIDTH }.toString()
+            s2.value = arch.hiddens.getOrElse(1) { DEFAULT_WIDTH }.toString()
         }
-        sel.value = key
+        refreshArchInfo(faction)
     }
 
     // Per-faction LLM model picker (shown only while the LLM driver is selected) — pick a different model per
