@@ -2,12 +2,18 @@ package ai.net
 
 import ai.Observation
 import ai.SliderVector
+import kotlin.js.Json
+import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 /** Guards the per-arch champion library: every baked genome decodes for this build and runs a valid forward pass. */
 class ChampionLibraryTest {
+
+    @AfterTest
+    fun tidy() = ChampionLibrary.reset() // drop any override an install test left on the singleton
 
     @Test
     fun everyBakedGenomeDecodesAndRuns() {
@@ -32,5 +38,28 @@ class ChampionLibraryTest {
     fun theDefaultChampionIsInTheLibrary() {
         assertEquals(ChampionLibrary.DEFAULT_LABEL, NetArch.DEFAULT.label(), "the default arch label matches the library key")
         assertTrue((GenomeIO.fitnessOf(ChampionLibrary.defaultJson()) ?: 0.0) > 0.0, "the default champion has a positive fitness margin")
+    }
+
+    @Test
+    fun exportRoundTripsBackThroughInstall() {
+        val exported = ChampionLibrary.exportJson() // the bundled library, serialized to champions.json shape
+        ChampionLibrary.installLibrary(exported) // installing our own export must succeed…
+        assertEquals(25, ChampionLibrary.bakedArchs().size, "…and preserve every arch")
+        ChampionLibrary.installLibrary("") // blank resets to the bundled library
+        assertEquals(25, ChampionLibrary.bakedArchs().size)
+    }
+
+    @Test
+    fun installRejectsAnIncompatibleSchemaVersion() {
+        val doc = JSON.parse<Json>(ChampionLibrary.exportJson())
+        doc.asDynamic().schemaVersion = ChampionLibrary.SCHEMA_VERSION + 1
+        assertFailsWith<IllegalStateException> { ChampionLibrary.installLibrary(JSON.stringify(doc)) }
+    }
+
+    @Test
+    fun installRejectsMismatchedNetIoDims() {
+        val doc = JSON.parse<Json>(ChampionLibrary.exportJson())
+        doc.asDynamic().inputs = NetArch.INPUTS + 7 // a library built against a different Observation layout
+        assertFailsWith<IllegalStateException> { ChampionLibrary.installLibrary(JSON.stringify(doc)) }
     }
 }
