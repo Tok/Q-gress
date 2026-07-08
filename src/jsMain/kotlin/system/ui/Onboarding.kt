@@ -438,10 +438,17 @@ object Onboarding {
         )
         val current = DriverControls.chosen(faction)
         DriverControls.select(faction, current) // seed the pick so it rides the URL even with no click
-        // Arch picker row (spans the grid, under this side's buttons) — shown only while this side is Neural net.
-        val archRow = archPickerRow(faction)
-        archRow.style.display = if (current == "net") "" else "none"
         val btns = mutableListOf<HTMLButtonElement>()
+        var netBtn: HTMLButtonElement? = null
+        // Arch picker row (spans the grid, under this side's buttons) — shown only while this side is Neural net.
+        // Its "Load net…" upload can flip this side to Neural net, so it syncs the buttons via the callback.
+        lateinit var archRow: HTMLElement
+        archRow = archPickerRow(faction) {
+            btns.forEach { it.removeClass("onboardActive") }
+            netBtn?.addClass("onboardActive")
+            archRow.style.display = ""
+        }
+        archRow.style.display = if (current == "net") "" else "none"
         options.forEach { (value, text) ->
             // Only YOUR side offers Human (manual sliders) — no enemy slider UI, so the opponent is AI-only.
             if (value == "manual" && !isYou) {
@@ -456,6 +463,7 @@ object Onboarding {
                 archRow.style.display = if (value == "net") "" else "none" // reveal the arch picker for Neural net
             }
             if (value == current) btn.addClass("onboardActive")
+            if (value == "net") netBtn = btn
             btns.add(btn)
             grid.appendChild(btn)
         }
@@ -464,11 +472,12 @@ object Onboarding {
 
     // A full-width row under a faction's driver buttons holding its Neural-net architecture picker (Random or a
     // baked arch). Spans every grid column so it sits on its own line without breaking the option-button alignment.
-    private fun archPickerRow(faction: Faction): HTMLElement {
+    private fun archPickerRow(faction: Faction, onNetLoaded: () -> Unit): HTMLElement {
         val row = div("driverArchRow")
         row.style.setProperty("grid-column", "1 / -1")
         row.appendChild(div("driverArchLabel").also { it.textContent = "NN architecture" })
         row.appendChild(DriverControls.archPicker(faction))
+        row.appendChild(DriverControls.loadNetControl(faction, onNetLoaded)) // upload + activate a shared net
         return row
     }
 

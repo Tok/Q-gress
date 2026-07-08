@@ -8,13 +8,18 @@ import ai.HeuristicPolicy
 import ai.llm.LlmPolicy
 import ai.llm.WebLlmClient
 import ai.net.ChampionLibrary
+import ai.net.GenomeIO
 import ai.net.NetArch
 import ai.net.NetPolicy
 import ai.net.NetStore
 import kotlinx.browser.document
+import org.w3c.dom.HTMLButtonElement
 import org.w3c.dom.HTMLElement
+import org.w3c.dom.HTMLInputElement
 import org.w3c.dom.HTMLOptionElement
 import org.w3c.dom.HTMLSelectElement
+import org.w3c.files.File
+import org.w3c.files.FileReader
 import util.GameUrl
 import util.Rng
 import util.RngStream
@@ -34,6 +39,7 @@ object DriverControls {
     private val llmClients = mutableMapOf<Faction, WebLlmClient>() // one client per faction (its own model load)
     private val netArch = mutableMapOf<Faction, String>() // each faction's chosen net-arch key ("16-16") or RANDOM_ARCH
     private val resolvedRandom = mutableMapOf<Faction, NetArch>() // a RANDOM pick resolved to a concrete arch (cached)
+    private val archSelects = mutableMapOf<Faction, HTMLSelectElement>() // live arch <select>s, so an upload can add/select an arch
 
     const val RANDOM_ARCH = "random" // the "let the seed pick a baked arch" option (the NN-driver default)
     private const val ARCH_SALT = 0x51A5 // decorrelate the arch pick from the world seed's other draws
@@ -134,18 +140,22 @@ object DriverControls {
         sel.value = choice
         selects[faction] = sel
         val archSel = archPicker(faction)
+        val loadNet = loadNetControl(faction) // upload + activate a shared net (net-only, next to the arch picker)
         val modelSel = modelPicker(faction)
         apply(faction, choice) // install it up front so the chosen brain plays from the first tick
         sel.onchange = {
             apply(faction, sel.value)
             setVisible(archSel, sel.value == "net") // the arch picker only matters for the neural-net driver
+            setVisible(loadNet, sel.value == "net")
             setVisible(modelSel, sel.value == "llm") // the model picker only matters for the LLM driver
             null
         }
         setVisible(archSel, choice == "net")
+        setVisible(loadNet, choice == "net")
         setVisible(modelSel, choice == "llm")
         wrap.appendChild(sel)
         wrap.appendChild(archSel)
+        wrap.appendChild(loadNet)
         wrap.appendChild(modelSel)
         return wrap
     }
@@ -170,7 +180,86 @@ object DriverControls {
             if (selects[faction]?.value == "net") apply(faction, "net") // swap to the new arch's champion live
             null
         }
+        archSelects[faction] = sel
         return sel
+    }
+
+    /**
+     * A **"Load net…"** upload control (shared by the in-game picker + the onboarding teams grid) — imports a
+     * shared genome JSON (as downloaded from the trainer), validates it for this build, installs it as its
+     * architecture's champion (persisted via [ChampionLibrary.installChampion]), and activates it as [faction]'s
+     * Neural-net brain. Shown alongside the arch picker (Neural-net only). [onActivated] lets the caller sync its
+     * own UI (e.g. the onboarding driver buttons).
+     */
+    fun loadNetControl(faction: Faction, onActivated: () -> Unit = {}): HTMLElement {
+        val wrap = el("span", "aiLoadNet")
+        val status = el("span", "aiLoadNetStatus")
+        val input = document.createElement("input") as HTMLInputElement
+        input.type = "file"
+        input.accept = "application/json,.json"
+        input.className = "invisible"
+        input.onchange = {
+            (input.files?.item(0))?.let { readNet(faction, it, status, onActivated) }
+            input.value = "" // allow re-loading the same file
+            null
+        }
+        val btn = el("button", "aiDriverSelect aiLoadNetBtn") as HTMLButtonElement
+        btn.type = "button"
+        btn.textContent = "Load net…"
+        btn.title = "Import a shared net JSON and use it as this side's brain"
+        btn.onclick = {
+            input.click()
+            null
+        }
+        wrap.appendChild(btn)
+        wrap.appendChild(input)
+        wrap.appendChild(status)
+        return wrap
+    }
+
+    private fun readNet(faction: Faction, file: File, status: HTMLElement, onActivated: () -> Unit) {
+        val reader = FileReader()
+        reader.onload = {
+            val text = reader.result as? String ?: ""
+            runCatching {
+                val net = GenomeIO.decode(text) // validate the genome for this build's net I/O
+                ChampionLibrary.installChampion(text) // register + persist it as its arch's champion
+                net.arch
+            }.onSuccess { arch ->
+                activateLoadedNet(faction, arch, onActivated)
+                status.textContent = "✓ ${file.name} → ${arch.hiddens.joinToString("×")}"
+                status.asDynamic().style.color = "#a0a0a0" // neutral (R==G==B)
+            }.onFailure {
+                status.textContent = "✗ ${it.message ?: "not a valid net JSON"}"
+                status.asDynamic().style.color = "#c0392b" // semantic error red
+            }
+            null
+        }
+        reader.readAsText(file)
+    }
+
+    private fun activateLoadedNet(faction: Faction, arch: NetArch, onActivated: () -> Unit) {
+        ensureArchOption(faction, arch)
+        selectArch(faction, archKey(arch))
+        select(faction, "net") // pending pick (onboarding carries it on the start URL)
+        selects[faction]?.let {
+            it.value = "net"
+            apply(faction, "net") // in-game: activate the uploaded champion live
+        }
+        reflect(faction, "net")
+        onActivated()
+    }
+
+    // Add [arch] to the faction's arch <select> if it isn't listed yet (a non-sweep uploaded arch), then select it.
+    private fun ensureArchOption(faction: Faction, arch: NetArch) {
+        val sel = archSelects[faction] ?: return
+        val key = archKey(arch)
+        val exists = (0 until sel.length).any { (sel.item(it) as? HTMLOptionElement)?.value == key }
+        if (!exists) {
+            val fit = ChampionLibrary.fitnessFor(arch)?.let { "  ${signed(it)}" } ?: ""
+            sel.appendChild(option(key, arch.hiddens.joinToString("×") + fit, disabled = false))
+        }
+        sel.value = key
     }
 
     // Per-faction LLM model picker (shown only while the LLM driver is selected) — pick a different model per

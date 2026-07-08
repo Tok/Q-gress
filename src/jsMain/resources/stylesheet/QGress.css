@@ -162,6 +162,20 @@ html, body {
     margin-left: 3px;
     max-width: 120px;
 }
+.aiLoadNet {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 3px;
+}
+.aiLoadNetBtn {
+    cursor: pointer;
+}
+.aiLoadNetStatus {
+    font-family: "Coda", monospace;
+    font-size: 10px;
+    color: #a0a0a0; /* neutral (R==G==B) */
+}
 .aiObsRow {
     display: grid;
     grid-template-columns: 80px 1fr 34px;
