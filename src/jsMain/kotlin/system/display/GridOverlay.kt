@@ -14,22 +14,24 @@ import util.data.*
 internal object GridOverlay {
     private const val OVERLAY_Z = 0.4 // above the terrain surface (per-vertex), clear of z-fighting
     private const val SEG = 96 // plane subdivisions per axis — enough to follow the DEM smoothly
+    private val BAND = Sim.OFFSCREEN_CELL_ROWS // off-screen grid margin (cells) drawn around the play area
 
     /** A per-cell textured, terrain-draped mesh; [colorOf] gives each walkable/blocked cell its overlay colour. */
     fun buildMesh(colorOf: (Cell) -> String): dynamic {
-        val cols = Sim.width / Pos.res
-        val rows = Sim.height / Pos.res
+        // Cover the WHOLE grid, including the off-screen band (14 cells / 140 units past each edge) so the
+        // masked round-arena moat AND the off-map NPC-destination band are visible — a diagnostic for whether
+        // the off-screen locations sit on passable ground. Cells are shifted by [BAND] so negative shadow
+        // coords land inside the canvas.
+        val cols = Sim.width / Pos.res + 2 * BAND
+        val rows = Sim.height / Pos.res + 2 * BAND
         val canvas = document.createElement("canvas").asDynamic()
         canvas.width = cols
         canvas.height = rows
         val ctx = canvas.getContext("2d")
         World.grid.forEach { (pos, cell) ->
-            val gx = pos.x.toInt()
-            val gy = pos.y.toInt()
-            val pixel = pos.fromShadow()
-            // Only paint cells inside the play area (clips to the circle when round); outside cells stay
-            // transparent — still in World.grid for routing, just not displayed.
-            if (gx in 0 until cols && gy in 0 until rows && Sim.isInPlayArea(pixel.x, pixel.y)) {
+            val gx = pos.x.toInt() + BAND
+            val gy = pos.y.toInt() + BAND
+            if (gx in 0 until cols && gy in 0 until rows) {
                 ctx.fillStyle = colorOf(cell)
                 ctx.fillRect(gx, gy, 1, 1)
             }
@@ -56,7 +58,10 @@ internal object GridOverlay {
     // texture maps exactly as when flat — only z changes. Flat (groundZ 0) until the DEM heights are ready.
     private fun terrainGeometry(): dynamic {
         val mpp = Scene3D.metersPerPixel
-        val geo = Three.PlaneGeometry(Sim.width * mpp, Sim.height * mpp, SEG, SEG)
+        val bandUnits = BAND * Pos.res // the off-screen band in sim units, mirrored on the canvas offset above
+        // Extend the plane by the band on every side so the drawn grid matches the (band-padded) canvas texture;
+        // the centre stays the play-area centre so the on-screen portion maps exactly as before.
+        val geo = Three.PlaneGeometry((Sim.width + 2 * bandUnits) * mpp, (Sim.height + 2 * bandUnits) * mpp, SEG, SEG)
         val pos = geo.asDynamic().attributes.position
         val count = pos.count as Int
         for (i in 0 until count) {

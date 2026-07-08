@@ -1280,15 +1280,16 @@ object Scene3D {
     }
 
     // Debug viz: a tall cyan pole (+ orb on top) at each NPC off-map destination
-    // ([NonFaction.offscreenDestinations]), so their spread around the border is visible at a glance. Toggled
-    // by `?debug` or the "NPC destinations" menu checkbox; rebuilt each sync (the ring rarely changes, cheap).
-    var showOffscreenDebug = false
+    // ([NonFaction.offscreenDestinations]), so their spread around the border is visible at a glance. `?debug`
+    // just sets the initial default; the "NPC destinations" menu checkbox is authoritative from there (binds
+    // to this flag), so unchecking it actually hides the markers. Rebuilt each sync (the ring rarely changes).
+    var showOffscreenDebug = Debug.enabled
     private val offscreenPoleGeo: dynamic by lazy { Three.CylinderGeometry(2.0, 2.0, OFFSCREEN_POLE_H, 8) }
     private val offscreenOrbGeo: dynamic by lazy { Three.SphereGeometry(8.0, 12, 12) }
     private fun buildOffscreenDebug() {
         val g = debugGroup ?: return
         g.clear()
-        if (!(Debug.enabled || showOffscreenDebug)) return
+        if (!showOffscreenDebug) return
         NonFaction.offscreenDestinations().forEach { p ->
             val base = groundZ(p)
             val pole = Three.Mesh(offscreenPoleGeo, Materials.solid("#00e5ff"))
