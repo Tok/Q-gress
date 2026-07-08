@@ -58,7 +58,7 @@ class NonFactionMathTest {
     // ---- ringDestinations: even, street-aware off-map ring placement ----
     // Signature: ringDestinations(placeable, targetCount, maxNudgeSamples, minGapSamples) → fractional sample
     // indices in [0, N). Candidates are the targetCount evenly-spaced angles; each snaps to nearby walkable
-    // ground or is dropped; placed points stay ≥ minGap apart.
+    // ground, else KEEPS its even position; placed points stay ≥ minGap apart.
 
     private fun allTrue(n: Int) = BooleanArray(n) { true }
 
@@ -86,28 +86,30 @@ class NonFactionMathTest {
     }
 
     @Test
-    fun aCandidateStuckInABigBlockedGapIsDropped() {
-        // A wide moat [40,60] swallows candidate #5 (sample 50); nothing walkable within the nudge window → dropped.
+    fun aCandidateWithNoNearbyStreetKeepsItsEvenPosition() {
+        // A wide moat [40,60] swallows candidate #5 (sample 50); nothing walkable within the nudge window, so it
+        // KEEPS its even angle rather than being dropped (dropping it would collapse the ring into a "cross").
         val placeable = BooleanArray(100) { it !in 40..60 }
         val slots = NonFactionMath.ringDestinations(placeable, targetCount = 10, maxNudgeSamples = 4, minGapSamples = 5)
-        assertTrue(slots.all { placeable[it.toInt() % 100] }, "every placed destination is on walkable ground")
-        assertTrue(slots.none { it in 41.0..59.0 }, "nothing lands inside the moat (slots=$slots)")
-        assertEquals(9, slots.size, "only the one candidate with no nearby street is dropped")
+        assertEquals(10, slots.size, "the even ring is kept whole — no candidate is dropped")
+        assertTrue(50.0 in slots, "the moat candidate stays at its even position (50), not dropped")
+        assertTrue(50.0 !in slots.filter { placeable[it.toInt() % 100] }, "…and it's the one point not on walkable ground")
     }
 
     @Test
     fun placedTargetsNeverBunchCloserThanTheMinGap() {
-        // Only a tiny walkable window [45,55]; several candidates would snap into it, but the min-gap keeps them apart.
-        val placeable = BooleanArray(100) { it in 45..55 }
-        val slots = NonFactionMath.ringDestinations(placeable, targetCount = 20, maxNudgeSamples = 8, minGapSamples = 6)
-        assertTrue(slots.all { it in 45.0..55.0 }, "all land in the only walkable window")
-        assertTrue(gaps(slots, 100).filter { it > 0.0 }.all { it >= 6.0 }, "no two placed targets are closer than the min gap")
+        // An open ring with a min-gap wider than the candidate spacing → alternating candidates are dropped so
+        // nothing bunches. 20 candidates (spacing 5) with a min gap of 6 ⇒ every other one survives (gaps ≥ 6).
+        val slots = NonFactionMath.ringDestinations(allTrue(100), targetCount = 20, maxNudgeSamples = 4, minGapSamples = 6)
+        assertTrue(gaps(slots, 100).all { it >= 6.0 }, "no two placed targets are closer than the min gap (${gaps(slots, 100)})")
     }
 
     @Test
-    fun aFullyBlockedRingYieldsNothing() {
+    fun aFullyBlockedRingKeepsAnEvenRing() {
+        // Nothing walkable (e.g. bare unit grid) → every candidate keeps its even angle → a plain even ring.
         val slots = NonFactionMath.ringDestinations(BooleanArray(100) { false }, targetCount = 10, maxNudgeSamples = 4, minGapSamples = 5)
-        assertTrue(slots.isEmpty(), "no walkable ground ⇒ empty (caller falls back to a raw even ring)")
+        assertEquals(10, slots.size, "an even ring, not empty")
+        assertTrue(gaps(slots, 100).all { it in 9.0..11.0 }, "evenly spaced (${gaps(slots, 100)})")
     }
 
     @Test

@@ -47,27 +47,28 @@ object NonFactionMath {
     }
 
     /**
-     * Place ~[targetCount] off-map destinations EVENLY spaced around the ring, but only where there's walkable
-     * space. [placeable] is the ring sampled at N even angles (index i ⇔ angle 2π·i/N; `true` = walkable
-     * ground). For each of [targetCount] evenly-spaced candidate angles we snap to the nearest walkable sample
-     * within [maxNudgeSamples] — so a candidate landing on a building shifts onto the adjacent street — and
-     * DROP it when there's no walkable ground within reach (a big blocked span, e.g. the round-arena moat
-     * between the off-screen pokes; NPCs can't head there anyway). A [minGapSamples] spacing floor stops two
-     * candidates snapping onto the same spot.
+     * Place ~[targetCount] off-map destinations EVENLY spaced around the ring. [placeable] is the ring sampled
+     * at N even angles (index i ⇔ angle 2π·i/N; `true` = walkable ground). For each of [targetCount] evenly-
+     * spaced candidate angles we snap to the nearest walkable sample within [maxNudgeSamples] — so a candidate
+     * landing on a building shifts onto the adjacent street — but if there's no walkable ground within reach we
+     * **keep the even position** rather than dropping it.
      *
-     * This keeps the even spread of the old ring while avoiding houses — instead of segmenting into arcs and
-     * re-packing the budget into the few open ones, which clustered them into a "cross". Returns fractional
-     * sample indices in `[0, N)` (the caller maps each to an angle); empty when nothing is walkable — the
-     * caller then falls back to a raw even ring. No World/RNG coupling → JVM-unit-tested.
+     * Keeping it is deliberate: on the round field the destination ring lies just outside the arena, so most of
+     * it is the (impassable) round-arena mask with only a few off-screen "pokes" open. Dropping the blocked
+     * candidates collapsed the even ring into those few pokes — a "cross". A kept point just outside the arena
+     * is harmless (its flow field is a gentle drift, [Pathfinding.fallbackVector]); the even spread is what we
+     * want visually and for spreading the crowd. A [minGapSamples] floor stops two candidates snapping onto the
+     * same spot. Returns fractional sample indices in `[0, N)` (the caller maps each to an angle).
+     * No World/RNG coupling → JVM-unit-tested.
      */
     fun ringDestinations(placeable: BooleanArray, targetCount: Int, maxNudgeSamples: Int, minGapSamples: Int): List<Double> {
         val n = placeable.size
-        if (n == 0 || targetCount <= 0 || placeable.none { it }) return emptyList()
+        if (n == 0 || targetCount <= 0) return emptyList()
         val placed = mutableListOf<Double>()
         for (i in 0 until targetCount) {
             val ideal = i.toDouble() * n / targetCount // the evenly-spaced candidate
-            val snapped = nearestWalkable(placeable, ideal, maxNudgeSamples) ?: continue // no street nearby → skip
-            if (placed.none { circularGapSamples(it, snapped, n) < minGapSamples }) placed.add(snapped)
+            val target = nearestWalkable(placeable, ideal, maxNudgeSamples) ?: ideal // snap to a street, else keep even
+            if (placed.none { circularGapSamples(it, target, n) < minGapSamples }) placed.add(target)
         }
         return placed
     }

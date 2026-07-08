@@ -10,8 +10,7 @@ import util.Rng
 import util.data.Cell
 import util.data.Pos
 import util.data.toShadow
-import kotlin.math.PI
-import kotlin.math.atan2
+import kotlin.math.hypot
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -179,45 +178,31 @@ class NonFactionActTest {
     }
 
     @Test
-    fun offscreenRingLandsInTheStreetsOfACityRoundField() {
+    fun aGiantRoundFieldGetsAnEvenRingAtAScaledDistance() {
         val w0 = Sim.width
         val h0 = Sim.height
         try {
             Sim.roundField = true
-            Sim.setSize(1000, 1000)
-            NonFaction.reset() // start from a clean ring cache
-            val cx = 500.0
-            val cy = 500.0
-
-            // A grid covering the ring margin: every cell in the angular sector θ ∈ [0.6π, 1.4π] is a solid
-            // block of buildings, the rest walkable (blocking by cell-angle covers the whole sector, ring and all).
-            val blockedFrom = 0.6 * PI
-            val blockedTo = 1.4 * PI
-            val cells = mutableMapOf<Pos, Cell>()
-            for (sx in -10..110) {
-                for (sy in -10..110) {
-                    val px = sx * Pos.res + Pos.res / 2.0
-                    val py = sy * Pos.res + Pos.res / 2.0
-                    val ang = (atan2(py - cy, px - cx) + 2 * PI) % (2 * PI)
-                    cells[Pos(sx, sy)] = Cell(Pos(sx, sy), ang !in blockedFrom..blockedTo, 50)
-                }
-            }
-            World.grid = cells
+            World.grid = emptyMap() // ring geometry alone (no city) → tests even spread + the scaled distance
+            Sim.setSize(6000, 6000)
+            NonFaction.reset()
+            val cx = 3000.0
+            val cy = 3000.0
+            val fieldR = Sim.fieldRadius()
 
             val dests = NonFaction.offscreenDestinations()
 
-            // The open ~216° arc is filled with evenly-spaced targets (candidates near the building edge snap
-            // onto the adjacent street; those deep in the blocked sector are dropped — no clustering).
-            assertTrue(dests.size >= 6, "the open street arc hosts a spread of targets (was ${dests.size})")
-            dests.forEach {
-                assertTrue(World.grid[it.toShadow()]?.isPassable != false, "every destination sits on walkable ground")
-                val ang = (atan2(it.y - cy, it.x - cx) + 2 * PI) % (2 * PI)
-                assertTrue(
-                    ang < blockedFrom + 0.25 || ang > blockedTo - 0.25, // deep interior of the building sector stays empty
-                    "no destination falls deep inside the blocked building sector (ang=$ang)",
-                )
-                assertTrue(!Sim.isInPlayArea(it.x, it.y), "and still sits outside the play area")
-            }
+            // A full even ring, NOT a handful of clustered pokes: every quadrant is populated.
+            assertTrue(dests.size >= 14, "a full even ring around the giant field (was ${dests.size})")
+            assertTrue(dests.any { it.x < cx && it.y < cy }, "NW quadrant populated")
+            assertTrue(dests.any { it.x > cx && it.y < cy }, "NE quadrant populated")
+            assertTrue(dests.any { it.x < cx && it.y > cy }, "SW quadrant populated")
+            assertTrue(dests.any { it.x > cx && it.y > cy }, "SE quadrant populated")
+            // The ring sits a SCALED distance outside a giant field (capped near the grid band) — not hugging the
+            // edge the way a fixed ~70-unit offset would on a map this big.
+            val avgOutside = dests.map { hypot(it.x - cx, it.y - cy) - fieldR }.average()
+            assertTrue(avgOutside > 100.0, "the ring is pushed well outside the field (avg $avgOutside past the edge)")
+            dests.forEach { assertTrue(!Sim.isInPlayArea(it.x, it.y), "every destination sits outside the play area") }
         } finally {
             Sim.setSize(w0, h0)
             World.grid = emptyMap()

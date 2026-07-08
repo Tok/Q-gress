@@ -192,6 +192,15 @@ data class NonFaction(
     companion object {
         private val OFFSCREEN_DISTANCE = Pos.res * (Sim.OFFSCREEN_CELL_ROWS / 2)
 
+        // How far OUTSIDE the round field the destination ring sits. A fixed [OFFSCREEN_DISTANCE] (≈7 cells)
+        // hugs the edge on a giant map (barely clears the field) — so scale it with the field radius, floored
+        // at the fixed distance and capped just inside the off-screen grid band ([RING_MAX_DISTANCE] < the
+        // 14-cell / 140-unit band) so the ring stays ON-grid (an off-grid destination has no flow field).
+        private const val RING_DISTANCE_FRACTION = 0.08
+        private const val RING_MAX_DISTANCE = 130.0
+        private fun roundRingDistance(): Double =
+            (Sim.fieldRadius() * RING_DISTANCE_FRACTION).coerceIn(OFFSCREEN_DISTANCE.toDouble(), RING_MAX_DISTANCE)
+
         // Roughly the gap between adjacent off-map destinations along the border (sim units ≈ half a screen).
         // The count then scales with the field perimeter, bounded so we don't compute too many full-map flow
         // fields (each destination needs one).
@@ -255,7 +264,7 @@ data class NonFaction(
         private fun computeRoundRing(w: Int, h: Int): List<Pos> {
             val cx = w / 2.0
             val cy = h / 2.0
-            val r = Sim.fieldRadius() + OFFSCREEN_DISTANCE
+            val r = Sim.fieldRadius() + roundRingDistance()
             val circumference = 2.0 * PI * r
             val targetCount = (circumference / OFFSCREEN_SPACING).toInt().coerceIn(MIN_OFFSCREEN, MAX_OFFSCREEN)
             val samples = (circumference / (Pos.res * RING_SAMPLE_CELLS)).toInt().coerceIn(RING_MIN_SAMPLES, RING_MAX_SAMPLES)

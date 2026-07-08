@@ -326,13 +326,14 @@ Commit hashes are illustrative pointers, not exhaustive.
   be captured once at class-load with the default size, which dropped targets *inside* a larger map and
   re-caused the centre-clustering. The round-field ring is **street-aware** (`NonFactionMath.ringDestinations`):
   ~16 **evenly-spaced candidate angles** around the ring, each **snapped onto nearby walkable ground** (so a
-  candidate that lands on a building shifts onto the adjacent street) and **dropped** when there's no street
-  within reach (a big masked gap — e.g. the round-arena moat between the off-screen pokes; NPCs can't head
-  there anyway), with a **min-gap** so placed targets never bunch up. This keeps the old even spread while
-  avoiding houses — instead of the old "even angles, then drop whatever hit a building" (few, off-centre
-  targets) and without re-packing the budget into the few open arcs (which clustered them into a "cross").
-  Fully blocked ring → falls back to a raw even ring. The rectangle keeps its per-edge even spacing + walkable
-  filter.
+  candidate that lands on a building shifts onto the adjacent street) but **kept at its even position** when no
+  street is near, with a **min-gap** so placed targets never bunch up. Keeping the un-snappable ones is what
+  stops the "cross": on the round field most of the ring is the impassable round-arena mask with only a few
+  off-screen pokes open — *dropping* the blocked candidates collapsed the ring onto those pokes, worst on giant
+  maps where the pokes are narrowest. A kept point just outside the arena is harmless (its flow field is a
+  gentle drift, not a route). The ring **distance scales with the field radius** (capped just inside the
+  off-screen grid band) so it doesn't hug the edge on a giant map. The rectangle keeps its per-edge even
+  spacing + walkable filter.
 - **Plausible agent handles** (`util/NameGen`): Ingress-style names from themed word banks (per-faction
   flavour + adjectives/nouns/titles), CamelCase/snake/dot styling, light leet, numeric + `xX_…_Xx`
   wraps, and a location token — deduped per game. Replaces the old gibberish generator.
