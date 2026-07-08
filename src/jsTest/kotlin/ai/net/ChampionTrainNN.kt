@@ -164,10 +164,12 @@ class ChampionTrainNN {
         private const val HELD_OUT_SEED_BASE = 10_000
         private val TICKS = Config.ticksPerScoringCycle // a full scoring cycle (~35 checkpoints) — assess "winning the cycle"
 
-        private const val POP = 16
-        private const val GENS = 12
+        // ~12x10x2 = 240 train matches per arch, matching bake-champs (full-cycle matches are ~2.8 s each). The
+        // env overrides (TRAIN_POP/GENS/SEEDS) still let a smoke run go tiny.
+        private const val POP = 12
+        private const val GENS = 10
         private const val ELITE = 6
-        private const val MATCHES_PER_EVAL = 3
+        private const val MATCHES_PER_EVAL = 2
         private const val VALIDATE_SEEDS = 6
         private const val TOURNEY_ELITES = 3 // challenger elites that enter the decider bracket alongside the incumbent
         private const val TOURNEY_SEEDS = 3 // per-pair seeds in the decider round-robin (each seed plays both colours)

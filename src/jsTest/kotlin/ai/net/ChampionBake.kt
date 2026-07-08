@@ -143,12 +143,13 @@ class ChampionBake {
         private const val HELD_OUT_SEED_BASE = 10_000 // held-out validation seeds sit far from the training seeds
         private val BAKE_TICKS = Config.ticksPerScoringCycle // a full scoring cycle (~35 checkpoints): win the cycle
 
-        // Train cheap on few seeds (fast), then SELECT the champion from the elite pool by held-out fitness —
-        // robustness comes from selection, not a huge training budget. ~16x12x3 = 576 train matches per arch.
-        private const val POP = 16
-        private const val GENS = 12
+        // Train on few seeds, then SELECT the champion from the elite pool by held-out fitness — robustness comes
+        // from selection, not a huge training budget. ~12x10x2 = 240 train matches per arch (full-cycle matches
+        // are ~2.8 s each, so this keeps a 25-arch sweep to ~5-6 h; raise for a deeper overnight search).
+        private const val POP = 12
+        private const val GENS = 10
         private const val ELITE = 6 // a wider elite pool → more held-out candidates to select the champion from
-        private const val MATCHES_PER_EVAL = 3
+        private const val MATCHES_PER_EVAL = 2
         private const val VALIDATE_SEEDS = 6 // held-out matches per candidate (the selection signal)
 
         private val WIDTHS = listOf(4, 8, 16, 24, 32) // the TRAIN-tab per-hidden-layer widths → 25 archs
