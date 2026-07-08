@@ -21,6 +21,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
@@ -86,10 +87,26 @@ class InventoryCoverageTest {
         val agent = Factory.frog()
         val inv = Inventory.empty()
         val portal = portalAt(Pos(300, 300))
-        val key = PortalKey(portal, agent)
-        repeat(3) { inv.addItem(key) } // the SAME key instance three times
+        // DISTINCT key objects to the SAME portal (what repeated hacking produces) — PortalKey has no
+        // equals/hashCode, so this only collapses to one if we dedupe by portal, not by object identity.
+        repeat(3) { inv.addItem(PortalKey(portal, agent)) }
         assertEquals(3, inv.keyCount(), "three raw keys")
-        assertEquals(1, inv.findUniqueKeys()?.size, "de-duplicated to one unique key")
+        assertEquals(1, inv.findUniqueKeys().size, "de-duplicated by portal to one unique key")
+    }
+
+    @Test
+    fun uniqueKeysNeverExceedTheNumberOfExistingPortals() {
+        val agent = Factory.frog()
+        val inv = Inventory.empty()
+        // Two portals exist in the world; the agent may hold keys to any portals (own/enemy/neutral).
+        val portalA = portalAt(Pos(300, 300))
+        val portalB = portalAt(Pos(600, 600))
+        repeat(4) { inv.addItem(PortalKey(portalA, agent)) }
+        repeat(2) { inv.addItem(PortalKey(portalB, agent)) }
+        assertEquals(6, inv.keyCount(), "six raw keys")
+        // The unique count is bounded by the portals in existence, not by the number of key objects held.
+        assertEquals(2, inv.findUniqueKeys().size, "two existing portals → two unique keys, never more")
+        assertTrue(inv.findUniqueKeys().size <= World.countPortals(), "unique keys never exceed existing portals")
     }
 
     @Test
@@ -132,6 +149,34 @@ class InventoryCoverageTest {
         assertEquals(sizeBefore - 4, inv.size(), "four items were recycled")
         assertTrue(recovered >= 0, "recycling returns the XM recovered")
         assertEquals(0, inv.recycleForSpace(0), "recycling zero is a no-op")
+    }
+
+    @Test
+    fun recycleForSpaceRecoversXmFromPowerCubes() {
+        val agent = Factory.frog()
+        val inv = Inventory.empty()
+        repeat(3) { inv.addItem(PowerCube.create(agent, 1)) } // no keys/resos → cubes are the recycle candidates
+        val recovered = inv.recycleForSpace(2)
+        assertEquals(1, inv.size(), "two of the three cubes were recycled")
+        assertTrue(recovered > 0, "recycling power cubes recovers XM")
+    }
+
+    @Test
+    fun consumeKeyToPortalRemovesTheMatchingKey() {
+        val agent = Factory.frog()
+        val inv = Inventory.empty()
+        val portal = portalAt(Pos(300, 300))
+        inv.addItem(PortalKey(portal, agent))
+        inv.consumeKeyToPortal(portal)
+        assertEquals(0, inv.keyCount(), "the key to that portal was consumed")
+    }
+
+    @Test
+    fun consumeKeyToPortalFailsWhenNoKeyExists() {
+        val agent = Factory.frog()
+        val inv = Inventory.empty()
+        val portal = portalAt(Pos(300, 300))
+        assertFailsWith<IllegalStateException> { inv.consumeKeyToPortal(portal) }
     }
 
     @Test

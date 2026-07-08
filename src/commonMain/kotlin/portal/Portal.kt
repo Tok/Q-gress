@@ -224,7 +224,7 @@ data class Portal(
     fun findConnectedPortals(): List<Portal> = findOutgoingTo() + findIncomingFrom()
 
     fun findLinkableForKeys(linker: Agent): List<Portal> {
-        val keyset = linker.inventory.findUniqueKeys() ?: return emptyList()
+        val keyset = linker.inventory.findUniqueKeys()
         // No crossing links: the new line must not intersect any EXISTING link. (Previously filtered
         // through Link.isNotExisting, which is always false for already-placed links → a no-op; the
         // real check was only in Linker. Now enforced here too.)

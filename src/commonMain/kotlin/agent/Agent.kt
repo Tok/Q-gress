@@ -65,7 +65,7 @@ data class Agent(
     private fun calcAbsXmBar() = min(xmCapacity(), max(0, xm))
     private fun xmBarPercent() = calcAbsXmBar() * 100 / xmCapacity()
     fun isXmFilled() = xmBarPercent() >= XM_FILLED_PCT
-    fun keySet() = inventory.findUniqueKeys().orEmpty()
+    fun keySet() = inventory.findUniqueKeys()
 
     fun removeXm(v: Int) {
         this.xm = MathUtil.clip(xm - v, 0, xmCapacity())

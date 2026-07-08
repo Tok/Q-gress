@@ -250,7 +250,7 @@ object TopAgentsPanel {
     private fun deployColor(level: Int): String = LevelColor.map[level] ?: "#ffffff"
 
     // Distinct portals an agent holds keys to (vs total Keys, which counts duplicates).
-    private fun uniqueKeys(agent: Agent): Int = agent.inventory.findUniqueKeys()?.size ?: 0
+    private fun uniqueKeys(agent: Agent): Int = agent.inventory.findUniqueKeys().size
 
     /** A leading right-justified count + a per-level bar strip (height = count, colour = level via [colorFor]). */
     private fun invCell(items: List<DeployableItem>, maxLevel: Int, colorFor: (Int) -> String): HTMLElement {

@@ -51,13 +51,16 @@ data class Inventory(val items: MutableList<QgressItem> = mutableListOf()) {
     fun findMultihacks(): List<Multihack> = items.filterIsInstance<Multihack>()
     fun findViruses(): List<Virus> = items.filterIsInstance<Virus>()
 
-    fun findUniqueKeys(): List<PortalKey>? = findKeys().distinct()
+    // "Unique" = one per PORTAL, not per key object: PortalKey has no equals/hashCode (identity), so plain
+    // distinct() would keep every separately-hacked key to the same portal — inflating the count past the
+    // portal total. distinctBy { portal } collapses all keys for a portal to one.
+    fun findUniqueKeys(): List<PortalKey> = findKeys().distinctBy { it.portal }
 
     fun addItem(item: QgressItem) = items.add(item)
     fun addItems(newItems: List<QgressItem>) = items.addAll(newItems)
 
     fun consumeKeyToPortal(portal: Portal) {
-        val key = findUniqueKeys()?.find { it.portal == portal } ?: error("Key should exist.")
+        val key = findUniqueKeys().find { it.portal == portal } ?: error("Key should exist.")
         items.remove(key)
     }
 
@@ -67,12 +70,6 @@ data class Inventory(val items: MutableList<QgressItem> = mutableListOf()) {
     fun consumeCubes(cubes: List<PowerCube>) = items.removeAll(cubes)
 
     fun keyCount(): Int = items.filter { it is PortalKey }.count()
-    private fun xmpCount(): Int = items.filter { it is XmpBurster }.count()
-    private fun usCount(): Int = items.filter { it is UltraStrike }.count()
-    private fun weaponCount(): Int = xmpCount() + usCount()
-    private fun resoCount(): Int = items.filter { it is Resonator }.count()
-    private fun shieldCount(): Int = items.filter { it is Shield }.count()
-    private fun powerCubeCount(): Int = items.filter { it is PowerCube }.count()
 
     override fun toString(): String {
         val filtered = items.filterNot { it is PortalKey || it is XmpBurster || it is Resonator }

@@ -74,7 +74,7 @@ class InventoryTest {
         inventory.addItem(firstKey)
         inventory.addItem(secondKey)
         inventory.addItem(secondKey)
-        assertEquals(2, inventory.findUniqueKeys()?.count())
+        assertEquals(2, inventory.findUniqueKeys().count())
     }
 
     @Test
