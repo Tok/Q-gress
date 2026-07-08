@@ -19,7 +19,9 @@ reads + heavy 3D + future WebGPU inference); mobile is explicitly out of scope a
 
 - **`docs/ARCHITECTURE.md`** — how the system fits together (entry point, `World`, the
   selection brain, map→grid pipeline, the 3D + DOM rendering, locations, toolchain).
-- **`PLAN.md`** — the roadmap / future TODOs (incl. the Phase 6 AI plan).
+- **`PLAN.md`** — concrete, standalone next steps (tuning, polish, technical improvements).
+- **`docs/FUTURE.md`** — the far-horizon, interconnected vision (the "grand game" across locations + the
+  roster/colony layer beneath it). Deliberately kept out of PLAN.
 - **`docs/FEATURES.md`** — what's already shipped.
 - **`docs/ACTIONS.md`** — the per-agent action machine: the tick loop, how the Q-value sliders pick an
   action, and the idle fallbacks (recruiting / discovery) with their timing + success odds.
@@ -27,7 +29,7 @@ reads + heavy 3D + future WebGPU inference); mobile is explicitly out of scope a
 - **`docs/NN.md` / `docs/LLM.md`** — design notes for the two AI-driver tracks.
 
 Keep these current as work lands, and **don't duplicate** info across them (architecture →
-ARCHITECTURE, shipped → FEATURES, future → PLAN, how-to-work → here).
+ARCHITECTURE, shipped → FEATURES, concrete next → PLAN, far-horizon vision → FUTURE, how-to-work → here).
 
 ## Tech stack
 

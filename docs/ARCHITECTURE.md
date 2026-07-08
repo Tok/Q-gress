@@ -112,7 +112,7 @@ shadow map's vector source for real POI/street names.
 **Zoom is calibrated to 18**: the grid, the pixel-to-metre factor, portal sizes, and ranges
 are all implicitly tied to zoom 18. The display zooms out to *frame* the whole Sim area, but
 the grid anchor stays at 18. Dynamic-zoom would require rebuilding the grid + rescaling — see
-the "rework movement model" / "going 3D" icebox notes in PLAN.md.
+the movement/pathfinding-rework note in [FUTURE.md](FUTURE.md) (*Grand game*).
 
 **Buildings are our own meshes, sourced from OSM.** MapLibre's openmaptiles building layer is
 heavily simplified (a city tile may hold ~19 of 1000+ real buildings), so `system/building/BuildingTiles`
