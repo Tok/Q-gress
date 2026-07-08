@@ -143,10 +143,12 @@ re-tunes the 17 sliders at checkpoint cadence; it does **not** replace the per-a
   - **A directional sun** (with time-of-day): a real key light so chrome poles cast highlights + terrain gets
     shading; plus a render-to-cubemap/PMREM of sky+terrain so chrome/glass reflect the *actual* scene (today a
     static gradient env in `Materials`). Sun direction drives shadow mood.
-- **Movement/pathfinding rework.** Derive walkability/penalties from **vector-tile road geometry** (features /
-  GeoJSON) and/or a navmesh instead of reading rasterized shadow pixels — decouples the sim from the screen and
-  unblocks dynamic zoom + a pitched/3D camera. Natural partner of the functional-core split. (The
-  pbf/`@mapbox/vector-tile` decoder in `external/VectorTile.kt` can pull road/water/landcover layers.)
+- **Movement/pathfinding rework.** Derive walkability/penalties from **road geometry** (features / GeoJSON)
+  and/or a navmesh instead of reading rasterized shadow pixels — decouples the sim from the screen and
+  unblocks dynamic zoom + a pitched/3D camera. Natural partner of the functional-core split. (Source the
+  road/water/landcover layers from OSM Overpass — as `BuildingTiles` already does for footprints — or
+  re-add an MVT decoder like pbf/`@mapbox/vector-tile`; both were removed when the building loader moved
+  off OpenFreeMap vector tiles.)
 - **Portal-name ticker — non-latin / RTL font.** `PortalNameTicker` reuses Coda (latin + digits), so
   Arabic/Hebrew/CJK names can't be drawn — RTL names are currently **suppressed** (`isRtl`), latin renders.
   To support them: load an RTL/CJK-capable typeface.json (or per-script fonts chosen by script detection)
@@ -170,6 +172,12 @@ re-tunes the 17 sliders at checkpoint cadence; it does **not** replace the per-a
 - **Evaluate NVIDIA Komodo** (per user) — investigate fit (rendering / AI / acceleration?) before committing.
 - **Swarming agent behaviour** — agents coordinate/cluster toward shared objectives (a flocking / group-movement
   layer + more destination variety) instead of each pathing solo. The last open lever from the old behaviour list.
+- **Toolchain bump: JDK 25 · detekt 2.x · Gradle 10 (blocked — revisit when detekt 2.0 ships).** The build runs
+  on JDK 21 because detekt 1.23.8 crashes on JDK 25 (its bundled Kotlin compiler can't parse the "25.0.x" runtime
+  version) — see the header note in `build.gradle.kts`. detekt 2.x is what unlocks JDK 25, but as of now **only
+  1.23.8** is published to Maven Central / the Gradle Plugin Portal (no 2.0-alpha there), and **Gradle 10 isn't
+  released** either (latest is 9.6.1, which we're on). So there's nothing to bump to yet. Once detekt 2.0 publishes
+  a real artifact, do JDK 25 + detekt 2.x (+ Gradle 10 if out) as one coherent upgrade and drop the JDK-21 pin.
 
 ## Constraints / agreements
 - Working directly on `main` for now; **no pushing** until something works end-to-end.
