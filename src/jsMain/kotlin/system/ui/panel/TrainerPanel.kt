@@ -33,15 +33,17 @@ import kotlin.math.roundToInt
 /**
  * The **Train NN** screen (PLAN Phase 6.5) — an in-browser neuro-evolution trainer, opened from the MENU's
  * "Train NN" entry / the BRAINS-tab link (not a footer tab) as its own full-screen overlay with the live game
- * paused behind it. Pick a [NetArch] + [EvolutionConfig], hit **Train**, and an [Evolution.Session] runs one
- * generation per `setTimeout(…, 0)` (so the UI never blocks), drawing a live fitness curve + a champion-genome
- * preview. The run is bracketed by [HeadlessRun] (parks the live world + silences FX; the game is paused while
- * the screen is up), so the headless matches never disturb the live game — which resumes untouched on close.
- * The winner can be **saved** to [NetStore] or **installed** as either faction's driver.
+ * paused behind it. Pick ONE architecture, hit **Train**, and an [Evolution.Session] evolves a challenger
+ * **against that arch's current champion** (NN-vs-NN, like `train-champs.sh` — the fitness *is* the margin over
+ * the champion, so a positive result means the challenger is better). One generation runs per `setTimeout(…, 0)`
+ * (so the UI never blocks), drawing a live fitness curve + a genome preview. The run is bracketed by
+ * [HeadlessRun] (parks the live world + silences FX; the game is paused while the screen is up), so the headless
+ * matches never disturb the live game — which resumes untouched on close. A better challenger can be **saved**
+ * to [NetStore], **installed** as either faction's driver, or **downloaded** to share.
  *
- * Each match is a full scoring cycle ([Config.ticksPerScoringCycle], ~35 checkpoints) — the fitness goal is to
- * win the cycle, so it can't be assessed in less; a big run is therefore minutes, not seconds. Serious training
- * still belongs headless (`scripts/bake-champs.sh` / `train-champs.sh`).
+ * This is for training + comparing ONE candidate interactively (~10 min at the defaults). Each match is a full
+ * scoring cycle ([Config.ticksPerScoringCycle], ~35 checkpoints) — the fitness goal is to win the cycle, so it
+ * can't be assessed in less. The full multi-arch sweep belongs headless (`scripts/bake-champs.sh` / `train-champs.sh`).
  */
 object TrainerPanel {
     private const val SEED = 12345 // fixed → a run is reproducible (re-train gives the same champion)
@@ -119,7 +121,7 @@ object TrainerPanel {
         overlay = screen
         built = true
         refreshActions()
-        setStatus("Idle — set the knobs and press Train to evolve a net on the live map.")
+        setStatus("Idle — pick an architecture and press Train to evolve a challenger against that arch's current champion.")
         return true
     }
 
@@ -171,7 +173,7 @@ object TrainerPanel {
 
     private fun buildChartCol(): HTMLElement {
         val col = el("div", "trainCol")
-        col.appendChild(el("div", "trainColHead").also { it.textContent = "Fitness — summed MU margin per generation" })
+        col.appendChild(el("div", "trainColHead").also { it.textContent = "Fitness — checkpoints led vs the champion, per generation" })
         col.appendChild(buildProgress())
         val chart = el("div", "trainChart")
         col.appendChild(chart)
@@ -303,16 +305,28 @@ object TrainerPanel {
             setStatus("Start a game first — training evolves a net on the live map.")
             return
         }
+        val config = readConfig()
+        // Train the candidate AGAINST that arch's CURRENT champion (NN-vs-NN, like train-champs.sh) rather than the
+        // uniform baseline — so the fitness is the margin over the champion (positive = the challenger is better),
+        // which is the in-game "is my candidate better than the current champ?" comparison.
+        val champion = runCatching { GenomeIO.decode(ChampionLibrary.jsonFor(config.arch)) }.getOrNull()
         HeadlessRun.begin() // park the live game + silence FX for the duration (shared with the leaderboard)
         running = true
         fitness.clear()
         plot?.setData(arrayOf(arrayOf<Double>(), arrayOf<Double>()))
-        session = Evolution.Session(World.grid, SEED, readConfig()) // opponent = the uniform-slider baseline
+        session = if (champion != null) {
+            Evolution.Session(World.grid, SEED, config) { NetPolicy(champion, Faction.RES) }
+        } else {
+            Evolution.Session(World.grid, SEED, config) // no champion for this arch → the uniform-slider baseline
+        }
         setProgress(0.0, "Starting…")
-        setStatus("Live game paused — training on the live map.")
+        val ref = ChampionLibrary.fitnessFor(config.arch)?.let { " (which leads the baseline by ${muLabel(it)})" } ?: ""
+        setStatus("Training a ${archName(config.arch)} challenger vs the current champion$ref — live game paused.")
         refreshActions()
         scheduleStep()
     }
+
+    private fun archName(arch: NetArch): String = arch.hiddens.joinToString("×")
 
     private fun scheduleStep() {
         timeoutId = window.setTimeout({ runStep() }, 0)
@@ -343,7 +357,7 @@ object TrainerPanel {
             done.toDouble() / total,
             "Generation ${current.generation + (if (current.done) 0 else 1)} / ${current.config.generations} · genome ${current.evaluatedThisGeneration}/${current.populationSize}",
         )
-        setStatus("Training · best ${muLabel(current.bestFitness)} ($done/$total matches)")
+        setStatus("Training · challenger ${muLabel(current.bestFitness)} vs champion ($done/$total matches)")
     }
 
     private fun finish() {
@@ -351,7 +365,12 @@ object TrainerPanel {
         teardown()
         if (done != null) {
             setProgress(1.0, "Done — ${done.generation} generations")
-            setStatus("Done · ${done.generation} generations · champion ${muLabel(done.bestFitness)} · live game resumed.")
+            val margin = done.bestFitness
+            val verdict = if (margin > 0) "beats" else "does NOT beat"
+            setStatus(
+                "Done · ${done.generation} generations · challenger ${muLabel(margin)} vs champion — it $verdict " +
+                    "the current champion. Save / Install / Download it if better · live game resumed.",
+            )
         }
         refreshActions()
     }
@@ -427,7 +446,7 @@ object TrainerPanel {
         val ctx = previewCanvas?.getContext("2d") as? CanvasRenderingContext2D ?: return
         val net = Net.fromGenome(current.bestGenome, current.config.arch)
         NetVizPanel.paintGenome(ctx, net, PREVIEW_W.toDouble(), PREVIEW_H.toDouble(), PREVIEW_COLOR)
-        previewCaption?.textContent = "${current.config.arch.label()} · ${muLabel(current.bestFitness)}"
+        previewCaption?.textContent = "${current.config.arch.label()} · ${muLabel(current.bestFitness)} vs champ"
     }
 
     // Save/Install are usable once a generation has produced a champion and the run has finished (restored).
