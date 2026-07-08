@@ -1,6 +1,7 @@
 package agent
 
 import util.data.Pos
+import kotlin.math.floor
 import kotlin.math.sqrt
 
 /**
@@ -42,5 +43,78 @@ object NonFactionMath {
         val ux = dx / dist
         val uy = dy / dist
         return all.filter { (it.x - cx) * ux + (it.y - cy) * uy < 0.0 }.ifEmpty { all }
+    }
+
+    /**
+     * Choose off-map ring destinations that land on WALKABLE arcs only (streets, not buildings). [placeable]
+     * is the ring sampled at N even angles (index i ⇔ angle 2π·i/N; `true` = walkable ground). Contiguous
+     * walkable samples form an **arc** (a street crossing the ring); each arc gets a share of [targetCount]
+     * destinations proportional to its width, placed **centred** within the arc (1 ⇒ its midpoint, k ⇒ k
+     * evenly spaced and centred). Arcs narrower than [minArcSamples] are ignored as noise (single-cell
+     * diagonal artefacts) unless that would drop them all. Returns fractional sample indices in `[0, N)`
+     * (the caller maps each to an angle); empty when nothing is walkable — the caller then falls back to a
+     * raw even ring. No World/RNG coupling → JVM-unit-tested.
+     */
+    fun ringDestinations(placeable: BooleanArray, targetCount: Int, minArcSamples: Int): List<Double> {
+        val n = placeable.size
+        if (n == 0 || targetCount <= 0) return emptyList()
+        val allArcs = walkableArcs(placeable, n)
+        if (allArcs.isEmpty()) return emptyList()
+        val arcs = allArcs.filter { it.second >= minArcSamples }.ifEmpty { allArcs }
+        val counts = allocateByLength(arcs.map { it.second }, targetCount)
+        val result = mutableListOf<Double>()
+        arcs.forEachIndexed { i, (start, len) ->
+            val k = counts[i]
+            for (j in 0 until k) {
+                result.add((start + (j + 0.5) / k * len) % n) // centred: 1 ⇒ midpoint, k ⇒ evenly spaced
+            }
+        }
+        return result
+    }
+
+    /**
+     * Contiguous runs of walkable samples around the circular ring, each as `(startIndex, lengthInSamples)`.
+     * Scanning starts at a blocked sample so no run straddles the array seam; an all-walkable ring is one
+     * full arc `(0, n)`; a fully blocked ring is no arcs.
+     */
+    private fun walkableArcs(placeable: BooleanArray, n: Int): List<Pair<Int, Int>> {
+        if (placeable.none { it }) return emptyList()
+        val firstBlocked = (0 until n).firstOrNull { !placeable[it] } ?: return listOf(0 to n) // all walkable
+        val arcs = mutableListOf<Pair<Int, Int>>()
+        var runStart = -1
+        var runLen = 0
+        for (i in 0 until n) {
+            val idx = (firstBlocked + i) % n
+            if (placeable[idx]) {
+                if (runLen == 0) runStart = idx
+                runLen++
+            } else if (runLen > 0) {
+                arcs.add(runStart to runLen)
+                runLen = 0
+            }
+        }
+        if (runLen > 0) arcs.add(runStart to runLen)
+        return arcs
+    }
+
+    /**
+     * Split [total] into per-arc integer counts ∝ each arc's length (largest-remainder / Hare quota), so a
+     * wider street hosts proportionally more destinations and a thin one just gets one (or none, when the
+     * budget is spent on wider streets). The counts sum to [total] whenever the arcs have any width.
+     */
+    private fun allocateByLength(lengths: List<Int>, total: Int): IntArray {
+        val sum = lengths.sum()
+        if (sum == 0 || total <= 0) return IntArray(lengths.size)
+        val ideal = lengths.map { total * it.toDouble() / sum }
+        val counts = IntArray(lengths.size) { floor(ideal[it]).toInt() }
+        val byRemainder = ideal.indices.sortedByDescending { ideal[it] - floor(ideal[it]) }
+        var remaining = total - counts.sum() // always in [0, arcCount) → one pass over byRemainder suffices
+        var r = 0
+        while (remaining > 0 && r < byRemainder.size) {
+            counts[byRemainder[r]]++
+            remaining--
+            r++
+        }
+        return counts
     }
 }

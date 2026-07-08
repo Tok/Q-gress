@@ -320,12 +320,16 @@ Commit hashes are illustrative pointers, not exhaustive.
   crowd on a huge map), and held constant by **1-for-1 replacement** when an NPC is recruited (`Recruiter`),
   so a game can't run dry. The onboarding **NPC-density slider** scales it from **×0.1 to ×3.0** (thin the
   crowd or pack it in; the ×30 floor still applies).
-- **Off-map NPC destinations** (`NonFaction.offscreenDestinations`): ~8–14 hidden targets spaced evenly
-  **just outside the play field** that ambient NPCs walk toward, so they stream across the whole map
-  instead of clumping at the central portals. Computed from the **current** field size + shape every time
-  (a ring of points for the round field, border points for a rectangle) — they used to be captured once at
-  class-load with the default size, which dropped targets *inside* a larger map and re-caused the
-  centre-clustering. Beyond-the-box points sit outside any inscribed shape, so round/rectangular both work.
+- **Off-map NPC destinations** (`NonFaction.offscreenDestinations`): ~8–20 hidden targets **just outside the
+  play field** that ambient NPCs walk toward, so they stream across the whole map instead of clumping at the
+  central portals. Computed from the **current** field size + shape (cached until it changes) — they used to
+  be captured once at class-load with the default size, which dropped targets *inside* a larger map and
+  re-caused the centre-clustering. The round-field ring is **street-aware** (`NonFactionMath.ringDestinations`):
+  it finely samples the ring for passability, splits it into contiguous **walkable arcs** (the streets that
+  cross the ring between off-map buildings), and spreads the budget across those arcs proportional to width,
+  **centred** per arc — so in a dense city the targets land in the streets instead of the old "even angles,
+  then drop whatever hit a building" (which left few, off-centre targets). Fully blocked ring → falls back to
+  a raw even ring. The rectangle keeps its per-edge even spacing + walkable filter.
 - **Plausible agent handles** (`util/NameGen`): Ingress-style names from themed word banks (per-faction
   flavour + adjectives/nouns/titles), CamelCase/snake/dot styling, light leet, numeric + `xX_…_Xx`
   wraps, and a location token — deduped per game. Replaces the old gibberish generator.

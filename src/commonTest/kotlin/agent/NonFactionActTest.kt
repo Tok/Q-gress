@@ -10,6 +10,10 @@ import util.Rng
 import util.data.Cell
 import util.data.Pos
 import util.data.toShadow
+import kotlin.math.PI
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.sin
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -173,6 +177,53 @@ class NonFactionActTest {
             ring.forEach { assertTrue(!Sim.isInPlayArea(it.x, it.y), "each ring point sits outside the play area") }
         } finally {
             Sim.setSize(w0, h0)
+        }
+    }
+
+    @Test
+    fun offscreenRingLandsInTheStreetsOfACityRoundField() {
+        val w0 = Sim.width
+        val h0 = Sim.height
+        try {
+            Sim.roundField = true
+            Sim.setSize(1000, 1000)
+            NonFaction.reset() // start from a clean ring cache
+            val cx = 500.0
+            val cy = 500.0
+            val r = Sim.fieldRadius() + Pos.res * 7 // = fieldRadius + OFFSCREEN_DISTANCE (OFFSCREEN_CELL_ROWS/2)
+
+            // A grid covering the ring margin, all walkable…
+            val cells = mutableMapOf<Pos, Cell>()
+            for (sx in -10..110) for (sy in -10..110) cells[Pos(sx, sy)] = Cell(Pos(sx, sy), true, 50)
+            // …except a solid contiguous block of buildings over the sector θ ∈ [0.6π, 1.4π].
+            val blockedFrom = 0.6 * PI
+            val blockedTo = 1.4 * PI
+            var a = blockedFrom
+            while (a <= blockedTo) {
+                val s = Pos((cx + r * cos(a)).toInt(), (cy + r * sin(a)).toInt()).toShadow()
+                cells[s] = Cell(s, false, 50)
+                a += 0.004 // finer than the ring sample step → every blocked-sector sample cell is a wall
+            }
+            World.grid = cells
+
+            val dests = NonFaction.offscreenDestinations()
+
+            // The OLD "even angles then drop the blocked ones" would lose ~40% of the ring here; the street-aware
+            // ring instead relocates the budget onto the open arc, so it's (almost) fully placed…
+            assertTrue(dests.size >= 10, "the budget is placed onto the open streets, not dropped (was ${dests.size})")
+            dests.forEach {
+                assertTrue(World.grid[it.toShadow()]?.isPassable != false, "every destination sits on walkable ground")
+                val ang = (atan2(it.y - cy, it.x - cx) + 2 * PI) % (2 * PI)
+                assertTrue(
+                    ang < blockedFrom - 0.05 || ang > blockedTo + 0.05,
+                    "no destination falls in the blocked building sector (ang=$ang)",
+                )
+                assertTrue(!Sim.isInPlayArea(it.x, it.y), "and still sits outside the play area")
+            }
+        } finally {
+            Sim.setSize(w0, h0)
+            World.grid = emptyMap()
+            NonFaction.reset()
         }
     }
 

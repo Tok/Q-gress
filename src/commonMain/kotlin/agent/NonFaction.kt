@@ -198,37 +198,79 @@ data class NonFaction(
         private val OFFSCREEN_SPACING = minOf(Dim.width, Dim.height) * 0.5
         private const val MIN_OFFSCREEN = 12
         private const val MAX_OFFSCREEN = 20 // more off-map targets → the crowd spreads over more destinations
+
+        // Round-ring street-awareness (see [computeRoundRing]): sample the ring ~ every cell to resolve which
+        // arcs are walkable, bounded so a huge map doesn't over-sample; ignore walkable slivers under a couple
+        // of cells (diagonal noise) when hosting a destination.
+        private const val RING_SAMPLE_CELLS = 1.0
+        private const val RING_MIN_SAMPLES = 120
+        private const val RING_MAX_SAMPLES = 900
+        private const val RING_MIN_ARC_SAMPLES = 2
         private const val OFFSCREEN_DEST_CHANCE = 0.6 // cross the map edge-to-edge; the rest (now 40%) head to a portal
         private const val FAR_PORTAL_CHANCE = 0.5 // of the non-offscreen remainder, half head to a FAR portal, half a random one
         private const val NPC_ATTRACT_RADIUS = 70.0 // idle/recruiting agents draw passing NPCs within this many sim px
         private const val NPC_ATTRACT_RADIUS_SQ = NPC_ATTRACT_RADIUS * NPC_ATTRACT_RADIUS
 
         /**
-         * Hidden destinations placed JUST OUTSIDE the play field, spaced evenly around its border, that NPCs
-         * walk toward so they stream across the whole map instead of clumping at the central portals.
-         * Computed from the CURRENT play-area size + shape on every call — NOT captured once at class-load,
-         * when [Sim] still held its default size (that staleness put targets *inside* a larger map → the
-         * centre-clustering bug). A point beyond the bounding box is outside any inscribed shape, so this
-         * works for the round field (a ring of points by angle) and the rectangle (points along each border)
-         * alike; irregular shapes can extend this later.
+         * Hidden destinations placed JUST OUTSIDE the play field, that NPCs walk toward so they stream across
+         * the whole map instead of clumping at the central portals.
+         *
+         * Computed from the CURRENT play-area size + shape — NOT captured once at class-load, when [Sim] still
+         * held its default size (that staleness put targets *inside* a larger map → the centre-clustering bug).
+         *
+         * On the round field the ring is placed street-aware: it's finely sampled for passability, split into
+         * contiguous WALKABLE arcs (gaps between off-map buildings), and the budget is spread across those
+         * arcs, centred, by [NonFactionMath.ringDestinations] — so in a dense city the targets land in the
+         * streets that cross the ring instead of the old "even angles, then drop whatever hit a building"
+         * (which left few, off-centre targets). The result is cached ([roundRingDestinations]) since it's now
+         * hundreds of grid look-ups per call. The rectangle keeps its per-edge even spacing + walkable filter.
          */
         fun offscreenDestinations(): List<Pos> {
             val w = World.simW()
             val h = World.simH()
-            val candidates = if (Sim.roundField) {
-                val cx = w / 2.0
-                val cy = h / 2.0
-                val r = Sim.fieldRadius() + OFFSCREEN_DISTANCE
-                val n = (2.0 * PI * r / OFFSCREEN_SPACING).toInt().coerceIn(MIN_OFFSCREEN, MAX_OFFSCREEN)
-                (0 until n).map { i ->
-                    val a = 2.0 * PI * i / n
-                    Pos((cx + r * cos(a)).toInt(), (cy + r * sin(a)).toInt())
-                }
-            } else {
-                rectBorderDestinations(w, h)
-            }
-            return walkableOnly(candidates)
+            return if (Sim.roundField) roundRingDestinations(w, h) else walkableOnly(rectBorderDestinations(w, h))
         }
+
+        // Cache the (now hundreds of grid look-ups) round-ring computation. It only changes when the play area
+        // resizes or the grid is rebuilt — a fresh map ref per world; the grid is never mutated in place — so
+        // keying on size + grid identity recomputes live on any real change (never the stale class-load value).
+        private var ringCacheW = Int.MIN_VALUE
+        private var ringCacheH = Int.MIN_VALUE
+        private var ringCacheGrid: Grid? = null
+        private var ringCache: List<Pos> = emptyList()
+
+        private fun roundRingDestinations(w: Int, h: Int): List<Pos> {
+            val grid = if (World.hasGrid()) World.grid else null
+            if (w == ringCacheW && h == ringCacheH && grid === ringCacheGrid) return ringCache
+            val result = computeRoundRing(w, h)
+            ringCacheW = w
+            ringCacheH = h
+            ringCacheGrid = grid
+            ringCache = result
+            return result
+        }
+
+        private fun computeRoundRing(w: Int, h: Int): List<Pos> {
+            val cx = w / 2.0
+            val cy = h / 2.0
+            val r = Sim.fieldRadius() + OFFSCREEN_DISTANCE
+            val circumference = 2.0 * PI * r
+            val targetCount = (circumference / OFFSCREEN_SPACING).toInt().coerceIn(MIN_OFFSCREEN, MAX_OFFSCREEN)
+            val samples = (circumference / (Pos.res * RING_SAMPLE_CELLS)).toInt().coerceIn(RING_MIN_SAMPLES, RING_MAX_SAMPLES)
+            fun pointAt(idx: Double): Pos {
+                val a = 2.0 * PI * idx / samples
+                return Pos((cx + r * cos(a)).toInt(), (cy + r * sin(a)).toInt())
+            }
+            val placeable = BooleanArray(samples) { i -> isRingPointPlaceable(pointAt(i.toDouble())) }
+            val slots = NonFactionMath.ringDestinations(placeable, targetCount, RING_MIN_ARC_SAMPLES)
+            // Fully blocked ring (no walkable arc at all) → fall back to a raw even ring so NPCs still have targets.
+            return slots.ifEmpty { (0 until targetCount).map { it.toDouble() * samples / targetCount } }.map { pointAt(it) }
+        }
+
+        // A ring sample sits on placeable ground when the grid marks its cell passable — or when there's no
+        // grid data there (off-map margin / bare unit test), matching [walkableOnly]. Blocked = a KNOWN wall
+        // (an off-map building or the masked round-arena edge).
+        private fun isRingPointPlaceable(pos: Pos): Boolean = !World.hasGrid() || World.grid[pos.toShadow()]?.isPassable != false
 
         /** Keep only ring points on WALKABLE ground — built the same way the interior is: drop any the grid
          *  marks impassable (off-map buildings/water, or the masked round-arena edge), so the flow field to a
@@ -324,6 +366,10 @@ data class NonFaction(
             fields.clear()
             pending.clear()
             seq = 0
+            ringCacheW = Int.MIN_VALUE
+            ringCacheH = Int.MIN_VALUE
+            ringCacheGrid = null
+            ringCache = emptyList()
         }
 
         fun findNearestTo(pos: Pos) = World.allNonFaction.minByOrNull {
