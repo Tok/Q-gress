@@ -162,6 +162,50 @@ html, body {
     margin-left: 3px;
     max-width: 120px;
 }
+.aiArchPickers {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    margin-left: 3px;
+}
+.aiArchTimes {
+    color: #a0a0a0; /* neutral (R==G==B) */
+    font-family: "Coda", monospace;
+    font-size: 11px;
+}
+.aiArchInfo {
+    /* colour is set inline per faction (like the ENL/RES labels); fixed width so the arch/fitness text changing
+       length never nudges the surrounding controls. */
+    font-family: "Coda", monospace;
+    font-size: 13px;
+    font-weight: 700;
+    text-shadow: -1px 0 black, 0 1px black, 1px 0 black, 0 -1px black; /* black outline, like the faction labels */
+    display: inline-block;
+    width: 104px;
+    margin-left: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.driverDivider {
+    color: #a0a0a0; /* neutral (R==G==B) */
+    margin: 0 8px;
+    font-size: 13px;
+}
+.aiArchRevert {
+    background: var(--ui-tint-1);
+    border: 1px solid var(--ui-tint-3);
+    border-radius: 4px;
+    color: #e8e8e8;
+    font-size: 12px;
+    line-height: 1;
+    padding: 1px 5px;
+    margin-left: 3px;
+    cursor: pointer;
+}
+.aiArchRevert:hover {
+    background: var(--ui-tint-2);
+}
 .aiLoadNet {
     display: inline-flex;
     align-items: center;
@@ -606,18 +650,8 @@ html, body {
     overflow: auto;
     padding: 6px 12px;
 }
-/* Per-tab docked height (set via .footer[data-tab] in Footer.activate): the dense tables + the log read fine
-   ~15% shorter, while the AUDIO knobs and the STATS graphs want ~15% more room. Placed BEFORE the .expanded
-   rule below so maximize still wins on the specificity tie. */
-.footer[data-tab="footerAgents"] .footerBody,
-.footer[data-tab="footerPortals"] .footerBody,
-.footer[data-tab="footerLog"] .footerBody {
-    height: 187px;
-}
-.footer[data-tab="footerAudio"] .footerBody,
-.footer[data-tab="footerAi"] .footerBody {
-    height: 253px;
-}
+/* Every tab docks to the SAME 220px height (above) — switching tabs never resizes the footer. Sparse tabs have
+   spare room; denser ones (tables / STATS graphs / AUDIO knobs) scroll within it. Maximize for the full view. */
 /* Expanded: pull the footer up to fill the screen up to just below the top toolbar (which is 100px tall,
    z-index 100), for space-hungry tabs (NET viz); the sim keeps running behind it. The reserve MUST clear the
    toolbar so the footer header — with the maximize/collapse buttons — stays clickable (it sits at the top of
@@ -973,6 +1007,21 @@ html, body {
 .trainScreenClose:hover {
     background: var(--ui-tint-2);
 }
+.trainScreenFoot {
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid var(--ui-tint-2);
+    font-family: "Coda", monospace;
+    font-size: 11px;
+    color: #a0a0a0; /* neutral (R==G==B) */
+}
+.trainScreenLink {
+    color: #7fb0ff; /* semantic link blue */
+    text-decoration: none;
+}
+.trainScreenLink:hover {
+    text-decoration: underline;
+}
 /* BRAINS-tab link to the trainer screen. */
 .brainsHeaderRow {
     display: flex;
@@ -1000,6 +1049,29 @@ html, body {
     font-size: 11px;
     color: #d8a24a; /* semantic warning amber */
     margin-top: 2px;
+}
+.trainOpponentLine {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+.trainOpponentLabel {
+    font-family: "Coda", monospace;
+    font-size: 11px;
+    color: #e8e8e8;
+}
+.trainMiniBtn {
+    background: var(--ui-tint-1);
+    border: 1px solid var(--ui-tint-3);
+    border-radius: 4px;
+    color: #e8e8e8;
+    font-size: 11px;
+    line-height: 1;
+    padding: 2px 6px;
+    cursor: pointer;
+}
+.trainMiniBtn:hover {
+    background: var(--ui-tint-2);
 }
 .trainPanel {
     display: flex;
