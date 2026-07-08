@@ -31,10 +31,15 @@ XML_DIR="build/test-results/jsNodeTest"
 OUT="build/champions"
 WIDTHS="4 8 16 24 32"
 
+# Stream ONLY our own "BAKE " progress lines from a Gradle run — no `> Task :…` list, no JUnit STANDARD_OUT
+# banner, no BUILD-SUCCESSFUL summary, and NOT the huge `BAKEGENOME|…weights…` line (it lacks the trailing
+# space, so `BAKE ` doesn't match it). The full genome is harvested from the JUnit XML into the .line file.
+bake_filter() { grep --line-buffered -E '^[[:space:]]*BAKE ' | sed -u -E 's/^[[:space:]]*//'; }
+
 if [ "${1:-}" = "--bench" ]; then
     echo "==> Timing a bake match (BAKE_BENCH)…"
-    BAKE_BENCH=1 ./gradlew jsNodeTest --tests 'ai.net.ChampionBake' -PmochaTimeout=600s --console=plain --rerun
-    grep -rhoE 'BAKE bench[^<]*' "$XML_DIR" 2>/dev/null || echo "(no bench output found)"
+    BAKE_BENCH=1 ./gradlew jsNodeTest --tests 'ai.net.ChampionBake' \
+        -PmochaTimeout=600s -PbakeVerbose=1 --console=plain --rerun 2>&1 | bake_filter
     exit 0
 fi
 
@@ -52,14 +57,17 @@ for h1 in $WIDTHS; do
             echo "==> [$key] already baked — skipping (--resume)"
             continue
         fi
-        echo "==> [$key] baking… (live per-generation progress streams below)"
+        echo "==> [$key] baking… (live per-generation progress below)"
         ok=0
         for attempt in 1 2 3 4; do
-            if BAKE_CHAMPS=1 BAKE_ARCH="$key" ./gradlew jsNodeTest --tests 'ai.net.ChampionBake' \
-                -PmochaTimeout=3600s -PbakeVerbose=1 --console=plain --rerun; then
+            BAKE_CHAMPS=1 BAKE_ARCH="$key" ./gradlew jsNodeTest --tests 'ai.net.ChampionBake' \
+                -PmochaTimeout=3600s -PbakeVerbose=1 --console=plain --rerun 2>&1 | bake_filter
+            rc=${PIPESTATUS[0]} # the Gradle exit code, not the filter's
+            if [ "$rc" = 0 ]; then
                 line=$(grep -rhoE 'BAKEGENOME\|[^<]*' "$XML_DIR"/*.xml 2>/dev/null | tail -1)
                 if [ -n "$line" ]; then
                     printf '%s\n' "$line" > "$OUT/$key.line"
+                    echo "   [$key] ✓ champion genome → $OUT/$key.line ($(wc -c < "$OUT/$key.line") bytes)"
                     ok=1
                     break
                 fi

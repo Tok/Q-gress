@@ -29,11 +29,15 @@ XML_DIR="build/test-results/jsNodeTest"
 OUT="build/champions-train"
 WIDTHS="4 8 16 24 32"
 
+# Stream ONLY our own "TRAIN " progress lines from a Gradle run — no `> Task :…` list, no JUnit STANDARD_OUT
+# banner, no BUILD-SUCCESSFUL summary, and NOT the huge `TRAINGENOME|…weights…` line (no trailing space, so
+# `TRAIN ` doesn't match it). The full winning genome is harvested from the JUnit XML into the .line file.
+train_filter() { grep --line-buffered -E '^[[:space:]]*TRAIN ' | sed -u -E 's/^[[:space:]]*//'; }
+
 run_overall() {
     echo "==> Overall ladder — cross-arch NN-vs-NN round-robin over all current champions…"
     TRAIN_OVERALL=1 ./gradlew jsNodeTest --tests 'ai.net.ChampionTrainNN' \
-        -PmochaTimeout=3600s -PbakeVerbose=1 --console=plain --rerun || true
-    grep -rhoE 'TRAIN overall[^<]*' "$XML_DIR"/*.xml 2>/dev/null | sort -u || echo "(no ladder output found)"
+        -PmochaTimeout=3600s -PbakeVerbose=1 --console=plain --rerun 2>&1 | train_filter || true
 }
 
 if [ "${1:-}" = "--overall" ]; then
@@ -55,15 +59,22 @@ for h1 in $WIDTHS; do
             echo "==> [$key] already decided — skipping (--resume)"
             continue
         fi
-        echo "==> [$key] training + deciding… (live progress streams below)"
+        echo "==> [$key] training + deciding… (live progress below)"
         ok=0
         for attempt in 1 2 3; do
-            if TRAIN_CHAMPS=1 TRAIN_ARCH="$key" ./gradlew jsNodeTest --tests 'ai.net.ChampionTrainNN' \
-                -PmochaTimeout=3600s -PbakeVerbose=1 --console=plain --rerun; then
+            TRAIN_CHAMPS=1 TRAIN_ARCH="$key" ./gradlew jsNodeTest --tests 'ai.net.ChampionTrainNN' \
+                -PmochaTimeout=3600s -PbakeVerbose=1 --console=plain --rerun 2>&1 | train_filter
+            rc=${PIPESTATUS[0]} # the Gradle exit code, not the filter's
+            if [ "$rc" = 0 ]; then
                 # A winner emits one TRAINGENOME line; an incumbent that held emits none → an empty marker file.
                 line=$(grep -rhoE 'TRAINGENOME\|[^<]*' "$XML_DIR"/*.xml 2>/dev/null | tail -1)
                 printf '%s\n' "$line" > "$OUT/$key.line"
-                [ -n "$line" ] && { NEW="$NEW $key"; echo "   [$key] NEW champion"; } || echo "   [$key] incumbent held"
+                if [ -n "$line" ]; then
+                    NEW="$NEW $key"
+                    echo "   [$key] ✓ NEW champion → $OUT/$key.line"
+                else
+                    echo "   [$key] incumbent held (no change)"
+                fi
                 ok=1
                 break
             fi
