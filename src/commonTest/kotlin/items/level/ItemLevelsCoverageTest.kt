@@ -3,6 +3,7 @@ package items.level
 import portal.Quality
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 /**
@@ -59,5 +60,37 @@ class ItemLevelsCoverageTest {
         assertEquals(XmpLevel.SIX, XmpLevel.find(4, Quality.BEST), "BEST adds +2")
         assertEquals(XmpLevel.ONE, XmpLevel.find(2, Quality.MORE), "MORE adds -1")
         assertEquals(XmpLevel.EIGHT, XmpLevel.find(8, Quality.TOP), "TOP over 8 clips to 8")
+    }
+
+    @Test
+    fun powerCubeLevelLookupsAndAccessors() {
+        assertEquals(PowerCubeLevel.ONE, PowerCubeLevel.valueOf(0), "below 1 clips up to L1")
+        assertEquals(PowerCubeLevel.EIGHT, PowerCubeLevel.valueOf(99), "above 8 clips down to L8")
+        assertEquals(PowerCubeLevel.FIVE, PowerCubeLevel.find(4, Quality.TOP), "TOP adds +1")
+        val l3 = PowerCubeLevel.THREE
+        assertEquals(3, l3.toInt())
+        assertEquals(3000, l3.calculateRecycleXm(), "recycle XM = the cube's XM value")
+        assertTrue(l3.getColor().startsWith("#"), "each level renders a hex colour")
+    }
+
+    @Test
+    fun resonatorLevelLookupsAndAccessors() {
+        assertEquals(ResonatorLevel.ONE, ResonatorLevel.valueOf(-1), "below 1 clips up to L1")
+        assertEquals(ResonatorLevel.EIGHT, ResonatorLevel.valueOf(99), "above 8 clips down to L8")
+        assertEquals(ResonatorLevel.SIX, ResonatorLevel.find(4, Quality.BEST), "BEST adds +2")
+        val l7 = ResonatorLevel.SEVEN
+        assertEquals(7, l7.toInt())
+        assertEquals(140, l7.calculateRecycleXm(), "recycle XM = level × 20")
+        assertTrue(l7.getColor().startsWith("#"))
+    }
+
+    @Test
+    fun portalLevelColourAndLookup() {
+        assertEquals(PortalLevel.FOUR, PortalLevel.findByValue(4))
+        assertEquals(4, PortalLevel.FOUR.toInt())
+        assertTrue(PortalLevel.EIGHT.getColor().startsWith("#"), "a mapped level renders its hex colour")
+        assertEquals("#FFFFFF", PortalLevel.ZERO.getColor(), "L0 has no map entry → the white fallback")
+        // findByValue does NOT clip (unlike the weapon levels), so an out-of-range value hits the error path.
+        assertFailsWith<IllegalStateException> { PortalLevel.findByValue(99) }
     }
 }

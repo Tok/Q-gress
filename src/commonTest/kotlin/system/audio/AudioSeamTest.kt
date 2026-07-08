@@ -13,6 +13,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertSame
 
 /**
  * The audio-sink seam (PLAN Phase-B groundwork): game logic fires SFX/TTS through [Snd.sink], so it runs
@@ -33,6 +34,26 @@ class AudioSeamTest {
         World.allPortals.clear()
         World.allAgents.clear()
         Snd.reset()
+        Snd.headless = false
+        Snd.bind(NoOpAudio) // restore the default boot-bound sink (a bind test may have swapped it)
+    }
+
+    @Test
+    fun headlessForcesTheNoOpSinkEvenWithAnOverrideInstalled() {
+        val fake = CountingAudio()
+        Snd.install(fake)
+        Snd.headless = true
+        assertSame(NoOpAudio, Snd.sink, "headless yields NoOpAudio even over an installed override")
+        Snd.headless = false
+        assertSame(fake, Snd.sink, "clearing headless restores the installed override")
+    }
+
+    @Test
+    fun bindSetsThePlatformSinkUsedWhenNoOverrideIsInstalled() {
+        val fake = CountingAudio()
+        Snd.bind(fake)
+        Snd.reset() // no override → sink falls through to the bound platform sink
+        assertSame(fake, Snd.sink, "with no override, the bound sink is used")
     }
 
     @Test

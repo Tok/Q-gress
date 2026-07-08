@@ -13,6 +13,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertSame
 
 /**
  * The effect-sink seam (PLAN Phase 6.1 groundwork): game logic fires visual effects through [Fx.sink], so
@@ -34,6 +35,26 @@ class EffectsSeamTest {
         World.allPortals.clear()
         World.allAgents.clear()
         Fx.reset()
+        Fx.headless = false
+        Fx.bind(NoOpEffects) // restore the default boot-bound sink (a bind test may have swapped it)
+    }
+
+    @Test
+    fun headlessForcesTheNoOpSinkEvenWithAnOverrideInstalled() {
+        val fake = CountingEffects()
+        Fx.install(fake)
+        Fx.headless = true
+        assertSame(NoOpEffects, Fx.sink, "headless yields NoOpEffects even over an installed override")
+        Fx.headless = false
+        assertSame(fake, Fx.sink, "clearing headless restores the installed override")
+    }
+
+    @Test
+    fun bindSetsThePlatformSinkUsedWhenNoOverrideIsInstalled() {
+        val fake = CountingEffects()
+        Fx.bind(fake)
+        Fx.reset() // no override → sink falls through to the bound platform sink
+        assertSame(fake, Fx.sink, "with no override, the bound sink is used")
     }
 
     @Test

@@ -42,4 +42,18 @@ class ModTypeLinkAmpTypeTest {
         assertEquals(levels.sorted(), levels, "link-amp levels ascend with rarity")
         assertTrue(LinkAmpType.values().all { it.abbr.isNotBlank() }, "every tier has an abbreviation")
     }
+
+    @Test
+    fun modTypeColoursComeFromRarityAndFallBackToWhite() {
+        // The rarity-derived colour getter on each LeveledColor mod type.
+        assertEquals(Rarity.COMMON.color, ShieldType.COMMON.color, "a shield's colour is its rarity colour")
+        assertEquals(Rarity.VERY_RARE.color, MultihackType.VERY_RARE.color)
+
+        // getColorForLevel → the matching entry's colour, or NO_MOD_COLOR when no level matches (both branches
+        // of LeveledColor.colorForLevel).
+        assertEquals(ShieldType.RARE.color, ShieldType.getColorForLevel(2), "level 2 → the RARE shield colour")
+        assertEquals(NO_MOD_COLOR, ShieldType.getColorForLevel(99), "no such level → the white fallback")
+        assertEquals(MultihackType.COMMON.color, MultihackType.getColorForLevel(1))
+        assertEquals(NO_MOD_COLOR, MultihackType.getColorForLevel(0), "no such level → the white fallback")
+    }
 }

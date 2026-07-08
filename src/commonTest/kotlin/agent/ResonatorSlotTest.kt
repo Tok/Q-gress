@@ -62,4 +62,32 @@ class ResonatorSlotTest {
             slot().deployReso(deployer(), resonator(), dist)
         }
     }
+
+    @Test
+    fun cannotDeployOntoAnEnemyOwnedSlot() = with(Factory) {
+        val enemySlot = slot().copy(owner = smurf()) // the octant is held by RES
+        assertTrue(enemySlot.isOwnedByEnemy(frog()), "a RES-owned slot reads as enemy to an ENL agent")
+        assertFailsWith(IllegalStateException::class) {
+            enemySlot.deployReso(frog(), resonator(), Dim.minDeploymentRange.toInt()) // ENL can't deploy onto it
+        }
+    }
+
+    @Test
+    fun cannotDeployAResoThatIsNotStrongerThanTheExisting() = with(Factory) {
+        val deployer = deployer()
+        val slot = slot()
+        slot.deployReso(deployer, resonator(level = 2), Dim.minDeploymentRange.toInt())
+        assertFailsWith(IllegalStateException::class) {
+            slot.deployReso(deployer, resonator(level = 2), Dim.minDeploymentRange.toInt()) // equal level → rejected
+        }
+    }
+
+    @Test
+    fun toStringBracketsTheResonatorOrShowsEmpty() = with(Factory) {
+        assertEquals("[]", slot().toString(), "an empty slot renders as empty brackets")
+        val slot = slot()
+        slot.deployReso(deployer(), resonator(), Dim.minDeploymentRange.toInt())
+        assertTrue(slot.toString().startsWith("[") && slot.toString().endsWith("]"), "a filled slot wraps the reso")
+        assertTrue(slot.toString().length > 2, "and shows the resonator inside the brackets")
+    }
 }
