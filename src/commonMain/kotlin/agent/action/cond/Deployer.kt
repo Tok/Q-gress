@@ -11,7 +11,6 @@ import items.deployable.Resonator
 import items.deployable.Shield
 import items.level.ResonatorLevel
 import portal.Octant
-import portal.Portal
 import portal.ResonatorSlot
 import system.audio.Snd
 import system.effect.Fx
@@ -30,8 +29,7 @@ object Deployer : ConditionalAction {
         if (!areMoreResosAllowed(agent)) return false
         val inventoryResos = inventoryResos(agent.inventory)
         if (inventoryResos.isEmpty()) return false
-        val ownedInPortal = ownedInPortal(agent)
-        return inventoryResos.toSet().any { canDeployReso(it, ownedInPortal, agent) }
+        return inventoryResos.toSet().any { canDeployReso(it, agent) }
     }
 
     // The best deployable mod the agent carries (shields first, then heat sinks, then multi-hacks; link amps
@@ -58,10 +56,9 @@ object Deployer : ConditionalAction {
 
     // Deploy the single best resonator (highest level, empty slots first); false if none fits.
     private fun deployOneReso(agent: Agent): Boolean {
-        val ownedInPortal = ownedInPortal(agent)
         val target = inventoryResos(agent.inventory).firstNotNullOfOrNull { reso ->
             // highest level first
-            deployTargetFor(agent, ownedInPortal, reso)?.let { reso to it }
+            deployTargetFor(agent, reso)?.let { reso to it }
         } ?: return false
         actuallyDeployOne(agent, target.second, target.first)
         return true
@@ -81,14 +78,13 @@ object Deployer : ConditionalAction {
     }
 
     // The octant a resonator should fill (empty slots first), or null if it can't be deployed here.
-    // The same-level cap mirrors Portal.deploy's own gate so we never pick a target it will refuse
-    // (which left the reso unplaced AND unconsumed → an endless deploy loop).
-    private fun deployTargetFor(agent: Agent, ownedInPortal: List<Pair<Octant, ResonatorSlot>>, reso: Resonator): Octant? {
-        val sameLevel = agent.actionPortal.slots.count { it.value.resonator?.level == reso.level }
-        val ok = reso.level.level <= agent.getLevel() &&
-            maxDeployable(ownedInPortal, reso) > 0 &&
-            sameLevel < reso.level.deployablePerPlayer
-        return if (!ok) null else deployableSlots(agent.actionPortal, reso).minByOrNull { if (it.second.isEmpty()) 0 else 1 }?.first
+    // Mirrors Portal.deploy's own gate so we never pick a target it will refuse (which left the reso
+    // unplaced AND unconsumed → an endless deploy loop): the PER-PLAYER same-level allowance
+    // ([Portal.findAllowedResoLevels]) plus an upgradeable slot (empty, or a teammate's lower reso).
+    private fun deployTargetFor(agent: Agent, reso: Resonator): Octant? {
+        val allowed = agent.actionPortal.findAllowedResoLevels(agent)[reso.level] ?: 0
+        val ok = reso.level.level <= agent.getLevel() && allowed > 0
+        return if (!ok) null else deployableSlots(agent, reso).minByOrNull { if (it.second.isEmpty()) 0 else 1 }?.first
     }
 
     private fun actuallyDeployOne(agent: Agent, octant: Octant, reso: Resonator) {
@@ -105,24 +101,18 @@ object Deployer : ConditionalAction {
 
     private fun allowedResoLevels(agent: Agent): Map<ResonatorLevel, Int> = agent.actionPortal.findAllowedResoLevels(agent)
 
-    private fun ownedInPortal(agent: Agent) = agent.actionPortal.slots.filter { it.value.isOwnedBy(agent) }.toList()
     private fun inventoryResos(inv: Inventory) =
         inv.items.filter { it is Resonator }.map { it as Resonator }.sortedByDescending { it.level }
 
-    private fun maxDeployable(ownedInPortal: List<Pair<Octant, ResonatorSlot>>, reso: Resonator): Int {
-        val owned =
-            ownedInPortal.filter { slot -> slot.second.resonator?.level?.level ?: 0 >= reso.level.level }.count()
-        return max(reso.level.deployablePerPlayer - owned, 0)
-    }
-
-    private fun deployableSlots(portal: Portal, reso: Resonator): List<Pair<Octant, ResonatorSlot>> = portal.slots
+    // A slot this agent can deploy into: empty, or a TEAMMATE's lower-level resonator (never the agent's
+    // own — a player can't upgrade their own reso).
+    private fun deployableSlots(agent: Agent, reso: Resonator): List<Pair<Octant, ResonatorSlot>> = agent.actionPortal.slots
         .filter {
             it.value.isEmpty() ||
-                it.value.resonator?.level?.level ?: 0 < reso.level.level
+                (!it.value.isOwnedBy(agent) && (it.value.resonator?.level?.level ?: 0) < reso.level.level)
         }
         .toList()
 
     // Possible exactly when an actual target exists — same gate Portal.deploy uses (no loop).
-    private fun canDeployReso(reso: Resonator, ownedInPortal: List<Pair<Octant, ResonatorSlot>>, agent: Agent): Boolean =
-        deployTargetFor(agent, ownedInPortal, reso) != null
+    private fun canDeployReso(reso: Resonator, agent: Agent): Boolean = deployTargetFor(agent, reso) != null
 }

@@ -54,10 +54,12 @@ class DeployerTest {
         }
     }
 
-    // Regression: once a level's global same-level count hits deployablePerPlayer, Portal.deploy
-    // refuses it — so the deploy gate must too, or the agent retries forever (the deploy-loop bug).
+    // Regression: the L5 same-level cap (ResonatorLevel.FIVE.deployablePerPlayer = 2) is PER PLAYER.
+    // Once an agent hits its OWN cap, the deploy gate must stop offering it that level (or the agent
+    // retries forever — the deploy-loop bug) — but a DIFFERENT agent, who hasn't hit their own cap, may
+    // still deploy the same level.
     @Test
-    fun globalSameLevelCapOffersNoDeploy() = with(Factory) {
+    fun perPlayerSameLevelCapOffersNoDeployToTheCappedAgentButDoesToOthers() = with(Factory) {
         val a = frog()
         val b = frog() // same faction → b may deploy on a's portal
         a.addAp(2_000_000)
@@ -65,13 +67,18 @@ class DeployerTest {
         val portal = portal()
         a.actionPortal = portal
         b.actionPortal = portal
-        // Two L5 resonators is the global cap (ResonatorLevel.FIVE.deployablePerPlayer = 2).
+        // a deploys its two L5s — that's a's own per-player L5 cap.
         portal.deploy(a, mapOf(Octant.N to resonator(a, 5)), Dim.maxDeploymentRange.toInt())
         portal.deploy(a, mapOf(Octant.S to resonator(a, 5)), Dim.maxDeploymentRange.toInt())
         assertEquals(2, portal.filledSlots().count { it.resonator?.level == ResonatorLevel.FIVE })
-        b.inventory.items.clear() // drop the random starting loadout so b ONLY carries the L5 below (test intent)
-        b.inventory.items.add(resonator(b, 5)) // b only carries an L5 — but the L5 cap is reached
-        assertFalse(Deployer.isActionPossible(b), "same-level cap reached → no deploy offered (was an infinite loop)")
+
+        a.inventory.items.clear()
+        a.inventory.items.add(resonator(a, 5)) // a only carries an L5 — but a's OWN L5 cap is reached
+        assertFalse(Deployer.isActionPossible(a), "the capped agent is offered no deploy (was an infinite loop)")
+
+        b.inventory.items.clear()
+        b.inventory.items.add(resonator(b, 5)) // b hasn't deployed any L5 yet → still within b's own cap
+        assertTrue(Deployer.isActionPossible(b), "a different agent may still add their own L5 (per-player cap)")
     }
 
     @Test

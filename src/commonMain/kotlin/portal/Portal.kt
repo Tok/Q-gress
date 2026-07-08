@@ -292,25 +292,22 @@ data class Portal(
         resos.asIterable().forEachIndexed { index, (octant, resonator) ->
             val level = resonator.level
             val oldReso = slots[octant]
+            // A player can NEVER upgrade their OWN resonator — only fill an empty slot or replace a
+            // teammate's lower one. That's what forces a level-8 portal to need 8 different agents.
+            if (oldReso?.isOwnedBy(deployer) ?: false) return
             val oldLevel = oldReso?.resonator?.level?.level
             check(oldLevel ?: 0 < level.level)
-            val sameLevelCount = slots.count { it.value.resonator?.level == level }
+            // The authentic per-level deploy caps (L8/L7:1, L6/L5:2, L4-L2:4, L1:8) are PER PLAYER, not
+            // per portal: count only the slots THIS agent already owns at this level, so many agents can
+            // each add their own top-level resonator (8×L8 → a level-8 portal).
+            val sameLevelCount = slots.count { it.value.isOwnedBy(deployer) && it.value.resonator?.level == level }
 
             val isUnableToDeployMoreOfTheSame = sameLevelCount >= level.deployablePerPlayer
             if (isUnableToDeployMoreOfTheSame) { // should only happen rarely
                 return
             }
 
-            deployer.addAp(
-                when {
-                    isCapture && index == 0 -> IngressFacts.AP_CAPTURE_PORTAL
-                    index < firstResoCount -> IngressFacts.AP_DEPLOY_RESONATOR
-                    index == firstResoCount && firstResoCount + initialResoCount == IngressFacts.RESO_SLOTS ->
-                        IngressFacts.AP_COMPLETE_PORTAL
-                    (oldReso?.isOwnedBy(deployer) ?: false) -> IngressFacts.AP_UPGRADE_RESONATOR
-                    else -> 0
-                },
-            )
+            deployer.addAp(deployAp(isCapture, index, firstResoCount, initialResoCount, oldReso))
             deployer.removeXm(level.level * RESO_DEPLOY_XM_PER_LEVEL)
             val oldDistance = oldReso?.distance
             // Clamp into the legal deploy band: a stored upgrade distance — or the agent's per-tick step
@@ -324,6 +321,16 @@ data class Portal(
             resonator.deploy(this, octant, Pos(xx, yy))
         }
         deployer.inventory.consumeResos(resos.map { it.value })
+    }
+
+    // AP for placing the resonator at [index] of a deploy batch: capturing / first-fill / completing the
+    // portal / upgrading a teammate's rod (replacing an occupied slot — self-upgrade returns early in [deploy]).
+    private fun deployAp(isCapture: Boolean, index: Int, firstResoCount: Int, initialResoCount: Int, oldReso: ResonatorSlot?): Int = when {
+        isCapture && index == 0 -> IngressFacts.AP_CAPTURE_PORTAL
+        index < firstResoCount -> IngressFacts.AP_DEPLOY_RESONATOR
+        index == firstResoCount && firstResoCount + initialResoCount == IngressFacts.RESO_SLOTS -> IngressFacts.AP_COMPLETE_PORTAL
+        oldReso?.resonator != null -> IngressFacts.AP_UPGRADE_RESONATOR
+        else -> 0
     }
 
     private fun findOutgoingTo(): List<Portal> = links.map { it.destination }
