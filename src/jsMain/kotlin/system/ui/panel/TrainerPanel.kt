@@ -23,7 +23,6 @@ import org.w3c.dom.HTMLButtonElement
 import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLInputElement
-import org.w3c.dom.HTMLOptionElement
 import org.w3c.dom.HTMLSelectElement
 import system.HeadlessRun
 import system.ui.DriverControls
@@ -97,6 +96,7 @@ object TrainerPanel {
     private var runButton: HTMLButtonElement? = null
     private var statusEl: HTMLElement? = null
     private var previewCanvas: HTMLCanvasElement? = null
+    private var activationCanvas: HTMLCanvasElement? = null
     private var previewCaption: HTMLElement? = null
     private var plot: UPlot? = null
     private var progressFill: HTMLElement? = null
@@ -113,6 +113,8 @@ object TrainerPanel {
         if (!ensure()) return // uPlot CDN not ready yet — try again on the next click
         overlay?.classList?.remove("invisible")
         GameLoop.pauseForEval() // freeze the live game while the trainer screen is up
+        // Seed the activation diagram with the current default champion so it isn't blank before the first run.
+        runCatching { renderActivation(GenomeIO.decode(ChampionLibrary.defaultJson())) }
     }
 
     /** Close the trainer screen and resume the game (stopping any run in progress first). */
@@ -181,16 +183,16 @@ object TrainerPanel {
 
     private fun buildConfigRow(): HTMLElement {
         val row = el("div", "trainConfig")
-        popInput = numberField(row, "Population", "10", "1", "2", "40")
-        genInput = numberField(row, "Generations", "15", "1", "1", "200")
-        mutInput = numberField(row, "Mutation", "0.15", "0.05", "0", "1")
+        popInput = TrainerWidgets.numberField(row, "Population", "10", "1", "2", "40")
+        genInput = TrainerWidgets.numberField(row, "Generations", "15", "1", "1", "200")
+        mutInput = TrainerWidgets.numberField(row, "Mutation", "0.15", "0.05", "0", "1")
         val widthOpts = HIDDEN_WIDTHS.map { it.toString() to it.toString() }
-        hidden1Select = selectField(row, "Hidden 1", widthOpts).also { it.value = DEFAULT_HIDDEN.toString() }
-        hidden2Select = selectField(row, "Hidden 2", widthOpts).also { it.value = DEFAULT_HIDDEN.toString() }
-        actSelect = selectField(row, "Activation", Activation.entries.map { it.name to it.name.lowercase() })
-        cleanEvalBox = checkboxField(row, "Clean eval", "anti-runaway mechanics off — a cleaner training gradient")
+        hidden1Select = TrainerWidgets.selectField(row, "Hidden 1", widthOpts).also { it.value = DEFAULT_HIDDEN.toString() }
+        hidden2Select = TrainerWidgets.selectField(row, "Hidden 2", widthOpts).also { it.value = DEFAULT_HIDDEN.toString() }
+        actSelect = TrainerWidgets.selectField(row, "Activation", Activation.entries.map { it.name to it.name.lowercase() })
+        cleanEvalBox = TrainerWidgets.checkboxField(row, "Clean eval", "anti-runaway mechanics off — a cleaner training gradient")
         buildOpponentControl(row)
-        val run = button("Train", "trainRun") { onRunClick() }
+        val run = TrainerWidgets.button("Train", "trainRun") { onRunClick() }
         runButton = run
         row.appendChild(run)
         statusEl = el("div", "trainStatus")
@@ -278,7 +280,7 @@ object TrainerPanel {
         col.appendChild(buildProgress())
         val chart = el("div", "trainChart")
         col.appendChild(chart)
-        plot = makePlot(chart)
+        plot = TrainerWidgets.makePlot(chart, CHART_W, CHART_H, PREVIEW_COLOR)
         return col
     }
 
@@ -300,8 +302,15 @@ object TrainerPanel {
 
     private fun buildChampionCol(): HTMLElement {
         val col = el("div", "trainCol")
-        col.appendChild(el("div", "trainColHead").also { it.textContent = "Champion genome (weights — sign × magnitude)" })
-        val canvas = dprCanvas(PREVIEW_W, PREVIEW_H)
+        // Live NN activation diagram (same viz as the BRAINS tab): input → hidden → output with weighted edges,
+        // the lit decision path, node activations, and driving-input / top-output labels — the net "thinking" on
+        // the (paused) live game. Painted on open (current champion) + after each run (the challenger).
+        col.appendChild(el("div", "trainColHead").also { it.textContent = "Net activation on the live game (inputs → hidden → actions)" })
+        val act = TrainerWidgets.dprCanvas(NetVizPanel.CW, NetVizPanel.CH)
+        activationCanvas = act
+        col.appendChild(act)
+        col.appendChild(el("div", "trainColHead").also { it.textContent = "Genome (all weights — sign × magnitude)" })
+        val canvas = TrainerWidgets.dprCanvas(PREVIEW_W, PREVIEW_H)
         previewCanvas = canvas
         col.appendChild(canvas)
         previewCaption = el("div", "trainCaption").also { it.textContent = "—" }
@@ -313,14 +322,14 @@ object TrainerPanel {
     private fun buildActions(): HTMLElement {
         val box = el("div", "trainActions")
         actionButtons.clear()
-        actionButtons += button("Save champion", "trainAction") { saveChampion() }
-        actionButtons += button("Install → ${Faction.ENL.abbr}", "trainAction") { install(Faction.ENL) }
-        actionButtons += button("Install → ${Faction.RES.abbr}", "trainAction") { install(Faction.RES) }
-        actionButtons += button("Download JSON", "trainAction") { downloadChampion() }
+        actionButtons += TrainerWidgets.button("Save champion", "trainAction") { saveChampion() }
+        actionButtons += TrainerWidgets.button("Install → ${Faction.ENL.abbr}", "trainAction") { install(Faction.ENL) }
+        actionButtons += TrainerWidgets.button("Install → ${Faction.RES.abbr}", "trainAction") { install(Faction.RES) }
+        actionButtons += TrainerWidgets.button("Download JSON", "trainAction") { downloadChampion() }
         actionButtons.forEach { box.appendChild(it) }
         // "Load JSON" is always usable (no champion needed) — it imports a shared champion, installs it as its
         // arch's champion (persisted), and makes it the net driver.
-        box.appendChild(button("Load JSON", "trainAction") { triggerLoad() })
+        box.appendChild(TrainerWidgets.button("Load JSON", "trainAction") { triggerLoad() })
         box.appendChild(buildLoadInput())
         return box
     }
@@ -473,7 +482,10 @@ object TrainerPanel {
         val opp = runOpponent
         if (done == null || opp == null) {
             teardown()
-            done?.let { setStatus("Done · ${it.generation} generations · challenger ${muLabel(it.bestFitness)} · live game resumed.") }
+            done?.let {
+                setStatus("Done · ${it.generation} generations · challenger ${muLabel(it.bestFitness)} · live game resumed.")
+                renderActivation(Net.fromGenome(it.bestGenome, it.config.arch))
+            }
             setProgress(1.0, "Done")
             refreshActions()
             return
@@ -542,6 +554,7 @@ object TrainerPanel {
             "Done · $gens generations · held-out decider: the challenger $verdict the opponent by " +
                 "${signedInt(margin)} checkpoints over ${DECIDER_SEEDS * 2} unseen matches — save / install / download if better.",
         )
+        deciderCand?.let { renderActivation(it) } // show the trained challenger "thinking" on the restored game
         refreshActions()
     }
 
@@ -625,6 +638,13 @@ object TrainerPanel {
         previewCaption?.textContent = "${current.config.arch.label()} · ${muLabel(current.bestFitness)} vs opponent"
     }
 
+    // Paint [net]'s activation diagram on the current (paused / restored) live game. No-op if no game is running.
+    private fun renderActivation(net: Net) {
+        if (World.grid.isEmpty()) return
+        val ctx = activationCanvas?.getContext("2d") as? CanvasRenderingContext2D ?: return
+        NetVizPanel.paintActivation(ctx, net, Faction.ENL, NetVizPanel.CW.toDouble(), NetVizPanel.CH.toDouble())
+    }
+
     // Save/Install are usable once a generation has produced a champion and the run has finished (restored).
     private fun refreshActions() {
         runButton?.textContent = if (running) "Stop" else "Train"
@@ -642,96 +662,5 @@ object TrainerPanel {
         if (value == Double.NEGATIVE_INFINITY) return "—"
         val rounded = value.roundToInt()
         return "${if (rounded >= 0) "+" else ""}$rounded MU"
-    }
-
-    private fun makePlot(target: HTMLElement): UPlot {
-        val opts: dynamic = js("({})")
-        opts.width = CHART_W
-        opts.height = CHART_H
-        opts.cursor = js("({ show: false })")
-        opts.legend = js("({ show: false })")
-        opts.scales = js("({ x: { time: false } })")
-        opts.axes = arrayOf(whiteAxis(), whiteAxis()) // tick labels white so they read on the dark UI
-        val series: dynamic = js("({})")
-        series.stroke = PREVIEW_COLOR
-        series.width = 2
-        series.fill = "rgba(120, 170, 255, 0.14)"
-        series.points = js("({ show: false })")
-        opts.series = arrayOf(js("({})"), series)
-        val empty: dynamic = arrayOf(arrayOf<Double>(), arrayOf<Double>())
-        return UPlot(opts, empty, target)
-    }
-
-    // A uPlot axis with white tick labels + faint grid/ticks — legible on the dark trainer panel.
-    private fun whiteAxis(): dynamic {
-        val a: dynamic = js("({})")
-        a.stroke = "#ffffff" // tick-label + axis colour
-        a.grid = js("({ stroke: 'rgba(255,255,255,0.10)', width: 1 })")
-        a.ticks = js("({ stroke: 'rgba(255,255,255,0.25)', width: 1 })")
-        return a
-    }
-
-    private fun numberField(parent: HTMLElement, label: String, value: String, step: String, min: String, max: String): HTMLInputElement {
-        val wrap = el("div", "trainField")
-        wrap.appendChild(el("span", "trainFieldLabel").also { it.textContent = label })
-        val input = document.createElement("input") as HTMLInputElement
-        input.type = "number"
-        input.value = value
-        input.step = step
-        input.min = min
-        input.max = max
-        input.className = "trainInput"
-        wrap.appendChild(input)
-        parent.appendChild(wrap)
-        return input
-    }
-
-    private fun checkboxField(parent: HTMLElement, label: String, title: String): HTMLInputElement {
-        val wrap = el("label", "ladderEntrant").also { it.title = title } // reuse the leaderboard checkbox-row style
-        val box = document.createElement("input") as HTMLInputElement
-        box.type = "checkbox"
-        wrap.appendChild(box)
-        wrap.appendChild(el("span", "trainFieldLabel").also { it.textContent = label })
-        parent.appendChild(wrap)
-        return box
-    }
-
-    private fun selectField(parent: HTMLElement, label: String, options: List<Pair<String, String>>): HTMLSelectElement {
-        val wrap = el("div", "trainField")
-        wrap.appendChild(el("span", "trainFieldLabel").also { it.textContent = label })
-        val select = document.createElement("select") as HTMLSelectElement
-        select.className = "trainSelect"
-        options.forEach { (value, text) ->
-            val option = document.createElement("option") as HTMLOptionElement
-            option.value = value
-            option.textContent = text
-            select.appendChild(option)
-        }
-        wrap.appendChild(select)
-        parent.appendChild(wrap)
-        return select
-    }
-
-    private fun button(label: String, cls: String, onClick: () -> Unit): HTMLButtonElement {
-        val btn = document.createElement("button") as HTMLButtonElement
-        btn.className = cls
-        btn.textContent = label
-        btn.onclick = {
-            onClick()
-            null
-        }
-        return btn
-    }
-
-    // A device-pixel-resolution canvas → crisp fills on HiDPI (CSS size w×h, backing store ×dpr).
-    private fun dprCanvas(w: Int, h: Int): HTMLCanvasElement {
-        val canvas = document.createElement("canvas") as HTMLCanvasElement
-        val dpr = window.devicePixelRatio.takeIf { it > 0.0 } ?: 1.0
-        canvas.width = (w * dpr).toInt()
-        canvas.height = (h * dpr).toInt()
-        canvas.style.width = "${w}px"
-        canvas.style.height = "${h}px"
-        (canvas.getContext("2d") as? CanvasRenderingContext2D)?.scale(dpr, dpr)
-        return canvas
     }
 }
