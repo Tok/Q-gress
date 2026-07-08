@@ -193,7 +193,7 @@ onboarding/search history; arbitrary coordinates work.
 
 ## Build & toolchain
 
-Kotlin 2.4 → JS (IR), Gradle 9.5, build JVM **JDK 21** (detekt can't run on 25). Browser
+Kotlin 2.4 → JS (IR), Gradle 9.6.1, build JVM **JDK 21** (detekt can't run on 25). Browser
 bundle via the Kotlin/JS webpack; **unit tests run in Node** (Mocha). Quality gates: **ktlint**
 + **detekt** (complexity limits) + tests, enforced by an in-repo **pre-commit hook**
 (`.githooks/`, `core.hooksPath`). three.js / cannon-es / MapLibre / uPlot come via npm or CDN

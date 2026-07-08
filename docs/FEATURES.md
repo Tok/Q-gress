@@ -5,7 +5,7 @@ sections are written newest-last, so where an area evolved the later entry is th
 Commit hashes are illustrative pointers, not exhaustive.
 
 ## Toolchain & build
-- Migrated the dead 2018 build to **Kotlin 2.4 → JS (IR)**, **Gradle 9.5**, build JVM **JDK 21**
+- Migrated the dead 2018 build to **Kotlin 2.4 → JS (IR)**, **Gradle 9.6.1**, build JVM **JDK 21**
   (detekt can't run on JDK 25). Sources under `src/jsMain` / `src/jsTest`.
 - Replaced removed/relocated APIs (`kotlin.browser.*`/`kotlin.dom.*` → `kotlinx-browser`,
   `toUpperCase`→`uppercase`, `Double.toByte()`, literal `js()`, null-safety).
@@ -168,8 +168,8 @@ Commit hashes are illustrative pointers, not exhaustive.
   count+level-bar columns (XMPs, US, Resos, Cubes, Shields, Heat sinks, Multi-hacks) plus Keys / unique Keys.
   Both tables only rebuild while their tab is visible (off-screen they're idle). **PORTALS** lists every
   portal — owner-faction-coloured name, Faction, Level, Health, Resos (n/8), Mods (n/4), Links, Fields, Owner.
-  Click any header to sort (toggles asc/desc; stable, tie-broken on name); collapsed shows the top rows,
-  expanded scrolls the full roster.
+  Click any header to sort (toggles asc/desc; stable, tie-broken on name). Both list **every** row (the
+  fixed-height footer body scrolls; maximize for the full view), rebuilt at ~5 Hz while their tab is visible.
 - **Unified tabbed dock** (`system/ui/Dock`): the scattered corner panes are consolidated into one
   right-docked panel with **NOW / HISTORY / TUNE** tabs (one view at a time) — NOW holds the
   scoreboard + leaderboard + LOG, HISTORY the sparklines, TUNE the sliders. It's the only
@@ -193,18 +193,20 @@ Commit hashes are illustrative pointers, not exhaustive.
   picker; a sane baseline opponent until a trained net is loadable.
 - **Collapsible + expandable footer** (`system/ui/Footer`): the full-width bottom tab bar has three body
   heights via two header controls — **collapse** (chevron: hide → just the tab bar) and **maximize** (expand
-  → fills up to just below the top scoreboard, with the sim still running behind it) — so space-hungry tabs
-  like NET get room. Normal is a **fixed-height** docked strip (the same size on every tab, so switching tabs no
-  longer makes the footer jump); Tab cycles tabs. The **NET** tab **auto-expands** on entry and auto-restores on
-  leave (unless you've taken manual control of the size).
-- **Driver picker in the top toolbar** (`system/ui/DriverControls`): per faction, Manual / **Heuristic** /
-  **Neural net** / **LLM**, reachable from anywhere. **Neural net is the default** — the sim plays itself
-  (AI-vs-AI) out of the box; switch your faction to Manual to drive it with the sliders.
+  → fills up to just below the top scoreboard, with the sim still running behind it). Normal is a **fixed-height**
+  docked strip — **the same size on every tab** (switching tabs never resizes the footer; no per-tab auto-expand),
+  denser tabs scrolling within it. Tab cycles tabs.
+- **Driver picker in the BRAINS tab** (`system/ui/DriverControls`, one "AI" group per faction, ENL │ RES): per
+  faction, Manual / **Heuristic** / **Neural net** / **LLM**. **Neural net is the default** — the sim plays
+  itself (AI-vs-AI) out of the box; switch your faction to Manual to drive it with the sliders. For a net side,
+  **two per-layer width dropdowns** (or **Rnd**) pick the arch, a **Load net…** button installs a shared JSON,
+  and a label shows the resolved arch + fitness — or the loaded net's filename (its **provenance**), with a **↺**
+  to revert that arch to the repo default.
 - **"Who plays?" onboarding step** (`system/ui/Onboarding.showDrivers`, right after faction pick): choose each
   side's brain — your side Human/Heuristic/Net/LLM, the opponent AI-only — defaulting to **net vs net**. The
   choice rides the start-URL (`?enl=…&res=…`) into the game.
-- **AI footer tab** (`system/ui/panel/AiPanel` + `system/ui/panel/SliderHistoryPanel`): the merged
-  AI-transparency tab (AGENTS / **AI** / NET / EVENT LOG) — a live **observation** readout (the 13-slot
+- **AI footer tab** (`system/ui/panel/AiPanel` + `system/ui/panel/SliderHistoryPanel`): the
+  AI-transparency tab (the net-activation viz now lives in **BRAINS**) — a live **observation** readout (the 13-slot
   `ai.Observation` feature vector a net/LLM receives, as labelled 0–1 bars) beside the **behaviour-sliders-
   over-time** sparklines (one uPlot per slider slot per faction: the visible record of an AI driver re-tuning
   the sliders — drifting lines — vs Manual's flat ones; faction-agnostic overlap blend, snapshots via each
@@ -214,31 +216,34 @@ Commit hashes are illustrative pointers, not exhaustive.
   hidden activation (TANH/RELU/SIGMOID/LINEAR; output always sigmoid). `GenomeIO` serializes the whole arch
   (back-compatible with old single-layer genomes); `Evolution`, the NET viz, and the `Tournament` all work for
   any shape — so different nets can be matched head-to-head.
-- **NET footer tab** (`system/ui/panel/NetVizPanel`): a live **activation diagram** of the neural-net driver. Per
-  net-driven faction it draws the net as node columns — observation inputs, **each hidden layer**, slider
-  outputs — wired by edges whose brightness tracks each connection's live contribution (weight × upstream
-  activation). Node brightness = activation; the strongest outputs (the actions the net favours now) are
-  ringed + labelled and the top one's incoming edges are lit as the "chosen path". Beside it a **stats
-  sidebar** (network shape, champion fitness, dominant driving input, peak hidden neuron, favoured actions),
-  and below it a **genome heatmap** — every weight as a sign×magnitude cell. The canvas renders at
-  **device-pixel resolution** for crisp lines/text. You watch the net think as the match swings
-  (`Net.forwardTraced` exposes the per-layer activations).
-- **TRAIN footer tab — visual NN trainer** (`system/ui/panel/TrainerPanel`): evolve a net **live in the
-  browser**. Pick population / generations / mutation / architecture / activation, hit **Train**, and a
-  resumable `Evolution.Session` runs **one generation per `setTimeout`** (the UI never blocks) on the current
-  live map: the **fitness curve** (summed-MU margin per generation, uPlot) climbs and the **champion genome
-  preview** (the NET tab's reused heatmap) fills in. The run is wrapped in `WorldSnapshot.capture/restore` with
-  the tick loop **paused** (`TrainerPanel.isTraining()`) and effects swapped to `NoOpEffects`, so the headless
-  matches never disturb the live game — which **resumes untouched** when training ends. The winner can be
-  **saved** to `NetStore` (becomes the "Neural net" driver's net, surviving reload) or **installed** straight as
-  the ENL/RES driver. In-browser defaults are deliberately small (serious training stays headless via
-  `Evolution.train`). A **Clean eval** toggle runs matches with the anti-runaway mechanics off (`MatchSetup.cleanEval`
-  → `comebackMax`/`dominanceDecay`/`leaderDistraction` = 0, restored after) for a cleaner training gradient.
-- **TRAIN tab — leaderboard** (`system/ui/panel/LeaderboardPanel`): a second TRAIN-tab section ranks AI
-  drivers head-to-head on the live map. Pick entrants (Baseline / Heuristic / Neural net), **Run ladder**, and a
-  resumable `Tournament.Session` plays a round-robin **one match per `setTimeout`**, showing the live `Standing`
-  table (W-L-T + avg MU margin, sorted). Both eval tools share the **`HeadlessRun`** harness (snapshot + tick-pause
-  + `Fx` no-op) so they never disturb the live game.
+- **BRAINS tab — NN activation viz** (`system/ui/panel/NetVizPanel`, folded in from the former NET tab): a live
+  **activation diagram** of the neural-net driver. Per net-driven faction it draws the net as node columns —
+  observation inputs, **each hidden layer**, slider outputs — wired by edges whose brightness tracks each
+  connection's live contribution (weight × upstream activation). Node brightness = activation; the strongest
+  outputs (the actions the net favours now) are ringed + labelled and the top one's incoming edges are lit as the
+  "chosen path". Beside it a **stats sidebar** (network shape, **source** — repo default vs a user-loaded net with
+  its filename + load time — fitness, dominant driving input, peak hidden neuron, favoured actions), and below it
+  a **genome heatmap** — every weight as a sign×magnitude cell. Device-pixel resolution for crisp lines/text. The
+  same diagram is reused in the Train NN screen.
+- **Train NN screen — the in-browser trainer** (`system/ui/panel/TrainerPanel`): opened from the **menu**
+  (top "Train NN" entry) / the BRAINS-tab link as its own full-screen overlay with the live game **paused**
+  behind it. Pick population / generations / mutation / **two per-layer width dropdowns** / activation + an
+  **opponent** (that arch's current champion by default, or a **loaded** net — NN-vs-NN), hit **Train**, and a
+  resumable `Evolution.Session` runs **one genome per `setTimeout`** (UI never blocks): the **fitness curve** (net
+  checkpoints led vs the opponent) climbs, and the selected arch's champion is shown as an activation diagram +
+  genome up front. Each match is a **full scoring cycle** (`Config.ticksPerScoringCycle`, ~35 checkpoints). A
+  **held-out decider** (unseen seeds, both colours) then reports whether the challenger beats the opponent and
+  tags it with a **vs-baseline** fitness comparable to the repo champions. The winner can be **saved** to
+  `NetStore`, **installed** as the ENL/RES driver, or **downloaded / loaded** as JSON to share. The run is
+  bracketed by `HeadlessRun` (snapshot + full pause + `NoOpEffects`), so the live game **resumes untouched** on
+  close. A **Clean eval** toggle runs matches with the anti-runaway mechanics off (`MatchSetup.cleanEval`, restored
+  after) for a cleaner gradient. (The full 25-arch rebake stays headless via `scripts/bake-champs.sh` /
+  `train-champs.sh`.)
+- **Train NN screen — leaderboard** (`system/ui/panel/LeaderboardPanel`): a second section ranks AI drivers
+  head-to-head on the live map. Pick entrants (Baseline / Heuristic / Neural net), **Run ladder**, and a resumable
+  `Tournament.Session` plays a round-robin **one match per `setTimeout`**, showing the live `Standing` table
+  (W-L-T + avg MU margin, sorted). Shares the **`HeadlessRun`** harness (snapshot + full pause + `Fx` no-op) so it
+  never disturbs the live game.
 - **Portals are discovered, not placed**: manual portal **placement** and **deletion** are removed
   from the real game (the map click only selects/deselects; the Inspector has no Remove button). The
   `/#demo` sandbox keeps LMB-place / RMB-shatter for showcasing.
@@ -276,7 +281,7 @@ Commit hashes are illustrative pointers, not exhaustive.
   edge). The **footer** is NOT blanket-blurred (it sat over the moving map) — it keeps a flat dark tint +
   faction edge, and only the content that needs to read clearly is wrapped in per-tab `.footerGlass` panes
   that **hug their content** (the table, the stat bars, each slider graph, the log text), so the scene shows
-  through around them; titles stay outside the panes (TRAIN panes everything). All UI grays are **neutral**
+  through around them; titles stay outside the panes (the Train NN screen panes everything). All UI grays are **neutral**
   (no greenish/bluish cast — see CLAUDE.md). Volume/Speed sliders stay deliberately grayscale.
 - **Auto cam** (icon toggle, rightmost; **on by default**): a slow, slightly-randomized cinematic camera
   drift around the arena — the title-screen orbit reused in-game (`MapController.setAutoCam`/`autoCamLeg`), but
@@ -549,10 +554,13 @@ Commit hashes are illustrative pointers, not exhaustive.
   limits + `shader-f16` — with collapsible, Chromium-only `chrome://` troubleshooting links). **The standalone
   NET tab was folded in here**; `NetVizPanel` is now a pure renderer (`paintActivation` / `paintGenome` /
   `stats`).
-- **Trainer: per-layer architecture + share** (`system/ui/panel/TrainerPanel`): two hidden-layer width dropdowns
-  ({4, 8, 16, 24, 32} → 4×4 … 32×32), a live per-genome progress bar, white chart axes, and **Download / Load
-  champion JSON** (share nets; `GenomeIO` + `NetStore` persist across reload). Training runs **silent**
-  (`Sound` mutes during a `HeadlessRun`) and **parked** (the live tick pauses), with a full-CPU warning.
+- **Trainer: per-layer architecture, opponent + share** (`system/ui/panel/TrainerPanel`): two hidden-layer width
+  dropdowns ({4, 8, 16, 24, 32} → 4×4 … 32×32), a chosen **opponent** (that arch's current champion, or a loaded
+  net → NN-vs-NN), a live per-genome progress bar + white chart axes, the selected champion's activation + genome
+  shown up front, a **held-out decider** (that also tags the winner with a **vs-baseline** fitness comparable to
+  the repo champions), and **Download / Load champion JSON** (share nets; `GenomeIO` + `NetStore` + `ChampionLibrary`
+  persist across reload, with per-arch **provenance**). Training runs **silent** (`Sound` mutes during a
+  `HeadlessRun`) and **parked** (the live tick pauses), with a full-CPU warning.
 - **Training pinned to the standard balance** (`MatchSetup.useDefaultBalance`, default on): every headless match
   (`SimRunner`) runs on the shipped default balance (combat dynamics / progress speed / portal churn) regardless
   of the player's live menu sliders (snapshot + restore around the run) — one canonical target, so champions are
@@ -592,4 +600,4 @@ Commit hashes are illustrative pointers, not exhaustive.
 ## Settled decisions
 - **Modernize Kotlin/JS in place** (not a TS rewrite; not KMP) — keep the ~7k lines of tested logic.
 - **MapLibre GL JS** as the map provider (open, keyless).
-- **Build on JDK 21**, Kotlin 2.4, Gradle 9.5 (pure tooling choice; ships JS only).
+- **Build on JDK 21**, Kotlin 2.4, Gradle 9.6.1 (pure tooling choice; ships JS only).

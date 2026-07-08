@@ -33,7 +33,7 @@ ARCHITECTURE, shipped → FEATURES, concrete next → PLAN, far-horizon vision �
 
 ## Tech stack
 
-- **Kotlin 2.4 → JavaScript (IR)**, **Gradle 9.5**, single `js()` target. Browser bundle via
+- **Kotlin 2.4 → JavaScript (IR)**, **Gradle 9.6.1**, single `js()` target. Browser bundle via
   the Kotlin/JS webpack; **unit tests run in Node** (Mocha).
 - **Build JVM: JDK 21** on purpose (detekt's latest can't run on JDK 25; we ship JS, so the
   build JVM is a pure tooling detail).
