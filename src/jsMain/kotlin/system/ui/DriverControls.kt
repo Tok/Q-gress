@@ -129,8 +129,10 @@ object DriverControls {
     /** Both faction pickers wrapped as a top-toolbar group (the "AI vs AI" control, reachable from anywhere). */
     fun toolbarGroup(): HTMLElement {
         val group = el("div", "toolbarGroup driverControls")
-        group.appendChild(el("span", "driverControlsLabel").also { it.textContent = "AI" })
-        Faction.all().forEach { group.appendChild(picker(it)) }
+        Faction.all().forEachIndexed { i, faction ->
+            if (i > 0) group.appendChild(el("span", "driverDivider").also { it.textContent = "|" }) // ENL | RES
+            group.appendChild(picker(faction))
+        }
         return group
     }
 
@@ -167,8 +169,8 @@ object DriverControls {
         setVisible(loadNet, choice == "net")
         setVisible(modelSel, choice == "llm")
         wrap.appendChild(sel)
+        wrap.appendChild(loadNet) // loading is an ALTERNATIVE to the two dropdowns, so it sits before them
         wrap.appendChild(archSel)
-        wrap.appendChild(loadNet)
         wrap.appendChild(modelSel)
         return wrap
     }
@@ -210,9 +212,16 @@ object DriverControls {
         return sel
     }
 
-    // Update the resolved-arch label (e.g. "16×8 · +12.00") beside a faction's two dropdowns.
+    // Update the arch label beside a faction's two dropdowns. If either layer is Rnd we just show "random" (the
+    // concrete pick is resolved on apply, and can be re-rolled/switched during the game — we don't reveal it here);
+    // with both widths fixed, show the arch + its baked fitness (e.g. "16×8 · +12.00"). Faction-coloured.
     private fun refreshArchInfo(faction: Faction) {
         val info = archInfo[faction] ?: return
+        info.asDynamic().style.color = faction.color
+        if (chosenLayer(faction, 1) == RANDOM_LAYER || chosenLayer(faction, 2) == RANDOM_LAYER) {
+            info.textContent = "random"
+            return
+        }
         val arch = resolvedArch(faction)
         val fit = ChampionLibrary.fitnessFor(arch)?.let { signed(it) } ?: "—"
         info.textContent = "${arch.hiddens.joinToString("×")} · $fit"

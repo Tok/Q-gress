@@ -476,8 +476,8 @@ object Onboarding {
         val row = div("driverArchRow")
         row.style.setProperty("grid-column", "1 / -1")
         row.appendChild(div("driverArchLabel").also { it.textContent = "NN architecture" })
+        row.appendChild(DriverControls.loadNetControl(faction, onNetLoaded)) // loading is an ALTERNATIVE to the dropdowns
         row.appendChild(DriverControls.archPicker(faction))
-        row.appendChild(DriverControls.loadNetControl(faction, onNetLoaded)) // upload + activate a shared net
         return row
     }
 

@@ -113,8 +113,7 @@ object TrainerPanel {
         if (!ensure()) return // uPlot CDN not ready yet — try again on the next click
         overlay?.classList?.remove("invisible")
         GameLoop.pauseForEval() // freeze the live game while the trainer screen is up
-        // Seed the activation diagram with the current default champion so it isn't blank before the first run.
-        runCatching { renderActivation(GenomeIO.decode(ChampionLibrary.defaultJson())) }
+        renderArchChampion() // show the selected arch's current champion (what a challenger will face) up front
     }
 
     /** Close the trainer screen and resume the game (stopping any run in progress first). */
@@ -187,8 +186,20 @@ object TrainerPanel {
         genInput = TrainerWidgets.numberField(row, "Generations", "15", "1", "1", "200")
         mutInput = TrainerWidgets.numberField(row, "Mutation", "0.15", "0.05", "0", "1")
         val widthOpts = HIDDEN_WIDTHS.map { it.toString() to it.toString() }
-        hidden1Select = TrainerWidgets.selectField(row, "Hidden 1", widthOpts).also { it.value = DEFAULT_HIDDEN.toString() }
-        hidden2Select = TrainerWidgets.selectField(row, "Hidden 2", widthOpts).also { it.value = DEFAULT_HIDDEN.toString() }
+        hidden1Select = TrainerWidgets.selectField(row, "Hidden 1", widthOpts).also {
+            it.value = DEFAULT_HIDDEN.toString()
+            it.onchange = {
+                renderArchChampion()
+                null
+            } // repaint the viz for the newly-selected arch's champion
+        }
+        hidden2Select = TrainerWidgets.selectField(row, "Hidden 2", widthOpts).also {
+            it.value = DEFAULT_HIDDEN.toString()
+            it.onchange = {
+                renderArchChampion()
+                null
+            }
+        }
         actSelect = TrainerWidgets.selectField(row, "Activation", Activation.entries.map { it.name to it.name.lowercase() })
         cleanEvalBox = TrainerWidgets.checkboxField(row, "Clean eval", "anti-runaway mechanics off — a cleaner training gradient")
         buildOpponentControl(row)
@@ -636,6 +647,25 @@ object TrainerPanel {
         val net = Net.fromGenome(current.bestGenome, current.config.arch)
         NetVizPanel.paintGenome(ctx, net, PREVIEW_W.toDouble(), PREVIEW_H.toDouble(), PREVIEW_COLOR)
         previewCaption?.textContent = "${current.config.arch.label()} · ${muLabel(current.bestFitness)} vs opponent"
+    }
+
+    // Show the current CHAMPION for the arch selected in the Hidden-1/Hidden-2 dropdowns (activation + genome +
+    // caption) — what a challenger will be trained against. Repainted when either dropdown changes; skipped mid-run
+    // (the diagram then shows the live challenger). Answers "what's the viz showing": the selected arch's champion.
+    private fun renderArchChampion() {
+        if (running) return
+        val h1 = hidden1Select?.value?.toIntOrNull() ?: DEFAULT_HIDDEN
+        val h2 = hidden2Select?.value?.toIntOrNull() ?: DEFAULT_HIDDEN
+        val arch = NetArch(listOf(h1, h2))
+        runCatching {
+            val net = GenomeIO.decode(ChampionLibrary.jsonFor(arch))
+            renderActivation(net)
+            (previewCanvas?.getContext("2d") as? CanvasRenderingContext2D)?.let {
+                NetVizPanel.paintGenome(it, net, PREVIEW_W.toDouble(), PREVIEW_H.toDouble(), PREVIEW_COLOR)
+            }
+            val fit = ChampionLibrary.fitnessFor(arch)?.let { muLabel(it) } ?: "—"
+            previewCaption?.textContent = "current ${arch.hiddens.joinToString("×")} champion · $fit"
+        }
     }
 
     // Paint [net]'s activation diagram on the current (paused / restored) live game. No-op if no game is running.
