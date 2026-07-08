@@ -1,7 +1,6 @@
 package system.ui.panel
 
 import World
-import config.Config
 import kotlinx.browser.document
 import org.w3c.dom.Element
 import org.w3c.dom.HTMLElement
@@ -15,12 +14,11 @@ import util.Profiler
 /**
  * The **PORTALS** footer tab: every portal (both factions + neutral) as a DOM table, styled like the AGENTS
  * tab. Columns: Portal (owner-faction colour), Faction, Level, Health, Resos (n/8), Mods (n/4), Links, Fields
- * and Owner. **Sortable** — click any column header to sort by it (toggles asc/desc). Collapsed it shows the
- * top [ROWS]; when the footer is **expanded** ([Footer.isExpanded]) it lists **every** portal (the body
- * scrolls). Rebuilt each frame from the sorted list.
+ * and Owner. **Sortable** — click any column header to sort by it (toggles asc/desc). Lists **every** portal
+ * (the footer body scrolls; maximize for the full view). Rebuilt from the sorted list at ~5 Hz (throttled —
+ * see [TABLE_REFRESH_MS]), not every frame, and only while the tab is visible.
  */
 object PortalsPanel {
-    private const val ROWS = Config.topAgentsMessageLimit
     private const val MAX_RESOS = 8
     private const val MAX_MODS = 4
     private const val NEUTRAL_COLOR = "#9a9a9a"
@@ -78,8 +76,8 @@ object PortalsPanel {
         refreshHeaders()
         body.textContent = ""
         val ordered = sortedPortals()
-        val limit = if (Footer.isExpanded()) ordered.size else ROWS // expanded → every portal (the body scrolls)
-        ordered.take(limit).forEach { portal ->
+        // every portal, always — the (uniform-height) footer body scrolls; no crop
+        ordered.forEach { portal ->
             val row = el("tr", "taRow")
             COLS.forEach { row.appendChild(it.render(portal)) }
             body.appendChild(row)

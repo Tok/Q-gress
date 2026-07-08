@@ -26,12 +26,11 @@ import util.Profiler
  * The **AGENTS** footer tab: a leaderboard of agents (both factions mixed) as a DOM table. Columns: #, XM, AP,
  * Agent (faction colour), then each carried item as a count + per-level bar strip in rarity/level colours
  * (XMPs, US, Resos, Cubes, Shields, Heat sinks, Multi-hacks), Keys + Unique keys, Action, Portal. **Sortable**
- * — click any column header to sort by it (toggles asc/desc). Collapsed it
- * shows the top [ROWS]; when the footer is **expanded** ([Footer.isExpanded]) it lists **every** agent (the
- * body scrolls). Rebuilt each frame from the sorted roster.
+ * — click any column header to sort by it (toggles asc/desc). Lists **every** agent (the footer body scrolls;
+ * maximize for the full view). Rebuilt from the sorted roster at ~5 Hz (throttled — see [TABLE_REFRESH_MS]),
+ * not every frame, and only while the tab is visible.
  */
 object TopAgentsPanel {
-    private const val ROWS = Config.topAgentsMessageLimit
     private const val MAX_DEPLOY_LEVEL = 8
     private const val MAX_SHIELD_LEVEL = 4
     private const val MAX_MOD_LEVEL = 3 // heat sinks / multi-hacks: Common / Rare / Very Rare
@@ -144,8 +143,8 @@ object TopAgentsPanel {
         refreshHeaders()
         body.textContent = ""
         val ordered = sortedAgents()
-        val limit = if (Footer.isExpanded()) ordered.size else ROWS // expanded → every agent (the body scrolls)
-        ordered.take(limit).forEach { agent ->
+        // every agent, always — the (uniform-height) footer body scrolls; no crop
+        ordered.forEach { agent ->
             val row = el("tr", "taRow")
             COLS.forEach { row.appendChild(it.render(agent)) }
             body.appendChild(row)
