@@ -3,11 +3,14 @@ package system
 import ai.SimRunner
 import system.audio.Snd
 import system.effect.Fx
+import system.ui.GameLoop
 
 /**
  * Brackets an in-browser **headless evaluation** (the TRAIN-tab trainer, the leaderboard) so it never disturbs
- * the live game: [begin] parks the live world via [WorldSnapshot] and forces the no-op effect sink ([Fx.headless]);
- * [end] clears the throwaway match state and restores the world + renderer exactly as they were. The tick loop
+ * the live game: [begin] parks the live world via [WorldSnapshot], forces the no-op effect sink ([Fx.headless]),
+ * and **fully pauses the live game** ([GameLoop.pauseForEval] — freezes the 3D animation clock + auto-cam +
+ * audio, not just the sim tick, so it's visibly still behind the trainer); [end] clears the throwaway match
+ * state and restores the world + renderer + prior play/pause state exactly as they were. The sim tick also
  * pauses while [active] (see `Bootstrap.tick`), and the eval drives its own matches chunked over `setTimeout`.
  * Re-entrant-safe via a simple depth count, but evals are expected to be one-at-a-time.
  */
@@ -21,6 +24,7 @@ object HeadlessRun {
     /** Park the live game + silence FX. Idempotent: a no-op if already active. */
     fun begin() {
         if (active) return
+        GameLoop.pauseForEval() // freeze the live game (animation clock + auto-cam + audio), restored in end()
         snapshot = WorldSnapshot.capture()
         Fx.headless = true // survives SimRunner's per-match Fx.reset(), so eval matches fire no 3D FX
         Snd.headless = true // ditto for audio: eval matches stay silent through their per-match Snd.reset()
@@ -38,5 +42,6 @@ object HeadlessRun {
         Snd.headless = false
         Snd.reset()
         active = false
+        GameLoop.resumeAfterEval() // restore the play/pause state the game had before the eval
     }
 }
