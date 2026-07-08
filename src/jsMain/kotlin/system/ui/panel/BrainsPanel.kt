@@ -10,8 +10,10 @@ import ai.SliderVector
 import ai.llm.LlmParser
 import ai.llm.LlmPolicy
 import ai.llm.WebLlmClient
+import ai.net.ChampionLibrary
 import ai.net.GenomeIO
 import ai.net.Net
+import ai.net.NetArch
 import ai.net.NetPolicy
 import ai.net.NetStore
 import config.Config
@@ -178,11 +180,21 @@ object BrainsPanel {
         }
     }
 
+    // "Repo default champion" vs a user-loaded net (its filename + load time) — see [ChampionLibrary.provenanceFor].
+    private fun sourceLabel(arch: NetArch): String {
+        val prov = ChampionLibrary.provenanceFor(arch)
+        if (!prov.isUser) return "Repo default champion"
+        val file = prov.filename?.let { " — $it" } ?: ""
+        val at = prov.installedAt?.let { " (loaded $it)" } ?: ""
+        return "User net$file$at"
+    }
+
     private fun renderNet(card: HTMLElement, faction: Faction, net: Net) {
         card.appendChild(driverTitle("Neural net")) // title outside the pane (consistent across tabs)
         // The NN summary readout in its own glass pane (the part that needs to read clearly over the map).
         val summary = el("div", "footerGlass")
         summary.appendChild(kv("Architecture", net.arch.label()))
+        summary.appendChild(kv("Source", sourceLabel(net.arch)))
         summary.appendChild(kv("Fitness", GenomeIO.fitnessOf(NetStore.activeJson())?.let { "+${it.roundToInt()} MU" } ?: "—"))
         summary.appendChild(kv("Re-tunes", retuneCadence()))
         val stats = NetVizPanel.stats(net, faction)

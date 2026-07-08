@@ -4,6 +4,10 @@ import kotlinx.browser.window
 import system.ui.Bootstrap
 import kotlin.js.Json
 
+/** Where a faction's active champion for an arch came from: a user-installed net (filename + install time) or
+ *  the bundled repo default. Surfaced by [ChampionLibrary.provenanceFor] for the "default vs user" UI badge. */
+class Provenance(val isUser: Boolean, val filename: String? = null, val installedAt: String? = null)
+
 /**
  * The baked champion **library** (PLAN Phase 6.2 / docs/NN.md) — one pre-trained genome per [NetArch] the
  * TRAIN tab offers (two hidden layers, each width in 4/8/16/24/32 → 25 combos), so the onboarding per-arch
@@ -32,6 +36,7 @@ object ChampionLibrary {
 
     // User-installed per-arch champions (arch label → genome JSON); persisted to localStorage, override bundled.
     private val overrides: MutableMap<String, String> = mutableMapOf()
+    private val overrideMeta: MutableMap<String, Provenance> = mutableMapOf() // filename + install time per override
 
     /** The default architecture's label — the fallback champion (`13 → 16 → 16 → 17`). */
     val DEFAULT_LABEL: String get() = championIndex["default"] as String
@@ -57,11 +62,16 @@ object ChampionLibrary {
      * [GenomeIO.decode] (throws [IllegalStateException]/[IllegalArgumentException] if it isn't a genome for this
      * build's net I/O), then persisted so it survives a reload.
      */
-    fun installChampion(json: String) {
+    fun installChampion(json: String, filename: String? = null, installedAt: String? = null) {
         val label = GenomeIO.decode(json).arch.label() // validates the genome for this build; derives its arch
         overrides[label] = json
+        overrideMeta[label] = Provenance(isUser = true, filename = filename, installedAt = installedAt)
         persist()
     }
+
+    /** Where [arch]'s ACTIVE champion came from: a user-installed net (with its filename + install time) or the
+     *  bundled repo default. Lets the UI show "default champion" vs "user: file.json @ time". */
+    fun provenanceFor(arch: NetArch): Provenance = overrideMeta[arch.label()] ?: Provenance(isUser = false)
 
     /** Restore user-installed champions from `localStorage` (browser only; no-op headless). Call once at startup
      *  BEFORE the first library read (onboarding's per-arch pick). Incompatible stored champions are dropped. */
@@ -70,7 +80,12 @@ object ChampionLibrary {
         val saved = window.localStorage.getItem(STORE_KEY) ?: return
         runCatching {
             val obj = JSON.parse<Json>(saved)
-            keysOf(obj).forEach { label -> installChampion(JSON.stringify(obj.asDynamic()[label])) }
+            keysOf(obj).forEach { label ->
+                val entry = obj.asDynamic()[label]
+                // New shape: { genome, filename?, installedAt? }; back-compat: the old shape stored the genome directly.
+                val genome = if (entry.genome != null) entry.genome else entry
+                installChampion(JSON.stringify(genome), entry.filename as? String, entry.installedAt as? String)
+            }
         }.onFailure {
             console.warn("stored champions incompatible with this build — dropping them: ${it.message}")
             window.localStorage.removeItem(STORE_KEY)
@@ -80,12 +95,14 @@ object ChampionLibrary {
     /** Forget all user-installed champions, reverting every arch to its bundled dev default. */
     fun resetToBundled() {
         overrides.clear()
+        overrideMeta.clear()
         if (Bootstrap.isRunningInBrowser()) window.localStorage.removeItem(STORE_KEY)
     }
 
     /** Drop in-memory overrides without touching storage — for deterministic tests. */
     fun reset() {
         overrides.clear()
+        overrideMeta.clear()
     }
 
     private fun persist() {
@@ -95,7 +112,15 @@ object ChampionLibrary {
             return
         }
         val obj: dynamic = js("({})")
-        overrides.forEach { (label, json) -> obj[label] = JSON.parse<Json>(json) }
+        overrides.forEach { (label, json) ->
+            val entry: dynamic = js("({})")
+            entry.genome = JSON.parse<Json>(json)
+            overrideMeta[label]?.let { meta ->
+                if (meta.filename != null) entry.filename = meta.filename
+                if (meta.installedAt != null) entry.installedAt = meta.installedAt
+            }
+            obj[label] = entry
+        }
         window.localStorage.setItem(STORE_KEY, JSON.stringify(obj))
     }
 

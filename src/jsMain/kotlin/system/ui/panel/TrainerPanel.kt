@@ -370,7 +370,8 @@ object TrainerPanel {
             val text = reader.result as? String ?: ""
             runCatching { GenomeIO.decode(text) }
                 .onSuccess {
-                    ChampionLibrary.installChampion(text) // register it as its arch's champion (persisted)
+                    // register as its arch's champion (persisted), tagged with the filename + load time (provenance)
+                    ChampionLibrary.installChampion(text, file.name, kotlin.js.Date().toLocaleString())
                     NetStore.save(text)
                     Faction.all().forEach { f ->
                         FactionPolicies.set(f, NetPolicy(GenomeIO.decode(text), f))

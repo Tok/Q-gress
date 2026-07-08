@@ -220,12 +220,22 @@ object DriverControls {
         info.asDynamic().style.color = faction.color
         if (chosenLayer(faction, 1) == RANDOM_LAYER || chosenLayer(faction, 2) == RANDOM_LAYER) {
             info.textContent = "random"
+            info.title = "A baked champion is seed-picked at match start"
             return
         }
         val arch = resolvedArch(faction)
-        val fit = ChampionLibrary.fitnessFor(arch)?.let { signed(it) } ?: "—"
-        info.textContent = "${arch.hiddens.joinToString("×")} · $fit"
+        val dims = arch.hiddens.joinToString("×")
+        val prov = ChampionLibrary.provenanceFor(arch)
+        if (prov.isUser) {
+            info.textContent = "$dims · ${clip(prov.filename ?: "user net", 11)}"
+            info.title = "User net — ${prov.filename ?: "?"}${prov.installedAt?.let { " · loaded $it" } ?: ""}"
+        } else {
+            info.textContent = "$dims · ${ChampionLibrary.fitnessFor(arch)?.let { signed(it) } ?: "—"}"
+            info.title = "Repo default champion (fitness = net checkpoints led vs the heuristic baseline)"
+        }
     }
+
+    private fun clip(s: String, max: Int): String = if (s.length <= max) s else s.take(max - 1) + "…"
 
     /**
      * A **"Load net…"** upload control (shared by the in-game picker + the onboarding teams grid) — imports a
@@ -266,7 +276,8 @@ object DriverControls {
             val text = reader.result as? String ?: ""
             runCatching {
                 val net = GenomeIO.decode(text) // validate the genome for this build's net I/O
-                ChampionLibrary.installChampion(text) // register + persist it as its arch's champion
+                // register + persist it as its arch's champion, tagged with the filename + load time (provenance)
+                ChampionLibrary.installChampion(text, file.name, kotlin.js.Date().toLocaleString())
                 net.arch
             }.onSuccess { arch ->
                 activateLoadedNet(faction, arch, onActivated)
