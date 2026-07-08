@@ -973,6 +973,21 @@ html, body {
 .trainScreenClose:hover {
     background: var(--ui-tint-2);
 }
+.trainScreenFoot {
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid var(--ui-tint-2);
+    font-family: "Coda", monospace;
+    font-size: 11px;
+    color: #a0a0a0; /* neutral (R==G==B) */
+}
+.trainScreenLink {
+    color: #7fb0ff; /* semantic link blue */
+    text-decoration: none;
+}
+.trainScreenLink:hover {
+    text-decoration: underline;
+}
 /* BRAINS-tab link to the trainer screen. */
 .brainsHeaderRow {
     display: flex;

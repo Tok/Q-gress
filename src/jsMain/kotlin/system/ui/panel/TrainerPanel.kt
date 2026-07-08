@@ -116,6 +116,7 @@ object TrainerPanel {
         glass.appendChild(buildScreenHeader())
         glass.appendChild(panel)
         LeaderboardPanel.buildInto(glass) // the driver ladder shares the training screen (was the same TRAIN tab)
+        glass.appendChild(buildScreenFooter())
         screen.appendChild(glass)
         document.body?.appendChild(screen)
         overlay = screen
@@ -139,6 +140,25 @@ object TrainerPanel {
         }
         head.appendChild(closeBtn)
         return head
+    }
+
+    // Footer: point at the headless BATCH scripts (this screen trains one arch; the full 25-arch sweep is a
+    // multi-hour CLI run) + a link to the committed champion library on GitHub.
+    private fun buildScreenFooter(): HTMLElement {
+        val foot = el("div", "trainScreenFoot")
+        foot.appendChild(
+            el("span", "").also {
+                it.textContent = "Full 25-architecture training runs headless — scripts/bake-champs.sh (vs heuristics) " +
+                    "then scripts/train-champs.sh (NN-vs-NN). Bundled champions: "
+            },
+        )
+        val link = el("a", "trainScreenLink") as org.w3c.dom.HTMLAnchorElement
+        link.href = "https://github.com/Tok/Q-gress/tree/main/src/jsMain/resources/champions"
+        link.target = "_blank"
+        link.rel = "noopener"
+        link.textContent = "resources/champions ↗"
+        foot.appendChild(link)
+        return foot
     }
 
     private fun buildConfigRow(): HTMLElement {
