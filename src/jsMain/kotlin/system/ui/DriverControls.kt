@@ -45,6 +45,7 @@ object DriverControls {
     private val resolvedRandom = mutableMapOf<Faction, NetArch>() // a RANDOM pick resolved to a concrete arch (cached)
     private val archSelects = mutableMapOf<Faction, Pair<HTMLSelectElement, HTMLSelectElement>>() // live H1/H2 <select>s
     private val archInfo = mutableMapOf<Faction, HTMLElement>() // the resolved-arch fitness/provenance label
+    private val archRevert = mutableMapOf<Faction, HTMLElement>() // "↺" — shown only for a user-overridden arch
 
     const val RANDOM_LAYER = "r" // a hidden-layer dropdown set to "Rnd" — the seed picks that layer's width
     private val ARCH_WIDTHS = listOf(4, 8, 16, 24, 32) // the per-layer width choices (matches the baked sweep)
@@ -188,10 +189,22 @@ object DriverControls {
         archSelects[faction] = s1 to s2
         val info = el("span", "aiArchInfo")
         archInfo[faction] = info
+        val revert = el("button", "aiArchRevert") as HTMLButtonElement
+        revert.type = "button"
+        revert.textContent = "↺"
+        revert.title = "Revert this architecture to the repo default champion"
+        revert.onclick = {
+            ChampionLibrary.revertToBundled(resolvedArch(faction)) // drop the user override for this arch
+            if (selects[faction]?.value == "net") apply(faction, "net") // reload the bundled champion live
+            refreshArchInfo(faction)
+            null
+        }
+        archRevert[faction] = revert
         wrap.appendChild(s1)
         wrap.appendChild(el("span", "aiArchTimes").also { it.textContent = "×" })
         wrap.appendChild(s2)
         wrap.appendChild(info)
+        wrap.appendChild(revert)
         refreshArchInfo(faction)
         return wrap
     }
@@ -221,6 +234,7 @@ object DriverControls {
         if (chosenLayer(faction, 1) == RANDOM_LAYER || chosenLayer(faction, 2) == RANDOM_LAYER) {
             info.textContent = "random"
             info.title = "A baked champion is seed-picked at match start"
+            archRevert[faction]?.let { setVisible(it, false) }
             return
         }
         val arch = resolvedArch(faction)
@@ -233,6 +247,7 @@ object DriverControls {
             info.textContent = "$dims · ${ChampionLibrary.fitnessFor(arch)?.let { signed(it) } ?: "—"}"
             info.title = "Repo default champion (fitness = net checkpoints led vs the heuristic baseline)"
         }
+        archRevert[faction]?.let { setVisible(it, prov.isUser) } // offer "revert to default" only for a user override
     }
 
     private fun clip(s: String, max: Int): String = if (s.length <= max) s else s.take(max - 1) + "…"

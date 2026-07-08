@@ -192,6 +192,20 @@ html, body {
     margin: 0 8px;
     font-size: 13px;
 }
+.aiArchRevert {
+    background: var(--ui-tint-1);
+    border: 1px solid var(--ui-tint-3);
+    border-radius: 4px;
+    color: #e8e8e8;
+    font-size: 12px;
+    line-height: 1;
+    padding: 1px 5px;
+    margin-left: 3px;
+    cursor: pointer;
+}
+.aiArchRevert:hover {
+    background: var(--ui-tint-2);
+}
 .aiLoadNet {
     display: inline-flex;
     align-items: center;

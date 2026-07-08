@@ -92,6 +92,13 @@ object ChampionLibrary {
         }
     }
 
+    /** Revert a SINGLE [arch] to its bundled repo default, discarding any user-installed override (persisted). */
+    fun revertToBundled(arch: NetArch) {
+        overrides.remove(arch.label())
+        overrideMeta.remove(arch.label())
+        persist()
+    }
+
     /** Forget all user-installed champions, reverting every arch to its bundled dev default. */
     fun resetToBundled() {
         overrides.clear()
