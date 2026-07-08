@@ -1,5 +1,6 @@
 package config
 
+import agent.Faction
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -21,12 +22,14 @@ class ConfigTest {
     private var savedDynamism = 0.0
     private var savedSimWidth = 0
     private var savedSimHeight = 0
+    private var savedStartStage = StartStage.MID
 
     @BeforeTest
     fun save() {
         savedMultiplier = Config.npcMultiplier
         savedStartPortals = Config.startPortals
         savedDynamism = Config.combatDynamism
+        savedStartStage = Config.startStage
         // targetPortals reads the live Sim area — pin it (other suites share + perturb the Sim singleton).
         savedSimWidth = Sim.width
         savedSimHeight = Sim.height
@@ -38,6 +41,7 @@ class ConfigTest {
         Config.npcMultiplier = savedMultiplier
         Config.startPortals = savedStartPortals
         Config.combatDynamism = savedDynamism
+        Config.startStage = savedStartStage
         Sim.setExactSize(savedSimWidth, savedSimHeight)
     }
 
@@ -150,5 +154,36 @@ class ConfigTest {
     fun comebackAttackBonusTracksDynamism() {
         Config.combatDynamism = 0.42
         assertEquals(0.42, Config.comebackAttackBonus())
+    }
+
+    // --- starting roster by stage -------------------------------------------
+
+    @Test
+    fun startRosterIsASingleAgentAtTheColdOpen() {
+        Config.startStage = StartStage.START
+        assertEquals(1, Config.startFrogs(), "a normal start is one agent per side")
+        assertEquals(1, Config.startSmurfs())
+        assertEquals(StartStage.START.initialAp, Config.initialAp(), "AP tracks the stage")
+    }
+
+    @Test
+    fun midStageSeedsTheSuggestedSquad() {
+        Config.startStage = StartStage.MID
+        assertEquals(Sim.suggestedAgents(Sim.areaKm2()), Config.startFrogs(), "mid-game seeds the size-scaled squad")
+    }
+
+    @Test
+    fun endStageSeedsTheFullRosterCap() {
+        Config.startStage = StartStage.END
+        assertEquals(Config.rosterCap(), Config.startSmurfs(), "end-game seeds the full size roster")
+    }
+
+    // --- maxFor ---------------------------------------------------------------
+
+    @Test
+    fun maxForFactionsIsTheRosterCapButNpcsAreTheirOwnPool() {
+        assertEquals(Config.rosterCap(), Config.maxFor(Faction.ENL), "ENL cap is the size-scaled roster cap")
+        assertEquals(Config.rosterCap(), Config.maxFor(Faction.RES), "RES cap is the size-scaled roster cap")
+        assertEquals(Config.maxNonFaction, Config.maxFor(null), "no faction → the NPC population target")
     }
 }

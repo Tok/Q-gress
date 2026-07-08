@@ -226,7 +226,7 @@ class NonFactionActTest {
             for (px in 300..1300 step 100) {
                 for (dy in intArrayOf(-250, -150, 150, 250)) {
                     val from = Pos(px, cy + dy)
-                    if (!Sim.isInPlayArea(from.x.toDouble(), from.y.toDouble())) continue
+                    if (!Sim.isInPlayArea(from.x, from.y)) continue
                     repeat(40) {
                         val d = NonFaction.opposingOffscreenDestination(from)
                         if (d.y < cy) {

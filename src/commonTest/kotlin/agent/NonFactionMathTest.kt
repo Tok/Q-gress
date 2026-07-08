@@ -49,7 +49,7 @@ class NonFactionMathTest {
         ring.forEach { from ->
             NonFactionMath.opposingHalf(ring, from, cx = 0.0, cy = 0.0, nearCentre = 1.0).forEach { to ->
                 // centre is (0,0): the dot of the two bearings ≤ 0 ⇔ they're AT LEAST 90° (a quarter circle) apart
-                val dot = from.x.toDouble() * to.x + from.y.toDouble() * to.y
+                val dot = from.x * to.x + from.y * to.y
                 assertTrue(dot <= 0.0, "opposing target is ≥90° from the source (dot=$dot)")
             }
         }
