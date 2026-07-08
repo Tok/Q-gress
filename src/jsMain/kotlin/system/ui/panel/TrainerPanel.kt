@@ -4,6 +4,7 @@ import World
 import agent.Faction
 import ai.FactionPolicies
 import ai.MatchSetup
+import ai.SimRunner
 import ai.net.Activation
 import ai.net.ChampionLibrary
 import ai.net.Evolution
@@ -62,11 +63,28 @@ object TrainerPanel {
     private val HIDDEN_WIDTHS = listOf(4, 8, 16, 24, 32)
     private const val DEFAULT_HIDDEN = 16
 
+    private const val DECIDER_SEEDS = 3 // unseen-seed held-out matches (× both colours) to decide vs the opponent
+    private const val DECIDER_SEED_BASE = 90_000 // far from the training SEED so the decider is genuinely held-out
+
     private var built = false
     private var running = false
     private var session: Evolution.Session? = null
     private var timeoutId = 0
     private val fitness = mutableListOf<Double>()
+
+    // Opponent the challenger trains + is decided against: a loaded net if set, else the candidate arch's champion.
+    private var opponentNet: Net? = null
+    private var opponentLabel: HTMLElement? = null
+    private var oppLoadInput: HTMLInputElement? = null
+    private var runOpponent: Net? = null // the opponent actually used for the in-flight run (for the decider)
+    private var runSetup: MatchSetup = MatchSetup()
+
+    // Held-out decider phase (runs after training): best challenger vs the opponent over unseen seeds, both colours.
+    private var deciding = false
+    private var deciderMatch = 0
+    private var deciderMarginSum = 0.0
+    private var deciderCand: Net? = null
+    private var deciderOpp: Net? = null
 
     private var popInput: HTMLInputElement? = null
     private var genInput: HTMLInputElement? = null
@@ -171,6 +189,7 @@ object TrainerPanel {
         hidden2Select = selectField(row, "Hidden 2", widthOpts).also { it.value = DEFAULT_HIDDEN.toString() }
         actSelect = selectField(row, "Activation", Activation.entries.map { it.name to it.name.lowercase() })
         cleanEvalBox = checkboxField(row, "Clean eval", "anti-runaway mechanics off — a cleaner training gradient")
+        buildOpponentControl(row)
         val run = button("Train", "trainRun") { onRunClick() }
         runButton = run
         row.appendChild(run)
@@ -184,6 +203,68 @@ object TrainerPanel {
         return row
     }
 
+    // The opponent picker: the challenger trains + is decided against the candidate arch's current champion by
+    // default, or any net loaded from JSON (NN-vs-NN with an arbitrary opponent). Reset (↺) reverts to the champion.
+    private fun buildOpponentControl(row: HTMLElement) {
+        val wrap = el("div", "trainField")
+        wrap.appendChild(el("span", "trainFieldLabel").also { it.textContent = "Opponent" })
+        val line = el("span", "trainOpponentLine")
+        opponentLabel = el("span", "trainOpponentLabel").also { it.textContent = "current champion" }
+        val load = el("button", "trainMiniBtn") as HTMLButtonElement
+        load.type = "button"
+        load.textContent = "Load…"
+        load.title = "Train against a net loaded from JSON instead of the champion"
+        load.onclick = {
+            oppLoadInput?.click()
+            null
+        }
+        val reset = el("button", "trainMiniBtn") as HTMLButtonElement
+        reset.type = "button"
+        reset.textContent = "↺"
+        reset.title = "Reset the opponent to the selected arch's current champion"
+        reset.onclick = {
+            opponentNet = null
+            opponentLabel?.textContent = "current champion"
+            null
+        }
+        line.appendChild(opponentLabel ?: el("span", ""))
+        line.appendChild(load)
+        line.appendChild(reset)
+        line.appendChild(buildOpponentInput())
+        wrap.appendChild(line)
+        row.appendChild(wrap)
+    }
+
+    private fun buildOpponentInput(): HTMLElement {
+        val input = document.createElement("input") as HTMLInputElement
+        input.type = "file"
+        input.accept = "application/json,.json"
+        input.className = "invisible"
+        input.onchange = {
+            (input.files?.item(0))?.let { readOpponent(it) }
+            input.value = ""
+            null
+        }
+        oppLoadInput = input
+        return input
+    }
+
+    private fun readOpponent(file: org.w3c.files.File) {
+        val reader = org.w3c.files.FileReader()
+        reader.onload = {
+            val text = reader.result as? String ?: ""
+            runCatching { GenomeIO.decode(text) }
+                .onSuccess { net ->
+                    opponentNet = net
+                    opponentLabel?.textContent = "loaded ${archName(net.arch)}"
+                    setStatus("Opponent set to the loaded ${archName(net.arch)} net — Train to evolve a challenger against it.")
+                }
+                .onFailure { setStatus("Couldn't load that opponent: ${it.message ?: "not a valid net JSON"}") }
+            null
+        }
+        reader.readAsText(file)
+    }
+
     private fun buildMain(): HTMLElement {
         val main = el("div", "trainMain")
         main.appendChild(buildChartCol())
@@ -193,7 +274,7 @@ object TrainerPanel {
 
     private fun buildChartCol(): HTMLElement {
         val col = el("div", "trainCol")
-        col.appendChild(el("div", "trainColHead").also { it.textContent = "Fitness — checkpoints led vs the champion, per generation" })
+        col.appendChild(el("div", "trainColHead").also { it.textContent = "Fitness — checkpoints led vs the opponent, per generation" })
         col.appendChild(buildProgress())
         val chart = el("div", "trainChart")
         col.appendChild(chart)
@@ -326,22 +407,27 @@ object TrainerPanel {
             return
         }
         val config = readConfig()
-        // Train the candidate AGAINST that arch's CURRENT champion (NN-vs-NN, like train-champs.sh) rather than the
-        // uniform baseline — so the fitness is the margin over the champion (positive = the challenger is better),
-        // which is the in-game "is my candidate better than the current champ?" comparison.
-        val champion = runCatching { GenomeIO.decode(ChampionLibrary.jsonFor(config.arch)) }.getOrNull()
+        // Train the candidate AGAINST an opponent NET (NN-vs-NN, like train-champs.sh): the loaded opponent if
+        // set, else that arch's current champion. The fitness is then the margin over the opponent (positive =
+        // the challenger is better) — the in-game "is my candidate better?" comparison, confirmed by the decider.
+        val opponent = opponentNet ?: runCatching { GenomeIO.decode(ChampionLibrary.jsonFor(config.arch)) }.getOrNull()
+        runOpponent = opponent
+        runSetup = config.setup
         HeadlessRun.begin() // park the live game + silence FX for the duration (shared with the leaderboard)
         running = true
         fitness.clear()
         plot?.setData(arrayOf(arrayOf<Double>(), arrayOf<Double>()))
-        session = if (champion != null) {
-            Evolution.Session(World.grid, SEED, config) { NetPolicy(champion, Faction.RES) }
+        session = if (opponent != null) {
+            Evolution.Session(World.grid, SEED, config) { NetPolicy(opponent, Faction.RES) }
         } else {
-            Evolution.Session(World.grid, SEED, config) // no champion for this arch → the uniform-slider baseline
+            Evolution.Session(World.grid, SEED, config) // no opponent (shouldn't happen) → the uniform-slider baseline
         }
         setProgress(0.0, "Starting…")
-        val ref = ChampionLibrary.fitnessFor(config.arch)?.let { " (which leads the baseline by ${muLabel(it)})" } ?: ""
-        setStatus("Training a ${archName(config.arch)} challenger vs the current champion$ref — live game paused.")
+        val oppName = opponentNet?.let { "the loaded ${archName(it.arch)} net" }
+            ?: ChampionLibrary.fitnessFor(config.arch)
+                ?.let { "the current ${archName(config.arch)} champion (it leads the baseline by ${muLabel(it)})" }
+            ?: "the current champion"
+        setStatus("Training a ${archName(config.arch)} challenger vs $oppName — live game paused.")
         refreshActions()
         scheduleStep()
     }
@@ -377,22 +463,91 @@ object TrainerPanel {
             done.toDouble() / total,
             "Generation ${current.generation + (if (current.done) 0 else 1)} / ${current.config.generations} · genome ${current.evaluatedThisGeneration}/${current.populationSize}",
         )
-        setStatus("Training · challenger ${muLabel(current.bestFitness)} vs champion ($done/$total matches)")
+        setStatus("Training · challenger ${muLabel(current.bestFitness)} vs opponent ($done/$total matches)")
     }
 
+    // Training finished → hand off to the held-out decider (best challenger vs the opponent over UNSEEN seeds),
+    // keeping the live game parked. If there was no opponent, just report and restore.
     private fun finish() {
         val done = session
-        teardown()
-        if (done != null) {
-            setProgress(1.0, "Done — ${done.generation} generations")
-            val margin = done.bestFitness
-            val verdict = if (margin > 0) "beats" else "does NOT beat"
-            setStatus(
-                "Done · ${done.generation} generations · challenger ${muLabel(margin)} vs champion — it $verdict " +
-                    "the current champion. Save / Install / Download it if better · live game resumed.",
-            )
+        val opp = runOpponent
+        if (done == null || opp == null) {
+            teardown()
+            done?.let { setStatus("Done · ${it.generation} generations · challenger ${muLabel(it.bestFitness)} · live game resumed.") }
+            setProgress(1.0, "Done")
+            refreshActions()
+            return
         }
+        startDecider(Net.fromGenome(done.bestGenome, done.config.arch), opp)
+    }
+
+    private fun startDecider(cand: Net, opp: Net) {
+        deciding = true
+        deciderCand = cand
+        deciderOpp = opp
+        deciderMatch = 0
+        deciderMarginSum = 0.0
+        setProgress(0.0, "Deciding…")
+        setStatus("Training done — held-out decider vs the opponent over $DECIDER_SEEDS unseen cycles (both colours)…")
+        timeoutId = window.setTimeout({ deciderStep() }, 0)
+    }
+
+    // One held-out match per tick (~2.8 s each) so the UI never freezes for long: the challenger plays the
+    // opponent on an unseen seed, alternating colours, and we sum the challenger's net checkpoint margin.
+    private fun deciderStep() {
+        if (!running) return
+        val cand = deciderCand
+        val opp = deciderOpp
+        if (cand == null || opp == null) {
+            finishDecider()
+            return
+        }
+        val total = DECIDER_SEEDS * 2
+        val seed = DECIDER_SEED_BASE + deciderMatch / 2
+        val candIsEnl = deciderMatch % 2 == 0
+        val result = runCatching {
+            if (candIsEnl) {
+                SimRunner.runMatch(World.grid, seed, MATCH_TICKS, runSetup, NetPolicy(cand, Faction.ENL), NetPolicy(opp, Faction.RES))
+            } else {
+                SimRunner.runMatch(World.grid, seed, MATCH_TICKS, runSetup, NetPolicy(opp, Faction.ENL), NetPolicy(cand, Faction.RES))
+            }
+        }.getOrElse {
+            abort(it.message)
+            return
+        }
+        deciderMarginSum += result.checkpointWinMargin(if (candIsEnl) Faction.ENL else Faction.RES)
+        SimRunner.reset()
+        deciderMatch++
+        setProgress(deciderMatch.toDouble() / total, "Deciding…")
+        setStatus(
+            "Held-out decider · match $deciderMatch/$total · challenger leads by ${signedInt(
+                deciderMarginSum,
+            )} checkpoints (unseen seeds)…",
+        )
+        if (deciderMatch >= total) finishDecider() else timeoutId = window.setTimeout({ deciderStep() }, 0)
+    }
+
+    private fun finishDecider() {
+        val done = session
+        val margin = deciderMarginSum
+        teardown() // HeadlessRun.end() → restores the live world, clears the decider flag
+        setProgress(1.0, "Done")
+        val verdict = when {
+            margin > 0 -> "BEATS"
+            margin < 0 -> "does NOT beat"
+            else -> "ties"
+        }
+        val gens = done?.generation ?: 0
+        setStatus(
+            "Done · $gens generations · held-out decider: the challenger $verdict the opponent by " +
+                "${signedInt(margin)} checkpoints over ${DECIDER_SEEDS * 2} unseen matches — save / install / download if better.",
+        )
         refreshActions()
+    }
+
+    private fun signedInt(value: Double): String {
+        val n = value.roundToInt()
+        return if (n >= 0) "+$n" else "$n"
     }
 
     private fun stop() {
@@ -415,6 +570,7 @@ object TrainerPanel {
     // Restore the live game and end the run; the session is kept so the champion can still be saved/installed.
     private fun teardown() {
         running = false
+        deciding = false
         window.clearTimeout(timeoutId)
         HeadlessRun.end() // clear the throwaway match state + restore the live world & renderer
     }
@@ -466,7 +622,7 @@ object TrainerPanel {
         val ctx = previewCanvas?.getContext("2d") as? CanvasRenderingContext2D ?: return
         val net = Net.fromGenome(current.bestGenome, current.config.arch)
         NetVizPanel.paintGenome(ctx, net, PREVIEW_W.toDouble(), PREVIEW_H.toDouble(), PREVIEW_COLOR)
-        previewCaption?.textContent = "${current.config.arch.label()} · ${muLabel(current.bestFitness)} vs champ"
+        previewCaption?.textContent = "${current.config.arch.label()} · ${muLabel(current.bestFitness)} vs opponent"
     }
 
     // Save/Install are usable once a generation has produced a champion and the run has finished (restored).

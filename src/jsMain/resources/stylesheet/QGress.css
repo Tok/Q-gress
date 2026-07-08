@@ -1016,6 +1016,29 @@ html, body {
     color: #d8a24a; /* semantic warning amber */
     margin-top: 2px;
 }
+.trainOpponentLine {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+.trainOpponentLabel {
+    font-family: "Coda", monospace;
+    font-size: 11px;
+    color: #e8e8e8;
+}
+.trainMiniBtn {
+    background: var(--ui-tint-1);
+    border: 1px solid var(--ui-tint-3);
+    border-radius: 4px;
+    color: #e8e8e8;
+    font-size: 11px;
+    line-height: 1;
+    padding: 2px 6px;
+    cursor: pointer;
+}
+.trainMiniBtn:hover {
+    background: var(--ui-tint-2);
+}
 .trainPanel {
     display: flex;
     flex-direction: column;
