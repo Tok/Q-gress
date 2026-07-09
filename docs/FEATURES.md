@@ -366,10 +366,13 @@ Commit hashes are illustrative pointers, not exhaustive.
   far as the geometry allows, and `NonFaction.findNearestReachableTo` (`Movement.hasClearPath`) keeps a
   recruiter from chasing an NPC standing inside a building (NPCs ignore passability), roaming instead when
   none is reachable. Covered by `StuckNavigationTest` over a real pipeline grid.
-  *Balance note:* `Discoverer` rolls portal churn on **every wander arrival**, and `canDiscover` counts
-  agents *currently* on EXPLORE — so permanently-wedged wanderers used to hold discoverer slots forever.
-  Un-wedging them roughly **doubles** portal churn (headless 8-seed tournament: 389→696 resolves, 52→114
-  create/remove). `Config.portalChurnRate` is still calibrated against the old, throttled rate.
+- **Portal churn is a rate per unit sim time**, not per wander arrival (`ChurnMath.perElapsed`, sampled by
+  `Discoverer.resolve`). It used to roll once per arrival, and `canDiscover` counts agents *currently* on
+  EXPLORE — so permanently-wedged wanderers held the discoverer slots forever and quietly throttled the
+  board. Un-wedging them (above) doubled churn on its own (8-seed headless tournament: 52→114
+  create/remove), which devalues field-building. Each roll is now weighted by the sim time it represents, so
+  expected churn over a span depends only on that span, however many strolls happen to finish in it — back
+  to 46 create/remove, with `Config.portalChurnRate` keeping its meaning as a chance per churn period.
 - **Stuck/loop recovery** (`StuckTracker`, always on): an entity whose **net displacement stays under one
   deployment range over a full sample window** is flagged, then un-stuck on the 20-tick cadence. It watches
   **every travelling agent** (`Agent.isTravelling` — MOVE, EXPLORE, and an approaching RECRUIT), not just

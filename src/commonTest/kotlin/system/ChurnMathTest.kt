@@ -53,4 +53,51 @@ class ChurnMathTest {
         assertEquals(open.create, packed.create, 1e-12, "the create value itself is unchanged")
         assertEquals(open.create, packed.remove, 1e-12, "but with no room it is added to removal so the board thins")
     }
+
+    // --- perElapsed: churn as a rate per unit TIME, not per roll ---------------
+
+    private val chances = ChurnMath.ChurnChances(create = 0.4, remove = 0.2)
+
+    @Test
+    fun onePeriodOfElapsedTimeIsOneWholeRoll() {
+        val c = ChurnMath.perElapsed(chances, elapsedTicks = 100, periodTicks = 100)
+        assertEquals(chances.create, c.create, 1e-12)
+        assertEquals(chances.remove, c.remove, 1e-12)
+    }
+
+    @Test
+    fun halfAPeriodIsHalfARoll() {
+        val c = ChurnMath.perElapsed(chances, elapsedTicks = 50, periodTicks = 100)
+        assertEquals(0.2, c.create, 1e-12)
+        assertEquals(0.1, c.remove, 1e-12)
+    }
+
+    @Test
+    fun aLongGapClampsToOneWholeRollSoSparseSamplingCannotSpike() {
+        val c = ChurnMath.perElapsed(chances, elapsedTicks = 10_000, periodTicks = 100)
+        assertEquals(chances.create, c.create, 1e-12, "never more than one roll's worth, however long the gap")
+        assertEquals(chances.remove, c.remove, 1e-12)
+    }
+
+    /**
+     * The whole point: expected churn over a span depends only on the SPAN, not on how many times it was
+     * sampled. Two strollers arriving 10 ticks apart must contribute exactly what one arriving after 20 does —
+     * otherwise un-wedging wanderers (they used to hold the discoverer slots forever) inflates the board's churn.
+     */
+    @Test
+    fun expectedChurnOverASpanIsIndependentOfHowOftenItIsSampled() {
+        val period = 100
+        val span = 60
+        val once = ChurnMath.perElapsed(chances, span, period).create
+        val split = listOf(10, 20, 30).sumOf { ChurnMath.perElapsed(chances, it, period).create }
+        val many = List(span) { ChurnMath.perElapsed(chances, 1, period).create }.sum()
+        assertEquals(once, split, 1e-12, "three samples across the span sum to the single-sample value")
+        assertEquals(once, many, 1e-12, "and so do sixty")
+    }
+
+    @Test
+    fun aZeroLengthGapContributesNoChurn() {
+        val c = ChurnMath.perElapsed(chances, elapsedTicks = 0, periodTicks = 100)
+        assertTrue(c.create == 0.0 && c.remove == 0.0, "a second stroller homing on the same tick adds nothing")
+    }
 }

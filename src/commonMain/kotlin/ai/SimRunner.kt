@@ -5,6 +5,7 @@ import agent.Agent
 import agent.Faction
 import agent.NonFaction
 import agent.StuckTracker
+import agent.action.cond.Discoverer
 import config.Config
 import config.Sim
 import config.StartStage
@@ -221,6 +222,7 @@ object SimRunner {
         Com.clear()
         XmMap.clear()
         NonFaction.reset()
+        Discoverer.reset()
         StuckTracker.reset()
         NameGen.reset()
         FactionPolicies.reset()

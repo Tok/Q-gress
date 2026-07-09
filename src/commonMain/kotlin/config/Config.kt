@@ -28,8 +28,8 @@ object Config {
     // a wander's arrival). Portals are DISCOVERED and REMOVED as a neutral process that converges the count toward
     // [targetPortals]: well below target, discovery ≫ removal (~4:1) so the board fills; at target, ~1:1; above,
     // removal wins. The board self-limits at its walkable capacity regardless (Positions.hasPortalSpace gates
-    // creation). Per-DISCOVERY chance scale now (was per-checkpoint in the retired Cycle.managePortalDensity);
-    // discovery is bounded by [maxConcurrentDiscoverers], so this stays gentle.
+    // creation). This is the chance per CHURN PERIOD of sim time (Discoverer.CHURN_PERIOD_TICKS) — a wander's
+    // arrival only samples that process, so the rate no longer rides on how often strolls finish.
     var portalChurnRate = DEFAULT_PORTAL_CHURN
 
     // Cap on how many agents per faction DISCOVER (wander → density-driven portal create/remove) at once — the
