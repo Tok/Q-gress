@@ -82,7 +82,7 @@ class NonFactionActTest {
         assertTrue(StuckTracker.isStuck("npc:${mover.id}"), "the wedged NPC is flagged stuck")
         val destBefore = mover.destination
         mover.act() // first escalation: bee-line begins
-        repeat(StuckTracker.RECOVERY_BEELINE_TICKS + 2) { mover.act() } // drain the bee-line
+        repeat(NonFaction.RECOVERY_BEELINE_TICKS + 2) { mover.act() } // drain the bee-line
         mover.act() // second escalation: re-roll a new destination
         assertTrue(mover.destination != destBefore, "a spent bee-line escalates to a fresh destination")
     }

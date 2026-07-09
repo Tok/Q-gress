@@ -4,7 +4,6 @@ import World
 import agent.Agent
 import agent.Faction
 import agent.StuckTracker
-import agent.action.ActionItem
 import config.Config
 import config.Locations
 import config.Sim
@@ -201,7 +200,7 @@ object TitleSim {
         if (!World.isReady) return
         Simulation.stepEntities()
         if (World.tick % STUCK_RECOVERY_TICKS == 0) {
-            World.allAgents.filter { it.action.item == ActionItem.MOVE }.forEach { it.recoverIfStuck() }
+            World.allAgents.filter { it.isTravelling() }.forEach { it.recoverIfStuck() }
         }
         window.requestAnimationFrame { Scene3D.sync() }
         World.tick++

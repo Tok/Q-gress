@@ -357,13 +357,31 @@ Commit hashes are illustrative pointers, not exhaustive.
   cause of agents wandering/looking stuck). `World.walkability` gate blocks mostly-water maps;
   `LocationTest` guards all presets; per-terrain movement penalties (landcover-graded shadow style →
   `Pathfinding` flow magnitude) + Terrain overlay.
-- **Stuck/loop recovery** (`StuckTracker`, always on): an agent/NPC whose **net displacement stays
-  under one deployment range over a full sample window** (frozen against geometry, or caught in a
-  vector-field spiral / off-screen-detour loop) is flagged, then un-stuck on the ~minute checkpoint
-  cadence — **escalating**: first a temporary **bee-line** straight at the target (ignoring the looping
-  field, `Agent.recoverIfStuck` / `NonFaction`), and if that doesn't free it (e.g. wedged on the
-  play-area edge) a **re-target** to a fresh portal / new destination. (`?debug` adds a 3D marker +
-  HUD count over the flagged entities.)
+- **Wall-safe agent movement**: agents step **continuously** (`Movement.step`), like NPCs always have.
+  The old step truncated the position to whole pixels each tick, discarding any velocity component under
+  1 px/tick — so an agent on a shallow diagonal walked dead straight into a wall it should have rounded,
+  and once deflected could never rebuild the sideways component that slides it free. Steering follows:
+  a **flow field routes around walls, a bare heading does not**, so the two heading-steered actions only
+  ever aim at a target with a verified clear line — `openGroundNear` marches its chosen ray and strolls as
+  far as the geometry allows, and `NonFaction.findNearestReachableTo` (`Movement.hasClearPath`) keeps a
+  recruiter from chasing an NPC standing inside a building (NPCs ignore passability), roaming instead when
+  none is reachable. Covered by `StuckNavigationTest` over a real pipeline grid.
+  *Balance note:* `Discoverer` rolls portal churn on **every wander arrival**, and `canDiscover` counts
+  agents *currently* on EXPLORE — so permanently-wedged wanderers used to hold discoverer slots forever.
+  Un-wedging them roughly **doubles** portal churn (headless 8-seed tournament: 389→696 resolves, 52→114
+  create/remove). `Config.portalChurnRate` is still calibrated against the old, throttled rate.
+- **Stuck/loop recovery** (`StuckTracker`, always on): an entity whose **net displacement stays under one
+  deployment range over a full sample window** is flagged, then un-stuck on the 20-tick cadence. It watches
+  **every travelling agent** (`Agent.isTravelling` — MOVE, EXPLORE, and an approaching RECRUIT), not just
+  MOVE: the heading-steered actions are the ones that wedge, and they used to have no detection or recovery
+  at all (a wedged recruiter also pinned its held NPC forever). Recovery is **action-aware and immediate** —
+  MOVE re-targets a fresh portal (a fresh field), EXPLORE re-rolls a wander destination, RECRUIT drops its
+  target and re-selects — and it **clears the entity's sample window**, since every sample that flagged it
+  predates the escape; leaving it re-fired recovery on stale evidence, which *was* the re-target loop.
+  There is no bee-line: it existed to escape flow-field whirls, which `Pathfinding.deWhirl` later removed at
+  the source, and being a straight line it simply drove wedged agents back into the wall. NPCs keep theirs —
+  they never clamp to passable ground, so a bee-line walks them *through* a building, not into it.
+  (`?debug` adds a 3D marker + HUD count over the flagged entities.)
 - **`?debug` diagnostics** (off by default, `util.Debug`, disabled in Node): grid-build connectivity
   self-check log (islands / on-screen islands / walkability, warns when unhealthy);
   **`?debug=capture`** sweeps every preset and downloads a `GridFixture` snapshot file, which

@@ -5,13 +5,16 @@ import util.data.Pos
 
 /**
  * Flags agents/NPCs that aren't making progress — frozen against geometry, or looping/wandering in a
- * small region (the vector-field spiral / off-screen-detour symptom). **Detection here**; the recovery
- * (a temporary bee-line, then a re-target) lives in [Agent.recoverIfStuck] + [NonFaction]. Fed every
- * tick (also powers the `?debug` 3D marker + HUD count). Keyed by a stable id, and only fed entities
- * *currently trying to travel*, so legitimately waiting / at-destination entities aren't flagged.
+ * small region (the off-screen-detour symptom). **Detection here**; the recovery lives in
+ * [Agent.recoverIfStuck] + [NonFaction]. Fed every tick (also powers the `?debug` 3D marker + HUD count).
+ * Keyed by a stable id, and only fed entities *currently trying to travel* ([Agent.isTravelling]), so
+ * legitimately waiting / at-destination entities aren't flagged.
  *
  * An entity is "stuck" when its net displacement over a full window of samples stays under one
  * deployment range — covers both frozen-in-place and back-and-forth looping (start ≈ end).
+ *
+ * A recovery MUST [clear] its entity: the whole window predates the escape, so leaving it in place re-flags
+ * the entity on the next check and recovery fires again and again on stale evidence.
  */
 object StuckTracker {
     // Windows halved now that walk speed doubled: a genuinely-travelling entity clears [stuckRadius] in ~half the
@@ -21,9 +24,6 @@ object StuckTracker {
     private const val ABSENCE_GRACE = 3 // ticks an entity may drop out of the moving set before its window resets
     private val stuckRadius get() = Dim.maxDeploymentRange // net move under this over the window = stuck
 
-    /** When flagged stuck, agents/NPCs bee-line straight at their target for this many ticks before re-targeting. */
-    const val RECOVERY_BEELINE_TICKS = 30
-
     private val history = mutableMapOf<String, ArrayDeque<Pos>>()
     private val absence = mutableMapOf<String, Int>() // consecutive ticks an entity has been out of the moving set
     private var stuck: Set<String> = emptySet()
@@ -32,6 +32,14 @@ object StuckTracker {
         history.clear()
         absence.clear()
         stuck = emptySet()
+    }
+
+    /** Drop [key]'s window and un-flag it — called the moment a recovery fires, so the next check judges the
+     *  entity on where it goes NEXT rather than re-firing for another [WINDOW] ticks on pre-recovery samples. */
+    fun clear(key: String) {
+        history.remove(key)
+        absence.remove(key)
+        if (key in stuck) stuck = stuck - key
     }
 
     /** Record positions of currently-moving entities ([moving] = stableKey→pos) and recompute the stuck set. */

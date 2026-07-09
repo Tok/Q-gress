@@ -2,7 +2,6 @@ package system
 
 import World
 import agent.StuckTracker
-import agent.action.ActionItem
 import portal.XmMap
 import util.Rng
 
@@ -33,8 +32,10 @@ object Simulation {
     }
 
     // Feed StuckTracker only the entities actively trying to travel this tick (powers recovery + ?debug viz).
+    // EVERY travelling action, not just MOVE: EXPLORE and RECRUIT steer by a bare heading rather than the flow
+    // field, so they are the ones that actually wedge on buildings — watching only MOVE left them stuck for good.
     private fun sampleStuck() {
-        val agents = World.allAgents.filter { it.action.item == ActionItem.MOVE }.map { it.key() to it.pos }
+        val agents = World.allAgents.filter { it.isTravelling() }.map { it.key() to it.pos }
         val npcs = World.allNonFaction.filter { it.isStuckCandidate(World.tick) }.map { "npc:${it.id}" to it.pos }
         StuckTracker.sample(agents + npcs)
     }

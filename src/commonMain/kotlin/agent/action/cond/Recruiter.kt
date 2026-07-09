@@ -5,6 +5,7 @@ import agent.Agent
 import agent.Balance
 import agent.BalanceMath
 import agent.Faction
+import agent.Movement
 import agent.NonFaction
 import agent.action.ActionItem
 import config.Config
@@ -36,10 +37,12 @@ object Recruiter : ConditionalAction {
         return active < Config.maxConcurrentRecruiters
     }
 
-    /** Start the walk-up: head to the NEAREST NPC (short, reliable walk so a capped recruit slot frees up
-     *  quickly) and the Agent drives the walk + meeting. */
+    /** Start the walk-up: head to the nearest **reachable** NPC (short, reliable walk so a capped recruit slot
+     *  frees up quickly) and the Agent drives the walk + meeting. [Agent.recruitStep] steers by a bare heading,
+     *  so an NPC standing inside a building (they ignore passability) would wedge the recruiter against the wall
+     *  — with none reachable, roam instead, exactly as an idle agent with no recruit slot does. */
     override fun performAction(agent: Agent): Agent {
-        val npc = NonFaction.findNearestTo(agent.pos) // always present (MIN_NONFACTION); findNearestTo throws if none
+        val npc = NonFaction.findNearestReachableTo(agent.pos) ?: return Movement.wander(agent)
         agent.recruitTargetId = npc.id
         agent.destination = npc.pos
         agent.action.start(actionItem)

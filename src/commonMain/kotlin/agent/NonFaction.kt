@@ -122,10 +122,13 @@ data class NonFaction(
     }
 
     /**
-     * Un-stick a wandering NPC flagged by [StuckTracker]. Escalates like the agents: first spend a
-     * bee-line straight at the destination (ignoring the looping field); if that doesn't free it,
-     * re-roll a new destination via [moveElsewhere]. A no-op while a bee-line is already running or
-     * when not flagged.
+     * Un-stick a wandering NPC flagged by [StuckTracker]: first spend a bee-line straight at the destination
+     * (ignoring the looping field); if that doesn't free it, re-roll a new destination via [moveElsewhere]. A
+     * no-op while a bee-line is already running or when not flagged.
+     *
+     * NPCs keep the bee-line that [Agent] dropped, and safely: they never clamp to passable ground (see [act]),
+     * so a straight line at the destination walks them THROUGH a building rather than into it. It is only ever
+     * a wall-clamped mover that a bee-line can wedge.
      */
     private fun maybeRecoverFromStuck() {
         if (beelineTicks > 0) return
@@ -133,11 +136,14 @@ data class NonFaction(
             triedBeeline = false
             return
         }
+        // Deliberately NOT StuckTracker.clear()-ing here (agents do): the bee-line→re-target escalation below
+        // needs the NPC to stay flagged across the bee-line to reach its second stage. Harmless — a re-fired
+        // NPC recovery just bee-lines again, and an NPC walks through the wall rather than into it.
         if (triedBeeline) {
             moveElsewhere()
             triedBeeline = false
         } else {
-            beelineTicks = StuckTracker.RECOVERY_BEELINE_TICKS
+            beelineTicks = RECOVERY_BEELINE_TICKS
             triedBeeline = true
         }
     }
@@ -190,6 +196,10 @@ data class NonFaction(
     }
 
     companion object {
+        /** Ticks a stuck NPC bee-lines straight at its destination before re-rolling one. NPC-only: agents used
+         *  to share this, but a bee-line is a straight line, and a wall-clamped agent just grinds into the wall. */
+        const val RECOVERY_BEELINE_TICKS = 30
+
         private val OFFSCREEN_DISTANCE = Pos.res * (Sim.OFFSCREEN_CELL_ROWS / 2)
 
         // How far OUTSIDE the round field the destination ring sits. A fixed [OFFSCREEN_DISTANCE] (≈7 cells)
@@ -391,6 +401,23 @@ data class NonFaction(
         fun findNearestTo(pos: Pos) = World.allNonFaction.minByOrNull {
             it.pos.distanceTo2(pos) // nearest → squared distance preserves the ordering, skips the sqrt
         } ?: throw IllegalStateException("Unable to find nearest to $pos")
+
+        /**
+         * The nearest NPC a recruiter at [pos] can actually walk to: standing on passable ground with a clear
+         * straight path ([Movement.hasClearPath]). NPCs ignore passability entirely, so they routinely stand
+         * *inside* buildings — and [Agent.recruitStep] chases them on a bare heading, not a flow field, so an
+         * unreachable target wedges the recruiter against the wall (and pins the NPC there, held in place).
+         * Null when none is reachable: the caller should do something else rather than chase into a wall.
+         *
+         * Nearest-first + short-circuit, so the (per-cell) path probe runs on the few closest NPCs, not all of them.
+         */
+        fun findNearestReachableTo(pos: Pos): NonFaction? {
+            val byDistance = World.allNonFaction.sortedBy { it.pos.distanceTo2(pos) }
+            // No map data (bare tests / pre-world): nothing is a KNOWN wall, so don't filter every NPC out and
+            // silently stop recruiting. Same convention as [walkableOnly] — only known walls are rejected.
+            if (World.gridOrEmpty.isEmpty()) return byDistance.firstOrNull()
+            return byDistance.firstOrNull { it.pos.isPassable() && Movement.hasClearPath(pos, it.pos) }
+        }
 
         /** A random NPC to recruit (the recruiter walks up to whoever — recruiting isn't tied to a portal).
          *  Prefer ones INSIDE the play area: agents can't leave it, so chasing an off-screen NPC would just

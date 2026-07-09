@@ -2,7 +2,6 @@ package system
 import World
 import agent.Agent
 import agent.Faction
-import agent.action.ActionItem
 import config.Config
 import config.Dim
 import portal.XmHeap
@@ -30,8 +29,7 @@ enum class Cycle(val checkpoints: MutableMap<Int, Checkpoint>) {
 
         fun updateCheckpoints(tick: Int, enlMu: Int, resMu: Int) {
             if (isUpdateStuck(tick)) {
-                World.allAgents.filter { it.action.item == ActionItem.MOVE }
-                    .forEach { it.recoverIfStuck() }
+                World.allAgents.filter { it.isTravelling() }.forEach { it.recoverIfStuck() }
             }
             if (isNewCheckpoint(tick)) {
                 val cp = Checkpoint(

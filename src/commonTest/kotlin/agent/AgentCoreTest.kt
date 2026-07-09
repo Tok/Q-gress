@@ -12,6 +12,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 /**
@@ -147,15 +148,28 @@ class AgentCoreTest {
     }
 
     @Test
-    fun recoverIfStuckBeelinesAStuckAgentBeforeReTargeting() {
+    fun recoverIfStuckReTargetsAStuckAgentAtOnce() {
+        val portal = Portal.create(Pos(1500, 900)).also { World.allPortals.add(it) }
         val agent = Factory.frog().copy(pos = Pos(500, 500))
         World.allAgents.add(agent)
         // Feed StuckTracker enough same-spot samples to flag this agent (net displacement under a deploy range).
         repeat(40) { StuckTracker.sample(listOf(agent.key() to agent.pos)) }
         assertTrue(StuckTracker.isStuck(agent.key()), "a pinned agent registers as stuck")
-        val portalBefore = agent.actionPortal
-        agent.recoverIfStuck() // first escalation: spend a bee-line, don't re-target yet
-        assertEquals(portalBefore, agent.actionPortal, "the first recovery step is a bee-line, not a re-target")
+        agent.recoverIfStuck()
+        assertEquals(portal, agent.actionPortal, "a wedged agent re-targets on the FIRST recovery — there is no bee-line")
+        StuckTracker.reset()
+    }
+
+    /** The re-target loop: every sample that flagged the agent predates the recovery, so leaving the window in
+     *  place re-fires recovery on the next check and undoes it. Recovery must drop the window. */
+    @Test
+    fun recoverIfStuckDropsTheStaleWindowSoItCannotReFire() {
+        World.allPortals.add(Portal.create(Pos(1500, 900)))
+        val agent = Factory.frog().copy(pos = Pos(500, 500))
+        World.allAgents.add(agent)
+        repeat(40) { StuckTracker.sample(listOf(agent.key() to agent.pos)) }
+        agent.recoverIfStuck()
+        assertFalse(StuckTracker.isStuck(agent.key()), "the pre-recovery window is dropped, so the next check starts fresh")
         StuckTracker.reset()
     }
 }

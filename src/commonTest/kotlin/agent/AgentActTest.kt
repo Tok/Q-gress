@@ -350,23 +350,49 @@ class AgentActTest {
     // --- stuck-recovery re-target escalation --------------------------------
 
     @Test
-    fun recoverIfStuckReTargetsAfterASpentBeeline() {
+    fun recoverIfStuckReTargetsAStuckMoverWithoutABeeline() {
         Portal.create(Pos(900, 600)).also { World.allPortals.add(it) }
         Portal.create(Pos(1000, 500)).also { World.allPortals.add(it) }
         val far = Portal.create(Pos(1700, 600))
         World.allPortals.add(far)
-        var agent = frogAt(Pos(100, 600))
+        val agent = frogAt(Pos(100, 600))
         agent.actionPortal = far
         agent.destination = far.location
+        agent.action.start(ActionItem.MOVE)
         World.allAgents.add(agent)
         repeat(40) { StuckTracker.sample(listOf(agent.key() to agent.pos)) }
         assertTrue(StuckTracker.isStuck(agent.key()), "the pinned agent is flagged stuck")
-        agent.recoverIfStuck() // first escalation: spend a bee-line
-        agent.action.start(ActionItem.MOVE)
-        repeat(StuckTracker.RECOVERY_BEELINE_TICKS + 2) { agent = agent.act() } // burn the bee-line down to 0
         val destBefore = agent.destination
-        agent.recoverIfStuck() // second escalation: re-target a fresh portal point
-        assertTrue(agent.destination != destBefore, "the spent bee-line escalates to a re-targeted destination")
+        agent.recoverIfStuck()
+        assertTrue(agent.destination != destBefore, "a stuck MOVE re-targets straight away — a fresh portal means a fresh field")
+    }
+
+    /** A wedged recruiter used to be invisible to [StuckTracker] (MOVE-only) AND immortal (it re-started its own
+     *  RECRUIT timer every tick), pinning its held NPC forever. Recovery must drop the target and re-select. */
+    @Test
+    fun recoverIfStuckAbortsAWedgedRecruiter() {
+        World.allPortals.add(Portal.create(Pos(900, 600)))
+        val npc = NonFaction.create(Factory.grid())
+        World.allNonFaction.add(npc)
+        val agent = frogAt(Pos(100, 600))
+        agent.recruitTargetId = npc.id
+        agent.destination = Pos(1700, 600) // far away → still "approaching", so it counts as travelling
+        agent.action.start(ActionItem.RECRUIT)
+        World.allAgents.add(agent)
+        assertTrue(agent.isTravelling(), "an approaching recruiter is watched for stuckness")
+        repeat(40) { StuckTracker.sample(listOf(agent.key() to agent.pos)) }
+        agent.recoverIfStuck()
+        assertEquals(null, agent.recruitTargetId, "the wedged recruiter drops its unreachable target")
+        assertTrue(agent.action.item != ActionItem.RECRUIT, "and stops recruiting, so act() re-selects next tick")
+    }
+
+    /** A recruiter standing in the meeting is meant to be still — it must not read as stuck. */
+    @Test
+    fun aMeetingRecruiterIsNotTravelling() {
+        val agent = frogAt(Pos(100, 600))
+        agent.destination = agent.pos
+        agent.action.start(ActionItem.RECRUIT)
+        assertFalse(agent.isTravelling(), "an arrived recruiter is standing in the meeting, not travelling")
     }
 
     // --- XM bar helpers ------------------------------------------------------

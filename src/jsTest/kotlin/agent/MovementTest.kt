@@ -99,10 +99,15 @@ class MovementTest {
     }
 
     @Test
-    fun clampHoldsOnlyInaTrueDeadCorner() {
-        // Wedged in the far corner of the passable quadrant: every probe (both slides + the shortened diagonal)
-        // crosses into the wall → hold at the start position (StuckTracker/the per-action bail takes over).
+    fun clampConvergesToAHoldInaTrueDeadCorner() {
+        // Wedged in the far corner of the passable quadrant. Positions are continuous, so the agent may first
+        // creep the last sub-pixel up to the wall (49.0 → 49.99 is still inside its own passable cell); from
+        // there every probe (both slides + the shortened diagonal) crosses into the wall → a fixed point.
+        // StuckTracker / the per-action bail takes over from the hold.
         setQuadrantGrid()
-        assertEquals(Pos(49, 49), Movement.clampToPlayable(Pos(49, 49), Pos(52, 52)), "boxed-in corner → hold")
+        var pos = Pos(49, 49)
+        repeat(5) { pos = Movement.clampToPlayable(pos, Pos(pos.x + 3, pos.y + 3)) }
+        assertTrue(pos.isPassable(), "the clamp never steps into the wall")
+        assertEquals(pos, Movement.clampToPlayable(pos, Pos(pos.x + 3, pos.y + 3)), "boxed-in corner → hold")
     }
 }

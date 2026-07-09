@@ -25,6 +25,32 @@ object Movement {
     // one-cell (≈10 px) passage into a wall still lands the agent inside the gap at a shorter fraction.
     private val CREEP_FRACTIONS = doubleArrayOf(1.0, 0.66, 0.33)
 
+    // Sample the segment every half cell, so no wall thinner than one cell can slip between two probes.
+    private const val PATH_PROBE_PX = Pos.res / 2.0
+
+    /**
+     * True when the straight segment [from]→[to] stays on passable ground.
+     *
+     * A **flow field routes around walls; a bare heading does not.** So every straight-line mover
+     * ([Agent.wanderStep], [Agent.recruitStep]) must aim only at a target it can actually walk to in a straight
+     * line — otherwise [clampToPlayable] slides it into a concave corner and it grinds there forever (a local
+     * minimum: sliding out of the pocket points it straight back in). Measured over a real pipeline grid,
+     * heading at a far target strands ~48% of start positions where field steering strands none.
+     */
+    fun hasClearPath(from: Pos, to: Pos): Boolean {
+        if (!to.isPassable()) return false
+        val dist = from.distanceTo(to)
+        if (dist <= PATH_PROBE_PX) return true
+        val dx = (to.x - from.x) / dist
+        val dy = (to.y - from.y) / dist
+        var d = PATH_PROBE_PX
+        while (d < dist) { // fixed-step march, so [farthestClearAlong] probes the very same points along the ray
+            if (!Pos(from.x + d * dx, from.y + d * dy).isPassable()) return false
+            d += PATH_PROBE_PX
+        }
+        return true
+    }
+
     /**
      * Keep an **agent** on walkable ground: only step into a cell that's **passable** — which also means
      * **on the grid** ([Pos.isPassable] is false off-map and on water/buildings). So an agent never walks on
@@ -45,11 +71,12 @@ object Movement {
 
     // The passable point nearest [to] along the segment from [from], probing decreasing fractions; null when
     // every probe (down to a near-[from] nudge) is blocked. Lets the agent reach as far into a thin/overshot
-    // passage as it can rather than holding at [from].
+    // passage as it can rather than holding at [from]. The scaled offset stays fractional — rounding it to whole
+    // pixels collapsed every sub-pixel slide to [from], so a shallow wall-hug found no probe at all and held.
     private fun creepToward(from: Pos, to: Pos): Pos? {
         if (to == from) return null
         CREEP_FRACTIONS.forEach { f ->
-            val p = Pos(from.x + ((to.x - from.x) * f).toInt(), from.y + ((to.y - from.y) * f).toInt())
+            val p = Pos(from.x + (to.x - from.x) * f, from.y + (to.y - from.y) * f)
             if (p != from && p.isPassable()) return p
         }
         return null
@@ -130,24 +157,44 @@ object Movement {
         return agent.copy(destination = openGroundNear(agent.pos))
     }
 
-    // A "wanderable" point a short stroll from [from] — passable AND inside the play area (same grid + field
-    // bounds the rest of the sim uses, so a wandering agent never strays off-map / off-field the way loose NPCs
-    // can). Samples the ring around [from]; falls back to anywhere wanderable, then to staying put (re-evaluate).
-    private fun openGroundNear(from: Pos): Pos {
+    /**
+     * A "wanderable" point a short stroll from [from] — passable, inside the play area (so a wandering agent
+     * never strays off-map / off-field the way loose NPCs can) and reachable **in a straight line**, since
+     * [Agent.wanderStep] steers by heading, not by a flow field.
+     *
+     * Picks a direction, then strolls **as far along it as the geometry allows** ([farthestClearAlong]) rather
+     * than testing one ring point and giving up. The old code sampled a ring point, and on a miss a random
+     * passable cell anywhere on the map — all but guaranteeing a wall on the straight line, which is the
+     * long blind walk that wedges agents. Marching the ray keeps the intended reach wherever it's open and
+     * shortens only where a wall genuinely blocks: stroll LENGTH matters, because
+     * [agent.action.cond.Discoverer] rolls portal churn on each arrival, so systematically shorter strolls
+     * would silently inflate the board's churn rate.
+     */
+    internal fun openGroundNear(from: Pos): Pos {
         repeat(WANDER_TRIES) {
             val angle = Rng.random() * 2.0 * PI
-            val dist = Dim.maxDeploymentRange + Rng.random() * WANDER_RADIUS
-            val point = Pos((from.x + dist * cos(angle)).toInt(), (from.y + dist * sin(angle)).toInt())
-            if (isWanderable(point)) return point
+            val reach = Dim.maxDeploymentRange + Rng.random() * WANDER_RADIUS
+            farthestClearAlong(from, angle, reach)?.let { return it }
         }
-        repeat(WANDER_TRIES) {
-            val point = Positions.createRandomPassable(World.grid)
-            if (isWanderable(point)) return point
-        }
-        return from
+        return from // boxed in on every heading → hold and re-select (never a blind walk through a wall)
     }
 
-    private fun isWanderable(p: Pos) = p.isPassable() && Sim.isInPlayArea(p.x, p.y)
+    // March outward from [from] along [angle], a half cell at a time, and return the LAST point that is still
+    // passable + in the play area — so the whole segment back to [from] is walkable by construction. Null when
+    // even [Dim.maxDeploymentRange] of clearance isn't there (the caller then tries another heading).
+    private fun farthestClearAlong(from: Pos, angle: Double, maxDist: Double): Pos? {
+        val dx = cos(angle)
+        val dy = sin(angle)
+        var best: Pos? = null
+        var d = PATH_PROBE_PX
+        while (d <= maxDist) {
+            val p = Pos(from.x + d * dx, from.y + d * dy)
+            if (!p.isPassable() || !Sim.isInPlayArea(p.x, p.y)) break
+            if (d >= Dim.maxDeploymentRange) best = p // a stroll worth taking, not a shuffle on the spot
+            d += PATH_PROBE_PX
+        }
+        return best
+    }
 
     private fun goToDestinationPortal(agent: Agent, destination: Portal): Agent {
         val distance = agent.skills.deployPrecision * Dim.maxDeploymentRange
@@ -157,4 +204,18 @@ object Movement {
     }
 
     fun move(velocity: Complex, force: Complex, limit: Double): Complex = MovementMath.move(velocity, force, limit)
+
+    /**
+     * One integrated step: advance [from] by [velocity], kept on passable ground. Returns the new position and
+     * the velocity to carry into the next tick — the **deflected** velocity when a wall shortened the step, so
+     * into-wall momentum is dropped and the next force re-steers cleanly instead of grinding.
+     *
+     * Pure (position in → position out), and the single definition of "an agent takes a step": [Agent] and the
+     * navigation tests both call it, so a test can't silently model a stepping rule the game no longer uses.
+     */
+    fun step(from: Pos, velocity: Complex): Pair<Pos, Complex> {
+        val target = Pos(from.x + velocity.re, from.y + velocity.im)
+        val next = clampToPlayable(from, target)
+        return next to if (next != target) Complex(next.x - from.x, next.y - from.y) else velocity
+    }
 }

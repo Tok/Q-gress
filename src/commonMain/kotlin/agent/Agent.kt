@@ -41,8 +41,6 @@ data class Agent(
     var ap: Int = 0,
     var xm: Int = 0,
     var velocity: Complex = Complex.ZERO,
-    private var beelineTicks: Int = 0, // >0 = temporarily bee-line straight at the target, ignoring the (looping) field
-    private var triedBeeline: Boolean = false, // a bee-line was already spent this stuck episode → escalate to re-target
     var recruitTargetId: Int? = null, // the NPC being recruited (walk up → meet → resolve); null = not recruiting
 ) {
     // Distance actually moved last tick (sim px), recomputed by act() each tick. NOT a constructor param, so a
@@ -141,27 +139,45 @@ data class Agent(
         }
     }
 
+    /** Actively walking somewhere this tick, so [StuckTracker] should watch it and [recoverIfStuck] may fire.
+     *  RECRUIT counts only while still approaching — a recruiter standing in the meeting is meant to be still.
+     *  ATTACK/DEPLOY hold position at the portal by design, and their approach is flow-field steered anyway. */
+    fun isTravelling(): Boolean = when (action.item) {
+        ActionItem.MOVE, ActionItem.EXPLORE -> true
+        ActionItem.RECRUIT -> distanceToDestination() > Dim.maxDeploymentRange
+        else -> false
+    }
+
     /**
-     * Un-stick a travelling agent flagged by [StuckTracker] (looping / wedged for a full window).
-     * Escalates: first spend a **bee-line** (walk straight at the target, ignoring the looping field);
-     * if that doesn't free it (e.g. wedged against the play-area edge), **re-target** a fresh portal.
-     * Called on the ~minute checkpoint cadence (see [system.Cycle]); a no-op when not stuck.
+     * Un-stick a travelling agent flagged by [StuckTracker], by whichever escape suits the action it's on.
+     *
+     * There is **no bee-line** any more. It was added to break out of flow-field *whirls*, which
+     * [system.grid.Pathfinding.deWhirl] later removed at the source — and since a bee-line is a straight line, it
+     * simply drove the agent back into the wall it was wedged on. Measured, it *created* stuck agents that the
+     * field alone never stranded.
      */
     fun recoverIfStuck() {
-        if (!StuckTracker.isStuck(key())) {
-            triedBeeline = false
-            return
-        }
-        if (beelineTicks > 0) return // a bee-line is already underway — let it run its course
-        if (triedBeeline) {
-            val newDest = World.randomPortal()
-            val dist = skills.deployPrecision * Dim.maxDeploymentRange
-            this.actionPortal = newDest
-            this.destination = newDest.findRandomPointNearPortal(dist.toInt())
-            triedBeeline = false
-        } else {
-            beelineTicks = BEELINE_DURATION
-            triedBeeline = true
+        if (!StuckTracker.isStuck(key())) return
+        // Every sample that flagged us predates this recovery. Without dropping the window, the next check
+        // (20 ticks — see [system.Cycle]) re-fires on those stale positions and undoes the escape we just made:
+        // that is the re-target loop, not a shortage of reachable portals.
+        StuckTracker.clear(key())
+        velocity = Complex.ZERO // drop the into-wall momentum so the new heading/field steers cleanly
+        when (action.item) {
+            // Recruiters walk a bare heading at their NPC, which can stand inside a building (NPCs ignore
+            // passability). Drop the target: act() re-selects next tick and the NPC's hold lapses.
+            ActionItem.RECRUIT -> {
+                recruitTargetId = null
+                action.end()
+            }
+            // Wander targets are picked with a clear path, but the world moves under them — re-roll a fresh one.
+            ActionItem.EXPLORE -> destination = Movement.openGroundNear(pos)
+            // Walking to a portal: the flow field already routes around walls, so a fresh target = a fresh field.
+            else -> {
+                val newDest = World.randomPortal()
+                actionPortal = newDest
+                destination = newDest.findRandomPointNearPortal((skills.deployPrecision * Dim.maxDeploymentRange).toInt())
+            }
         }
     }
 
@@ -172,30 +188,24 @@ data class Agent(
         }
         if (isAtActionPortal()) {
             action.end()
-            beelineTicks = 0
-            triedBeeline = false
             return this
         }
-        val beelining = beelineTicks > 0
-        if (beelining) beelineTicks--
-        val force = if (beelining) {
-            Movement.headingTo(pos, actionPortal.location) // un-stick override: straight line through the spiral
-        } else {
-            actionPortal.vectors[pos.toShadow()] ?: Movement.headingTo(pos, actionPortal.location)
-        }
+        val force = actionPortal.vectors[pos.toShadow()] ?: Movement.headingTo(pos, actionPortal.location)
         velocity = Movement.move(velocity, force, skills.speed)
         return stepByVelocity()
     }
 
-    // Apply the integrated [velocity] one tick, kept on passable ground. If a wall DEFLECTS the step (the clamp
-    // couldn't reach the intended target), drop the into-wall momentum so the wall-aware flow field re-steers
-    // cleanly NEXT tick instead of grinding into the wall for several ticks while momentum bleeds off — the key
-    // to threading tight corners and not wedging. A sub-pixel tick (target == pos, velocity still building from
-    // rest) keeps its velocity so the agent still accelerates.
+    // Apply the integrated [velocity] one tick, kept on passable ground ([Movement.step]).
+    //
+    // The step is CONTINUOUS (as NPCs have always been). It used to truncate both coordinates to whole pixels,
+    // which silently discarded any velocity component under 1 px/tick — every tick, never carried. An agent
+    // walking a shallow diagonal (say 3.9 px down, 0.5 px across) therefore moved straight down and pinned on a
+    // wall it should have rounded. Worse, a deflection resets velocity to the clamped delta, so the next tick
+    // started from a unit-length force whose minor axis always truncated to zero: the agent could never build up
+    // the sideways component that slides it free, and wedged permanently against a flat wall.
     private fun stepByVelocity(): Agent {
-        val target = Pos((pos.x + velocity.re).toInt(), (pos.y + velocity.im).toInt())
-        val next = Movement.clampToPlayable(pos, target)
-        if (target != pos && next != target) velocity = Complex(next.x - pos.x, next.y - pos.y)
+        val (next, deflected) = Movement.step(pos, velocity)
+        velocity = deflected
         return this.copy(pos = next)
     }
 
@@ -207,7 +217,11 @@ data class Agent(
             action.end()
             return this
         }
-        if (distanceToDestination() <= skills.inRangeSpeed()) {
+        // Arrive within ONE FULL STEP, not the tighter [Skills.inRangeSpeed] (= speed/φ) the precise attack/deploy
+        // approach uses. A free agent can't jump that disc (its diameter is 1.24 steps), but a wander approach
+        // runs alongside walls, and a step the clamp deflects can circle it instead of landing in it. Wandering
+        // wants open ground, not precision. (Measured on a building grid: 1/799 wanders orbited, 0/799 with this.)
+        if (distanceToDestination() <= skills.speed) {
             Discoverer.resolve(this) // arrived → discover a new portal / find one gone (density-driven)
             action.end()
             return ActionSelector.doSomethingElse(this)
@@ -345,7 +359,6 @@ data class Agent(
     override fun hashCode() = this.key().hashCode() * 31
 
     companion object {
-        private val BEELINE_DURATION = StuckTracker.RECOVERY_BEELINE_TICKS // ticks to bee-line before re-targeting
         private const val RECRUIT_HOLD_TICKS = 8 // re-applied each tick → the target NPC waits while approached + met
         private const val XM_FILLED_PCT = 80 // XM bar at/above this % reads as "filled" (gates recharge behaviour)
         private const val HEALTHY_PORTAL_PCT = 80 // above this portal health%, attackers aim centre; below, the strongest reso
