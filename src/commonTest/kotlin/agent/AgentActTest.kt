@@ -402,9 +402,9 @@ class AgentActTest {
         val agent = Factory.frog()
         agent.ap = 5_000
         agent.removeXm(agent.xm)
-        assertFalse(agent.isXmFilled(), "an empty bar is not filled")
+        assertTrue(agent.isXmLow(), "an empty bar is low (below the drained mark)")
         agent.addXm(agent.xmCapacity())
-        assertTrue(agent.isXmFilled(), "a topped-up bar reads filled")
+        assertFalse(agent.isXmLow(), "a topped-up bar is not low")
         assertTrue(agent.keySet().isEmpty(), "a fresh agent holds no portal keys")
     }
 

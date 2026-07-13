@@ -67,7 +67,9 @@ the agent's current situation and picks one by weighted random.
 ### 1. Context → candidate list — `ActionSelector`
 The candidates depend on where the agent is and what it's standing on:
 
-- not at its target portal → `doAnywhereAction` → `{ RECYCLE, RECHARGE }`
+- not at its target portal → `doAnywhereAction` → `{ RECYCLE, RECHARGE }` (away from a portal, `RECHARGE`
+  only fires as the keyed *emergency hold* — a held key to a badly-hurt friendly portal; see
+  `docs/MECHANICS.md` → *Resonator decay & recharge*)
 - at a **friendly** portal → `+ { HACK, GLYPH, DEPLOY, LINK, VIRUS* }`
 - at a **neutral** portal → `+ { HACK, GLYPH, CAPTURE }`
 - at an **enemy** portal → `+ { HACK, GLYPH, ATTACK, VIRUS }`

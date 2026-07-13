@@ -62,7 +62,7 @@ data class Agent(
 
     private fun calcAbsXmBar() = min(xmCapacity(), max(0, xm))
     private fun xmBarPercent() = calcAbsXmBar() * 100 / xmCapacity()
-    fun isXmFilled() = xmBarPercent() >= XM_FILLED_PCT
+    fun isXmLow() = xmBarPercent() < XM_LOW_PCT
     fun keySet() = inventory.findUniqueKeys()
 
     fun removeXm(v: Int) {
@@ -360,7 +360,10 @@ data class Agent(
 
     companion object {
         private const val RECRUIT_HOLD_TICKS = 8 // re-applied each tick → the target NPC waits while approached + met
-        private const val XM_FILLED_PCT = 80 // XM bar at/above this % reads as "filled" (gates recharge behaviour)
+
+        // Below this XM-bar %, the agent is "drained": Recycler taps a power cube, Recharger stops feeding portals.
+        // The SAME mark for both keeps the recharge↔recycle loop gap-free (no dead zone where neither can fire).
+        private const val XM_LOW_PCT = 10
         private const val HEALTHY_PORTAL_PCT = 80 // above this portal health%, attackers aim centre; below, the strongest reso
 
         /** Pure: enemy (non-[faction]) portals within [attackDistance] of [from], nearest first. Takes the

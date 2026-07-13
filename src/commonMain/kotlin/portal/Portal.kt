@@ -481,9 +481,23 @@ data class Portal(
             return if (nearest.isNotEmpty()) nearest.first().second else null
         }
 
-        fun findChargeableForKeys(agent: Agent, keys: List<PortalKey>): List<Portal>? {
-            val chargeable = World.factionPortals(agent.faction).filter { it.calcHealth() <= CHARGEABLE_HEALTH_MAX }.toSet()
-            return chargeable.filter { keys.map { a -> a.portal }.contains(it) }
+        /** The friendly portals [agent] can recharge: the one it's standing at and working (its action
+         *  portal) below full-ish health (≤ [CHARGEABLE_HEALTH_MAX] — the casual top-up, no key needed, as
+         *  in Ingress), plus keyed REMOTE ones only when badly hurt (≤ [REMOTE_CHARGEABLE_HEALTH_MAX] — the
+         *  emergency hold). Both bars are deliberately narrow: cycle decay leaves EVERY friendly portal a
+         *  bit below full, so a looser gate keeps a recharge on offer everywhere — and away from the action
+         *  portal only recycle/move (base 0.01) compete, so agents would tarpit at each damaged portal they
+         *  pass (or recharge↔recycle in place off a keyed portal) instead of ever travelling. */
+        fun findChargeable(agent: Agent, keys: List<PortalKey>): List<Portal> {
+            val keyed = keys.map { it.portal }.toSet()
+            return World.factionPortals(agent.faction).filter {
+                val health = it.calcHealth()
+                if (it == agent.actionPortal && agent.isAtActionPortal()) {
+                    health <= CHARGEABLE_HEALTH_MAX
+                } else {
+                    keyed.contains(it) && health <= REMOTE_CHARGEABLE_HEALTH_MAX
+                }
+            }
         }
 
         // Hacks allowed before burnout. Above the authentic 4 (a poor-man's multi-hack) so agents restock
@@ -502,7 +516,8 @@ data class Portal(
         private const val MAX_OUTGOING_LINKS = 8
         private const val LINK_XM_COST = 250 // XM an agent spends to place one link
         private const val RESO_DEPLOY_XM_PER_LEVEL = 20 // XM to deploy one resonator, per its level
-        private const val CHARGEABLE_HEALTH_MAX = 90 // a friendly portal below this health% can be recharged
+        private const val CHARGEABLE_HEALTH_MAX = 90 // an in-range friendly portal below this health% can be recharged
+        private const val REMOTE_CHARGEABLE_HEALTH_MAX = 50 // keyed remote recharge only below this health% (see findChargeable)
         private const val LINK_TEARDOWN_RESO_THRESHOLD = 2 // at/below this many resos left, links + fields drop
 
         // Passive stray-XM leak a portal emits each cycle (agents refuel from it): calculateLevel × the per-level

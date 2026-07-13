@@ -305,15 +305,19 @@ class PortalLifecycleTest {
     }
 
     @Test
-    fun findChargeableForKeysMatchesHeldKeysToDamagedFriendlyPortals() {
+    fun findChargeableMatchesHeldKeysToDamagedFriendlyPortals() {
         val owner = Factory.frog()
         World.allAgents.add(owner)
         val portal = deployedPortal(Pos(500, 500), owner)
         portal.filledSlots().forEach { it.resonator?.energy = 10 } // damaged → health ≤ 90
         val keys = listOf(PortalKey(portal, owner))
-        val chargeable = Portal.findChargeableForKeys(owner, keys)
-        assertNotNull(chargeable, "a key set yields a chargeable list")
-        assertTrue(chargeable.contains(portal), "the damaged friendly portal is chargeable")
+        assertTrue(Portal.findChargeable(owner, keys).contains(portal), "the badly-hurt friendly portal is chargeable via its key")
+        val atPortal = owner.copy(pos = portal.location)
+        atPortal.actionPortal = portal // standing at + working the portal — the keyless casual top-up
+        assertTrue(
+            Portal.findChargeable(atPortal, emptyList()).contains(portal),
+            "an agent at its action portal needs no key to recharge it",
+        )
     }
 
     @Test

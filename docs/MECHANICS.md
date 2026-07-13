@@ -124,9 +124,11 @@ Power cubes are XM batteries that **drop from hacks** (`PowerCubeLevel` L1–L8 
 in Ingress). An agent low on XM (< 10% of capacity) **recycles** one (`Recycler`, the `RECYCLE` action),
 consuming it to restore its level × 1000 XM — the agent's main self-refill alongside picking up stray XM.
 This is distinct from **recharge** (`Recharger`, the `RECHARGE` action), which spends the agent's XM to refill
-a *portal's* resonators via a held key. Recycle is also **inventory management**: when ~full it dumps junk to
-free space (`Inventory.recycleForSpace`) — surplus **duplicate keys** first (keeping a few per portal), then
-the lowest resonators / surplus weapons / power cubes.
+a *portal's* resonators — and the two run **back and forth**, as in Ingress: recharging drains the bar toward
+the same < 10% mark below which the cube-recycle kicks in, so an agent holding portals alternates
+recharge → recycle → recharge until the portal is topped up or the cubes run out. Recycle is also
+**inventory management**: when ~full it dumps junk to free space (`Inventory.recycleForSpace`) — surplus
+**duplicate keys** first (keeping a few per portal), then the lowest resonators / surplus weapons / power cubes.
 
 ## Recruiting — `agent/action/cond/Recruiter.kt`, `agent/Balance.kt`
 Growing a faction's roster by persuading a bystander **NPC** to join. It is the *team-size* lever, kept
@@ -173,11 +175,23 @@ open map supports more portals than a built-up one of the same size:
 
 ## Resonator decay & recharge — `items/deployable/Resonator.kt`
 Resonators lose energy over time; a portal with no energy left loses resonators and eventually goes
-neutral. Recharging (`Recharger`, via a held key) tops them back up at an XM cost.
+neutral. Recharging (`Recharger`, the `RECHARGE` action) tops them back up from the agent's own XM.
+- **Targets (`Portal.findChargeable`):** the friendly portal the agent is **standing at and working**
+  (its action portal, no key needed) once below **90%** health — the casual top-up — plus **keyed remote**
+  portals once **badly hurt** (≤ 50% health) — the emergency hold, as in Ingress. The remote bar is
+  deliberately low: cycle decay leaves *every* friendly portal a bit below full, and a looser gate had
+  key-holding agents tarpit at each damaged portal they passed instead of travelling.
+- **One action = one "recharge all" press:** the agent's XM is split **evenly** across the portal's
+  resonators, at most **1000 XM per resonator** (`Recharger.RECHARGE_XM_PER_RESO`, authentic), each capped
+  by the resonator's open capacity; only the XM actually applied is deducted (+10 AP per resonator).
+- **The recharge↔recycle loop:** recharge fires while the agent isn't drained (`Agent.isXmLow`, ≥ 10% of
+  capacity) and can spend the bar right down; below the same mark the `Recycler` taps a power cube to
+  refill — so holding a portal is the authentic alternation: recharge → recycle a cube → recharge.
 - **Authentic Ingress (doc'd for reference, not implemented as-is):** a portal loses **15% of each
   resonator's energy per day**, so an un-recharged portal (e.g. a remote one you only hold via a key)
   fully **decays after ~a week**. We deliberately *don't* model real-time day/week decay — matches are
-  meant to be fast — but it's the canonical mechanic to keep in mind.
+  meant to be fast — but it's the canonical mechanic to keep in mind. Likewise **remote-recharge
+  efficiency** (falling with key distance, down to 35%) is not modelled: remote recharge is full-strength.
 - **Sim model:** `Resonator.DECAY_RATIO = 0.15` (the 15% figure) applied at **cycle end**
   (`Portal.decay`), i.e. accelerated to sim time. Recharging counters it.
 - **Dominance decay (sim anti-runaway, `Config.dominanceDecay`):** *every checkpoint*, a portal owned by
